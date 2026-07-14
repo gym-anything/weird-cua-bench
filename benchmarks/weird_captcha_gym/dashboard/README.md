@@ -11,10 +11,10 @@ The mined Survey corpus is deliberately excluded from this product and from stat
 From the repository root:
 
 ```bash
-python benchmarks/weird_captcha_gym/dashboard/server.py --open --runner avf
+python run.py
 ```
 
-Then visit <http://127.0.0.1:8767>. The server binds to localhost by default.
+The launcher opens <http://127.0.0.1:8767>. The server binds to localhost by default, and local mode requires no endpoint or pairing key.
 
 `avf` is the normal runner on Apple Silicon. `qemu`, `qemu_native`, `docker`, and `local` remain available when the corresponding Gym-Anything runner is configured.
 
@@ -47,19 +47,31 @@ It deploys automatically after changes reach `main`. All frontend and media URLs
 
 ## Connect a collaborator's computer
 
-From their repository checkout, the collaborator runs:
+The simplest path is the local launcher above: `python run.py` opens the same dashboard locally with no pairing at all.
+
+If a collaborator wants to keep using the public GitHub Pages dashboard, they run:
+
+```bash
+python run.py --hosted
+```
+
+This starts the loopback companion and opens a newly paired public-dashboard tab. The secret is carried in the URL fragment, which is not sent to GitHub, and the frontend removes it from the address bar immediately. Copying a pairing key is only a manual recovery path.
+
+For another static host, use the explicit advanced command:
 
 ```bash
 python benchmarks/weird_captcha_gym/dashboard/server.py \
   --companion \
-  --allow-origin https://your-dashboard.example
+  --allow-origin https://your-dashboard.example \
+  --dashboard-url https://your-dashboard.example/path/ \
+  --open
 ```
 
-For the local rehearsal above, use `--allow-origin http://127.0.0.1:8080`.
+For the local rehearsal above, use `--allow-origin http://127.0.0.1:8080` and its matching `--dashboard-url`.
 
 For the GitHub Pages deployment, use `--allow-origin https://gym-anything.github.io` (the browser `Origin` excludes `/weird-cua-bench/`).
 
-The companion prints a persistent pairing key. Open **LOCAL COMPANION** in the dashboard sidebar and paste that key once. It is stored only in that browser's local storage and sent only to the loopback companion.
+The companion still prints its persistent pairing key for recovery. If automatic pairing is blocked, expand **Manual recovery only** in the local-execution dialog and paste it once. It is stored only in that browser's local storage and sent only to the loopback companion.
 
 Chrome 142 and newer asks whether the shared dashboard may find and connect to devices on the local network. Choose **Allow**: this is the browser's Local Network Access gate for the explicit `127.0.0.1` companion. The shared deployment itself should use HTTPS; the loopback companion intentionally remains HTTP and never leaves the collaborator's machine.
 

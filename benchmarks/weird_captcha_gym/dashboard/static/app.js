@@ -6,6 +6,18 @@ const config = Object.freeze({
 });
 const companionTokenKey = `captcha-bench-companion-token:${config.companionUrl || "same-origin"}`;
 
+function consumePairingFragment() {
+  if (config.mode !== "shared" || !location.hash.startsWith("#pair=")) return false;
+  const token = new URLSearchParams(location.hash.slice(1)).get("pair") || "";
+  const valid = token.length >= 24 && token.length <= 256 && /^[A-Za-z0-9_-]+$/.test(token);
+  history.replaceState(null, "", `${location.pathname}${location.search}#/observatory`);
+  if (!valid) return false;
+  localStorage.setItem(companionTokenKey, token);
+  return true;
+}
+
+const pairedFromLaunch = consumePairingFragment();
+
 const state = {
   catalog: null,
   reviews: null,
@@ -192,7 +204,7 @@ function updateCounts() {
   const runner = document.getElementById("runner-name");
   const kicker = document.getElementById("runner-kicker");
   const status = document.querySelector(".companion-status");
-  if (runner) runner.textContent = state.companion.connected ? state.system?.runner || "connected" : config.mode === "shared" ? "pair companion" : "offline";
+  if (runner) runner.textContent = state.companion.connected ? state.system?.runner || "connected" : config.mode === "shared" ? "local setup" : "offline";
   if (kicker) kicker.textContent = config.mode === "shared" ? "LOCAL COMPANION" : "LOCAL RUNNER";
   if (status) status.dataset.connection = state.companion.connected ? "connected" : state.companion.status;
 }
@@ -809,23 +821,49 @@ function closeModal() {
   modalRoot.innerHTML = "";
 }
 
+function localDashboardCommand() {
+  return "python run.py";
+}
+
 function companionCommand() {
   const origin = location.origin === "null" ? "null" : location.origin;
-  return `python benchmarks/weird_captcha_gym/dashboard/server.py --companion --allow-origin ${origin}`;
+  const official = origin === "https://gym-anything.github.io" && location.pathname.startsWith("/weird-cua-bench");
+  if (official) return "python run.py --hosted";
+  const dashboardUrl = new URL(".", location.href).href.split("#", 1)[0].split("?", 1)[0];
+  return `python benchmarks/weird_captcha_gym/dashboard/server.py --companion --allow-origin ${origin} --dashboard-url ${dashboardUrl} --open`;
 }
 
 function openCompanionDialog() {
   const connected = state.companion.connected;
-  const statusCopy = connected
-    ? `Connected to ${escapeHtml(config.companionUrl || "this dashboard server")}. Launches, reviews, VNC sessions, and evaluations run on this computer.`
-    : `Start the loopback-only helper from a CAPTCHA Bench checkout, then paste the pairing key printed in that terminal. This frontend stores it in this browser and sends it only to the localhost companion. If your browser asks for Local Network Access, choose Allow.`;
-  modalShell(`<header class="modal-head"><div><small>Local execution boundary</small><h2>${connected ? "Companion connected" : "Pair this computer"}</h2></div><button class="modal-close" type="button" data-action="close-modal" aria-label="Close">×</button></header><div class="modal-body companion-dialog">
-    <div class="modal-callout">${statusCopy}</div>
-    <div class="companion-endpoint"><small>LOOPBACK ENDPOINT</small><code>${escapeHtml(config.companionUrl || location.origin)}</code><span class="status-pill" style="--status-color:${connected ? "#d7ff54" : "#ffc857"}">${connected ? "connected" : escapeHtml(state.companion.status)}</span></div>
-    ${config.mode === "shared" ? `<div class="companion-command"><small>RUN FROM THE REPOSITORY ROOT</small><code>${escapeHtml(companionCommand())}</code><button class="button button-ghost button-small" type="button" data-copy="${escapeHtml(companionCommand())}">Copy command</button></div>
-    <form id="companion-form" class="companion-pair-form"><div class="form-field"><label for="companion-token">Pairing key</label><input id="companion-token" name="token" value="${escapeHtml(state.companion.token)}" autocomplete="off" spellcheck="false" placeholder="Paste the key printed by the companion"></div><div class="modal-actions"><button class="button button-ghost" type="button" data-action="forget-companion">Forget key</button><button class="button button-acid" type="submit">${connected ? "Reconnect" : "Connect companion"} ${arrowIcon}</button></div></form>` : `<div class="companion-command"><small>LOCAL DASHBOARD MODE</small><p>This page and its execution API already share one localhost origin; no pairing key is needed.</p></div>`}
-    ${state.companion.error ? `<p class="companion-error">${escapeHtml(state.companion.error)}</p>` : ""}
-  </div>`);
+  let content = "";
+  if (connected) {
+    content = `<div class="companion-ready"><i></i><div><small>LOCAL RUNNER CONNECTED</small><h3>Everything launches on this computer.</h3><p>Browser puzzles, reviews, VNC sessions, and evaluations stay local.</p></div></div>
+      <details class="companion-technical"><summary>Connection details</summary><div class="companion-endpoint"><small>LOOPBACK ENDPOINT</small><code>${escapeHtml(config.companionUrl || location.origin)}</code><span class="status-pill" style="--status-color:#d7ff54">connected</span></div></details>
+      <div class="modal-actions">${config.mode === "shared" ? `<button class="button button-ghost" type="button" data-action="forget-companion">Disconnect this browser</button>` : ""}<button class="button button-acid" type="button" data-action="close-modal">Done</button></div>`;
+  } else if (config.mode === "shared") {
+    content = `<section class="local-run-card">
+        <div class="local-run-eyebrow"><span>RECOMMENDED</span><small>NO PAIRING · SAME DASHBOARD</small></div>
+        <h3>Open the dashboard locally</h3>
+        <p>Run one short command from the repository root. The full dashboard opens by itself, and browser puzzles need no key, endpoint, or VNC setup.</p>
+        <div class="launch-command"><code>${escapeHtml(localDashboardCommand())}</code><button class="button button-acid" type="button" data-copy="${escapeHtml(localDashboardCommand())}">Copy command</button></div>
+        <div class="local-run-links"><a class="button button-ghost button-small" href="http://127.0.0.1:8767" target="_blank" rel="noopener">Open local dashboard ${arrowIcon}</a><a href="https://github.com/gym-anything/weird-cua-bench" target="_blank" rel="noopener">Get the repository</a></div>
+      </section>
+      <details class="companion-advanced">
+        <summary><span>Stay on this public dashboard</span><small>ONE COMMAND · AUTO-PAIRS A NEW TAB</small></summary>
+        <div class="companion-advanced-body">
+          <p>Run this instead. It starts the local companion and opens a newly paired copy of this page automatically—there is no key to paste.</p>
+          <div class="launch-command"><code>${escapeHtml(companionCommand())}</code><button class="button button-ghost button-small" type="button" data-copy="${escapeHtml(companionCommand())}">Copy command</button></div>
+          <p class="companion-privacy">The pairing secret travels only in the new tab's URL fragment, is never sent to GitHub, and is removed from the address bar immediately.</p>
+          <details class="companion-recovery"><summary>Manual recovery only</summary>
+            <form id="companion-form" class="companion-pair-form"><div class="form-field"><label for="companion-token">Pairing key from the terminal</label><input id="companion-token" name="token" value="${escapeHtml(state.companion.token)}" autocomplete="off" spellcheck="false" placeholder="Paste only if automatic pairing was blocked"></div><div class="modal-actions">${state.companion.token ? `<button class="button button-ghost" type="button" data-action="forget-companion">Forget key</button>` : ""}<button class="button button-acid" type="submit">Connect ${arrowIcon}</button></div></form>
+          </details>
+          ${state.companion.error ? `<p class="companion-error">${escapeHtml(state.companion.error)}</p>` : ""}
+        </div>
+      </details>`;
+  } else {
+    content = `<div class="companion-ready"><i></i><div><small>LOCAL DASHBOARD</small><h3>No pairing is needed.</h3><p>This page and its execution API already share one localhost origin.</p></div></div>`;
+  }
+  modalShell(`<header class="modal-head"><div><small>Local execution</small><h2>${connected ? "Ready on this computer" : "Run puzzles on this computer"}</h2></div><button class="modal-close" type="button" data-action="close-modal" aria-label="Close">×</button></header><div class="modal-body companion-dialog">${content}</div>`, "companion-modal");
 }
 
 function ensureCompanion() {
@@ -864,9 +902,12 @@ async function connectCompanion({interactive = false} = {}) {
   } catch (error) {
     state.companion.connected = false;
     state.companion.status = error.status === 401 ? "pairing required" : "offline";
-    state.companion.error = error.status === 401
-      ? "The pairing key was rejected. Copy the exact key from the companion terminal."
-      : `Could not reach the local companion: ${error.message}`;
+    const explainFailure = interactive || Boolean(state.companion.token);
+    state.companion.error = explainFailure
+      ? error.status === 401
+        ? "The pairing key was rejected. Use the automatic command again or paste the exact terminal key under Manual recovery."
+        : `Could not reach the local companion: ${error.message}`
+      : "";
     updateCounts();
     if (interactive) openCompanionDialog();
     return false;
@@ -1240,6 +1281,7 @@ async function init() {
     await connectCompanion();
     if (!location.hash) history.replaceState(null, "", "#/observatory");
     render();
+    if (pairedFromLaunch && state.companion.connected) toast("This computer is ready", "Automatic pairing completed. You can launch any puzzle now.", "success");
     window.setInterval(pollJobs, 1600);
   } catch (error) {
     app.innerHTML = `<section class="loading-screen"><p style="color:#ff8f7e">Dashboard failed to initialize: ${escapeHtml(error.message)}</p></section>`;

@@ -132,11 +132,17 @@ def main() -> None:
                 expect(page.locator(".companion-status")).to_have_attribute("data-connection", "pairing required")
 
                 page.locator('[data-action="open-companion"]').click()
-                expect(page.locator("#companion-form")).to_be_visible()
-                page.locator("#companion-token").fill(token)
-                page.locator("#companion-form").evaluate("form => form.requestSubmit()")
-                expect(page.locator("#modal-root")).to_be_empty(timeout=10_000)
+                expect(page.locator(".companion-modal h2")).to_have_text("Run puzzles on this computer")
+                expect(page.locator(".local-run-card")).to_contain_text("Open the dashboard locally")
+                expect(page.locator(".local-run-card code")).to_have_text("python run.py")
+                expect(page.locator("#companion-form")).not_to_be_visible()
+                page.screenshot(path=str(output / "shared-dashboard-local-setup.png"), full_page=True)
+                page.locator(".modal-close").click()
+
+                page.goto(f"{static_url}/#pair={token}", wait_until="networkidle")
+                page.reload(wait_until="networkidle")  # Model the fresh tab opened by the launcher.
                 expect(page.locator(".companion-status")).to_have_attribute("data-connection", "connected")
+                expect(page).to_have_url(f"{static_url}/#/observatory")
                 page.screenshot(path=str(output / "shared-dashboard-paired.png"), full_page=True)
 
                 page.goto(f"{static_url}/#/environment/domino_autopsy_env", wait_until="networkidle")

@@ -24,24 +24,22 @@ The `verified` split is intentionally empty. Scripted browser success proves wir
 The dashboard and ordinary local-browser puzzles use the Python standard library:
 
 ```bash
-python benchmarks/weird_captcha_gym/dashboard/server.py --open --runner avf
+python run.py
 ```
 
-Open <http://127.0.0.1:8767>. To enable runner-backed VNC sessions, install the optional runtime:
+This opens the complete dashboard at <http://127.0.0.1:8767>. There is no pairing step in local mode. To enable runner-backed VNC sessions, install the optional runtime:
 
 ```bash
 python -m pip install -e ".[runtime]"
 ```
 
-To pair this checkout with the hosted dashboard:
+To keep using the hosted dashboard while execution stays on this computer:
 
 ```bash
-python benchmarks/weird_captcha_gym/dashboard/server.py \
-  --companion \
-  --allow-origin https://gym-anything.github.io
+python run.py --hosted
 ```
 
-The hosted site is static. Every puzzle launch, review, evaluation, filesystem path, and VNC session remains on the collaborator's own computer through the authenticated loopback companion.
+The launcher starts the authenticated loopback companion and opens an automatically paired dashboard tab. No pairing key needs to be copied. The hosted site is static: every puzzle launch, review, evaluation, filesystem path, and VNC session remains on the collaborator's own computer.
 
 ## Validate
 

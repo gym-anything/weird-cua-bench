@@ -25,7 +25,7 @@ from datetime import datetime, timezone
 from http import HTTPStatus
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
-from typing import Any
+from typing import Any, Sequence
 from urllib.parse import quote, unquote, urlparse
 from urllib.request import urlopen
 
@@ -87,6 +87,23 @@ def is_loopback_host(host: str) -> bool:
         return socket.getaddrinfo(host, None)[0][4][0] in {"127.0.0.1", "::1"}
     except socket.gaierror:
         return False
+
+
+def paired_dashboard_url(dashboard_url: str, token: str, allowed_origins: set[str]) -> str:
+    """Put a companion token in a URL fragment after checking its destination origin.
+
+    Fragments are never sent to the static host. The dashboard consumes the token,
+    stores it locally, and immediately removes it from browser history.
+    """
+
+    parsed = urlparse(dashboard_url)
+    if parsed.scheme not in {"http", "https"} or not parsed.netloc:
+        raise ValueError("dashboard URL must be an absolute http(s) URL")
+    origin = f"{parsed.scheme}://{parsed.netloc}".rstrip("/")
+    normalized_origins = {item.rstrip("/") for item in allowed_origins}
+    if origin not in normalized_origins:
+        raise ValueError("dashboard URL origin must exactly match an allowed origin")
+    return parsed._replace(fragment=f"pair={quote(token, safe='')}").geturl()
 
 
 def reserve_local_port() -> int:
@@ -1037,7 +1054,7 @@ class DashboardHandler(BaseHTTPRequestHandler):
         return
 
 
-def parse_args() -> argparse.Namespace:
+def parse_args(argv: Sequence[str] | None = None) -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="Serve the CAPTCHA Bench visual environment dashboard.")
     parser.add_argument("--host", default="127.0.0.1")
     parser.add_argument("--port", type=int, default=8767)
@@ -1048,11 +1065,11 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--token-path", type=Path, default=DEFAULT_TOKEN_PATH, help="Persistent pairing-key file used in companion mode")
     parser.add_argument("--dashboard-url", help="Shared dashboard URL to open when --open is used in companion mode")
     parser.add_argument("--open", action="store_true", help="Open the dashboard in the default browser")
-    return parser.parse_args()
+    return parser.parse_args(argv)
 
 
-def main() -> int:
-    args = parse_args()
+def main(argv: Sequence[str] | None = None) -> int:
+    args = parse_args(argv)
     if args.companion and not is_loopback_host(args.host):
         raise SystemExit("companion mode must bind to localhost/loopback; refusing a network-visible address")
     token = load_or_create_companion_token(args.token_path) if args.companion else None
@@ -1072,6 +1089,13 @@ def main() -> int:
         print(f"Allowed dashboard origins: {', '.join(sorted(server.allowed_origins)) or 'none (same-origin requests only)'}")
     if args.open:
         destination = args.dashboard_url if args.companion and args.dashboard_url else url
+        if args.companion and args.dashboard_url:
+            try:
+                destination = paired_dashboard_url(args.dashboard_url, token or "", set(args.allow_origin))
+            except ValueError as exc:
+                server.cleanup()
+                server.server_close()
+                raise SystemExit(f"cannot open shared dashboard: {exc}") from exc
         threading.Timer(0.35, lambda: webbrowser.open(destination)).start()
 
     def request_shutdown(_signum: int, _frame: object) -> None:

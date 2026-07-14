@@ -17,9 +17,12 @@ from benchmarks.weird_captcha_gym.dashboard.atlas import (
     AtlasCurationStore, COLLECTION_ROOT, artifact_page, build_atlas, instance_detail, instance_page,
     source_detail, specimen_detail,
 )
-from benchmarks.weird_captcha_gym.dashboard.server import DashboardServer, EvaluationManager, SessionManager
+from benchmarks.weird_captcha_gym.dashboard.server import (
+    DashboardServer, EvaluationManager, SessionManager, paired_dashboard_url,
+)
 from benchmarks.weird_captcha_gym.dashboard.export_static import _validate_output_path, export_dashboard
 from benchmarks.weird_captcha_gym.dashboard.reviews import EnvironmentReviewStore
+from run import launcher_args
 
 
 PACK_III = {
@@ -49,6 +52,37 @@ SURVEY_SKIP_REASON = "optional sibling research/collection survey corpus is not 
 
 
 class WeirdCaptchaDashboardTests(unittest.TestCase):
+    def test_human_launcher_defaults_local_and_expands_hosted_shortcut(self) -> None:
+        self.assertEqual(launcher_args([]), ["--open"])
+        self.assertEqual(launcher_args(["--runner", "local"]), ["--open", "--runner", "local"])
+        hosted = launcher_args(["--hosted", "--runner", "local"])
+        self.assertEqual(hosted[:6], [
+            "--companion",
+            "--allow-origin",
+            "https://gym-anything.github.io",
+            "--dashboard-url",
+            "https://gym-anything.github.io/weird-cua-bench/",
+            "--open",
+        ])
+        self.assertEqual(hosted[6:], ["--runner", "local"])
+
+    def test_companion_auto_pairing_uses_a_fragment_and_exact_allowed_origin(self) -> None:
+        token = "automatic_pairing_token_with_enough_entropy"
+        url = paired_dashboard_url(
+            "https://gym-anything.github.io/weird-cua-bench/#/environments",
+            token,
+            {"https://gym-anything.github.io"},
+        )
+        self.assertEqual(url, f"https://gym-anything.github.io/weird-cua-bench/#pair={token}")
+        with self.assertRaisesRegex(ValueError, "exactly match"):
+            paired_dashboard_url(
+                "https://hostile.example/weird-cua-bench/",
+                token,
+                {"https://gym-anything.github.io"},
+            )
+        with self.assertRaisesRegex(ValueError, "absolute"):
+            paired_dashboard_url("/weird-cua-bench/", token, {"https://gym-anything.github.io"})
+
     def test_environment_review_ledger_is_atomic_persistent_and_built_only(self) -> None:
         with tempfile.TemporaryDirectory() as temporary:
             path = Path(temporary) / "environment-reviews.json"
@@ -543,6 +577,9 @@ class WeirdCaptchaDashboardTests(unittest.TestCase):
             catalog = json.loads((output / "data" / "catalog.json").read_text(encoding="utf-8"))
             self.assertNotIn("Survey Atlas", html)
             self.assertNotIn("/api/atlas", app)
+            self.assertIn("Open the dashboard locally", app)
+            self.assertIn("python run.py --hosted", app)
+            self.assertIn("consumePairingFragment", app)
             self.assertIn('\"mode\":\"shared\"', config)
             self.assertEqual(catalog["stats"]["built"], 63)
             self.assertTrue(all(
