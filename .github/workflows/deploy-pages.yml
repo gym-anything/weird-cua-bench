@@ -1,0 +1,62 @@
+name: Deploy Weird CUA dashboard
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Export static dashboard
+        run: >-
+          python benchmarks/weird_captcha_gym/dashboard/export_static.py
+          --output _site
+
+      - name: Verify standalone export
+        run: |
+          test -f _site/index.html
+          test -f _site/data/catalog.json
+          test -f _site/manifest.json
+          test ! -e _site/survey
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          manifest = json.loads(Path("_site/manifest.json").read_text())
+          assert manifest["survey_included"] is False
+          assert manifest["catalog"]["built"] == 63
+          PY
+
+      - name: Upload Pages artifact
+        uses: actions/upload-pages-artifact@v4
+        with:
+          path: _site
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
