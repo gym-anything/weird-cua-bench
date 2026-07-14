@@ -16,7 +16,8 @@ Never simulate a claimed mechanic with presentation hacks. Visible geometry, hit
 - Do not add CUA-World or any unrelated Gym-Anything environment.
 - Do not vendor Gym-Anything's core source tree; it is an optional external runtime dependency.
 - Do not publish the mined Survey archive. Static exports contain the built catalog and its dashboard media only.
-- Preserve the local-execution boundary: the hosted dashboard is static, while puzzles, reviews, evaluations, VNC credentials, paths, and process controls run through the authenticated loopback companion.
+- Preserve the two-tier execution boundary. Ordinary collaborator play is a static browser runtime: the export ships generated challenge pools, the existing interaction UI, and the exact Python graders executed through pinned Pyodide/WebAssembly. This exploration path requires no checkout, clone, pairing key, localhost service, or VNC.
+- Do not call public browser play an authoritative or secret evaluation surface: its challenge truth necessarily ships to the browser and is inspectable in developer tools. Reviews, evaluation execution, fresh authoritative generation, VNC credentials, filesystem paths, and process controls remain opt-in local operations through the authenticated loopback companion.
 
 ## Required checks
 
@@ -28,4 +29,4 @@ python -m pytest tests -q
 
 Also inspect `python benchmarks/weird_captcha_gym/tools/audit_quality.py --strict` when changing task quality or status. It is expected to exit nonzero while candidates still lack the required human/VNC/agent evidence. Never weaken metadata or promote a task merely to make that audit green.
 
-For dashboard changes, also export the static site and run the shared-dashboard smoke test. Real runner/VNC and human calibration remain separate gates from automation.
+For dashboard or browser-runtime changes, also export the static site and run `tools/smoke_static_browser_play.py`; companion changes still require the shared-dashboard smoke. Real runner/VNC and human calibration remain separate gates from automation.

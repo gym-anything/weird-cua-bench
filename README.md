@@ -6,6 +6,8 @@ The benchmark starts from CAPTCHA-like and internet puzzle mechanics, but its ta
 
 [Explore the dashboard](https://gym-anything.github.io/weird-cua-bench/)
 
+Every built puzzle can be opened from that site with one click. The task UI and its existing Python grader run entirely in the browser through WebAssembly; ordinary exploration needs no clone, terminal, pairing key, localhost helper, or VNC.
+
 ## Repository scope
 
 This is the standalone home of the Weird CUA benchmark. It contains only:
@@ -19,9 +21,9 @@ It deliberately excludes CUA-World, other Gym-Anything environments, the mined S
 
 The `verified` split is intentionally empty. Scripted browser success proves wiring, not human usability or agent difficulty.
 
-## Run the dashboard locally
+## Optional local controls
 
-The dashboard and ordinary local-browser puzzles use the Python standard library:
+The public dashboard is enough to browse and play all 63 built puzzles. Clone and run locally only when you need persistent reviews, fresh authoritative challenges, VNC sessions, evaluation execution, filesystem paths, or process controls:
 
 ```bash
 python run.py
@@ -33,13 +35,15 @@ This opens the complete dashboard at <http://127.0.0.1:8767>. There is no pairin
 python -m pip install -e ".[runtime]"
 ```
 
-To keep using the hosted dashboard while execution stays on this computer:
+To attach those advanced local controls to the hosted dashboard:
 
 ```bash
 python run.py --hosted
 ```
 
-The launcher starts the authenticated loopback companion and opens an automatically paired dashboard tab. No pairing key needs to be copied. The hosted site is static: every puzzle launch, review, evaluation, filesystem path, and VNC session remains on the collaborator's own computer.
+The launcher starts the authenticated loopback companion and opens an automatically paired dashboard tab. No pairing key needs to be copied. Browser play remains static and zero-setup; reviews, evaluation execution, VNC credentials, filesystem paths, and administrative controls stay on the collaborator's own computer.
+
+The public browser runtime is an exploration surface, not a secure evaluation endpoint: because it has no server, its finite challenge pool and grading truth are inspectable in developer tools. Use the local/VNC benchmark path for authoritative agent runs.
 
 ## Validate
 

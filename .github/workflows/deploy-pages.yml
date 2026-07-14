@@ -36,6 +36,9 @@ jobs:
           test -f _site/index.html
           test -f _site/data/catalog.json
           test -f _site/manifest.json
+          test -f _site/play/index.html
+          test -f _site/play/runtime/browser_adapter.js
+          test -f _site/play/runtime/grader_worker.js
           test ! -e _site/survey
           python - <<'PY'
           import json
@@ -43,6 +46,21 @@ jobs:
           manifest = json.loads(Path("_site/manifest.json").read_text())
           assert manifest["survey_included"] is False
           assert manifest["catalog"]["built"] == 63
+          assert manifest["browser_play"] == {
+              "enabled": True,
+              "environments": 63,
+              "challenges": 252,
+              "challenges_per_environment": 4,
+              "grader_files": 57,
+              "python_runtime": "pyodide@314.0.2",
+          }
+          challenges = sorted(Path("_site/play/challenges").glob("*.json"))
+          assert len(challenges) == 63
+          for path in challenges:
+              bundle = json.loads(path.read_text())
+              assert len(bundle["challenges"]) == 4, path
+              assert len({item["ground_truth"]["challenge_id"] for item in bundle["challenges"]}) == 4, path
+              assert (Path("_site/play") / bundle["grader"]).is_file(), path
           PY
 
       - name: Upload Pages artifact

@@ -92,6 +92,12 @@ const popupModel = {state: null, cleared: [], topZ: 20, submitting: false};
 const funeralModel = {state: null, events: [], brushed: new Set(), gathered: new Set(), brushing: false, completed: false, pointerUpHandler: null};
 const slimeModel = {state: null, startedAt: 0, player: {x: 0, y: 10}, deaths: 0, visited: new Set(), keyHandler: null, animationFrame: 0, completed: false, lastTick: -1};
 
+function runtimeAssetUrl(relative) {
+  const normalized = String(relative || "").replace(/^\/+/, "");
+  if (window.WEIRD_CAPTCHA_ASSET_BASE) return new URL(normalized, window.WEIRD_CAPTCHA_ASSET_BASE).href;
+  return `/${normalized}`;
+}
+
 function text(value) {
   return String(value == null ? "" : value);
 }
@@ -133,7 +139,7 @@ async function renderExternalMechanic(state) {
     try {
       await new Promise((resolve, reject) => {
         const script = document.createElement("script");
-        script.src = `/mechanics/${encodeURIComponent(mechanicId)}.js`;
+        script.src = runtimeAssetUrl(`mechanics/${encodeURIComponent(mechanicId)}.js`);
         script.dataset.mechanicScript = mechanicId;
         script.onload = resolve;
         script.onerror = reject;
@@ -149,7 +155,7 @@ async function renderExternalMechanic(state) {
   if (!style) {
     style = document.createElement("link");
     style.rel = "stylesheet";
-    style.href = `/mechanics/${encodeURIComponent(mechanicId)}.css`;
+    style.href = runtimeAssetUrl(`mechanics/${encodeURIComponent(mechanicId)}.css`);
     style.dataset.mechanicStyle = mechanicId;
     await new Promise((resolve, reject) => {
       style.onload = resolve;

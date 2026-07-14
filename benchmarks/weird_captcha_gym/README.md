@@ -33,7 +33,7 @@ The complete interaction-first design history, human VNC findings, implementatio
 
 ## Visual Dashboard
 
-The benchmark includes a screenshot-first environment hub for browsing all 65 folders: 63 evidence-backed built designs and 2 rejected archive records. All twenty Pack III–VI selections and all historical Incubator selections have been promoted to real, launchable environment records; the dashboard contains zero concept or scaffold cards. It can inspect evidence, open every built task as an ordinary local browser app, preserve the isolated VNC path, store human reviews, and prepare or run evaluations through the existing CLI contract. A Survey-free static export can be shared with collaborators; its authenticated loopback companion keeps all execution and administrative controls on each collaborator's own computer.
+The benchmark includes a screenshot-first environment hub for browsing all 65 folders: 63 evidence-backed built designs and 2 rejected archive records. All twenty Pack III–VI selections and all historical Incubator selections have been promoted to real, launchable environment records; the dashboard contains zero concept or scaffold cards. Its Survey-free static export can open every built puzzle with one click and run the existing Python grader in a WebAssembly worker, requiring no checkout or localhost helper for ordinary exploration. The optional authenticated loopback companion preserves fresh authoritative generation, isolated VNC, persistent reviews, evaluations, and administrative controls on each collaborator's own computer. Static browser play is deliberately non-authoritative because its bundled challenge truth is inspectable.
 
 [Open the hosted Weird CUA dashboard](https://gym-anything.github.io/weird-cua-bench/).
 

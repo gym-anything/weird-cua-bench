@@ -1648,6 +1648,40 @@ def generate_unavailable(task: dict[str, Any], seed: str) -> tuple[dict[str, Any
     return public_state, ground_truth
 
 
+def generate_task_state(task: dict[str, Any], seed: str) -> tuple[dict[str, Any], dict[str, Any]]:
+    """Generate one challenge without coupling the generator to filesystem state."""
+
+    mechanic_id = (task.get("metadata") or {}).get("mechanic_id")
+    generators = {
+        "surreal_apple_on_tree_grid": generate_surreal_apple_on_tree_grid,
+        "cursor_lens_reveal": generate_cursor_lens_reveal,
+        "board_game_captcha": generate_board_game_captcha,
+        "modifier_stack_image_grid": generate_modifier_stack_image_grid,
+        "semantic_drag_drop_absurdity": generate_semantic_drag_drop_absurdity,
+        "reload_interruption": generate_reload_interruption,
+        "rotate_wrong_thing_upright": generate_rotate_wrong_thing_upright,
+        "bureaucratic_signature_trap": generate_bureaucratic_signature_trap,
+        "wonky_text_hostile_rendering": generate_wonky_text_hostile_rendering,
+        "temporal_memory_first_change": generate_temporal_memory_first_change,
+        "motion_only_ghost_jigsaw": generate_motion_only_ghost_jigsaw,
+        "cursor_constellation_hunt": generate_cursor_constellation_hunt,
+        "parallel_grillmaster": generate_parallel_grillmaster,
+        "rotating_keyboard": generate_rotating_keyboard,
+        "slot_reel_capture": generate_slot_reel_capture,
+        "domino_autopsy": generate_domino_autopsy,
+        "consequences_boss": generate_consequences_boss,
+        "popup_exorcist": generate_popup_exorcist,
+        "funeral_ritual": generate_funeral_ritual,
+        "slime_commute": generate_slime_commute,
+    }
+    generator = generators.get(str(mechanic_id or ""))
+    if generator is not None:
+        return generator(task, seed)
+    if has_incubator_generator(str(mechanic_id or "")):
+        return generate_incubator_candidate(task, seed)
+    return generate_unavailable(task, seed)
+
+
 def write_json(path: Path, data: dict[str, Any]) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     tmp = path.with_suffix(path.suffix + ".tmp")
@@ -1669,50 +1703,7 @@ def main() -> None:
     task = load_task(task_path)
     seed = challenge_seed(task, args.seed)
     mechanic_id = (task.get("metadata") or {}).get("mechanic_id")
-    if mechanic_id == "surreal_apple_on_tree_grid":
-        public_state, ground_truth = generate_surreal_apple_on_tree_grid(task, seed)
-    elif mechanic_id == "cursor_lens_reveal":
-        public_state, ground_truth = generate_cursor_lens_reveal(task, seed)
-    elif mechanic_id == "board_game_captcha":
-        public_state, ground_truth = generate_board_game_captcha(task, seed)
-    elif mechanic_id == "modifier_stack_image_grid":
-        public_state, ground_truth = generate_modifier_stack_image_grid(task, seed)
-    elif mechanic_id == "semantic_drag_drop_absurdity":
-        public_state, ground_truth = generate_semantic_drag_drop_absurdity(task, seed)
-    elif mechanic_id == "reload_interruption":
-        public_state, ground_truth = generate_reload_interruption(task, seed)
-    elif mechanic_id == "rotate_wrong_thing_upright":
-        public_state, ground_truth = generate_rotate_wrong_thing_upright(task, seed)
-    elif mechanic_id == "bureaucratic_signature_trap":
-        public_state, ground_truth = generate_bureaucratic_signature_trap(task, seed)
-    elif mechanic_id == "wonky_text_hostile_rendering":
-        public_state, ground_truth = generate_wonky_text_hostile_rendering(task, seed)
-    elif mechanic_id == "temporal_memory_first_change":
-        public_state, ground_truth = generate_temporal_memory_first_change(task, seed)
-    elif mechanic_id == "motion_only_ghost_jigsaw":
-        public_state, ground_truth = generate_motion_only_ghost_jigsaw(task, seed)
-    elif mechanic_id == "cursor_constellation_hunt":
-        public_state, ground_truth = generate_cursor_constellation_hunt(task, seed)
-    elif mechanic_id == "parallel_grillmaster":
-        public_state, ground_truth = generate_parallel_grillmaster(task, seed)
-    elif mechanic_id == "rotating_keyboard":
-        public_state, ground_truth = generate_rotating_keyboard(task, seed)
-    elif mechanic_id == "slot_reel_capture":
-        public_state, ground_truth = generate_slot_reel_capture(task, seed)
-    elif mechanic_id == "domino_autopsy":
-        public_state, ground_truth = generate_domino_autopsy(task, seed)
-    elif mechanic_id == "consequences_boss":
-        public_state, ground_truth = generate_consequences_boss(task, seed)
-    elif mechanic_id == "popup_exorcist":
-        public_state, ground_truth = generate_popup_exorcist(task, seed)
-    elif mechanic_id == "funeral_ritual":
-        public_state, ground_truth = generate_funeral_ritual(task, seed)
-    elif mechanic_id == "slime_commute":
-        public_state, ground_truth = generate_slime_commute(task, seed)
-    elif has_incubator_generator(mechanic_id):
-        public_state, ground_truth = generate_incubator_candidate(task, seed)
-    else:
-        public_state, ground_truth = generate_unavailable(task, seed)
+    public_state, ground_truth = generate_task_state(task, seed)
 
     state_dir = Path(args.state_dir)
     write_json(state_dir / "current_task.json", {"task": task, "seed": seed, "base_seed": seed, "attempt": 0})

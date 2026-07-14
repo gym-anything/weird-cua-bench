@@ -2,6 +2,7 @@ const config = Object.freeze({
   mode: "local",
   catalogUrl: "/api/catalog",
   companionUrl: "",
+  browserPlayUrl: "",
   ...(window.CAPTCHA_BENCH_CONFIG || {}),
 });
 const companionTokenKey = `captcha-bench-companion-token:${config.companionUrl || "same-origin"}`;
@@ -17,6 +18,7 @@ function consumePairingFragment() {
 }
 
 const pairedFromLaunch = consumePairingFragment();
+const initialCompanionToken = config.mode === "shared" ? localStorage.getItem(companionTokenKey) || "" : "";
 
 const state = {
   catalog: null,
@@ -26,9 +28,9 @@ const state = {
   evaluations: [],
   companion: {
     connected: config.mode === "local",
-    status: config.mode === "local" ? "connected" : "checking",
+    status: config.mode === "local" ? "connected" : initialCompanionToken ? "checking" : "optional",
     error: "",
-    token: config.mode === "shared" ? localStorage.getItem(companionTokenKey) || "" : "",
+    token: initialCompanionToken,
     lastAttempt: 0,
   },
   route: {name: "observatory", id: null},
@@ -204,8 +206,8 @@ function updateCounts() {
   const runner = document.getElementById("runner-name");
   const kicker = document.getElementById("runner-kicker");
   const status = document.querySelector(".companion-status");
-  if (runner) runner.textContent = state.companion.connected ? state.system?.runner || "connected" : config.mode === "shared" ? "local setup" : "offline";
-  if (kicker) kicker.textContent = config.mode === "shared" ? "LOCAL COMPANION" : "LOCAL RUNNER";
+  if (runner) runner.textContent = state.companion.connected ? state.system?.runner || "connected" : config.mode === "shared" ? "browser ready" : "offline";
+  if (kicker) kicker.textContent = config.mode === "shared" ? "ADVANCED CONTROLS" : "LOCAL RUNNER";
   if (status) status.dataset.connection = state.companion.connected ? "connected" : state.companion.status;
 }
 
@@ -221,7 +223,7 @@ function environmentCard(environment, index = 0) {
     ? `<span class="card-review" data-review-status="${escapeHtml(review.status)}" style="--review-color:${reviewStatusColor(review.status)}"><i></i>${escapeHtml(reviewStatusShort(review.status))}</span>`
     : "";
   const launch = environment.stage === "built" && environment.launchable
-    ? `<button class="quick-launch" type="button" data-quick-launch="${escapeHtml(environment.id)}" title="Open locally in browser" aria-label="Open ${escapeHtml(environment.title)} locally in browser">${arrowIcon}</button>`
+    ? `<button class="quick-launch" type="button" data-quick-launch="${escapeHtml(environment.id)}" title="Try in this browser" aria-label="Try ${escapeHtml(environment.title)} in this browser">${arrowIcon}</button>`
     : "";
   return `
     <article class="environment-card" role="button" tabindex="0" data-open-env="${escapeHtml(environment.id)}" style="--accent:${escapeHtml(environment.accent)}">
@@ -528,7 +530,7 @@ function reviewDeskMarkup(environment) {
   return `<section class="review-desk" id="review-desk" data-review-status="${escapeHtml(review.status)}" style="--review-color:${reviewStatusColor(review.status)}">
     <header><div><small>Human review ledger</small><h3>Make the call</h3></div><span class="review-status-badge"><i></i>${escapeHtml(reviewStatusLabel(review.status))}</span></header>
     <div class="review-stamp" aria-hidden="true">${stamp}</div>
-    <p class="review-intro">A film/design screening may be marked “Looks good.” Play the specimen locally or in VNC before approval. Neither state replaces the scripted verifier.</p>
+    <p class="review-intro">A film/design screening may be marked “Looks good.” Play the specimen in-browser or in VNC before approval. Neither state replaces the scripted verifier.</p>
     <form id="environment-review-form" data-environment="${escapeHtml(environment.id)}">
       <input type="hidden" name="status" value="${escapeHtml(review.status)}">
       <div class="review-choice-grid" role="group" aria-label="Review decision">
@@ -556,7 +558,7 @@ function renderEnvironmentDetail(environmentId) {
   const returnToReviews = state.environmentReturn === "reviews";
   const serverFeedback = validation.server_grade?.feedback || (validation.ok ? "Browser evidence present" : archived ? "Rejected infrastructure pilot" : "Not yet verified");
   const headerActions = environment.stage === "built" && environment.launchable
-    ? `<div class="detail-actions"><button class="button button-review" type="button" data-action="open-review-desk" style="--review-color:${reviewStatusColor(review.status)}">Review · ${escapeHtml(reviewStatusShort(review.status))}</button><button class="button button-ghost" type="button" data-open-eval="${escapeHtml(environment.id)}">Evaluate</button><button class="button button-acid" type="button" data-config-launch="${escapeHtml(environment.id)}">Launch locally ${arrowIcon}</button></div>`
+    ? `<div class="detail-actions"><button class="button button-review" type="button" data-action="open-review-desk" style="--review-color:${reviewStatusColor(review.status)}">Review · ${escapeHtml(reviewStatusShort(review.status))}</button><button class="button button-ghost" type="button" data-open-eval="${escapeHtml(environment.id)}">Evaluate</button><button class="button button-acid" type="button" data-quick-launch="${escapeHtml(environment.id)}">Try in browser ${arrowIcon}</button></div>`
     : `<div class="archive-chip"><i></i>REJECTED INFRASTRUCTURE PILOT</div>`;
   const consoleMarkup = archived
     ? `<aside class="launch-console archive-console">
@@ -573,14 +575,14 @@ function renderEnvironmentDetail(environmentId) {
     : `<aside class="launch-console">
         <div class="launch-console-head"><span>Runtime console</span><h3>Open the specimen</h3></div>
         <div class="launch-console-body">
-          <div class="console-row"><span>Runner</span><b>${escapeHtml(state.system.runner)}</b></div>
+          <div class="console-row"><span>${config.mode === "shared" ? "Runtime" : "Runner"}</span><b>${config.mode === "shared" ? "browser / WASM" : escapeHtml(state.system.runner)}</b></div>
           <div class="console-row"><span>Resolution</span><b>1280 × 720</b></div>
           <div class="console-row"><span>Tasks</span><b>${environment.task_count}</b></div>
           <div class="console-row"><span>Evidence</span><b>${environment.screenshots.length} frames</b></div>
           <div class="console-row"><span>Difficulty</span><b>${escapeHtml(environment.difficulty)}</b></div>
           ${validation.ok ? `<div class="validation-mark">WIRING REPLAY PASSED · HUMAN REVIEW PENDING</div>` : ""}
-          <div class="console-actions"><button class="button button-acid button-wide" type="button" data-quick-launch="${escapeHtml(environment.id)}">One-click browser play ${arrowIcon}</button><button class="button button-ghost button-wide" type="button" data-config-launch="${escapeHtml(environment.id)}">Browser / VNC options</button><button class="button button-ghost button-wide" type="button" data-open-eval="${escapeHtml(environment.id)}">Prepare evaluation</button></div>
-          <p class="console-note">Browser play starts the real task UI and grader on localhost. The launch dialog also preserves the isolated Gym-Anything VNC workflow.</p>
+          <div class="console-actions"><button class="button button-acid button-wide" type="button" data-quick-launch="${escapeHtml(environment.id)}">One-click browser play ${arrowIcon}</button><button class="button button-ghost button-wide" type="button" data-config-launch="${escapeHtml(environment.id)}">Advanced local / VNC</button><button class="button button-ghost button-wide" type="button" data-open-eval="${escapeHtml(environment.id)}">Prepare evaluation</button></div>
+          <p class="console-note">Browser play runs the real task UI and its existing Python grader entirely inside this tab. Advanced controls preserve local VNC and evaluation workflows.</p>
         </div>
       </aside>`;
   app.innerHTML = `
@@ -821,10 +823,6 @@ function closeModal() {
   modalRoot.innerHTML = "";
 }
 
-function localDashboardCommand() {
-  return "python run.py";
-}
-
 function companionCommand() {
   const origin = location.origin === "null" ? "null" : location.origin;
   const official = origin === "https://gym-anything.github.io" && location.pathname.startsWith("/weird-cua-bench");
@@ -837,23 +835,17 @@ function openCompanionDialog() {
   const connected = state.companion.connected;
   let content = "";
   if (connected) {
-    content = `<div class="companion-ready"><i></i><div><small>LOCAL RUNNER CONNECTED</small><h3>Everything launches on this computer.</h3><p>Browser puzzles, reviews, VNC sessions, and evaluations stay local.</p></div></div>
+    content = `<div class="companion-ready"><i></i><div><small>ADVANCED CONTROLS CONNECTED</small><h3>VNC, reviews, and evaluations are ready.</h3><p>Ordinary browser play remains self-contained; administrative actions use this local runner.</p></div></div>
       <details class="companion-technical"><summary>Connection details</summary><div class="companion-endpoint"><small>LOOPBACK ENDPOINT</small><code>${escapeHtml(config.companionUrl || location.origin)}</code><span class="status-pill" style="--status-color:#d7ff54">connected</span></div></details>
       <div class="modal-actions">${config.mode === "shared" ? `<button class="button button-ghost" type="button" data-action="forget-companion">Disconnect this browser</button>` : ""}<button class="button button-acid" type="button" data-action="close-modal">Done</button></div>`;
   } else if (config.mode === "shared") {
-    content = `<section class="local-run-card">
-        <div class="local-run-eyebrow"><span>RECOMMENDED</span><small>NO PAIRING · SAME DASHBOARD</small></div>
-        <h3>Open the dashboard locally</h3>
-        <p>Run one short command from the repository root. The full dashboard opens by itself, and browser puzzles need no key, endpoint, or VNC setup.</p>
-        <div class="launch-command"><code>${escapeHtml(localDashboardCommand())}</code><button class="button button-acid" type="button" data-copy="${escapeHtml(localDashboardCommand())}">Copy command</button></div>
-        <div class="local-run-links"><a class="button button-ghost button-small" href="http://127.0.0.1:8767" target="_blank" rel="noopener">Open local dashboard ${arrowIcon}</a><a href="https://github.com/gym-anything/weird-cua-bench" target="_blank" rel="noopener">Get the repository</a></div>
-      </section>
+    content = `<div class="companion-ready"><i></i><div><small>BROWSER PLAY IS ALREADY READY</small><h3>You do not need to connect anything.</h3><p>Close this panel and use any “Try in browser” button. The puzzle and its grader run entirely in that tab.</p></div></div>
       <details class="companion-advanced">
-        <summary><span>Stay on this public dashboard</span><small>ONE COMMAND · AUTO-PAIRS A NEW TAB</small></summary>
+        <summary><span>Enable optional VNC, reviews, and evaluations</span><small>LOCAL REPOSITORY REQUIRED</small></summary>
         <div class="companion-advanced-body">
-          <p>Run this instead. It starts the local companion and opens a newly paired copy of this page automatically—there is no key to paste.</p>
+          <p>Only these advanced controls need a local checkout. From its root, run this command; it opens a newly paired dashboard tab automatically.</p>
           <div class="launch-command"><code>${escapeHtml(companionCommand())}</code><button class="button button-ghost button-small" type="button" data-copy="${escapeHtml(companionCommand())}">Copy command</button></div>
-          <p class="companion-privacy">The pairing secret travels only in the new tab's URL fragment, is never sent to GitHub, and is removed from the address bar immediately.</p>
+          <p class="companion-privacy">The pairing secret stays between this browser and loopback, never reaches GitHub, and is removed from the address bar immediately.</p>
           <details class="companion-recovery"><summary>Manual recovery only</summary>
             <form id="companion-form" class="companion-pair-form"><div class="form-field"><label for="companion-token">Pairing key from the terminal</label><input id="companion-token" name="token" value="${escapeHtml(state.companion.token)}" autocomplete="off" spellcheck="false" placeholder="Paste only if automatic pairing was blocked"></div><div class="modal-actions">${state.companion.token ? `<button class="button button-ghost" type="button" data-action="forget-companion">Forget key</button>` : ""}<button class="button button-acid" type="submit">Connect ${arrowIcon}</button></div></form>
           </details>
@@ -863,7 +855,7 @@ function openCompanionDialog() {
   } else {
     content = `<div class="companion-ready"><i></i><div><small>LOCAL DASHBOARD</small><h3>No pairing is needed.</h3><p>This page and its execution API already share one localhost origin.</p></div></div>`;
   }
-  modalShell(`<header class="modal-head"><div><small>Local execution</small><h2>${connected ? "Ready on this computer" : "Run puzzles on this computer"}</h2></div><button class="modal-close" type="button" data-action="close-modal" aria-label="Close">×</button></header><div class="modal-body companion-dialog">${content}</div>`, "companion-modal");
+  modalShell(`<header class="modal-head"><div><small>Optional local runner</small><h2>${connected ? "Advanced controls ready" : "Browser play needs no setup"}</h2></div><button class="modal-close" type="button" data-action="close-modal" aria-label="Close">×</button></header><div class="modal-body companion-dialog">${content}</div>`, "companion-modal");
 }
 
 function ensureCompanion() {
@@ -972,12 +964,28 @@ function openCommandPalette(mode = "browse") {
 
 function paletteItems(environments, mode) {
   if (!environments.length) return `<div class="empty-catalog" style="min-height:160px"><b>No matches.</b></div>`;
-  return environments.map((environment) => `<button class="palette-item" type="button" data-palette-mode="${mode}" data-palette-environment="${escapeHtml(environment.id)}"><span class="palette-thumb">${coverMarkup(environment)}</span><span><b>${escapeHtml(environment.title)}</b><span>${escapeHtml(environment.axes.join(" · "))}</span></span><em>${mode === "launch" ? "launch ↗" : mode === "eval" ? "evaluate ↗" : "open ↗"}</em></button>`).join("");
+  return environments.map((environment) => `<button class="palette-item" type="button" data-palette-mode="${mode}" data-palette-environment="${escapeHtml(environment.id)}"><span class="palette-thumb">${coverMarkup(environment)}</span><span><b>${escapeHtml(environment.title)}</b><span>${escapeHtml(environment.axes.join(" · "))}</span></span><em>${mode === "launch" ? config.mode === "shared" ? "play ↗" : "launch ↗" : mode === "eval" ? "evaluate ↗" : "open ↗"}</em></button>`).join("");
+}
+
+function browserPlayHref(environmentId) {
+  const url = new URL(String(config.browserPlayUrl || "play/"), location.href);
+  url.searchParams.set("environment", environmentId);
+  url.hash = "";
+  return url.href;
 }
 
 async function quickLaunch(environmentId) {
   const environment = findEnvironment(environmentId);
   if (!environment || !environment.tasks.length) return;
+  if (config.mode === "shared" && config.browserPlayUrl) {
+    const link = document.createElement("a");
+    link.href = browserPlayHref(environment.id);
+    link.target = "_blank";
+    link.rel = "noopener";
+    link.click();
+    toast("Browser puzzle opened", `${environment.title} is running in a new tab.`, "success");
+    return;
+  }
   if (!ensureCompanion()) return;
   toast("Local launch requested", `${environment.title} is preparing in your browser.`, "info");
   try {
@@ -1193,7 +1201,10 @@ document.addEventListener("click", async (event) => {
     const environment = findEnvironment(target.dataset.paletteEnvironment);
     const mode = target.dataset.paletteMode;
     closeModal();
-    if (mode === "launch") openLaunchDialog(environment);
+    if (mode === "launch") {
+      if (config.mode === "shared" && config.browserPlayUrl) await quickLaunch(environment.id);
+      else openLaunchDialog(environment);
+    }
     else if (mode === "eval") openEvalDialog(environment);
     else navigate(`environment/${environment.id}`);
     return;
@@ -1207,12 +1218,13 @@ document.addEventListener("click", async (event) => {
       localStorage.removeItem(companionTokenKey);
       state.companion.token = "";
       state.companion.connected = false;
-      state.companion.status = "pairing required";
+      state.companion.status = "optional";
       state.companion.error = "";
       openCompanionDialog();
       updateCounts();
     } else if (action === "open-launch-picker") {
-      if (ensureCompanion()) openLaunchPicker();
+      if (config.mode === "shared" && config.browserPlayUrl) openLaunchPicker();
+      else if (ensureCompanion()) openLaunchPicker();
     }
     else if (action === "open-eval-picker") {
       if (ensureCompanion()) openEvalPicker();
@@ -1278,7 +1290,7 @@ async function init() {
     state.catalog = await loadCatalog();
     state.reviews = emptyReviewSnapshot(state.catalog);
     state.system = {runner: "offline", agents: [], platform: "local", repo_root: "Companion not connected", review_path: "Companion not connected"};
-    await connectCompanion();
+    if (config.mode === "local" || state.companion.token) await connectCompanion();
     if (!location.hash) history.replaceState(null, "", "#/observatory");
     render();
     if (pairedFromLaunch && state.companion.connected) toast("This computer is ready", "Automatic pairing completed. You can launch any puzzle now.", "success");

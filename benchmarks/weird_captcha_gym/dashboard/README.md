@@ -2,7 +2,7 @@
 
 The dashboard is the visual control plane for Weird CAPTCHA Gym. It presents 65 real environment folders—63 evidence-backed built designs and 2 rejected archive pilots—with screenshots, solution reels, task contracts, human reviews, local launches, VNC sessions, and evaluation controls tied to the same environment identities.
 
-The dashboard is local-first. A shared static copy can be hosted for collaborators, but puzzle execution never moves to that host: each collaborator runs a small authenticated companion on `127.0.0.1`, and every puzzle, VNC guest, review write, and evaluation process stays on their own computer.
+The shared dashboard is zero-setup for ordinary exploration. Every built puzzle opens as a static browser app; its existing Python grader runs in a dedicated Pyodide/WebAssembly worker. No repository checkout, terminal command, pairing key, localhost helper, or VNC is required. The optional authenticated companion on `127.0.0.1` remains responsible for persistent review writes, fresh authoritative generation, VNC guests, evaluations, paths, and process control.
 
 The mined Survey corpus is deliberately excluded from this product and from static exports.
 
@@ -30,6 +30,8 @@ The export contains:
 - the full 65-environment catalog;
 - every catalog screenshot and all 11 solution reels;
 - Observatory, Environments, Review queue, Live sessions, and Evaluations;
+- four deterministic generated challenges for each of the 63 built environments;
+- the shared puzzle runtime, Matter.js mechanics, and the exact Python graders executed by pinned Pyodide;
 - a shared-mode configuration pointing at `http://127.0.0.1:8767`;
 - no Survey APIs, records, artifacts, or navigation.
 
@@ -45,9 +47,15 @@ The repository's GitHub Pages workflow publishes this export as the standalone p
 
 It deploys automatically after changes reach `main`. All frontend and media URLs are relative, so the same artifact remains portable to another static host.
 
-## Connect a collaborator's computer
+## Play directly in the hosted dashboard
 
-The simplest path is the local launcher above: `python run.py` opens the same dashboard locally with no pairing at all.
+Choose any built environment and click **Try in browser**. A new tab loads the same interaction UI used by the local task server. `/state` and `/result` are fulfilled by a browser adapter; the first submission initializes the pinned Python/WebAssembly runtime, and a failed submission rotates to another real bundled challenge.
+
+This is an exploration surface, not an authoritative evaluation endpoint. A fully static app must ship its challenge truth to the browser, so a user or agent with developer-tools/network access can inspect it. Screenshot-and-input behavior remains faithful, but secure/fresh agent evaluation still belongs on the local or VNC path.
+
+## Connect optional advanced controls
+
+No connection is needed for browser play. To enable persistent review changes, fresh server-backed tasks, VNC, evaluation execution, and administration, the simplest path is the local launcher above: `python run.py` opens the same dashboard locally with no pairing at all.
 
 If a collaborator wants to keep using the public GitHub Pages dashboard, they run:
 
@@ -73,7 +81,7 @@ For the GitHub Pages deployment, use `--allow-origin https://gym-anything.github
 
 The companion still prints its persistent pairing key for recovery. If automatic pairing is blocked, expand **Manual recovery only** in the local-execution dialog and paste it once. It is stored only in that browser's local storage and sent only to the loopback companion.
 
-Chrome 142 and newer asks whether the shared dashboard may find and connect to devices on the local network. Choose **Allow**: this is the browser's Local Network Access gate for the explicit `127.0.0.1` companion. The shared deployment itself should use HTTPS; the loopback companion intentionally remains HTTP and never leaves the collaborator's machine.
+Chrome may ask whether the shared dashboard may connect to devices on the local network only after the collaborator explicitly enables the `127.0.0.1` companion. Browser play never probes loopback and must not trigger this permission. The shared deployment itself uses HTTPS; the companion intentionally remains HTTP and never leaves the collaborator's machine.
 
 Companion mode has three safety boundaries:
 
@@ -85,9 +93,10 @@ The server keeps legacy Private Network Access preflight compatibility in additi
 
 ## Launch modes
 
-Every built environment supports two launch paths from the same dashboard:
+Every built environment supports three launch paths from the same dashboard:
 
-- **Local browser** — the default one-click path. The companion runs the real seeded task setup, starts the shared puzzle UI and grader on an ephemeral localhost port, and opens a normal browser tab. No VM is involved.
+- **Static browser play** — the default one-click path. A pre-generated task, the shared puzzle UI, and the exact Python grader run in the tab with no backend. It is faithful exploration, not secret evaluation.
+- **Authoritative local browser** — the companion runs fresh seeded task setup, starts the shared puzzle UI and server grader on an ephemeral localhost port, and opens a normal browser tab. No VM is involved.
 - **Isolated VNC guest** — the existing Gym-Anything path. The companion starts the selected runner, waits for `SessionInfo`, exposes the real VNC address/password, and can open TigerVNC.
 
 The Live sessions page manages both kinds together. It keeps the existing two-active-session limit, prevents duplicate launches of one environment, exposes logs and local paths, supports reconnect/open, and terminates the owned process group on stop or companion shutdown.
@@ -119,6 +128,12 @@ python benchmarks/weird_captcha_gym/tools/smoke_dashboard_ui.py \
   --exercise-reviews
 ```
 
+Exercise all 63 static browser apps plus a real failure/fresh-challenge/WebAssembly-pass cycle:
+
+```bash
+python benchmarks/weird_captcha_gym/tools/smoke_static_browser_play.py
+```
+
 Exercise the complete shared-site boundary—including static export, browser pairing, localhost companion, a real Domino browser task, and teardown:
 
 ```bash
@@ -136,13 +151,14 @@ python benchmarks/weird_captcha_gym/tools/smoke_dashboard_live_vnc.py \
 
 ```text
 63 built folders + task.json + evidence media ──► catalog.py ──► static export
-            │                                          │
-            │                                          └─► shared dashboard host
-            │                                                       │
-            ├─► setup_task.py ─► local puzzle server ◄──────────────┤
-            │            normal browser tab                         │
-            │                                                       ▼
-            ├─► session_worker.py ─► Gym-Anything / VNC     paired localhost companion
+            │                                          │             ├─► browser challenge pools
+            │                                          │             └─► UI + Python graders / WASM
+            │                                          └─► shared dashboard host ─► zero-setup play
+            │
+            ├─► setup_task.py ─► local puzzle server ◄──── optional paired companion
+            │            authoritative browser tab                    │
+            │                                                         ▼
+            ├─► session_worker.py ─► Gym-Anything / VNC      reviews / paths / controls
             │
             └─► benchmark CLI ─► local evaluation process
 

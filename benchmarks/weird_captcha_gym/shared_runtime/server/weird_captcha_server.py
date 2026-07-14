@@ -668,55 +668,13 @@ class PuzzleServer(BaseHTTPRequestHandler):
         task = current.get("task")
         if not isinstance(task, dict):
             return None
-        mechanic_id = (task.get("metadata") or {}).get("mechanic_id")
         module = self._load_setup_module()
         if module is None:
             return None
         challenge_index = int(current.get("challenge_index") or current.get("attempt") or 0) + 1
         seed = f"{reason}:{time.time_ns()}:{secrets.token_hex(12)}"
-        if mechanic_id == "surreal_apple_on_tree_grid":
-            public_state, ground_truth = module.generate_surreal_apple_on_tree_grid(task, seed)
-        elif mechanic_id == "cursor_lens_reveal":
-            public_state, ground_truth = module.generate_cursor_lens_reveal(task, seed)
-        elif mechanic_id == "board_game_captcha":
-            public_state, ground_truth = module.generate_board_game_captcha(task, seed)
-        elif mechanic_id == "modifier_stack_image_grid":
-            public_state, ground_truth = module.generate_modifier_stack_image_grid(task, seed)
-        elif mechanic_id == "semantic_drag_drop_absurdity":
-            public_state, ground_truth = module.generate_semantic_drag_drop_absurdity(task, seed)
-        elif mechanic_id == "reload_interruption":
-            public_state, ground_truth = module.generate_reload_interruption(task, seed)
-        elif mechanic_id == "rotate_wrong_thing_upright":
-            public_state, ground_truth = module.generate_rotate_wrong_thing_upright(task, seed)
-        elif mechanic_id == "bureaucratic_signature_trap":
-            public_state, ground_truth = module.generate_bureaucratic_signature_trap(task, seed)
-        elif mechanic_id == "wonky_text_hostile_rendering":
-            public_state, ground_truth = module.generate_wonky_text_hostile_rendering(task, seed)
-        elif mechanic_id == "temporal_memory_first_change":
-            public_state, ground_truth = module.generate_temporal_memory_first_change(task, seed)
-        elif mechanic_id == "motion_only_ghost_jigsaw":
-            public_state, ground_truth = module.generate_motion_only_ghost_jigsaw(task, seed)
-        elif mechanic_id == "cursor_constellation_hunt":
-            public_state, ground_truth = module.generate_cursor_constellation_hunt(task, seed)
-        elif mechanic_id == "parallel_grillmaster":
-            public_state, ground_truth = module.generate_parallel_grillmaster(task, seed)
-        elif mechanic_id == "rotating_keyboard":
-            public_state, ground_truth = module.generate_rotating_keyboard(task, seed)
-        elif mechanic_id == "slot_reel_capture":
-            public_state, ground_truth = module.generate_slot_reel_capture(task, seed)
-        elif mechanic_id == "domino_autopsy":
-            public_state, ground_truth = module.generate_domino_autopsy(task, seed)
-        elif mechanic_id == "consequences_boss":
-            public_state, ground_truth = module.generate_consequences_boss(task, seed)
-        elif mechanic_id == "popup_exorcist":
-            public_state, ground_truth = module.generate_popup_exorcist(task, seed)
-        elif mechanic_id == "funeral_ritual":
-            public_state, ground_truth = module.generate_funeral_ritual(task, seed)
-        elif mechanic_id == "slime_commute":
-            public_state, ground_truth = module.generate_slime_commute(task, seed)
-        elif module.has_incubator_generator(mechanic_id):
-            public_state, ground_truth = module.generate_incubator_candidate(task, seed)
-        else:
+        public_state, ground_truth = module.generate_task_state(task, seed)
+        if public_state.get("status") == "not_benchmark_ready":
             return None
         self._write_json(self.state_dir / "current_task.json", {
             "task": task,

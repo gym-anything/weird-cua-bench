@@ -71,7 +71,7 @@ task metadata
   -> screenshot and trajectory evidence
 ```
 
-Every puzzle uses the same normal computer-use surface. No mechanic receives privileged agent actions. For spatial mechanics, the browser receives the geometry needed for honest rendering, hit testing, and local collision, while hidden routes/answers stay private and the server independently replays primitive actions against its own geometry. That is a screenshot/action-agent boundary, not secrecy from browser internals.
+Every puzzle uses the same normal computer-use surface. No mechanic receives privileged agent actions. For spatial mechanics, the authoritative local runtime gives the browser the geometry needed for honest rendering, hit testing, and local collision, while hidden routes/answers stay private and the server independently replays primitive actions against its own geometry. That is a screenshot/action-agent boundary, not secrecy from browser internals. Public static browser play is an explicitly non-authoritative exploration surface: it bundles a finite challenge pool and its grading truth so the exact Python graders can run in WebAssembly without any backend.
 
 ## User request and response ledger
 
@@ -117,6 +117,7 @@ This section is chronological. “Implemented” means present in the current tr
 | Next-ten principle audit v2 | Apply the same recipe to the following ten: isolate clean accepted transcripts, reject VNC/input-density gates, replace weak concepts rather than polishing them, and self-audit before handoff. | Replaced OCR-memory Wrong Number with a drifting analog phase-lock task and text-manual Bomb with three-layer acetate registration; repaired Panorama, Flat-Pack, Hovercar, Art Critic, Dead Man, Blind Dice, and Forklift; retained the delayed market with its browser-state boundary. Expanded Forklift from four physical boards to eight topologies × four transforms and task/geometry-bound the graders. | Three post-repair cohorts passed 30/30; 800 generator seeds, all eight Forklift layouts, and accepted-result tamper checks passed. Documented in `next-ten-audit-v2.md`; human VNC review remains pending. |
 | Next-ten difficulty upgrade v3 | Strong concepts are still inadequate when their generators produce tutorial-scale instances: a periodic market, a handful of drawing strokes, short routes, and tiny object counts do not create meaningful interaction debt. | Increased the physical, temporal, and spatial scale of all ten without adding tiny targets or hidden quotas: 32-sector panorama search, seven-part assembly, five moving hover checks, 10–14-stroke art classes, seven drifting carriers, five acetate layers, moving-pad dual control, five hidden-orientation gates, two-crate delayed Sokoban, and a causal-policy-calibrated nonperiodic market. | Canonical and multi-seed browser replay, 80-seed-per-mechanic generator gates, forged-terminal rejection, and visual evidence are documented in `next-ten-difficulty-v3.md`; human VNC difficulty calibration remains pending. |
 | Robot Art Critic fidelity boundary | Asked what happens when a model produces a legitimate locomotive with a substantially different design. | Recorded that the current critic is closed-world and prototype-bound: it measures closeness to eight generated structural families, not open-world artistic or semantic validity. A valid alternate design can therefore fail. The task was frozen and was not changed while solution films were being produced. | Known benchmark limitation, now visible in the dashboard dossier and review note. Do not describe this grader as a faithful general art critic. |
+| Zero-setup public browser play | Rejected cloning, terminal commands, pairing keys, and localhost helpers for ordinary puzzle exploration; asked why every browser app could not simply run in the browser. | Added four deterministic real challenges per built environment to the static export, reused the existing UI unchanged, intercepted only the state/result contract in-browser, and run the exact Python graders in a pinned Pyodide Web Worker. All 63 render from the static artifact; failure rotates to a fresh bundled challenge; a real fail/fresh/pass browser smoke exercises the WebAssembly grade. The companion is no longer contacted on page load and is only offered for VNC, reviews, evaluations, and administration. | Implemented. This public path is for exploration, not secure evaluation, because bundled truth is inspectable in developer tools. |
 
 ## Interaction-first pack one
 
@@ -483,19 +484,20 @@ Examples from this execution:
 - Assert the bell is dynamic, finite-mass, non-sensor, and constrained.
 - Require measurable bell swing rather than trusting a CSS class or sound.
 
-### Keep a shared dashboard local-execution only
+### Separate zero-setup exploration from authoritative local execution
 
-The collaboration surface may be hosted, but the environments must not silently become hosted demos. The durable boundary is:
+The user explicitly superseded the earlier companion-only launch boundary. The durable split is now:
 
-- publish the built catalog and its dashboard media as static files;
+- publish the built catalog, dashboard media, all 63 puzzle interfaces, four generated attempts per environment, and their exact Python graders as static files;
+- make ordinary **Try in browser** launch entirely inside the collaborator's current browser—no clone, terminal, pairing, localhost request, VNC, or hosted application server;
+- execute those graders in a dedicated pinned Pyodide/WebAssembly worker, rotate to another bundled challenge after failure, and preserve the existing puzzle interaction/difficulty rather than introducing demo variants;
+- label this path as exploration rather than authoritative evaluation, because any fully static artifact necessarily exposes bundled ground truth to developer tools;
 - exclude the mined Survey archive from the product export rather than deleting the source research;
-- run every built puzzle, review write, evaluation, and VNC session through an authenticated companion bound to loopback on the collaborator's own computer;
-- make the real localhost browser task the one-click default, while retaining VNC for runner-faithful inspection;
-- keep review, evaluation, password, path, and administrative controls visible to paired collaborators, as explicitly requested;
-- pair by exact dashboard origin plus a persistent local token, account for the browser's Local Network Access permission prompt, and retain legacy private-network preflight compatibility rather than assuming localhost fetches work;
-- verify the whole static-host → pairing UI → companion → generated task → local browser → teardown chain with ordinary browser actions.
+- keep review writes, evaluation execution, fresh authoritative generation, VNC sessions/credentials, local paths, and process controls available through the authenticated loopback companion;
+- never probe the companion or trigger Local Network Access merely to browse or play; connect it only after an explicit advanced-control action;
+- test both tiers: static export → one-click puzzle → failure regeneration → WebAssembly pass, plus the separate paired companion/VNC lifecycle.
 
-A static “Try now” button that executes on the host violates this boundary. A button that asks the paired local companion to launch the actual task satisfies it.
+A public browser launch is now correct when it is a faithful static copy of the real task UI and grader. It must never be represented as secret, tamper-resistant, or equivalent to a fresh server-backed benchmark evaluation.
 
 ## Human validation status as of this record
 

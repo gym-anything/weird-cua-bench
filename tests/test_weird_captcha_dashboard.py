@@ -22,6 +22,9 @@ from benchmarks.weird_captcha_gym.dashboard.server import (
 )
 from benchmarks.weird_captcha_gym.dashboard.export_static import _validate_output_path, export_dashboard
 from benchmarks.weird_captcha_gym.dashboard.reviews import EnvironmentReviewStore
+from benchmarks.weird_captcha_gym.shared_runtime.server.legacy_browser_grader import grade as grade_legacy_browser_result
+from benchmarks.weird_captcha_gym.shared_runtime.server.weird_captcha_server import PuzzleServer
+from benchmarks.weird_captcha_gym.shared_scripts.setup_task import generate_task_state, load_task
 from run import launcher_args
 
 
@@ -571,17 +574,37 @@ class WeirdCaptchaDashboardTests(unittest.TestCase):
             self.assertFalse(manifest["survey_included"])
             self.assertEqual(manifest["catalog"], {"total": 65, "built": 63, "solution_videos": 11})
             self.assertEqual(manifest["companion_url"], "http://127.0.0.1:9123")
+            self.assertEqual(manifest["browser_play"], {
+                "enabled": True,
+                "environments": 63,
+                "challenges": 252,
+                "challenges_per_environment": 4,
+                "grader_files": 57,
+                "python_runtime": "pyodide@314.0.2",
+            })
             html = (output / "index.html").read_text(encoding="utf-8")
             app = (output / "static" / "app.js").read_text(encoding="utf-8")
             config = (output / "static" / "config.js").read_text(encoding="utf-8")
             catalog = json.loads((output / "data" / "catalog.json").read_text(encoding="utf-8"))
             self.assertNotIn("Survey Atlas", html)
             self.assertNotIn("/api/atlas", app)
-            self.assertIn("Open the dashboard locally", app)
+            self.assertIn("Browser play needs no setup", app)
+            self.assertIn("browserPlayHref", app)
             self.assertIn("python run.py --hosted", app)
             self.assertIn("consumePairingFragment", app)
             self.assertIn('\"mode\":\"shared\"', config)
+            self.assertIn('\"browserPlayUrl\":\"play/\"', config)
             self.assertEqual(catalog["stats"]["built"], 63)
+            self.assertTrue((output / "play" / "index.html").is_file())
+            self.assertTrue((output / "play" / "runtime" / "browser_adapter.js").is_file())
+            self.assertTrue((output / "play" / "runtime" / "grader_worker.js").is_file())
+            challenge_files = sorted((output / "play" / "challenges").glob("*.json"))
+            self.assertEqual(len(challenge_files), 63)
+            for challenge_file in challenge_files:
+                bundle = json.loads(challenge_file.read_text(encoding="utf-8"))
+                self.assertEqual(len(bundle["challenges"]), 4, challenge_file.name)
+                self.assertEqual(len({item["ground_truth"]["challenge_id"] for item in bundle["challenges"]}), 4)
+                self.assertTrue((output / "play" / bundle["grader"]).is_file(), challenge_file.name)
             self.assertTrue(all(
                 not str(environment.get("cover") or "").startswith("/media/")
                 for environment in catalog["environments"]
@@ -590,6 +613,76 @@ class WeirdCaptchaDashboardTests(unittest.TestCase):
                 _validate_output_path(Path.home().resolve())
             with self.assertRaises(ValueError):
                 _validate_output_path(REPO_ROOT.resolve())
+
+    def test_legacy_browser_grader_is_exactly_equal_to_server_grading(self) -> None:
+        methods = {
+            "motion_only_ghost_jigsaw": "_grade_ghost_jigsaw_submission",
+            "cursor_constellation_hunt": "_grade_constellation_submission",
+            "parallel_grillmaster": "_grade_grillmaster_submission",
+            "rotating_keyboard": "_grade_rotating_keyboard_submission",
+            "slot_reel_capture": "_grade_slot_reel_submission",
+            "domino_autopsy": "_grade_domino_submission",
+            "funeral_ritual": "_grade_funeral_submission",
+        }
+        environments = {item["mechanic_id"]: item for item in build_catalog()["environments"]}
+        with tempfile.TemporaryDirectory() as temporary:
+            state_dir = Path(temporary)
+            server = object.__new__(PuzzleServer)
+            server.state_dir = state_dir
+            for mechanic_id, method_name in methods.items():
+                environment = environments[mechanic_id]
+                task_id = environment["tasks"][0]["id"]
+                task = load_task(REPO_ROOT / environment["environment_path"] / "tasks" / task_id / "task.json")
+                public_state, truth = generate_task_state(task, f"browser-grader-parity:{mechanic_id}")
+                (state_dir / "public_state.json").write_text(json.dumps(public_state), encoding="utf-8")
+                (state_dir / "ground_truth.json").write_text(json.dumps(truth), encoding="utf-8")
+                server_grade = getattr(server, method_name)
+
+                invalid = {"mechanic_id": mechanic_id, "challenge_id": truth["challenge_id"]}
+                self.assertEqual(
+                    grade_legacy_browser_result(invalid, truth, public_state),
+                    server_grade(invalid),
+                    f"invalid parity: {mechanic_id}",
+                )
+
+                if mechanic_id == "motion_only_ghost_jigsaw":
+                    success = {"placements": truth["expected_positions"]}
+                elif mechanic_id == "cursor_constellation_hunt":
+                    success = {"click": {"x": truth["expected_click"]["x"], "y": truth["expected_click"]["y"]}}
+                elif mechanic_id == "parallel_grillmaster":
+                    success = {"durations_ms": {key: value["target_ms"] for key, value in truth["targets"].items()}}
+                elif mechanic_id == "rotating_keyboard":
+                    success = {"text": truth["target"]}
+                elif mechanic_id == "slot_reel_capture":
+                    success = {
+                        "captured_sequence": truth["sequence"],
+                        "frozen_reel_ids": truth["reel_ids"],
+                        "wrong_keys": 0,
+                    }
+                elif mechanic_id == "domino_autopsy":
+                    first = str(truth["first_body_id"])
+                    expected = [str(item) for item in truth["expected_body_ids"]]
+                    bell = str(truth["bell_body_id"])
+                    chain = [first, *[item for item in expected if item != first], bell]
+                    success = {
+                        "placements": {str(item): {"x": 1, "y": 1, "angle": 0} for item in truth["loose_ids"]},
+                        "physics_engine": "matter-js@0.20.0",
+                        "bell_hit": True,
+                        "bell_peak_angle": truth["minimum_bell_swing_radians"],
+                        "run_completed": True,
+                        "collision_pairs": [[left, right] for left, right in zip(chain, chain[1:])],
+                    }
+                else:
+                    success = {
+                        "events": truth["required_events"],
+                        "brushed_cells": list(range(int(truth["brush_threshold"]))),
+                        "gathered_flower_ids": truth["flower_ids"],
+                        "completed": True,
+                    }
+                success.update({"mechanic_id": mechanic_id, "challenge_id": truth["challenge_id"]})
+                browser_grade = grade_legacy_browser_result(success, truth, public_state)
+                self.assertEqual(browser_grade, server_grade(success), f"success parity: {mechanic_id}")
+                self.assertTrue(browser_grade["passed"], mechanic_id)
 
     def test_browser_session_canceled_during_setup_cannot_boot_after_shutdown(self) -> None:
         manager = SessionManager("local")
