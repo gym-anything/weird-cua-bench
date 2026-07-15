@@ -6,6 +6,14 @@ The shared dashboard is zero-setup for ordinary exploration. Every built puzzle 
 
 The mined Survey corpus is deliberately excluded from this product and from static exports.
 
+## Star and share a shortlist
+
+Use the star on any environment card or dossier to keep a personal shortlist. Stars are stored only in that browser's `localStorage`; they do not alter the review ledger or require a companion. The **Starred only** control composes with search, collection, stage, and review filters.
+
+From the Environment collection, **Share stars** creates a public dashboard URL containing only the selected environment IDs. A collaborator opening it sees exactly that shortlist and can either save those entries into their own browser stars or leave the shared view and browse the full catalog. Opening a shared link never overwrites existing personal stars, and the URL carries no review notes, credentials, filesystem paths, or process state.
+
+The local dashboard deliberately generates links against the canonical GitHub Pages site. A static deployment generates links against its own host and path, so the feature remains portable to mirrors.
+
 ## Run the complete dashboard locally
 
 From the repository root:

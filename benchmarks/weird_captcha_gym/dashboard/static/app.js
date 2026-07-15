@@ -3,9 +3,33 @@ const config = Object.freeze({
   catalogUrl: "/api/catalog",
   companionUrl: "",
   browserPlayUrl: "",
+  publicDashboardUrl: "https://gym-anything.github.io/weird-cua-bench/",
   ...(window.CAPTCHA_BENCH_CONFIG || {}),
 });
 const companionTokenKey = `captcha-bench-companion-token:${config.companionUrl || "same-origin"}`;
+const starredEnvironmentsKey = "captcha-bench-starred-environments:v1";
+
+function parseStarIds(value) {
+  return new Set(
+    String(value || "")
+      .split(",")
+      .map((item) => item.trim())
+      .filter((item, index) => index < 75 && /^[A-Za-z0-9_-]{1,96}$/.test(item)),
+  );
+}
+
+function loadPersonalStars() {
+  try {
+    const value = JSON.parse(localStorage.getItem(starredEnvironmentsKey) || "[]");
+    return new Set(Array.isArray(value) ? value.filter((item) => typeof item === "string") : []);
+  } catch (_error) {
+    return new Set();
+  }
+}
+
+function loadSharedStars() {
+  return parseStarIds(new URLSearchParams(location.search).get("stars"));
+}
 
 function consumePairingFragment() {
   if (config.mode !== "shared" || !location.hash.startsWith("#pair=")) return false;
@@ -19,6 +43,8 @@ function consumePairingFragment() {
 
 const pairedFromLaunch = consumePairingFragment();
 const initialCompanionToken = config.mode === "shared" ? localStorage.getItem(companionTokenKey) || "" : "";
+const hasSharedStarsParameter = new URLSearchParams(location.search).has("stars");
+const initialSharedStars = loadSharedStars();
 
 const state = {
   catalog: null,
@@ -34,8 +60,13 @@ const state = {
     lastAttempt: 0,
   },
   route: {name: "observatory", id: null},
-  filters: {query: "", group: "All", stage: "built", review: "all", view: "grid"},
+  filters: {query: "", group: "All", stage: "built", review: "all", view: "grid", starredOnly: initialSharedStars.size > 0},
   reviewFilters: {query: "", status: "pending"},
+  stars: {
+    personal: loadPersonalStars(),
+    shared: initialSharedStars,
+    sharedView: initialSharedStars.size > 0,
+  },
   environmentReturn: "environments",
   gallery: {},
   expandedLogs: new Set(),
@@ -50,6 +81,7 @@ const arrowIcon = `<svg viewBox="0 0 24 24" width="15" height="15" fill="none" s
 const searchIcon = `<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="6.5"/><path d="m16 16 4 4"/></svg>`;
 const gridIcon = `<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="4" y="4" width="6" height="6"/><rect x="14" y="4" width="6" height="6"/><rect x="4" y="14" width="6" height="6"/><rect x="14" y="14" width="6" height="6"/></svg>`;
 const listIcon = `<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M5 6h14M5 12h14M5 18h14"/></svg>`;
+const starIcon = `<svg viewBox="0 0 24 24" width="15" height="15" aria-hidden="true"><path d="m12 2.9 2.72 5.51 6.08.88-4.4 4.29 1.04 6.06L12 16.78l-5.44 2.86 1.04-6.06-4.4-4.29 6.08-.88z"/></svg>`;
 
 function escapeHtml(value) {
   return String(value == null ? "" : value)
@@ -211,6 +243,147 @@ function updateCounts() {
   if (status) status.dataset.connection = state.companion.connected ? "connected" : state.companion.status;
 }
 
+function activeStars() {
+  return state.stars.sharedView ? state.stars.shared : state.stars.personal;
+}
+
+function isStarred(environmentId) {
+  return activeStars().has(environmentId);
+}
+
+function persistPersonalStars() {
+  try {
+    if (state.stars.personal.size) localStorage.setItem(starredEnvironmentsKey, JSON.stringify([...state.stars.personal].sort()));
+    else localStorage.removeItem(starredEnvironmentsKey);
+  } catch (_error) {
+    // Storage can be unavailable in hardened/private browser contexts. The in-memory shortlist still works.
+  }
+}
+
+function replaceSharedStarsParameter(stars = null) {
+  const url = new URL(location.href);
+  if (stars?.size) url.searchParams.set("stars", [...stars].sort().join(","));
+  else url.searchParams.delete("stars");
+  history.replaceState(null, "", `${url.pathname}${url.search}${url.hash || "#/environments"}`);
+}
+
+function pruneStarsToCatalog() {
+  const validIds = new Set(state.catalog.environments.map((environment) => environment.id));
+  state.stars.personal = new Set([...state.stars.personal].filter((id) => validIds.has(id)));
+  state.stars.shared = new Set([...state.stars.shared].filter((id) => validIds.has(id)));
+  persistPersonalStars();
+  if (state.stars.shared.size) {
+    state.stars.sharedView = true;
+    state.filters.starredOnly = true;
+    replaceSharedStarsParameter(state.stars.shared);
+  } else if (hasSharedStarsParameter) {
+    state.stars.sharedView = false;
+    state.filters.starredOnly = false;
+    replaceSharedStarsParameter();
+  }
+}
+
+function starToggleMarkup(environment, context = "card") {
+  const starred = isStarred(environment.id);
+  const label = state.stars.sharedView
+    ? `${environment.title} is ${starred ? "included in" : "outside"} this shared shortlist`
+    : `${starred ? "Remove" : "Add"} ${environment.title} ${starred ? "from" : "to"} your stars`;
+  return `<button class="star-toggle star-toggle-${escapeHtml(context)} ${starred ? "is-starred" : ""}" type="button" data-star-environment="${escapeHtml(environment.id)}" aria-label="${escapeHtml(label)}" aria-pressed="${starred}" title="${escapeHtml(label)}" ${state.stars.sharedView ? "disabled" : ""}>${starIcon}</button>`;
+}
+
+function updateVisibleStarControls(environmentId) {
+  document.querySelectorAll(`[data-star-environment="${CSS.escape(environmentId)}"]`).forEach((button) => {
+    const environment = findEnvironment(environmentId);
+    const starred = state.stars.personal.has(environmentId);
+    button.classList.toggle("is-starred", starred);
+    button.setAttribute("aria-pressed", String(starred));
+    const label = `${starred ? "Remove" : "Add"} ${environment?.title || environmentId} ${starred ? "from" : "to"} your stars`;
+    button.setAttribute("aria-label", label);
+    button.setAttribute("title", label);
+  });
+}
+
+function togglePersonalStar(environmentId) {
+  if (state.stars.sharedView) return;
+  const environment = findEnvironment(environmentId);
+  if (!environment) return;
+  const starred = state.stars.personal.has(environmentId);
+  if (starred) state.stars.personal.delete(environmentId);
+  else state.stars.personal.add(environmentId);
+  persistPersonalStars();
+  updateVisibleStarControls(environmentId);
+  if (state.filters.starredOnly && parseRoute().name === "environments") refreshEnvironmentCatalog();
+  else refreshStarChrome();
+  toast(starred ? "Removed from stars" : "Starred", environment.title, starred ? "info" : "success");
+}
+
+function starredShareUrl() {
+  const base = config.mode === "shared" ? new URL(".", location.href) : new URL(config.publicDashboardUrl, location.href);
+  base.search = "";
+  base.hash = "#/environments";
+  base.searchParams.set("stars", [...state.stars.personal].sort().join(","));
+  return base.href;
+}
+
+function saveSharedStars() {
+  state.stars.shared.forEach((id) => state.stars.personal.add(id));
+  persistPersonalStars();
+  const count = state.stars.shared.size;
+  state.stars.sharedView = false;
+  state.filters.starredOnly = true;
+  replaceSharedStarsParameter();
+  render();
+  toast("Saved to your stars", `${count} environment${count === 1 ? "" : "s"} now live in this browser.`, "success");
+}
+
+function exitSharedStars() {
+  state.stars.sharedView = false;
+  state.filters.starredOnly = false;
+  replaceSharedStarsParameter();
+  render();
+}
+
+function sharedStarsBannerMarkup() {
+  if (!state.stars.sharedView) return "";
+  const count = state.stars.shared.size;
+  return `<aside class="star-share-banner" aria-label="Shared environment shortlist">
+    <div class="star-share-mark">${starIcon}<span>${String(count).padStart(2, "0")}</span></div>
+    <div><p class="eyebrow">Collaborator shortlist</p><h2>Someone starred these for you.</h2><p>This view contains ${count} selected environment${count === 1 ? "" : "s"}. It carries no reviews, credentials, or private dashboard state.</p></div>
+    <div class="star-share-actions"><button class="button button-acid" type="button" data-action="save-shared-stars">Save to my stars</button><button class="button button-ghost" type="button" data-action="exit-shared-stars">Browse all ${state.catalog.stats.total}</button></div>
+  </aside>`;
+}
+
+function refreshStarChrome() {
+  const count = state.stars.personal.size;
+  document.querySelectorAll("[data-personal-star-count]").forEach((node) => { node.textContent = count; });
+  document.querySelectorAll("[data-star-filter-count]").forEach((node) => { node.textContent = activeStars().size; });
+  document.querySelectorAll('[data-action="share-stars"]').forEach((button) => { button.disabled = count === 0; });
+  const filter = document.querySelector('[data-action="toggle-star-filter"]');
+  if (filter) {
+    filter.classList.toggle("is-active", state.filters.starredOnly);
+    filter.setAttribute("aria-pressed", String(state.filters.starredOnly));
+  }
+}
+
+function openStarShareDialog() {
+  if (!state.stars.personal.size) {
+    toast("No stars yet", "Star a few environments before making a shortlist.", "info");
+    return;
+  }
+  const url = starredShareUrl();
+  const count = state.stars.personal.size;
+  modalShell(`<button class="modal-close" type="button" data-action="close-modal" aria-label="Close">×</button>
+    <div class="star-share-dialog">
+      <div class="star-share-stamp">${starIcon}<b>${String(count).padStart(2, "0")}</b></div>
+      <p class="eyebrow">Portable collaborator view</p>
+      <h2>Share your starred machines.</h2>
+      <p>The link opens only these ${count} environment${count === 1 ? "" : "s"} on the public dashboard. It shares no review decisions, credentials, or local process controls.</p>
+      <label class="star-share-field"><span>Public shortlist link</span><input id="star-share-url" type="text" readonly value="${escapeHtml(url)}" aria-label="Public shortlist link"></label>
+      <div class="modal-actions"><button class="button button-ghost" type="button" data-action="close-modal">Cancel</button><button class="button button-acid" type="button" data-copy="${escapeHtml(url)}">Copy shortlist link ${arrowIcon}</button></div>
+    </div>`, "star-share-modal");
+  document.getElementById("star-share-url")?.select();
+}
+
 function coverMarkup(environment, className = "") {
   if (environment.cover) return `<img class="${className}" src="${escapeHtml(environment.cover)}" alt="${escapeHtml(environment.title)} screenshot" loading="lazy">`;
   return `<div class="generative-cover ${className}" style="--accent:${escapeHtml(environment.accent)}"><span>${escapeHtml(environment.stage)} / NO EVIDENCE</span></div>`;
@@ -232,6 +405,7 @@ function environmentCard(environment, index = 0) {
         <span class="card-index">${String(index + 1).padStart(2, "0")}</span>
         <span class="card-stage"><i></i>${escapeHtml(stageLabel)}</span>
         ${reviewStamp}
+        ${starToggleMarkup(environment, "card")}
       </div>
       <div class="card-content">
         <div class="card-overline"><span>${escapeHtml(environment.group)}</span><span>${escapeHtml(environment.difficulty)}</span></div>
@@ -340,19 +514,21 @@ function renderObservatory() {
 
 function filteredEnvironments() {
   const query = state.filters.query.trim().toLowerCase();
+  const stars = activeStars();
   return state.catalog.environments.filter((environment) => {
     const groupMatch = state.filters.group === "All" || environment.group === state.filters.group;
     const stageMatch = state.filters.stage === "all" || environment.stage === state.filters.stage;
     const reviewMatch = state.filters.review === "all" || (environment.stage === "built" && reviewFor(environment.id).status === state.filters.review);
+    const starMatch = !state.filters.starredOnly || stars.has(environment.id);
     const haystack = [environment.title, environment.summary, environment.mechanic_id, environment.group, ...environment.axes].join(" ").toLowerCase();
-    return groupMatch && stageMatch && reviewMatch && (!query || haystack.includes(query));
+    return groupMatch && stageMatch && reviewMatch && starMatch && (!query || haystack.includes(query));
   });
 }
 
 function environmentGridMarkup(environments) {
   return environments.length
     ? environments.map((environment, index) => environmentCard(environment, index)).join("")
-    : `<div class="empty-catalog"><b>No strange machines found.</b><span>Try a wider search or stage filter.</span></div>`;
+    : `<div class="empty-catalog"><b>${state.filters.starredOnly ? "No starred machines match." : "No strange machines found."}</b><span>${state.filters.starredOnly && !activeStars().size ? "Use the star on any environment card to build your shortlist." : "Try a wider search or filter."}</span></div>`;
 }
 
 function refreshEnvironmentCatalog({rebuild = true} = {}) {
@@ -369,6 +545,7 @@ function refreshEnvironmentCatalog({rebuild = true} = {}) {
   document.querySelectorAll("[data-view]").forEach((button) => {
     button.classList.toggle("is-active", button.dataset.view === state.filters.view);
   });
+  refreshStarChrome();
   const stage = document.getElementById("stage-filter");
   if (stage && stage.value !== state.filters.stage) stage.value = state.filters.stage;
   const review = document.getElementById("review-filter");
@@ -379,12 +556,15 @@ function renderEnvironments() {
   setChrome("environments", "Environment collection");
   const filtered = filteredEnvironments();
   const groupButtons = ["All", ...state.catalog.groups.map((group) => group.name)];
+  const personalStarCount = state.stars.personal.size;
+  const effectiveStarCount = activeStars().size;
   app.innerHTML = `
     <div class="page environments-page">
       <header class="page-head">
         <div><p class="eyebrow">Environment collection</p><h1 class="page-title">Strange machines,<br>ready to disturb.</h1><p class="page-copy">Every working card comes from a real environment, task, verifier, and evidence run. Human approval is tracked separately, so a green scripted solve never silently becomes a usability claim.</p></div>
-        <div class="page-head-actions"><button class="button button-acid" type="button" data-action="open-launch-picker">Quick launch ${arrowIcon}</button></div>
+        <div class="page-head-actions">${state.stars.sharedView ? "" : `<button class="button button-star-share" type="button" data-action="share-stars" ${personalStarCount ? "" : "disabled"}>${starIcon}<span>Share stars</span><b data-personal-star-count>${personalStarCount}</b></button>`}<button class="button button-acid" type="button" data-action="open-launch-picker">Quick launch ${arrowIcon}</button></div>
       </header>
+      ${sharedStarsBannerMarkup()}
       <div class="catalog-toolbar">
         <label class="search-field">${searchIcon}<input id="environment-search" type="search" value="${escapeHtml(state.filters.query)}" placeholder="Search motion, physics, memory…" aria-label="Search environments"></label>
         <select class="filter-select" id="stage-filter" aria-label="Filter by stage">
@@ -399,6 +579,7 @@ function renderEnvironments() {
           <option value="approved" ${state.filters.review === "approved" ? "selected" : ""}>Approved</option>
           <option value="revision_requested" ${state.filters.review === "revision_requested" ? "selected" : ""}>Needs revision</option>
         </select>
+        <button class="star-filter-button ${state.filters.starredOnly ? "is-active" : ""}" type="button" data-action="toggle-star-filter" aria-pressed="${state.filters.starredOnly}" ${state.stars.sharedView ? "disabled" : ""}>${starIcon}<span>${state.stars.sharedView ? "Shared picks" : "Starred only"}</span><b data-star-filter-count>${effectiveStarCount}</b></button>
         <div class="view-toggle" aria-label="Catalog view"><button type="button" data-view="grid" class="${state.filters.view === "grid" ? "is-active" : ""}" aria-label="Grid view">${gridIcon}</button><button type="button" data-view="compact" class="${state.filters.view === "compact" ? "is-active" : ""}" aria-label="Wide card view">${listIcon}</button></div>
       </div>
       <div class="filter-pills">${groupButtons.map((group) => `<button class="filter-pill ${state.filters.group === group ? "is-active" : ""}" type="button" data-filter-group="${escapeHtml(group)}">${escapeHtml(group)}</button>`).join("")}<span class="catalog-count">${filtered.length} / ${state.catalog.stats.total}</span></div>
@@ -569,9 +750,10 @@ function renderEnvironmentDetail(environmentId) {
   const archived = environment.stage === "rejected";
   const returnToReviews = state.environmentReturn === "reviews";
   const serverFeedback = validation.server_grade?.feedback || (validation.ok ? "Browser evidence present" : archived ? "Rejected infrastructure pilot" : "Not yet verified");
+  const detailStar = starToggleMarkup(environment, "detail");
   const headerActions = environment.stage === "built" && environment.launchable
-    ? `<div class="detail-actions"><button class="button button-review" type="button" data-action="open-review-desk" style="--review-color:${reviewStatusColor(review.status)}">Review · ${escapeHtml(reviewStatusShort(review.status))}</button><button class="button button-ghost" type="button" data-open-eval="${escapeHtml(environment.id)}">Evaluate</button><button class="button button-acid" type="button" data-quick-launch="${escapeHtml(environment.id)}">Try in browser ${arrowIcon}</button></div>`
-    : `<div class="archive-chip"><i></i>REJECTED INFRASTRUCTURE PILOT</div>`;
+    ? `<div class="detail-actions">${detailStar}<button class="button button-review" type="button" data-action="open-review-desk" style="--review-color:${reviewStatusColor(review.status)}">Review · ${escapeHtml(reviewStatusShort(review.status))}</button><button class="button button-ghost" type="button" data-open-eval="${escapeHtml(environment.id)}">Evaluate</button><button class="button button-acid" type="button" data-quick-launch="${escapeHtml(environment.id)}">Try in browser ${arrowIcon}</button></div>`
+    : `<div class="detail-actions">${detailStar}<div class="archive-chip"><i></i>REJECTED INFRASTRUCTURE PILOT</div></div>`;
   const consoleMarkup = archived
     ? `<aside class="launch-console archive-console">
         <div class="launch-console-head"><span>Archive dossier</span><h3>Preserved, not runnable</h3></div>
@@ -1172,6 +1354,7 @@ async function pollJobs() {
 document.addEventListener("click", async (event) => {
   const target = event.target.closest("button, [data-open-env], [data-nav], [data-action]");
   if (!target) return;
+  if (target.dataset.starEnvironment) { event.stopPropagation(); togglePersonalStar(target.dataset.starEnvironment); return; }
   if (target.dataset.reviewChoice) { selectReviewChoice(target); return; }
   if (target.dataset.reviewFilter) { state.reviewFilters.status = target.dataset.reviewFilter; refreshReviewQueue(); return; }
   if (target.dataset.quickLaunch) { event.stopPropagation(); await quickLaunch(target.dataset.quickLaunch); return; }
@@ -1226,6 +1409,15 @@ document.addEventListener("click", async (event) => {
     if (action === "close-modal") {
       if (event.target.classList.contains("modal-backdrop") || target.classList.contains("modal-close") || target.closest("form")) closeModal();
     } else if (action === "open-companion") openCompanionDialog();
+    else if (action === "toggle-star-filter") {
+      if (!state.stars.sharedView) {
+        state.filters.starredOnly = !state.filters.starredOnly;
+        refreshEnvironmentCatalog();
+      }
+    }
+    else if (action === "share-stars") openStarShareDialog();
+    else if (action === "save-shared-stars") saveSharedStars();
+    else if (action === "exit-shared-stars") exitSharedStars();
     else if (action === "forget-companion") {
       localStorage.removeItem(companionTokenKey);
       state.companion.token = "";
@@ -1256,7 +1448,7 @@ document.addEventListener("keydown", (event) => {
   if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === "k") { event.preventDefault(); openCommandPalette("browse"); }
   if (event.key === "Escape" && modalRoot.innerHTML) closeModal();
   const card = event.target.closest('[data-open-env][role="button"]');
-  if (card && ["Enter", " "].includes(event.key)) { event.preventDefault(); navigate(`environment/${card.dataset.openEnv}`); }
+  if (card && event.target === card && ["Enter", " "].includes(event.key)) { event.preventDefault(); navigate(`environment/${card.dataset.openEnv}`); }
 });
 
 document.addEventListener("input", (event) => {
@@ -1300,6 +1492,7 @@ window.addEventListener("hashchange", render);
 async function init() {
   try {
     state.catalog = await loadCatalog();
+    pruneStarsToCatalog();
     state.reviews = emptyReviewSnapshot(state.catalog);
     state.system = {runner: "offline", agents: [], platform: "local", repo_root: "Companion not connected", review_path: "Companion not connected"};
     if (config.mode === "local" || state.companion.token) await connectCompanion();

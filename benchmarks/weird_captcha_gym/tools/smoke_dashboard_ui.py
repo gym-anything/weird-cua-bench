@@ -36,6 +36,8 @@ def main() -> None:
     }
     for name in (
         "observatory.png",
+        "starred-shortlist.png",
+        "shared-starred-shortlist.png",
         "environment-search.png",
         "environment-detail.png",
         "review-queue.png",
@@ -91,6 +93,63 @@ def main() -> None:
         expect(page.locator('[data-open-env="shadow_crime_lab_env"]')).to_have_count(1)
         expect(page.locator('[data-open-env="robot_art_critic_env"]')).to_have_count(1)
         capture(page, output, "observatory")
+
+        stars_context = browser.new_context(viewport={"width": 1600, "height": 1000}, device_scale_factor=1)
+        stars_page = stars_context.new_page()
+        stars_page.on("pageerror", lambda exc: errors.append(f"stars: {exc}"))
+        stars_page.goto(f"{args.base_url}/#/environments", wait_until="networkidle")
+        expect(stars_page.locator(".environment-card")).to_have_count(75)
+        domino_star = stars_page.locator('[data-open-env="domino_autopsy_env"] [data-star-environment="domino_autopsy_env"]')
+        funeral_star = stars_page.locator('[data-open-env="funeral_ritual_env"] [data-star-environment="funeral_ritual_env"]')
+        domino_star.click()
+        funeral_star.focus()
+        stars_page.keyboard.press("Enter")
+        expect(stars_page.locator(".detail-page")).to_have_count(0)
+        expect(domino_star).to_have_attribute("aria-pressed", "true")
+        expect(funeral_star).to_have_attribute("aria-pressed", "true")
+        expect(stars_page.locator('[data-action="share-stars"] [data-personal-star-count]')).to_have_text("2")
+        expect(stars_page.locator('[data-action="toggle-star-filter"] b')).to_have_text("2")
+        stored_stars = stars_page.evaluate("localStorage.getItem('captcha-bench-starred-environments:v1')")
+        if json.loads(stored_stars or "[]") != ["domino_autopsy_env", "funeral_ritual_env"]:
+            raise AssertionError(f"unexpected persisted stars: {stored_stars}")
+        stars_page.locator('[data-action="toggle-star-filter"]').click()
+        expect(stars_page.locator(".environment-card")).to_have_count(2)
+        expect(stars_page.locator('[data-open-env="domino_autopsy_env"]')).to_have_count(1)
+        expect(stars_page.locator('[data-open-env="funeral_ritual_env"]')).to_have_count(1)
+        capture(stars_page, output, "starred-shortlist")
+        stars_page.locator('[data-action="share-stars"]').click()
+        share_url = stars_page.locator("#star-share-url").input_value()
+        if not share_url.startswith("https://gym-anything.github.io/weird-cua-bench/?stars="):
+            raise AssertionError(f"local dashboard produced a non-public shortlist URL: {share_url}")
+        if "domino_autopsy_env" not in share_url or "funeral_ritual_env" not in share_url:
+            raise AssertionError(f"shortlist URL omitted a star: {share_url}")
+        stars_page.locator(".modal-close").click()
+        stars_context.close()
+
+        shared_stars_context = browser.new_context(viewport={"width": 1600, "height": 1000}, device_scale_factor=1)
+        shared_stars_page = shared_stars_context.new_page()
+        shared_stars_page.on("pageerror", lambda exc: errors.append(f"shared stars: {exc}"))
+        shared_stars_page.goto(
+            f"{args.base_url}/?stars=domino_autopsy_env,funeral_ritual_env#/environments",
+            wait_until="networkidle",
+        )
+        expect(shared_stars_page.locator(".star-share-banner")).to_be_visible()
+        expect(shared_stars_page.locator(".environment-card")).to_have_count(2)
+        expect(shared_stars_page.locator('[data-action="toggle-star-filter"]')).to_be_disabled()
+        expect(shared_stars_page.locator(".star-toggle-card")).to_have_count(2)
+        expect(shared_stars_page.locator(".star-toggle-card").first).to_be_disabled()
+        if shared_stars_page.evaluate("localStorage.getItem('captcha-bench-starred-environments:v1')") is not None:
+            raise AssertionError("opening a shared shortlist overwrote personal browser stars")
+        capture(shared_stars_page, output, "shared-starred-shortlist")
+        shared_stars_page.locator('[data-action="save-shared-stars"]').click()
+        expect(shared_stars_page.locator(".star-share-banner")).to_have_count(0)
+        expect(shared_stars_page.locator(".environment-card")).to_have_count(2)
+        if "stars=" in shared_stars_page.url:
+            raise AssertionError(f"saving the shared shortlist left its query parameter behind: {shared_stars_page.url}")
+        saved_shared_stars = shared_stars_page.evaluate("localStorage.getItem('captcha-bench-starred-environments:v1')")
+        if json.loads(saved_shared_stars or "[]") != ["domino_autopsy_env", "funeral_ritual_env"]:
+            raise AssertionError(f"shared shortlist did not save locally: {saved_shared_stars}")
+        shared_stars_context.close()
 
         if args.exercise_reviews:
             expect(page.locator("#nav-review-count")).to_have_text("75")
@@ -461,6 +520,10 @@ def main() -> None:
                 "responsive review queue and decision desk",
                 "review status filtering on the environment catalog",
             ] if args.exercise_reviews else []),
+            "personal star persistence and keyboard-safe card controls",
+            "starred-only catalog filtering",
+            "public shortlist URL generation",
+            "shared shortlist isolation and save-to-personal flow",
             "environment search",
             "catalog controls without page reconstruction",
             "screenshot detail gallery",

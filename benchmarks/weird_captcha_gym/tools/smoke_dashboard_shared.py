@@ -139,6 +139,24 @@ def main() -> None:
                 page.screenshot(path=str(output / "shared-dashboard-local-setup.png"), full_page=True)
                 page.locator(".modal-close").click()
 
+                shortlist_context = browser.new_context(viewport={"width": 1600, "height": 1000}, device_scale_factor=1)
+                shortlist = shortlist_context.new_page()
+                shortlist.on("pageerror", lambda exc: errors.append(f"shared shortlist: {exc}"))
+                shortlist.goto(
+                    f"{static_url}/?stars=domino_autopsy_env,funeral_ritual_env#/environments",
+                    wait_until="networkidle",
+                )
+                expect(shortlist.locator(".star-share-banner")).to_contain_text("Someone starred these for you")
+                expect(shortlist.locator(".environment-card")).to_have_count(2)
+                expect(shortlist.locator('[data-open-env="domino_autopsy_env"]')).to_have_count(1)
+                expect(shortlist.locator('[data-open-env="funeral_ritual_env"]')).to_have_count(1)
+                expect(shortlist.locator(".star-toggle-card")).to_have_count(2)
+                expect(shortlist.locator(".star-toggle-card").first).to_be_disabled()
+                if shortlist.evaluate("localStorage.getItem('captcha-bench-starred-environments:v1')") is not None:
+                    raise AssertionError("static shortlist mutated personal browser stars on open")
+                shortlist.screenshot(path=str(output / "shared-dashboard-starred-shortlist.png"), full_page=True)
+                shortlist_context.close()
+
                 page.goto(
                     f"{static_url}/#/environment/bureaucratic_signature_trap_env",
                     wait_until="networkidle",
@@ -202,6 +220,7 @@ def main() -> None:
                     "survey_included": manifest["survey_included"],
                     "deployment_path": "/weird-cua-bench/",
                     "paired": True,
+                    "starred_shortlist_loaded": True,
                     "pending_solution_video_loaded": True,
                     "foundational_solution_video_loaded": True,
                     "local_browser_url": browser_url,
