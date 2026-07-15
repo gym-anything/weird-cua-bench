@@ -67,14 +67,16 @@ def solve(page, state_dir: Path, out_dir: Path, mechanic: str) -> None:
                 _shot(page, out_dir, mechanic, "active-pressure-hold")
             page.keyboard.up("Space")
         elif round_type == "chord":
-            first, second = round_data["keys"]
-            page.keyboard.down(first)
-            page.keyboard.down(second)
-            page.wait_for_timeout(int(round_data["required_ticks"] * round_data["tick_ms"] + 180))
-            if round_index < 3:
-                _shot(page, out_dir, mechanic, "active-two-key-chord")
-            page.keyboard.up(first)
-            page.keyboard.up(second)
+            for chord_index, (first, second) in enumerate(round_data["chords"]):
+                page.keyboard.down(first)
+                page.keyboard.down(second)
+                page.wait_for_timeout(int(round_data["required_ticks"] * round_data["tick_ms"] + 180))
+                if chord_index == 1:
+                    _shot(page, out_dir, mechanic, "active-three-stage-chord")
+                page.keyboard.up(first)
+                page.keyboard.up(second)
+                if chord_index < len(round_data["chords"]) - 1:
+                    page.wait_for_function("index => document.querySelector(`[data-chord-stage=\"${index}\"]`)?.dataset.status === 'active'", arg=chord_index + 1)
         elif round_type == "dial":
             dial = page.locator("#gauntlet-dial")
             box = dial.bounding_box()
@@ -89,15 +91,30 @@ def solve(page, state_dir: Path, out_dir: Path, mechanic: str) -> None:
                 page.mouse.move(*_dial_point(box, angle))
                 page.wait_for_timeout(25)
             page.mouse.up()
-            page.wait_for_selector('#gauntlet-brake[data-in-zone="true"]', timeout=6_000)
             _shot(page, out_dir, mechanic, "active-inertial-coast")
-            page.locator("#gauntlet-brake").click()
+            page.evaluate("""() => new Promise((resolve, reject) => {
+              const brake = document.getElementById('gauntlet-brake');
+              const finish = () => { observer.disconnect(); clearTimeout(timeout); brake.click(); resolve(true); };
+              const observer = new MutationObserver(() => { if (brake.dataset.inZone === 'true') finish(); });
+              const timeout = setTimeout(() => { observer.disconnect(); reject(new Error('dial never crossed target sector')); }, 6000);
+              observer.observe(brake, {attributes:true, attributeFilter:['data-in-zone']});
+              if (brake.dataset.inZone === 'true') finish();
+            })""")
         elif round_type == "intercept":
             page.locator("#intercept-arm").click()
             page.wait_for_timeout(120)
             _shot(page, out_dir, mechanic, "active-moving-intercept")
-            page.wait_for_selector('#intercept-target[data-in-gate="true"]', timeout=6_000)
-            page.locator("#intercept-target").click()
+            for packet_index, _packet in enumerate(round_data["packets"]):
+                page.evaluate("""() => new Promise((resolve, reject) => {
+                  const target = document.getElementById('intercept-target');
+                  const finish = () => { observer.disconnect(); clearTimeout(timeout); target.click(); resolve(true); };
+                  const observer = new MutationObserver(() => { if (target.dataset.inGate === 'true') finish(); });
+                  const timeout = setTimeout(() => { observer.disconnect(); reject(new Error('packet never crossed capture gate')); }, 6000);
+                  observer.observe(target, {attributes:true, attributeFilter:['data-in-gate']});
+                  if (target.dataset.inGate === 'true') finish();
+                })""")
+                if packet_index < len(round_data["packets"]) - 1:
+                    page.wait_for_function("index => document.querySelector(`[data-packet-mark=\"${index}\"]`)?.dataset.status === 'captured'", arg=packet_index)
         elif round_type == "route":
             pad = page.locator("#route-pad")
             box = pad.bounding_box()

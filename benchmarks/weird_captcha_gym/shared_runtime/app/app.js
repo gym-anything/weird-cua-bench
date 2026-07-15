@@ -135,6 +135,27 @@ async function renderExternalMechanic(state) {
   const mechanicId = text(state?.mechanic_id);
   if (!/^[a-z0-9_]+$/.test(mechanicId)) return false;
   window.WeirdCaptchaMechanics = window.WeirdCaptchaMechanics || {};
+  const interactionViiViii = new Set([
+    "specular_lighthouse_relay", "wind_tunnel_seed_courier",
+    "hologram_silhouette_foundry", "orbital_docking_customs",
+    "gravity_room_freight", "floodgate_archive_rescue",
+    "elastic_membrane_sorter", "pheromone_dispatch",
+    "clockwork_clutch_safe", "marionette_checkpoint",
+  ]);
+  if (interactionViiViii.has(mechanicId) && !window.WeirdInteractionViiViii) {
+    try {
+      await new Promise((resolve, reject) => {
+        const script = document.createElement("script");
+        script.src = runtimeAssetUrl("mechanics/_interaction_vii_viii.js");
+        script.dataset.mechanicSharedScript = "interaction-vii-viii";
+        script.onload = resolve;
+        script.onerror = reject;
+        document.head.appendChild(script);
+      });
+    } catch (_error) {
+      return false;
+    }
+  }
   if (!window.WeirdCaptchaMechanics[mechanicId]) {
     try {
       await new Promise((resolve, reject) => {

@@ -2,11 +2,13 @@
 
 Interaction-first visual puzzles for evaluating screenshot-driven computer-use agents.
 
-The benchmark starts from CAPTCHA-like and internet puzzle mechanics, but its target is broader: strange, human-manageable tasks whose real difficulty comes from acting over time. The current candidate corpus contains 63 built puzzle environments and two rejected infrastructure pilots retained as an honest archive.
+The benchmark starts from CAPTCHA-like and internet puzzle mechanics, but its target is broader: strange, human-manageable tasks whose real difficulty comes from acting over time. The current candidate corpus contains 75 built puzzle environments. Two early rejected pilots remain documented as implementation history, but both were later replaced end to end with interaction-first designs.
 
 [Explore the dashboard](https://gym-anything.github.io/weird-cua-bench/)
 
 Every built puzzle can be opened from that site with one click. The task UI and its existing Python grader run entirely in the browser through WebAssembly; ordinary exploration needs no clone, terminal, pairing key, localhost helper, or VNC.
+
+All 75 environment dossiers include a successful solution film. Seventy-four were recorded against frozen task contracts with live-server, independent-grader, and exported-verifier agreement; the earlier Semantic Drag-Drop walkthrough remains clearly labeled as the one pre-freeze recording.
 
 ## Repository scope
 
@@ -23,7 +25,7 @@ The `verified` split is intentionally empty. Scripted browser success proves wir
 
 ## Optional local controls
 
-The public dashboard is enough to browse and play all 63 built puzzles. Clone and run locally only when you need persistent reviews, fresh authoritative challenges, VNC sessions, evaluation execution, filesystem paths, or process controls:
+The public dashboard is enough to browse and play all 75 built puzzles. Clone and run locally only when you need persistent reviews, fresh authoritative challenges, VNC sessions, evaluation execution, filesystem paths, or process controls:
 
 ```bash
 python run.py

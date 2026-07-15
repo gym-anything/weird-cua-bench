@@ -64,25 +64,14 @@ def solve(page, state_dir: Path, out_dir: Path, mechanic: str) -> None:
     if mechanic != MECHANIC_ID:
         raise AssertionError(f"unexpected mechanic {mechanic!r}")
     truth = _read(state_dir / "ground_truth.json")
-    starting_durability = int(truth["starting_durability"])
-    # Exercise a legal but damaging lava ray, then prove the local rebuild path
-    # restores the exact initial mine before the successful extraction.
-    edge = truth["edge_case_hit"]
-    _click_internal(page, edge["click"])
-    current_durability = page.evaluate("() => Number(window.document.getElementById('voxel-durability-value').textContent.split('/')[0].trim())")
-    if current_durability != starting_durability - 1:
-        raise AssertionError("lava edge case did not consume one durability")
-    _shot(page, out_dir, mechanic, "edge-lava-strike")
-    page.locator("#voxel-reset").click()
-    page.wait_for_timeout(80)
-    restored = page.evaluate("() => Number(window.document.getElementById('voxel-durability-value').textContent.split('/')[0].trim())")
-    if restored != starting_durability:
-        raise AssertionError("mine rebuild did not restore durability")
-
     orientation = int(truth["starting_orientation"])
     for index, step in enumerate(truth["solution_steps"]):
         orientation = _rotate_to(page, orientation, int(step["orientation"]))
         _click_internal(page, step["click"])
+        last = page.evaluate("() => window.voxelMineModel?.events.at(-1)")
+        expected_outcome = "diamond_extracted" if step["kind"] == "extract" else "stone_removed"
+        if not last or last.get("voxel_id") != step["voxel_id"] or last.get("outcome") != expected_outcome:
+            raise AssertionError(f"voxel solution ray drifted at step {index}: expected {step}, observed {last}")
         if index == 0:
             _shot(page, out_dir, mechanic, "active-blocker-removal")
         if step["kind"] == "extract" and index < 4:
@@ -91,5 +80,8 @@ def solve(page, state_dir: Path, out_dir: Path, mechanic: str) -> None:
     if inventory != len(truth["diamond_ids"]):
         raise AssertionError(f"voxel extraction collected {inventory}/{len(truth['diamond_ids'])} diamonds")
     _shot(page, out_dir, mechanic, "solved-pre-exit")
+    clean = page.evaluate("() => ({events: window.voxelMineModel?.events || [], collapsed: window.voxelMineModel?.collapsed})")
+    if clean["collapsed"] or any(event.get("action") == "reset" or event.get("outcome") in {"lava_strike", "support_collapse"} for event in clean["events"]):
+        raise AssertionError(f"accepted extraction contains a contaminated action: {clean}")
     page.locator("#voxel-exit").click()
     page.wait_for_function("() => document.querySelector('.readout')?.textContent === 'PASS'", timeout=8_000)

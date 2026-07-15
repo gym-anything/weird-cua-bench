@@ -3,13 +3,9 @@
 
   let model = null;
 
-  function clean(value) {
-    return String(value == null ? "" : value)
-      .replaceAll("&", "&amp;")
-      .replaceAll("<", "&lt;")
-      .replaceAll(">", "&gt;")
-      .replaceAll('"', "&quot;");
-  }
+  const esc = (value) => String(value == null ? "" : value).replaceAll("&", "&amp;").replaceAll("<", "&lt;").replaceAll(">", "&gt;").replaceAll('"', "&quot;");
+  const round = (value, digits = 6) => Math.round(value * (10 ** digits)) / (10 ** digits);
+  const distance = (a, b) => Math.hypot(a[0] - b[0], a[1] - b[1]);
 
   function record(kind, details = {}) {
     const event = {sequence: model.events.length + 1, kind, ...details};
@@ -17,288 +13,317 @@
     return event;
   }
 
-  function stagePoint(event) {
-    const stage = document.querySelector(".eco-stage");
-    const rect = stage.getBoundingClientRect();
+  function clearFresh() {
+    const root = document.querySelector(".impossible-ecology-captcha");
+    if (!root || root.dataset.freshFailure !== "true") return;
+    root.dataset.freshFailure = "false";
+    document.querySelector(".eco-fail-stamp")?.remove();
+    model.helpers.setReadout("FIELD LAB ACTIVE · CALIBRATE OR INTERVENE", "idle");
+  }
+
+  function initialOrganisms() {
+    return Object.fromEntries(model.state.organisms.map((item) => [item.id, {
+      id: item.id,
+      label: item.label,
+      color: item.color,
+      radius: Number(item.radius),
+      responses: {...item.responses},
+      x: Number(item.initial_position[0]),
+      y: Number(item.initial_position[1]),
+      vx: 0,
+      vy: 0,
+      captured: false,
+      trail: [],
+    }]));
+  }
+
+  function resetWorld(recordEvent = true) {
+    if (!model || model.submitting || model.terminal) return;
+    clearFresh();
+    if (recordEvent) record("reset");
+    model.organisms = initialOrganisms();
+    model.tick = 0;
+    model.active = false;
+    model.pointerDown = false;
+    model.completed = false;
+    model.selectedField = null;
+    model.lure = [model.state.arena.width / 2, model.state.arena.height / 2];
+    model.resets += recordEvent ? 1 : 0;
+    document.querySelector(".eco-complete")?.setAttribute("data-visible", "false");
+    updateHUD();
+    model.helpers.setReadout("ECOSYSTEM RESET · ALL ORGANISMS MOBILE", "idle");
+  }
+
+  function targetFor(id) {
+    return model.targets.get(id);
+  }
+
+  function resolveObstacle(organism, next) {
+    const obstacle = model.state.obstacle;
+    const dx = next[0] - obstacle.center[0], dy = next[1] - obstacle.center[1];
+    const size = Math.hypot(dx, dy);
+    const minimum = Number(obstacle.radius) + organism.radius;
+    if (size >= minimum) return next;
+    const ux = size > 1e-9 ? dx / size : 1, uy = size > 1e-9 ? dy / size : 0;
+    const inward = organism.vx * ux + organism.vy * uy;
+    if (inward < 0) {
+      organism.vx -= 1.55 * inward * ux;
+      organism.vy -= 1.55 * inward * uy;
+    }
+    return [obstacle.center[0] + ux * minimum, obstacle.center[1] + uy * minimum];
+  }
+
+  function advancePhysics() {
+    const controls = model.state.controls;
+    const arena = model.state.arena;
+    for (const organism of Object.values(model.organisms)) {
+      if (organism.captured) continue;
+      if (model.active && model.selectedField) {
+        const dx = model.lure[0] - organism.x, dy = model.lure[1] - organism.y;
+        const size = Math.hypot(dx, dy);
+        if (size > 1e-9) {
+          const acceleration = Number(organism.responses[model.selectedField]);
+          organism.vx += dx / size * acceleration;
+          organism.vy += dy / size * acceleration;
+        }
+      }
+      organism.vx *= Number(controls.damping);
+      organism.vy *= Number(controls.damping);
+      const speed = Math.hypot(organism.vx, organism.vy);
+      if (speed > Number(controls.max_speed)) {
+        organism.vx = organism.vx / speed * Number(controls.max_speed);
+        organism.vy = organism.vy / speed * Number(controls.max_speed);
+      }
+      let next = resolveObstacle(organism, [organism.x + organism.vx, organism.y + organism.vy]);
+      const low = Number(arena.margin) + organism.radius;
+      const highX = Number(arena.width) - Number(arena.margin) - organism.radius;
+      const highY = Number(arena.height) - Number(arena.margin) - organism.radius;
+      if (next[0] < low || next[0] > highX) { next[0] = Math.max(low, Math.min(highX, next[0])); organism.vx *= -.35; }
+      if (next[1] < low || next[1] > highY) { next[1] = Math.max(low, Math.min(highY, next[1])); organism.vy *= -.35; }
+      organism.x = round(next[0]); organism.y = round(next[1]); organism.vx = round(organism.vx); organism.vy = round(organism.vy);
+      organism.trail.push([organism.x, organism.y]);
+      if (organism.trail.length > 26) organism.trail.shift();
+      const target = targetFor(organism.id);
+      const captureRadius = Number(target.radius) - organism.radius - Number(controls.capture_margin);
+      if (distance([organism.x, organism.y], target.center) <= captureRadius && Math.hypot(organism.vx, organism.vy) <= Number(controls.capture_speed)) {
+        organism.x = Number(target.center[0]); organism.y = Number(target.center[1]);
+        organism.vx = 0; organism.vy = 0; organism.captured = true;
+      }
+    }
+  }
+
+  function snapshot() {
+    return Object.values(model.organisms).sort((a, b) => a.id.localeCompare(b.id)).map((item) => ({
+      id: item.id,
+      position: [round(item.x, 3), round(item.y, 3)],
+      velocity: [round(item.vx, 3), round(item.vy, 3)],
+      captured: item.captured,
+    }));
+  }
+
+  function physicsTick() {
+    if (!model || model.submitting || model.terminal || model.calibrating) return;
+    const moving = Object.values(model.organisms).some((item) => !item.captured && Math.hypot(item.vx, item.vy) > .015);
+    if (!model.active && !moving) return;
+    if (model.tick >= Number(model.state.controls.max_ticks)) {
+      model.active = false;
+      model.pointerDown = false;
+      model.helpers.setReadout("FIELD BUDGET EXHAUSTED · RESET OR SUBMIT", "error");
+      return;
+    }
+    model.tick += 1;
+    advancePhysics();
+    record("physics_tick", {
+      tick: model.tick,
+      active: model.active,
+      field: model.active ? model.selectedField : null,
+      lure: model.lure.map((value) => round(value, 3)),
+      organisms: snapshot(),
+    });
+    const captured = Object.values(model.organisms).filter((item) => item.captured).length;
+    if (captured === Object.keys(model.organisms).length && !model.completed) {
+      model.completed = true;
+      model.active = false;
+      model.pointerDown = false;
+      record("complete", {tick: model.tick});
+      document.querySelector(".eco-complete")?.setAttribute("data-visible", "true");
+      model.helpers.setReadout("ALL FIVE SANCTUARIES STABLE · READY TO CERTIFY", "idle");
+    }
+    updateHUD();
+  }
+
+  function arenaPoint(event) {
+    const box = model.canvas.getBoundingClientRect();
     return [
-      Math.max(0, Math.min(model.state.stage.width, Math.round((event.clientX - rect.left) / rect.width * model.state.stage.width))),
-      Math.max(0, Math.min(model.state.stage.height, Math.round((event.clientY - rect.top) / rect.height * model.state.stage.height))),
+      Math.max(0, Math.min(model.state.arena.width, (event.clientX - box.left) / box.width * model.state.arena.width)),
+      Math.max(0, Math.min(model.state.arena.height, (event.clientY - box.top) / box.height * model.state.arena.height)),
     ];
   }
 
-  function inside(point, rect) {
-    return point[0] >= rect.x && point[0] <= rect.x + rect.width
-      && point[1] >= rect.y && point[1] <= rect.y + rect.height;
+  function selectField(field) {
+    if (!model || model.active || model.submitting || model.terminal || model.calibrating || !model.state.fields.includes(field)) return;
+    clearFresh();
+    model.selectedField = field;
+    model.fieldSelections += 1;
+    record("field_select", {field, tick: model.tick});
+    updateHUD();
+    model.helpers.setReadout(`${field} FIELD ARMED · HOLD THE POINTER IN THE ARENA`, "idle");
   }
 
-  function cycleForStep(step) {
-    return model.state.cycles.find((cycle) => cycle.step === step);
-  }
-
-  function applySnapshot(snapshot) {
-    for (const state of snapshot) {
-      const organism = document.querySelector(`.eco-organism[data-habitat-id="${CSS.escape(state.habitat_id)}"]`);
-      if (!organism) continue;
-      organism.style.left = `${state.x}%`;
-      organism.style.top = `${state.y}%`;
-      organism.style.setProperty("--eco-scale", String(state.scale / 100));
-      organism.style.setProperty("--eco-lean", `${state.lean}deg`);
-      organism.style.setProperty("--eco-pulse", String(Math.max(0, Math.min(100, state.pulse)) / 100));
-      organism.dataset.pulse = String(state.pulse);
-    }
-  }
-
-  function resetOrganisms() {
-    document.querySelectorAll(".eco-organism").forEach((organism) => {
-      organism.style.left = "50%";
-      organism.style.top = "54%";
-      organism.style.setProperty("--eco-scale", "1");
-      organism.style.setProperty("--eco-lean", "0deg");
-      organism.style.setProperty("--eco-pulse", ".5");
-      organism.classList.remove("is-quarantined");
-      organism.dataset.pulse = "50";
-    });
-    document.querySelectorAll(".eco-trace").forEach((trace) => { trace.innerHTML = "<i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i>"; });
-  }
-
-  function updateProtocol() {
-    document.querySelectorAll(".eco-protocol-step").forEach((step, index) => {
-      step.dataset.status = index < model.progress ? "done" : index === model.progress ? "next" : "waiting";
-    });
-    document.querySelectorAll(".eco-probe").forEach((button) => {
-      const next = model.state.protocol[model.progress];
-      button.disabled = model.active || model.poisoned || model.progress >= model.state.protocol.length;
-      button.classList.toggle("is-next", button.dataset.probe === next && !button.disabled);
-    });
-    const gate = document.querySelector(".eco-quarantine-gate");
-    if (gate) gate.dataset.ready = model.progress === 3 && !model.poisoned ? "true" : "false";
-    document.querySelectorAll(".eco-organism").forEach((organism) => {
-      organism.dataset.draggable = model.progress === 3 && !model.poisoned ? "true" : "false";
-    });
-  }
-
-  function traceCycle(snapshot) {
-    for (const state of snapshot) {
-      const trace = document.querySelector(`.eco-habitat[data-habitat-id="${CSS.escape(state.habitat_id)}"] .eco-trace`);
-      if (!trace) continue;
-      const direction = state.x > 56 ? "→" : state.x < 44 ? "←" : state.scale > 125 ? "↟" : state.pulse < 40 ? "·" : "↗";
-      trace.innerHTML = Array.from({length: 8}, (_, index) => `<i style="height:${10 + Math.abs((state.pulse + index * 7) % 28)}%"></i>`).join("") + `<b>${direction}</b>`;
-    }
-  }
-
-  function finishCycle(cycle, startedAt) {
-    const finalSnapshot = cycle.frames.at(-1).snapshot;
-    traceCycle(finalSnapshot);
-    record("cycle_complete", {step: cycle.step, probe: cycle.probe, elapsed_ms: Math.round(performance.now() - startedAt)});
-    model.completedCycles.push(cycle.probe);
-    model.progress += 1;
-    model.active = false;
-    model.timer = null;
-    updateProtocol();
-    if (model.progress === model.state.protocol.length) {
-      model.helpers.setReadout("PROTOCOL COMPLETE · DRAG THE CAUSAL VIOLATOR INTO QUARANTINE", "idle");
-      document.querySelector(".eco-stage")?.classList.add("is-quarantine-ready");
-    } else {
-      model.helpers.setReadout(`CYCLE STORED · NEXT ${model.state.protocol[model.progress]}`, "idle");
-    }
-  }
-
-  function runProbe(probe) {
-    if (!model || model.submitting || model.terminal || model.active || model.progress >= 3) return;
-    document.querySelector(".eco-failure-stamp")?.remove();
-    const expected = model.state.protocol[model.progress];
-    if (probe !== expected) {
-      record("probe_rejected", {probe, expected, step: model.progress});
-      model.poisoned = true;
-      updateProtocol();
-      document.querySelector(".eco-stage")?.classList.add("is-protocol-error");
-      model.helpers.setReadout(`PROTOCOL CONTAMINATED · EXPECTED ${expected} · RESET LAB`, "error");
-      return;
-    }
-    const cycle = cycleForStep(model.progress);
+  function pointerDown(event) {
+    if (!model?.selectedField || model.completed || model.submitting || model.terminal || model.calibrating) return;
+    event.preventDefault();
+    clearFresh();
+    model.lure = arenaPoint(event);
     model.active = true;
-    record("probe", {step: model.progress, probe});
-    updateProtocol();
-    document.querySelector(".eco-stage")?.setAttribute("data-active-probe", probe.toLowerCase());
-    model.helpers.setReadout(`${probe} RESPONSE RUNNING · OBSERVE ALL FIVE HABITATS`, "pending");
-    const startedAt = performance.now();
-    let tick = 0;
-    model.timer = window.setInterval(() => {
-      tick += 1;
-      const frame = cycle.frames[tick - 1];
-      applySnapshot(frame.snapshot);
-      const elapsed = Math.max(Math.round(performance.now() - startedAt), tick * 70);
-      record("tick", {step: cycle.step, probe: cycle.probe, tick, elapsed_ms: elapsed, snapshot: frame.snapshot});
-      model.tickTotal += 1;
-      const meter = document.querySelector(".eco-cycle-meter i");
-      if (meter) meter.style.width = `${tick / model.state.ticks_per_cycle * 100}%`;
-      const label = document.querySelector(".eco-cycle-meter b");
-      if (label) label.textContent = `${probe} ${String(tick).padStart(2, "0")}/${String(model.state.ticks_per_cycle).padStart(2, "0")}`;
-      if (tick >= model.state.ticks_per_cycle) {
-        window.clearInterval(model.timer);
-        finishCycle(cycle, startedAt);
-      }
-    }, model.state.tick_ms);
+    model.pointerDown = true;
+    model.pointerDrags += 1;
+    record("pointer_down", {tick: model.tick, field: model.selectedField, point: model.lure.map((value) => round(value, 3))});
+    model.canvas.setPointerCapture?.(event.pointerId);
+    model.helpers.setReadout(`${model.selectedField} FIELD LIVE · ALL MOBILE ORGANISMS RESPOND`, "pending");
   }
 
-  function quarantineDown(event) {
-    const organism = event.target.closest(".eco-organism");
-    if (!organism || organism.dataset.draggable !== "true" || model.active || model.poisoned || model.terminal) return;
-    event.preventDefault();
-    const habitatId = organism.dataset.habitatId;
-    const point = stagePoint(event);
-    record("quarantine_down", {habitat_id: habitatId, point});
-    model.drag = {habitatId, pointerId: event.pointerId};
-    const stage = document.querySelector(".eco-stage");
-    stage.setPointerCapture(event.pointerId);
-    const ghost = document.querySelector(".eco-drag-ghost");
-    ghost.classList.add("is-visible");
-    ghost.dataset.habitatId = habitatId;
-    ghost.style.left = `${point[0] / model.state.stage.width * 100}%`;
-    ghost.style.top = `${point[1] / model.state.stage.height * 100}%`;
-    model.helpers.setReadout(`SPECIMEN ${habitatId.toUpperCase()} IN TRANSFER`, "pending");
+  function pointerMove(event) {
+    if (!model) return;
+    const point = arenaPoint(event);
+    if (!model.pointerDown) { model.lure = point; return; }
+    if (distance(point, model.lure) < Number(model.state.controls.pointer_sample_distance)) return;
+    model.lure = point;
+    record("pointer_move", {tick: model.tick, field: model.selectedField, point: model.lure.map((value) => round(value, 3))});
   }
 
-  function quarantineMove(event) {
-    if (!model?.drag) return;
-    event.preventDefault();
-    const point = stagePoint(event);
-    record("quarantine_move", {habitat_id: model.drag.habitatId, point});
-    model.quarantineMoves += 1;
-    const ghost = document.querySelector(".eco-drag-ghost");
-    ghost.style.left = `${point[0] / model.state.stage.width * 100}%`;
-    ghost.style.top = `${point[1] / model.state.stage.height * 100}%`;
-  }
-
-  function quarantineUp(event) {
-    if (!model?.drag) return;
-    event.preventDefault();
-    const point = stagePoint(event);
-    const habitatId = model.drag.habitatId;
-    record("quarantine_up", {habitat_id: habitatId, point});
-    const dropped = inside(point, model.state.quarantine_rect);
-    model.quarantinedId = dropped ? habitatId : null;
-    model.drag = null;
-    const ghost = document.querySelector(".eco-drag-ghost");
-    ghost.classList.remove("is-visible");
-    document.querySelectorAll(".eco-organism").forEach((organism) => organism.classList.toggle("is-quarantined", dropped && organism.dataset.habitatId === habitatId));
-    const chamber = document.querySelector(".eco-quarantine");
-    if (chamber) {
-      chamber.dataset.occupied = dropped ? "true" : "false";
-      chamber.querySelector("b").textContent = dropped ? habitatId.toUpperCase() : "EMPTY";
-    }
-    model.helpers.setReadout(dropped ? `${habitatId.toUpperCase()} SEALED · CERTIFY WHEN READY` : "QUARANTINE DROP MISSED", dropped ? "idle" : "error");
-  }
-
-  function resetLab() {
-    if (!model || model.submitting || model.terminal) return;
-    document.querySelector(".eco-failure-stamp")?.remove();
-    if (model.timer) window.clearInterval(model.timer);
-    record("reset");
-    model.progress = 0;
+  function pointerUp(event) {
+    if (!model?.pointerDown) return;
+    model.lure = arenaPoint(event);
+    record("pointer_up", {tick: model.tick, field: model.selectedField, point: model.lure.map((value) => round(value, 3))});
+    model.pointerDown = false;
     model.active = false;
-    model.timer = null;
-    model.poisoned = false;
-    model.completedCycles = [];
-    model.tickTotal = 0;
-    model.quarantinedId = null;
-    model.drag = null;
-    model.quarantineMoves = 0;
-    model.resetCount += 1;
-    resetOrganisms();
-    document.querySelector(".eco-stage")?.classList.remove("is-protocol-error", "is-quarantine-ready");
-    document.querySelector(".eco-quarantine")?.setAttribute("data-occupied", "false");
-    const chamberLabel = document.querySelector(".eco-quarantine b");
-    if (chamberLabel) chamberLabel.textContent = "EMPTY";
-    const meter = document.querySelector(".eco-cycle-meter i");
-    if (meter) meter.style.width = "0";
-    updateProtocol();
-    model.helpers.setReadout(`LAB RESET · BEGIN WITH ${model.state.protocol[0]}`, "idle");
+    model.helpers.setReadout("FIELD RELEASED · INERTIA DECAYING", "idle");
+  }
+
+  function runCalibration() {
+    if (!model || model.active || model.submitting || model.terminal || model.calibrating) return;
+    clearFresh();
+    model.calibrationRuns += 1;
+    model.calibrating = {started: performance.now()};
+    record("calibration", {tick: model.tick, fields: [...model.state.fields]});
+    document.querySelector(".eco-calibrate")?.setAttribute("disabled", "disabled");
+    model.helpers.setReadout("CALIBRATION FILM RUNNING · WATCH EVERY ORGANISM", "pending");
+  }
+
+  function calibrationState(now) {
+    if (!model.calibrating) return null;
+    const elapsed = now - model.calibrating.started;
+    const duration = Number(model.state.controls.calibration_field_ms);
+    const index = Math.floor(elapsed / duration);
+    if (index >= model.state.fields.length) {
+      model.calibrating = null;
+      document.querySelector(".eco-calibrate")?.removeAttribute("disabled");
+      model.helpers.setReadout("CALIBRATION COMPLETE · POSITIONS RESTORED · INTERVENE", "idle");
+      return null;
+    }
+    return {field: model.state.fields[index], progress: (elapsed % duration) / duration};
+  }
+
+  function updateHUD() {
+    const captured = Object.values(model.organisms).filter((item) => item.captured).length;
+    const root = document.querySelector(".impossible-ecology-captcha");
+    if (root) root.dataset.captured = String(captured);
+    const count = document.getElementById("eco-capture-count");
+    if (count) count.textContent = `${captured} / ${Object.keys(model.organisms).length}`;
+    const tick = document.getElementById("eco-tick-count");
+    if (tick) tick.textContent = String(model.tick).padStart(4, "0");
+    document.querySelectorAll("[data-field]").forEach((button) => button.dataset.selected = button.dataset.field === model.selectedField ? "true" : "false");
+    const ledger = document.getElementById("eco-organism-ledger");
+    if (ledger) ledger.innerHTML = Object.values(model.organisms).map((item) => `<li data-captured="${item.captured}"><i style="--organism:${esc(item.color)}">${esc(item.label)}</i><span>${item.captured ? "SANCTUARY LOCKED" : "RESPONDING TO GLOBAL FIELD"}</span><b>${item.captured ? "STABLE" : "MOBILE"}</b></li>`).join("");
+  }
+
+  function draw(now) {
+    if (!model) return;
+    const ctx = model.canvas.getContext("2d");
+    const {width, height} = model.state.arena;
+    const palette = model.state.palette;
+    ctx.clearRect(0, 0, width, height);
+    ctx.fillStyle = palette.paper; ctx.fillRect(0, 0, width, height);
+    ctx.strokeStyle = palette.grid; ctx.lineWidth = 1; ctx.globalAlpha = .42;
+    for (let x = 20; x < width; x += 40) { ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, height); ctx.stroke(); }
+    for (let y = 15; y < height; y += 40) { ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(width, y); ctx.stroke(); }
+    ctx.globalAlpha = 1;
+    const obstacle = model.state.obstacle;
+    ctx.beginPath(); ctx.arc(obstacle.center[0], obstacle.center[1], obstacle.radius, 0, Math.PI * 2); ctx.fillStyle = `${palette.danger}18`; ctx.fill(); ctx.setLineDash([8, 6]); ctx.strokeStyle = palette.danger; ctx.lineWidth = 2; ctx.stroke(); ctx.setLineDash([]); ctx.fillStyle = palette.danger; ctx.font = "800 9px ui-monospace"; ctx.textAlign = "center"; ctx.fillText("STERILE NURSERY / SOLID", obstacle.center[0], obstacle.center[1] + 3);
+    for (const target of model.state.targets) {
+      const organism = model.organisms[target.organism_id];
+      ctx.beginPath(); ctx.arc(target.center[0], target.center[1], target.radius, 0, Math.PI * 2); ctx.fillStyle = `${target.color}12`; ctx.fill(); ctx.strokeStyle = target.color; ctx.lineWidth = organism.captured ? 5 : 2; ctx.setLineDash(organism.captured ? [] : [7, 6]); ctx.stroke(); ctx.setLineDash([]); ctx.fillStyle = target.color; ctx.font = "900 12px ui-monospace"; ctx.fillText(`SANCTUARY ${target.label}`, target.center[0], target.center[1] + 4);
+    }
+    const calibration = calibrationState(now);
+    for (const organism of Object.values(model.organisms)) {
+      if (organism.trail.length > 1) { ctx.beginPath(); organism.trail.forEach((point, index) => index ? ctx.lineTo(point[0], point[1]) : ctx.moveTo(point[0], point[1])); ctx.strokeStyle = `${organism.color}66`; ctx.lineWidth = 2; ctx.stroke(); }
+      if (calibration) {
+        const dx = model.state.obstacle.center[0] - organism.x, dy = model.state.obstacle.center[1] - organism.y, size = Math.hypot(dx, dy) || 1;
+        const offset = Number(organism.responses[calibration.field]) * 27 * Math.sin(calibration.progress * Math.PI);
+        ctx.beginPath(); ctx.arc(organism.x + dx / size * offset, organism.y + dy / size * offset, organism.radius + 5, 0, Math.PI * 2); ctx.strokeStyle = organism.color; ctx.globalAlpha = .45; ctx.setLineDash([4, 4]); ctx.stroke(); ctx.setLineDash([]); ctx.globalAlpha = 1;
+      }
+      ctx.beginPath(); ctx.arc(organism.x, organism.y, organism.radius, 0, Math.PI * 2); ctx.fillStyle = organism.color; ctx.shadowColor = organism.color; ctx.shadowBlur = organism.captured ? 18 : 8; ctx.fill(); ctx.shadowBlur = 0; ctx.fillStyle = "#07100a"; ctx.font = "900 13px ui-monospace"; ctx.fillText(organism.label, organism.x, organism.y + 5);
+    }
+    if (calibration) { ctx.fillStyle = `${palette.paper}dd`; ctx.fillRect(355, 16, 290, 45); ctx.strokeStyle = palette.ink; ctx.strokeRect(355, 16, 290, 45); ctx.fillStyle = palette.ink; ctx.font = "900 13px ui-monospace"; ctx.fillText(`CALIBRATION FILM · ${calibration.field}`, 500, 44); }
+    else if (model.selectedField) { ctx.strokeStyle = "#ffffff"; ctx.lineWidth = 2; ctx.beginPath(); ctx.arc(model.lure[0], model.lure[1], 12, 0, Math.PI * 2); ctx.moveTo(model.lure[0] - 18, model.lure[1]); ctx.lineTo(model.lure[0] + 18, model.lure[1]); ctx.moveTo(model.lure[0], model.lure[1] - 18); ctx.lineTo(model.lure[0], model.lure[1] + 18); ctx.stroke(); ctx.fillStyle = palette.ink; ctx.font = "800 8px ui-monospace"; ctx.fillText(`${model.selectedField}${model.active ? " LIVE" : " ARMED"}`, model.lure[0], model.lure[1] - 22); }
+    model.raf = requestAnimationFrame(draw);
   }
 
   async function submit() {
     if (!model || model.submitting || model.terminal) return;
     model.submitting = true;
-    model.helpers.setReadout("REPLAYING CAUSAL RESPONSE RECORD…", "pending");
+    model.helpers.setReadout("REPLAYING COUPLED FIELD PHYSICS…", "pending");
+    const payload = {
+      mechanic_id: model.state.mechanic_id,
+      task_id: model.state.task_id,
+      challenge_id: model.state.challenge_id,
+      events: model.events,
+      final_organisms: snapshot(),
+      tick: model.tick,
+      completed: model.completed,
+      field_selections: model.fieldSelections,
+      pointer_drags: model.pointerDrags,
+      calibration_runs: model.calibrationRuns,
+      resets: model.resets,
+    };
     try {
-      const response = await fetch("/result", {
-        method: "POST",
-        headers: {"content-type": "application/json"},
-        body: JSON.stringify({
-          mechanic_id: model.state.mechanic_id,
-          challenge_id: model.state.challenge_id,
-          events: model.events,
-          protocol_progress: model.progress,
-          completed_cycles: model.completedCycles,
-          quarantined_id: model.quarantinedId,
-          tick_total: model.tickTotal,
-          quarantine_moves: model.quarantineMoves,
-          reset_count: model.resetCount,
-          completed: model.progress === 3 && Boolean(model.quarantinedId),
-        }),
-      });
+      const response = await fetch("/result", {method: "POST", headers: {"content-type": "application/json"}, body: JSON.stringify(payload)});
       const outcome = await response.json();
       if (outcome.passed === true) {
         model.terminal = true;
-        document.querySelector(".impossible-ecology-captcha")?.classList.add("is-pass");
-        document.querySelector(".impossible-ecology-captcha")?.insertAdjacentHTML("beforeend", '<div class="eco-verdict eco-verdict-pass"><span>CAUSAL LAW VIOLATION CONTAINED</span><strong>PASS</strong><small>THREE COMPLETE RESPONSE CYCLES VERIFIED</small></div>');
+        document.querySelector(".impossible-ecology-captcha")?.insertAdjacentHTML("beforeend", '<div class="eco-verdict"><span>COUPLED ECOSYSTEM STABLE</span><strong>PASS</strong><i>FIELD / MOTION / SANCTUARY REPLAY VERIFIED</i></div>');
         model.helpers.setReadout("PASS", "passed");
       } else if (outcome.passed === false && outcome.state) {
         await model.helpers.render(outcome.state);
-        const shell = document.querySelector(".impossible-ecology-captcha");
-        shell?.setAttribute("data-fresh-failure", "true");
-        shell?.insertAdjacentHTML("afterbegin", '<div class="eco-failure-stamp"><b>FAIL</b><span>CAUSAL RECORD REJECTED · FRESH TERRARIUM ISSUED</span></div>');
-        const readout = document.querySelector(".readout");
-        if (readout) { readout.textContent = "FAIL · FRESH TERRARIUM ISSUED"; readout.dataset.status = "error"; }
-      } else {
-        model.submitting = false;
-        model.helpers.setReadout("FAIL · NO AUTHORITATIVE GRADE", "error");
-      }
-    } catch (_error) {
-      model.submitting = false;
-      model.helpers.setReadout("FAIL · LAB VERIFIER OFFLINE", "error");
-    }
-  }
-
-  function habitatMarkup(habitat) {
-    const stage = model.state.stage;
-    const rect = habitat.rect;
-    return `<article class="eco-habitat" data-habitat-id="${clean(habitat.id)}" style="left:${rect.x / stage.width * 100}%;top:${rect.y / stage.height * 100}%;width:${rect.width / stage.width * 100}%;height:${rect.height / stage.height * 100}%"><header><span>${clean(habitat.label)}</span><i>LIVE</i></header><div class="eco-tank"><div class="eco-lamp"></div><div class="eco-food"></div><div class="eco-organism" data-habitat-id="${clean(habitat.id)}" data-draggable="false"><i></i><b></b><em></em></div><div class="eco-substrate"></div></div><footer><span>RESPONSE TRACE</span><div class="eco-trace"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div></footer></article>`;
+        const root = document.querySelector(".impossible-ecology-captcha");
+        root?.setAttribute("data-fresh-failure", "true");
+        root?.insertAdjacentHTML("afterbegin", '<div class="eco-fail-stamp"><b>FAIL</b><span>UNSTABLE ECOLOGY · FRESH FIELD ISSUED</span></div>');
+        const readout = document.querySelector(".readout"); if (readout) { readout.textContent = "FAIL · FRESH COUPLED FIELD ISSUED"; readout.dataset.status = "error"; }
+      } else { model.submitting = false; model.helpers.setReadout("FAIL · ECOLOGY GRADE UNAVAILABLE", "error"); }
+    } catch (_error) { model.submitting = false; model.helpers.setReadout("FAIL · ECOLOGY VERIFIER OFFLINE", "error"); }
   }
 
   async function render(state, helpers) {
+    if (model?.raf) cancelAnimationFrame(model.raf);
+    if (model?.timer) clearInterval(model.timer);
     document.body.dataset.mechanic = "impossible-ecology";
-    document.body.dataset.ecologyPalette = state.palette;
     document.body.dataset.cheatMode = helpers.isCheatMode() ? "true" : "false";
-    model = {
-      state,
-      helpers,
-      progress: 0,
-      active: false,
-      timer: null,
-      poisoned: false,
-      events: [],
-      completedCycles: [],
-      tickTotal: 0,
-      quarantinedId: null,
-      quarantineMoves: 0,
-      resetCount: 0,
-      drag: null,
-      submitting: false,
-      terminal: false,
-    };
+    helpers.app.innerHTML = `<section class="impossible-ecology-captcha" data-challenge-id="${esc(state.challenge_id)}" data-fresh-failure="false" data-captured="0" style="--eco-grid:${esc(state.palette.grid)};--eco-ink:${esc(state.palette.ink)};--eco-danger:${esc(state.palette.danger)}"><header class="eco-head"><div><span>IMPOSSIBLE ECOLOGY / COUPLED FIELD ${esc(state.challenge_id)}</span><h1>${esc(state.prompt)}</h1></div><aside><span>STABLE SANCTUARIES</span><b id="eco-capture-count">0 / 5</b><i>TICK <strong id="eco-tick-count">0000</strong></i></aside></header><main class="eco-main"><section class="eco-arena-shell"><canvas class="eco-arena" width="${state.arena.width}" height="${state.arena.height}"></canvas><div class="eco-arena-note">SELECT FIELD · HOLD / MOVE POINTER · RELEASE TO DAMP</div><div class="eco-complete" data-visible="false"><b>ALL SANCTUARIES STABLE</b><span>CERTIFY THE LIVING FIELD</span></div></section><aside class="eco-console"><p class="eco-console-label">GLOBAL FIELD CONSOLE</p><h2>One pointer. Five incompatible responses.</h2><div class="eco-fields">${state.fields.map((field, index) => `<button type="button" data-field="${esc(field)}"><i>${String(index + 1).padStart(2, "0")}</i><b>${esc(field)}</b><span>ARM FIELD</span></button>`).join("")}</div><button type="button" class="eco-calibrate">RUN THREE-FIELD CALIBRATION FILM</button><ol id="eco-organism-ledger" class="eco-ledger"></ol><div class="eco-rules">${state.rules.map((rule) => `<p>${esc(rule)}</p>`).join("")}</div></aside></main><footer class="eco-foot"><button type="button" class="eco-reset">RESET ECOSYSTEM</button><div><span>FIELD STATUS</span><div class="readout" data-status="idle">FIELD LAB ACTIVE · CALIBRATE OR INTERVENE</div></div><button type="button" class="eco-submit">${esc(state.submit_label)}</button></footer>${helpers.cheatPanelTemplate()}</section>`;
+    model = {state, helpers, canvas: document.querySelector(".eco-arena"), targets: new Map(state.targets.map((target) => [target.organism_id, target])), organisms: {}, selectedField: null, lure: [state.arena.width / 2, state.arena.height / 2], active: false, pointerDown: false, tick: 0, completed: false, events: [], fieldSelections: 0, pointerDrags: 0, calibrationRuns: 0, resets: 0, calibrating: null, submitting: false, terminal: false, raf: null, timer: null};
+    model.organisms = initialOrganisms();
     window.impossibleEcologyModel = model;
-    const quarantine = state.quarantine_rect;
-    helpers.app.innerHTML = `<section class="impossible-ecology-captcha" data-challenge-id="${clean(state.challenge_id)}"><header class="eco-head"><div><span>CAUSAL TERRARIUM / QUARANTINE LAB</span><h1>${clean(state.prompt)}</h1></div><div class="eco-protocol">${state.protocol.map((probe, index) => `<div class="eco-protocol-step" data-status="${index === 0 ? "next" : "waiting"}"><b>${String(index + 1).padStart(2, "0")}</b><span>${clean(probe)}</span></div>`).join("")}</div></header><main class="eco-main"><section class="eco-stage">${state.habitats.map(habitatMarkup).join("")}<div class="eco-quarantine" data-occupied="false" style="left:${quarantine.x / state.stage.width * 100}%;top:${quarantine.y / state.stage.height * 100}%;width:${quarantine.width / state.stage.width * 100}%;height:${quarantine.height / state.stage.height * 100}%"><span>SEALED QUARANTINE</span><b>EMPTY</b><i></i></div><div class="eco-quarantine-gate" data-ready="false">DRAG SPECIMEN HERE AFTER ALL THREE CYCLES</div><div class="eco-drag-ghost"><i></i></div></section><aside class="eco-console"><p>ENVIRONMENTAL ACTUATORS</p><h2>Intervene. Wait. Compare.</h2><div class="eco-probes"><button type="button" class="eco-probe" data-probe="CLIMATE"><i>≈</i><b>CLIMATE</b><span>Thermal pulse</span></button><button type="button" class="eco-probe" data-probe="FOOD"><i>◌</i><b>FOOD</b><span>Nutrient drop</span></button><button type="button" class="eco-probe" data-probe="LIGHT"><i>☼</i><b>LIGHT</b><span>Directional lamp</span></button></div><div class="eco-cycle-meter"><span><b>AWAITING PROBE</b><i></i></span></div><ol>${state.rules.map((rule, index) => `<li><b>${index + 1}</b><span>${clean(rule)}</span></li>`).join("")}</ol><p class="eco-console-note">The five organisms are visually identical at rest. Only causal response is admissible evidence.</p></aside></main><footer class="eco-foot"><button type="button" class="eco-reset">RESET LAB</button><div><span>OBSERVATION RECORD</span><div class="readout" data-status="idle">BEGIN WITH ${clean(state.protocol[0])}</div></div><button type="button" class="eco-submit">${clean(state.submit_label)}</button></footer>${helpers.cheatPanelTemplate()}</section>`;
-    document.querySelectorAll(".eco-probe").forEach((button) => button.addEventListener("click", () => runProbe(button.dataset.probe)));
-    const stage = document.querySelector(".eco-stage");
-    stage.addEventListener("pointerdown", quarantineDown);
-    stage.addEventListener("pointermove", quarantineMove);
-    stage.addEventListener("pointerup", quarantineUp);
-    stage.addEventListener("pointercancel", quarantineUp);
-    document.querySelector(".eco-reset").addEventListener("click", resetLab);
-    document.querySelector(".eco-submit").addEventListener("click", submit);
-    updateProtocol();
+    document.querySelectorAll("[data-field]").forEach((button) => button.addEventListener("click", () => selectField(button.dataset.field)));
+    document.querySelector(".eco-calibrate")?.addEventListener("click", runCalibration);
+    document.querySelector(".eco-reset")?.addEventListener("click", () => resetWorld(true));
+    document.querySelector(".eco-submit")?.addEventListener("click", submit);
+    model.canvas.addEventListener("pointerdown", pointerDown);
+    model.canvas.addEventListener("pointermove", pointerMove);
+    model.canvas.addEventListener("pointerup", pointerUp);
+    model.canvas.addEventListener("pointercancel", pointerUp);
+    model.timer = setInterval(physicsTick, Number(state.controls.tick_ms));
+    updateHUD();
+    model.raf = requestAnimationFrame(draw);
     helpers.installCheatPanel();
   }
 

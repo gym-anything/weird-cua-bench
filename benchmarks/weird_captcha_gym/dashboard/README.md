@@ -1,6 +1,6 @@
 # CAPTCHA Bench Dashboard
 
-The dashboard is the visual control plane for Weird CAPTCHA Gym. It presents 65 real environment folders—63 evidence-backed built designs and 2 rejected archive pilots—with screenshots, solution reels, task contracts, human reviews, local launches, VNC sessions, and evaluation controls tied to the same environment identities.
+The dashboard is the visual control plane for Weird CAPTCHA Gym. It presents 75 evidence-backed built environment folders with screenshots, solution reels, task contracts, human reviews, local launches, VNC sessions, and evaluation controls tied to the same environment identities.
 
 The shared dashboard is zero-setup for ordinary exploration. Every built puzzle opens as a static browser app; its existing Python grader runs in a dedicated Pyodide/WebAssembly worker. No repository checkout, terminal command, pairing key, localhost helper, or VNC is required. The optional authenticated companion on `127.0.0.1` remains responsible for persistent review writes, fresh authoritative generation, VNC guests, evaluations, paths, and process control.
 
@@ -27,10 +27,10 @@ python benchmarks/weird_captcha_gym/dashboard/export_static.py \
 
 The export contains:
 
-- the full 65-environment catalog;
-- every catalog screenshot and all 11 solution reels;
+- the full 75-environment catalog;
+- every catalog screenshot and all 75 solution reels;
 - Observatory, Environments, Review queue, Live sessions, and Evaluations;
-- four deterministic generated challenges for each of the 63 built environments;
+- four deterministic generated challenges for each of the 75 built environments;
 - the shared puzzle runtime, Matter.js mechanics, and the exact Python graders executed by pinned Pyodide;
 - a shared-mode configuration pointing at `http://127.0.0.1:8767`;
 - no Survey APIs, records, artifacts, or navigation.
@@ -104,7 +104,7 @@ The Live sessions page manages both kinds together. It keeps the existing two-ac
 ## Product surfaces
 
 - **Observatory** — screenshot-first overview of the interaction-first benchmark principles and all six packs.
-- **Environments** — searchable and filterable collection of 63 built candidates plus 2 rejected pilots retained as an honest archive.
+- **Environments** — searchable and filterable collection of all 75 built candidates, including two complete replacements whose rejected-pilot history remains documented.
 - **Review queue** — pending, looks-good, approved, and revision-requested lanes with notes and decision history.
 - **Environment dossier** — evidence filmstrip, solution reel when available, task instruction, verifier state, launch controls, and review desk.
 - **Live sessions** — local-browser and VNC process lifecycle, addresses, passwords, logs, reconnect, and teardown.
@@ -128,7 +128,7 @@ python benchmarks/weird_captcha_gym/tools/smoke_dashboard_ui.py \
   --exercise-reviews
 ```
 
-Exercise all 63 static browser apps plus a real failure/fresh-challenge/WebAssembly-pass cycle:
+Exercise all 75 static browser apps plus a real failure/fresh-challenge/WebAssembly-pass cycle:
 
 ```bash
 python benchmarks/weird_captcha_gym/tools/smoke_static_browser_play.py
@@ -150,7 +150,7 @@ python benchmarks/weird_captcha_gym/tools/smoke_dashboard_live_vnc.py \
 ## Architecture
 
 ```text
-63 built folders + task.json + evidence media ──► catalog.py ──► static export
+75 built folders + task.json + evidence media ──► catalog.py ──► static export
             │                                          │             ├─► browser challenge pools
             │                                          │             └─► UI + Python graders / WASM
             │                                          └─► shared dashboard host ─► zero-setup play

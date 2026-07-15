@@ -92,7 +92,7 @@ def solve(page, state_dir: Path, out_dir: Path, mechanic: str) -> None:
         raise AssertionError("transformed desktop is not visible")
     width = float(truth["desktop"]["width"])
     height = float(truth["desktop"]["height"])
-    first_mapping, second_mapping = [str(item) for item in truth["mapping_sequence"]]
+    first_mapping, second_mapping, third_mapping = [str(item) for item in truth["mapping_sequence"]]
     windows = {item["id"]: dict(item) for item in truth["initial_windows"]}
     geometry = truth["geometry"]
 
@@ -113,40 +113,62 @@ def solve(page, state_dir: Path, out_dir: Path, mechanic: str) -> None:
     page.wait_for_timeout(90)
     _screenshot(page, out_dir, mechanic, "active-window-reorder")
 
-    target_file = next(item for item in truth["files"] if item["id"] == truth["target_file_id"])
+    target_files = [next(item for item in truth["files"] if item["id"] == target_id) for target_id in truth["target_file_ids"]]
     file_width, file_height = geometry["file_size"]
-    file_remote = (
-        vault["x"] + geometry["file_origin"][0] + target_file["slot"] * (file_width + geometry["file_gap"]) + file_width / 2,
-        vault["y"] + geometry["file_origin"][1] + file_height / 2,
-    )
     verifier = windows["verifier"]
     drop = geometry["drop_zone"]
+    gap_x, gap_y = geometry["file_gap"]
+    columns = int(geometry["file_columns"])
+
+    def file_remote(file_item: dict) -> tuple[float, float]:
+        column, row = int(file_item["slot"]) % columns, int(file_item["slot"]) // columns
+        return (
+            vault["x"] + geometry["file_origin"][0] + column * (file_width + gap_x) + file_width / 2,
+            vault["y"] + geometry["file_origin"][1] + row * (file_height + gap_y) + file_height / 2,
+        )
+
     drop_remote = (verifier["x"] + drop[0] + drop[2] / 2, verifier["y"] + drop[1] + drop[3] / 2)
-    _drag_remote(page, desktop_box, file_remote, drop_remote, first_mapping, width, height, steps=12)
+    _drag_remote(page, desktop_box, file_remote(target_files[0]), drop_remote, first_mapping, width, height, steps=12)
     page.wait_for_timeout(140)
-    expect(page.locator(".fd-mapping-badge")).to_contain_text("CHANNEL 2/2")
+    expect(page.locator(".fd-mapping-badge")).to_contain_text("CHANNEL 2/3")
     _screenshot(page, out_dir, mechanic, "active-workflow-remap")
+
+    # Channel two uses a new transform. Reposition the verifier itself before
+    # recovering the second seal, making the destination geometry persistent
+    # across the remap instead of repeating one memorized drag.
+    verifier_title_start = (verifier["x"] + verifier["width"] - 86, verifier["y"] + geometry["title_height"] / 2)
+    verifier_title_end = (verifier_title_start[0] - 55, verifier_title_start[1] + 28)
+    _drag_remote(page, desktop_box, verifier_title_start, verifier_title_end, second_mapping, width, height, steps=9)
+    verifier["x"] -= 55
+    verifier["y"] += 28
+    drop_remote = (verifier["x"] + drop[0] + drop[2] / 2, verifier["y"] + drop[1] + drop[3] / 2)
+    _drag_remote(page, desktop_box, file_remote(target_files[1]), drop_remote, second_mapping, width, height, steps=14)
+    page.wait_for_timeout(140)
+    expect(page.locator(".fd-mapping-badge")).to_contain_text("CHANNEL 3/3")
+    _screenshot(page, out_dir, mechanic, "active-second-transfer-remap")
 
     arm = geometry["arm_control"]
     arm_remote = (verifier["x"] + arm[0] + arm[2] / 2, verifier["y"] + arm[1] + arm[3] / 2)
-    _click_remote(page, desktop_box, arm_remote, second_mapping, width, height)
+    _click_remote(page, desktop_box, arm_remote, third_mapping, width, height)
     page.wait_for_timeout(100)
     expect(page.locator(".fd-arm-control.is-armed")).to_be_visible()
     state = page.evaluate("""() => ({
         boundary: window.fakeDesktopInversionModel.boundary,
-        loaded: window.fakeDesktopInversionModel.loadedFileId,
+        loaded: [...window.fakeDesktopInversionModel.loadedFileIds],
         armed: window.fakeDesktopInversionModel.armed,
-        moved: window.fakeDesktopInversionModel.moveCount,
+        move_count: window.fakeDesktopInversionModel.moveCount,
         closed: window.fakeDesktopInversionModel.closedCount,
         z: window.fakeDesktopInversionModel.zOrderChanges,
+        moved_ids: [...window.fakeDesktopInversionModel.movedWindowIds].sort(),
     })""")
     if not (
-        state["boundary"] == 1
-        and state["loaded"] == truth["target_file_id"]
+        state["boundary"] == 2
+        and state["loaded"] == truth["target_file_ids"]
         and state["armed"] is True
-        and state["moved"] >= 1
+        and state["move_count"] >= 2
         and state["closed"] >= 1
         and state["z"] >= 2
+        and set(state["moved_ids"]) >= set(truth["required_moved_window_ids"])
     ):
         raise AssertionError(f"automation-inversion physical workflow ended in unexpected state: {state}")
     _screenshot(page, out_dir, mechanic, "solved")

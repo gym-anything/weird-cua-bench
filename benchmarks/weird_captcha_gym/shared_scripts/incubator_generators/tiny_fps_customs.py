@@ -12,36 +12,10 @@ MECHANIC_ID = "tiny_fps_customs"
 CREATURE_RADIUS = 0.27
 PLAYER_RADIUS = 0.18
 MOVE_STEP = 0.25
-AMMO = 9
-
-_MAP_ROWS = (
-    "#################",
-    "#.....#.........#",
-    "#.###.#.#####.#.#",
-    "#.#...#.....#.#.#",
-    "#.#.#####.#.#.#.#",
-    "#.#.......#...#.#",
-    "#.#####.#######.#",
-    "#.....#.......#.#",
-    "###.#.###.###.#.#",
-    "#...#.....#...#.#",
-    "#.#######.#.###.#",
-    "#...............#",
-    "#################",
-)
-
-_SPAWN_CELLS = (
-    (14, 1),
-    (8, 3),
-    (3, 5),
-    (13, 5),
-    (4, 7),
-    (11, 7),
-    (2, 9),
-    (8, 9),
-    (12, 11),
-    (15, 11),
-)
+AMMO = 11
+WANTED_COUNT = 4
+MAP_WIDTH = 17
+MAP_HEIGHT = 13
 
 _PALETTES = (
     ("verdigris", "#43d6b1", "#123f43", "#ffe26c"),
@@ -62,7 +36,7 @@ def _seed_int(seed: str, salt: str) -> int:
 
 
 def _challenge_id(seed: str) -> str:
-    return hashlib.sha256(f"{seed}|{MECHANIC_ID}|v1".encode("utf-8")).hexdigest()[:14]
+    return hashlib.sha256(f"{seed}|{MECHANIC_ID}|v2".encode("utf-8")).hexdigest()[:14]
 
 
 def _creature_id(seed: str, index: int) -> str:
@@ -78,11 +52,54 @@ def _open_cells(rows: tuple[str, ...]) -> set[tuple[int, int]]:
     }
 
 
+def _maze_layout(rng: random.Random) -> tuple[tuple[str, ...], tuple[int, int], tuple[tuple[int, int], ...]]:
+    grid = [["#" for _ in range(MAP_WIDTH)] for _ in range(MAP_HEIGHT)]
+    start = (1, 1)
+    grid[start[1]][start[0]] = "."
+    visited = {start}
+    stack = [start]
+    while stack:
+        current = stack[-1]
+        directions = [(2, 0), (0, 2), (-2, 0), (0, -2)]
+        rng.shuffle(directions)
+        candidates = []
+        for dx, dy in directions:
+            target = (current[0] + dx, current[1] + dy)
+            if 1 <= target[0] < MAP_WIDTH - 1 and 1 <= target[1] < MAP_HEIGHT - 1 and target not in visited:
+                candidates.append((target, (current[0] + dx // 2, current[1] + dy // 2)))
+        if not candidates:
+            stack.pop()
+            continue
+        target, between = rng.choice(candidates)
+        grid[between[1]][between[0]] = "."
+        grid[target[1]][target[0]] = "."
+        visited.add(target)
+        stack.append(target)
+    rows = tuple("".join(row) for row in grid)
+    open_cells = _open_cells(rows)
+    queue: deque[tuple[int, int]] = deque([start])
+    distance = {start: 0}
+    while queue:
+        cell = queue.popleft()
+        for dx, dy in ((1, 0), (0, 1), (-1, 0), (0, -1)):
+            candidate = (cell[0] + dx, cell[1] + dy)
+            if candidate in open_cells and candidate not in distance:
+                distance[candidate] = distance[cell] + 1
+                queue.append(candidate)
+    nodes = [cell for cell in visited if cell != start and distance.get(cell, 0) >= 7]
+    nodes.sort(key=lambda cell: distance[cell], reverse=True)
+    pool = nodes[: min(30, len(nodes))]
+    if len(pool) < 12:
+        pool = nodes
+    spawn_cells = tuple(rng.sample(pool, 12))
+    return rows, start, spawn_cells
+
+
 def _layout_variant(
-    variant: str,
+    rows: tuple[str, ...], start: tuple[int, int], spawn_cells: tuple[tuple[int, int], ...], variant: str,
 ) -> tuple[tuple[str, ...], tuple[int, int], int, tuple[tuple[int, int], ...]]:
-    width = len(_MAP_ROWS[0])
-    height = len(_MAP_ROWS)
+    width = len(rows[0])
+    height = len(rows)
 
     def transform_cell(cell: tuple[int, int]) -> tuple[int, int]:
         x, y = cell
@@ -95,18 +112,22 @@ def _layout_variant(
         return x, y
 
     if variant == "mirror_x":
-        rows = tuple(row[::-1] for row in _MAP_ROWS)
-        angle_mdeg = 180_000
+        transformed = tuple(row[::-1] for row in rows)
     elif variant == "mirror_y":
-        rows = tuple(reversed(_MAP_ROWS))
-        angle_mdeg = 0
+        transformed = tuple(reversed(rows))
     elif variant == "rotate_180":
-        rows = tuple(row[::-1] for row in reversed(_MAP_ROWS))
-        angle_mdeg = 180_000
+        transformed = tuple(row[::-1] for row in reversed(rows))
     else:
-        rows = _MAP_ROWS
-        angle_mdeg = 0
-    return rows, transform_cell((1, 1)), angle_mdeg, tuple(transform_cell(cell) for cell in _SPAWN_CELLS)
+        transformed = rows
+    transformed_start = transform_cell(start)
+    first_neighbor = next(
+        (candidate for candidate in ((transformed_start[0] + 1, transformed_start[1]), (transformed_start[0], transformed_start[1] + 1), (transformed_start[0] - 1, transformed_start[1]), (transformed_start[0], transformed_start[1] - 1)) if transformed[candidate[1]][candidate[0]] == "."),
+        None,
+    )
+    if first_neighbor is None:
+        raise AssertionError("generated maze start has no corridor")
+    angle_mdeg = _angle_mdeg(transformed_start, first_neighbor)
+    return transformed, transformed_start, angle_mdeg, tuple(transform_cell(cell) for cell in spawn_cells)
 
 
 def _reachable(start: tuple[int, int], open_cells: set[tuple[int, int]]) -> set[tuple[int, int]]:
@@ -172,9 +193,12 @@ def _decoy_traits(target: dict[str, Any], pair_index: int) -> dict[str, Any]:
     elif pair_index == 1:
         mark_index = _MARKS.index(str(target["mark"]))
         decoy["mark"] = _MARKS[(mark_index + 1) % len(_MARKS)]
-    else:
+    elif pair_index == 2:
         horn_index = _HORNS.index(str(target["horn"]))
         decoy["horn"] = _HORNS[(horn_index + 1) % len(_HORNS)]
+    else:
+        stripe_index = _STRIPES.index(str(target["stripe"]))
+        decoy["stripe"] = _STRIPES[(stripe_index + 1) % len(_STRIPES)]
     return decoy
 
 
@@ -300,17 +324,18 @@ def _manifest_digest(rows: tuple[str, ...], initial_pose: dict[str, Any], creatu
 
 def generate(task: dict[str, Any], seed: str) -> tuple[dict[str, Any], dict[str, Any]]:
     rng = random.Random(_seed_int(seed, MECHANIC_ID))
+    base_rows, base_start, base_spawns = _maze_layout(rng)
     layout_variant = rng.choice(("identity", "mirror_x", "mirror_y", "rotate_180"))
-    rows, start_cell, initial_angle, spawn_cells = _layout_variant(layout_variant)
+    rows, start_cell, initial_angle, spawn_cells = _layout_variant(base_rows, base_start, base_spawns, layout_variant)
     open_cells = _open_cells(rows)
     initial_pose = {"x": start_cell[0] + 0.5, "y": start_cell[1] + 0.5, "angle_mdeg": initial_angle}
 
     selected_cells = list(spawn_cells)
     rng.shuffle(selected_cells)
-    selected_cells = selected_cells[:6]
+    selected_cells = selected_cells[: WANTED_COUNT * 2]
     occupied = set(selected_cells)
 
-    wanted_traits = [_traits(rng, index) for index in range(3)]
+    wanted_traits = [_traits(rng, index) for index in range(WANTED_COUNT)]
     # Repair the extremely unlikely possibility that randomized feature choices
     # create identical warrants.
     for index in range(1, len(wanted_traits)):
@@ -321,7 +346,7 @@ def generate(task: dict[str, Any], seed: str) -> tuple[dict[str, Any], dict[str,
     creatures: list[dict[str, Any]] = []
     wanted_ids: list[str] = []
     protected_ids: list[str] = []
-    for pair_index in range(3):
+    for pair_index in range(WANTED_COUNT):
         wanted_id = _creature_id(seed, pair_index * 2)
         protected_id = _creature_id(seed, pair_index * 2 + 1)
         wanted_cell = selected_cells[pair_index * 2]
@@ -385,10 +410,11 @@ def generate(task: dict[str, Any], seed: str) -> tuple[dict[str, Any], dict[str,
         "mechanic_id": MECHANIC_ID,
         "task_id": task_id,
         "challenge_id": challenge_id,
-        "prompt": task.get("natural_language") or "Clear the three warrants. Protected travellers must survive.",
+        "prompt": task.get("natural_language") or "Clear four warrants through the generated maze. Protected travellers must survive.",
         "asset_manifest": "shared_runtime/assets/provenance/incubator_puzzles_v1.json",
-        "generator": {"name": "tiny_fps_customs_v1", "variant_count": 2_500_000_000},
+        "generator": {"name": "procedural_tiny_fps_customs_v2", "variant_count": 10**18},
         "layout_variant": layout_variant,
+        "topology_id": hashlib.sha256("\n".join(rows).encode()).hexdigest()[:12],
         "map": list(rows),
         "initial_pose": initial_pose,
         "player_radius": PLAYER_RADIUS,
@@ -417,12 +443,12 @@ def generate(task: dict[str, Any], seed: str) -> tuple[dict[str, Any], dict[str,
         "solver_plan": solver_plan,
         "protected_test_plan": protected_plan,
         "manifest_digest": digest,
-        "variant_count": 2_500_000_000,
+        "variant_count": 10**18,
     }
 
     assert _reachable(start_cell, open_cells) == open_cells
-    assert len(creatures) == 6
-    assert len(wanted_ids) == len(protected_ids) == 3
+    assert len(creatures) == WANTED_COUNT * 2
+    assert len(wanted_ids) == len(protected_ids) == WANTED_COUNT
     assert not (set(wanted_ids) & set(protected_ids))
     assert all("id" not in poster and "wanted" not in poster for poster in posters)
     assert all(len(segment["route_cells"]) >= 1 for segment in solver_plan)

@@ -261,6 +261,8 @@ function renderObservatory() {
   const fourthPack = catalog.environments.filter((environment) => environment.group === "Interaction IV");
   const fifthPack = catalog.environments.filter((environment) => environment.group === "Interaction V");
   const sixthPack = catalog.environments.filter((environment) => environment.group === "Interaction VI");
+  const seventhPack = catalog.environments.filter((environment) => environment.group === "Interaction VII");
+  const eighthPack = catalog.environments.filter((environment) => environment.group === "Interaction VIII");
   app.innerHTML = `
     <div class="page observatory-page">
       <section class="observatory-hero">
@@ -317,6 +319,16 @@ function renderObservatory() {
       <section class="interaction-pack-collection">
         <div class="section-heading"><div><p class="eyebrow">Collection 06 · Built interaction pack</p><h2>Machines you must inhabit</h2></div><p>Five working embodied tests built from active 3D sensing, volumetric reconstruction, multi-camera teleoperation, deformable physics, and portal coordinate frames.</p></div>
         ${renderRail(sixthPack)}
+      </section>
+
+      <section class="interaction-pack-collection">
+        <div class="section-heading"><div><p class="eyebrow">Collection 07 · Pending human calibration</p><h2>Worlds with momentum</h2></div><p>Five new instruments built around multi-bounce optics, thermally limited airflow, inverse 3D construction, finite-fuel rendezvous, and a room whose gravity frame is the control.</p></div>
+        ${renderRail(seventhPack)}
+      </section>
+
+      <section class="interaction-pack-collection">
+        <div class="section-heading"><div><p class="eyebrow">Collection 08 · Pending human calibration</p><h2>Systems that refuse to wait</h2></div><p>Five new control loops where water levels, rolling trajectories, evaporating fields, live shaft phases, and coupled limbs keep accruing interaction debt.</p></div>
+        ${renderRail(eighthPack)}
       </section>
 
       <section class="principle-band">
@@ -494,7 +506,7 @@ function solutionVideoMarkup(environment) {
       </div>
       <div class="solution-reel-notes">
         <div><small>Operator transcript</small><p>${escapeHtml(video.approach)}</p></div>
-        <dl><div><dt>Evidence set</dt><dd>${escapeHtml(video.evidence_set)}</dd></div><div><dt>Codec</dt><dd>${escapeHtml(String(video.codec || "recorded"))}</dd></div><div><dt>Captured</dt><dd>${escapeHtml(reviewTimestamp(video.generated_at))}</dd></div></dl>
+        <dl><div><dt>Evidence set</dt><dd>${escapeHtml(video.evidence_set)}</dd></div><div><dt>Contract</dt><dd>${video.frozen_contract_verified ? "frozen · unchanged" : "historical capture"}</dd></div><div><dt>Codec</dt><dd>${escapeHtml(String(video.codec || "recorded"))}</dd></div><div><dt>Captured</dt><dd>${escapeHtml(reviewTimestamp(video.generated_at))}</dd></div></dl>
         <a href="${escapeHtml(video.manifest_url)}" target="_blank" rel="noreferrer">OPEN MACHINE MANIFEST ↗</a>
       </div>
     </div>

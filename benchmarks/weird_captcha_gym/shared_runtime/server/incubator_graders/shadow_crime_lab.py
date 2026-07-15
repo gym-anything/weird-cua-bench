@@ -148,6 +148,9 @@ def grade(payload: dict[str, Any], ground_truth: dict[str, Any], public_state: d
     challenge_id = str(ground_truth.get("challenge_id") or "")
     if str(payload.get("mechanic_id") or "") != MECHANIC_ID or str(ground_truth.get("mechanic_id") or "") != MECHANIC_ID:
         return _failure("mechanic mismatch")
+    task_id = str(ground_truth.get("task_id") or "")
+    if not task_id or str(payload.get("task_id") or "") != task_id or str(public_state.get("task_id") or "") != task_id:
+        return _failure("task identity mismatch")
     if not challenge_id or str(payload.get("challenge_id") or "") != challenge_id:
         return _failure("stale challenge")
     if str(public_state.get("challenge_id") or "") != challenge_id or str(public_state.get("mechanic_id") or "") != MECHANIC_ID:
@@ -187,6 +190,7 @@ def grade(payload: dict[str, Any], ground_truth: dict[str, Any], public_state: d
     travel = 0.0
     move_count = 0
     tagged: str | None = None
+    tag_drag: dict[str, Any] | None = None
     resets = 0
     previous_time = -1.0
 
@@ -267,24 +271,42 @@ def grade(payload: dict[str, Any], ground_truth: dict[str, Any], public_state: d
             travel = 0.0
             move_count = 0
             tagged = None
+            tag_drag = None
             resets += 1
             claimed_lamp = _point(event.get("lamp_after"))
             if claimed_lamp is None or not _close(claimed_lamp[0], lamp[0]) or not _close(claimed_lamp[1], lamp[1]):
                 return _failure("scene reset does not restore the manifest lamp")
             continue
-        if action == "tag":
+        if action == "tag_start":
+            if dragging or tag_drag is not None or len(sampled) < int(ground_truth.get("minimum_probe_zones") or 4):
+                return _failure(f"evidence tag {sequence} was lifted before causal probing completed")
+            if event.get("dock") != "evidence_tag":
+                return _failure(f"evidence tag {sequence} did not leave its visible dock")
+            tag_drag = {"moves": 0}
+            continue
+        if action == "tag_move":
             click = _point(event.get("point"))
-            if dragging or click is None or len(sampled) < int(ground_truth.get("minimum_probe_zones") or 4):
-                return _failure(f"shadow tag {sequence} occurred before causal probing completed")
+            if dragging or tag_drag is None or click is None:
+                return _failure(f"evidence tag move {sequence} has no physical drag")
+            tag_drag["moves"] += 1
+            continue
+        if action == "tag_end":
+            click = _point(event.get("point"))
+            if dragging or tag_drag is None or click is None or tag_drag["moves"] < 3 or not (0 <= click[0] <= width and 0 <= click[1] <= height):
+                return _failure(f"shadow tag {sequence} was not physically dragged from its dock")
+            if event.get("move_count") != tag_drag["moves"]:
+                return _failure(f"shadow tag {sequence} move count disagrees with replay")
             hit = _raycast(_polygons(objects, lamp, initial_lamp, area_radius, contract), click[0], click[1])
-            if hit is None or str(event.get("object_id") or "") != hit:
+            claimed = event.get("object_id")
+            if (str(claimed) if claimed is not None else None) != hit:
                 return _failure(f"shadow tag {sequence} violates physical polygon hit testing")
             tagged = hit
+            tag_drag = None
             continue
         return _failure(f"lab event {sequence} has invalid action {action!r}")
 
-    if dragging:
-        return _failure("lamp remained grabbed at submission")
+    if dragging or tag_drag is not None:
+        return _failure("a physical tool remained grabbed at submission")
     expected_state = {
         "lamp_position": _point_dict(lamp),
         "visited_zone_ids": visited,

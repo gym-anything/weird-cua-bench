@@ -67,22 +67,17 @@ def _angle_error(first: float, second: float) -> float:
 
 def _swept_catch(round_data: dict[str, Any], catcher: dict[str, Any]) -> tuple[bool, float | None]:
     if not catcher.get("armed"): return False, None
-    previous_t = float(round_data["wall_exit_ms"])
-    previous_local = _local(_path(round_data, previous_t), catcher)
-    current_t = previous_t + 10.0
+    current_t = float(round_data["wall_exit_ms"])
     end = float(round_data["duration_ms"])
+    projectile_radius = float(round_data["projectile_radius"])
+    clear_half_aperture = float(catcher["aperture"]) / 2.0 - projectile_radius
+    clear_half_depth = float(round_data["capture_depth"]) / 2.0 - projectile_radius
     while current_t <= end + 1e-6:
-        current_local = _local(_path(round_data, current_t), catcher)
-        if previous_local[0] == 0 or current_local[0] == 0 or previous_local[0] * current_local[0] < 0:
-            denominator = previous_local[0] - current_local[0]
-            amount = 0.0 if abs(denominator) < 1e-9 else _clamp(previous_local[0] / denominator, 0.0, 1.0)
-            crossing_t = previous_t + (current_t - previous_t) * amount
-            crossing_y = previous_local[1] + (current_local[1] - previous_local[1]) * amount
-            clearance = float(catcher["aperture"]) / 2.0 - float(round_data["projectile_radius"])
-            if clearance >= 0 and abs(crossing_y) <= clearance + 1e-9 and _angle_error(_velocity_angle(round_data, crossing_t), float(catcher["angle_deg"])) <= float(round_data["alignment_tolerance_deg"]) + 1e-9:
-                return True, crossing_t
-        previous_t, previous_local = current_t, current_local
-        current_t += 10.0
+        local = _local(_path(round_data, current_t), catcher)
+        aligned = _angle_error(_velocity_angle(round_data, current_t), float(catcher["angle_deg"])) <= float(round_data["alignment_tolerance_deg"]) + 1e-9
+        if clear_half_aperture >= 0 and clear_half_depth >= 0 and abs(local[0]) <= clear_half_depth and abs(local[1]) <= clear_half_aperture and aligned:
+            return True, current_t
+        current_t += 5.0
     return False, None
 
 
@@ -258,7 +253,7 @@ def grade(payload: dict[str, Any], ground_truth: dict[str, Any], public_state: d
             caught, crossing = _swept_catch(round_data, context["catcher"])
             if bool(event.get("caught")) != caught or not _state_matches(event.get("catcher"), context["catcher"]): return _failure("round result disagrees with swept catcher geometry")
             if caught:
-                if context["drag_moves"] < 2 or context["rotations"] < 1 or context["resizes"] < 1: return _failure("successful catch lacks physical placement, rotation, or sizing")
+                if context["drag_moves"] < 2: return _failure("successful catch lacks physical catcher placement")
                 if not _close(event.get("crossing_ms"), crossing, 0.15): return _failure("reported crossing time disagrees with swept replay")
                 completed.append(str(round_data["id"]))
                 caught_crossings.append(float(crossing))

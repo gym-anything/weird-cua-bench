@@ -76,23 +76,9 @@ def solve(page, state_dir: Path, out_dir: Path, mechanic: str) -> None:
     truth = _read_json(state_dir / "ground_truth.json")
     target = {key: int(value) for key, value in truth["target_date"].items()}
 
-    # A fast physical day-ring release establishes genuine momentum. Let at least
-    # one timer-driven detent happen before pressing the visible brake.
-    _drag_detents(page, "day", 5, brake_immediately=False)
-    page.wait_for_function(
-        "() => window.thirtyYearTimeWheelModel.coastDetents >= 1 && window.thirtyYearTimeWheelModel.coast !== null",
-        timeout=5000,
-    )
-    _screenshot(page, out_dir, mechanic, "active-coast")
-    page.locator("#time-brake").click()
-    page.wait_for_function(
-        "() => window.thirtyYearTimeWheelModel.qualifyingBrakes >= 1 && window.thirtyYearTimeWheelModel.coast === null",
-        timeout=3000,
-    )
-
     # Month and year changes can clamp the day. Set them first, then recover the
-    # exact day. Every adjustment is another physical angular drag; the brake is
-    # clicked immediately after release so no unobserved coast can corrupt it.
+    # exact day. Every adjustment is a physical angular drag; the visible brake
+    # catches release momentum before it can corrupt the next ring.
     _adjust_to(page, "month", target["month"])
     _adjust_to(page, "year", target["year"])
     _adjust_to(page, "day", target["day"])
@@ -100,13 +86,11 @@ def solve(page, state_dir: Path, out_dir: Path, mechanic: str) -> None:
         """target => ({
           current: {...window.thirtyYearTimeWheelModel.current},
           coverage: [...window.thirtyYearTimeWheelModel.coverage].sort(),
-          coast: window.thirtyYearTimeWheelModel.coastDetents,
-          brakes: window.thirtyYearTimeWheelModel.qualifyingBrakes,
           target,
         })""",
         target,
     )
-    if contract["current"] != target or contract["coverage"] != ["day", "month", "year"] or contract["coast"] < 1 or contract["brakes"] < 1:
+    if contract["current"] != target or contract["coverage"] != ["day", "month", "year"]:
         raise AssertionError(f"time wheel proof is incomplete: {contract}")
     _screenshot(page, out_dir, mechanic, "solved")
     page.locator("#time-lock").click()

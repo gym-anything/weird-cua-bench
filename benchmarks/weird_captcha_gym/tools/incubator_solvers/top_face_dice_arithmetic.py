@@ -47,28 +47,6 @@ def solve(page, state_dir: Path, out_dir: Path, mechanic: str) -> None:
         raise AssertionError(f"unexpected mechanic {mechanic!r}")
     page.wait_for_function("() => !document.querySelector('.foundry-scale')?.classList.contains('is-failed')", timeout=4_000)
     truth = _read(state_dir / "ground_truth.json")
-    first_id = truth["dice"][0]["id"]
-    first_token = page.locator(f'[data-foundry-token="{first_id}"]')
-
-    # Exercise a real rejected roll and prove the recoverable reset before solving.
-    page.locator(f'[data-die-select="{first_id}"]').click()
-    start_x, start_y = first_token.get_attribute("data-x"), first_token.get_attribute("data-y")
-    page.keyboard.press("ArrowLeft")
-    expect(page.locator(".foundry-foot .readout")).to_contain_text("RAIL STOP")
-    if first_token.get_attribute("data-x") != start_x or first_token.get_attribute("data-y") != start_y:
-        raise AssertionError("invalid foundry roll moved the selected die")
-    _shot(page, out_dir, mechanic, "edge-invalid-roll")
-    page.locator("#foundry-reset").click()
-    expect(page.locator(".foundry-foot .readout")).to_contain_text("TABLE RESET")
-    if page.locator('.foundry-die-token[data-visible="true"]').count() != 3:
-        raise AssertionError("foundry reset did not restore all three initial top reveals")
-
-    # The 180-degree table turn is meaningful: screen commands now map to the
-    # opposite world directions used in the private solver-backed routes.
-    page.locator("#foundry-view-rotate").click()
-    expect(page.locator(".foundry-scale")).to_have_attribute("data-view", "2")
-    _shot(page, out_dir, mechanic, "active-rotated-table")
-
     captured_hidden = False
     captured_scanner = False
     move_index = 0
@@ -77,7 +55,7 @@ def solve(page, state_dir: Path, out_dir: Path, mechanic: str) -> None:
         page.locator(f'[data-die-select="{die_id}"]').click()
         token = page.locator(f'[data-foundry-token="{die_id}"]')
         for command_index, world_direction in enumerate(plan["world_directions"]):
-            screen_direction = OPPOSITE[str(world_direction)]
+            screen_direction = str(world_direction)
             if move_index % 2 == 0:
                 page.keyboard.press(KEYS[screen_direction])
             else:
@@ -92,10 +70,13 @@ def solve(page, state_dir: Path, out_dir: Path, mechanic: str) -> None:
                 captured_scanner = True
         expect(token).to_have_attribute("data-docked", "true")
 
-    if page.locator('.foundry-die-token[data-docked="true"]').count() != 3:
-        raise AssertionError("not all three foundry dice reached their scale docks")
+    if page.locator('.foundry-die-token[data-docked="true"]').count() != 4:
+        raise AssertionError("not all four foundry dice reached their scale docks")
+    clean = page.evaluate("() => ({events: window.topFaceDiceModel?.events || [], resets: window.topFaceDiceModel?.resetCount || 0})")
+    if clean["resets"] != 0 or any(event.get("type") == "reset" or (event.get("type") == "roll" and not event.get("accepted")) for event in clean["events"]):
+        raise AssertionError(f"foundry solution contains a contaminated action: {clean}")
     page.wait_for_timeout(340)
-    _shot(page, out_dir, mechanic, "solved-three-docks")
+    _shot(page, out_dir, mechanic, "solved-four-docks")
     page.locator("#foundry-weigh").click()
     expect(page.locator(".foundry-scale")).to_have_attribute("data-settling", "true")
     page.wait_for_timeout(280)

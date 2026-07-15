@@ -43,11 +43,19 @@ def _grade_pressure(round_data: dict[str, Any], events: list[dict[str, Any]]) ->
 
 
 def _grade_chord(round_data: dict[str, Any], events: list[dict[str, Any]]) -> str | None:
-    required = {str(key).upper() for key in round_data.get("keys") or []}
+    chords = [
+        {str(key).upper() for key in chord}
+        for chord in round_data.get("chords") or []
+    ]
+    if len(chords) != 3 or any(len(chord) != 2 for chord in chords):
+        return "magnetic chord contract is malformed"
+    stage = 0
     held: set[str] = set()
     tick_count = 0
-    released: set[str] = set()
     for event in events:
+        if stage >= len(chords) or event.get("chord_index") != stage:
+            return "chord event targets the wrong stage"
+        required = chords[stage]
         action = event.get("action")
         key = str(event.get("key") or "").upper()
         if action == "key_down":
@@ -62,11 +70,15 @@ def _grade_chord(round_data: dict[str, Any], events: list[dict[str, Any]]) -> st
             if key not in held:
                 return "chord key-up sequence is invalid"
             held.remove(key)
-            released.add(key)
+            if not held:
+                if tick_count < int(round_data.get("required_ticks") or 0):
+                    return "magnetic chord was released before it charged"
+                stage += 1
+                tick_count = 0
         else:
             return "chord transcript has an unknown action"
-    if held or released != required or tick_count < int(round_data.get("required_ticks") or 0):
-        return "two-key chord was not held and released completely"
+    if held or stage != len(chords):
+        return "all three magnetic chords were not held and released completely"
     return None
 
 
@@ -121,30 +133,41 @@ def _grade_dial(round_data: dict[str, Any], events: list[dict[str, Any]]) -> str
 
 
 def _grade_intercept(round_data: dict[str, Any], events: list[dict[str, Any]]) -> str | None:
-    if events[0].get("action") != "arm" or events[-1].get("action") != "intercept_click":
-        return "intercept transcript must arm and click"
+    packets = [dict(packet) for packet in round_data.get("packets") or []]
+    if len(packets) != 3 or events[0].get("action") != "arm":
+        return "triple intercept transcript must begin with one arm action"
     position = 8.0
     direction = 1
     tick_count = 0
-    speed = float(round_data["speed"])
-    for event in events[1:-1]:
-        if event.get("action") != "intercept_tick":
-            return "intercept transcript contains a non-tick action"
-        position += speed * direction
-        if position >= 92:
-            position, direction = 92.0, -1
-        elif position <= 8:
-            position, direction = 8.0, 1
-        if not _close(event.get("position"), position) or int(event.get("direction") or 0) != direction:
-            return "moving packet tick disagrees with deterministic track"
-        tick_count += 1
-    click = events[-1]
-    if not _close(click.get("position"), position):
-        return "intercept click position disagrees with the moving packet"
-    if tick_count < 2:
-        return "moving packet was clicked without observation ticks"
-    if abs(position - float(round_data["gate_center"])) > float(round_data["gate_half_width"]):
-        return "moving packet was outside the capture gate"
+    packet_index = 0
+    for event in events[1:]:
+        if packet_index >= len(packets):
+            return "intercept transcript continues after the third packet"
+        packet = packets[packet_index]
+        if event.get("packet_index") != packet_index or event.get("packet_id") != packet.get("id"):
+            return "intercept event targets the wrong moving packet"
+        if event.get("action") == "intercept_tick":
+            position += float(packet["speed"]) * direction
+            if position >= 92:
+                position, direction = 92.0, -1
+            elif position <= 8:
+                position, direction = 8.0, 1
+            if not _close(event.get("position"), position) or int(event.get("direction") or 0) != direction:
+                return "moving packet tick disagrees with deterministic track"
+            tick_count += 1
+        elif event.get("action") == "intercept_click":
+            if not _close(event.get("position"), position):
+                return "intercept click position disagrees with the moving packet"
+            if tick_count < 2:
+                return "moving packet was clicked without observation ticks"
+            if abs(position - float(packet["gate_center"])) > float(packet["gate_half_width"]):
+                return "moving packet was outside its capture gate"
+            packet_index += 1
+            position, direction, tick_count = 8.0, 1, 0
+        else:
+            return "intercept transcript contains an unknown action"
+    if packet_index != len(packets):
+        return "all three packets were not intercepted"
     return None
 
 
@@ -203,6 +226,9 @@ def grade(payload: dict[str, Any], ground_truth: dict[str, Any], public_state: d
         return {"graded": True, "passed": False, "feedback": "stale challenge"}
     if str(public_state.get("challenge_id") or "") != challenge_id:
         return {"graded": True, "passed": False, "feedback": "public-state challenge mismatch"}
+    task_id = str(ground_truth.get("task_id") or "")
+    if not task_id or str(payload.get("task_id") or "") != task_id or str(public_state.get("task_id") or "") != task_id:
+        return {"graded": True, "passed": False, "feedback": "task identity mismatch"}
     rounds = ground_truth.get("rounds")
     records = payload.get("round_records")
     if not isinstance(rounds, list) or not isinstance(records, list) or len(records) != len(rounds) or len(rounds) != 5:

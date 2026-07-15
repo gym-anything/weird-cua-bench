@@ -27,6 +27,13 @@ def main() -> None:
     args = parse_args()
     output = Path(args.out_dir)
     output.mkdir(parents=True, exist_ok=True)
+    review_only_evidence = {
+        "review-queue.png",
+        "environment-review-revision.png",
+        "environment-review-approved.png",
+        "mobile-review-queue.png",
+        "mobile-review-desk.png",
+    }
     for name in (
         "observatory.png",
         "environment-search.png",
@@ -42,6 +49,11 @@ def main() -> None:
         "interaction-five-detail.png",
         "interaction-six-built.png",
         "interaction-six-detail.png",
+        "interaction-seven-built.png",
+        "interaction-seven-detail.png",
+        "interaction-eight-built.png",
+        "interaction-eight-detail.png",
+        "final-eleven-review-dossier.png",
         "roadmap-concepts.png",  # stale pre-promotion captures
         "roadmap-detail.png",
         "interaction-six-roadmap.png",
@@ -60,6 +72,8 @@ def main() -> None:
         "mobile-atlas.png",
         "summary.json",
     ):
+        if not args.exercise_reviews and name in review_only_evidence:
+            continue
         (output / name).unlink(missing_ok=True)
     errors: list[str] = []
 
@@ -69,7 +83,7 @@ def main() -> None:
         page.on("pageerror", lambda exc: errors.append(str(exc)))
         page.goto(args.base_url, wait_until="networkidle")
         expect(page.locator(".display-title")).to_contain_text("screenshot")
-        expect(page.locator("#nav-environment-count")).to_have_text("65")
+        expect(page.locator("#nav-environment-count")).to_have_text("75")
         expect(page.locator('[data-nav="atlas"]')).to_have_count(0)
         expect(page.locator('[data-nav="reviews"]')).to_be_visible()
         expect(page.locator(".specimen-card")).to_have_count(3)
@@ -79,12 +93,12 @@ def main() -> None:
         capture(page, output, "observatory")
 
         if args.exercise_reviews:
-            expect(page.locator("#nav-review-count")).to_have_text("63")
+            expect(page.locator("#nav-review-count")).to_have_text("75")
             page.locator('[data-nav="reviews"]').click()
             expect(page.locator(".reviews-page")).to_be_visible()
-            expect(page.locator(".review-ledger-stamp")).to_contain_text("0 / 63")
-            expect(page.locator(".review-grid .environment-card")).to_have_count(63)
-            expect(page.locator('.review-summary [data-review-filter="pending"] b')).to_have_text("63")
+            expect(page.locator(".review-ledger-stamp")).to_contain_text("0 / 75")
+            expect(page.locator(".review-grid .environment-card")).to_have_count(75)
+            expect(page.locator('.review-summary [data-review-filter="pending"] b')).to_have_text("75")
             capture(page, output, "review-queue")
 
             page.locator("#review-search").fill("domino")
@@ -99,7 +113,7 @@ def main() -> None:
             page.locator('#environment-review-form [type="submit"]').click()
             expect(page.locator("#review-desk")).to_have_attribute("data-review-status", "looks_good")
             expect(page.locator("#detail-review-state")).to_have_text("Looks good · hands-on pending")
-            expect(page.locator("#nav-review-count")).to_have_text("63")
+            expect(page.locator("#nav-review-count")).to_have_text("75")
             page.locator('[data-review-choice="revision_requested"]').click()
             page.locator('#environment-review-form [name="note"]').fill("AUTOMATED UI FIXTURE — exercises revision feedback; this is not a human verdict.")
             page.locator(".detail-page").evaluate("node => { node.dataset.stabilityProbe = 'review-save'; }")
@@ -119,7 +133,7 @@ def main() -> None:
             expect(page.locator("#detail-review-state")).to_have_text("Approved")
             expect(page.locator('[data-action="open-review-desk"]')).to_contain_text("Review · Approved")
             expect(page.locator(".review-history-wrap summary")).to_contain_text("3")
-            expect(page.locator("#nav-review-count")).to_have_text("62")
+            expect(page.locator("#nav-review-count")).to_have_text("74")
             page.locator("#review-desk").evaluate("node => node.scrollIntoView({block: 'start'})")
             page.wait_for_timeout(120)
             capture(page, output, "environment-review-approved", full_page=False)
@@ -139,7 +153,7 @@ def main() -> None:
         page.locator('[data-nav="environments"]').click()
         expect(page.locator("#environment-search")).to_be_visible()
         expect(page.locator("#review-filter")).to_be_visible()
-        expect(page.locator(".environment-card")).to_have_count(63)
+        expect(page.locator(".environment-card")).to_have_count(75)
         expect(page.locator('#stage-filter option[value="concept"]')).to_have_count(0)
         expect(page.locator('#stage-filter option[value="scaffold"]')).to_have_count(0)
         page.locator(".environments-page").evaluate("node => { node.dataset.stabilityProbe = 'catalog'; }")
@@ -191,6 +205,99 @@ def main() -> None:
         expect(solution.locator(".solution-reel video")).to_have_js_property("videoHeight", 720)
         solution.close()
 
+        new_solution = browser.new_page(viewport={"width": 1600, "height": 1000}, device_scale_factor=1)
+        new_solution.on("pageerror", lambda exc: errors.append(f"interaction seven solution video: {exc}"))
+        new_solution.goto(f"{args.base_url}/#/environment/specular_lighthouse_relay_env", wait_until="networkidle")
+        expect(new_solution.locator('[data-solution-video="specular_lighthouse_relay"]')).to_be_visible()
+        expect(new_solution.locator('.solution-reel source[type="video/mp4"]')).to_have_attribute(
+            "src", "/media/evidence/interaction_vii_viii_difficulty_v2/solution_videos/specular_lighthouse_relay-solution.mp4"
+        )
+        new_solution.locator(".solution-reel > summary").click()
+        expect(new_solution.locator(".solution-reel")).to_have_attribute("open", "")
+        new_solution.wait_for_function("document.querySelector('.solution-reel video').readyState >= 1")
+        expect(new_solution.locator(".solution-reel video")).to_have_js_property("videoWidth", 1280)
+        expect(new_solution.locator(".solution-reel video")).to_have_js_property("videoHeight", 720)
+        expect(new_solution.locator(".solution-reel-notes")).to_contain_text("frozen · unchanged")
+        new_solution.close()
+
+        pending_solution = browser.new_page(viewport={"width": 1600, "height": 1000}, device_scale_factor=1)
+        pending_solution.on("pageerror", lambda exc: errors.append(f"pending v3 solution video: {exc}"))
+        pending_solution.goto(f"{args.base_url}/#/environment/impossible_ecology_env", wait_until="networkidle")
+        expect(pending_solution.locator('[data-solution-video="impossible_ecology"]')).to_be_visible()
+        expect(pending_solution.locator('.solution-reel source[type="video/mp4"]')).to_have_attribute(
+            "src", "/media/evidence/pending_next_ten_v3/solution_videos/impossible_ecology-solution.mp4"
+        )
+        expect(pending_solution.locator("#review-desk")).to_have_attribute("data-review-status", "looks_good")
+        pending_solution.locator(".solution-reel > summary").click()
+        expect(pending_solution.locator(".solution-reel")).to_have_attribute("open", "")
+        pending_solution.wait_for_function("document.querySelector('.solution-reel video').readyState >= 1")
+        expect(pending_solution.locator(".solution-reel video")).to_have_js_property("videoWidth", 1280)
+        expect(pending_solution.locator(".solution-reel video")).to_have_js_property("videoHeight", 720)
+        expect(pending_solution.locator(".solution-reel-notes")).to_contain_text("frozen · unchanged")
+        pending_solution.close()
+
+        complete_coverage = browser.new_page(viewport={"width": 1600, "height": 1000}, device_scale_factor=1)
+        complete_coverage.on("pageerror", lambda exc: errors.append(f"complete solution coverage: {exc}"))
+        coverage_samples = (
+            ("domino_autopsy", "foundational_seven_v1"),
+            ("magnetic_stripe_purgatory", "remaining_modular_fourteen_v1"),
+        )
+        for mechanic_id, evidence_set in coverage_samples:
+            complete_coverage.goto(
+                f"{args.base_url}/#/environment/{mechanic_id}_env",
+                wait_until="networkidle",
+            )
+            expect(complete_coverage.locator(f'[data-solution-video="{mechanic_id}"]')).to_be_visible()
+            expect(complete_coverage.locator('.solution-reel source[type="video/mp4"]')).to_have_attribute(
+                "src", f"/media/evidence/{evidence_set}/solution_videos/{mechanic_id}-solution.mp4"
+            )
+            complete_coverage.locator(".solution-reel > summary").click()
+            complete_coverage.wait_for_function(
+                "document.querySelector('.solution-reel video').readyState >= 1"
+            )
+            expect(complete_coverage.locator(".solution-reel video")).to_have_js_property("videoWidth", 1280)
+            expect(complete_coverage.locator(".solution-reel video")).to_have_js_property("videoHeight", 720)
+            expect(complete_coverage.locator(".solution-reel-notes")).to_contain_text("frozen · unchanged")
+        complete_coverage.close()
+
+        final_solution = browser.new_page(viewport={"width": 1600, "height": 1000}, device_scale_factor=1)
+        final_solution.on("pageerror", lambda exc: errors.append(f"final eleven solution video: {exc}"))
+        final_eleven = (
+            ("shadow_crime_lab", "looks_good"),
+            ("trajectory_catcher", "looks_good"),
+            ("jigsaw_slider_alignment", "looks_good"),
+            ("microgame_gauntlet", "looks_good"),
+            ("minecraft_block_grid", "looks_good"),
+            ("relation_prompt_grounding", "looks_good"),
+            ("rorschach_fixed_rubric", "looks_good"),
+            ("single_scene_split_boxes", "looks_good"),
+            ("top_face_dice_arithmetic", "looks_good"),
+            ("trace_shape_without_walls", "looks_good"),
+            ("wizard_critter_capture", "looks_good"),
+        )
+        for index, (mechanic_id, review_status) in enumerate(final_eleven):
+            final_solution.goto(
+                f"{args.base_url}/#/environment/{mechanic_id}_env",
+                wait_until="networkidle",
+            )
+            expect(final_solution.locator(f'[data-solution-video="{mechanic_id}"]')).to_be_visible()
+            expect(final_solution.locator('.solution-reel source[type="video/mp4"]')).to_have_attribute(
+                "src", f"/media/evidence/final_eleven_v1/solution_videos/{mechanic_id}-solution.mp4"
+            )
+            expect(final_solution.locator("#review-desk")).to_have_attribute(
+                "data-review-status", review_status
+            )
+            final_solution.locator(".solution-reel > summary").click()
+            final_solution.wait_for_function(
+                "document.querySelector('.solution-reel video').readyState >= 1"
+            )
+            expect(final_solution.locator(".solution-reel video")).to_have_js_property("videoWidth", 1280)
+            expect(final_solution.locator(".solution-reel video")).to_have_js_property("videoHeight", 720)
+            expect(final_solution.locator(".solution-reel-notes")).to_contain_text("frozen · unchanged")
+            if index == 0:
+                capture(final_solution, output, "final-eleven-review-dossier")
+        final_solution.close()
+
         page.locator('[data-open-eval="domino_autopsy_env"]').first.click()
         expect(page.locator("#eval-form")).to_be_visible()
         expect(page.locator('[name="preview_only"]')).to_be_checked()
@@ -236,7 +343,7 @@ def main() -> None:
         interaction_five.locator('[data-open-env="photograph_eats_the_room_env"] .card-media').click()
         expect(interaction_five.locator(".detail-title")).to_have_text("The Photograph Eats the Room")
         expect(interaction_five.locator(".launch-console")).to_contain_text("WIRING REPLAY PASSED · HUMAN REVIEW PENDING")
-        expect(interaction_five.locator("[data-config-launch]")).to_have_count(2)
+        expect(interaction_five.locator("[data-config-launch]")).to_have_count(1)
         expect(interaction_five.locator(".archive-chip")).to_have_count(0)
         capture(interaction_five, output, "interaction-five-detail")
         interaction_five.close()
@@ -253,10 +360,44 @@ def main() -> None:
         interaction_six.locator('[data-open-env="tomographic_baggage_surgery_env"] .card-media').click()
         expect(interaction_six.locator(".detail-title")).to_have_text("Tomographic Baggage Surgery")
         expect(interaction_six.locator(".launch-console")).to_contain_text("WIRING REPLAY PASSED · HUMAN REVIEW PENDING")
-        expect(interaction_six.locator("[data-config-launch]")).to_have_count(2)
+        expect(interaction_six.locator("[data-config-launch]")).to_have_count(1)
         expect(interaction_six.locator(".archive-chip")).to_have_count(0)
         capture(interaction_six, output, "interaction-six-detail")
         interaction_six.close()
+
+        interaction_seven = browser.new_page(viewport={"width": 1600, "height": 1000}, device_scale_factor=1)
+        interaction_seven.on("pageerror", lambda exc: errors.append(f"interaction seven: {exc}"))
+        interaction_seven.goto(f"{args.base_url}/#/environments", wait_until="networkidle")
+        interaction_seven.locator('[data-filter-group="Interaction VII"]').click()
+        expect(interaction_seven.locator(".environment-card")).to_have_count(5)
+        expect(interaction_seven.locator(".quick-launch")).to_have_count(5)
+        expect(interaction_seven.locator('[data-open-env="specular_lighthouse_relay_env"]')).to_have_count(1)
+        expect(interaction_seven.locator('[data-open-env="gravity_room_freight_env"]')).to_have_count(1)
+        capture(interaction_seven, output, "interaction-seven-built")
+        interaction_seven.locator('[data-open-env="orbital_docking_customs_env"] .card-media').click()
+        expect(interaction_seven.locator(".detail-title")).to_have_text("Orbital Docking Customs")
+        expect(interaction_seven.locator(".launch-console")).to_contain_text("WIRING REPLAY PASSED · HUMAN REVIEW PENDING")
+        expect(interaction_seven.locator("[data-config-launch]")).to_have_count(1)
+        expect(interaction_seven.locator('[data-solution-video="orbital_docking_customs"]')).to_be_visible()
+        capture(interaction_seven, output, "interaction-seven-detail")
+        interaction_seven.close()
+
+        interaction_eight = browser.new_page(viewport={"width": 1600, "height": 1000}, device_scale_factor=1)
+        interaction_eight.on("pageerror", lambda exc: errors.append(f"interaction eight: {exc}"))
+        interaction_eight.goto(f"{args.base_url}/#/environments", wait_until="networkidle")
+        interaction_eight.locator('[data-filter-group="Interaction VIII"]').click()
+        expect(interaction_eight.locator(".environment-card")).to_have_count(5)
+        expect(interaction_eight.locator(".quick-launch")).to_have_count(5)
+        expect(interaction_eight.locator('[data-open-env="floodgate_archive_rescue_env"]')).to_have_count(1)
+        expect(interaction_eight.locator('[data-open-env="marionette_checkpoint_env"]')).to_have_count(1)
+        capture(interaction_eight, output, "interaction-eight-built")
+        interaction_eight.locator('[data-open-env="pheromone_dispatch_env"] .card-media').click()
+        expect(interaction_eight.locator(".detail-title")).to_have_text("Pheromone Dispatch")
+        expect(interaction_eight.locator(".launch-console")).to_contain_text("WIRING REPLAY PASSED · HUMAN REVIEW PENDING")
+        expect(interaction_eight.locator("[data-config-launch]")).to_have_count(1)
+        expect(interaction_eight.locator('[data-solution-video="pheromone_dispatch"]')).to_be_visible()
+        capture(interaction_eight, output, "interaction-eight-detail")
+        interaction_eight.close()
 
         incubator = browser.new_page(viewport={"width": 1600, "height": 1000}, device_scale_factor=1)
         incubator.on("pageerror", lambda exc: errors.append(f"incubator: {exc}"))
@@ -271,7 +412,7 @@ def main() -> None:
         incubator.locator('[data-open-env="insider_trading_captcha_env"] .card-media').click()
         expect(incubator.locator(".detail-title")).to_have_text("Insider Trading CAPTCHA")
         expect(incubator.locator(".launch-console")).to_contain_text("WIRING REPLAY PASSED · HUMAN REVIEW PENDING")
-        expect(incubator.locator("[data-config-launch]")).to_have_count(2)
+        expect(incubator.locator("[data-config-launch]")).to_have_count(1)
         expect(incubator.locator(".roadmap-chip")).to_have_count(0)
         expect(incubator.locator(".detail-page")).to_have_css("opacity", "1")
         capture(incubator, output, "incubator-built-detail")
@@ -291,7 +432,7 @@ def main() -> None:
             mobile_review = browser.new_page(viewport={"width": 390, "height": 844}, device_scale_factor=1)
             mobile_review.on("pageerror", lambda exc: errors.append(f"mobile review: {exc}"))
             mobile_review.goto(f"{args.base_url}/#/reviews", wait_until="networkidle")
-            expect(mobile_review.locator(".review-ledger-stamp")).to_contain_text("1 / 63")
+            expect(mobile_review.locator(".review-ledger-stamp")).to_contain_text("1 / 75")
             expect(mobile_review.locator(".review-filter-tabs")).to_be_visible()
             capture(mobile_review, output, "mobile-review-queue", full_page=False)
             mobile_review.goto(f"{args.base_url}/#/environment/domino_autopsy_env", wait_until="networkidle")
@@ -325,6 +466,11 @@ def main() -> None:
             "screenshot detail gallery",
             "gallery swap without page-level transition",
             "dual-format Semantic Drag-Drop solution playback",
+            "seven foundational frozen-contract solution reels",
+            "fourteen remaining modular frozen-contract solution reels",
+            "ten frozen-contract Interaction VII–VIII solution reels",
+            "ten frozen-contract pending-v3 solution reels with looks-good review state",
+            "eleven frozen-contract final-cohort reels with looks-good review state",
             "safe evaluation command preview",
             "poll-stable evaluation focus",
             "live-session empty state",
@@ -335,6 +481,8 @@ def main() -> None:
             "zero concept and scaffold cards",
             "five launchable Interaction V builds and evidence dossier",
             "five launchable Interaction VI builds and evidence dossier",
+            "five launchable Interaction VII builds and evidence dossier",
+            "five launchable Interaction VIII builds and evidence dossier",
             "twenty-three launchable Incubator builds",
             "Incubator built dossier",
             "responsive navigation",

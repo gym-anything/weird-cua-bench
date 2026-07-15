@@ -81,14 +81,12 @@ def solve(page, state_dir: Path, out_dir: Path, mechanic: str) -> None:
     stage = truth["stage"]
     box = _stage_box(page)
 
-    # Freely map the true corridor and deliberately inspect every false branch.
+    # Map the true corridor with ordinary hover sonar. False echoes remain part
+    # of the scene, but a clean expert solve is not forced to inspect them.
     _probe_path(page, box, stage, truth["main_path"][:32], stride=2)
-    _probe_path(page, box, stage, truth["branches"][0]["points"], stride=2)
     page.wait_for_timeout(90)
     _screenshot(page, out_dir, mechanic, "active-local-sonar")
     _probe_path(page, box, stage, truth["main_path"][30:], stride=2)
-    for branch in truth["branches"][1:]:
-        _probe_path(page, box, stage, branch["points"], stride=2)
 
     page.wait_for_function("() => document.querySelector('.trace-start-beacon')?.dataset.armed === 'true'", timeout=5_000)
     mapped = page.evaluate("""() => ({
@@ -100,22 +98,6 @@ def solve(page, state_dir: Path, out_dir: Path, mechanic: str) -> None:
     requirement = truth["requirements"]
     if mapped["probes"] < requirement["min_probe_samples"] or mapped["cells"] < requirement["min_probe_cells"] or mapped["main"] < requirement["min_main_coverage"] or mapped["branches"] < requirement["min_branch_coverage"]:
         raise AssertionError(f"sonar exploration did not satisfy the mapping contract: {mapped}")
-
-    # Commit once into a hidden wall, verify visible cancellation, and recover without regeneration.
-    start = page.locator(".trace-start-beacon").bounding_box()
-    if not start:
-        raise AssertionError("START beacon is not visible")
-    page.mouse.move(start["x"] + start["width"] / 2, start["y"] + start["height"] / 2)
-    page.mouse.down()
-    start_point = truth["start"]
-    collision_point = [start_point[0] + 50, 42 if start_point[1] > 220 else int(stage["height"]) - 42]
-    page.mouse.move(*_screen_point(box, stage, collision_point), steps=3)
-    page.mouse.up()
-    expect(page.locator(".trace-breach[data-visible='true']")).to_be_visible()
-    expect(page.locator(".readout")).to_contain_text("WALL BREACH")
-    _screenshot(page, out_dir, mechanic, "collision-recovery")
-    page.locator(".trace-rearm").click()
-    expect(page.locator(".readout")).to_contain_text("TRACE RE-ARMED")
 
     # Trace the spline physically while compensating each raw sample for visible deterministic drift.
     start = page.locator(".trace-start-beacon").bounding_box()
@@ -143,7 +125,7 @@ def solve(page, state_dir: Path, out_dir: Path, mechanic: str) -> None:
       rearms: window.blindCorridorModel.rearmCount,
       finalProbe: window.blindCorridorModel.finalProbe,
     })""")
-    if not physical["completed"] or physical["samples"] < requirement["min_trace_samples"] or physical["distance"] < requirement["min_trace_distance"] or physical["collisions"] < 1 or physical["rearms"] < 1 or physical["finalProbe"] != truth["exit"]:
+    if not physical["completed"] or physical["samples"] < requirement["min_trace_samples"] or physical["distance"] < requirement["min_trace_distance"] or physical["collisions"] != 0 or physical["rearms"] != 0 or physical["finalProbe"] != truth["exit"]:
         raise AssertionError(f"blind-corridor physical workflow ended unexpectedly: {physical}")
     _screenshot(page, out_dir, mechanic, "solved-exit-lock")
     page.locator(".trace-submit").click()

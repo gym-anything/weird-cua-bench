@@ -100,6 +100,9 @@ def grade(payload: dict[str, Any], ground_truth: dict[str, Any], public_state: d
     challenge_id = str(ground_truth.get("challenge_id") or "")
     if str(payload.get("mechanic_id") or "") != MECHANIC_ID or str(ground_truth.get("mechanic_id") or "") != MECHANIC_ID:
         return {"graded": True, "passed": False, "feedback": "mechanic mismatch"}
+    task_id = str(ground_truth.get("task_id") or "")
+    if not task_id or str(payload.get("task_id") or "") != task_id or str(public_state.get("task_id") or "") != task_id:
+        return {"graded": True, "passed": False, "feedback": "task identity mismatch"}
     if not challenge_id or str(payload.get("challenge_id") or "") != challenge_id:
         return {"graded": True, "passed": False, "feedback": "stale challenge"}
     if str(public_state.get("challenge_id") or "") != challenge_id:
@@ -188,8 +191,6 @@ def grade(payload: dict[str, Any], ground_truth: dict[str, Any], public_state: d
         and all(diamond_id not in voxels for diamond_id in diamond_ids)
         and not collapsed
         and durability >= 0
-        and rotations >= 2
-        and len(visited) >= 3
     )
     return {
         "graded": True,

@@ -82,21 +82,6 @@ def solve(page, state_dir: Path, out_dir: Path, mechanic: str) -> None:
     truth = _read_json(state_dir / "ground_truth.json")
     stage = truth["stage"]
 
-    # Exercise a real cancelled carry and recover through the visible reset control.
-    first_id = truth["objects"][0]["id"]
-    first = page.locator(f'.rel-object[data-object-id="{first_id}"]')
-    box = first.bounding_box()
-    carousel_target = _stage_target(page, 185, 405, int(stage["width"]), int(stage["height"]))
-    if not box:
-        raise AssertionError("carousel object is not visible for recovery check")
-    page.mouse.move(box["x"] + box["width"] / 2, box["y"] + box["height"] / 2)
-    page.mouse.down()
-    page.mouse.move(carousel_target[0], carousel_target[1], steps=4)
-    page.mouse.up()
-    expect(page.locator(".readout")).to_contain_text("DROP CANCELLED")
-    page.locator(".rel-reset").click()
-    expect(page.locator(".readout")).to_contain_text("ASSEMBLY RESET")
-
     solutions = truth["solution_positions"]
     # The frame goes down before any object that may need to sit inside it.
     ordered_ids = [item["id"] for item in truth["objects"] if item.get("container")]
@@ -116,7 +101,7 @@ def solve(page, state_dir: Path, out_dir: Path, mechanic: str) -> None:
       depthDistance: window.relationAssemblyModel.depthDistance,
       resetCount: window.relationAssemblyModel.resetCount,
     })""")
-    if physical["drags"] < 5 or physical["dragSamples"] < 15 or physical["depthSamples"] < 4 or physical["depthDistance"] < 45 or physical["resetCount"] < 1:
+    if physical["drags"] != 5 or physical["dragSamples"] < 15 or physical["depthSamples"] < 10 or physical["depthDistance"] < 80 or physical["resetCount"] != 0:
         raise AssertionError(f"relation workflow lacked required physical evidence: {physical}")
 
     page.locator(".rel-settle").click()
@@ -124,6 +109,6 @@ def solve(page, state_dir: Path, out_dir: Path, mechanic: str) -> None:
     _screenshot(page, out_dir, mechanic, "active-settle-inspection")
     page.wait_for_function("() => window.relationAssemblyModel.settled === true", timeout=5_000)
     expect(page.locator(".rel-stage.is-settled")).to_be_visible()
-    _screenshot(page, out_dir, mechanic, "solved-stable-graph")
+    _screenshot(page, out_dir, mechanic, "solved-dual-projection")
     page.locator(".rel-submit").click()
     expect(page.locator(".readout")).to_have_text("PASS", timeout=8_000)

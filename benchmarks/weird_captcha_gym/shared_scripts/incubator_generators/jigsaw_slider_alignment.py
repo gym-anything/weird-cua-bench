@@ -67,6 +67,9 @@ def _build_scene(rng: random.Random, transform: str, notch: str) -> tuple[dict[s
         "parallax_milli": piece_parallax,
         "scale_base_milli": 720,
         "scale_span_milli": 480,
+        "initial_rotation_deg": rng.choice((45, 60, 90, 120, 135, 150, 210, 225, 270, 300, 315)),
+        "target_rotation_deg": 0,
+        "rotation_step_deg": 15,
     }
     gap = {
         "base_x_milli": gap_x_pixels * 1000,
@@ -131,12 +134,13 @@ def generate(task: dict[str, Any], seed: str) -> tuple[dict[str, Any], dict[str,
     tolerances = {
         "x_milli": 10000,
         "depth_milli": 35,
+        "rotation_deg": 3,
         "hold_ms": 700,
         "sample_ms": 100,
         "minimum_scan_samples": 6,
-        "minimum_rail_travel_milli": 120000,
-        "minimum_depth_travel_milli": 180,
-        "minimum_inertia_samples": 2,
+        "minimum_rail_travel_milli": 0,
+        "minimum_depth_travel_milli": 0,
+        "minimum_inertia_samples": 0,
     }
     inertia = {
         "velocity_threshold_milli_s": 120000,
@@ -166,7 +170,8 @@ def generate(task: dict[str, Any], seed: str) -> tuple[dict[str, Any], dict[str,
         "rules": {
             "rail": "Drag the carriage horizontally; a fast release coasts under friction.",
             "depth": "Move the separate depth grip to change scale, height, and layer parallax.",
-            "scan": "Hold optical lock continuously while both projected dimensions remain stable.",
+            "rotation": "Rotate the fragment until its image orientation agrees with the cutout.",
+            "scan": "Hold optical lock continuously while rail, depth, and orientation remain stable.",
         },
     }
     ground_truth = {

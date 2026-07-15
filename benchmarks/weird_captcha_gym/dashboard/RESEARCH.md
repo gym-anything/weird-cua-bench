@@ -27,7 +27,7 @@ These reinforced two choices: preserve the benchmark's actual runtime path, and 
 
 1. **A screenshot is evidence, not the task.** The visual system repeatedly states the benchmark's interaction-first thesis while still making screenshots useful for discovery.
 2. **One catalog object powers every surface.** Environment folders, task metadata, screenshots, verifier evidence, VNC launch, and evaluation commands are joined by the same environment ID.
-3. **Built and rejected work remain visibly different.** The final catalog contains 65 real folders: 63 built designs and 2 rejected pilots, with zero concept or scaffold cards. Forty-three formerly queued or selected Incubator/Pack III–VI mechanics became built only after real folders, verifiers, browser evidence, and launch contracts existed.
+3. **Rejection history is preserved without freezing bad implementations in the product.** The current catalog contains 75 built designs with zero rejected, concept, or scaffold cards. Forty-three formerly queued mechanics, ten Interaction VII–VIII mechanics, and two fully replaced pilots became built only after real folders, verifiers, browser evidence, and launch contracts existed.
 4. **Launching means launching the real environment.** One-click VNC calls Gym-Anything, waits for its published session information, and exposes teardown/logging; there is no simulated success state.
 5. **Evaluation is safe by default.** The evaluation form creates an argument-validated command preview unless the operator explicitly disables preview mode.
 6. **The visual language should feel like a field station.** The design uses an editorial/scientific observatory metaphor, evidence filmstrips, specimen numbering, and restrained acid color rather than generic SaaS analytics cards.
@@ -38,11 +38,11 @@ These reinforced two choices: preserve the benchmark's actual runtime path, and 
 10. **Large corpora require progressive disclosure.** Atlas cards carry representative evidence, concrete instances are server-paginated, item dossiers resolve only the relevant files, and source dossiers paginate the complete archive. This keeps the 3.6 GB benchmark corpora inspectable without sending thousands of records to the browser at once.
 11. **Counts must describe their unit.** Designs, source implementations, challenge records, and raw visual assets are different things. A nine-cell option grid is one challenge with nine assets—not nine CAPTCHAs—and an advertised source count is not expanded unless individual records are locally enumerated.
 12. **Render geometry is an interaction contract, not a secret.** A spatial browser must receive enough geometry to draw, hit-test, and collide honestly. Hidden routes and answers stay server-side; the grader independently replays primitive actions against its own geometry. This is a screenshot/action boundary, not protection against page-state or network inspection.
-13. **Script verification is not human evidence.** All 63 built designs have local browser/server/exported-verifier evidence, while direct VNC calibration remains incomplete for many and the `verified` split stays empty. No specific VNC viewer is treated as proof of usability.
+13. **Script verification is not human evidence.** All 75 built designs have local browser/server/exported-verifier evidence, while direct VNC calibration remains incomplete for many and the `verified` split stays empty. No specific VNC viewer is treated as proof of usability.
 
 ## Shipped research layer
 
-The environment hub now indexes 63 evidence-backed builds and 2 rejected archive pilots. Interaction V and VI are represented by the complete batch-eight and batch-nine evidence summaries rather than roadmap placeholders. The shared dashboard deliberately omits the upstream survey and instead preserves the complete implemented catalog, evidence-rich dossiers, solution films, persistent human reviews, direct localhost browser play, isolated VNC sessions, and evaluation controls.
+The environment hub now indexes 75 evidence-backed builds. Interaction V–IX are represented by complete canonical evidence summaries rather than roadmap or archive placeholders. The shared dashboard deliberately omits the upstream survey and instead preserves the complete implemented catalog, evidence-rich dossiers, solution films, persistent human reviews, direct localhost browser play, isolated VNC sessions, and evaluation controls.
 
 ## Intended next layer
 

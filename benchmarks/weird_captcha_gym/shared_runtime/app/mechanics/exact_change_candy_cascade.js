@@ -340,7 +340,8 @@
       await sleep(700);
       await submit(false);
     } else {
-      flashMessage(`MOVE ${model.validMoves} PAID +${moveScore} · ONE SWAP LEFT`, "idle");
+      const remaining = Number(model.state.move_budget) - model.validMoves;
+      flashMessage(`MOVE ${model.validMoves} PAID +${moveScore} · ${remaining} VALID SWAP${remaining === 1 ? "" : "S"} LEFT`, "idle");
     }
   }
 

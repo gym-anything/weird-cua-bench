@@ -67,34 +67,25 @@ def solve(page, state_dir: Path, out_dir: Path, mechanic: str) -> None:
         raise AssertionError(f"unexpected mechanic {mechanic!r}")
     truth = _read_json(state_dir / "ground_truth.json")
 
-    # Prove a contaminated, out-of-order run can be recovered using the visible reset.
-    wrong_tool = next(tool for tool in ("COOL", "PRESSURE", "FOLD") if tool != truth["protocol"][0])
-    if wrong_tool == "COOL":
-        page.locator(".ink-cool").click()
-    elif wrong_tool == "PRESSURE":
-        page.locator(".ink-pressure").click()
-    else:
-        track = page.locator(".ink-fold-track").bounding_box()
-        if not track:
-            raise AssertionError("fold tool is not visible for recovery check")
-        page.mouse.click(track["x"] + 2, track["y"] + track["height"] / 2)
-    expect(page.locator(".readout")).to_contain_text("CONTAMINATED")
-    page.locator(".ink-reset").click()
-    expect(page.locator(".readout")).to_contain_text("MATERIAL RUN RESET")
-
-    for index, tool in enumerate(truth["protocol"]):
-        if tool == "FOLD":
-            _fold(page)
-        elif tool == "PRESSURE":
-            _pressure(page, int(truth["pressure_min_ms"]) + 110)
-        elif tool == "COOL":
-            page.locator(".ink-cool").click()
-        else:
-            raise AssertionError(f"unknown material tool {tool!r}")
-        if index == 0:
-            page.wait_for_timeout(310)
-            _screenshot(page, out_dir, mechanic, "active-transient-response")
-        page.wait_for_function("expected => window.inkblotMaterialModel.progress === expected", arg=index + 1, timeout=5_000)
+    probe_index = 0
+    for blot in truth["blot_rects"]:
+        blot_id = blot["id"]
+        page.locator(f'.ink-card[data-blot-id="{blot_id}"]').click()
+        for tool in truth["required_tools"]:
+            if tool == "FOLD":
+                _fold(page)
+            elif tool == "PRESSURE":
+                _pressure(page, int(truth["pressure_min_ms"]) + 110)
+            elif tool == "COOL":
+                page.locator(".ink-cool").click()
+            else:
+                raise AssertionError(f"unknown material tool {tool!r}")
+            probe_index += 1
+            if probe_index in {3, 7}:
+                page.wait_for_timeout(310)
+                _screenshot(page, out_dir, mechanic, f"active-specimen-response-{probe_index}")
+            key = f"{blot_id}|{tool}"
+            page.wait_for_function("key => window.inkblotMaterialModel.observations.has(key)", arg=key, timeout=5_000)
 
     expect(page.locator(".ink-stamp[data-ready='true']")).to_be_visible()
     stamp = page.locator(".ink-stamp").bounding_box()
@@ -107,7 +98,7 @@ def solve(page, state_dir: Path, out_dir: Path, mechanic: str) -> None:
     page.mouse.up()
     expect(page.locator(f'.ink-blot[data-blot-id="{truth["culprit_id"]}"].is-stamped')).to_be_visible()
     physical = page.evaluate("""() => ({
-      progress: window.inkblotMaterialModel.progress,
+      observations: window.inkblotMaterialModel.observations.size,
       ticks: window.inkblotMaterialModel.tickTotal,
       foldSamples: window.inkblotMaterialModel.foldSamples,
       pressureHolds: window.inkblotMaterialModel.pressureHolds,
@@ -116,9 +107,13 @@ def solve(page, state_dir: Path, out_dir: Path, mechanic: str) -> None:
       stamped: window.inkblotMaterialModel.stampedId,
       resets: window.inkblotMaterialModel.resetCount,
     })""")
-    expected_ticks = 3 * int(truth["ticks_per_cycle"])
-    if physical["progress"] != 3 or physical["ticks"] != expected_ticks or physical["foldSamples"] < 3 or physical["pressureHolds"] != 1 or physical["thermalPulses"] != 1 or physical["stampMoves"] < 3 or physical["stamped"] != truth["culprit_id"] or physical["resets"] < 1:
+    expected_observations = int(truth["observations_required"])
+    expected_ticks = expected_observations * int(truth["ticks_per_cycle"])
+    expected_fold = 5 if "FOLD" in truth["required_tools"] else 0
+    expected_pressure = 5 if "PRESSURE" in truth["required_tools"] else 0
+    expected_cool = 5 if "COOL" in truth["required_tools"] else 0
+    if physical["observations"] != expected_observations or physical["ticks"] != expected_ticks or physical["foldSamples"] < expected_fold * 3 or physical["pressureHolds"] != expected_pressure or physical["thermalPulses"] != expected_cool or physical["stampMoves"] < 3 or physical["stamped"] != truth["culprit_id"] or physical["resets"] != 0:
         raise AssertionError(f"material workflow lacked required physical evidence: {physical}")
-    _screenshot(page, out_dir, mechanic, "solved-material-stamp")
+    _screenshot(page, out_dir, mechanic, "solved-specimen-matrix")
     page.locator(".ink-submit").click()
     expect(page.locator(".readout")).to_have_text("PASS", timeout=8_000)

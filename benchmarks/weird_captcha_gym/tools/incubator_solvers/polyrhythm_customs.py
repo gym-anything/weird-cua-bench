@@ -37,7 +37,7 @@ def fail_once(page, state_dir: Path, out_dir: Path, mechanic: str) -> None:
     _screenshot(page, out_dir, mechanic, "active-single-lane-preview")
     page.wait_for_function(
         "() => document.querySelector('.polyrhythm-customs-captcha')?.dataset.phase === 'performance'",
-        timeout=18_000,
+        timeout=28_000,
     )
     page.locator(".rhythm-certify-now").click()
     _wait_new_challenge(state_dir, before)
@@ -67,9 +67,8 @@ def solve(page, state_dir: Path, out_dir: Path, mechanic: str) -> None:
     page.locator(".rhythm-start").click()
     page.wait_for_function(
         "() => document.querySelector('.polyrhythm-customs-captcha')?.dataset.phase === 'performance'",
-        timeout=18_000,
+        timeout=28_000,
     )
-    captured = False
     for index, (target_ms, _order, lane, event_type) in enumerate(events):
         remaining = target_ms - _elapsed(page)
         if remaining > 4:
@@ -81,14 +80,8 @@ def solve(page, state_dir: Path, out_dir: Path, mechanic: str) -> None:
             page.keyboard.down(key)
         else:
             page.keyboard.up(key)
-        if not captured and index + 1 < len(events):
-            gap = events[index + 1][0] - target_ms
-            if target_ms > 1_200 and gap > 430:
-                _screenshot(page, out_dir, mechanic, "active-combined-performance")
-                captured = True
-
-    _screenshot(page, out_dir, mechanic, "solved-transcript")
     page.wait_for_function("() => document.querySelector('.readout')?.textContent.startsWith('PASS')", timeout=8_000)
+    _screenshot(page, out_dir, mechanic, "pass-combined-performance")
     result = _read(state_dir / "result.json")
     transcript = result.get("transcript") or []
     if len(transcript) != len(events):

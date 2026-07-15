@@ -127,7 +127,7 @@ def main() -> None:
                 page = browser.new_page(viewport={"width": 1600, "height": 1000}, device_scale_factor=1)
                 page.on("pageerror", lambda exc: errors.append(str(exc)))
                 page.goto(static_url, wait_until="networkidle")
-                expect(page.locator("#nav-environment-count")).to_have_text("65")
+                expect(page.locator("#nav-environment-count")).to_have_text("75")
                 expect(page.locator('[data-nav="atlas"]')).to_have_count(0)
                 expect(page.locator(".companion-status")).to_have_attribute("data-connection", "optional")
 
@@ -139,6 +139,21 @@ def main() -> None:
                 page.screenshot(path=str(output / "shared-dashboard-local-setup.png"), full_page=True)
                 page.locator(".modal-close").click()
 
+                page.goto(
+                    f"{static_url}/#/environment/bureaucratic_signature_trap_env",
+                    wait_until="networkidle",
+                )
+                expect(page.locator(".detail-title")).to_have_text("Bureaucratic Signature Trap")
+                page.locator(".solution-reel > summary").click()
+                page.wait_for_function(
+                    "document.querySelector('.solution-reel video').readyState >= 1"
+                )
+                solution_video = page.locator(".solution-reel video")
+                expect(solution_video).to_have_js_property("videoWidth", 1280)
+                expect(solution_video).to_have_js_property("videoHeight", 720)
+                if float(solution_video.evaluate("video => video.duration")) <= 7:
+                    raise AssertionError("exported pending-cohort solution film is unexpectedly short")
+
                 page.goto(f"{static_url}/#pair={token}", wait_until="networkidle")
                 page.reload(wait_until="networkidle")  # Model the fresh tab opened by the launcher.
                 expect(page.locator(".companion-status")).to_have_attribute("data-connection", "connected")
@@ -147,6 +162,16 @@ def main() -> None:
 
                 page.goto(f"{static_url}/#/environment/domino_autopsy_env", wait_until="networkidle")
                 expect(page.locator(".detail-title")).to_have_text("Domino Autopsy")
+                page.locator(".solution-reel > summary").click()
+                domino_solution = page.locator(".solution-reel video")
+                page.wait_for_function(
+                    "document.querySelector('.solution-reel video').readyState >= 1"
+                )
+                expect(domino_solution).to_have_js_property("videoWidth", 1280)
+                expect(domino_solution).to_have_js_property("videoHeight", 720)
+                domino_mp4 = domino_solution.locator('source[type="video/mp4"]')
+                if "foundational_seven_v1" not in str(domino_mp4.get_attribute("src")):
+                    raise AssertionError("Domino dossier did not load the new foundational solution film")
                 page.locator('[data-config-launch="domino_autopsy_env"]').first.click()
                 expect(page.locator("#launch-mode")).to_have_value("browser")
                 page.locator('#launch-form input[name="auto_open"]').evaluate("node => { node.checked = false; }")
@@ -177,6 +202,8 @@ def main() -> None:
                     "survey_included": manifest["survey_included"],
                     "deployment_path": "/weird-cua-bench/",
                     "paired": True,
+                    "pending_solution_video_loaded": True,
+                    "foundational_solution_video_loaded": True,
                     "local_browser_url": browser_url,
                     "session_stopped": True,
                     "page_errors": errors,

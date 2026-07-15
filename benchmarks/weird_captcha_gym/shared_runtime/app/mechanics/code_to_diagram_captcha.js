@@ -97,7 +97,7 @@
       });
     });
     const count = document.getElementById("flow-wire-count");
-    if (count) count.textContent = `${String(wires.length).padStart(2, "0")} / 06`;
+    if (count) count.textContent = `${String(wires.length).padStart(2, "0")} / ${String(model.edgeCount).padStart(2, "0")}`;
   }
 
   function connectWire(fromPort, label, toNode) {
@@ -150,9 +150,9 @@
     const nodes = model.coverage.size;
     const probeCount = document.getElementById("flow-probe-count");
     const coverage = document.getElementById("flow-coverage-count");
-    if (probeCount) probeCount.textContent = `${probes} / 3`;
-    if (coverage) coverage.textContent = `${nodes} / 6`;
-    const ready = probes === 3 && nodes === 6 && model.wires.size === 6;
+    if (probeCount) probeCount.textContent = `${probes} / ${model.probeCount}`;
+    if (coverage) coverage.textContent = `${nodes} / ${model.nodes.size}`;
+    const ready = probes === model.probeCount && nodes === model.nodes.size && model.wires.size === model.edgeCount;
     const button = document.getElementById("flow-certify");
     if (button) button.dataset.ready = ready ? "true" : "false";
     if (ready && !model.submitting && !model.terminal) helpersCache.setReadout("HARNESS POPULATED · READY TO VALIDATE", "idle");
@@ -238,6 +238,7 @@
     const payload = {
       mechanic_id: model.state.mechanic_id,
       challenge_id: model.state.challenge_id,
+      task_id: model.state.task_id,
       probe_runs: model.probeRuns,
       wire_events: model.wireEvents,
       final_wires: normalizedWires(),
@@ -305,6 +306,8 @@
       traceSequence: 0,
       wires: new Map(),
       wireEvents: [],
+      probeCount: Number(state.required_probe_count || (state.probe_inputs || []).length),
+      edgeCount: Number(state.expected_edge_count || 0),
       drag: null,
       submitting: false,
       terminal: false,
@@ -318,13 +321,13 @@
         <aside class="flow-debugger">
           <div class="flow-panel-title"><span>01 / PROBE THE PROGRAM</span><i>REQUIRED</i></div>
           <ol class="flow-code-list">${(state.nodes || []).map((node) => `<li><b>${esc(node.id)}</b><code>${esc(node.code)}</code></li>`).join("")}</ol>
-          <div class="flow-probe-picker">${(state.probe_inputs || []).map((value, index) => `<button type="button" data-probe-index="${index}" data-status="waiting"><span>PROBE</span><b>${Number(value) >= 0 ? "+" : ""}${Number(value)}</b></button>`).join("")}</div>
+          <div class="flow-probe-picker" style="--probe-count:${Math.max(1, (state.probe_inputs || []).length)}">${(state.probe_inputs || []).map((value, index) => `<button type="button" data-probe-index="${index}" data-status="waiting"><span>PROBE</span><b>${Number(value) >= 0 ? "+" : ""}${Number(value)}</b></button>`).join("")}</div>
           <button class="flow-step" id="flow-step" type="button" disabled><span>STEP DEBUGGER</span><b>→</b></button>
           <div class="flow-current" id="flow-current-state"><span>TRANSIENT REGISTER</span><b>SELECT A PROBE</b></div>
           <ol class="flow-probe-tape" id="flow-probe-tape"><li class="is-empty">NO TRANSIENT TRACE CAPTURED</li></ol>
         </aside>
         <section class="flow-rig">
-          <div class="flow-rig-head"><div><span>02 / PATCH THE DIRECTED GRAPH</span><b>DRAG OUTPUT PORT → NODE INPUT</b></div><div><span>PROBES <b id="flow-probe-count">0 / 3</b></span><span>NODES <b id="flow-coverage-count">0 / 6</b></span><span>WIRES <b id="flow-wire-count">00 / 06</b></span></div></div>
+          <div class="flow-rig-head"><div><span>02 / PATCH THE DIRECTED GRAPH</span><b>DRAG OUTPUT PORT → NODE INPUT</b></div><div><span>PROBES <b id="flow-probe-count">0 / ${Number(state.required_probe_count || 0)}</b></span><span>NODES <b id="flow-coverage-count">0 / ${(state.nodes || []).length}</b></span><span>WIRES <b id="flow-wire-count">00 / ${String(Number(state.expected_edge_count || 0)).padStart(2, "0")}</b></span></div></div>
           <div class="flow-canvas" aria-label="control-flow wiring board">
             <svg id="flow-wire-svg" aria-hidden="true"></svg>
             ${(state.nodes || []).map(nodeMarkup).join("")}

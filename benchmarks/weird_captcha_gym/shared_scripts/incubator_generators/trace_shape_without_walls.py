@@ -117,7 +117,9 @@ def generate(task: dict[str, Any], seed: str) -> tuple[dict[str, Any], dict[str,
         "min_probe_samples": 24,
         "min_probe_cells": 14,
         "min_main_coverage": min(58, round(len(main_path) * 0.62)),
-        "min_branch_coverage": min(3, branch_count),
+        # False echoes are discoverable and useful, but exploring them is not a
+        # ceremonial pass quota once the real corridor has been mapped.
+        "min_branch_coverage": 0,
         "min_trace_samples": max(62, round(len(main_path) * 0.78)),
         "min_trace_distance": round(path_length * 0.83),
         "min_trace_ms": 620,

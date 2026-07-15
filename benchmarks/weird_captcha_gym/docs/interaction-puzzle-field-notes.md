@@ -59,7 +59,7 @@ The original Weird CAPTCHA Gym surface had 25 environment families:
 - 2 rejected infrastructure pilots;
 - 0 tasks on the verified evaluation surface.
 
-The completed tree now contains 65 real environment folders: 63 built/prototype designs, 0 scaffolds, 0 concept-only records, and 2 rejected pilots. Forty-three formerly queued or selected Incubator/Pack III–VI mechanics were promoted only after implementation and evidence. They live inside the existing benchmark contract rather than as standalone demos:
+The completed tree now contains 75 real environment folders: 75 built/prototype designs, 0 scaffolds, 0 concept-only records, and 0 live rejected records. Forty-three formerly queued or selected Incubator/Pack III–VI mechanics, ten Interaction VII–VIII mechanics, and two complete replacements for the historical rejected pilots were promoted only after implementation and evidence. They live inside the existing benchmark contract rather than as standalone demos:
 
 ```text
 task metadata
@@ -182,10 +182,10 @@ Automated evidence is in [incubator_batch_two_v1](../evidence/incubator_batch_tw
 | Mechanic | Interaction stressor | Implemented contract | Review lesson |
 |---|---|---|---|
 | Insider Trading CAPTCHA | Live observation, delayed action consequences, inventory management, and closing a position under time pressure. | A nonperiodic 34–38 tick regime tape settles every order three ticks later, charges a fixed fee, enforces a four-lot limit, and admits only causal-policy-solvable targets of at least 1,100¢. | The ledger must be exactly replayable. Future prices are not rendered before their ticks, but the current static plugin seam still places them in browser state; see the boundary below. |
-| Polyrhythm Customs | One-at-a-time temporal inspection, working memory, chord timing, and real key holds/releases. | Three A/S/D lanes are previewed separately and then hidden for one combined performance containing taps, a hold, and a chord with humane timing tolerances. | A timing puzzle should verify keydown and keyup duration, tolerate VNC-scale latency, and avoid confusing audio transport with authoritative state. |
-| Exact-Change Candy Cascade | Causal simulation, two-step planning, deterministic cascades, and exact-score control. | A real 5×5 adjacent-swap match-three engine performs simultaneous removal, gravity/refill, wave multipliers, and exactly two swaps; moving black licorice is immediately terminal. | The generator searches solver-audited boards with a two-swap target and a multi-wave cascade. Invalid swaps restore the board, and retry must clear stale FAIL state. |
-| Tiny FPS Customs | Active 3D navigation, visual identity matching, collision-aware aiming, and irreversible protected-target avoidance. | A ray-cast maze has real circle-wall collision and nearest-unobstructed ray hits; three warrants must be shot while three close visual decoys survive. | A fixed maze would leak a reusable action script. Four seeded transforms—identity, both mirrors, and 180° rotation—are now required and centrally tested. |
-| Thirty-Year Time Wheel | Angular dragging, calendar arithmetic, release velocity, inertia, braking, and coordinated multi-ring state. | Three concentric rings control day/month/year with real month lengths, leap years, clamping, detents, decaying momentum, an effective brake, and an exact final lock. | The grader requires all three rings, at least one coast detent, and a brake that actually catches motion. Static value assignment is not a physical solve. |
+| Polyrhythm Customs | One-at-a-time temporal inspection, working memory, chord timing, and real key holds/releases. | Four A/S/D/F lanes are previewed separately and then hidden for one 18–22 note combined performance containing two holds and two chords with humane timing tolerances. | Increase temporal composition, not latency pressure. A timing puzzle should verify keydown/keyup duration and avoid confusing optional audio transport with authoritative state. |
+| Exact-Change Candy Cascade | Causal simulation, changing multi-step planning, deterministic cascades, and exact-score control. | A real 5×5 adjacent-swap engine enumerates four-swap routes over evolving boards, with simultaneous removal, gravity/refill, wave multipliers, and terminal licorice contact. | Two swaps were tutorial scale. Four outcome-dependent decisions create natural depth while invalid swaps still restore the board and retry clears stale FAIL state. |
+| Tiny FPS Customs | Active 3D navigation, visual identity matching, collision-aware aiming, and irreversible protected-target avoidance. | A fresh connected perfect-maze topology is generated per seed; real circle-wall collision and nearest-unobstructed ray hits govern four warrants and four close protected decoys. | Mirroring one fixed maze still leaks a reusable route. Structural variation must change connectivity itself, not only challenge IDs or transforms. |
+| Thirty-Year Time Wheel | Angular dragging, calendar arithmetic, release velocity, inertia, braking, and coordinated multi-ring state. | Three concentric rings control day/month/year with real month lengths, leap years, clamping, detents, decaying momentum, an effective brake, and an exact stopped lock. | Coast and braking remain physical consequences, but requiring a ceremonial coast/brake demonstration was artificial. Grade the date, necessary ring use, and stopped state. |
 
 ### Incubator batch verification lessons
 
@@ -488,7 +488,7 @@ Examples from this execution:
 
 The user explicitly superseded the earlier companion-only launch boundary. The durable split is now:
 
-- publish the built catalog, dashboard media, all 63 puzzle interfaces, four generated attempts per environment, and their exact Python graders as static files;
+- publish the built catalog, dashboard media, all 75 puzzle interfaces, four generated attempts per environment, and their exact Python graders as static files;
 - make ordinary **Try in browser** launch entirely inside the collaborator's current browser—no clone, terminal, pairing, localhost request, VNC, or hosted application server;
 - execute those graders in a dedicated pinned Pyodide/WebAssembly worker, rotate to another bundled challenge after failure, and preserve the existing puzzle interaction/difficulty rather than introducing demo variants;
 - label this path as exploration rather than authoritative evaluation, because any fully static artifact necessarily exposes bundled ground truth to developer tools;
@@ -498,6 +498,218 @@ The user explicitly superseded the earlier companion-only launch boundary. The d
 - test both tiers: static export → one-click puzzle → failure regeneration → WebAssembly pass, plus the separate paired companion/VNC lifecycle.
 
 A public browser launch is now correct when it is a faithful static copy of the real task UI and grader. It must never be represented as secret, tamper-resistant, or equivalent to a fresh server-backed benchmark evaluation.
+
+## Interaction VII–VIII: natural difficulty is interaction debt
+
+The July 14 cohort began only after checking the repository inventory and
+discovering that the historical Incubator queue was already empty. These ten
+were newly selected from retained survey mechanics; they must never be
+described as old cards that were waiting to be implemented.
+
+The first browser run made all ten mechanics technically pass, but the user
+correctly rejected technical depth as a substitute for actual difficulty. The
+v1 implementations often compressed a strong concept into one short authored
+sequence. The v2 audit therefore increased coupled state, observation debt,
+recovery work, and continuous control without adding tiny targets, hidden
+timers, input lag, arbitrary quotas, or answer-key traps.
+
+- **Specular Lighthouse Relay** keeps the three finite mirror intersections,
+  then makes the final receiver move vertically. Charge leaks whenever the
+  reflected ray drifts off it, across four generated rounds. The grader
+  independently replays the analytic ray rather than matching authored angles.
+- **Wind-Tunnel Seed Courier** now flies two pods with different response and
+  velocity through eight moving apertures. Both use one four-fan spool/heat
+  plant, so the first delivery changes the state inherited by the second.
+- **Hologram Silhouette Foundry** now packs six non-overlapping colored rods in
+  a 7³ volume. All three dies grade the frontmost color per ray, making depth
+  and occlusion essential rather than accepting equivalent occupancy masks.
+- **Orbital Docking Customs** now requires an S-shaped inertial route around
+  two debris fields, two ordered scan beacons, velocity cancellation, and a
+  final match to a station whose position and port attitude both move.
+- **Gravity-Room Freight** now couples an archive crate with an explicitly
+  isolated under-deck counterweight. They share walls and quarter-turn gravity
+  but occupy separate collision layers; one sequence must clear four seals and
+  dock both bodies.
+- **Floodgate Archive Rescue** now conserves water across five chambers while
+  two capsules cross four equalized locks in opposite directions. Every pump
+  moves water source-to-destination; no action may create or discard mass.
+- **Elastic Membrane Sorter** now keeps the posts live after release. Each of
+  three moving marbles must pass two ordered rings and enter its assigned well
+  below a visible capture-speed limit, requiring observe–steer–recover loops.
+- **Pheromone Dispatch** now maintains two independently decaying fields for
+  amber and violet swarms. A solver must alternate route repair while both
+  carrier teams move through one obstacle map; a stale team pauses visibly.
+- **Clockwork Clutch Safe** now has four shafts and real active-set load
+  redistribution. Releasing or re-engaging any clutch changes the angular
+  speed of every active shaft, so later phase timing depends on earlier acts.
+- **Marionette Checkpoint** now has three dynamic acts. Four coupled limbs must
+  track slowly moving target rings for sustained periods, and every missed
+  frame visibly erases progress instead of hiding a failure timer.
+
+Terminal overlays remain paint-contained inside the 1280×720 shell, and
+fresh-failure/pass evidence remains raw viewport capture. Visible render
+geometry, browser hit testing, simulation state, server replay, and verifier
+acceptance use the same mechanics. The separate v2 contract is recorded in
+`docs/interaction-vii-viii-difficulty-v2.md`.
+
+Canonical evidence is now
+`evidence/interaction_vii_viii_difficulty_v2/`: 52 raw frames and one summary
+in which browser interaction, live server grading, direct grader replay, and
+task verifier all pass for every mechanic. Two additional fresh seed prefixes
+also passed, for 30 total browser solves and 90 independent acceptance checks.
+The adversarial suite rejects forged moving-ray contact, invalid wind routes,
+stale dual-field delivery, instant marionette clears, non-conserving flood
+pumps, empty transcripts, and other state-spoofing shortcuts.
+
+The v2 evidence set also contains ten new 1280×720 H.264 solution films. Every
+recording was produced with ordinary visible mouse/keyboard controls against a
+live server, accepted independently by the server, direct grader, and task
+verifier, and protected by before/after hashes of the task, common and wrapper
+generator, frontend, styles, grader, and solver. A capture-only keypress delay
+initially perturbed the live membrane trajectory; the recorder was corrected
+without changing the task contract or its acceptance thresholds. This remains
+scripted evidence. All ten stay `script-verified-pending-human`, outside
+`verified`, until real human calibration and agent experiments occur.
+
+## Pending review cohort, audit v2 (July 14)
+
+The next pending cohort was audited against the accumulated user feedback
+before any review status changed. The binding retain/repair/replace decisions
+are in `docs/pending-next-ten-audit-v2.md`; canonical browser evidence is in
+`evidence/pending_next_ten_v2/`. All ten passed live browser interaction, live
+server grading, direct grader replay, and exported-task verification. This is
+script evidence only: every mechanic remains pending human review.
+
+- **Bureaucratic Signature Trap** was replaced. Four independently draggable
+  carbon sheets must first be physically registered; only then is a seeded
+  multi-loop autograph exposed for tracing. Arc-length resampling grades mean
+  and tail deviation, coverage, length, and endpoints. A generic circle is an
+  explicit rejected shortcut.
+- **First Change Memory** was replaced. Nine continuously moving carriers
+  undergo five reversible events in a one-shot run. The answer disappears into
+  a settled grid, so the operator must scrub a physical review spool and use a
+  cursor lens before selecting. The grader requires target observations both
+  before and during the first event; knowing the target id alone cannot pass.
+- **Polyrhythm Customs** was deepened to four simultaneous key lanes, 18–22
+  generated notes, two real holds, and two chords. The accepted transcript is a
+  clean performance with no hidden mandatory miss.
+- **Exact-Change Candy Cascade** now requires four evolving-board swaps and a
+  three-or-more-wave cascade while preserving licorice. The generator
+  enumerates legal four-swap routes, prefers a unique target, and rejects
+  instances with more than eight solutions.
+- **Tiny FPS Customs** now generates a fresh connected perfect-maze topology
+  per seed. Four warrants must be distinguished from four one-trait protected
+  doppelgängers with limited ammunition; collision, navigation, aiming, and
+  protected-hit failure share one replayed contract.
+- **Thirty-Year Time Wheel** retains inertial detents and braking but removes
+  the ceremonial requirement to demonstrate a coast and a brake. Passing now
+  means using all three necessary rings, stopping motion, reaching the exact
+  date, and locking it.
+- **Photograph Eats the Room**, **Clockwork Doppelgänger Customs**,
+  **Recursive Dollhouse Smuggling**, and **Flat Prisoner** retained their deep
+  mechanics. Their accepted solution proofs were repaired so deliberate bad
+  actions live in separate negative runs rather than counting mandatory
+  failures inside a supposedly valid solve.
+
+The scale suite generated 24 instances apiece for the six changed generators.
+It observed 24 distinct autograph traces, all nine memory carriers represented
+as the first target, four-lane rhythm structure in every instance, four-swap
+candy routes with bounded target multiplicity, 24 distinct connected FPS
+mazes, and no reintroduced time-wheel performance quota. Canonical clean-run
+metrics include a 100% autograph coverage trace, a 21-note perfect rhythm
+performance, a five-wave candy cascade, four FPS warrant hits with every
+protected traveller safe, zero accepted-run photograph failures, zero
+doppelgänger rewinds, zero dollhouse collisions/resets, and zero flat-prisoner
+deaths/thaws.
+
+A second fresh browser seed prefix also passed all ten, for 20 browser solves
+and 60 independent server/direct-grader/exported-verifier acceptances across
+the two runs. The runs materially changed generated behavior—the autograph,
+exact candy score, calendar target, doppelgänger phases, and FPS maze and
+navigation transcript all differed—without weakening or special-casing the
+contracts.
+
+The final 1280×720 montage caught one issue that transcript tests missed: a
+legacy short-viewport rule enlarged the four FPS warrant cards and clipped the
+last identity. The rule was corrected, the solver now asserts that all four
+card rectangles are fully contained by the visible dossier, and a fresh
+protected-hit plus four-warrant pass succeeded after the fix. This is another
+case where a green grader is not sufficient evidence of a fair visible task.
+
+Ten clean 1280×720 solution films now accompany this cohort in
+`evidence/pending_next_ten_v2/solution_videos/`. Every MP4/WebM pair was
+captured from the live browser task with ordinary inputs and passed the live
+server, direct grader, and exported verifier with zero console errors. The
+manifest proves that task, generator, frontend, grader, verifier, solver, and
+shared runtime hashes were unchanged across capture. Presentation-only pacing
+made fast cursor and keyboard actions visible; it did not change the tasks.
+These remain solution demonstrations, not human calibration or approval.
+
+## Pending next-ten v3: interaction debt over answer debt
+
+The next pending cohort was audited under a stricter rule: a clever answer is
+not enough; the accepted trajectory must contain the intended interaction
+debt. Forced Perspective, LIDAR, Tomography, Three-Camera Claw, Zero-G Cable,
+and Portal Freight retained their spatial contracts. Code-to-Diagram grew to
+four transient probes and ten cords; Vim now couples four buffers, six edits,
+and four outer modes; Fake Desktop couples two file transfers to three pointer
+transforms; and Impossible Ecology was replaced outright because animated
+observation plus culprit selection was still classification. Its replacement
+is continuous five-body coupled control.
+
+Three implementation lessons should survive this cohort:
+
+1. A grader being task-bound is insufficient unless the browser actually sends
+   the task identity. Test the complete browser payload boundary, not just a
+   hand-authored forged dictionary.
+2. Negative physics evidence belongs in a disposable challenge. A canonical
+   solver and a solution film must not demonstrate a collision and then hide it
+   behind refresh, even when the final exported transcript is clean.
+3. Recording is a legitimate motor stress test. Video encoding can change poll
+   latency; robust automation should use short feedback-controlled ordinary
+   inputs, not loosen geometry or acceptance to accommodate capture.
+
+The final evidence has two full browser seed prefixes, 480 additional generated
+instances, explicit empty-claim and task-replay rejection, and ten hash-frozen
+solution films in `evidence/pending_next_ten_v3/solution_videos/`. These ten are
+still `pending`: scripted completion and polished films are not human review.
+
+## Interaction IX: reviving a rejected identity means replacing the mechanic
+
+The final two environment identities reached the built catalog only after their
+original pilot contracts were discarded. A historical folder name is not a
+reason to preserve a weak task. Provenance and launch identity can survive
+while the interaction, UI, generator, grader, verifier, evidence, and solution
+path are replaced together.
+
+`moving_checkbox_evasive_button` is now **Scroll-Cage Checkbox**. The durable
+implementation lesson is that indirect control still needs ordinary physical
+invariants: the checkbox is a finite-radius fixed-step body; every divider
+collides from both directions; portal openings exist only when the two rendered
+scroll-bound halves align; and checking is impossible until the body enters the
+final clamp. A CSS opening, one-sided crossing test, teleported body, or
+client-reported capture would repeat the exact class of fake-physics failure
+seen during Domino development. The canonical solver changes real scroll
+offsets and drives only the visible cursor-repulsion field.
+
+`reverse_identity_gate` is now **Four-Tab Robot Handshake**. Four panels inside
+one page would not create the intended interaction debt. The operator must
+explicitly create and retain four real same-origin browser tabs, follow a visual
+handoff glyph, switch to the active limb, directionally chase a moving phase,
+and maintain mouse contact while it overlaps. Child tabs inherit the already
+loaded challenge through an opener bridge so static-browser exploration does
+not accidentally assign four independent attempts. The merged ledger records
+deployments, actual focused-limb input, key/contact transitions, every fixed
+tick, charge decay, and each immediate relay.
+
+The shared validation lesson is equally important: a passing happy path was not
+enough. Both tasks were exercised through deliberate failure and fresh-state
+isolation, ordinary-input browser solves, server/direct/exported replay, visual
+inspection, frozen-contract films, and 100 deterministic seeds. Every stale
+challenge and every one-step forged state was rejected. Those facts justify
+`built`; they do not justify `approved`, `verified`, or a claim that agents will
+fail. Both entered the human queue as pending and were subsequently marked
+`looks_good` by the user; that is still not hands-on approval.
 
 ## Human validation status as of this record
 
@@ -528,6 +740,9 @@ A public browser launch is now correct when it is a faithful static copy of the 
 | Interaction IV (5 mechanics) | Yes | No aggregate claim | Batch-seven evidence is complete; realtime prediction/assembly controls still need human runs. |
 | Interaction V (5 mechanics) | Yes | No aggregate claim | Batch-eight evidence is complete; spatial projection and concurrent-loop legibility still need human runs. |
 | Interaction VI (5 mechanics) | Yes | No aggregate claim | Batch-nine evidence is complete; 3D sensing, multi-camera, cable, and portal controls still need human runs. |
+| Interaction VII (5 mechanics) | Yes | No aggregate claim | Reflected optics, thermally timed airflow, inverse 3D construction, debris rendezvous, and rotating support geometry have canonical browser/server/verifier evidence; human calibration is pending. |
+| Interaction VIII (5 mechanics) | Yes | No aggregate claim | Hydraulics, membrane trajectories, decaying swarm fields, live clutch phases, and coupled puppet poses have canonical browser/server/verifier evidence; human calibration is pending. |
+| Interaction IX (2 revived mechanics) | Yes | No | Scroll-Cage Checkbox and Four-Tab Robot Handshake have canonical browser/server/verifier evidence, frozen solution films, and a 100-seed deterministic/adversarial replay audit; hands-on review is pending. |
 
 “Automated end-to-end” here means local browser interaction plus server and exported-verifier success. It does not mean benchmark-ready and does not predict agent failure.
 
@@ -536,7 +751,7 @@ A public browser launch is now correct when it is a faithful static copy of the 
 1. **No actual computer-use-agent evaluation has been completed for the final built corpus.** Human delight and scripted difficulty are hypotheses, not benchmark results.
 2. **The verified surface must remain empty until the documented quality gate is met.** Do not promote tasks based on local Playwright success.
 3. **Constellation calibration remains suspect.** Its shape can look complete over a broader region than the 28 px acceptance radius. Align perception and grading before promotion.
-4. **Human VNC coverage remains sparse.** Twelve environments now have explicit human decisions in the review ledger: six approved and six revision-requested. The six rejected designs were rebuilt but remain rejected until the user retests them; automation cannot clear that status. The other 51 built designs still need calibration through the real runner. Automated AVF screenshots do not count as direct human evidence.
+4. **Human VNC coverage remains incomplete.** The review ledger now has an explicit screening state for all 75 reviewable builds: 22 approved, 53 marked `looks_good` but still awaiting hands-on completion, zero revision-requested, and zero pending. Automated browser evidence and films cannot promote `looks_good` into approval.
 5. **Development feedback and benchmark feedback are in tension.** The current Domino UI shows swing degrees and “rewind and repair,” while [benchmark-quality-gate-v0.md](benchmark-quality-gate-v0.md) requires terse final surfaces without explanations or next-step hints. Keep the clarity during human calibration, then decide what belongs behind a development mode before promotion.
 6. **A bell ring is not synonymous with a Domino pass.** The current contract intentionally requires every expected domino in one connected graph and sufficient swing. If that contract feels unintuitive in more human tests, revisit the task specification first; do not silently loosen the verifier.
 7. **VNC audio is not reliable evidence.** The physical bell's visible body motion and engine telemetry are authoritative; audio transport may be absent.

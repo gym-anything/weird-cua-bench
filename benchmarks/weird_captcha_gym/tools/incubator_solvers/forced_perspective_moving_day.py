@@ -29,6 +29,16 @@ def _wait_new(state_dir: Path, before: str) -> None:
 
 def fail_once(page, state_dir: Path, out_dir: Path, mechanic: str) -> None:
     if mechanic != MECHANIC_ID: raise AssertionError(mechanic)
+    # Collision evidence belongs to this disposable negative attempt, never to
+    # the accepted solution transcript.
+    page.keyboard.down("w")
+    try:
+        expect(page.locator(".persp-impact[data-visible='true']")).to_be_visible(timeout=5_000)
+    finally:
+        page.keyboard.up("w")
+    _shot(page, out_dir, mechanic, "unbridged-void-collision")
+    page.locator(".persp-reset").click()
+    expect(page.locator(".readout")).to_contain_text("REWOUND")
     before = str(_read(state_dir / "ground_truth.json")["challenge_id"]); page.locator(".persp-submit").click(); _wait_new(state_dir, before)
     expect(page.locator(".perspective-captcha[data-fresh-failure='true']")).to_be_visible(timeout=8_000); expect(page.locator(".readout")).to_contain_text("FAIL"); _shot(page, out_dir, mechanic, "fail-fresh-room")
 
@@ -76,8 +86,6 @@ def _place(page, truth: dict, box: dict, object_id: str, target: list[float], us
 def solve(page, state_dir: Path, out_dir: Path, mechanic: str) -> None:
     if mechanic != MECHANIC_ID: raise AssertionError(mechanic)
     truth = _read(state_dir / "ground_truth.json")
-    # Walk into the unbridged void to prove symmetric avatar/floor contact, then rewind.
-    page.keyboard.down("w"); expect(page.locator(".persp-impact[data-visible='true']")).to_be_visible(timeout=5_000); page.keyboard.up("w"); _shot(page, out_dir, mechanic, "unbridged-void-collision"); page.locator(".persp-reset").click(); expect(page.locator(".readout")).to_contain_text("REWOUND")
     box = page.locator(".persp-canvas").bounding_box()
     if not box: raise AssertionError("perspective room canvas missing")
     _place(page, truth, box, "crate", truth["solver_targets"]["crate"], use_wheel=False, out_dir=out_dir); expect(page.locator(".persp-door-state")).to_have_text("UNLOCKED"); _shot(page, out_dir, mechanic, "shrunk-crate-key-slot")
@@ -109,5 +117,5 @@ def solve(page, state_dir: Path, out_dir: Path, mechanic: str) -> None:
         final_state = page.evaluate("() => ({x:window.forcedPerspectiveMovingDayModel.camera.x,z:window.forcedPerspectiveMovingDayModel.camera.z,done:window.forcedPerspectiveMovingDayModel.completed,blocked:window.forcedPerspectiveMovingDayModel.blocked,bridge:window.forcedPerspectiveMovingDayModel.bridgeReady,door:window.forcedPerspectiveMovingDayModel.doorOpen,tick:window.forcedPerspectiveMovingDayModel.tick})")
         raise AssertionError(f"avatar did not reach impossible-door exit: {final_state}")
     expect(page.locator(".persp-complete[data-visible='true']")).to_be_visible(timeout=3_000); state = page.evaluate("() => ({completed:window.forcedPerspectiveMovingDayModel.completed,bridge:window.forcedPerspectiveMovingDayModel.bridgeReady,door:window.forcedPerspectiveMovingDayModel.doorOpen,collisions:window.forcedPerspectiveMovingDayModel.collisions,resets:window.forcedPerspectiveMovingDayModel.resets,tick:window.forcedPerspectiveMovingDayModel.tick})")
-    if not state["completed"] or not state["bridge"] or not state["door"] or state["collisions"] < 1 or state["resets"] < 1: raise AssertionError(f"perspective move incomplete: {state}")
+    if not state["completed"] or not state["bridge"] or not state["door"] or state["collisions"] != 0 or state["resets"] != 0: raise AssertionError(f"perspective move was not a clean completion: {state}")
     _shot(page, out_dir, mechanic, "solved-impossible-door"); page.locator(".persp-submit").click(); expect(page.locator(".readout")).to_have_text("PASS", timeout=8_000)

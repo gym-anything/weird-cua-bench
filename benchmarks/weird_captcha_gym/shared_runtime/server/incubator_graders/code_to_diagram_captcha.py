@@ -8,6 +8,7 @@ MECHANIC_ID = "code_to_diagram_captcha"
 
 def _identity_error(payload: dict[str, Any], ground_truth: dict[str, Any], public_state: dict[str, Any]) -> str | None:
     challenge_id = str(ground_truth.get("challenge_id") or "")
+    task_id = str(ground_truth.get("task_id") or "")
     if str(payload.get("mechanic_id") or "") != MECHANIC_ID:
         return "mechanic mismatch"
     if str(ground_truth.get("mechanic_id") or "") != MECHANIC_ID:
@@ -16,6 +17,8 @@ def _identity_error(payload: dict[str, Any], ground_truth: dict[str, Any], publi
         return "stale challenge"
     if str(public_state.get("challenge_id") or "") != challenge_id:
         return "public-state challenge mismatch"
+    if not task_id or str(payload.get("task_id") or "") != task_id or str(public_state.get("task_id") or "") != task_id:
+        return "task identity mismatch"
     return None
 
 
@@ -35,12 +38,12 @@ def _condition_result(condition: dict[str, Any], value: int) -> bool:
 
 def _simulate(nodes: list[dict[str, Any]], entry_id: str, probe: int) -> dict[str, Any]:
     by_id = {str(node.get("id") or ""): node for node in nodes}
-    if not entry_id or entry_id not in by_id or len(by_id) != 6:
-        raise ValueError("invalid six-node program")
+    if not entry_id or entry_id not in by_id or len(by_id) != 9:
+        raise ValueError("invalid nine-node controller")
     current = entry_id
     accumulator = probe
     steps: list[dict[str, Any]] = []
-    for sequence in range(1, 10):
+    for sequence in range(1, 14):
         node = by_id.get(current)
         if node is None:
             raise ValueError("transition references an unknown node")
@@ -53,13 +56,13 @@ def _simulate(nodes: list[dict[str, Any]], entry_id: str, probe: int) -> dict[st
             condition = node.get("condition")
             if not isinstance(condition, dict):
                 raise ValueError("decision condition is malformed")
-            branch = "TRUE" if _condition_result(condition, probe) else "FALSE"
-        elif kind == "operation":
+            branch = "TRUE" if _condition_result(condition, accumulator) else "FALSE"
+        elif kind in {"operation", "merge"}:
             amount = int(node.get("amount"))
             accumulator = accumulator + amount if node.get("operator") == "add" else accumulator - amount
             branch = "NEXT"
         elif kind == "audit":
-            accumulator *= int(node.get("multiplier"))
+            accumulator = accumulator * int(node.get("multiplier")) + int(node.get("bias", 0))
             branch = "NEXT"
         elif kind == "halt":
             branch = "HALT"
@@ -126,8 +129,9 @@ def grade(payload: dict[str, Any], ground_truth: dict[str, Any], public_state: d
         return {"graded": True, "passed": False, "feedback": f"invalid program contract: {exc}"}
 
     runs = payload.get("probe_runs")
-    if not isinstance(runs, list) or len(runs) != 3 or len(expected_runs) != 3:
-        return {"graded": True, "passed": False, "feedback": "exactly three debugger probes are required"}
+    required_probe_count = len(expected_inputs)
+    if not isinstance(runs, list) or len(runs) != required_probe_count or len(expected_runs) != required_probe_count:
+        return {"graded": True, "passed": False, "feedback": f"exactly {required_probe_count} debugger probes are required"}
     seen_inputs: set[int] = set()
     covered_nodes: set[str] = set()
     total_steps = 0
@@ -198,7 +202,7 @@ def grade(payload: dict[str, Any], ground_truth: dict[str, Any], public_state: d
         "graded": True,
         "passed": passed,
         "feedback": (
-            f"debugger probes 3/3; nodes {len(covered_nodes)}/6; steps {total_steps}; "
+            f"debugger probes {len(seen_inputs)}/{required_probe_count}; nodes {len(covered_nodes)}/{len(node_ids)}; steps {total_steps}; "
             f"wires {sum(wire in expected_edges for wire in replay_final)}/{len(expected_edges)}"
         ),
     }

@@ -5,6 +5,7 @@
     state: null,
     rail: 0,
     depth: 0,
+    rotation: 0,
     events: [],
     railTravel: 0,
     depthTravel: 0,
@@ -38,6 +39,7 @@
       ...details,
       rail_milli: model.rail,
       depth_milli: model.depth,
+      rotation_deg: model.rotation,
     };
     model.events.push(event);
     return event;
@@ -83,6 +85,7 @@
     const width = Math.round(Number(piece.base_width_milli) * scale / 1000);
     const height = Math.round(Number(piece.base_height_milli) * scale / 1000);
     const depthError = Math.abs(model.depth - derivedTargetDepth());
+    const rotationError = Math.abs(((model.rotation - Number(piece.target_rotation_deg || 0) + 180) % 360 + 360) % 360 - 180);
     return {
       gapX,
       pieceX,
@@ -91,6 +94,7 @@
       height,
       xError: Math.abs(pieceX - gapX),
       depthError,
+      rotationError,
     };
   }
 
@@ -101,6 +105,7 @@
       ...current,
       railStable: current.xError <= Number(tolerance.x_milli),
       depthStable: current.depthError <= Number(tolerance.depth_milli),
+      rotationStable: current.rotationError <= Number(tolerance.rotation_deg),
     };
   }
 
@@ -190,6 +195,7 @@
       piece.style.top = `${px(current.pieceY)}px`;
       piece.style.width = `${px(current.width)}px`;
       piece.style.height = `${px(current.height)}px`;
+      piece.style.transform = `rotate(${model.rotation}deg)`;
     }
     const carriage = document.getElementById("alignment-carriage");
     if (carriage) carriage.style.left = `${px(model.rail)}px`;
@@ -208,10 +214,15 @@
     const axes = axisState();
     const railLamp = document.querySelector('[data-axis="rail"]');
     const depthLamp = document.querySelector('[data-axis="depth"]');
+    const rotationLamp = document.querySelector('[data-axis="rotation"]');
     railLamp?.classList.toggle("is-locked", axes.railStable);
     depthLamp?.classList.toggle("is-locked", axes.depthStable);
+    rotationLamp?.classList.toggle("is-locked", axes.rotationStable);
     if (railLamp) railLamp.querySelector("b").textContent = axes.railStable ? "COINCIDENT" : "UNRESOLVED";
     if (depthLamp) depthLamp.querySelector("b").textContent = axes.depthStable ? "COINCIDENT" : "UNRESOLVED";
+    if (rotationLamp) rotationLamp.querySelector("b").textContent = axes.rotationStable ? "COINCIDENT" : `${Math.round(axes.rotationError)}° OFF`;
+    const rotationValue = document.getElementById("alignment-rotation-value");
+    if (rotationValue) rotationValue.textContent = `${String(model.rotation).padStart(3, "0")}°`;
     const inertia = document.getElementById("alignment-inertia");
     if (inertia) {
       inertia.dataset.active = model.inertia ? "true" : "false";
@@ -222,9 +233,9 @@
     const proofRail = document.querySelector('[data-proof="rail"]');
     const proofDepth = document.querySelector('[data-proof="depth"]');
     const proofInertia = document.querySelector('[data-proof="inertia"]');
-    proofRail?.classList.toggle("is-lit", model.railTravel >= Number(model.state.tolerances.minimum_rail_travel_milli));
-    proofDepth?.classList.toggle("is-lit", model.depthTravel >= Number(model.state.tolerances.minimum_depth_travel_milli));
-    proofInertia?.classList.toggle("is-lit", model.inertiaSamples >= Number(model.state.tolerances.minimum_inertia_samples));
+    proofRail?.classList.toggle("is-lit", axes.railStable);
+    proofDepth?.classList.toggle("is-lit", axes.depthStable);
+    proofInertia?.classList.toggle("is-lit", axes.rotationStable);
     const tape = document.getElementById("alignment-tape");
     if (tape) tape.innerHTML = tapeMarkup();
     if (message !== null) model.helpers.setReadout(message, status);
@@ -361,23 +372,33 @@
     updatePanels("DEPTH GRIP RELEASED", "idle");
   }
 
+  function rotateFragment(delta) {
+    if (model.busy || model.terminal || model.scan || model.inertia || model.railDrag || model.depthDrag) return;
+    clearFreshFailure();
+    const before = model.rotation;
+    model.rotation = ((model.rotation + delta) % 360 + 360) % 360;
+    record("rotate", {delta_deg: delta, rotation_before: before, rotation_after: model.rotation});
+    updatePanels("FRAGMENT ORIENTATION CHANGED", "idle");
+  }
+
   function takeScanSample() {
     if (!model.scan) return;
     const axes = axisState();
-    const stable = axes.railStable && axes.depthStable;
+    const stable = axes.railStable && axes.depthStable && axes.rotationStable;
     record("scan_sample", {
       x_error_milli: axes.xError,
       depth_error_milli: axes.depthError,
+      rotation_error_deg: axes.rotationError,
       stable,
     });
-    model.scan.samples.push({stable, railStable: axes.railStable, depthStable: axes.depthStable});
+    model.scan.samples.push({stable, railStable: axes.railStable, depthStable: axes.depthStable, rotationStable: axes.rotationStable});
     model.scan.lastSampleAt = performance.now();
     const progress = document.querySelector(".alignment-scan-progress i");
     if (progress) {
       const elapsed = performance.now() - model.scan.startedAt;
       progress.style.width = `${Math.min(100, elapsed / Number(model.state.tolerances.hold_ms) * 100)}%`;
     }
-    const status = stable ? "OPTICAL COINCIDENCE HOLDING" : !axes.railStable && !axes.depthStable ? "RAIL + DEPTH DRIFT" : !axes.railStable ? "RAIL DRIFT" : "DEPTH DRIFT";
+    const status = stable ? "THREE-AXIS COINCIDENCE HOLDING" : !axes.rotationStable ? "ORIENTATION DRIFT" : !axes.railStable && !axes.depthStable ? "RAIL + DEPTH DRIFT" : !axes.railStable ? "RAIL DRIFT" : "DEPTH DRIFT";
     updatePanels(status, stable ? "pending" : "error");
   }
 
@@ -405,12 +426,13 @@
 
   function failureReason(samples, duration, proofReady) {
     if (duration < Number(model.state.tolerances.hold_ms) - 40) return "LOCK RELEASED EARLY";
-    if (!proofReady) return "INERTIA / TRAVEL UNPROVEN";
+    if (!proofReady) return "THREE-AXIS ALIGNMENT INCOMPLETE";
     const railBad = samples.some((sample) => !sample.railStable);
     const depthBad = samples.some((sample) => !sample.depthStable);
     if (railBad && depthBad) return "RAIL + DEPTH DRIFT";
     if (railBad) return "RAIL DRIFT";
     if (depthBad) return "DEPTH DRIFT";
+    if (samples.some((sample) => !sample.rotationStable)) return "ORIENTATION DRIFT";
     return "OPTICAL HOLD REJECTED";
   }
 
@@ -426,6 +448,7 @@
       events: model.events,
       final_rail_milli: model.rail,
       final_depth_milli: model.depth,
+      final_rotation_deg: model.rotation,
       completed,
     };
     try {
@@ -471,9 +494,8 @@
     model.scan = null;
     document.querySelector(".alignment-captcha")?.classList.remove("is-scanning");
     record("scan_end", {duration_ms: duration, sample_count: scan.samples.length});
-    const proofReady = model.railTravel >= Number(model.state.tolerances.minimum_rail_travel_milli)
-      && model.depthTravel >= Number(model.state.tolerances.minimum_depth_travel_milli)
-      && model.inertiaSamples >= Number(model.state.tolerances.minimum_inertia_samples);
+    const axes = axisState();
+    const proofReady = axes.railStable && axes.depthStable && axes.rotationStable;
     const completed = duration >= Number(model.state.tolerances.hold_ms) - 40
       && scan.samples.length >= Number(model.state.tolerances.minimum_scan_samples)
       && scan.samples.every((sample) => sample.stable)
@@ -488,6 +510,7 @@
     stopScanTimer();
     model.rail = Number(model.state.scene.rail.initial_milli);
     model.depth = Number(model.state.scene.depth.initial_milli);
+    model.rotation = Number(model.state.scene.piece.initial_rotation_deg || 0);
     model.events = [];
     model.railTravel = 0;
     model.depthTravel = 0;
@@ -515,6 +538,7 @@
       state,
       rail: Number(state.scene.rail.initial_milli),
       depth: Number(state.scene.depth.initial_milli),
+      rotation: Number(state.scene.piece.initial_rotation_deg || 0),
       events: [],
       railTravel: 0,
       depthTravel: 0,
@@ -545,10 +569,11 @@
           </section>
           <aside class="alignment-console">
             <div class="alignment-console-title"><span>DEPTH PROJECTION</span><i>ANALYTIC</i></div>
-            <div class="alignment-axis-pair"><div data-axis="rail"><i></i><span>HORIZONTAL</span><b>UNRESOLVED</b></div><div data-axis="depth"><i></i><span>DEPTH / SCALE</span><b>UNRESOLVED</b></div></div>
+            <div class="alignment-axis-pair"><div data-axis="rail"><i></i><span>HORIZONTAL</span><b>UNRESOLVED</b></div><div data-axis="depth"><i></i><span>DEPTH / SCALE</span><b>UNRESOLVED</b></div><div data-axis="rotation"><i></i><span>ORIENTATION</span><b>UNRESOLVED</b></div></div>
+            <div class="alignment-rotation-rig"><button type="button" id="alignment-rotate-left">−15°</button><b id="alignment-rotation-value">000°</b><button type="button" id="alignment-rotate-right">+15°</button></div>
             <div class="alignment-depth-rig"><div class="depth-label depth-far">FAR PLANE</div><div class="depth-track" id="alignment-depth-track"><i></i><i></i><i></i><i></i><i></i><button type="button" id="alignment-depth-grip" class="depth-grip"><b>DEPTH</b><span>↕</span></button></div><div class="depth-label depth-near">NEAR PLANE</div></div>
             <div class="alignment-inertia" id="alignment-inertia" data-active="false"><i></i><div><b>SETTLED</b><span>0 SAMPLES CAPTURED</span></div></div>
-            <div class="alignment-proof"><span data-proof="rail"><i></i>RAIL TRAVEL</span><span data-proof="depth"><i></i>DEPTH TRAVEL</span><span data-proof="inertia"><i></i>COAST OBSERVED</span></div>
+            <div class="alignment-proof"><span data-proof="rail"><i></i>RAIL LOCK</span><span data-proof="depth"><i></i>DEPTH LOCK</span><span data-proof="inertia"><i></i>ORIENTATION LOCK</span></div>
             <ol class="alignment-tape" id="alignment-tape">${tapeMarkup()}</ol>
           </aside>
         </main>
@@ -568,6 +593,8 @@
     depthGrip?.addEventListener("pointermove", moveDepth);
     depthGrip?.addEventListener("pointerup", endDepth);
     depthGrip?.addEventListener("pointercancel", endDepth);
+    document.getElementById("alignment-rotate-left")?.addEventListener("click", () => rotateFragment(-Number(state.scene.piece.rotation_step_deg || 15)));
+    document.getElementById("alignment-rotate-right")?.addEventListener("click", () => rotateFragment(Number(state.scene.piece.rotation_step_deg || 15)));
     const scan = document.getElementById("alignment-scan");
     scan?.addEventListener("pointerdown", beginScan);
     scan?.addEventListener("pointerup", endScan);

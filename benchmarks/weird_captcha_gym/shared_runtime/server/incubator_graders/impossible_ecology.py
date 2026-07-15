@@ -1,222 +1,233 @@
 from __future__ import annotations
 
+import math
 from typing import Any
 
 
 MECHANIC_ID = "impossible_ecology"
 
 
-def _point(value: Any, width: int, height: int) -> tuple[int, int]:
-    if not isinstance(value, list) or len(value) != 2:
-        raise ValueError("drag point is malformed")
-    if isinstance(value[0], bool) or isinstance(value[1], bool):
-        raise ValueError("boolean drag point is invalid")
-    x, y = int(value[0]), int(value[1])
-    if not (0 <= x <= width and 0 <= y <= height):
-        raise ValueError("drag point leaves terrarium stage")
-    return x, y
+def _round(value: float, digits: int = 6) -> float:
+    return round(float(value) + 1e-12, digits)
 
 
-def _inside(point: tuple[int, int], rect: dict[str, Any]) -> bool:
-    x, y = point
-    left, top = int(rect["x"]), int(rect["y"])
-    return left <= x <= left + int(rect["width"]) and top <= y <= top + int(rect["height"])
+def _point(value: Any, arena: dict[str, Any]) -> list[float]:
+    if not isinstance(value, list) or len(value) != 2 or any(isinstance(item, bool) for item in value):
+        raise ValueError("field point is malformed")
+    point = [float(value[0]), float(value[1])]
+    if not (math.isfinite(point[0]) and math.isfinite(point[1]) and 0 <= point[0] <= float(arena["width"]) and 0 <= point[1] <= float(arena["height"])):
+        raise ValueError("field point leaves arena")
+    return point
 
 
-def _habitat_at(point: tuple[int, int], rects: list[dict[str, Any]]) -> str | None:
-    for rect in rects:
-        if _inside(point, rect):
-            return str(rect.get("id") or "")
-    return None
+def _initial_organisms(contract: dict[str, Any]) -> dict[str, dict[str, Any]]:
+    result: dict[str, dict[str, Any]] = {}
+    fields = set(contract["fields"])
+    for raw in contract["organisms"]:
+        organism_id = str(raw["id"])
+        responses = {str(key): float(value) for key, value in raw["responses"].items()}
+        if not organism_id or organism_id in result or set(responses) != fields:
+            raise ValueError("organism response contract is malformed")
+        result[organism_id] = {
+            "id": organism_id,
+            "radius": float(raw["radius"]),
+            "responses": responses,
+            "x": float(raw["initial_position"][0]), "y": float(raw["initial_position"][1]),
+            "vx": 0.0, "vy": 0.0, "captured": False,
+        }
+    if len(result) != 5:
+        raise ValueError("coupled ecology must contain five organisms")
+    return result
 
 
-def _cycle_map(ground_truth: dict[str, Any]) -> dict[int, dict[str, Any]]:
-    raw = ground_truth.get("cycles")
-    if not isinstance(raw, list) or len(raw) != 3:
-        raise ValueError("three causal cycles are required")
-    output: dict[int, dict[str, Any]] = {}
-    for cycle in raw:
-        if not isinstance(cycle, dict):
-            raise ValueError("cycle is malformed")
-        step = int(cycle.get("step"))
-        output[step] = cycle
-    if set(output) != {0, 1, 2}:
-        raise ValueError("cycle steps are incomplete")
-    return output
+def _targets(contract: dict[str, Any]) -> dict[str, dict[str, Any]]:
+    result = {str(item["organism_id"]): item for item in contract["targets"]}
+    if len(result) != 5:
+        raise ValueError("sanctuary contract is malformed")
+    return result
+
+
+def _resolve_obstacle(organism: dict[str, Any], next_point: list[float], obstacle: dict[str, Any]) -> list[float]:
+    dx = next_point[0] - float(obstacle["center"][0]); dy = next_point[1] - float(obstacle["center"][1])
+    size = math.hypot(dx, dy); minimum = float(obstacle["radius"]) + organism["radius"]
+    if size >= minimum:
+        return next_point
+    ux, uy = (dx / size, dy / size) if size > 1e-9 else (1.0, 0.0)
+    inward = organism["vx"] * ux + organism["vy"] * uy
+    if inward < 0:
+        organism["vx"] -= 1.55 * inward * ux
+        organism["vy"] -= 1.55 * inward * uy
+    return [float(obstacle["center"][0]) + ux * minimum, float(obstacle["center"][1]) + uy * minimum]
+
+
+def _advance(organisms: dict[str, dict[str, Any]], targets: dict[str, dict[str, Any]], contract: dict[str, Any], active: bool, selected: str | None, lure: list[float]) -> None:
+    controls, arena, obstacle = contract["controls"], contract["arena"], contract["obstacle"]
+    for organism in organisms.values():
+        if organism["captured"]:
+            continue
+        if active and selected:
+            dx, dy = lure[0] - organism["x"], lure[1] - organism["y"]
+            size = math.hypot(dx, dy)
+            if size > 1e-9:
+                acceleration = organism["responses"][selected]
+                organism["vx"] += dx / size * acceleration
+                organism["vy"] += dy / size * acceleration
+        organism["vx"] *= float(controls["damping"])
+        organism["vy"] *= float(controls["damping"])
+        speed = math.hypot(organism["vx"], organism["vy"])
+        if speed > float(controls["max_speed"]):
+            organism["vx"] = organism["vx"] / speed * float(controls["max_speed"])
+            organism["vy"] = organism["vy"] / speed * float(controls["max_speed"])
+        next_point = _resolve_obstacle(organism, [organism["x"] + organism["vx"], organism["y"] + organism["vy"]], obstacle)
+        low = float(arena["margin"]) + organism["radius"]
+        high_x = float(arena["width"]) - float(arena["margin"]) - organism["radius"]
+        high_y = float(arena["height"]) - float(arena["margin"]) - organism["radius"]
+        if next_point[0] < low or next_point[0] > high_x:
+            next_point[0] = max(low, min(high_x, next_point[0])); organism["vx"] *= -.35
+        if next_point[1] < low or next_point[1] > high_y:
+            next_point[1] = max(low, min(high_y, next_point[1])); organism["vy"] *= -.35
+        organism["x"] = _round(next_point[0]); organism["y"] = _round(next_point[1])
+        organism["vx"] = _round(organism["vx"]); organism["vy"] = _round(organism["vy"])
+        target = targets[organism["id"]]
+        capture_radius = float(target["radius"]) - organism["radius"] - float(controls["capture_margin"])
+        if math.dist([organism["x"], organism["y"]], [float(value) for value in target["center"]]) <= capture_radius and math.hypot(organism["vx"], organism["vy"]) <= float(controls["capture_speed"]):
+            organism["x"], organism["y"] = [float(value) for value in target["center"]]
+            organism["vx"] = organism["vy"] = 0.0; organism["captured"] = True
+
+
+def _snapshot(organisms: dict[str, dict[str, Any]]) -> list[dict[str, Any]]:
+    return [{"id": item["id"], "position": [_round(item["x"], 3), _round(item["y"], 3)], "velocity": [_round(item["vx"], 3), _round(item["vy"], 3)], "captured": item["captured"]} for item in sorted(organisms.values(), key=lambda value: value["id"])]
+
+
+def _snapshot_matches(claimed: Any, expected: list[dict[str, Any]], tolerance: float = .035) -> bool:
+    if not isinstance(claimed, list) or len(claimed) != len(expected):
+        return False
+    for actual, wanted in zip(claimed, expected):
+        if not isinstance(actual, dict) or actual.get("id") != wanted["id"] or actual.get("captured") is not wanted["captured"]:
+            return False
+        for field in ("position", "velocity"):
+            values = actual.get(field)
+            if not isinstance(values, list) or len(values) != 2 or any(isinstance(item, bool) or not math.isfinite(float(item)) for item in values):
+                return False
+            if math.dist([float(item) for item in values], wanted[field]) > tolerance:
+                return False
+    return True
 
 
 def grade(payload: dict[str, Any], ground_truth: dict[str, Any], public_state: dict[str, Any]) -> dict[str, Any]:
-    challenge_id = str(ground_truth.get("challenge_id") or "")
-    if str(payload.get("mechanic_id") or "") != MECHANIC_ID:
+    challenge_id, task_id = str(ground_truth.get("challenge_id") or ""), str(ground_truth.get("task_id") or "")
+    if str(payload.get("mechanic_id") or "") != MECHANIC_ID or str(ground_truth.get("mechanic_id") or "") != MECHANIC_ID:
         return {"graded": True, "passed": False, "feedback": "mechanic mismatch"}
-    if str(ground_truth.get("mechanic_id") or "") != MECHANIC_ID:
-        return {"graded": True, "passed": False, "feedback": "ground-truth mechanic mismatch"}
-    if not challenge_id or str(payload.get("challenge_id") or "") != challenge_id:
+    if not challenge_id or str(payload.get("challenge_id") or "") != challenge_id or str(public_state.get("challenge_id") or "") != challenge_id:
         return {"graded": True, "passed": False, "feedback": "stale challenge"}
-    if str(public_state.get("challenge_id") or "") != challenge_id:
-        return {"graded": True, "passed": False, "feedback": "public-state challenge mismatch"}
-
+    if not task_id or str(payload.get("task_id") or "") != task_id:
+        return {"graded": True, "passed": False, "feedback": "task identity mismatch"}
+    for field in ("arena", "fields", "organisms", "targets", "obstacle", "controls"):
+        if public_state.get(field) != ground_truth.get(field):
+            return {"graded": True, "passed": False, "feedback": f"public/private ecology {field} contract skew"}
     try:
-        protocol = [str(item) for item in ground_truth.get("protocol") or []]
-        if len(protocol) != 3 or set(protocol) != {"CLIMATE", "FOOD", "LIGHT"}:
-            raise ValueError("protocol is invalid")
-        ticks_per_cycle = int(ground_truth.get("ticks_per_cycle"))
-        if ticks_per_cycle < 6:
-            raise ValueError("response cycle is too short")
-        cycles = _cycle_map(ground_truth)
-        stage = public_state.get("stage") or {}
-        width, height = int(stage["width"]), int(stage["height"])
-        habitat_rects = [dict(item) for item in ground_truth.get("habitat_rects") or []]
-        if len(habitat_rects) != 5:
-            raise ValueError("five habitats are required")
-        quarantine_rect = dict(ground_truth.get("quarantine_rect") or {})
+        organisms = _initial_organisms(ground_truth)
+        targets = _targets(ground_truth)
+        arena = ground_truth["arena"]
+        fields = [str(item) for item in ground_truth["fields"]]
     except (KeyError, TypeError, ValueError) as exc:
-        return {"graded": True, "passed": False, "feedback": f"invalid terrarium contract: {exc}"}
+        return {"graded": True, "passed": False, "feedback": f"invalid ecology contract: {exc}"}
 
     events = payload.get("events")
-    if not isinstance(events, list) or not (1 <= len(events) <= 500):
-        return {"graded": True, "passed": False, "feedback": "causal transcript is missing or outside limits"}
-
-    progress = 0
-    active_cycle: dict[str, Any] | None = None
-    quarantined_id: str | None = None
-    drag: dict[str, Any] | None = None
-    current_cycles: list[str] = []
-    current_tick_total = 0
-    quarantine_moves = 0
-    reset_count = 0
-    poisoned = False
+    if not isinstance(events, list) or not (1 <= len(events) <= 5000):
+        return {"graded": True, "passed": False, "feedback": "ecology transcript is missing or outside limits"}
+    selected: str | None = None
+    lure = [float(arena["width"]) / 2, float(arena["height"]) / 2]
+    active = completed = terminal = False
+    tick = field_selections = pointer_drags = calibration_runs = resets = 0
 
     for sequence, event in enumerate(events, start=1):
+        if terminal:
+            return {"graded": True, "passed": False, "feedback": "interaction continued after all sanctuaries locked"}
         if not isinstance(event, dict) or event.get("sequence") != sequence:
             return {"graded": True, "passed": False, "feedback": f"event {sequence} sequence mismatch"}
         kind = str(event.get("kind") or "")
-
-        if kind == "reset":
-            progress = 0
-            active_cycle = None
-            quarantined_id = None
-            drag = None
-            current_cycles = []
-            current_tick_total = 0
-            quarantine_moves = 0
-            poisoned = False
-            reset_count += 1
+        if kind == "calibration":
+            if active or event.get("tick") != tick or event.get("fields") != fields:
+                return {"graded": True, "passed": False, "feedback": "calibration film event is malformed"}
+            calibration_runs += 1
             continue
-
-        if kind == "probe_rejected":
-            probe = str(event.get("probe") or "")
-            if active_cycle is not None or progress >= len(protocol) or probe == protocol[progress]:
-                return {"graded": True, "passed": False, "feedback": f"event {sequence} is not a valid rejected probe"}
-            poisoned = True
+        if kind == "field_select":
+            field = str(event.get("field") or "")
+            if active or field not in fields or event.get("tick") != tick:
+                return {"graded": True, "passed": False, "feedback": "field selection is malformed"}
+            selected = field; field_selections += 1
             continue
-
-        if kind == "probe":
-            probe = str(event.get("probe") or "")
-            if poisoned or active_cycle is not None or progress >= len(protocol):
-                return {"graded": True, "passed": False, "feedback": f"event {sequence} starts a probe in an invalid state"}
-            if event.get("step") != progress or probe != protocol[progress]:
-                return {"graded": True, "passed": False, "feedback": f"event {sequence} violates the posted protocol"}
-            active_cycle = {"step": progress, "probe": probe, "next_tick": 1, "elapsed": 0}
-            continue
-
-        if kind == "tick":
-            if active_cycle is None:
-                return {"graded": True, "passed": False, "feedback": f"event {sequence} records a tick without an active probe"}
-            step = active_cycle["step"]
-            tick = active_cycle["next_tick"]
-            if event.get("step") != step or event.get("probe") != active_cycle["probe"] or event.get("tick") != tick:
-                return {"graded": True, "passed": False, "feedback": f"event {sequence} response tick is out of order"}
-            frames = cycles[step].get("frames") or []
-            if len(frames) != ticks_per_cycle or event.get("snapshot") != frames[tick - 1].get("snapshot"):
-                return {"graded": True, "passed": False, "feedback": f"event {sequence} response snapshot was tampered"}
+        if kind in {"pointer_down", "pointer_move", "pointer_up"}:
             try:
-                elapsed = int(event.get("elapsed_ms"))
-            except (TypeError, ValueError):
-                return {"graded": True, "passed": False, "feedback": f"event {sequence} is missing cycle time"}
-            if elapsed < tick * 70 or elapsed < active_cycle["elapsed"]:
-                return {"graded": True, "passed": False, "feedback": f"event {sequence} did not wait through the visible response"}
-            active_cycle["elapsed"] = elapsed
-            active_cycle["next_tick"] += 1
-            current_tick_total += 1
-            continue
-
-        if kind == "cycle_complete":
-            if active_cycle is None or active_cycle["next_tick"] != ticks_per_cycle + 1:
-                return {"graded": True, "passed": False, "feedback": f"event {sequence} closes an incomplete response cycle"}
-            if event.get("step") != active_cycle["step"] or event.get("probe") != active_cycle["probe"]:
-                return {"graded": True, "passed": False, "feedback": f"event {sequence} completes the wrong probe"}
-            current_cycles.append(active_cycle["probe"])
-            progress += 1
-            active_cycle = None
-            continue
-
-        if kind in {"quarantine_down", "quarantine_move", "quarantine_up"}:
-            try:
-                point = _point(event.get("point"), width, height)
-            except (TypeError, ValueError) as exc:
+                point = _point(event.get("point"), arena)
+            except ValueError as exc:
                 return {"graded": True, "passed": False, "feedback": f"event {sequence}: {exc}"}
-            if kind == "quarantine_down":
-                if poisoned or active_cycle is not None or progress != len(protocol):
-                    return {"graded": True, "passed": False, "feedback": "quarantine began before all causal trials completed"}
-                habitat_id = _habitat_at(point, habitat_rects)
-                if not habitat_id or event.get("habitat_id") != habitat_id:
-                    return {"graded": True, "passed": False, "feedback": "quarantine drag did not begin inside the claimed habitat"}
-                drag = {"habitat_id": habitat_id, "moves": 0}
-            elif kind == "quarantine_move":
-                if drag is None:
-                    return {"graded": True, "passed": False, "feedback": "quarantine move has no specimen"}
-                drag["moves"] += 1
-                quarantine_moves += 1
+            if event.get("tick") != tick or str(event.get("field") or "") != selected or selected not in fields:
+                return {"graded": True, "passed": False, "feedback": f"event {sequence} uses stale field/tick state"}
+            if kind == "pointer_down":
+                if active:
+                    return {"graded": True, "passed": False, "feedback": "pointer field was pressed twice"}
+                active = True; pointer_drags += 1
+            elif kind == "pointer_move":
+                if not active:
+                    return {"graded": True, "passed": False, "feedback": "field pointer moved while released"}
             else:
-                if drag is None or event.get("habitat_id") != drag["habitat_id"]:
-                    return {"graded": True, "passed": False, "feedback": "quarantine drop specimen mismatch"}
-                quarantined_id = drag["habitat_id"] if _inside(point, quarantine_rect) else None
-                drag = None
+                if not active:
+                    return {"graded": True, "passed": False, "feedback": "field pointer released while inactive"}
+                active = False
+            lure = point
             continue
-
+        if kind == "reset":
+            if active or completed:
+                return {"graded": True, "passed": False, "feedback": "ecology reset during active/terminal field"}
+            organisms = _initial_organisms(ground_truth); selected = None
+            lure = [float(arena["width"]) / 2, float(arena["height"]) / 2]; tick = 0; resets += 1
+            continue
+        if kind == "physics_tick":
+            if event.get("tick") != tick + 1 or tick >= int(ground_truth["controls"]["max_ticks"]):
+                return {"graded": True, "passed": False, "feedback": "physics tick skipped, reversed, or exceeded"}
+            if event.get("active") is not active or event.get("field") != (selected if active else None):
+                return {"graded": True, "passed": False, "feedback": "physics tick field state disagrees with replay"}
+            try:
+                claimed_lure = _point(event.get("lure"), arena)
+            except ValueError:
+                return {"graded": True, "passed": False, "feedback": "physics tick lure is malformed"}
+            if active and math.dist(claimed_lure, lure) > .01:
+                return {"graded": True, "passed": False, "feedback": f"physics tick {tick + 1} lure moved without a pointer event: claimed={claimed_lure}, replay={lure}, event={sequence}"}
+            if not active:
+                # Hover motion is visually useful while inertia decays but has
+                # no physical effect until the next recorded pointer-down.
+                lure = claimed_lure
+            tick += 1
+            _advance(organisms, targets, ground_truth, active, selected, lure)
+            if not _snapshot_matches(event.get("organisms"), _snapshot(organisms)):
+                return {"graded": True, "passed": False, "feedback": f"physics tick {tick} fabricates coupled organism motion"}
+            continue
+        if kind == "complete":
+            if completed or event.get("tick") != tick or not all(item["captured"] for item in organisms.values()):
+                return {"graded": True, "passed": False, "feedback": "completion lacks five physically captured organisms"}
+            completed = terminal = True
+            continue
         return {"graded": True, "passed": False, "feedback": f"event {sequence} has unknown kind"}
 
-    expected_scalars = {
-        "protocol_progress": progress,
-        "quarantined_id": quarantined_id,
-        "tick_total": current_tick_total,
-        "quarantine_moves": quarantine_moves,
-        "reset_count": reset_count,
-    }
-    for field, expected in expected_scalars.items():
-        if payload.get(field) != expected:
-            return {"graded": True, "passed": False, "feedback": f"submitted {field} does not match causal replay"}
-    if payload.get("completed_cycles") != current_cycles:
-        return {"graded": True, "passed": False, "feedback": "submitted completed cycles do not match replay"}
-
-    culprit_id = str(ground_truth.get("culprit_id") or "")
-    passed = (
-        not poisoned
-        and active_cycle is None
-        and drag is None
-        and progress == 3
-        and current_cycles == protocol
-        and current_tick_total == 3 * ticks_per_cycle
-        and quarantine_moves >= 3
-        and quarantined_id == culprit_id
-    )
+    expected = _snapshot(organisms)
+    if not _snapshot_matches(payload.get("final_organisms"), expected):
+        return {"graded": True, "passed": False, "feedback": "submitted final organisms disagree with physics replay"}
+    expected_scalars = {"tick": tick, "completed": completed, "field_selections": field_selections, "pointer_drags": pointer_drags, "calibration_runs": calibration_runs, "resets": resets}
+    for field, value in expected_scalars.items():
+        if payload.get(field) != value:
+            return {"graded": True, "passed": False, "feedback": f"submitted {field} disagrees with ecology replay"}
+    captured = sum(item["captured"] for item in organisms.values())
+    passed = completed and captured == len(organisms) and pointer_drags > 0
     return {
         "graded": True,
         "passed": passed,
         "score": 100 if passed else 0,
-        "feedback": (
-            f"causal replay: probes {progress}/3; response ticks {current_tick_total}/{3 * ticks_per_cycle}; "
-            f"quarantine={'correct' if quarantined_id == culprit_id else 'incorrect'}; drag samples {quarantine_moves}"
-        ),
+        "feedback": f"coupled ecology replay: sanctuaries {captured}/{len(organisms)}; field selections {field_selections}; pointer interventions {pointer_drags}; ticks {tick}; resets {resets}",
     }
 
 
 def cheat(public_state: dict[str, Any], ground_truth: dict[str, Any]) -> dict[str, Any]:
     del public_state
-    return {
-        "protocol": ground_truth.get("protocol"),
-        "culprit_id": ground_truth.get("culprit_id"),
-        "anomaly_probe": ground_truth.get("anomaly_probe"),
-        "response_law": ground_truth.get("response_law"),
-    }
+    return {"organisms": ground_truth.get("organisms") or [], "targets": ground_truth.get("targets") or [], "answers": []}

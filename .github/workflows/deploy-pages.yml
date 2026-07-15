@@ -45,17 +45,21 @@ jobs:
           from pathlib import Path
           manifest = json.loads(Path("_site/manifest.json").read_text())
           assert manifest["survey_included"] is False
-          assert manifest["catalog"]["built"] == 63
+          assert manifest["catalog"] == {
+              "total": 75,
+              "built": 75,
+              "solution_videos": 75,
+          }
           assert manifest["browser_play"] == {
               "enabled": True,
-              "environments": 63,
-              "challenges": 252,
+              "environments": 75,
+              "challenges": 300,
               "challenges_per_environment": 4,
-              "grader_files": 57,
+              "grader_files": 69,
               "python_runtime": "pyodide@314.0.2",
           }
           challenges = sorted(Path("_site/play/challenges").glob("*.json"))
-          assert len(challenges) == 63
+          assert len(challenges) == 75
           for path in challenges:
               bundle = json.loads(path.read_text())
               assert len(bundle["challenges"]) == 4, path

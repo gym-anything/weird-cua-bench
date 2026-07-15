@@ -97,8 +97,19 @@ def _set_phase(page, slot: int, target: int, step: int) -> None:
 def fail_once(page, state_dir: Path, out_dir: Path, mechanic: str) -> None:
     if mechanic != MECHANIC_ID:
         raise AssertionError(f"unexpected mechanic {mechanic!r}")
-    before = str(_read(state_dir / "ground_truth.json")["challenge_id"])
+    truth = _read(state_dir / "ground_truth.json")
+    before = str(truth["challenge_id"])
     expect(page.locator(".clockwork-customs")).to_have_attribute("data-active", "true")
+    # Screenshot latency is confined to this intentionally rejected take.  No
+    # screenshot perturbs any recording used by the passing master cycle.
+    start = truth["stations"]["pickup"]
+    page.mouse.move(*_canvas_point(page, start))
+    page.locator('[data-record="0"]').click()
+    page.mouse.move(*_canvas_point(page, start))
+    page.wait_for_timeout(260)
+    page.keyboard.press("g")
+    _shot(page, out_dir, mechanic, "active-rejected-take-negative-run")
+    expect(page.locator(".clockwork-foot .readout")).to_contain_text("TAKE 1 REJECTED", timeout=4_500)
     page.locator("#clockwork-submit").click()
     expect(page.locator(".clockwork-customs[data-fresh-failure='true']")).to_be_visible(timeout=7_000)
     expect(page.locator(".clockwork-foot .readout")).to_have_text("FAIL", timeout=7_000)
@@ -120,30 +131,9 @@ def solve(page, state_dir: Path, out_dir: Path, mechanic: str) -> None:
     controls = truth["controls"]
     _shot(page, out_dir, mechanic, "initial-fresh-desk")
 
-    # Capture active recording evidence in an intentionally discarded take, so
-    # screenshot latency can never perturb one of the authoritative loops.
-    start = truth["stations"]["pickup"]
-    page.mouse.move(*_canvas_point(page, start))
-    page.locator('[data-record="0"]').click()
-    page.mouse.move(*_canvas_point(page, start))
-    page.wait_for_timeout(260)
-    page.keyboard.press("g")
-    _shot(page, out_dir, mechanic, "active-dense-recording")
-    expect(page.locator(".clockwork-foot .readout")).to_contain_text("TAKE 1 REJECTED", timeout=4_500)
-
     for slot in range(3):
         _record_role(page, truth, slot, out_dir, mechanic)
     _shot(page, out_dir, mechanic, "three-recorded-ghosts")
-
-    # Zero phases are a genuine synchronization near-miss, not a terminal
-    # failure. The user can rewind without losing any dense take.
-    page.locator("#clockwork-run").click()
-    expect(page.locator(".clockwork-customs")).to_have_attribute("data-cycle", "true")
-    expect(page.locator(".clockwork-customs")).to_have_attribute("data-cycle", "false", timeout=int(controls["loop_duration_ms"]) + 2_500)
-    expect(page.locator(".clockwork-foot .readout")).to_contain_text("SYNC MISS")
-    _shot(page, out_dir, mechanic, "local-sync-failure")
-    page.locator("#clockwork-rewind").click()
-    expect(page.locator(".clockwork-foot .readout")).to_contain_text("REWOUND")
 
     step = int(controls["phase_step_ms"])
     catch_time = int(truth["conveyor"]["catch_time_ms"])

@@ -161,28 +161,39 @@
   }
 
   function chordRound(round, stage) {
-    const required = new Set((round.keys || []).map((key) => String(key).toUpperCase()));
-    stage.innerHTML = `<div class="chord-field"><div class="chord-keys">${[...required].map((key) => `<div class="chord-key" data-key="${esc(key)}"><span>HOLD</span><strong>${esc(key)}</strong><i></i></div>`).join('<b class="chord-plus">+</b>')}</div><div class="chord-charge">${Array.from({length: Number(round.required_ticks)}, (_, index) => `<i data-tick="${index}"></i>`).join("")}</div><p>TWO KEYS / ONE CONTINUOUS MAGNETIC FIELD</p></div>`;
-    const progress = {held: new Set(), ticks: 0, charged: false, faulted: false, timer: null};
+    const chords = (round.chords || []).map((chord) => chord.map((key) => String(key).toUpperCase()));
+    stage.innerHTML = `<div class="chord-field"><div class="chord-sequence">${chords.map((chord, index) => `<div data-chord-stage="${index}" data-status="${index === 0 ? "active" : "waiting"}"><span>FIELD ${index + 1}</span><b>${esc(chord[0])} + ${esc(chord[1])}</b></div>`).join("")}</div><div class="chord-keys"></div><div class="chord-charge"></div><p>CHARGE → RELEASE → ADVANCE / THREE CONTINUOUS FIELDS</p></div>`;
+    const progress = {stage: 0, held: new Set(), ticks: 0, charged: false, faulted: false, timer: null};
     const stopTimer = () => { if (progress.timer) window.clearInterval(progress.timer); progress.timer = null; };
+    const required = () => new Set(chords[progress.stage] || []);
+    const paintStage = () => {
+      stage.querySelectorAll("[data-chord-stage]").forEach((node, index) => { node.dataset.status = index < progress.stage ? "done" : index === progress.stage ? "active" : "waiting"; });
+      const keys = chords[progress.stage] || [];
+      const keyRack = stage.querySelector(".chord-keys");
+      const charge = stage.querySelector(".chord-charge");
+      if (keyRack) keyRack.innerHTML = keys.map((key) => `<div class="chord-key" data-key="${esc(key)}"><span>HOLD</span><strong>${esc(key)}</strong><i></i></div>`).join('<b class="chord-plus">+</b>');
+      if (charge) charge.innerHTML = Array.from({length: Number(round.required_ticks)}, (_, index) => `<i data-tick="${index}"></i>`).join("");
+    };
+    paintStage();
     keyDownHandler = (keyEvent) => {
       const key = keyEvent.key.toUpperCase();
-      if (!required.has(key) || keyEvent.repeat || progress.held.has(key) || progress.faulted) return;
+      const expected = required();
+      if (!expected.has(key) || keyEvent.repeat || progress.held.has(key) || progress.faulted) return;
       keyEvent.preventDefault();
       clearFreshFailure();
       progress.held.add(key);
-      event("key_down", {key});
+      event("key_down", {key, chord_index: progress.stage});
       stage.querySelector(`.chord-key[data-key="${CSS.escape(key)}"]`)?.classList.add("is-held");
-      if (progress.held.size === required.size && !progress.timer) {
+      if (progress.held.size === expected.size && !progress.timer) {
         progress.timer = window.setInterval(() => {
-          if (progress.held.size !== required.size || progress.faulted) return;
+          if (progress.held.size !== required().size || progress.faulted) return;
           progress.ticks += 1;
-          event("hold_tick", {keys: [...progress.held].sort()});
+          event("hold_tick", {keys: [...progress.held].sort(), chord_index: progress.stage});
           stage.querySelector(`[data-tick="${progress.ticks - 1}"]`)?.classList.add("is-filled");
           if (progress.ticks >= Number(round.required_ticks)) {
             progress.charged = true;
             stopTimer();
-            helpersCache.setReadout("CHORD CHARGED · RELEASE BOTH KEYS", "idle");
+            helpersCache.setReadout(`FIELD ${progress.stage + 1}/3 CHARGED · RELEASE BOTH KEYS`, "idle");
           }
         }, Number(round.tick_ms));
         model.timers.push(progress.timer);
@@ -190,16 +201,25 @@
     };
     keyUpHandler = (keyEvent) => {
       const key = keyEvent.key.toUpperCase();
-      if (!required.has(key) || !progress.held.has(key) || progress.faulted) return;
+      if (!required().has(key) || !progress.held.has(key) || progress.faulted) return;
       keyEvent.preventDefault();
       progress.held.delete(key);
-      event("key_up", {key});
+      event("key_up", {key, chord_index: progress.stage});
       stage.querySelector(`.chord-key[data-key="${CSS.escape(key)}"]`)?.classList.remove("is-held");
       if (!progress.charged) {
         progress.faulted = true;
         stopTimer();
         fault("chord_released_early");
-      } else if (progress.held.size === 0) completeRound();
+      } else if (progress.held.size === 0) {
+        progress.stage += 1;
+        progress.ticks = 0;
+        progress.charged = false;
+        if (progress.stage >= chords.length) completeRound();
+        else {
+          paintStage();
+          helpersCache.setReadout(`FIELD ${progress.stage}/3 SEALED · CHARGE FIELD ${progress.stage + 1}`, "idle");
+        }
+      }
     };
     window.addEventListener("keydown", keyDownHandler, true);
     window.addEventListener("keyup", keyUpHandler, true);
@@ -278,13 +298,21 @@
   }
 
   function interceptRound(round, stage) {
-    stage.innerHTML = `<div class="intercept-field"><div class="capture-gate" style="--center:${round.gate_center}%;--width:${Number(round.gate_half_width) * 2}%"><span>CAPTURE GATE</span></div><div class="intercept-track"><button type="button" class="intercept-target" id="intercept-target" data-in-gate="false"><i></i><b>PACKET</b></button></div><button type="button" class="intercept-arm" id="intercept-arm">ARM SCANNER</button><p>PACKET MOVES AFTER ARM / CLICK ONLY INSIDE GATE</p></div>`;
+    const packets = round.packets || [];
+    stage.innerHTML = `<div class="intercept-field"><div class="intercept-bank">${packets.map((packet, index) => `<i data-packet-mark="${index}">${index + 1}</i>`).join("")}</div><div class="capture-gate"><span>CAPTURE GATE</span></div><div class="intercept-track"><button type="button" class="intercept-target" id="intercept-target" data-in-gate="false"><i></i><b>PK-1</b></button></div><button type="button" class="intercept-arm" id="intercept-arm">ARM TRIPLE SCANNER</button><p>THREE SPEEDS / THREE MOVING GATES / ONE ARM CYCLE</p></div>`;
     const target = document.getElementById("intercept-target");
     const arm = document.getElementById("intercept-arm");
-    const progress = {armed: false, position: 8, direction: 1, timer: null, ticks: 0};
+    const gate = stage.querySelector(".capture-gate");
+    const progress = {armed: false, packetIndex: 0, position: 8, direction: 1, timer: null, ticks: 0};
+    const packet = () => packets[progress.packetIndex];
     const paint = () => {
+      const current = packet();
+      if (!current) return;
+      gate.style.setProperty("--center", `${current.gate_center}%`);
+      gate.style.setProperty("--width", `${Number(current.gate_half_width) * 2}%`);
       target.style.left = `${progress.position}%`;
-      target.dataset.inGate = Math.abs(progress.position - Number(round.gate_center)) <= Number(round.gate_half_width) ? "true" : "false";
+      target.dataset.inGate = Math.abs(progress.position - Number(current.gate_center)) <= Number(current.gate_half_width) ? "true" : "false";
+      target.querySelector("b").textContent = current.id;
     };
     paint();
     arm.addEventListener("click", () => {
@@ -294,21 +322,30 @@
       arm.disabled = true;
       event("arm");
       progress.timer = window.setInterval(() => {
-        progress.position += Number(round.speed) * progress.direction;
+        const current = packet();
+        if (!current) return;
+        progress.position += Number(current.speed) * progress.direction;
         if (progress.position >= 92) { progress.position = 92; progress.direction = -1; }
         else if (progress.position <= 8) { progress.position = 8; progress.direction = 1; }
         progress.ticks += 1;
-        event("intercept_tick", {position: Number(progress.position.toFixed(2)), direction: progress.direction});
+        event("intercept_tick", {packet_index: progress.packetIndex, packet_id: current.id, position: Number(progress.position.toFixed(2)), direction: progress.direction});
         paint();
       }, Number(round.tick_ms));
       model.timers.push(progress.timer);
     });
     target.addEventListener("click", () => {
       if (!progress.armed) { fault("packet_before_arm"); return; }
-      window.clearInterval(progress.timer);
-      event("intercept_click", {position: Number(progress.position.toFixed(2))});
-      if (progress.ticks >= 2 && target.dataset.inGate === "true") completeRound();
-      else fault("packet_outside_gate");
+      const current = packet();
+      event("intercept_click", {packet_index: progress.packetIndex, packet_id: current.id, position: Number(progress.position.toFixed(2))});
+      if (progress.ticks < 2 || target.dataset.inGate !== "true") { window.clearInterval(progress.timer); fault("packet_outside_gate"); return; }
+      stage.querySelector(`[data-packet-mark="${progress.packetIndex}"]`)?.setAttribute("data-status", "captured");
+      progress.packetIndex += 1;
+      if (progress.packetIndex >= packets.length) { window.clearInterval(progress.timer); completeRound(); return; }
+      progress.position = 8;
+      progress.direction = 1;
+      progress.ticks = 0;
+      helpersCache.setReadout(`PACKET ${progress.packetIndex}/3 CAPTURED · GATE HAS MOVED`, "idle");
+      paint();
     });
   }
 
@@ -413,6 +450,7 @@
     try {
       const response = await fetch("/result", {method: "POST", headers: {"content-type": "application/json"}, body: JSON.stringify({
         mechanic_id: model.state.mechanic_id,
+        task_id: model.state.task_id,
         challenge_id: model.state.challenge_id,
         round_records: model.roundRecords,
         resource_events: model.resourceEvents,

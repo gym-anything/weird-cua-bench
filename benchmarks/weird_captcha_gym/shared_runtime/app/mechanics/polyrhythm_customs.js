@@ -51,8 +51,8 @@
       const index = (model.state.lanes || []).findIndex((lane) => lane.id === laneId);
       const oscillator = model.audio.createOscillator();
       const gain = model.audio.createGain();
-      oscillator.type = index === 0 ? "triangle" : index === 1 ? "sine" : "square";
-      oscillator.frequency.value = [330, 440, 550][Math.max(0, index)] || 440;
+      oscillator.type = ["triangle", "sine", "square", "sawtooth"][Math.max(0, index)] || "sine";
+      oscillator.frequency.value = [294, 392, 494, 659][Math.max(0, index)] || 440;
       gain.gain.setValueAtTime(0.0001, model.audio.currentTime);
       gain.gain.exponentialRampToValueAtTime(0.08, model.audio.currentTime + 0.012);
       gain.gain.exponentialRampToValueAtTime(0.0001, model.audio.currentTime + Math.max(0.05, duration));
@@ -137,7 +137,7 @@
       board.dataset.hidden = "false";
       board.innerHTML = `<div class="rhythm-score-lanes">${scoreMarkup(lane.id)}</div><i class="rhythm-scanhead"></i>`;
     }
-    updatePhase(`PREVIEW ${index + 1}/3 · LANE ${lane.key} ONLY`, `${lane.label} manifest · remember taps, bars, and shared stamps`);
+    updatePhase(`PREVIEW ${index + 1}/${model.state.preview_order.length} · LANE ${lane.key} ONLY`, `${lane.label} manifest · remember taps, bars, and shared stamps`);
     helpers.setReadout(`OBSERVE LANE ${lane.key} · INPUT LOCKED`, "pending");
     drawPreview(helpers);
     const duration = Number(model.state.settings.performance_ms) * Number(model.state.settings.preview_scale);
@@ -153,14 +153,14 @@
     const board = document.querySelector(".rhythm-score-board");
     if (board) {
       board.dataset.hidden = "true";
-      board.innerHTML = '<div class="rhythm-seal"><span>ALL THREE MANIFESTS SEALED</span><strong>3</strong><i>COMBINE FROM MEMORY</i></div>';
+      board.innerHTML = `<div class="rhythm-seal"><span>ALL ${model.state.lanes.length} MANIFESTS SEALED</span><strong>3</strong><i>COMBINE FROM MEMORY</i></div>`;
     }
     let count = 3;
     const step = Number(model.state.settings.countdown_ms) / 3;
     const advance = () => {
       const node = document.querySelector(".rhythm-seal strong");
       if (node) node.textContent = String(count);
-      updatePhase("COMBINED CLEARANCE INCOMING", `${count} · hands on A / S / D`);
+      updatePhase("COMBINED CLEARANCE INCOMING", `${count} · hands on ${model.state.lanes.map((lane) => lane.key).join(" / ")}`);
       if (count <= 0) {
         beginPerformance(helpers);
         return;
@@ -217,8 +217,8 @@
     if (shell) shell.dataset.phase = "performance";
     const board = document.querySelector(".rhythm-score-board");
     if (board) board.innerHTML = '<div class="rhythm-performance-void"><span>MANIFEST HIDDEN</span><strong>PERFORM THE COMBINED SCORE</strong><i>taps · holds · simultaneous stamps</i></div>';
-    updatePhase("LIVE COMBINED INSPECTION", "A / S / D · keydown and release are both recorded");
-    helpers.setReadout("PERFORM NOW · START WINDOW ±230ms", "idle");
+    updatePhase("LIVE COMBINED INSPECTION", `${model.state.lanes.map((lane) => lane.key).join(" / ")} · keydown and release are both recorded`);
+    helpers.setReadout(`PERFORM NOW · START WINDOW ±${model.state.rules.start_window_ms}ms`, "idle");
     drawPerformance(helpers);
     model.timer = window.setTimeout(() => endPerformance(helpers), Number(model.state.settings.performance_ms) + 260);
   }
@@ -252,7 +252,7 @@
         const shell = document.querySelector(".polyrhythm-customs-captcha");
         if (shell) shell.dataset.terminal = "pass";
         const stamp = document.querySelector(".rhythm-terminal-stamp");
-        if (stamp) stamp.innerHTML = '<span>POLYRHYTHM ACCEPTED</span><strong>PASS</strong><i>THREE LANES / ONE CLEARANCE</i>';
+        if (stamp) stamp.innerHTML = `<span>POLYRHYTHM ACCEPTED</span><strong>PASS</strong><i>${model.state.lanes.length} LANES / ONE CLEARANCE</i>`;
         helpers.setReadout("PASS · COMBINED PERFORMANCE VERIFIED", "passed");
       } else if (outcome.passed === false && outcome.state) {
         await helpers.render(outcome.state);
@@ -298,17 +298,17 @@
         <div class="rhythm-grain"></div>
         <header class="rhythm-head">
           <div><span>PORT OF ENTRY / SONIC DECLARATIONS</span><h1>${clean(state.prompt)}</h1></div>
-          <aside><span>FORM PR-3</span><b>3 LANES</b><i>ACCURACY ≥ ${state.rules.pass_accuracy_percent}%</i></aside>
+          <aside><span>FORM PR-${state.lanes.length}</span><b>${state.lanes.length} LANES</b><i>ACCURACY ≥ ${state.rules.pass_accuracy_percent}%</i></aside>
         </header>
         <main class="rhythm-main">
           <section class="rhythm-manifest">
-            <header><div><span class="rhythm-phase-label">MANIFESTS SEALED</span><b class="rhythm-phase-sub">Press begin to inspect each lane separately</b></div><div class="rhythm-passport-mark">PR<br><i>03</i></div></header>
-            <div class="rhythm-score-board" data-hidden="false"><div class="rhythm-ready-seal"><span>SEQUENTIAL PREVIEW</span><strong>① ② ③</strong><i>THEN COMBINE FROM MEMORY</i></div></div>
+            <header><div><span class="rhythm-phase-label">MANIFESTS SEALED</span><b class="rhythm-phase-sub">Press begin to inspect each lane separately</b></div><div class="rhythm-passport-mark">PR<br><i>0${state.lanes.length}</i></div></header>
+            <div class="rhythm-score-board" data-hidden="false"><div class="rhythm-ready-seal"><span>SEQUENTIAL PREVIEW</span><strong>① ② ③ ④</strong><i>THEN COMBINE FROM MEMORY</i></div></div>
             <div class="rhythm-phase-progress"><i></i></div>
           </section>
           <aside class="rhythm-rules">
             <div class="rhythm-rule-card"><span>01</span><b>WATCH SEPARATELY</b><p>Only one lane is revealed at a time. Long bars must be held.</p></div>
-            <div class="rhythm-rule-card"><span>02</span><b>PERFORM TOGETHER</b><p>When the score vanishes, interleave all three lanes. Shared marks are chords.</p></div>
+            <div class="rhythm-rule-card"><span>02</span><b>PERFORM TOGETHER</b><p>When the score vanishes, interleave all four lanes. Shared marks are chords.</p></div>
             <div class="rhythm-tolerance-card"><span>INSPECTION TOLERANCE</span><dl><div><dt>START</dt><dd>±${state.rules.start_window_ms}ms</dd></div><div><dt>HOLD</dt><dd>±${state.rules.duration_tolerance_ms}ms</dd></div><div><dt>CHORD</dt><dd>${state.rules.chord_window_ms}ms</dd></div></dl></div>
           </aside>
         </main>
@@ -320,9 +320,9 @@
           <button type="button" class="rhythm-certify-now">CERTIFY NOW</button>
           <button type="button" class="rhythm-replay">REPLAY WHOLE TRIAL</button>
         </section>
-        <footer class="rhythm-foot"><div class="readout" data-status="idle">READY · AUDIO OPTIONAL / VISUAL PULSES AUTHORITATIVE</div><span>KEYDOWN + KEYUP RECORDED · A / S / D</span></footer>
+        <footer class="rhythm-foot"><div class="readout" data-status="idle">READY · AUDIO OPTIONAL / VISUAL PULSES AUTHORITATIVE</div><span>KEYDOWN + KEYUP RECORDED · ${state.lanes.map((lane) => lane.key).join(" / ")}</span></footer>
         <div class="rhythm-terminal-stamp"></div>
-        <div class="rhythm-start-curtain"><div><span>POLYRHYTHM CUSTOMS</span><strong>DECLARE<br>YOUR RHYTHM</strong><p>Three officers will reveal their stamps one lane at a time. Then every manifest disappears.</p><button type="button" class="rhythm-start">BEGIN INSPECTION</button></div></div>
+        <div class="rhythm-start-curtain"><div><span>POLYRHYTHM CUSTOMS</span><strong>DECLARE<br>YOUR RHYTHM</strong><p>Four officers reveal their stamps one lane at a time. Then every manifest disappears.</p><button type="button" class="rhythm-start">BEGIN INSPECTION</button></div></div>
         ${helpers.cheatPanelTemplate()}
       </section>`;
 

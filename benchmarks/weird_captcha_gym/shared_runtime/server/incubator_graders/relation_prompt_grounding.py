@@ -94,6 +94,9 @@ def grade(payload: dict[str, Any], ground_truth: dict[str, Any], public_state: d
         return {"graded": True, "passed": False, "feedback": "stale challenge"}
     if str(public_state.get("challenge_id") or "") != challenge_id:
         return {"graded": True, "passed": False, "feedback": "public-state challenge mismatch"}
+    task_id = str(ground_truth.get("task_id") or "")
+    if not task_id or str(payload.get("task_id") or "") != task_id or str(public_state.get("task_id") or "") != task_id:
+        return {"graded": True, "passed": False, "feedback": "task identity mismatch"}
     try:
         stage = ground_truth.get("stage") or {}
         width, height = int(stage["width"]), int(stage["height"])
@@ -102,12 +105,16 @@ def grade(payload: dict[str, Any], ground_truth: dict[str, Any], public_state: d
         objects = {str(item["id"]): dict(item) for item in ground_truth.get("objects") or []}
         if len(objects) != 5:
             raise ValueError("five assembly objects are required")
-        constraints = [dict(item) for item in ground_truth.get("constraints") or []]
-        if len(constraints) != 3:
-            raise ValueError("three relations are required")
+        projection_targets = {str(item["id"]): dict(item) for item in ground_truth.get("projection_targets") or []}
+        if len(projection_targets) != 5 or set(projection_targets) != set(objects):
+            raise ValueError("five dual-projection targets are required")
         settle_vectors = {str(key): dict(value) for key, value in (ground_truth.get("settle_vectors") or {}).items()}
         settle_ticks = int(ground_truth.get("settle_ticks"))
-        rules = dict(ground_truth.get("rules") or {})
+        tolerance = {str(key): int(value) for key, value in (ground_truth.get("target_tolerance") or {}).items()}
+        if set(tolerance) != {"x", "y", "depth"} or any(value < 0 for value in tolerance.values()):
+            raise ValueError("projection tolerance is malformed")
+        if public_state.get("projection_targets") != ground_truth.get("projection_targets") or public_state.get("target_tolerance") != ground_truth.get("target_tolerance"):
+            raise ValueError("public projection seals differ from hidden contract")
     except (KeyError, TypeError, ValueError) as exc:
         return {"graded": True, "passed": False, "feedback": f"invalid relation contract: {exc}"}
 
@@ -269,18 +276,24 @@ def grade(payload: dict[str, Any], ground_truth: dict[str, Any], public_state: d
     for field, value in expected.items():
         if payload.get(field) != value:
             return {"graded": True, "passed": False, "feedback": f"submitted {field} does not match replay"}
-    relation_results = _relations(states, objects, constraints, rules) if all(state["placed"] for state in states.values()) else [False] * len(constraints)
+    projection_results = {
+        object_id: bool(
+            state["placed"]
+            and abs(int(state["x"]) - int(projection_targets[object_id]["x"])) <= tolerance["x"]
+            and abs(int(state["y"]) - int(projection_targets[object_id]["y"])) <= tolerance["y"]
+            and abs(int(state["depth"]) - int(projection_targets[object_id]["depth"])) <= tolerance["depth"]
+        )
+        for object_id, state in states.items()
+    }
     passed = (
         settled
         and drag is None
         and depth_drag is None
         and all(state["placed"] for state in states.values())
-        and all(relation_results)
+        and all(projection_results.values())
         and drag_count >= 5
         and drag_samples >= 15
         and total_drag_distance >= 900
-        and depth_samples >= 4
-        and depth_distance >= 45
         and settle_samples == settle_ticks
     )
     return {
@@ -288,7 +301,7 @@ def grade(payload: dict[str, Any], ground_truth: dict[str, Any], public_state: d
         "passed": passed,
         "score": 100 if passed else 0,
         "feedback": (
-            f"relation replay: constraints {sum(relation_results)}/{len(relation_results)}; placed {sum(state['placed'] for state in states.values())}/5; "
+            f"dual-projection replay: seals {sum(projection_results.values())}/5; placed {sum(state['placed'] for state in states.values())}/5; "
             f"drags {drag_count}; depth travel {depth_distance}; settle ticks {settle_samples}/{settle_ticks}"
         ),
     }
@@ -297,7 +310,7 @@ def grade(payload: dict[str, Any], ground_truth: dict[str, Any], public_state: d
 def cheat(public_state: dict[str, Any], ground_truth: dict[str, Any]) -> dict[str, Any]:
     del public_state
     return {
-        "constraints": ground_truth.get("constraints"),
+        "projection_targets": ground_truth.get("projection_targets"),
         "solution_positions": ground_truth.get("solution_positions"),
         "settle_vectors": ground_truth.get("settle_vectors"),
     }

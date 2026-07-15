@@ -8,11 +8,11 @@ from typing import Any
 MECHANIC_ID = "microgame_gauntlet"
 ROUND_TYPES = ("pressure", "chord", "dial", "intercept", "route")
 CHORDS = (("A", "L"), ("D", "K"), ("F", "J"), ("Q", "P"), ("S", "K"))
-PULSE_POSITIONS = ((22, 32), (50, 23), (77, 36), (32, 69), (66, 72))
+PULSE_POSITIONS = ((14, 25), (34, 18), (59, 22), (83, 30), (20, 70), (45, 79), (70, 72), (88, 62))
 ROUTE_TEMPLATES = (
-    ((12, 72), (25, 42), (43, 57), (59, 25), (77, 46), (89, 18)),
-    ((10, 24), (27, 58), (42, 32), (57, 71), (74, 45), (91, 76)),
-    ((12, 50), (28, 20), (45, 66), (61, 37), (76, 73), (90, 42)),
+    ((8, 75), (19, 55), (29, 29), (42, 48), (53, 73), (64, 42), (73, 18), (84, 39), (92, 16)),
+    ((8, 22), (18, 46), (29, 73), (40, 52), (51, 25), (62, 48), (72, 76), (83, 55), (93, 79)),
+    ((8, 52), (18, 23), (30, 42), (41, 74), (52, 49), (63, 20), (74, 43), (84, 74), (93, 48)),
 )
 
 
@@ -27,9 +27,9 @@ def generate(task: dict[str, Any], seed: str) -> tuple[dict[str, Any], dict[str,
     rng.shuffle(order)
     pulse_positions = list(PULSE_POSITIONS)
     rng.shuffle(pulse_positions)
-    pulse_count = rng.choice((3, 4))
+    pulse_count = rng.choice((7, 8))
     pulse_ids = [f"P{index + 1}-{rng.randint(20, 98)}" for index in range(pulse_count)]
-    chord = rng.choice(CHORDS)
+    chord_sequence = rng.sample(CHORDS, 3)
     dial_start = rng.randrange(0, 360, 30)
     dial_target = (dial_start + rng.choice((120, 150, 180, 210, 240))) % 360
     route_template = rng.choice(ROUTE_TEMPLATES)
@@ -56,11 +56,11 @@ def generate(task: dict[str, Any], seed: str) -> tuple[dict[str, Any], dict[str,
             })
         elif round_type == "chord":
             base.update({
-                "title": "TWO-KEY MAGNETIC CHORD",
-                "instruction": f"Hold {chord[0]} + {chord[1]} together until five charge bars fill, then release both keys.",
-                "keys": list(chord),
-                "required_ticks": 5,
-                "tick_ms": 130,
+                "title": "THREE-STAGE MAGNETIC CHORD",
+                "instruction": "Charge and release all three two-key chords in the displayed order. An early release discharges the bank.",
+                "chords": [list(chord) for chord in chord_sequence],
+                "required_ticks": 4,
+                "tick_ms": 145,
             })
         elif round_type == "dial":
             base.update({
@@ -68,26 +68,33 @@ def generate(task: dict[str, Any], seed: str) -> tuple[dict[str, Any], dict[str,
                 "instruction": "Drag around the flywheel to spin it. Release, let it coast, then brake inside the striped target sector.",
                 "start_angle": dial_start,
                 "target_angle": dial_target,
-                "target_tolerance": 28,
-                "friction": 0.92,
-                "tick_ms": 110,
+                "target_tolerance": 13,
+                "friction": 0.945,
+                "tick_ms": 95,
             })
         elif round_type == "intercept":
+            packets = [
+                {
+                    "id": f"PK-{index + 1}",
+                    "speed": round(rng.uniform(4.4 + index * .45, 6.0 + index * .55), 2),
+                    "gate_center": rng.randint(30, 70),
+                    "gate_half_width": rng.choice((5, 6)),
+                }
+                for index in range(3)
+            ]
             base.update({
-                "title": "MOVING-PACKET INTERCEPT",
-                "instruction": "Arm the scanner. Click the moving packet only while its center crosses the illuminated capture gate.",
-                "speed": round(rng.uniform(3.8, 5.2), 2),
-                "gate_center": rng.randint(43, 57),
-                "gate_half_width": 9,
-                "tick_ms": 120,
+                "title": "TRIPLE MOVING-PACKET INTERCEPT",
+                "instruction": "Arm once, then catch three packets. The capture gate and packet speed change after every hit.",
+                "packets": packets,
+                "tick_ms": 105,
             })
         else:
             base.update({
                 "title": "BALANCE-ROUTE COURIER",
                 "instruction": "Drag the reactor capsule through every numbered hoop without leaving the visible route corridor.",
                 "points": route_points,
-                "checkpoint_radius": 8,
-                "corridor_radius": 13,
+                "checkpoint_radius": 6,
+                "corridor_radius": 8,
             })
         rounds.append(base)
 
@@ -100,7 +107,7 @@ def generate(task: dict[str, Any], seed: str) -> tuple[dict[str, Any], dict[str,
         "challenge_id": challenge_id,
         "prompt": task.get("natural_language") or "Complete all five reactor trials without exhausting stability.",
         "asset_manifest": "shared_runtime/assets/provenance/incubator_full_build_v1.json",
-        "generator": {"name": "mixed_input_verification_reactor_v1", "variant_count": 8_000_000_000},
+        "generator": {"name": "mixed_input_verification_reactor_v2", "variant_count": 19_000_000_000},
         "reactor_id": f"VR-{challenge_id.upper()}",
         "rounds": rounds,
         "starting_energy": 100,

@@ -64,23 +64,16 @@ def _swept_catch(round_data: dict[str, Any], catcher: dict[str, Any]) -> tuple[b
         return False, None
     start = float(round_data["wall_exit_ms"])
     end = float(round_data["duration_ms"])
-    step = 10.0
-    previous_t = start
-    previous_local = _local(_path(round_data, previous_t), catcher)
-    current_t = start + step
+    step = 5.0
+    projectile_radius = float(round_data["projectile_radius"])
+    clear_half_aperture = float(catcher["aperture"]) / 2.0 - projectile_radius
+    clear_half_depth = float(round_data["capture_depth"]) / 2.0 - projectile_radius
+    current_t = start
     while current_t <= end + 1e-6:
-        current_local = _local(_path(round_data, current_t), catcher)
-        crosses = previous_local[0] == 0 or current_local[0] == 0 or previous_local[0] * current_local[0] < 0
-        if crosses:
-            denominator = previous_local[0] - current_local[0]
-            amount = 0.0 if abs(denominator) < 1e-9 else previous_local[0] / denominator
-            amount = _clamp(amount, 0.0, 1.0)
-            crossing_t = previous_t + (current_t - previous_t) * amount
-            crossing_y = previous_local[1] + (current_local[1] - previous_local[1]) * amount
-            clear_half_aperture = float(catcher["aperture"]) / 2.0 - float(round_data["projectile_radius"])
-            if clear_half_aperture >= 0 and abs(crossing_y) <= clear_half_aperture + 1e-9 and _angle_error(_velocity_angle(round_data, crossing_t), float(catcher["angle_deg"])) <= float(round_data["alignment_tolerance_deg"]) + 1e-9:
-                return True, crossing_t
-        previous_t, previous_local = current_t, current_local
+        local = _local(_path(round_data, current_t), catcher)
+        aligned = _angle_error(_velocity_angle(round_data, current_t), float(catcher["angle_deg"])) <= float(round_data["alignment_tolerance_deg"]) + 1e-9
+        if clear_half_aperture >= 0 and clear_half_depth >= 0 and abs(local[0]) <= clear_half_depth and abs(local[1]) <= clear_half_aperture and aligned:
+            return True, current_t
         current_t += step
     return False, None
 
@@ -111,6 +104,7 @@ def _round(rng: random.Random, seed: str, index: int, family: str) -> tuple[dict
         "phase": phase,
         "projectile_radius": projectile_radius,
         "alignment_tolerance_deg": 22,
+        "capture_depth": 64,
         "initial_catcher": {"x": 450.0, "y": 427.0, "angle_deg": 0, "aperture": 70},
         "aperture_min": 60,
         "aperture_max": 120,
@@ -174,7 +168,7 @@ def generate(task: dict[str, Any], seed: str) -> tuple[dict[str, Any], dict[str,
         "task_id": task_id,
         "challenge_id": challenge_id,
         "asset_manifest": "shared_runtime/assets/provenance/incubator_full_build_v1.json",
-        "prompt": task.get("natural_language") or "Watch each flight. Set, orient, size, and arm the catcher before emergence.",
+        "prompt": task.get("natural_language") or "Watch each flight. Place the full capture tunnel on its hidden continuation, match its direction, and arm before emergence.",
         "generator": {"name": "analytic_hidden_flight_catcher_v1", "variant_count": VARIANT_COUNT},
         "range_id": f"TR-{challenge_id[:4].upper()}-{rng.randint(100, 999)}",
         "palette": rng.choice(PALETTES),

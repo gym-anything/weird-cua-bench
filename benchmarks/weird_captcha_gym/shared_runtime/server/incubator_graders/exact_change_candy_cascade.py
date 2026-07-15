@@ -124,7 +124,7 @@ def _contract(ground_truth: dict[str, Any], public_state: dict[str, Any]) -> tup
     move_budget = ground_truth.get("move_budget")
     if isinstance(target, bool) or not isinstance(target, int) or target <= 0:
         raise ValueError("target score is malformed")
-    if move_budget != 2:
+    if move_budget != 4:
         raise ValueError("move budget contract is malformed")
     if public_state.get("target_score") != target or public_state.get("move_budget") != move_budget:
         raise ValueError("public score contract differs from hidden contract")
@@ -236,6 +236,6 @@ def cheat(public_state: dict[str, Any], ground_truth: dict[str, Any]) -> dict[st
         "swaps": ground_truth.get("solution_swaps") or [],
         "move_scores": ground_truth.get("solution_move_scores") or [],
         "wave_counts": ground_truth.get("solution_wave_counts") or [],
-        "instruction": "Perform the two adjacent swaps in order, then stamp the exact receipt.",
+        "instruction": "Perform the four adjacent swaps in order, then stamp the exact receipt.",
         "answers": [],
     }

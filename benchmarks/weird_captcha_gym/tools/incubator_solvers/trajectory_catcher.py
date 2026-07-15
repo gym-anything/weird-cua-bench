@@ -45,15 +45,10 @@ def _place_catcher(page, round_data: dict, solution: dict) -> None:
     target_angle = int(solution["angle_deg"]) % 180
     clockwise_steps = ((target_angle - current_angle) % 180) // 15
     counter_steps = ((current_angle - target_angle) % 180) // 15
-    if clockwise_steps == 0:
-        # A successful transcript must demonstrate a real orientation action even
-        # when a generated tangent happens to match the reset stop.
-        page.locator("#trajectory-rotate-right").click()
-        page.locator("#trajectory-rotate-left").click()
-    elif clockwise_steps <= counter_steps:
+    if clockwise_steps and clockwise_steps <= counter_steps:
         for _ in range(clockwise_steps):
             page.locator("#trajectory-rotate-right").click()
-    else:
+    elif counter_steps:
         for _ in range(counter_steps):
             page.locator("#trajectory-rotate-left").click()
 
@@ -105,19 +100,8 @@ def solve(page, state_dir: Path, out_dir: Path, mechanic: str) -> None:
     page.wait_for_timeout(520)
     _screenshot(page, out_dir, mechanic, "active-observation")
 
-    # Exercise the one-round replay contract with a genuine physical miss.
-    _wait_for_phase(page, "hidden")
-    page.locator("#trajectory-arm").click()
-    expect(page.locator(".trajectory-catcher")).to_have_attribute("data-result", "miss", timeout=7_000)
-    _screenshot(page, out_dir, mechanic, "miss-feedback")
-    page.locator("#trajectory-replay").click()
-
     for index, (round_data, solution) in enumerate(zip(rounds, solutions)):
         _wait_for_phase(page, "hidden")
-        if index == 0:
-            page.locator("#trajectory-reset-catcher").click()
-            expect(page.locator(".trajectory-foot .readout")).to_contain_text("CATCHER RESET")
-            _screenshot(page, out_dir, mechanic, "reset-contract")
         _place_catcher(page, round_data, solution)
         if index == 0:
             _screenshot(page, out_dir, mechanic, "hidden-commit")

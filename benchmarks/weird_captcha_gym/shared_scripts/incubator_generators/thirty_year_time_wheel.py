@@ -101,7 +101,7 @@ def generate(task: dict[str, Any], seed: str) -> tuple[dict[str, Any], dict[str,
         "task_id": task_id,
         "challenge_id": challenge_id,
         "prompt": task.get("natural_language")
-        or "Wind all three calendar rings to the target. Let one ring coast, then catch it with the brake before locking.",
+        or "Wind all three calendar rings to the target. Stop every moving ring before locking.",
         "submit_label": "LOCK CHRONOMETER",
         "asset_manifest": "shared_runtime/assets/provenance/incubator_puzzles_v1.json",
         "generator": {
@@ -120,7 +120,7 @@ def generate(task: dict[str, Any], seed: str) -> tuple[dict[str, Any], dict[str,
         "rules": {
             "day": "Day detents wrap inside the current month's real length.",
             "month_year": "Month and year changes clamp invalid dates, including leap day.",
-            "proof": "LOCK requires every ring, a genuine coast detent, and an effective brake.",
+            "proof": "LOCK requires the exact date, all three necessary rings, and no remaining momentum.",
         },
     }
     ground_truth = {

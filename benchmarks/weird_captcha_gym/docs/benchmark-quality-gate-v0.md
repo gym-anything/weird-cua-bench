@@ -19,7 +19,7 @@ This benchmark is not ready just because an environment boots, renders, submits,
 
 ## Frozen historical v0 classification (superseded)
 
-The bullets below record the 2026-07-08 snapshot and are not the current catalog. The live tree now contains 65 folders—63 built/prototype designs, 0 scaffolds, and 2 rejected pilots—while the `verified` split remains empty pending this gate.
+The bullets below record the 2026-07-08 snapshot and are not the current catalog. The live tree now contains 75 folders—all 75 built/prototype designs, with 0 scaffolds and 0 live rejected records—while the `verified` split remains empty pending this gate. The two pilots rejected below were later replaced completely; their original contracts remain rejected.
 
 - `reverse_identity_gate`: rejected infrastructure pilot. It proves runtime plumbing, not benchmark quality.
 - `moving_checkbox_evasive_button`: rejected infrastructure pilot. It reads like a tutorial/demo.

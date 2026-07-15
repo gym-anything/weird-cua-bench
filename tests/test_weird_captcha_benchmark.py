@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import importlib.util
 import json
+import math
 import os
 import unittest
 
@@ -18,9 +19,9 @@ class WeirdCaptchaBenchmarkTests(unittest.TestCase):
         self.assertTrue((root / "environments").is_dir())
         self.assertTrue((root / "splits").is_dir())
 
-    def test_all_65_current_envs_are_discoverable(self) -> None:
+    def test_all_75_current_envs_are_discoverable(self) -> None:
         envs = list_environments("weird_captcha_gym", split="all")
-        self.assertEqual(len(envs), 65)
+        self.assertEqual(len(envs), 75)
         self.assertIn("reverse_identity_gate_env", envs)
         self.assertIn("temporal_memory_first_change_env", envs)
         self.assertIn("motion_only_ghost_jigsaw_env", envs)
@@ -63,6 +64,16 @@ class WeirdCaptchaBenchmarkTests(unittest.TestCase):
         self.assertIn("three_camera_claw_machine_env", envs)
         self.assertIn("zero_g_cable_autopsy_env", envs)
         self.assertIn("portal_freight_oversized_parcel_env", envs)
+        self.assertIn("specular_lighthouse_relay_env", envs)
+        self.assertIn("wind_tunnel_seed_courier_env", envs)
+        self.assertIn("hologram_silhouette_foundry_env", envs)
+        self.assertIn("orbital_docking_customs_env", envs)
+        self.assertIn("gravity_room_freight_env", envs)
+        self.assertIn("floodgate_archive_rescue_env", envs)
+        self.assertIn("elastic_membrane_sorter_env", envs)
+        self.assertIn("pheromone_dispatch_env", envs)
+        self.assertIn("clockwork_clutch_safe_env", envs)
+        self.assertIn("marionette_checkpoint_env", envs)
 
     def test_benchmark_manifest_matches_discovered_environment_folders(self) -> None:
         benchmark_root = resolve_benchmark_root("weird_captcha_gym")
@@ -84,7 +95,7 @@ class WeirdCaptchaBenchmarkTests(unittest.TestCase):
             env_root = benchmark_root / "environments" / env_name
             hooks.extend(env_root.glob("scripts/*.sh"))
             hooks.extend(env_root.glob("tasks/*/*.sh"))
-        self.assertEqual(len(hooks), 65 * 4)
+        self.assertEqual(len(hooks), 75 * 4)
         for hook in hooks:
             self.assertTrue(os.access(hook, os.X_OK), f"hook is not executable: {hook.relative_to(benchmark_root)}")
 
@@ -294,6 +305,171 @@ class WeirdCaptchaBenchmarkTests(unittest.TestCase):
             positions.add(int(truth["target_slot"]))
         self.assertEqual(positions, set(range(7)))
 
+    def test_pending_next_ten_v2_scale_variation_and_closed_shortcuts(self) -> None:
+        benchmark_root = resolve_benchmark_root("weird_captcha_gym")
+        setup_spec = importlib.util.spec_from_file_location(
+            "weird_captcha_pending_next_ten_v2_setup_test",
+            benchmark_root / "shared_scripts" / "setup_task.py",
+        )
+        self.assertIsNotNone(setup_spec and setup_spec.loader)
+        setup = importlib.util.module_from_spec(setup_spec)
+        setup_spec.loader.exec_module(setup)
+
+        mechanics = (
+            "bureaucratic_signature_trap",
+            "temporal_memory_first_change",
+            "polyrhythm_customs",
+            "exact_change_candy_cascade",
+            "tiny_fps_customs",
+            "thirty_year_time_wheel",
+        )
+
+        def task_for(mechanic: str) -> dict:
+            path = benchmark_root / f"environments/{mechanic}_env/tasks/{mechanic}_seed_0001/task.json"
+            return json.loads(path.read_text(encoding="utf-8"))
+
+        generated = {
+            mechanic: [
+                setup.generate_incubator_candidate(task_for(mechanic), f"pending-v2-audit-{index}-{mechanic}")
+                for index in range(24)
+            ]
+            for mechanic in mechanics
+        }
+
+        signature_traces = set()
+        for public, truth in generated["bureaucratic_signature_trap"]:
+            self.assertEqual(len(public["form"]["layers"]), 4)
+            self.assertEqual(public["form"], truth["form"])
+            signature_traces.add(json.dumps(public["form"]["original_trace"], separators=(",", ":")))
+        self.assertEqual(len(signature_traces), 24)
+
+        memory_targets = set()
+        for public, truth in generated["temporal_memory_first_change"]:
+            timeline = public["timeline"]
+            self.assertEqual(len(timeline["objects"]), 9)
+            self.assertEqual(len(timeline["events"]), 5)
+            self.assertNotIn("pulse_lead_ms", timeline)
+            self.assertEqual(min(timeline["events"], key=lambda item: item["at_ms"])["object_id"], truth["target_object_id"])
+            memory_targets.add(truth["target_object_id"])
+        self.assertEqual(len(memory_targets), 24)
+
+        for public, truth in generated["polyrhythm_customs"]:
+            self.assertEqual(len(public["lanes"]), 4)
+            self.assertTrue(18 <= len(public["score"]) <= 22)
+            self.assertEqual(sum(note["kind"] == "hold" for note in truth["expected_notes"]), 2)
+            self.assertEqual(len(truth["chords"]), 2)
+
+        for public, truth in generated["exact_change_candy_cascade"]:
+            self.assertEqual(public["move_budget"], 4)
+            self.assertEqual(len(truth["solution_swaps"]), 4)
+            self.assertGreaterEqual(max(truth["solution_wave_counts"]), 3)
+            self.assertLessEqual(truth["solution_count_for_target"], 8)
+
+        fps_maps = set()
+        for public, truth in generated["tiny_fps_customs"]:
+            fps_maps.add(tuple(public["map"]))
+            self.assertEqual(len(public["wanted_posters"]), 4)
+            self.assertEqual(len(truth["wanted_ids"]), 4)
+            self.assertEqual(len(truth["protected_ids"]), 4)
+        self.assertGreaterEqual(len(fps_maps), 22)
+
+        for public, _truth in generated["thirty_year_time_wheel"]:
+            self.assertNotIn("coast detent", public["rules"]["proof"].lower())
+            self.assertNotIn("effective brake", public["rules"]["proof"].lower())
+
+        def load_grader(mechanic: str):
+            path = benchmark_root / f"shared_runtime/server/incubator_graders/{mechanic}.py"
+            spec = importlib.util.spec_from_file_location(f"pending_v2_grader_{mechanic}", path)
+            self.assertIsNotNone(spec and spec.loader)
+            module = importlib.util.module_from_spec(spec)
+            spec.loader.exec_module(module)
+            return module
+
+        signature_public, signature_truth = generated["bureaucratic_signature_trap"][0]
+        form = signature_truth["form"]
+        alignment = []
+        for layer in form["layers"]:
+            start = [float(layer["initial"]["x"]), float(layer["initial"]["y"])]
+            end = [float(layer["target"]["x"]), float(layer["target"]["y"])]
+            count = max(2, math.ceil(math.hypot(end[0] - start[0], end[1] - start[1]) / 24))
+            samples = [
+                [start[0] + (end[0] - start[0]) * index / count, start[1] + (end[1] - start[1]) * index / count]
+                for index in range(1, count + 1)
+            ]
+            alignment.append({"kind": "sheet_drag", "sheet_id": layer["id"], "start": start, "samples": samples, "end": samples[-1]})
+
+        def sequenced(events: list[dict]) -> list[dict]:
+            return [{"sequence": index, **event} for index, event in enumerate(events, start=1)]
+
+        aperture = form["aperture"]
+        circle = [
+            [
+                aperture["x"] + aperture["radius"] * .62 * math.cos(index * math.tau / 80),
+                aperture["y"] + aperture["radius"] * .62 * math.sin(index * math.tau / 80),
+            ]
+            for index in range(81)
+        ]
+        signature_grader = load_grader("bureaucratic_signature_trap")
+        circle_payload = {
+            "mechanic_id": "bureaucratic_signature_trap",
+            "challenge_id": signature_truth["challenge_id"],
+            "events": sequenced([*alignment, {"kind": "signature", "points": circle}, {"kind": "certify"}]),
+        }
+        self.assertFalse(signature_grader.grade(circle_payload, signature_truth, signature_public)["passed"])
+        trace_payload = {
+            **circle_payload,
+            "events": sequenced([*alignment, {"kind": "signature", "points": form["original_trace"]}, {"kind": "certify"}]),
+        }
+        self.assertTrue(signature_grader.grade(trace_payload, signature_truth, signature_public)["passed"])
+
+        memory_public, memory_truth = generated["temporal_memory_first_change"][0]
+        timeline = memory_truth["timeline"]
+        target_id = memory_truth["target_object_id"]
+        target = next(item for item in timeline["objects"] if item["id"] == target_id)
+        target_index = timeline["settle_order"].index(target_id)
+        grid = timeline["settle_grid"]
+        settled_point = [
+            grid["x0"] + target_index % grid["columns"] * grid["dx"],
+            grid["y0"] + target_index // grid["columns"] * grid["dy"],
+        ]
+        memory_grader = load_grader("temporal_memory_first_change")
+        shortcut_events = sequenced([
+            {"kind": "arm"},
+            {"kind": "return_settled"},
+            {"kind": "select", "selected_object_id": target_id, "point": settled_point},
+        ])
+        shortcut = {
+            "mechanic_id": "temporal_memory_first_change",
+            "challenge_id": memory_truth["challenge_id"],
+            "selected_object_id": target_id,
+            "events": shortcut_events,
+        }
+        self.assertFalse(memory_grader.grade(shortcut, memory_truth, memory_public)["passed"])
+
+        first = timeline["events"][0]
+
+        def moving_point(at_ms: float) -> list[float]:
+            return [
+                target["x0"] + math.sin(target["phase"] + at_ms * target["rate_x"]) * target["amp_x"],
+                target["y0"] + math.cos(target["phase"] * .83 + at_ms * target["rate_y"]) * target["amp_y"],
+            ]
+
+        pre_ms = first["at_ms"] - 160
+        change_a = first["at_ms"] + 120
+        change_b = first["at_ms"] + 260
+        witnessed = {
+            **shortcut,
+            "events": sequenced([
+                {"kind": "arm"},
+                {"kind": "observe", "mode": "review", "timeline_ms": pre_ms, "cursor": moving_point(pre_ms)},
+                {"kind": "observe", "mode": "review", "timeline_ms": change_a, "cursor": moving_point(change_a)},
+                {"kind": "observe", "mode": "review", "timeline_ms": change_b, "cursor": moving_point(change_b)},
+                {"kind": "return_settled"},
+                {"kind": "select", "selected_object_id": target_id, "point": settled_point},
+            ]),
+        }
+        self.assertTrue(memory_grader.grade(witnessed, memory_truth, memory_public)["passed"])
+
     def test_incubator_batch_two_plugins_are_deterministic_private_and_identity_bound(self) -> None:
         benchmark_root = resolve_benchmark_root("weird_captcha_gym")
         setup_spec = importlib.util.spec_from_file_location(
@@ -336,11 +512,14 @@ class WeirdCaptchaBenchmarkTests(unittest.TestCase):
             generated[mechanic] = (public_a, truth_a)
 
         _, candy_truth = generated["exact_change_candy_cascade"]
-        self.assertEqual(len(candy_truth["solution_swaps"]), 2)
-        self.assertGreaterEqual(max(candy_truth["solution_wave_counts"]), 2)
+        self.assertEqual(len(candy_truth["solution_swaps"]), 4)
+        self.assertGreaterEqual(max(candy_truth["solution_wave_counts"]), 3)
+        self.assertLessEqual(candy_truth["solution_count_for_target"], 8)
         _, rhythm_truth = generated["polyrhythm_customs"]
-        self.assertTrue(rhythm_truth["chords"])
-        self.assertTrue(any(note["kind"] == "hold" and note["duration_ms"] > 0 for note in rhythm_truth["expected_notes"]))
+        self.assertEqual(len(rhythm_truth["lanes"]), 4)
+        self.assertEqual(len(rhythm_truth["chords"]), 2)
+        self.assertEqual(sum(note["kind"] == "hold" and note["duration_ms"] > 0 for note in rhythm_truth["expected_notes"]), 2)
+        self.assertGreaterEqual(len(rhythm_truth["expected_notes"]), 18)
 
         fps_task = json.loads((benchmark_root / "environments/tiny_fps_customs_env/tasks/tiny_fps_customs_seed_0001/task.json").read_text())
         fps_layouts = {
@@ -348,6 +527,11 @@ class WeirdCaptchaBenchmarkTests(unittest.TestCase):
             for index in range(32)
         }
         self.assertEqual(fps_layouts, {"identity", "mirror_x", "mirror_y", "rotate_180"})
+        fps_maps = {
+            tuple(setup.generate_incubator_candidate(fps_task, f"maze-audit-{index}")[0]["map"])
+            for index in range(32)
+        }
+        self.assertGreaterEqual(len(fps_maps), 28)
 
     def test_next_ten_v3_generators_have_meaningful_structural_variation_and_scale(self) -> None:
         benchmark_root = resolve_benchmark_root("weird_captcha_gym")
@@ -503,6 +687,340 @@ class WeirdCaptchaBenchmarkTests(unittest.TestCase):
                     0.45,
                     f"market tape retained a short near-period at lag {lag}",
                 )
+
+    def test_pending_next_ten_v3_are_structurally_varied_identity_bound_and_not_terminal_claims(self) -> None:
+        benchmark_root = resolve_benchmark_root("weird_captcha_gym")
+        setup_spec = importlib.util.spec_from_file_location(
+            "weird_captcha_pending_next_ten_v3_setup_test",
+            benchmark_root / "shared_scripts" / "setup_task.py",
+        )
+        self.assertIsNotNone(setup_spec and setup_spec.loader)
+        setup = importlib.util.module_from_spec(setup_spec)
+        setup_spec.loader.exec_module(setup)
+        mechanics = (
+            "forced_perspective_moving_day",
+            "lidar_blacksite",
+            "tomographic_baggage_surgery",
+            "three_camera_claw_machine",
+            "zero_g_cable_autopsy",
+            "portal_freight_oversized_parcel",
+            "code_to_diagram_captcha",
+            "exit_vim_terminal_escape",
+            "fake_desktop_automation_inversion",
+            "impossible_ecology",
+        )
+        generated: dict[str, list[tuple[dict, dict]]] = {}
+        cosmetic_fields = {
+            "asset_manifest", "benchmark", "challenge_id", "generator", "palette",
+            "prompt", "submit_label", "task_id",
+        }
+        for mechanic in mechanics:
+            task_path = benchmark_root / f"environments/{mechanic}_env/tasks/{mechanic}_seed_0001/task.json"
+            task = json.loads(task_path.read_text(encoding="utf-8"))
+            examples: list[tuple[dict, dict]] = []
+            structural_signatures: set[str] = set()
+            for index in range(48):
+                seed = f"pending-v3-variation-{index}"
+                public, truth = setup.generate_incubator_candidate(task, seed)
+                repeated = setup.generate_incubator_candidate(task, seed)
+                self.assertEqual((public, truth), repeated, f"{mechanic} was not deterministic")
+                structure = {key: value for key, value in public.items() if key not in cosmetic_fields}
+                structural_signatures.add(json.dumps(structure, sort_keys=True))
+                examples.append((public, truth))
+            self.assertEqual(len(structural_signatures), 48, f"{mechanic} varied only cosmetically")
+            generated[mechanic] = examples
+
+            grader_path = benchmark_root / f"shared_runtime/server/incubator_graders/{mechanic}.py"
+            grader_spec = importlib.util.spec_from_file_location(f"pending_v3_grader_{mechanic}", grader_path)
+            self.assertIsNotNone(grader_spec and grader_spec.loader)
+            grader = importlib.util.module_from_spec(grader_spec)
+            grader_spec.loader.exec_module(grader)
+            public, truth = examples[0]
+            forged_terminal_claim = {
+                "mechanic_id": mechanic,
+                "challenge_id": truth["challenge_id"],
+                "task_id": truth["task_id"],
+                "events": [],
+                "actions": [],
+                "completed": True,
+                "delivered": True,
+                "captured": True,
+                "armed": True,
+            }
+            self.assertFalse(
+                grader.grade(forged_terminal_claim, truth, public).get("passed"),
+                f"{mechanic} accepted an empty terminal-state claim",
+            )
+            forged_terminal_claim["task_id"] = "tampered-task"
+            task_mismatch = grader.grade(forged_terminal_claim, truth, public)
+            self.assertFalse(task_mismatch.get("passed"), mechanic)
+            self.assertIn("task", str(task_mismatch.get("feedback") or "").lower(), mechanic)
+
+        perspective = generated["forced_perspective_moving_day"]
+        self.assertEqual({truth["mirror"] for _, truth in perspective}, {-1, 1})
+        self.assertEqual(len({public["camera"]["yaw"] for public, _ in perspective}), 48)
+
+        lidar = generated["lidar_blacksite"]
+        self.assertEqual(
+            len({tuple(tuple(point) for point in truth["solution"]["route_points"]) for _, truth in lidar}),
+            8,
+        )
+        self.assertTrue(all(truth["solution"]["scan_route_indices"] == [0, 2, 4, 5] for _, truth in lidar))
+
+        tomography = generated["tomographic_baggage_surgery"]
+        self.assertEqual(len({tuple(truth["solver"]["target"]) for _, truth in tomography}), 48)
+        self.assertTrue(all(len(public["solids"]) == 4 for public, _ in tomography))
+
+        claw = generated["three_camera_claw_machine"]
+        self.assertGreaterEqual(len({tuple(truth["solver"]["target"]) for _, truth in claw}), 14)
+        self.assertTrue(all(sorted(camera["delay"] for camera in public["cameras"].values()) == [0, 2, 4] for public, _ in claw))
+
+        cable = generated["zero_g_cable_autopsy"]
+        self.assertEqual({public["rings"][0]["center"][1] for public, _ in cable}, {1.5, 1.75, 2.0})
+        self.assertEqual({public["pegs"][0]["radius"] for public, _ in cable}, {0.68, 0.72, 0.76})
+        self.assertEqual({1 if public["nodes"][4][2] > 0 else -1 for public, _ in cable}, {-1, 1})
+
+        portals = generated["portal_freight_oversized_parcel"]
+        self.assertEqual(
+            {public["delivery"]["frame"]["wall_id"] for public, _ in portals},
+            {"B-east", "B-west", "B-north", "B-south"},
+        )
+        self.assertEqual({public["parcel"]["initial_angle_deg"] for public, _ in portals}, {-20.0, 20.0})
+
+        code = generated["code_to_diagram_captcha"]
+        self.assertTrue(all(len(public["nodes"]) == 9 and len(public["probe_inputs"]) == 4 for public, _ in code))
+        self.assertTrue(all(len(truth["expected_edges"]) == 10 for _, truth in code))
+        self.assertTrue(all(sum(len(run["steps"]) for run in truth["expected_probe_runs"]) == 28 for _, truth in code))
+
+        terminal = generated["exit_vim_terminal_escape"]
+        self.assertGreaterEqual(len({tuple(public["layer_order"]) for public, _ in terminal}), 20)
+        self.assertTrue(all(len(public["reference_buffers"]) == 3 and len(public["target_buffer"]) == 6 for public, _ in terminal))
+
+        desktop = generated["fake_desktop_automation_inversion"]
+        self.assertGreaterEqual(len({tuple(public["mapping_sequence"]) for public, _ in desktop}), 20)
+        self.assertGreaterEqual(len({tuple(public["target_filenames"]) for public, _ in desktop}), 18)
+        self.assertTrue(all(len(set(public["mapping_sequence"])) == 3 and len(public["target_filenames"]) == 2 for public, _ in desktop))
+
+        ecology = generated["impossible_ecology"]
+        for public, _ in ecology:
+            dominant = {
+                (
+                    max(organism["responses"], key=lambda field: abs(organism["responses"][field])),
+                    1 if organism["responses"][max(organism["responses"], key=lambda field: abs(organism["responses"][field]))] > 0 else -1,
+                )
+                for organism in public["organisms"]
+            }
+            self.assertEqual(len(dominant), 5)
+            self.assertEqual(len(public["targets"]), 5)
+
+    def test_interaction_vii_viii_are_seeded_replayable_and_resist_shortcuts(self) -> None:
+        benchmark_root = resolve_benchmark_root("weird_captcha_gym")
+        setup_spec = importlib.util.spec_from_file_location(
+            "weird_captcha_interaction_vii_viii_setup_test",
+            benchmark_root / "shared_scripts" / "setup_task.py",
+        )
+        self.assertIsNotNone(setup_spec and setup_spec.loader)
+        setup = importlib.util.module_from_spec(setup_spec)
+        setup_spec.loader.exec_module(setup)
+        mechanics = (
+            "specular_lighthouse_relay",
+            "wind_tunnel_seed_courier",
+            "hologram_silhouette_foundry",
+            "orbital_docking_customs",
+            "gravity_room_freight",
+            "floodgate_archive_rescue",
+            "elastic_membrane_sorter",
+            "pheromone_dispatch",
+            "clockwork_clutch_safe",
+            "marionette_checkpoint",
+        )
+        examples: dict[str, tuple[dict, dict, object]] = {}
+        for mechanic in mechanics:
+            task_path = benchmark_root / f"environments/{mechanic}_env/tasks/{mechanic}_seed_0001/task.json"
+            task = json.loads(task_path.read_text(encoding="utf-8"))
+            contracts: set[str] = set()
+            challenge_ids: set[str] = set()
+            for seed_index in range(24):
+                seed = f"interaction-vii-viii-variation-{mechanic}-{seed_index}"
+                public, truth = setup.generate_incubator_candidate(task, seed)
+                replay_public, replay_truth = setup.generate_incubator_candidate(task, seed)
+                self.assertEqual((public, truth), (replay_public, replay_truth), mechanic)
+                self.assertEqual(public["challenge_id"], truth["challenge_id"], mechanic)
+                self.assertNotIn("seed", public, mechanic)
+                challenge_ids.add(str(truth["challenge_id"]))
+                contracts.add(json.dumps({
+                    key: value for key, value in truth.items() if key not in {"seed", "challenge_id"}
+                }, sort_keys=True, separators=(",", ":")))
+                if seed_index == 0:
+                    grader_path = benchmark_root / f"shared_runtime/server/incubator_graders/{mechanic}.py"
+                    grader_spec = importlib.util.spec_from_file_location(
+                        f"interaction_vii_viii_grader_{mechanic}", grader_path
+                    )
+                    self.assertIsNotNone(grader_spec and grader_spec.loader)
+                    grader = importlib.util.module_from_spec(grader_spec)
+                    grader_spec.loader.exec_module(grader)
+                    examples[mechanic] = (public, truth, grader)
+            self.assertEqual(len(challenge_ids), 24, mechanic)
+            self.assertGreaterEqual(len(contracts), 8, mechanic)
+
+        for mechanic, (public, truth, grader) in examples.items():
+            forged = grader.grade({
+                "mechanic_id": mechanic,
+                "task_id": truth["task_id"],
+                "challenge_id": truth["challenge_id"],
+                "completed": True,
+                "passed": True,
+                "score": 100,
+                "events": [],
+            }, truth, public)
+            self.assertFalse(
+                forged.get("passed"),
+                f"{mechanic} trusted a terminal claim without replayable interaction",
+            )
+
+        spec_public, spec_truth, spec_grader = examples["specular_lighthouse_relay"]
+        first_round = spec_public["rounds"][0]
+        initial_angles = [float(mirror["angle_deg"]) for mirror in first_round["mirrors"]]
+        analytic_hit = spec_grader._trace_hit(first_round, initial_angles, 1)
+        reflected_spoof = spec_grader.grade({
+            "mechanic_id": "specular_lighthouse_relay",
+            "task_id": spec_truth["task_id"],
+            "challenge_id": spec_truth["challenge_id"],
+            "events": [
+                {"seq": 1, "type": "shutter", "round_id": first_round["id"], "tick": 0, "open": True},
+                {"seq": 2, "type": "charge_sample", "round_id": first_round["id"], "tick": 1, "angles": initial_angles, "hit": not analytic_hit, "charge_after": 1},
+            ],
+            "completed": True,
+        }, spec_truth, spec_public)
+        self.assertFalse(reflected_spoof.get("passed"))
+        self.assertIn("analytic", str(reflected_spoof.get("feedback") or ""))
+
+        wind_public, wind_truth, wind_grader = examples["wind_tunnel_seed_courier"]
+        thermal_prearm = wind_grader.grade({
+            "mechanic_id": "wind_tunnel_seed_courier",
+            "task_id": wind_truth["task_id"],
+            "challenge_id": wind_truth["challenge_id"],
+            "events": [
+                {"seq": 1, "type": "launch", "tick": 0},
+                {"seq": 2, "type": "fan_control", "tick": 0, "fan": 0, "power": 1},
+            ],
+            "completed": True,
+        }, wind_truth, wind_public)
+        self.assertFalse(thermal_prearm.get("passed"))
+        self.assertTrue(str(thermal_prearm.get("feedback") or ""))
+
+        pheromone_public, pheromone_truth, pheromone_grader = examples["pheromone_dispatch"]
+        painted: dict[str, list[dict[str, float]]] = {}
+        events: list[dict] = []
+        for field_id, reference in pheromone_truth["reference_paths"].items():
+            route: list[list[float]] = []
+            for segment_index, (first, second) in enumerate(zip(reference, reference[1:])):
+                if segment_index == 0:
+                    route.append([float(first[0]), float(first[1])])
+                for step in range(1, 13):
+                    amount = step / 12
+                    route.append([
+                        float(first[0]) + (float(second[0]) - float(first[0])) * amount,
+                        float(first[1]) + (float(second[1]) - float(first[1])) * amount,
+                    ])
+            points = [{"x": point[0], "y": point[1]} for point in route]
+            painted[field_id] = points
+            events.append({"seq": len(events) + 1, "type": "stroke_start", "tick": 0, "field_id": field_id, "mode": "route", "point": points[0]})
+            events.extend({
+                "seq": len(events) + 1, "type": "stroke_point", "tick": 0,
+                "field_id": field_id, "mode": "route", "point": point,
+            } for point in points[1:])
+            events.append({"seq": len(events) + 1, "type": "stroke_end", "tick": 0, "field_id": field_id, "mode": "route", "samples": len(points)})
+        events.append({"seq": len(events) + 1, "type": "dispatch", "tick": 0, "paths": painted})
+        events.append({
+            "seq": len(events) + 1, "type": "delivery", "tick": 650,
+            "delivered": {field_id: 7 for field_id in painted},
+            "last_refresh": {field_id: 0 for field_id in painted},
+        })
+        stale_field = pheromone_grader.grade({
+            "mechanic_id": "pheromone_dispatch",
+            "task_id": pheromone_truth["task_id"],
+            "challenge_id": pheromone_truth["challenge_id"],
+            "events": events,
+            "completed": True,
+        }, pheromone_truth, pheromone_public)
+        self.assertFalse(stale_field.get("passed"))
+        self.assertIn("delivery", str(stale_field.get("feedback") or ""))
+
+        marionette_public, marionette_truth, marionette_grader = examples["marionette_checkpoint"]
+        pose = marionette_truth["poses"][0]
+        lengths = [float(value) for value in marionette_public["initial_lengths"]]
+        marionette_events = [{
+            "seq": 1, "type": "act_clear", "tick": 0, "pose_id": pose["id"],
+            "lengths": list(lengths), "progress": int(pose["tracking_ticks"]),
+        }]
+        instant_pose = marionette_grader.grade({
+            "mechanic_id": "marionette_checkpoint",
+            "task_id": marionette_truth["task_id"],
+            "challenge_id": marionette_truth["challenge_id"],
+            "events": marionette_events,
+            "completed": True,
+        }, marionette_truth, marionette_public)
+        self.assertFalse(instant_pose.get("passed"))
+        self.assertIn("tracking", str(instant_pose.get("feedback") or ""))
+
+        flood_public, flood_truth, flood_grader = examples["floodgate_archive_rescue"]
+        initial_levels = [float(item["level"]) for item in flood_public["chambers"]]
+        first_circuit = flood_public["circuits"][0]["between"]
+        nonconserving = list(initial_levels)
+        nonconserving[first_circuit[1]] += float(flood_public["pump_step"])
+        fake_pump = flood_grader.grade({
+            "mechanic_id": "floodgate_archive_rescue",
+            "task_id": flood_truth["task_id"],
+            "challenge_id": flood_truth["challenge_id"],
+            "events": [{
+                "seq": 1, "type": "pump", "circuit": 0, "direction": 1,
+                "source": first_circuit[0], "destination": first_circuit[1],
+                "before": initial_levels, "after": nonconserving,
+                "total_after": sum(nonconserving),
+            }],
+            "completed": True,
+        }, flood_truth, flood_public)
+        self.assertFalse(fake_pump.get("passed"))
+        self.assertIn("conservation", str(fake_pump.get("feedback") or ""))
+
+        orbital_public, orbital_truth, _ = examples["orbital_docking_customs"]
+        debris = orbital_public["debris"][0]
+        ship = orbital_public["ship"]
+        station = orbital_public["station"]
+        self.assertAlmostEqual(float(debris["y"]), float(ship["y"]))
+        self.assertGreater(float(debris["x"]), float(ship["x"]))
+        self.assertLess(float(debris["x"]), float(station["x"]))
+        transverse = sum(
+            int(item.get("count", 0)) for item in orbital_truth["reference_plan"]
+            if str(item.get("action", "")).startswith("strafe-")
+        )
+        self.assertGreaterEqual(transverse, 28)
+        self.assertEqual(sum(int(item.get("ticks", 0)) for item in orbital_truth["reference_plan"] if item.get("action") == "coast"), 600)
+        self.assertEqual(len(orbital_public["debris"]), 2)
+        self.assertEqual(len(orbital_public["beacons"]), 2)
+
+        self.assertEqual(len(examples["specular_lighthouse_relay"][0]["rounds"]), 4)
+        self.assertTrue(all(item["required_charge_ticks"] >= 50 and item["receiver"]["amplitude"] > 0 for item in examples["specular_lighthouse_relay"][0]["rounds"]))
+        self.assertEqual(len(examples["wind_tunnel_seed_courier"][0]["gates"]), 4)
+        self.assertEqual(len(examples["wind_tunnel_seed_courier"][0]["pods"]), 2)
+        self.assertTrue(all(len(item["slots"]) == 2 for item in examples["wind_tunnel_seed_courier"][0]["gates"]))
+        self.assertEqual(len(examples["hologram_silhouette_foundry"][0]["objects"]), 6)
+        self.assertEqual(examples["hologram_silhouette_foundry"][0]["grid_size"], 7)
+        self.assertTrue(all(entry.count(":") >= 2 and "#" in entry for view in examples["hologram_silhouette_foundry"][0]["target_masks"].values() for entry in view))
+        self.assertEqual(len(examples["gravity_room_freight"][0]["board"]["gates"]), 4)
+        self.assertGreaterEqual(len(examples["gravity_room_freight"][1]["solution"]), 14)
+        self.assertEqual(len(flood_public["chambers"]), 5)
+        self.assertEqual(len(flood_public["capsules"]), 2)
+        self.assertEqual(len(flood_public["circuits"]), 5)
+        self.assertEqual(len(examples["elastic_membrane_sorter"][0]["rounds"]), 3)
+        self.assertTrue(all(len(item["checkpoints"]) == 2 for item in examples["elastic_membrane_sorter"][0]["rounds"]))
+        self.assertEqual(len(examples["pheromone_dispatch"][0]["fields"]), 2)
+        self.assertEqual(examples["pheromone_dispatch"][0]["physics"]["delivery_required"], 7)
+        self.assertEqual(len(examples["clockwork_clutch_safe"][1]["release_schedule"]), 4)
+        self.assertEqual(examples["clockwork_clutch_safe"][0]["physics"]["load_numerator"], 4)
+        self.assertEqual(len(examples["marionette_checkpoint"][0]["poses"]), 3)
+        self.assertTrue(all(item["tracking_ticks"] >= 60 for item in examples["marionette_checkpoint"][0]["poses"]))
 
     def test_every_incubator_plugin_has_a_complete_identity_bound_surface(self) -> None:
         benchmark_root = resolve_benchmark_root("weird_captcha_gym")

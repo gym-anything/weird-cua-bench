@@ -106,14 +106,27 @@ def _find_point(voxels: dict[str, dict[str, Any]], orientation: int, voxel_id: s
     faces = [face for face in _polygon_faces(voxels, orientation) if face["voxel_id"] == voxel_id]
     for face in reversed(faces):
         points = face["points"]
-        cx = sum(point[0] for point in points) / len(points)
-        cy = sum(point[1] for point in points) / len(points)
-        samples = [(cx, cy)]
-        for px, py in points:
-            samples.append(((cx * 3 + px) / 4, (cy * 3 + py) / 4))
+        # Browser CSS scaling can quantize a click by roughly one internal
+        # canvas pixel. Search the face interior and accept only points whose
+        # entire local neighborhood raycasts to the same voxel.
+        p0, p1, p2, p3 = points
+        samples: list[tuple[float, float]] = []
+        for u in (0.2, 0.35, 0.5, 0.65, 0.8):
+            for v in (0.2, 0.35, 0.5, 0.65, 0.8):
+                sx = (1 - u) * (1 - v) * p0[0] + u * (1 - v) * p1[0] + u * v * p2[0] + (1 - u) * v * p3[0]
+                sy = (1 - u) * (1 - v) * p0[1] + u * (1 - v) * p1[1] + u * v * p2[1] + (1 - u) * v * p3[1]
+                samples.append((sx, sy))
         for sx, sy in samples:
-            hit = _raycast(voxels, orientation, sx, sy)
-            if hit and hit["voxel_id"] == voxel_id:
+            stable = True
+            for offset_x in (-1.25, 0.0, 1.25):
+                for offset_y in (-1.25, 0.0, 1.25):
+                    hit = _raycast(voxels, orientation, sx + offset_x, sy + offset_y)
+                    if not hit or hit["voxel_id"] != voxel_id:
+                        stable = False
+                        break
+                if not stable:
+                    break
+            if stable:
                 return round(sx, 2), round(sy, 2), str(hit["face"])
     return None
 
@@ -224,7 +237,9 @@ def _build_layout(rng: random.Random, target_count: int) -> tuple[list[dict[str,
 
 def generate(task: dict[str, Any], seed: str) -> tuple[dict[str, Any], dict[str, Any]]:
     base_rng = random.Random(_seed_int(seed, MECHANIC_ID))
-    target_count = base_rng.choice((2, 3))
+    # Four independent view-bound ore pockets are the minimum useful spatial
+    # workload; the old two/three-target lots were tutorial scale.
+    target_count = 4
     built = None
     for attempt in range(120):
         rng = random.Random(_seed_int(seed, f"{MECHANIC_ID}|layout|{attempt}"))
@@ -245,7 +260,7 @@ def generate(task: dict[str, Any], seed: str) -> tuple[dict[str, Any], dict[str,
         "challenge_id": challenge_id,
         "prompt": task.get("natural_language") or "Rotate the mine, expose every diamond, and extract it without breaking the support lattice.",
         "asset_manifest": "shared_runtime/assets/provenance/incubator_full_build_v1.json",
-        "generator": {"name": "isometric_voxel_extraction_mine_v1", "variant_count": 9_000_000_000},
+        "generator": {"name": "isometric_voxel_extraction_mine_v2", "variant_count": 9_000_000_000},
         "palette": palette,
         "grid_size": [GRID, GRID, 3],
         "canvas_size": [CANVAS_WIDTH, CANVAS_HEIGHT],

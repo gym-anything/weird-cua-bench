@@ -23,9 +23,35 @@
     return model.layerIndex < 0 ? model.mode : layerName();
   }
 
+  function editorLines() {
+    if (model.bufferIndex === 0) return model.buffer;
+    return model.referenceBuffers[model.bufferIndex - 1]?.lines || [];
+  }
+
+  function editorBufferName() {
+    if (model.bufferIndex === 0) return "manifest.cfg";
+    return model.referenceBuffers[model.bufferIndex - 1]?.name || "missing.ref";
+  }
+
+  function editorWritable() {
+    return model.bufferIndex === 0;
+  }
+
+  function switchBuffer(delta) {
+    const count = model.referenceBuffers.length + 1;
+    model.bufferIndex = ((model.bufferIndex + delta) % count + count) % count;
+    model.visitedBuffers.add(model.bufferIndex);
+    model.bufferSwitches += 1;
+    model.row = 0;
+    model.col = 0;
+    model.pending = "";
+    model.message = `${editorBufferName()} · ${editorWritable() ? "WRITABLE" : "READ ONLY"}`;
+  }
+
   function clampCursor() {
-    model.row = Math.max(0, Math.min(model.row, model.buffer.length - 1));
-    model.col = Math.max(0, Math.min(model.col, model.buffer[model.row].length));
+    const lines = editorLines();
+    model.row = Math.max(0, Math.min(model.row, Math.max(0, lines.length - 1)));
+    model.col = Math.max(0, Math.min(model.col, (lines[model.row] || "").length));
   }
 
   function pushUndo() {
@@ -39,6 +65,7 @@
     model.exitLog.push(current);
     model.layerIndex += 1;
     model.sshInput = "";
+    model.muxPending = false;
     model.message = model.layerIndex >= model.layerOrder.length ? "ALL SHELLS CLOSED" : `RETURNED TO ${layerName().toUpperCase()}`;
   }
 
@@ -84,13 +111,19 @@
         model.commandHistory.push(command);
         model.command = "";
         model.mode = "normal";
-        if (command === "wq" && model.buffer.every((line, index) => line === model.targetBuffer[index])) {
+        if (["bn", "bnext"].includes(command)) {
+          switchBuffer(1);
+        } else if (["bp", "bprevious"].includes(command)) {
+          switchBuffer(-1);
+        } else if (command === "wq" && model.bufferIndex === 0 && model.visitedBuffers.size === model.referenceBuffers.length + 1 && model.buffer.every((line, index) => line === model.targetBuffer[index])) {
           model.saved = true;
           model.layerIndex = 0;
           model.message = `MANIFEST WRITTEN · ENTERING ${layerName().toUpperCase()}`;
         } else {
           model.commandErrors += 1;
-          model.message = command === "wq" ? "E492: MANIFEST STILL CORRUPT" : `E492: NOT AN EDITOR COMMAND: ${command || "<empty>"}`;
+          if (command === "wq" && model.bufferIndex !== 0) model.message = "E45: READ-ONLY REFERENCE BUFFER";
+          else if (command === "wq" && model.visitedBuffers.size < model.referenceBuffers.length + 1) model.message = "E173: REFERENCE BUFFERS REMAIN UNREAD";
+          else model.message = command === "wq" ? "E492: MANIFEST STILL CORRUPT" : `E492: NOT AN EDITOR COMMAND: ${command || "<empty>"}`;
         }
       } else if (key.length === 1 && !ctrl && !alt && !meta) {
         model.command += key;
@@ -126,6 +159,11 @@
       }
       return;
     }
+    if (!editorWritable() && ["c", "i", "a", "x", "u"].includes(key)) {
+      model.pending = "";
+      model.message = "E21: CANNOT MODIFY READ-ONLY REFERENCE";
+      return;
+    }
     if (key === "c") {
       if (model.pending === "c") {
         pushUndo();
@@ -147,12 +185,12 @@
     else if (key === "h" || key === "ArrowLeft") model.col -= 1;
     else if (key === "l" || key === "ArrowRight") model.col += 1;
     else if (key === "0" || key === "Home") model.col = 0;
-    else if (key === "$" || key === "End") model.col = model.buffer[model.row].length;
+    else if (key === "$" || key === "End") model.col = (editorLines()[model.row] || "").length;
     else if (key === "i") {
       model.mode = "insert";
       model.message = "-- INSERT --";
     } else if (key === "a") {
-      model.col = Math.min(model.buffer[model.row].length, model.col + 1);
+      model.col = Math.min((editorLines()[model.row] || "").length, model.col + 1);
       model.mode = "insert";
       model.message = "-- INSERT --";
     } else if (key === "x") {
@@ -190,6 +228,16 @@
           model.sshInput = "";
         }
       } else if (key.length === 1 && !ctrl && !alt && !meta) model.sshInput += key;
+    } else if (current === "mux") {
+      if (key.toLowerCase() === "b" && ctrl && !alt && !meta) {
+        model.muxPending = true;
+        model.message = "TMUX PREFIX ARMED · PRESS d";
+      } else if (model.muxPending && key.toLowerCase() === "d" && !ctrl && !alt && !meta) {
+        advanceLayer();
+      } else {
+        model.muxPending = false;
+        model.message = "TMUX SESSION ATTACHED · Ctrl+B THEN d DETACHES";
+      }
     }
   }
 
@@ -249,9 +297,10 @@
   }
 
   function editorMarkup() {
-    const lines = model.buffer.map((line, index) => `<div class="terminal-buffer-line${index === model.row ? " is-current" : ""}"><i>${String(index + 1).padStart(2, "0")}</i><code>${cursorLine(line, index)}</code><span>${line === model.targetBuffer[index] ? "CLEAN" : "CORRUPT"}</span></div>`).join("");
+    const writable = editorWritable();
+    const lines = editorLines().map((line, index) => `<div class="terminal-buffer-line${index === model.row ? " is-current" : ""}"><i>${String(index + 1).padStart(2, "0")}</i><code>${cursorLine(line, index)}</code><span>${writable ? (line === model.targetBuffer[index] ? "CLEAN" : "CORRUPT") : "REFERENCE"}</span></div>`).join("");
     const command = model.mode === "command" ? `:${esc(model.command)}<span class="terminal-cursor"> </span>` : esc(model.message);
-    return `<div class="terminal-editor-bar"><span>manifest.cfg</span><b>${model.saved ? "WRITTEN" : "[+] UNSAVED"}</b></div><div class="terminal-buffer">${lines}</div><div class="terminal-command"><b>${esc(model.mode.toUpperCase())}</b><code>${command}</code><span>${model.row + 1}:${model.col + 1}</span></div>`;
+    return `<div class="terminal-editor-bar"><span>${esc(editorBufferName())} · BUFFER ${model.bufferIndex + 1}/${model.referenceBuffers.length + 1}</span><b>${writable ? (model.saved ? "WRITTEN" : "[+] UNSAVED") : "[RO] REFERENCE"}</b></div><div class="terminal-buffer">${lines}</div><div class="terminal-command"><b>${esc(model.mode.toUpperCase())}</b><code>${command}</code><span>${model.row + 1}:${model.col + 1}</span></div>`;
   }
 
   function pagerMarkup() {
@@ -266,6 +315,10 @@
     return `<div class="terminal-layer-screen ssh-screen"><p>Connection to ${esc(model.state.host)} is still open.</p><p>Last login: seed-bound console / pseudo-terminal 1</p><div class="ssh-prompt"><b>verify@${esc(model.state.host)}:~$</b><code>${esc(model.sshInput)}<span class="terminal-cursor"> </span></code></div><footer>type <b>exit</b>, then press Enter</footer></div>`;
   }
 
+  function muxMarkup() {
+    return `<div class="terminal-layer-screen mux-screen"><header>tmux / attached session ${esc(model.state.challenge_id.slice(0, 6))}</header><p>The editor exited inside a persistent multiplexer.</p><p>Closing the pane would kill the audit; detach the client cleanly.</p><div class="mux-panes"><i></i><i></i><i></i><i></i></div><footer><b>${model.muxPending ? "PREFIX ARMED" : "ATTACHED"}</b><span>Ctrl+B, then d detaches</span></footer></div>`;
+  }
+
   function renderTerminal() {
     if (!model) return;
     const viewport = document.getElementById("terminal-viewport");
@@ -275,11 +328,16 @@
       else if (current === "pager") viewport.innerHTML = pagerMarkup();
       else if (current === "job") viewport.innerHTML = jobMarkup();
       else if (current === "ssh") viewport.innerHTML = sshMarkup();
+      else if (current === "mux") viewport.innerHTML = muxMarkup();
       else viewport.innerHTML = '<div class="terminal-layer-screen complete-screen"><span>TTY RELEASED</span><strong>VERIFYING…</strong></div>';
       viewport.dataset.layer = current;
     }
     const stack = document.getElementById("terminal-layer-stack");
     if (stack) stack.innerHTML = layerStackMarkup();
+    document.querySelectorAll("[data-buffer-index]").forEach((item) => {
+      const index = Number(item.dataset.bufferIndex);
+      item.dataset.status = index === model.bufferIndex && current === "editor" ? "active" : model.visitedBuffers.has(index) ? "visited" : "unread";
+    });
     const mode = document.getElementById("terminal-mode-state");
     if (mode) mode.textContent = modeName().toUpperCase();
     const eventCount = document.getElementById("terminal-event-count");
@@ -299,6 +357,9 @@
       layer_index: model.layerIndex,
       exit_log: [...model.exitLog],
       mode: modeName(),
+      buffer_index: model.bufferIndex,
+      visited_buffers: [...model.visitedBuffers].sort((a, b) => a - b),
+      buffer_switches: model.bufferSwitches,
     };
   }
 
@@ -314,6 +375,7 @@
         body: JSON.stringify({
           mechanic_id: model.state.mechanic_id,
           challenge_id: model.state.challenge_id,
+          task_id: model.state.task_id,
           events: model.events,
           final_state: finalState(),
           completed: true,
@@ -354,6 +416,10 @@
       state,
       buffer: [...(state.initial_buffer || [])],
       targetBuffer: [...(state.target_buffer || [])],
+      referenceBuffers: [...(state.reference_buffers || [])],
+      bufferIndex: 0,
+      visitedBuffers: new Set([0]),
+      bufferSwitches: 0,
       layerOrder: [...(state.layer_order || [])],
       layerIndex: -1,
       mode: "normal",
@@ -365,6 +431,7 @@
       saved: false,
       exitLog: [],
       sshInput: "",
+      muxPending: false,
       clearCount: 0,
       insertedChars: 0,
       commandErrors: 0,
@@ -380,12 +447,12 @@
       <main class="terminal-main">
         <section class="terminal-frame"><div class="terminal-chrome"><i></i><i></i><i></i><span>root@${esc(state.host)} — 96×28</span></div><div class="terminal-viewport" id="terminal-viewport" data-layer="editor"></div><div class="terminal-focus-note">CLICK TERMINAL TO FOCUS · PASTE DISABLED</div></section>
         <aside class="terminal-brief">
-          <div class="terminal-brief-title"><span>RECOVERY MANIFEST</span><i>POSTED TARGET</i></div>
-          <ol class="terminal-targets">${(state.target_buffer || []).map((line, index) => `<li><i>${String(index + 1).padStart(2, "0")}</i><code>${esc(line)}</code></li>`).join("")}</ol>
-          <div class="terminal-keystroke-card"><span>EDITOR FIELD PROCEDURE</span><p><kbd>gg</kbd> top · <kbd>j/k</kbd> line</p><p><kbd>cc</kbd> replace line · type target</p><p><kbd>Esc</kbd> normal · <kbd>:wq ↵</kbd> write/quit</p><small><kbd>u</kbd> undoes the latest edit</small></div>
+          <div class="terminal-brief-title"><span>BUFFER RING</span><i>VISIT ALL FOUR</i></div>
+          <ol class="terminal-buffer-ring"><li data-buffer-index="0"><i>01</i><code>manifest.cfg</code><b>WRITABLE</b></li>${(state.reference_buffers || []).map((item, index) => `<li data-buffer-index="${index + 1}"><i>${String(index + 2).padStart(2, "0")}</i><code>${esc(item.name)}</code><b>READ ONLY</b></li>`).join("")}</ol>
+          <div class="terminal-keystroke-card"><span>MULTI-BUFFER FIELD PROCEDURE</span><p><kbd>:bn ↵</kbd> next · <kbd>:bp ↵</kbd> previous</p><p><kbd>gg</kbd> top · <kbd>j/k</kbd> line · <kbd>cc</kbd> replace</p><p><kbd>Esc</kbd> normal · <kbd>:wq ↵</kbd> write/quit manifest</p><small>Each reference holds two authoritative fields. Paste is disabled.</small></div>
           <div class="terminal-layer-title"><span>NESTED MODAL STACK</span><b>ESCAPED <i id="terminal-depth-count">0 / ${state.layer_order.length}</i></b></div>
           <ol class="terminal-layer-stack" id="terminal-layer-stack"></ol>
-          <div class="terminal-outer-help"><span>OUTER ESCAPES APPEAR WHEN ACTIVE</span><p>PAGER <kbd>q</kbd> · JOB <kbd>Ctrl+C</kbd> · SSH <kbd>exit ↵</kbd></p></div>
+          <div class="terminal-outer-help"><span>OUTER ESCAPES APPEAR WHEN ACTIVE</span><p>PAGER <kbd>q</kbd> · JOB <kbd>Ctrl+C</kbd> · SSH <kbd>exit ↵</kbd> · TMUX <kbd>Ctrl+B</kbd> <kbd>d</kbd></p></div>
         </aside>
       </main>
       <footer class="terminal-foot"><div class="readout" data-status="idle">NORMAL MODE · BUFFER DIRTY</div><span>RAW KEYDOWN REPLAY / NO FINAL-STATE TRUST</span><button id="terminal-verify" type="button">${esc(state.submit_label || "VERIFY SESSION")} →</button></footer>

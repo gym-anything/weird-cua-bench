@@ -29,7 +29,11 @@ def _wait_new(state_dir: Path, before: str) -> None:
 
 def fail_once(page, state_dir: Path, out_dir: Path, mechanic: str) -> None:
     if mechanic != MECHANIC_ID: raise AssertionError(mechanic)
-    before = str(_read(state_dir / "ground_truth.json")["challenge_id"]); page.locator(".doll-submit").click(); _wait_new(state_dir, before)
+    truth = _read(state_dir / "ground_truth.json"); before = str(truth["challenge_id"])
+    _drag(page, truth, "mini", truth["parcel"]["initial_center"], [[28, 50]], steps=16)
+    expect(page.locator(".doll-collision[data-visible='true']")).to_be_visible(); expect(page.locator(".readout")).to_contain_text("CONTACT")
+    _shot(page, out_dir, mechanic, "canonical-collision-negative-run")
+    page.locator(".doll-submit").click(); _wait_new(state_dir, before)
     expect(page.locator(".dollhouse-captcha[data-fresh-failure='true']")).to_be_visible(timeout=8_000); expect(page.locator(".readout")).to_contain_text("FAIL"); _shot(page, out_dir, mechanic, "fail-fresh-room")
 
 
@@ -53,11 +57,6 @@ def _drag(page, truth: dict, view_id: str, start: list[float], waypoints: list[l
 def solve(page, state_dir: Path, out_dir: Path, mechanic: str) -> None:
     if mechanic != MECHANIC_ID: raise AssertionError(mechanic)
     truth = _read(state_dir / "ground_truth.json")
-    # Deliberately drive the miniature parcel into the still-solid canonical gate.
-    _drag(page, truth, "mini", truth["parcel"]["initial_center"], [[28, 50]], steps=16)
-    expect(page.locator(".doll-collision[data-visible='true']")).to_be_visible(); expect(page.locator(".readout")).to_contain_text("CONTACT"); _shot(page, out_dir, mechanic, "canonical-gate-collision")
-    page.locator(".doll-reset").click(); expect(page.locator(".readout")).to_contain_text("REWOUND")
-
     # Move one canonical gate through the giant projection; all copies update.
     _drag(page, truth, "giant", truth["gate"]["center"], truth["solver_waypoints"]["gate"], steps=14)
     expect(page.locator(".doll-gate-value")).to_contain_text("PARKED"); _shot(page, out_dir, mechanic, "giant-scale-gate-reposition")
@@ -67,5 +66,5 @@ def solve(page, state_dir: Path, out_dir: Path, mechanic: str) -> None:
     expect(page.locator(".doll-scale-value")).to_contain_text("GIANT"); _shot(page, out_dir, mechanic, "human-to-giant-frame-transfer")
     _drag(page, truth, "giant", truth["portals"][1]["center"], truth["solver_waypoints"]["scale_2"], steps=12)
     expect(page.locator(".doll-delivered[data-visible='true']")).to_be_visible(); state = page.evaluate("() => ({delivered:window.recursiveDollhouseSmugglingModel.delivered,scale:window.recursiveDollhouseSmugglingModel.parcelScale,transitions:window.recursiveDollhouseSmugglingModel.transitions,views:[...window.recursiveDollhouseSmugglingModel.viewsUsed].sort(),collisions:window.recursiveDollhouseSmugglingModel.collisions,resets:window.recursiveDollhouseSmugglingModel.resets})")
-    if not state["delivered"] or state["scale"] != 2 or len(state["transitions"]) != 2 or state["views"] != ["giant", "human", "mini"] or state["collisions"] < 1 or state["resets"] < 1: raise AssertionError(f"nested world incomplete: {state}")
+    if not state["delivered"] or state["scale"] != 2 or len(state["transitions"]) != 2 or state["views"] != ["giant", "human", "mini"] or state["collisions"] != 0 or state["resets"] != 0: raise AssertionError(f"nested world clean solve was incomplete: {state}")
     _shot(page, out_dir, mechanic, "solved-giant-bay"); page.locator(".doll-submit").click(); expect(page.locator(".readout")).to_have_text("PASS", timeout=8_000)

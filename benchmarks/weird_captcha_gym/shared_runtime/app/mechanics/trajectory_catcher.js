@@ -42,24 +42,28 @@
   function angleError(first, second) { return Math.abs(((first - second + 90) % 180 + 180) % 180 - 90); }
 
   function sweptCatch(round, catcher) {
-    if (!catcher.armed) return {caught: false, crossing: null};
-    let previousT = Number(round.wall_exit_ms);
-    let previous = localPoint(pathAt(round, previousT), catcher);
-    for (let currentT = previousT + 10; currentT <= Number(round.duration_ms) + 0.001; currentT += 10) {
-      const current = localPoint(pathAt(round, currentT), catcher);
-      const crosses = previous.x === 0 || current.x === 0 || previous.x * current.x < 0;
-      if (crosses) {
-        const denominator = previous.x - current.x;
-        const amount = Math.abs(denominator) < 1e-9 ? 0 : clamp(previous.x / denominator, 0, 1);
-        const crossing = previousT + (currentT - previousT) * amount;
-        const crossingY = previous.y + (current.y - previous.y) * amount;
-        const clearance = catcher.aperture / 2 - Number(round.projectile_radius);
-        if (clearance >= 0 && Math.abs(crossingY) <= clearance + 1e-9 && angleError(velocityAngle(round, crossing), catcher.angle_deg) <= Number(round.alignment_tolerance_deg) + 1e-9) return {caught: true, crossing};
+    if (!catcher.armed) return {caught: false, crossing: null, diagnostic: {reason: "NOT ARMED"}};
+    const radius = Number(round.projectile_radius);
+    const halfDepth = Number(round.capture_depth) / 2 - radius;
+    const halfAperture = catcher.aperture / 2 - radius;
+    let closest = null;
+    for (let currentT = Number(round.wall_exit_ms); currentT <= Number(round.duration_ms) + 0.001; currentT += 5) {
+      const position = pathAt(round, currentT);
+      const local = localPoint(position, catcher);
+      const angular = angleError(velocityAngle(round, currentT), catcher.angle_deg);
+      const depthMiss = Math.max(0, Math.abs(local.x) - Math.max(0, halfDepth));
+      const apertureMiss = Math.max(0, Math.abs(local.y) - Math.max(0, halfAperture));
+      const score = Math.hypot(depthMiss, apertureMiss) + Math.max(0, angular - Number(round.alignment_tolerance_deg)) * 1.4;
+      if (!closest || score < closest.score) closest = {score, t: currentT, position, local, angular, depthMiss, apertureMiss};
+      if (halfDepth >= 0 && halfAperture >= 0 && Math.abs(local.x) <= halfDepth && Math.abs(local.y) <= halfAperture && angular <= Number(round.alignment_tolerance_deg) + 1e-9) {
+        return {caught: true, crossing: currentT, diagnostic: {reason: "CAPTURE VOLUME ENTERED", ...closest}};
       }
-      previousT = currentT;
-      previous = current;
     }
-    return {caught: false, crossing: null};
+    let reason = "TUNNEL MISPLACED";
+    if (closest?.angular > Number(round.alignment_tolerance_deg)) reason = `ANGLE OFF ${Math.round(closest.angular)}°`;
+    else if (closest?.apertureMiss > 0) reason = `MOUTH MISSED BY ${Math.ceil(closest.apertureMiss)} PX`;
+    else if (closest?.depthMiss > 0) reason = `TUNNEL MISSED BY ${Math.ceil(closest.depthMiss)} PX`;
+    return {caught: false, crossing: null, diagnostic: {reason, ...closest}};
   }
 
   function initialCatcher(round) { return {...catcherCopy({...round.initial_catcher, armed: false})}; }
@@ -110,9 +114,13 @@
     context.strokeStyle = catcher.armed ? "#66f4cb" : "#f3c66f"; context.fillStyle = catcher.armed ? "rgba(59, 215, 168, .18)" : "rgba(229, 174, 79, .12)"; context.lineWidth = catcher.armed ? 4 : 2;
     context.setLineDash(catcher.armed ? [] : [7, 5]);
     const aperture = catcher.aperture;
-    context.strokeRect(-18, -aperture / 2 - 16, 36, 16); context.fillRect(-18, -aperture / 2 - 16, 36, 16);
-    context.strokeRect(-18, aperture / 2, 36, 16); context.fillRect(-18, aperture / 2, 36, 16);
-    context.beginPath(); context.moveTo(0, -aperture / 2); context.lineTo(0, aperture / 2); context.stroke();
+    const depth = Number(currentRound().capture_depth);
+    context.fillRect(-depth / 2, -aperture / 2, depth, aperture);
+    context.strokeRect(-depth / 2, -aperture / 2, depth, aperture);
+    context.strokeRect(-depth / 2 - 9, -aperture / 2 - 13, depth + 18, 13);
+    context.strokeRect(-depth / 2 - 9, aperture / 2, depth + 18, 13);
+    context.beginPath(); context.moveTo(-depth / 2, 0); context.lineTo(depth / 2, 0); context.stroke();
+    context.beginPath(); context.moveTo(-depth / 2 + 8, -6); context.lineTo(-depth / 2, 0); context.lineTo(-depth / 2 + 8, 6); context.moveTo(depth / 2 - 8, -6); context.lineTo(depth / 2, 0); context.lineTo(depth / 2 - 8, 6); context.stroke();
     context.setLineDash([]); context.beginPath(); context.arc(0, 0, 9, 0, Math.PI * 2); context.fillStyle = catcher.armed ? "#5de1bb" : "#e1aa51"; context.fill(); context.strokeStyle = "#071319"; context.lineWidth = 2; context.stroke();
     context.restore();
     context.fillStyle = catcher.armed ? "#83f6d5" : "#e7c07b"; context.font = "800 7px Courier New"; context.textAlign = "center"; context.fillText(`${catcher.angle_deg}° / ${catcher.aperture}`, catcher.x, catcher.y + catcher.aperture / 2 + 31);
@@ -124,7 +132,18 @@
     const round = currentRound(); const t = model.phase === "result" ? Number(round.duration_ms) : roundTime();
     drawGrid(context, canvas.width, canvas.height); drawTail(context);
     if (model.phase !== "hidden") drawProjectile(context, round, t);
-    drawWall(context, round.wall); drawCatcher(context);
+    drawWall(context, round.wall);
+    if (model.phase === "result") {
+      context.beginPath();
+      for (let t = Number(round.wall_exit_ms); t <= Number(round.duration_ms); t += 25) {
+        const sample = pathAt(round, t);
+        if (t === Number(round.wall_exit_ms)) context.moveTo(sample.x, sample.y); else context.lineTo(sample.x, sample.y);
+      }
+      context.strokeStyle = model.result === "caught" ? "rgba(102,244,203,.62)" : "rgba(255,118,159,.72)"; context.lineWidth = 3; context.setLineDash([5, 5]); context.stroke(); context.setLineDash([]);
+      const near = model.diagnostic?.position;
+      if (near) { context.beginPath(); context.arc(near.x, near.y, Number(round.projectile_radius) + 4, 0, Math.PI * 2); context.strokeStyle = "#fff0a8"; context.lineWidth = 2; context.stroke(); context.beginPath(); context.moveTo(near.x, near.y); context.lineTo(model.catcher.x, model.catcher.y); context.strokeStyle = "rgba(255,240,168,.48)"; context.stroke(); }
+    }
+    drawCatcher(context);
     context.fillStyle = "rgba(224, 177, 103, .8)"; context.font = "800 8px Courier New"; context.textAlign = "left"; context.fillText(`FLIGHT ${round.sequence + 1} / LIVE VECTOR`, 14, 18);
   }
 
@@ -136,6 +155,7 @@
     document.getElementById("trajectory-angle")?.replaceChildren(document.createTextNode(`${model.catcher.angle_deg}°`));
     document.getElementById("trajectory-aperture")?.replaceChildren(document.createTextNode(String(model.catcher.aperture)));
     const phaseLabel = document.getElementById("trajectory-phase"); if (phaseLabel) phaseLabel.textContent = model.phase === "observing" ? "OBSERVE" : model.phase === "hidden" ? "OCCLUDED" : model.phase === "emerged" ? "EMERGENCE" : model.result === "caught" ? "CAUGHT" : model.result === "miss" ? "MISS" : "STANDBY";
+    const diagnostic = document.getElementById("trajectory-diagnostic"); if (diagnostic) { diagnostic.dataset.result = model.result || ""; diagnostic.innerHTML = model.phase === "result" ? `<b>${model.result === "caught" ? "CAPTURE VOLUME ENTERED" : "WHY IT MISSED"}</b><span>${model.result === "caught" ? `INTERCEPT ${Math.round(Number(model.diagnostic?.t || 0))} MS` : String(model.diagnostic?.reason || "NO INTERSECTION")}</span>` : "<b>VISIBLE PHYSICS</b><span>THE PROJECTILE CENTER MUST ENTER THE TINTED TUNNEL ALONG ITS AXIS.</span>"; }
     const canCommitNow = commitOpen();
     document.querySelectorAll(".catcher-transform").forEach((button) => { button.disabled = !canCommitNow || model.dragging || model.catcher.armed; });
     const arm = document.getElementById("trajectory-arm"); if (arm) arm.disabled = !canCommitNow || model.dragging || model.catcher.armed;
@@ -160,7 +180,7 @@
 
   function startRound() {
     if (model.frameId) cancelAnimationFrame(model.frameId);
-    const round = currentRound(); model.catcher = initialCatcher(round); model.phase = "observing"; model.result = null; model.dragging = false; model.dragOffset = {x: 0, y: 0}; model.lastPointer = null; model.observedTail = []; model.lastObservation = -1000; model.roundStartedAt = performance.now(); model.attemptCounts[model.roundIndex] += 1;
+    const round = currentRound(); model.catcher = initialCatcher(round); model.phase = "observing"; model.result = null; model.diagnostic = null; model.dragging = false; model.dragOffset = {x: 0, y: 0}; model.lastPointer = null; model.observedTail = []; model.lastObservation = -1000; model.roundStartedAt = performance.now(); model.attemptCounts[model.roundIndex] += 1;
     pushEvent({type: "round_start", round_id: round.id, attempt: model.attempt, round_t_ms: 0}); model.helpers.setReadout("OBSERVE FLIGHT", "idle"); updateInterface(); model.frameId = requestAnimationFrame(frame);
   }
 
@@ -176,10 +196,10 @@
       pushEvent({type: "catcher_drag_end", round_id: round.id, attempt: model.attempt, round_t_ms: resultTime, pointer: point(pointer), catcher_after: catcherCopy(model.catcher)});
       model.dragging = false;
     }
-    const outcome = sweptCatch(round, model.catcher); model.phase = "result"; model.result = outcome.caught ? "caught" : "miss";
+    const outcome = sweptCatch(round, model.catcher); model.phase = "result"; model.result = outcome.caught ? "caught" : "miss"; model.diagnostic = outcome.diagnostic;
     pushEvent({type: "round_result", round_id: round.id, attempt: model.attempt, round_t_ms: resultTime, caught: outcome.caught, crossing_ms: outcome.caught ? round2(outcome.crossing) : null, catcher: catcherCopy(model.catcher)});
     if (outcome.caught) { model.completed.push(round.id); model.helpers.setReadout("CATCH CONFIRMED", "idle"); }
-    else model.helpers.setReadout("MISS / REWIND AVAILABLE", "error");
+    else model.helpers.setReadout(`MISS · ${outcome.diagnostic?.reason || "NO CAPTURE"} · REWIND AVAILABLE`, "error");
     updateInterface();
   }
 
@@ -254,7 +274,7 @@
 
   async function render(state, helpers, options = {}) {
     if (activeCleanup) activeCleanup(); document.body.dataset.mechanic = "trajectory-catcher"; document.body.dataset.cheatMode = helpers.isCheatMode() ? "true" : "false";
-    model = {state, helpers, startedAt: performance.now(), roundStartedAt: performance.now(), frameId: null, events: [], roundIndex: 0, attempt: 0, catcher: initialCatcher(state.rounds[0]), phase: "standby", result: null, dragging: false, dragOffset: {x: 0, y: 0}, lastPointer: null, observedTail: [], lastObservation: -1000, completed: [], replayUsed: state.rounds.map(() => 0), attemptCounts: state.rounds.map(() => 0), replayCount: 0, catcherResetCount: 0, challengeResetCount: 0, submitting: false, completedSubmission: false, timers: new Set()};
+    model = {state, helpers, startedAt: performance.now(), roundStartedAt: performance.now(), frameId: null, events: [], roundIndex: 0, attempt: 0, catcher: initialCatcher(state.rounds[0]), phase: "standby", result: null, diagnostic: null, dragging: false, dragOffset: {x: 0, y: 0}, lastPointer: null, observedTail: [], lastObservation: -1000, completed: [], replayUsed: state.rounds.map(() => 0), attemptCounts: state.rounds.map(() => 0), replayCount: 0, catcherResetCount: 0, challengeResetCount: 0, submitting: false, completedSubmission: false, timers: new Set()};
     helpers.app.innerHTML = `
       <section class="trajectory-catcher palette-${helpers.text(state.palette)}" data-fresh-failure="${options.freshFailure ? "true" : "false"}" data-phase="standby" tabindex="0">
         <div class="trajectory-verdict" aria-live="assertive"></div>
@@ -263,7 +283,8 @@
           <section class="trajectory-stage"><canvas id="trajectory-canvas" width="${Number(state.canvas.width)}" height="${Number(state.canvas.height)}" aria-label="hidden trajectory flight range"></canvas><div class="trajectory-caption"><span>OBSERVE / COMMIT UNDER OCCLUSION</span><b>NO OPTICAL RETURN THROUGH WALL</b></div></section>
           <aside class="trajectory-console">
             <div class="trajectory-round-card"><span>FLIGHT</span><b id="trajectory-round">1 / ${Number(state.round_count)}</b><i id="trajectory-phase">OBSERVE</i></div>
-            <div class="catcher-controls"><span>CATCHER TRANSFORM</span><div class="control-pair"><button class="catcher-transform" id="trajectory-rotate-left">−15°</button><b id="trajectory-angle">0°</b><button class="catcher-transform" id="trajectory-rotate-right">+15°</button></div><div class="control-pair"><button class="catcher-transform" id="trajectory-size-down">−</button><b id="trajectory-aperture">70</b><button class="catcher-transform" id="trajectory-size-up">+</button></div><button id="trajectory-reset-catcher">RESET CATCHER</button><button id="trajectory-arm">ARM CATCHER</button></div>
+            <div class="catcher-controls"><span>CAPTURE TUNNEL TRANSFORM</span><div class="control-pair"><button class="catcher-transform" id="trajectory-rotate-left">−15°</button><b id="trajectory-angle">0°</b><button class="catcher-transform" id="trajectory-rotate-right">+15°</button></div><div class="control-pair"><button class="catcher-transform" id="trajectory-size-down">−</button><b id="trajectory-aperture">70</b><button class="catcher-transform" id="trajectory-size-up">+</button></div><button id="trajectory-reset-catcher">RESET TUNNEL</button><button id="trajectory-arm">ARM TUNNEL</button></div>
+            <div class="trajectory-diagnostic" id="trajectory-diagnostic"><b>VISIBLE PHYSICS</b><span>THE PROJECTILE CENTER MUST ENTER THE TINTED TUNNEL ALONG ITS AXIS.</span></div>
             <div class="flight-ledger"><span>FLIGHT LEDGER</span>${state.rounds.map((_round, index) => `<div data-flight-ledger="${index}"><i>${String(index + 1).padStart(2, "0")}</i><b>OBSERVATION SEALED</b><em>VECTOR WITHHELD</em></div>`).join("")}</div>
             <div class="round-actions"><button id="trajectory-replay" hidden>REWIND ROUND</button><button id="trajectory-next" hidden>NEXT FLIGHT</button><button id="trajectory-restart" hidden>RESTART TEST</button></div>
           </aside>

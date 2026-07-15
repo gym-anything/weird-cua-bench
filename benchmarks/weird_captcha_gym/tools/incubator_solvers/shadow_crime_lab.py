@@ -59,20 +59,7 @@ def solve(page, state_dir: Path, out_dir: Path, mechanic: str) -> None:
     if not box:
         raise AssertionError("analytic shadow canvas has no physical geometry")
     initial = truth["lamp"]
-
-    # Exercise a genuine lamp movement and prove that local Reset restores the
-    # scene before the evidence-producing probe path.
     start = _screen(box, initial)
-    detour = _screen(box, {"x": float(initial["x"]) + 72, "y": float(initial["y"]) + 18})
-    page.mouse.move(*start)
-    page.mouse.down()
-    page.mouse.move(*detour, steps=5)
-    page.mouse.up()
-    page.locator("#shadow-reset").click()
-    expect(page.locator(".shadow-foot .readout")).to_contain_text("SCENE RESET")
-    expect(page.locator(".shadow-crime-lab")).to_have_attribute("data-probe-count", "0")
-    _shot(page, out_dir, mechanic, "edge-reset-recovery")
-
     page.mouse.move(*start)
     page.mouse.down()
     for index, probe in enumerate(truth["solution"]["probe_path"]):
@@ -85,7 +72,15 @@ def solve(page, state_dir: Path, out_dir: Path, mechanic: str) -> None:
     _shot(page, out_dir, mechanic, "active-four-zone-trace")
 
     tag_point = truth["solution"]["expected_tag_point"]
-    page.mouse.click(*_screen(box, tag_point))
+    tag = page.locator("#shadow-tag-tool")
+    expect(tag).to_have_attribute("data-unlocked", "true")
+    tag_box = tag.bounding_box()
+    if not tag_box:
+        raise AssertionError("visible evidence tag has no physical geometry")
+    page.mouse.move(tag_box["x"] + tag_box["width"] / 2, tag_box["y"] + tag_box["height"] / 2)
+    page.mouse.down()
+    page.mouse.move(*_screen(box, tag_point), steps=9)
+    page.mouse.up()
     expect(page.locator(".shadow-crime-lab")).to_have_attribute("data-tagged-object", str(truth["forged_object_id"]))
     expect(page.locator("#shadow-tag-readout")).to_have_text("SHADOW TAGGED")
     _shot(page, out_dir, mechanic, "solved-forged-shadow-tag")

@@ -293,6 +293,7 @@
   function payload() {
     return {
       mechanic_id: model.state.mechanic_id,
+      task_id: model.state.task_id,
       challenge_id: model.state.challenge_id,
       completed: model.settled,
       events: model.events,
@@ -335,7 +336,7 @@
   function runSettlement() {
     if (!model || model.settling || model.completed) return;
     const dice = [...model.dice.values()];
-    const ready = dice.every((die) => die.docked && die.acceptedRolls >= 2) && model.viewRotations >= 1;
+    const ready = dice.every((die) => die.docked && die.acceptedRolls >= 2);
     if (!ready) {
       model.helpers.setReadout("WEIGHING…", "idle");
       postResult();
@@ -471,13 +472,14 @@
       completed: false,
       timers: new Set(),
     };
+    window.topFaceDiceModel = model;
 
     helpers.app.innerHTML = `
       <section class="foundry-scale palette-${helpers.text(state.palette)}" data-view="0" data-fresh-failure="${options.freshFailure ? "true" : "false"}" tabindex="0">
         <div class="foundry-verdict" aria-live="assertive"></div>
         <header class="foundry-head">
-          <div class="foundry-title"><span>THREE-DIE FOUNDRY SCALE / ${helpers.text(state.foundry_serial)}</span><h1>${helpers.text(state.prompt)}</h1></div>
-          <div class="foundry-target"><span>TOP SUM</span><b>${Number(state.target_sum)}</b><i>TARE / D6×3</i></div>
+          <div class="foundry-title"><span>${state.dice.length}-DIE FOUNDRY SCALE / ${helpers.text(state.foundry_serial)}</span><h1>${helpers.text(state.prompt)}</h1></div>
+          <div class="foundry-target"><span>TOP SUM</span><b>${Number(state.target_sum)}</b><i>TARE / D6×${state.dice.length}</i></div>
         </header>
         <main class="foundry-workbench">
           <aside class="foundry-controls">
@@ -509,7 +511,7 @@
               <div class="balance-dock-slots">${(state.dice || []).map((config) => `<div data-scale-slot="${helpers.text(config.id)}" data-filled="false"><span>${helpers.text(config.label.slice(0, 1))}</span></div>`).join("")}</div>
               <div class="balance-plinth"><span>0</span><i></i><span>${Number(state.target_sum)}</span></div>
             </div>
-            <div class="balance-seal"><span>WEIGHTS &amp; MEASURES</span><b>F-3</b></div>
+            <div class="balance-seal"><span>WEIGHTS &amp; MEASURES</span><b>F-${state.dice.length}</b></div>
           </aside>
         </main>
         <footer class="foundry-foot"><button type="button" id="foundry-reset">RESET TABLE</button><div class="readout" data-status="idle">INITIAL TOP FACES EXPOSED</div><button type="button" id="foundry-weigh">${helpers.text(state.submit_label || "WEIGH LOT")}</button></footer>
@@ -529,7 +531,7 @@
         rotateView();
         return;
       }
-      if (["1", "2", "3"].includes(key)) {
+      if (["1", "2", "3", "4"].includes(key)) {
         event.preventDefault();
         const config = state.dice[Number(key) - 1];
         if (config) selectDie(config.id);

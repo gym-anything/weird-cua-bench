@@ -150,12 +150,8 @@
       const lamp = document.querySelector(`[data-ring-proof="${component}"]`);
       lamp?.classList.toggle("is-lit", model.coverage.has(component));
     });
-    document.querySelector('[data-proof="coast"]')?.classList.toggle("is-lit", model.coastDetents > 0);
-    document.querySelector('[data-proof="brake"]')?.classList.toggle("is-lit", model.qualifyingBrakes > 0);
     const ready = sameDate(model.current, model.target)
       && model.coverage.size === 3
-      && model.coastDetents > 0
-      && model.qualifyingBrakes > 0
       && !model.coast;
     if (lock) lock.classList.toggle("is-ready", ready);
     paintRings();
@@ -429,8 +425,6 @@
               <span data-ring-proof="day"><i></i>DAY HAND</span>
               <span data-ring-proof="month"><i></i>MONTH HAND</span>
               <span data-ring-proof="year"><i></i>YEAR HAND</span>
-              <span data-proof="coast"><i></i>COAST SEEN</span>
-              <span data-proof="brake"><i></i>BRAKE CAUGHT</span>
             </div>
             <div class="time-rule-card"><b>CALENDAR LAW</b><p>Month lengths are real. Leap years count. Month and year changes clamp impossible days.</p></div>
             <ol class="time-tape" id="time-tape">${recentMarkup()}</ol>
@@ -438,7 +432,7 @@
         </main>
         <footer class="time-foot">
           <button type="button" class="time-reset" id="time-reset">↺ REWIND ALL</button>
-          <div class="readout" data-status="idle">THREE RINGS · ONE COAST · ONE BRAKE</div>
+          <div class="readout" data-status="idle">THREE RINGS · CONTROL MOMENTUM · LOCK EXACT</div>
           <button type="button" class="time-lock" id="time-lock">${clean(state.submit_label || "LOCK CHRONOMETER")}</button>
         </footer>
         ${helpers.cheatPanelTemplate()}

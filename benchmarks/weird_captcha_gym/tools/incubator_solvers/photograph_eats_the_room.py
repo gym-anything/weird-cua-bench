@@ -111,8 +111,20 @@ def _rotate_plane_to(page, target: int) -> None:
 def fail_once(page, state_dir: Path, out_dir: Path, mechanic: str) -> None:
     if mechanic != MECHANIC_ID:
         raise AssertionError(f"unexpected mechanic {mechanic!r}")
-    before = str(_read(state_dir / "ground_truth.json")["challenge_id"])
+    truth = _read(state_dir / "ground_truth.json")
+    before = str(truth["challenge_id"])
     expect(page.locator(".photo-room")).to_have_attribute("data-active", "true")
+    # Exercise local rejection on this non-passing challenge only.  The clean
+    # authoritative solve below never needs to make this mistake.
+    first_capture = truth["solution"]["captures"][0]
+    _move_to(page, first_capture["camera"])
+    _turn_to(page, float(first_capture["camera"]["yaw_deg"]))
+    page.locator("#photo-capture").click()
+    expect(page.locator(".photo-room")).to_have_attribute("data-carrying", "beam")
+    page.locator("#photo-develop").click()
+    expect(page.locator(".photo-foot .readout")).to_contain_text("DEVELOPMENT REJECTED")
+    expect(page.locator(".photo-room")).to_have_attribute("data-operation-count", "0")
+    _shot(page, out_dir, mechanic, "local-transform-rejected-negative-run")
     page.locator("#photo-submit").click()
     expect(page.locator(".photo-room[data-fresh-failure='true']")).to_be_visible(timeout=7_000)
     expect(page.locator(".photo-foot .readout")).to_have_text("FAIL", timeout=7_000)
@@ -141,15 +153,6 @@ def solve(page, state_dir: Path, out_dir: Path, mechanic: str) -> None:
     page.locator("#photo-capture").click()
     expect(page.locator(".photo-room")).to_have_attribute("data-carrying", "beam")
     _shot(page, out_dir, mechanic, "active-frustum-capture")
-
-    # A deliberately impossible development is informative and locally
-    # repairable; it must not silently create collision geometry.
-    page.locator("#photo-develop").click()
-    expect(page.locator(".photo-foot .readout")).to_contain_text("DEVELOPMENT REJECTED")
-    expect(page.locator(".photo-room")).to_have_attribute("data-operation-count", "0")
-    _shot(page, out_dir, mechanic, "local-transform-failure")
-    page.locator("#photo-plane-reset").click()
-    expect(page.locator(".photo-foot .readout")).to_contain_text("PRINT RESTORED")
 
     first_placement = solution["placements"][0]
     _move_to(page, first_placement["camera"])

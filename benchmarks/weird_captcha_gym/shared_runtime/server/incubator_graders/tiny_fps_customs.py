@@ -395,7 +395,7 @@ def grade(payload: dict[str, Any], ground_truth: dict[str, Any], public_state: d
         "score": 100,
         "feedback": (
             f"replayed {move_count} moves, {turn_count} turns and {shot_count} shots; "
-            f"warrants 3/3, protected 3/3, ammo {ammo}"
+            f"warrants {len(wanted)}/{len(wanted)}, protected {len(protected)}/{len(protected)}, ammo {ammo}"
         ),
     }
 

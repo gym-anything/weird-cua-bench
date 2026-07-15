@@ -25,6 +25,10 @@ def _clamp(value: int, minimum: int, maximum: int) -> int:
     return max(minimum, min(maximum, value))
 
 
+def _angle_error(first: int, second: int) -> int:
+    return abs(((first - second + 180) % 360) - 180)
+
+
 def _project_offset(depth_milli: int, parallax_milli: int) -> int:
     return _js_round((depth_milli - 500) * parallax_milli / 1000)
 
@@ -107,14 +111,23 @@ def _contract(
         expected_height,
     ):
         raise ValueError("gap projection disagrees with target depth")
+    initial_rotation = _integer(piece.get("initial_rotation_deg"), "initial rotation")
+    target_rotation = _integer(piece.get("target_rotation_deg"), "target rotation")
+    rotation_step = _integer(piece.get("rotation_step_deg"), "rotation step")
+    if not (0 <= initial_rotation < 360 and 0 <= target_rotation < 360 and rotation_step in {15, 30}):
+        raise ValueError("fragment rotation contract is malformed")
+    if initial_rotation == target_rotation or initial_rotation % rotation_step or target_rotation % rotation_step:
+        raise ValueError("fragment rotation is not a meaningful reachable displacement")
     return scene, {key: int(value) for key, value in tolerances.items()}, {key: int(value) for key, value in inertia.items()}, target_rail, target_depth
 
 
-def _event_state(event: dict[str, Any], rail_milli: int, depth_milli: int, index: int) -> str | None:
+def _event_state(event: dict[str, Any], rail_milli: int, depth_milli: int, rotation_deg: int, index: int) -> str | None:
     if event.get("rail_milli") != rail_milli:
         return f"event {index} rail does not match replay"
     if event.get("depth_milli") != depth_milli:
         return f"event {index} depth does not match replay"
+    if event.get("rotation_deg") != rotation_deg:
+        return f"event {index} rotation does not match replay"
     return None
 
 
@@ -136,6 +149,9 @@ def grade(payload: dict[str, Any], ground_truth: dict[str, Any], public_state: d
     depth_min, depth_max = int(depth_contract["minimum_milli"]), int(depth_contract["maximum_milli"])
     rail_milli = int(rail_contract["initial_milli"])
     depth_milli = int(depth_contract["initial_milli"])
+    rotation_deg = int(scene["piece"]["initial_rotation_deg"])
+    target_rotation = int(scene["piece"]["target_rotation_deg"])
+    rotation_step = int(scene["piece"]["rotation_step_deg"])
     mode = "idle"
     last_rail_delta = 0
     last_rail_dt = 1
@@ -145,7 +161,7 @@ def grade(payload: dict[str, Any], ground_truth: dict[str, Any], public_state: d
     rail_sample_count = 0
     depth_sample_count = 0
     inertia_samples = 0
-    scan_samples: list[tuple[int, int]] = []
+    scan_samples: list[tuple[int, int, int]] = []
     scan_duration = 0
     scan_complete = False
 
@@ -244,6 +260,20 @@ def grade(payload: dict[str, Any], ground_truth: dict[str, Any], public_state: d
             if mode != "depth":
                 return _fail(f"event {index} ends a depth drag that is not active")
             mode = "idle"
+        elif event_type == "rotate":
+            if mode != "idle":
+                return _fail(f"event {index} rotates the fragment while {mode}")
+            try:
+                delta = _integer(event.get("delta_deg"), "rotation delta")
+                before = _integer(event.get("rotation_before"), "rotation before")
+                after = _integer(event.get("rotation_after"), "rotation after")
+            except ValueError as exc:
+                return _fail(f"event {index} is malformed: {exc}")
+            if delta not in {-rotation_step, rotation_step} or before != rotation_deg:
+                return _fail(f"event {index} has an invalid rotation step")
+            rotation_deg = (rotation_deg + delta) % 360
+            if after != rotation_deg:
+                return _fail(f"event {index} rotation result disagrees with replay")
         elif event_type == "scan_start":
             if mode != "idle":
                 return _fail(f"event {index} starts optical lock while {mode}")
@@ -253,12 +283,13 @@ def grade(payload: dict[str, Any], ground_truth: dict[str, Any], public_state: d
             if mode != "scan":
                 return _fail(f"event {index} has an optical sample outside a hold")
             x_error, depth_error = _geometry(scene, rail_milli, depth_milli, target_depth)
-            if event.get("x_error_milli") != x_error or event.get("depth_error_milli") != depth_error:
+            rotation_error = _angle_error(rotation_deg, target_rotation)
+            if event.get("x_error_milli") != x_error or event.get("depth_error_milli") != depth_error or event.get("rotation_error_deg") != rotation_error:
                 return _fail(f"event {index} optical error disagrees with analytic geometry")
-            expected_stable = x_error <= tolerances["x_milli"] and depth_error <= tolerances["depth_milli"]
+            expected_stable = x_error <= tolerances["x_milli"] and depth_error <= tolerances["depth_milli"] and rotation_error <= tolerances["rotation_deg"]
             if event.get("stable") is not expected_stable:
                 return _fail(f"event {index} misreports optical stability")
-            scan_samples.append((x_error, depth_error))
+            scan_samples.append((x_error, depth_error, rotation_error))
         elif event_type == "scan_end":
             if mode != "scan":
                 return _fail(f"event {index} ends an optical hold that is not active")
@@ -274,39 +305,38 @@ def grade(payload: dict[str, Any], ground_truth: dict[str, Any], public_state: d
         else:
             return _fail(f"event {index} has unknown type {event_type!r}")
 
-        state_error = _event_state(event, rail_milli, depth_milli, index)
+        state_error = _event_state(event, rail_milli, depth_milli, rotation_deg, index)
         if state_error:
             return _fail(state_error)
 
     if mode != "idle" or not scan_complete:
         return _fail("transcript does not end with a released optical lock")
-    if payload.get("final_rail_milli") != rail_milli or payload.get("final_depth_milli") != depth_milli:
+    if payload.get("final_rail_milli") != rail_milli or payload.get("final_depth_milli") != depth_milli or payload.get("final_rotation_deg") != rotation_deg:
         return _fail("submitted final controls do not match replay")
     final_x_error, final_depth_error = _geometry(scene, rail_milli, depth_milli, target_depth)
+    final_rotation_error = _angle_error(rotation_deg, target_rotation)
     stable_samples = bool(scan_samples) and all(
-        x_error <= tolerances["x_milli"] and depth_error <= tolerances["depth_milli"]
-        for x_error, depth_error in scan_samples
+        x_error <= tolerances["x_milli"] and depth_error <= tolerances["depth_milli"] and rotation_error <= tolerances["rotation_deg"]
+        for x_error, depth_error, rotation_error in scan_samples
     )
     passed = (
         payload.get("completed") is True
         and rail_sample_count > 0
         and depth_sample_count > 0
-        and rail_travel >= tolerances["minimum_rail_travel_milli"]
-        and depth_travel >= tolerances["minimum_depth_travel_milli"]
-        and inertia_samples >= tolerances["minimum_inertia_samples"]
         and scan_duration >= tolerances["hold_ms"] - 40
         and len(scan_samples) >= tolerances["minimum_scan_samples"]
         and stable_samples
         and final_x_error <= tolerances["x_milli"]
         and final_depth_error <= tolerances["depth_milli"]
+        and final_rotation_error <= tolerances["rotation_deg"]
     )
     return {
         "graded": True,
         "passed": passed,
         "feedback": (
             f"projection replay: rail travel {rail_travel / 1000:.1f}px; depth travel {depth_travel}; "
-            f"inertia samples {inertia_samples}; stable scan samples "
-            f"{sum(1 for x, d in scan_samples if x <= tolerances['x_milli'] and d <= tolerances['depth_milli'])}/{len(scan_samples)}; "
+            f"optional inertia samples {inertia_samples}; final rotation error {final_rotation_error}°; stable scan samples "
+            f"{sum(1 for x, d, r in scan_samples if x <= tolerances['x_milli'] and d <= tolerances['depth_milli'] and r <= tolerances['rotation_deg'])}/{len(scan_samples)}; "
             f"hold {scan_duration}ms"
         ),
     }

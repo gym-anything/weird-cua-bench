@@ -257,7 +257,7 @@
     document.getElementById("voxel-exit")?.setAttribute("disabled", "disabled");
     helpersCache.setReadout("REPLAYING CAMERA / RAYS / SUPPORT GRAPH…", "pending");
     try {
-      const response = await fetch("/result", {method: "POST", headers: {"content-type": "application/json"}, body: JSON.stringify({mechanic_id: model.state.mechanic_id, challenge_id: model.state.challenge_id, events: model.events, final_state: finalState(), completed: true})});
+      const response = await fetch("/result", {method: "POST", headers: {"content-type": "application/json"}, body: JSON.stringify({mechanic_id: model.state.mechanic_id, task_id: model.state.task_id, challenge_id: model.state.challenge_id, events: model.events, final_state: finalState(), completed: true})});
       const outcome = await response.json();
       if (outcome.passed === true) {
         model.terminal = true;
@@ -296,6 +296,7 @@
       mineAt((clickEvent.clientX - rect.left) / rect.width * WIDTH, (clickEvent.clientY - rect.top) / rect.height * HEIGHT);
     });
     renderHud(); drawMine(); helpersCache.installCheatPanel();
+    window.voxelMineModel = model;
   }
 
   window.WeirdCaptchaMechanics = window.WeirdCaptchaMechanics || {};

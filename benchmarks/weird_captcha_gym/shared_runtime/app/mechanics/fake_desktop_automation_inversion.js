@@ -63,7 +63,11 @@
     const geometry = model.state.geometry;
     const [originX, originY] = geometry.file_origin;
     const [width, height] = geometry.file_size;
-    return [window.x + originX + file.slot * (width + geometry.file_gap), window.y + originY, width, height];
+    const [gapX, gapY] = geometry.file_gap;
+    const columns = Number(geometry.file_columns || 2);
+    const column = Number(file.slot) % columns;
+    const row = Math.floor(Number(file.slot) / columns);
+    return [window.x + originX + column * (width + gapX), window.y + originY + row * (height + gapY), width, height];
   }
 
   function relativeRect(window, values) {
@@ -107,14 +111,15 @@
       const top = (rect[1] - window.y) / window.height * 100;
       const width = rect[2] / window.width * 100;
       const height = rect[3] / window.height * 100;
-      const loaded = model.loadedFileId === file.id;
-      return `<div class="fd-keyfile ${loaded ? "is-loaded" : ""}" data-file-id="${clean(file.id)}" style="left:${left}%;top:${top}%;width:${width}%;height:${height}%"><i></i><b>${clean(file.name)}</b><span>${loaded ? "IN VERIFIER" : "LOCAL FILE"}</span></div>`;
+      const loadedIndex = model.loadedFileIds.indexOf(file.id);
+      const loaded = loadedIndex >= 0;
+      return `<div class="fd-keyfile ${loaded ? "is-loaded" : ""}" data-file-id="${clean(file.id)}" style="left:${left}%;top:${top}%;width:${width}%;height:${height}%"><i></i><b>${clean(file.name)}</b><span>${loaded ? `SEAL ${loadedIndex + 1} INGESTED` : "LOCAL FILE"}</span></div>`;
     }).join("");
   }
 
   function windowBody(window) {
     if (window.id === "directive") {
-      return `<div class="fd-directive"><strong>HUMAN INPUT REQUIRED</strong><span>Recover <b>${clean(model.state.target_filename)}</b></span><small>Pointer mapping is visible. Follow the remote cursor—not the physical ring.</small></div>`;
+      return `<div class="fd-directive"><strong>HUMAN INPUT REQUIRED</strong><span>1 · <b>${clean(model.state.target_filenames[0])}</b><br>2 · <b>${clean(model.state.target_filenames[1])}</b></span><small>Order matters. Follow the remote cursor—not the physical ring.</small></div>`;
     }
     if (window.id === "vault") {
       return `<div class="fd-vault-grid">${fileMarkup(window)}</div>`;
@@ -122,9 +127,11 @@
     if (window.id === "verifier") {
       const drop = model.state.geometry.drop_zone;
       const arm = model.state.geometry.arm_control;
-      return `<div class="fd-drop-zone ${model.loadedFileId ? "has-file" : ""}" style="left:${drop[0] / window.width * 100}%;top:${drop[1] / window.height * 100}%;width:${drop[2] / window.width * 100}%;height:${drop[3] / window.height * 100}%"><span>${model.loadedFileId ? "KEYFILE INGESTED" : "DROP KEYFILE HERE"}</span><b>${model.loadedFileId ? clean((model.state.files.find((item) => item.id === model.loadedFileId) || {}).name) : "NO TOKEN"}</b></div><div class="fd-arm-control ${model.armed ? "is-armed" : ""}" style="left:${arm[0] / window.width * 100}%;top:${arm[1] / window.height * 100}%;width:${arm[2] / window.width * 100}%;height:${arm[3] / window.height * 100}%"><i></i><b>${model.armed ? "MANUAL CONTROL ARMED" : "ARM MANUAL CONTROL"}</b></div>`;
+      const pendingName = model.boundary < model.targetFileIds.length ? model.state.target_filenames[model.boundary] : "BOTH SEALS INGESTED";
+      const ledger = model.loadedFileIds.map((id, index) => `${index + 1}:${(model.state.files.find((item) => item.id === id) || {}).name}`).join(" · ");
+      return `<div class="fd-drop-zone ${model.loadedFileIds.length ? "has-file" : ""}" style="left:${drop[0] / window.width * 100}%;top:${drop[1] / window.height * 100}%;width:${drop[2] / window.width * 100}%;height:${drop[3] / window.height * 100}%"><span>${model.boundary < model.targetFileIds.length ? `DROP SEAL ${model.boundary + 1} HERE` : "TRANSFER LEDGER COMPLETE"}</span><b>${clean(pendingName)}</b><small>${clean(ledger || "NO SEALS")}</small></div><div class="fd-arm-control ${model.armed ? "is-armed" : ""}" style="left:${arm[0] / window.width * 100}%;top:${arm[1] / window.height * 100}%;width:${arm[2] / window.width * 100}%;height:${arm[3] / window.height * 100}%"><i></i><b>${model.armed ? "MANUAL CONTROL ARMED" : "ARM MANUAL CONTROL"}</b></div>`;
     }
-    return `<div class="fd-interceptor-body"><div class="fd-scan-lines"><i></i><i></i><i></i><i></i></div><strong>AUTOMATION SIGNATURE DETECTED</strong><p>This window is obstructing operator files. Close it with the transformed remote cursor.</p><span>CONFIDENCE ${(86 + Number(model.state.challenge_id.slice(-1), 16) % 12)}%</span></div>`;
+    return `<div class="fd-interceptor-body"><div class="fd-scan-lines"><i></i><i></i><i></i><i></i></div><strong>AUTOMATION SIGNATURE DETECTED</strong><p>This window is obstructing operator files. Close it with the transformed remote cursor.</p><span>CONFIDENCE ${(86 + parseInt(model.state.challenge_id.slice(-1), 16) % 12)}%</span></div>`;
   }
 
   function renderWindows() {
@@ -156,7 +163,7 @@
   function showBoundary() {
     const label = model.state.mapping_labels[mappingName()] || mappingName();
     const badge = document.querySelector(".fd-mapping-badge");
-    if (badge) badge.innerHTML = `<span>CHANNEL ${model.boundary + 1}/2</span><b>${clean(label)}</b>`;
+    if (badge) badge.innerHTML = `<span>CHANNEL ${model.boundary + 1}/${model.state.mapping_sequence.length}</span><b>${clean(label)}</b>`;
     const banner = document.querySelector(".fd-remap-banner");
     if (banner) {
       banner.innerHTML = `<span>WORKFLOW BOUNDARY</span><b>REMOTE CURSOR REMAPPED</b><small>${clean(label)}</small>`;
@@ -196,7 +203,7 @@
         ghost.classList.add("is-visible");
       }
     } else if (result.hit === "arm") {
-      if (model.boundary === 1 && model.loadedFileId === model.targetFileId) {
+      if (model.boundary === model.targetFileIds.length && model.loadedFileIds.join("|") === model.targetFileIds.join("|")) {
         model.armed = true;
         model.helpers.setReadout("MANUAL CONTROL ARMED · READY TO SUBMIT", "idle");
       } else {
@@ -239,18 +246,20 @@
     if (drag?.type === "window") {
       const windowModel = model.windows[drag.id];
       const distance = Math.hypot(windowModel.x - drag.start[0], windowModel.y - drag.start[1]);
-      if (distance >= 44) model.moveCount += 1;
+      if (distance >= 44) { model.moveCount += 1; model.movedWindowIds.add(windowModel.id); }
       model.helpers.setReadout(distance >= 44 ? "WINDOW REPOSITIONED · Z-ORDER UPDATED" : "WINDOW FOCUSED", "idle");
     } else if (drag?.type === "file") {
       const verifier = model.windows.verifier;
       const validDrop = verifier && !verifier.closed && inside(points.remote, relativeRect(verifier, model.state.geometry.drop_zone));
       if (validDrop) {
-        model.loadedFileId = drag.id;
         const file = model.state.files.find((item) => item.id === drag.id);
-        if (drag.id === model.targetFileId) {
-          record("boundary", {from: 0, to: 1, reason: "keyfile_loaded", mapping: model.state.mapping_sequence[1]});
-          model.boundary = 1;
-          model.helpers.setReadout("KEYFILE ACCEPTED · CONTROL CHANNEL REMAPPED", "idle");
+        const expected = model.targetFileIds[model.boundary];
+        if (expected && drag.id === expected && !model.loadedFileIds.includes(drag.id)) {
+          const from = model.boundary, to = from + 1;
+          model.loadedFileIds.push(drag.id);
+          record("boundary", {from, to, reason: `keyfile_${to}_loaded`, mapping: model.state.mapping_sequence[to]});
+          model.boundary = to;
+          model.helpers.setReadout(`SEAL ${to} ACCEPTED · CONTROL CHANNEL REMAPPED`, "idle");
           showBoundary();
         } else {
           model.helpers.setReadout(`${file ? file.name : "KEYFILE"} REJECTED · WRONG TOKEN`, "error");
@@ -277,7 +286,7 @@
     model.windows = cloneWindows(model.state.windows);
     model.zCounter = Math.max(...Object.values(model.windows).map((item) => item.z));
     model.boundary = 0;
-    model.loadedFileId = null;
+    model.loadedFileIds = [];
     model.armed = false;
     model.drag = null;
     model.pointerDown = false;
@@ -285,6 +294,7 @@
     model.closedCount = 0;
     model.zOrderChanges = 0;
     model.fileDragMoves = 0;
+    model.movedWindowIds = new Set();
     model.resetCount += 1;
     renderWindows();
     showBoundary();
@@ -302,18 +312,20 @@
         body: JSON.stringify({
           mechanic_id: model.state.mechanic_id,
           challenge_id: model.state.challenge_id,
+          task_id: model.state.task_id,
           events: model.events,
           window_state: snapshotWindows(),
           boundary_index: model.boundary,
           active_mapping: mappingName(),
-          loaded_file_id: model.loadedFileId,
+          loaded_file_ids: [...model.loadedFileIds],
           armed: model.armed,
           move_count: model.moveCount,
           closed_count: model.closedCount,
           z_order_changes: model.zOrderChanges,
           file_drag_moves: model.fileDragMoves,
+          moved_window_ids: [...model.movedWindowIds].sort(),
           reset_count: model.resetCount,
-          completed: model.armed && model.loadedFileId === model.targetFileId,
+          completed: model.armed && model.loadedFileIds.join("|") === model.targetFileIds.join("|"),
         }),
       });
       const outcome = await response.json();
@@ -342,15 +354,15 @@
   async function render(state, helpers) {
     document.body.dataset.mechanic = "fake-desktop-automation-inversion";
     document.body.dataset.cheatMode = helpers.isCheatMode() ? "true" : "false";
-    const targetFile = state.files.find((item) => item.name === state.target_filename);
+    const targetFileIds = state.target_filenames.map((name) => (state.files.find((item) => item.name === name) || {}).id || "");
     model = {
       state,
       helpers,
       windows: cloneWindows(state.windows),
-      targetFileId: targetFile ? targetFile.id : "",
+      targetFileIds,
       zCounter: Math.max(...state.windows.map((item) => item.z)),
       boundary: 0,
-      loadedFileId: null,
+      loadedFileIds: [],
       armed: false,
       events: [],
       drag: null,
@@ -359,12 +371,13 @@
       closedCount: 0,
       zOrderChanges: 0,
       fileDragMoves: 0,
+      movedWindowIds: new Set(),
       resetCount: 0,
       submitting: false,
       terminal: false,
     };
     window.fakeDesktopInversionModel = model;
-    helpers.app.innerHTML = `<section class="fake-desktop-captcha" data-challenge-id="${clean(state.challenge_id)}"><header class="fd-head"><div><span>MANUALITY LAB / REMOTE DESKTOP 04</span><h1>${clean(state.prompt)}</h1></div><div class="fd-mapping-badge"><span>CHANNEL 1/2</span><b>${clean(state.mapping_labels[state.mapping_sequence[0]])}</b></div></header><main class="fd-workbench"><section class="fd-desktop" aria-label="Transformed remote desktop"><div class="fd-grid-labels"><span>000</span><span>450</span><span>900</span></div><div class="fd-window-layer"></div><div class="fd-file-ghost"></div><div class="fd-physical-cursor"><i></i><span>PHYSICAL</span></div><div class="fd-remote-cursor"><i></i><span>REMOTE</span></div><div class="fd-remap-banner"></div><div class="fd-coordinate-readout">MOVE INSIDE GRID TO CALIBRATE</div></section><aside class="fd-brief"><p class="fd-brief-label">WORK ORDER / ${clean(state.challenge_id)}</p><h2>Prove you are not automating the automation.</h2><ol>${state.workflow.map((item, index) => `<li><b>${String(index + 1).padStart(2, "0")}</b><span>${clean(item)}</span></li>`).join("")}</ol><div class="fd-legend"><span><i class="is-physical"></i>Physical ring</span><span><i class="is-remote"></i>Remote action cursor</span></div><p class="fd-brief-note">Every mapped pointer action, window move, z-order change, and keyfile drop is replayed by the verifier.</p></aside></main><footer class="fd-foot"><button type="button" class="fd-reset">RESTORE WINDOWS</button><div><span>TRACE STATUS</span><div class="readout" data-status="idle">CALIBRATE REMOTE CURSOR · CLOSE THE INTERCEPTOR</div></div><button type="button" class="fd-submit">${clean(state.submit_label)}</button></footer>${helpers.cheatPanelTemplate()}</section>`;
+    helpers.app.innerHTML = `<section class="fake-desktop-captcha" data-challenge-id="${clean(state.challenge_id)}"><header class="fd-head"><div><span>MANUALITY LAB / REMOTE DESKTOP 04</span><h1>${clean(state.prompt)}</h1></div><div class="fd-mapping-badge"><span>CHANNEL 1/${state.mapping_sequence.length}</span><b>${clean(state.mapping_labels[state.mapping_sequence[0]])}</b></div></header><main class="fd-workbench"><section class="fd-desktop" aria-label="Transformed remote desktop"><div class="fd-grid-labels"><span>000</span><span>450</span><span>900</span></div><div class="fd-window-layer"></div><div class="fd-file-ghost"></div><div class="fd-physical-cursor"><i></i><span>PHYSICAL</span></div><div class="fd-remote-cursor"><i></i><span>REMOTE</span></div><div class="fd-remap-banner"></div><div class="fd-coordinate-readout">MOVE INSIDE GRID TO CALIBRATE</div></section><aside class="fd-brief"><p class="fd-brief-label">WORK ORDER / ${clean(state.challenge_id)}</p><h2>Prove you are not automating the automation.</h2><ol>${state.workflow.map((item, index) => `<li><b>${String(index + 1).padStart(2, "0")}</b><span>${clean(item)}</span></li>`).join("")}</ol><div class="fd-legend"><span><i class="is-physical"></i>Physical ring</span><span><i class="is-remote"></i>Remote action cursor</span></div><p class="fd-brief-note">Every mapped pointer action, window move, z-order change, ordered seal drop, and channel transition is replayed by the verifier.</p></aside></main><footer class="fd-foot"><button type="button" class="fd-reset">RESTORE WINDOWS</button><div><span>TRACE STATUS</span><div class="readout" data-status="idle">CALIBRATE REMOTE CURSOR · CLOSE THE INTERCEPTOR</div></div><button type="button" class="fd-submit">${clean(state.submit_label)}</button></footer>${helpers.cheatPanelTemplate()}</section>`;
     renderWindows();
     const desktop = document.querySelector(".fd-desktop");
     desktop.addEventListener("pointerdown", pointerDown);

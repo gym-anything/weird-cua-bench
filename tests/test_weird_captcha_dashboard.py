@@ -46,6 +46,51 @@ PACK_VI = {
     "three_camera_claw_machine", "zero_g_cable_autopsy",
     "portal_freight_oversized_parcel",
 }
+PACK_VII = {
+    "specular_lighthouse_relay", "wind_tunnel_seed_courier",
+    "hologram_silhouette_foundry", "orbital_docking_customs",
+    "gravity_room_freight",
+}
+PACK_VIII = {
+    "floodgate_archive_rescue", "elastic_membrane_sorter",
+    "pheromone_dispatch", "clockwork_clutch_safe",
+    "marionette_checkpoint",
+}
+PENDING_NEXT_TEN_V2 = {
+    "bureaucratic_signature_trap", "temporal_memory_first_change",
+    "polyrhythm_customs", "exact_change_candy_cascade",
+    "tiny_fps_customs", "thirty_year_time_wheel",
+    "photograph_eats_the_room", "clockwork_doppelganger_customs",
+    "recursive_dollhouse_smuggling", "flat_prisoner",
+}
+PENDING_NEXT_TEN_V3 = {
+    "forced_perspective_moving_day", "lidar_blacksite",
+    "tomographic_baggage_surgery", "three_camera_claw_machine",
+    "zero_g_cable_autopsy", "portal_freight_oversized_parcel",
+    "code_to_diagram_captcha", "exit_vim_terminal_escape",
+    "fake_desktop_automation_inversion", "impossible_ecology",
+}
+FINAL_ELEVEN_V1 = {
+    "shadow_crime_lab", "trajectory_catcher", "jigsaw_slider_alignment",
+    "microgame_gauntlet", "minecraft_block_grid", "relation_prompt_grounding",
+    "rorschach_fixed_rubric", "single_scene_split_boxes",
+    "top_face_dice_arithmetic", "trace_shape_without_walls",
+    "wizard_critter_capture",
+}
+FOUNDATIONAL_SEVEN_V1 = {
+    "motion_only_ghost_jigsaw", "cursor_constellation_hunt",
+    "parallel_grillmaster", "rotating_keyboard", "slot_reel_capture",
+    "domino_autopsy", "funeral_ritual",
+}
+REMAINING_MODULAR_FOURTEEN_V1 = {
+    "consequences_boss", "popup_exorcist", "slime_commute",
+    "reload_interruption", "rotate_wrong_thing_upright",
+    "wonky_text_hostile_rendering", "surreal_apple_on_tree_grid",
+    "cursor_lens_reveal", "modifier_stack_image_grid",
+    "board_game_captcha", "craftcha_alchemy_bench",
+    "occlusion_shell_swindle", "ribbon_switchboard",
+    "magnetic_stripe_purgatory",
+}
 SURVEY_CORPUS_AVAILABLE = (
     (COLLECTION_ROOT / "catalog.jsonl").is_file()
     and (COLLECTION_ROOT / "mechanic-index.jsonl").is_file()
@@ -91,11 +136,11 @@ class WeirdCaptchaDashboardTests(unittest.TestCase):
             path = Path(temporary) / "environment-reviews.json"
             store = EnvironmentReviewStore(path)
             self.assertEqual(store.snapshot()["stats"], {
-                "total": 63,
+                "total": 75,
                 "reviewed": 0,
                 "decided": 0,
-                "pending": 63,
-                "hands_on_pending": 63,
+                "pending": 75,
+                "hands_on_pending": 75,
                 "looks_good": 0,
                 "approved": 0,
                 "revision_requested": 0,
@@ -108,7 +153,7 @@ class WeirdCaptchaDashboardTests(unittest.TestCase):
             self.assertEqual(len(revised["history"]), 2)
             reloaded = EnvironmentReviewStore(path).snapshot()
             self.assertEqual(reloaded["stats"]["revision_requested"], 1)
-            self.assertEqual(reloaded["stats"]["pending"], 62)
+            self.assertEqual(reloaded["stats"]["pending"], 74)
             self.assertEqual(reloaded["items"]["domino_autopsy_env"]["note"], "Make the bell strike more legible.")
             screened = store.update("domino_autopsy_env", {"status": "looks_good", "note": "Film looks good; VNC still pending."})
             self.assertEqual(screened["status"], "looks_good")
@@ -117,12 +162,11 @@ class WeirdCaptchaDashboardTests(unittest.TestCase):
             self.assertEqual(screened_snapshot["stats"]["looks_good"], 1)
             self.assertEqual(screened_snapshot["stats"]["decided"], 0)
             self.assertEqual(screened_snapshot["stats"]["reviewed"], 1)
-            self.assertEqual(screened_snapshot["stats"]["hands_on_pending"], 63)
+            self.assertEqual(screened_snapshot["stats"]["hands_on_pending"], 75)
             with self.assertRaisesRegex(ValueError, "require a note"):
                 store.update("domino_autopsy_env", {"status": "revision_requested", "note": ""})
-            archived = next(environment["id"] for environment in build_catalog()["environments"] if environment["stage"] == "rejected")
             with self.assertRaisesRegex(ValueError, "non-reviewable"):
-                store.update(archived, {"status": "approved", "note": ""})
+                store.update("not_a_real_environment", {"status": "approved", "note": ""})
 
     @unittest.skipUnless(SURVEY_CORPUS_AVAILABLE, SURVEY_SKIP_REASON)
     def test_atlas_ingests_individual_specimens_sources_and_real_artifacts(self) -> None:
@@ -208,25 +252,42 @@ class WeirdCaptchaDashboardTests(unittest.TestCase):
 
     def test_catalog_reports_the_final_environment_inventory(self) -> None:
         catalog = build_catalog()
-        self.assertEqual(catalog["stats"]["total"], 65)
-        self.assertEqual(catalog["stats"]["built"], 63)
-        self.assertEqual(catalog["stats"]["browser_verified"], 63)
+        self.assertEqual(catalog["stats"]["total"], 75)
+        self.assertEqual(catalog["stats"]["built"], 75)
+        self.assertEqual(catalog["stats"]["browser_verified"], 75)
         self.assertEqual(catalog["stats"]["scaffolds"], 0)
         self.assertEqual(catalog["stats"]["concepts"], 0)
         self.assertEqual(catalog["stats"]["incubator_candidates"], 0)
         self.assertEqual(catalog["stats"]["human_touched"], 6)
-        self.assertEqual(catalog["stats"]["solution_videos"], 11)
-        self.assertEqual(sum(group["count"] for group in catalog["groups"]), 65)
+        self.assertEqual(catalog["stats"]["solution_videos"], 75)
+        self.assertEqual(sum(group["count"] for group in catalog["groups"]), 75)
         recordings = [environment for environment in catalog["environments"] if environment["solution_video"]]
-        self.assertEqual(len(recordings), 11)
+        self.assertEqual(len(recordings), 75)
         for environment in recordings:
             video = environment["solution_video"]
             self.assertTrue(video["verified"], environment["mechanic_id"])
             self.assertEqual((video["width"], video["height"]), (1280, 720))
         current_recordings = [environment for environment in recordings if environment["mechanic_id"] != "semantic_drag_drop_absurdity"]
-        self.assertEqual(len(current_recordings), 10)
+        self.assertEqual(len(current_recordings), 74)
         for environment in current_recordings:
-            self.assertIn("/media/evidence/next_ten_difficulty_v3/solution_videos/", environment["solution_video"]["mp4_url"])
+            expected_set = (
+                "foundational_seven_v1"
+                if environment["mechanic_id"] in FOUNDATIONAL_SEVEN_V1
+                else "remaining_modular_fourteen_v1"
+                if environment["mechanic_id"] in REMAINING_MODULAR_FOURTEEN_V1
+                else "final_eleven_v1"
+                if environment["mechanic_id"] in FINAL_ELEVEN_V1
+                else "incubator_batch_revived_v1"
+                if environment["mechanic_id"] in {"moving_checkbox_evasive_button", "reverse_identity_gate"}
+                else "pending_next_ten_v3"
+                if environment["mechanic_id"] in PENDING_NEXT_TEN_V3
+                else "interaction_vii_viii_difficulty_v2"
+                if environment["mechanic_id"] in PACK_VII | PACK_VIII
+                else "pending_next_ten_v2"
+                if environment["mechanic_id"] in PENDING_NEXT_TEN_V2
+                else "next_ten_difficulty_v3"
+            )
+            self.assertIn(f"/media/evidence/{expected_set}/solution_videos/", environment["solution_video"]["mp4_url"])
             self.assertTrue(environment["solution_video"]["frozen_contract_verified"])
         semantic = next(environment for environment in recordings if environment["mechanic_id"] == "semantic_drag_drop_absurdity")
         self.assertTrue(semantic["solution_video"]["mp4_url"].endswith("/reviewed_overhaul_v1/semantic_drag_drop_absurdity-walkthrough.mp4"))
@@ -235,9 +296,21 @@ class WeirdCaptchaDashboardTests(unittest.TestCase):
         self.assertFalse(semantic["solution_video"]["frozen_contract_verified"])
         critic = next(environment for environment in catalog["environments"] if environment["mechanic_id"] == "robot_art_critic")
         self.assertIn("fixed prototype family", critic["known_limitations"][0])
+        revived = {
+            environment["mechanic_id"]: environment
+            for environment in catalog["environments"]
+            if environment["mechanic_id"] in {"moving_checkbox_evasive_button", "reverse_identity_gate"}
+        }
+        self.assertEqual(set(revived), {"moving_checkbox_evasive_button", "reverse_identity_gate"})
+        for mechanic, environment in revived.items():
+            self.assertEqual(environment["stage"], "built", mechanic)
+            self.assertEqual(environment["group"], "Interaction IX", mechanic)
+            self.assertTrue(environment["validation"]["ok"], mechanic)
+            self.assertTrue(environment["solution_video"]["frozen_contract_verified"], mechanic)
+            self.assertIn("/incubator_batch_revived_v1/", environment["cover"], mechanic)
 
-    def test_all_twenty_selected_pack_three_through_six_designs_are_promoted(self) -> None:
-        selected = PACK_III | PACK_IV | PACK_V | PACK_VI
+    def test_all_thirty_selected_pack_three_through_eight_designs_are_promoted(self) -> None:
+        selected = PACK_III | PACK_IV | PACK_V | PACK_VI | PACK_VII | PACK_VIII
         environments = {
             environment["mechanic_id"]: environment
             for environment in build_catalog()["environments"]
@@ -249,6 +322,8 @@ class WeirdCaptchaDashboardTests(unittest.TestCase):
             "Interaction IV": 5,
             "Interaction V": 5,
             "Interaction VI": 5,
+            "Interaction VII": 5,
+            "Interaction VIII": 5,
         })
         for mechanic, environment in environments.items():
             self.assertEqual(environment["stage"], "built", mechanic)
@@ -462,6 +537,8 @@ class WeirdCaptchaDashboardTests(unittest.TestCase):
             self.assertTrue(result["server_grade"]["passed"], mechanic)
             self.assertTrue(result["direct_grade"]["passed"], mechanic)
             self.assertTrue(result["verifier"]["passed"], mechanic)
+
+
     def test_interaction_six_batch_nine_is_launchable_with_independent_evidence(self) -> None:
         environments = {
             environment["mechanic_id"]: environment
@@ -495,6 +572,59 @@ class WeirdCaptchaDashboardTests(unittest.TestCase):
         }
         for mechanic, marker in clean_acceptance.items():
             self.assertIn(marker, summary["mechanics"][mechanic]["direct_grade"]["feedback"])
+
+    def test_interaction_seven_and_eight_are_launchable_with_independent_evidence(self) -> None:
+        expected = PACK_VII | PACK_VIII
+        environments = {
+            environment["mechanic_id"]: environment
+            for environment in build_catalog()["environments"]
+            if environment["mechanic_id"] in expected
+        }
+        self.assertEqual(set(environments), expected)
+        self.assertEqual(Counter(environment["group"] for environment in environments.values()), {
+            "Interaction VII": 5,
+            "Interaction VIII": 5,
+        })
+        for mechanic, environment in environments.items():
+            self.assertEqual(environment["stage"], "built", mechanic)
+            self.assertTrue(environment["launchable"], mechanic)
+            self.assertTrue(environment["screenshots"], mechanic)
+            self.assertTrue(environment["validation"]["ok"], mechanic)
+            self.assertEqual(environment["human_status"], "script-verified-pending-human", mechanic)
+            self.assertEqual(environment["design_status"], "local_verification_pending_vnc_human_evidence", mechanic)
+
+        summary = json.loads((BENCHMARK_ROOT / "evidence/interaction_vii_viii_difficulty_v2/summary.json").read_text(encoding="utf-8"))
+        self.assertTrue(summary["ok"])
+        self.assertEqual(set(summary["mechanics"]), expected)
+        self.assertEqual(sum(len(result["screenshots"]) for result in summary["mechanics"].values()), 52)
+        for mechanic, result in summary["mechanics"].items():
+            self.assertTrue(result["ok"], mechanic)
+            self.assertTrue(result["server_grade"]["passed"], mechanic)
+            self.assertTrue(result["direct_grade"]["passed"], mechanic)
+            self.assertTrue(result["verifier"]["passed"], mechanic)
+
+        multiseed = json.loads((BENCHMARK_ROOT / "evidence/interaction_vii_viii_difficulty_v2/multiseed-summary.json").read_text(encoding="utf-8"))
+        self.assertTrue(multiseed["ok"])
+        self.assertEqual(multiseed["browser_solves"], 30)
+        self.assertEqual(set(multiseed["mechanics"]), expected)
+        for mechanic, result in multiseed["mechanics"].items():
+            self.assertEqual(result, {
+                "direct_grade_passes": 3,
+                "server_grade_passes": 3,
+                "task_verifier_passes": 3,
+            }, mechanic)
+
+        films = json.loads((BENCHMARK_ROOT / "evidence/interaction_vii_viii_difficulty_v2/solution_videos/manifest.json").read_text(encoding="utf-8"))
+        self.assertTrue(films["ok"])
+        self.assertTrue(films["frozen_contract_verified"])
+        self.assertFalse(films["task_implementations_modified"])
+        self.assertEqual(set(films["videos"]), expected)
+        for mechanic, recording in films["videos"].items():
+            self.assertEqual((recording["media"]["width"], recording["media"]["height"]), (1280, 720), mechanic)
+            self.assertEqual(recording["media"]["codec"], "h264", mechanic)
+            self.assertTrue(recording["server_grade"]["passed"], mechanic)
+            self.assertTrue(recording["direct_grade"]["passed"], mechanic)
+            self.assertTrue(recording["verifier"]["passed"], mechanic)
 
     def test_next_ten_difficulty_v3_evidence_supersedes_historical_batch_frames(self) -> None:
         expected = {
@@ -535,7 +665,7 @@ class WeirdCaptchaDashboardTests(unittest.TestCase):
 
     def test_every_built_environment_exposes_real_non_cheat_evidence(self) -> None:
         built = [environment for environment in build_catalog()["environments"] if environment["stage"] == "built"]
-        self.assertEqual(len(built), 63)
+        self.assertEqual(len(built), 75)
         for environment in built:
             self.assertTrue(environment["cover"], environment["mechanic_id"])
             self.assertTrue(environment["screenshots"], environment["mechanic_id"])
@@ -572,14 +702,14 @@ class WeirdCaptchaDashboardTests(unittest.TestCase):
             output = Path(temporary) / "site"
             manifest = export_dashboard(output, companion_url="http://127.0.0.1:9123", copy_media=False)
             self.assertFalse(manifest["survey_included"])
-            self.assertEqual(manifest["catalog"], {"total": 65, "built": 63, "solution_videos": 11})
+            self.assertEqual(manifest["catalog"], {"total": 75, "built": 75, "solution_videos": 75})
             self.assertEqual(manifest["companion_url"], "http://127.0.0.1:9123")
             self.assertEqual(manifest["browser_play"], {
                 "enabled": True,
-                "environments": 63,
-                "challenges": 252,
+                "environments": 75,
+                "challenges": 300,
                 "challenges_per_environment": 4,
-                "grader_files": 57,
+                "grader_files": 69,
                 "python_runtime": "pyodide@314.0.2",
             })
             html = (output / "index.html").read_text(encoding="utf-8")
@@ -594,12 +724,12 @@ class WeirdCaptchaDashboardTests(unittest.TestCase):
             self.assertIn("consumePairingFragment", app)
             self.assertIn('\"mode\":\"shared\"', config)
             self.assertIn('\"browserPlayUrl\":\"play/\"', config)
-            self.assertEqual(catalog["stats"]["built"], 63)
+            self.assertEqual(catalog["stats"]["built"], 75)
             self.assertTrue((output / "play" / "index.html").is_file())
             self.assertTrue((output / "play" / "runtime" / "browser_adapter.js").is_file())
             self.assertTrue((output / "play" / "runtime" / "grader_worker.js").is_file())
             challenge_files = sorted((output / "play" / "challenges").glob("*.json"))
-            self.assertEqual(len(challenge_files), 63)
+            self.assertEqual(len(challenge_files), 75)
             for challenge_file in challenge_files:
                 bundle = json.loads(challenge_file.read_text(encoding="utf-8"))
                 self.assertEqual(len(bundle["challenges"]), 4, challenge_file.name)
@@ -796,7 +926,7 @@ class WeirdCaptchaDashboardTests(unittest.TestCase):
         try:
             with urllib.request.urlopen(f"{base}/api/catalog", timeout=3) as response:
                 payload = json.loads(response.read())
-                self.assertEqual(payload["stats"]["built"], 63)
+                self.assertEqual(payload["stats"]["built"], 75)
                 photograph = next(
                     environment
                     for environment in payload["environments"]
@@ -806,8 +936,8 @@ class WeirdCaptchaDashboardTests(unittest.TestCase):
                 self.assertTrue(photograph["launchable"])
             with urllib.request.urlopen(f"{base}/api/reviews", timeout=3) as response:
                 reviews = json.loads(response.read())
-                self.assertEqual(reviews["stats"]["total"], 63)
-                self.assertEqual(reviews["stats"]["pending"], 63)
+                self.assertEqual(reviews["stats"]["total"], 75)
+                self.assertEqual(reviews["stats"]["pending"], 75)
             review_request = urllib.request.Request(
                 f"{base}/api/reviews/domino_autopsy_env",
                 data=json.dumps({"status": "approved", "note": "Hand-tested in TigerVNC."}).encode("utf-8"),
@@ -828,7 +958,7 @@ class WeirdCaptchaDashboardTests(unittest.TestCase):
                 review = json.loads(response.read())
                 self.assertEqual(review["review"]["status"], "looks_good")
                 self.assertEqual(review["stats"]["looks_good"], 1)
-                self.assertEqual(review["stats"]["hands_on_pending"], 62)
+                self.assertEqual(review["stats"]["hands_on_pending"], 74)
             self.assertTrue(review_path.is_file())
             invalid_review = urllib.request.Request(
                 f"{base}/api/reviews/domino_autopsy_env",

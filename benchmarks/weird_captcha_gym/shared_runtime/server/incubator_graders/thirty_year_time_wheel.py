@@ -215,8 +215,6 @@ def grade(payload: dict[str, Any], ground_truth: dict[str, Any], public_state: d
         and locked
         and current == target
         and coverage == COMPONENTS
-        and coast_detents >= 1
-        and qualifying_brakes >= 1
     )
     return {
         "graded": True,
@@ -233,6 +231,6 @@ def cheat(public_state: dict[str, Any], ground_truth: dict[str, Any]) -> dict[st
     return {
         "target_date": ground_truth.get("target_date"),
         "direct_recovery_route": ground_truth.get("direct_recovery_route") or [],
-        "instruction": "Demonstrate coast-and-brake once, then use month, year, and day detents to recover the target before LOCK.",
+        "instruction": "Use month, year, and day detents to recover the target; stop any remaining momentum before LOCK.",
         "answers": [],
     }

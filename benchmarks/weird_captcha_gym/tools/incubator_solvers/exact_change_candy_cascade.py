@@ -52,8 +52,9 @@ def solve(page, state_dir: Path, out_dir: Path, mechanic: str) -> None:
         raise AssertionError(f"unexpected mechanic {mechanic!r}")
     truth = _read_json(state_dir / "ground_truth.json")
     swaps = truth.get("solution_swaps") or []
-    if len(swaps) != 2:
-        raise AssertionError(f"expected a two-swap solution, got {swaps!r}")
+    move_budget = int(truth["move_budget"])
+    if len(swaps) != move_budget:
+        raise AssertionError(f"expected a {move_budget}-swap solution, got {swaps!r}")
     for index, swap in enumerate(swaps, start=1):
         _click_cell(page, swap[0])
         _click_cell(page, swap[1])
@@ -62,7 +63,7 @@ def solve(page, state_dir: Path, out_dir: Path, mechanic: str) -> None:
             arg=index,
             timeout=12000,
         )
-        if index == 1:
+        if index == 2:
             _screenshot(page, out_dir, mechanic, "active-cascade")
     contract = page.evaluate(
         """() => ({
@@ -73,7 +74,7 @@ def solve(page, state_dir: Path, out_dir: Path, mechanic: str) -> None:
           forbidden: window.exactChangeCandyModel.forbiddenActivated,
         })"""
     )
-    if not contract["ready"] or contract["score"] != contract["target"] or contract["moves"] != 2 or contract["forbidden"]:
+    if not contract["ready"] or contract["score"] != contract["target"] or contract["moves"] != move_budget or contract["forbidden"]:
         raise AssertionError(f"candy route did not reach an exact safe receipt: {contract}")
     _screenshot(page, out_dir, mechanic, "solved")
     page.locator("#candy-certify").click()

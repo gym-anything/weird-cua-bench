@@ -113,36 +113,29 @@ def solve(page, state_dir: Path, out_dir: Path, mechanic: str) -> None:
     if mechanic != MECHANIC_ID:
         raise AssertionError(f"unexpected mechanic {mechanic!r}")
     truth = _read_json(state_dir / "ground_truth.json")
-    scene = truth["scene"]
-    current = _rail_value(page)
-    maximum = int(scene["rail"]["maximum_milli"])
-    fast_delta = 150.0 if maximum - current > 260000 else -150.0
-    _drag_rail(page, fast_delta, precision_tail=False)
-    page.wait_for_function(
-        "() => window.jigsawSliderAlignmentModel.inertiaSamples >= 2 && window.jigsawSliderAlignmentModel.inertia !== null",
-        timeout=4000,
-    )
-    _screenshot(page, out_dir, mechanic, "active-inertia")
-    page.wait_for_function("() => window.jigsawSliderAlignmentModel.inertia === null", timeout=6000)
-
     _set_depth(page, int(truth["target_depth_milli"]))
     _set_rail(page, int(truth["target_rail_milli"]))
-    page.wait_for_function("() => document.querySelectorAll('.alignment-axis-pair > div.is-locked').length === 2", timeout=3000)
+    piece = truth["scene"]["piece"]
+    current_rotation = int(piece["initial_rotation_deg"])
+    target_rotation = int(piece["target_rotation_deg"])
+    step = int(piece["rotation_step_deg"])
+    clockwise = ((target_rotation - current_rotation) % 360) // step
+    counter = ((current_rotation - target_rotation) % 360) // step
+    button = "#alignment-rotate-right" if clockwise <= counter else "#alignment-rotate-left"
+    for _ in range(min(clockwise, counter)):
+        page.locator(button).click()
+    page.wait_for_function("() => document.querySelectorAll('.alignment-axis-pair > div.is-locked').length === 3", timeout=3000)
     proof = page.evaluate(
         """() => ({
           railTravel: window.jigsawSliderAlignmentModel.railTravel,
           depthTravel: window.jigsawSliderAlignmentModel.depthTravel,
-          inertiaSamples: window.jigsawSliderAlignmentModel.inertiaSamples,
+      rotation: window.jigsawSliderAlignmentModel.rotation,
           rail: window.jigsawSliderAlignmentModel.rail,
           depth: window.jigsawSliderAlignmentModel.depth,
         })"""
     )
-    if proof["railTravel"] < int(truth["tolerances"]["minimum_rail_travel_milli"]):
-        raise AssertionError(f"rail manipulation proof is too short: {proof}")
-    if proof["depthTravel"] < int(truth["tolerances"]["minimum_depth_travel_milli"]):
-        raise AssertionError(f"depth manipulation proof is too short: {proof}")
-    if proof["inertiaSamples"] < int(truth["tolerances"]["minimum_inertia_samples"]):
-        raise AssertionError(f"inertia proof is too short: {proof}")
+    if proof["rail"] != int(truth["target_rail_milli"]) or proof["depth"] != int(truth["target_depth_milli"]) or proof["rotation"] != target_rotation:
+        raise AssertionError(f"three-axis optical splice did not reach the generated target: {proof}")
     page.wait_for_timeout(260)
     _screenshot(page, out_dir, mechanic, "aligned")
     _hold_scan(page, 790)

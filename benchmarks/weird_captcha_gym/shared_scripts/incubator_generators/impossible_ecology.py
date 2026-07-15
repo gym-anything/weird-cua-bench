@@ -1,20 +1,21 @@
 from __future__ import annotations
 
 import hashlib
+import math
 import random
 from typing import Any
 
 
 MECHANIC_ID = "impossible_ecology"
-PROBES = ("CLIMATE", "FOOD", "LIGHT")
-TICKS_PER_CYCLE = 8
-STAGE_WIDTH = 1000
-STAGE_HEIGHT = 460
-LAW_VARIANTS = {
-    "CLIMATE": ("thermal_stasis", "inverse_thermotaxis"),
-    "FOOD": ("food_avoidance", "runaway_growth"),
-    "LIGHT": ("negative_phototaxis", "light_freeze"),
-}
+FIELDS = ("CLIMATE", "FOOD", "LIGHT")
+SIGNATURES = tuple((field, sign) for field in FIELDS for sign in (-1, 1))
+COLORS = ("#9dff70", "#63e7ff", "#ffcc63", "#ff7aa8", "#c499ff")
+PALETTES = (
+    {"name": "moss", "paper": "#08120c", "grid": "#244b31", "ink": "#dff3d5", "danger": "#ff5f56"},
+    {"name": "brine", "paper": "#071319", "grid": "#255063", "ink": "#d8f5f4", "danger": "#ff6a65"},
+    {"name": "ember", "paper": "#171008", "grid": "#694426", "ink": "#f5e8cf", "danger": "#ff5d51"},
+    {"name": "violet", "paper": "#100b18", "grid": "#533769", "ink": "#eee1f7", "danger": "#ff6573"},
+)
 
 
 def _seed_int(seed: str, salt: str) -> int:
@@ -22,78 +23,71 @@ def _seed_int(seed: str, salt: str) -> int:
     return int.from_bytes(digest[:8], "big")
 
 
-def _normal_frame(probe: str, tick: int) -> tuple[int, int, int, int, int]:
-    if probe == "LIGHT":
-        return 50 + 3 * tick, 54, 100, 52 + 3 * tick, 8
-    if probe == "CLIMATE":
-        return 50 + (tick % 2), 54 - tick // 3, 100 + tick // 4, 48 + 5 * tick, -4
-    return 50 + tick, 54 - 2 * tick, 100 + 4 * tick, 54 + tick, 3
-
-
-def _anomalous_frame(probe: str, law: str, tick: int) -> tuple[int, int, int, int, int]:
-    if law == "negative_phototaxis":
-        return 50 - 3 * tick, 54, 100, 52 + tick, -12
-    if law == "light_freeze":
-        return 50, 54, 100, 42, 0
-    if law == "thermal_stasis":
-        return 50, 54, 100, 48, 0
-    if law == "inverse_thermotaxis":
-        return 50 - (tick % 2), 54 + tick // 2, 98, 48 - 3 * tick, 7
-    if law == "food_avoidance":
-        return 50 - 2 * tick, 54 + tick, 100 - 2 * tick, 49, -10
-    return 50 + tick, 54 - tick, 100 + 9 * tick, 64 + 2 * tick, 14
-
-
-def _snapshot(habitat_ids: list[str], culprit_id: str, probe: str, anomaly_probe: str, law: str, tick: int) -> list[dict[str, Any]]:
-    snapshot: list[dict[str, Any]] = []
-    for habitat_id in habitat_ids:
-        values = (
-            _anomalous_frame(probe, law, tick)
-            if habitat_id == culprit_id and probe == anomaly_probe
-            else _normal_frame(probe, tick)
-        )
-        x, y, scale, pulse, lean = values
-        snapshot.append({
-            "habitat_id": habitat_id,
-            "x": x,
-            "y": y,
-            "scale": scale,
-            "pulse": pulse,
-            "lean": lean,
-        })
-    return snapshot
+def _round(value: float) -> float:
+    return round(float(value) + 1e-12, 5)
 
 
 def generate(task: dict[str, Any], seed: str) -> tuple[dict[str, Any], dict[str, Any]]:
     rng = random.Random(_seed_int(seed, MECHANIC_ID))
-    protocol = list(PROBES)
-    rng.shuffle(protocol)
-    habitat_ids = [f"habitat-{index + 1}" for index in range(5)]
-    culprit_id = rng.choice(habitat_ids)
-    anomaly_probe = rng.choice(PROBES)
-    response_law = rng.choice(LAW_VARIANTS[anomaly_probe])
-    palette = rng.choice(("moss", "brine", "ember", "violet"))
+    arena = {"width": 1000, "height": 430, "margin": 24}
+    center = [arena["width"] / 2, arena["height"] / 2]
+    rotation = rng.uniform(-math.pi, math.pi)
+    signatures = list(SIGNATURES)
+    rng.shuffle(signatures)
+    selected = signatures[:5]
+    colors = list(COLORS)
+    rng.shuffle(colors)
 
-    habitats = []
-    habitat_rects: list[dict[str, Any]] = []
-    for index, habitat_id in enumerate(habitat_ids):
-        x = 14 + index * 194
-        rect = {"id": habitat_id, "x": x, "y": 20, "width": 178, "height": 278}
-        habitat_rects.append(rect)
-        habitats.append({
-            "id": habitat_id,
-            "label": f"BIO-{chr(65 + index)}{rng.randint(10, 99)}",
-            "rect": rect,
+    organisms: list[dict[str, Any]] = []
+    targets: list[dict[str, Any]] = []
+    for index in range(5):
+        angle = rotation + index * math.tau / 5
+        tangent = [-math.sin(angle), math.cos(angle)]
+        radial = [math.cos(angle), math.sin(angle)]
+        initial_radius = rng.uniform(78, 96)
+        tangential_jitter = rng.uniform(-14, 14)
+        position = [
+            center[0] + radial[0] * initial_radius + tangent[0] * tangential_jitter,
+            center[1] + radial[1] * initial_radius + tangent[1] * tangential_jitter,
+        ]
+        target_radius = rng.uniform(164, 174)
+        target = [center[0] + radial[0] * target_radius, center[1] + radial[1] * target_radius]
+        primary_field, primary_sign = selected[index]
+        responses: dict[str, float] = {}
+        for field in FIELDS:
+            if field == primary_field:
+                responses[field] = _round(primary_sign * rng.uniform(1.18, 1.34))
+            else:
+                responses[field] = _round(rng.choice((-1, 1)) * rng.uniform(.11, .19))
+        organism_id = f"organism-{index + 1}"
+        organisms.append({
+            "id": organism_id,
+            "label": chr(65 + index),
+            "color": colors[index],
+            "radius": 14,
+            "initial_position": [_round(value) for value in position],
+            "responses": responses,
+        })
+        targets.append({
+            "id": f"sanctuary-{index + 1}",
+            "organism_id": organism_id,
+            "label": chr(65 + index),
+            "color": colors[index],
+            "center": [_round(value) for value in target],
+            "radius": 38,
         })
 
-    cycles: list[dict[str, Any]] = []
-    for step, probe in enumerate(protocol):
-        frames = [
-            {"tick": tick, "snapshot": _snapshot(habitat_ids, culprit_id, probe, anomaly_probe, response_law, tick)}
-            for tick in range(1, TICKS_PER_CYCLE + 1)
-        ]
-        cycles.append({"step": step, "probe": probe, "frames": frames})
-
+    controls = {
+        "tick_ms": 50,
+        "damping": .83,
+        "max_speed": 4.8,
+        "capture_speed": 5.0,
+        "capture_margin": 1.0,
+        "pointer_sample_distance": 3.0,
+        "max_ticks": 1400,
+        "calibration_field_ms": 620,
+    }
+    obstacle = {"id": "nursery", "center": center, "radius": 48}
     challenge_id = hashlib.sha256(f"{seed}|{MECHANIC_ID}".encode("utf-8")).hexdigest()[:12]
     task_id = str(task.get("id") or "impossible_ecology_seed_0001@0.1")
     public_state = {
@@ -101,44 +95,41 @@ def generate(task: dict[str, Any], seed: str) -> tuple[dict[str, Any], dict[str,
         "mechanic_id": MECHANIC_ID,
         "task_id": task_id,
         "challenge_id": challenge_id,
-        "prompt": task.get("natural_language")
-        or "Run the posted three-probe protocol, observe every full response cycle, then quarantine the organism that breaks the causal law.",
-        "submit_label": "CERTIFY QUARANTINE",
+        "prompt": task.get("natural_language") or "Learn the coupled field responses, then shepherd every organism into its matching sanctuary.",
+        "submit_label": "CERTIFY STABLE ECOLOGY",
         "asset_manifest": "shared_runtime/assets/provenance/incubator_full_build_v1.json",
-        "generator": {
-            "name": "causal_terrarium_lab_v1",
-            "variant_count": 5 * 3 * 2 * 6 * 4 * 90**5,
-        },
-        "palette": palette,
-        "stage": {"width": STAGE_WIDTH, "height": STAGE_HEIGHT},
-        "habitats": habitats,
-        "habitat_rects": habitat_rects,
-        "quarantine_rect": {"x": 330, "y": 338, "width": 340, "height": 102},
-        "protocol": protocol,
-        "ticks_per_cycle": TICKS_PER_CYCLE,
-        "tick_ms": 115,
-        "cycles": cycles,
+        "generator": {"name": "coupled_field_ecology_shepherd_v2", "variant_count": 24_000_000_000},
+        "palette": rng.choice(PALETTES),
+        "arena": arena,
+        "fields": list(FIELDS),
+        "organisms": organisms,
+        "targets": targets,
+        "obstacle": obstacle,
+        "controls": controls,
         "rules": [
-            "Initial appearance is not evidence.",
-            "Run the illuminated protocol in order and let every response cycle finish.",
-            "After all three trials, drag the causal violator into quarantine.",
+            "Select one global field, then hold the pointer inside the arena.",
+            "Each uncaptured organism is attracted or repelled differently; all move at once.",
+            "A matching sanctuary locks an organism permanently. Stabilize all five.",
         ],
+        "render_boundary": "The static browser receives response coefficients to run the local simulation. They are never rendered numerically; the independent grader replays every field, pointer, and physics tick.",
     }
     ground_truth = {
         "mechanic_id": MECHANIC_ID,
         "task_id": task_id,
         "seed": seed,
         "challenge_id": challenge_id,
-        "protocol": protocol,
-        "ticks_per_cycle": TICKS_PER_CYCLE,
-        "cycles": cycles,
-        "habitat_rects": habitat_rects,
-        "quarantine_rect": public_state["quarantine_rect"],
-        "culprit_id": culprit_id,
-        "anomaly_probe": anomaly_probe,
-        "response_law": response_law,
+        "arena": arena,
+        "fields": list(FIELDS),
+        "organisms": organisms,
+        "targets": targets,
+        "obstacle": obstacle,
+        "controls": controls,
         "variant_count": public_state["generator"]["variant_count"],
     }
-    assert len(protocol) == 3 and set(protocol) == set(PROBES)
-    assert len(cycles) == 3 and all(len(cycle["frames"]) == TICKS_PER_CYCLE for cycle in cycles)
+    for organism, target in zip(organisms, targets):
+        assert organism["id"] == target["organism_id"]
+        assert max(abs(value) for value in organism["responses"].values()) > 1.1
+        assert math.dist(organism["initial_position"], center) > obstacle["radius"] + organism["radius"] + 12
+        assert math.dist(target["center"], center) > 150
+    assert len({(max(item["responses"], key=lambda field: abs(item["responses"][field])), 1 if item["responses"][max(item["responses"], key=lambda field: abs(item["responses"][field]))] > 0 else -1) for item in organisms}) == 5
     return public_state, ground_truth

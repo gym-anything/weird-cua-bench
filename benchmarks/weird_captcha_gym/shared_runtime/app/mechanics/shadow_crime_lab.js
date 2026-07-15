@@ -297,6 +297,7 @@
     root.dataset.probeCount = String(model.sampled.size);
     root.dataset.taggedObject = model.taggedId || "";
     root.dataset.dragging = String(model.dragging);
+    root.dataset.tagDragging = String(Boolean(model.tagDrag));
     document.querySelectorAll("[data-probe-id]").forEach((slot) => {
       slot.dataset.visited = String(model.visited.includes(slot.dataset.probeId));
       slot.dataset.sampled = String(model.sampled.has(slot.dataset.probeId));
@@ -304,6 +305,13 @@
     document.querySelectorAll("[data-evidence-id]").forEach((row) => row.dataset.tagged = String(row.dataset.evidenceId === model.taggedId));
     const tag = document.getElementById("shadow-tag-readout");
     if (tag) tag.textContent = model.taggedId ? "SHADOW TAGGED" : "NO SHADOW TAG";
+    const tagTool = document.getElementById("shadow-tag-tool");
+    const tagUnlocked = model.sampled.size >= Number(model.state.minimum_probe_zones || 4);
+    if (tagTool) {
+      tagTool.disabled = !tagUnlocked || model.submitting || model.completed;
+      tagTool.dataset.unlocked = String(tagUnlocked);
+      tagTool.querySelector("span")?.replaceChildren(document.createTextNode(tagUnlocked ? "DRAG ONTO SHADOW" : `LOCKED · ${model.sampled.size}/4 PROBES`));
+    }
     const submit = document.getElementById("shadow-submit");
     if (submit) submit.disabled = model.submitting || model.completed;
     drawScene();
@@ -340,19 +348,9 @@
       updateInterface();
       return;
     }
-    if (model.sampled.size < Number(model.state.minimum_probe_zones || 4)) {
-      model.helpers.setReadout("PROBE SEQUENCE INCOMPLETE", "error");
-      return;
-    }
-    const objectId = raycastShadow(point);
-    if (!objectId) {
-      model.helpers.setReadout("TAG MISSED SHADOW", "error");
-      return;
-    }
-    model.taggedId = objectId;
-    pushEvent({type: "tag", point, object_id: objectId});
-    model.helpers.setReadout("SHADOW TAGGED", "idle");
-    updateInterface();
+    model.helpers.setReadout(model.sampled.size < Number(model.state.minimum_probe_zones || 4)
+      ? "PROBE SEQUENCE INCOMPLETE"
+      : "USE THE RED EVIDENCE TAG · DRAG IT ONTO A SHADOW", "error");
   }
 
   function pointerMove(event) {
@@ -380,6 +378,59 @@
     updateInterface();
   }
 
+  function moveTagGhost(event, visible = true) {
+    const ghost = document.getElementById("shadow-tag-ghost");
+    if (!ghost) return;
+    ghost.dataset.visible = String(visible);
+    if (visible) {
+      ghost.style.left = `${event.clientX}px`;
+      ghost.style.top = `${event.clientY}px`;
+    }
+  }
+
+  function tagDown(event) {
+    if (!model || model.dragging || model.tagDrag || model.submitting || model.completed) return;
+    if (model.sampled.size < Number(model.state.minimum_probe_zones || 4)) {
+      model.helpers.setReadout("EVIDENCE TAG LOCKED · COMPLETE FOUR PROBES", "error");
+      return;
+    }
+    event.preventDefault();
+    model.tagDrag = {pointerId: event.pointerId, moves: 0};
+    pushEvent({type: "tag_start", dock: "evidence_tag"});
+    event.currentTarget.setPointerCapture?.(event.pointerId);
+    moveTagGhost(event, true);
+    model.helpers.setReadout("EVIDENCE TAG IN HAND · DROP ON THE IMPOSSIBLE SHADOW", "idle");
+    updateInterface();
+  }
+
+  function tagMove(event) {
+    if (!model?.tagDrag || model.tagDrag.pointerId !== event.pointerId) return;
+    event.preventDefault();
+    const point = canvasPoint(event);
+    model.tagDrag.moves += 1;
+    pushEvent({type: "tag_move", point});
+    moveTagGhost(event, true);
+  }
+
+  function tagUp(event) {
+    if (!model?.tagDrag || model.tagDrag.pointerId !== event.pointerId) return;
+    event.preventDefault();
+    const point = canvasPoint(event);
+    const moves = model.tagDrag.moves;
+    const objectId = moves >= 3 ? raycastShadow(point) : null;
+    pushEvent({type: "tag_end", point, object_id: objectId, move_count: moves});
+    model.tagDrag = null;
+    event.currentTarget.releasePointerCapture?.(event.pointerId);
+    moveTagGhost(event, false);
+    if (!objectId) {
+      model.helpers.setReadout(moves < 3 ? "EVIDENCE TAG WAS NOT DRAGGED" : "TAG MISSED EVERY SHADOW · TRY AGAIN", "error");
+    } else {
+      model.taggedId = objectId;
+      model.helpers.setReadout("SHADOW TAGGED · FILE FINDING", "idle");
+    }
+    updateInterface();
+  }
+
   function resetScene() {
     if (!model || model.dragging || model.submitting || model.completed) return;
     model.lamp = clonePoint(model.initialLamp);
@@ -389,6 +440,7 @@
     model.snapshots = [];
     model.path = [clonePoint(model.lamp)];
     model.taggedId = null;
+    model.tagDrag = null;
     model.resetCount += 1;
     pushEvent({type: "reset", lamp_after: clonePoint(model.lamp)});
     model.helpers.setReadout("SCENE RESET", "idle");
@@ -427,7 +479,7 @@
       const response = await fetch("/result", {
         method: "POST",
         headers: {"content-type": "application/json"},
-        body: JSON.stringify({mechanic_id: current.state.mechanic_id, challenge_id: current.state.challenge_id, completed: true, events: current.events, final_state: finalState()}),
+        body: JSON.stringify({mechanic_id: current.state.mechanic_id, task_id: current.state.task_id, challenge_id: current.state.challenge_id, completed: true, events: current.events, final_state: finalState()}),
       });
       const outcome = await response.json();
       if (outcome.passed === true) {
@@ -492,6 +544,7 @@
       snapshots: [],
       path: [clonePoint(initialLamp)],
       taggedId: null,
+      tagDrag: null,
       resetCount: 0,
       submitting: false,
       completed: false,
@@ -508,15 +561,16 @@
         <main class="shadow-workbench">
           <section class="shadow-stage">
             <canvas id="shadow-canvas" width="${Number(state.canvas.width)}" height="${Number(state.canvas.height)}" aria-label="analytic shadow crime scene"></canvas>
-            <div class="stage-caption"><span>DRAG LIGHT / CLICK SHADOW TO TAG</span><b>ANALYTIC PROJECTION TABLE</b></div>
+            <div class="stage-caption"><span>DRAG LIGHT THROUGH A–D / THEN DRAG THE RED TAG</span><b>ANALYTIC PROJECTION TABLE</b></div>
           </section>
           <aside class="shadow-console">
             <div class="lamp-manifest"><span>LIGHT SOURCE</span><b>${helpers.text(String(state.lamp.type).toUpperCase())}</b><i>${Number(state.lamp.area_radius) > 0 ? `AREA Ø${Number(state.lamp.area_radius) * 2}` : "POINT EMITTER"}</i></div>
             <div class="probe-ledger"><span>PROBE LEDGER</span>${state.probe_zones.map((zone, index) => `<div data-probe-id="${helpers.text(zone.id)}" data-visited="false" data-sampled="false"><i>${String.fromCharCode(65 + index)}</i><b>ZONE ${index + 1}</b><em></em></div>`).join("")}</div>
             <div class="evidence-ledger"><span>SHADOW EVIDENCE</span>${state.objects.map((object) => `<div data-evidence-id="${helpers.text(object.id)}" data-tagged="false"><i>${helpers.text(object.case_label)}</i><b>${helpers.text(String(object.shape).toUpperCase())}</b><em>TAG</em></div>`).join("")}</div>
-            <div class="shadow-tag-panel"><span id="shadow-tag-readout">NO SHADOW TAG</span><button type="button" id="shadow-reset">RESET SCENE</button></div>
+            <div class="shadow-tag-panel"><span id="shadow-tag-readout">NO SHADOW TAG</span><button type="button" id="shadow-tag-tool" data-unlocked="false"><b>EVIDENCE TAG</b><span>LOCKED · 0/4 PROBES</span></button><button type="button" id="shadow-reset">RESET SCENE</button></div>
           </aside>
         </main>
+        <div class="shadow-tag-ghost" id="shadow-tag-ghost" data-visible="false"><b>TAG</b><i></i></div>
         <footer class="shadow-foot"><div class="readout" data-status="idle">LIGHT RESPONSE READY</div><button type="button" id="shadow-submit">${helpers.text(state.submit_label || "FILE FINDING")}</button></footer>
         ${helpers.cheatPanelTemplate()}
       </section>`;
@@ -525,6 +579,11 @@
     canvas.addEventListener("pointermove", pointerMove);
     canvas.addEventListener("pointerup", pointerUp);
     canvas.addEventListener("pointercancel", pointerUp);
+    const tagTool = document.getElementById("shadow-tag-tool");
+    tagTool?.addEventListener("pointerdown", tagDown);
+    tagTool?.addEventListener("pointermove", tagMove);
+    tagTool?.addEventListener("pointerup", tagUp);
+    tagTool?.addEventListener("pointercancel", tagUp);
     document.getElementById("shadow-reset")?.addEventListener("click", resetScene);
     document.getElementById("shadow-submit")?.addEventListener("click", submitFinding);
     installDeveloperReveal();
@@ -533,6 +592,10 @@
       canvas.removeEventListener("pointermove", pointerMove);
       canvas.removeEventListener("pointerup", pointerUp);
       canvas.removeEventListener("pointercancel", pointerUp);
+      tagTool?.removeEventListener("pointerdown", tagDown);
+      tagTool?.removeEventListener("pointermove", tagMove);
+      tagTool?.removeEventListener("pointerup", tagUp);
+      tagTool?.removeEventListener("pointercancel", tagUp);
       model?.timers.forEach((timer) => window.clearTimeout(timer));
     };
     updateInterface();

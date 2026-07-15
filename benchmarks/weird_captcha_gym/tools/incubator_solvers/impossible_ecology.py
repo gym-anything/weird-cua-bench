@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import math
 import time
 from pathlib import Path
 
@@ -10,74 +11,111 @@ from playwright.sync_api import expect
 MECHANIC_ID = "impossible_ecology"
 
 
-def _read_json(path: Path) -> dict:
+def _read(path: Path) -> dict:
     return json.loads(path.read_text(encoding="utf-8"))
 
 
-def _screenshot(page, out_dir: Path, mechanic: str, label: str) -> None:
+def _shot(page, out_dir: Path, mechanic: str, label: str) -> None:
     out_dir.mkdir(parents=True, exist_ok=True)
     page.screenshot(path=str(out_dir / f"{mechanic}-{label}.png"), full_page=True)
 
 
-def _wait_for_new_challenge(state_dir: Path, previous: str) -> str:
+def _wait_new(state_dir: Path, before: str) -> None:
     deadline = time.time() + 8
     while time.time() < deadline:
-        current = str(_read_json(state_dir / "ground_truth.json").get("challenge_id") or "")
-        if current and current != previous:
-            return current
-        time.sleep(0.05)
-    raise AssertionError("causal terrarium did not regenerate after failure")
+        if str(_read(state_dir / "ground_truth.json").get("challenge_id")) != before:
+            return
+        time.sleep(.05)
+    raise AssertionError("coupled ecology did not regenerate after failure")
 
 
 def fail_once(page, state_dir: Path, out_dir: Path, mechanic: str) -> None:
     if mechanic != MECHANIC_ID:
-        raise AssertionError(f"unexpected mechanic {mechanic!r}")
-    before = str(_read_json(state_dir / "ground_truth.json")["challenge_id"])
+        raise AssertionError(mechanic)
+    before = str(_read(state_dir / "ground_truth.json")["challenge_id"])
     page.locator(".eco-submit").click()
-    _wait_for_new_challenge(state_dir, before)
+    _wait_new(state_dir, before)
     expect(page.locator(".impossible-ecology-captcha[data-fresh-failure='true']")).to_be_visible(timeout=8_000)
     expect(page.locator(".readout")).to_contain_text("FAIL")
-    _screenshot(page, out_dir, mechanic, "fail-refresh")
+    _shot(page, out_dir, mechanic, "fail-refresh")
+
+
+def _screen(box: dict, arena: dict, point: tuple[float, float] | list[float]) -> tuple[float, float]:
+    return box["x"] + float(point[0]) / arena["width"] * box["width"], box["y"] + float(point[1]) / arena["height"] * box["height"]
+
+
+def _live(page, organism_id: str) -> dict:
+    return page.evaluate("""id => { const item=window.impossibleEcologyModel.organisms[id]; return {x:item.x,y:item.y,vx:item.vx,vy:item.vy,captured:item.captured,tick:window.impossibleEcologyModel.tick}; }""", organism_id)
+
+
+def _herd(page, truth: dict, box: dict, organism: dict) -> None:
+    target = next(item for item in truth["targets"] if item["organism_id"] == organism["id"])
+    primary = max(organism["responses"], key=lambda field: abs(float(organism["responses"][field])))
+    sign = 1 if float(organism["responses"][primary]) > 0 else -1
+    page.locator(f'[data-field="{primary}"]').click()
+    state = _live(page, organism["id"])
+    if state["captured"]:
+        return
+    pointer_is_down = False
+    try:
+        for _ in range(190):
+            state = _live(page, organism["id"])
+            if state["captured"]:
+                return
+            dx, dy = float(target["center"][0]) - state["x"], float(target["center"][1]) - state["y"]
+            remaining = math.hypot(dx, dy)
+            ux, uy = (dx / remaining, dy / remaining) if remaining > 1e-6 else (1.0, 0.0)
+            if sign > 0:
+                lure = [float(target["center"][0]) + ux * 62, float(target["center"][1]) + uy * 62]
+            else:
+                lure = [state["x"] - ux * 142, state["y"] - uy * 142]
+            lure[0] = max(4, min(float(truth["arena"]["width"]) - 4, lure[0]))
+            lure[1] = max(4, min(float(truth["arena"]["height"]) - 4, lure[1]))
+            point = _screen(box, truth["arena"], lure)
+            if not pointer_is_down:
+                page.mouse.move(*point, steps=8)
+                page.mouse.down()
+                pointer_is_down = True
+            else:
+                page.mouse.move(*point, steps=3)
+            page.wait_for_timeout(105)
+        raise AssertionError(f"organism {organism['id']} did not reach its sanctuary: {_live(page, organism['id'])}")
+    finally:
+        if pointer_is_down:
+            page.mouse.up()
+            page.wait_for_timeout(90)
 
 
 def solve(page, state_dir: Path, out_dir: Path, mechanic: str) -> None:
     if mechanic != MECHANIC_ID:
-        raise AssertionError(f"unexpected mechanic {mechanic!r}")
-    truth = _read_json(state_dir / "ground_truth.json")
-    wrong_probe = next(probe for probe in ("CLIMATE", "FOOD", "LIGHT") if probe != truth["protocol"][0])
-    page.locator(f'.eco-probe[data-probe="{wrong_probe}"]').click()
-    expect(page.locator(".readout")).to_contain_text("PROTOCOL CONTAMINATED")
-    page.locator(".eco-reset").click()
-    expect(page.locator(".readout")).to_contain_text("LAB RESET")
-    for index, probe in enumerate(truth["protocol"]):
-        page.locator(f'.eco-probe[data-probe="{probe}"]').click()
-        if index == 0:
-            page.wait_for_timeout(360)
-            _screenshot(page, out_dir, mechanic, "active-response-cycle")
-        page.wait_for_function("expected => window.impossibleEcologyModel.progress === expected", arg=index + 1, timeout=5_000)
+        raise AssertionError(mechanic)
+    truth = _read(state_dir / "ground_truth.json")
+    expect(page.locator(".impossible-ecology-captcha")).to_be_visible(timeout=8_000)
+    page.locator(".eco-calibrate").click()
+    page.wait_for_timeout(720)
+    _shot(page, out_dir, mechanic, "active-calibration-film")
+    page.wait_for_function("() => window.impossibleEcologyModel.calibrating === null", timeout=5_000)
+    canvas = page.locator(".eco-arena")
+    box = canvas.bounding_box()
+    if not box:
+        raise AssertionError("coupled ecology arena is not visible")
 
-    expect(page.locator(".eco-quarantine-gate[data-ready='true']")).to_be_visible()
-    culprit = page.locator(f'.eco-organism[data-habitat-id="{truth["culprit_id"]}"]')
-    quarantine = page.locator(".eco-quarantine")
-    culprit_box = culprit.bounding_box()
-    quarantine_box = quarantine.bounding_box()
-    if not culprit_box or not quarantine_box:
-        raise AssertionError("culprit or quarantine chamber is not visible")
-    page.mouse.move(culprit_box["x"] + culprit_box["width"] / 2, culprit_box["y"] + culprit_box["height"] / 2)
-    page.mouse.down()
-    page.mouse.move(quarantine_box["x"] + quarantine_box["width"] / 2, quarantine_box["y"] + quarantine_box["height"] / 2, steps=12)
-    page.mouse.up()
-    page.wait_for_timeout(120)
-    expect(page.locator(".eco-quarantine[data-occupied='true']")).to_contain_text(truth["culprit_id"].upper())
-    state = page.evaluate("""() => ({
-        progress: window.impossibleEcologyModel.progress,
-        ticks: window.impossibleEcologyModel.tickTotal,
-        quarantined: window.impossibleEcologyModel.quarantinedId,
-        moves: window.impossibleEcologyModel.quarantineMoves,
-    })""")
-    expected_ticks = 3 * int(truth["ticks_per_cycle"])
-    if state["progress"] != 3 or state["ticks"] != expected_ticks or state["quarantined"] != truth["culprit_id"] or state["moves"] < 3:
-        raise AssertionError(f"causal quarantine physical workflow ended in unexpected state: {state}")
-    _screenshot(page, out_dir, mechanic, "solved-quarantine")
+    # Start with the organisms whose primary responses are strongest so their
+    # coupled motion is removed from the live field first.
+    organisms = sorted(truth["organisms"], key=lambda item: -max(abs(float(value)) for value in item["responses"].values()))
+    for index, organism in enumerate(organisms):
+        if not _live(page, organism["id"])["captured"]:
+            _herd(page, truth, box, organism)
+        captured = int(page.locator(".impossible-ecology-captcha").get_attribute("data-captured") or "0")
+        if index == 1:
+            _shot(page, out_dir, mechanic, "active-coupled-herding")
+        if captured >= 4 and not (out_dir / f"{mechanic}-four-sanctuaries.png").exists():
+            _shot(page, out_dir, mechanic, "four-sanctuaries")
+
+    expect(page.locator(".eco-complete[data-visible='true']")).to_be_visible(timeout=8_000)
+    final = page.evaluate("""() => ({captured:Object.values(window.impossibleEcologyModel.organisms).filter(x=>x.captured).length,completed:window.impossibleEcologyModel.completed,tick:window.impossibleEcologyModel.tick,resets:window.impossibleEcologyModel.resets,drags:window.impossibleEcologyModel.pointerDrags})""")
+    if final["captured"] != 5 or not final["completed"] or final["resets"] != 0 or final["drags"] < 1:
+        raise AssertionError(f"coupled ecology clean solve incomplete: {final}")
+    _shot(page, out_dir, mechanic, "stable-all-sanctuaries")
     page.locator(".eco-submit").click()
-    expect(page.locator(".readout")).to_have_text("PASS", timeout=8_000)
+    expect(page.locator(".readout")).to_have_text("PASS", timeout=10_000)

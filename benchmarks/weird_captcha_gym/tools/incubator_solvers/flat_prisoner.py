@@ -87,22 +87,6 @@ def solve(page, state_dir: Path, out_dir: Path, mechanic: str) -> None:
     expect(page.locator(".flat-prison-verdict.is-fresh")).to_have_count(0)
     truth = _read_json(state_dir / "ground_truth.json")
 
-    # Freeze the intake camera, physically walk off its disconnected projection,
-    # and recover through the visible thaw/reframe workflow.
-    page.locator("#freeze-view").click()
-    expect(page.locator('.flat-prisoner[data-mode="flat"]')).to_be_visible()
-    _screenshot(page, out_dir, mechanic, "bad-frozen-projection")
-    page.keyboard.down("ArrowRight")
-    page.wait_for_function("() => window.flatPrisonerModel.prisoner && !window.flatPrisonerModel.prisoner.alive", timeout=9_000)
-    page.keyboard.up("ArrowRight")
-    expect(page.locator("#prisoner-status")).to_contain_text("FELL")
-    _screenshot(page, out_dir, mechanic, "failed-flat-traversal")
-    page.locator("#thaw-view").click()
-    expect(page.locator('.flat-prisoner[data-mode="camera"]')).to_be_visible()
-    page.wait_for_timeout(35)
-    page.locator("#reset-camera").click()
-    page.wait_for_timeout(35)
-
     _align_camera(page, truth, out_dir)
     _screenshot(page, out_dir, mechanic, "successful-camera-topology")
     page.locator("#freeze-view").click()
@@ -140,8 +124,8 @@ def solve(page, state_dir: Path, out_dir: Path, mechanic: str) -> None:
       deaths: window.flatPrisonerModel.deathCount,
     })""")
     requirements = truth["requirements"]
-    if not physical["reached"] or not physical["alive"] or physical["ticks"] < int(requirements["minimum_traversal_ticks"]) or physical["jumps"] < int(requirements["minimum_jumps"]) or physical["transitions"] < int(requirements["minimum_key_transitions"]) or physical["cameraEvents"] < int(requirements["minimum_camera_events"]) or physical["freezes"] < 2 or physical["thaws"] < 1 or physical["deaths"] < 1:
-        raise AssertionError(f"flat-prison physical workflow was incomplete: {physical}")
+    if not physical["reached"] or not physical["alive"] or physical["ticks"] < int(requirements["minimum_traversal_ticks"]) or physical["jumps"] < int(requirements["minimum_jumps"]) or physical["transitions"] < int(requirements["minimum_key_transitions"]) or physical["cameraEvents"] < int(requirements["minimum_camera_events"]) or physical["freezes"] != 1 or physical["thaws"] != 0 or physical["deaths"] != 0:
+        raise AssertionError(f"flat-prison clean physical workflow was incomplete: {physical}")
     _screenshot(page, out_dir, mechanic, "exit-reached-before-certification")
     page.locator("#certify-escape").click()
     expect(page.locator(".readout")).to_have_text("PASS", timeout=10_000)

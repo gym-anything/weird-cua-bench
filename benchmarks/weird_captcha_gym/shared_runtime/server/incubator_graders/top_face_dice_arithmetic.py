@@ -118,6 +118,9 @@ def grade(payload: dict[str, Any], ground_truth: dict[str, Any], public_state: d
     challenge_id = str(ground_truth.get("challenge_id") or "")
     if str(payload.get("mechanic_id") or "") != MECHANIC_ID or str(ground_truth.get("mechanic_id") or "") != MECHANIC_ID:
         return _failure("mechanic mismatch")
+    task_id = str(ground_truth.get("task_id") or "")
+    if not task_id or str(payload.get("task_id") or "") != task_id or str(public_state.get("task_id") or "") != task_id:
+        return _failure("task identity mismatch")
     if not challenge_id or str(payload.get("challenge_id") or "") != challenge_id:
         return _failure("stale challenge")
     if str(public_state.get("challenge_id") or "") != challenge_id or str(public_state.get("mechanic_id") or "") != MECHANIC_ID:
@@ -132,8 +135,8 @@ def grade(payload: dict[str, Any], ground_truth: dict[str, Any], public_state: d
         return _failure("public scale target disagrees with hidden state")
 
     raw_dice = ground_truth.get("dice")
-    if not isinstance(raw_dice, list) or len(raw_dice) != 3:
-        return _failure("hidden three-die manifest is missing")
+    if not isinstance(raw_dice, list) or len(raw_dice) != 4:
+        return _failure("hidden four-die manifest is missing")
     dice: dict[str, dict[str, Any]] = {}
     order: list[str] = []
     for raw in raw_dice:
@@ -261,8 +264,8 @@ def grade(payload: dict[str, Any], ground_truth: dict[str, Any], public_state: d
         if action == "settle_start":
             if settling or settle_samples or not all(die["docked"] for die in dice.values()):
                 return _failure("scale settlement began before all dice were docked")
-            if view_rotations < 1 or any(die["accepted_rolls"] < 2 for die in dice.values()):
-                return _failure("scale settlement lacks meaningful rolls or a table rotation")
+            if any(die["accepted_rolls"] < 2 for die in dice.values()):
+                return _failure("scale settlement lacks meaningful die rolls")
             top_sum = sum(die["orientation"]["top"] for die in dice.values())
             expected_profile = _settle_profile(top_sum - target_sum)
             settling = True
@@ -302,7 +305,6 @@ def grade(payload: dict[str, Any], ground_truth: dict[str, Any], public_state: d
         settled
         and not settling
         and all(die["docked"] and die["accepted_rolls"] >= 2 for die in dice.values())
-        and view_rotations >= 1
         and top_sum == target_sum
         and settle_samples == _settle_profile(0)
     )
@@ -310,7 +312,7 @@ def grade(payload: dict[str, Any], ground_truth: dict[str, Any], public_state: d
         "graded": True,
         "passed": passed,
         "score": 100 if passed else 0,
-        "feedback": f"replayed three docked dice; top sum {top_sum}/{target_sum}; view turns {view_rotations}; settle samples {len(settle_samples)}; resets {reset_count}",
+        "feedback": f"replayed four docked dice; top sum {top_sum}/{target_sum}; optional view turns {view_rotations}; settle samples {len(settle_samples)}; resets {reset_count}",
     }
 
 

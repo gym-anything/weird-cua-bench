@@ -39,23 +39,27 @@ def _turn_to(page, target: tuple[float, float] | float) -> None:
         desired = math.atan2(target[1] - y, target[0] - x)
     else:
         desired = target
-    for _ in range(5):
+    turn_speed = math.radians(float(page.evaluate(
+        "() => window.lidarBlacksiteModel.state.controls.turn_speed_deg"
+    )))
+    for _ in range(24):
         difference = _normalize(desired - _heading(page))
-        if abs(difference) <= .02:
+        if abs(difference) <= .045:
             return
         key = "ArrowRight" if difference > 0 else "ArrowLeft"
+        # A short ordinary key hold is more robust than waiting for a sampled
+        # sign crossing while Chromium is encoding video. Re-read after every
+        # pulse so capture load cannot turn one delayed poll into a large
+        # overshoot.
+        pulse_ms = max(22, min(120, round(abs(difference) / turn_speed * 650)))
         page.keyboard.down(key)
         try:
-            page.wait_for_function(
-                "([desired, initial]) => { const h=window.lidarBlacksiteModel.player.heading; const n=(v)=>((v+Math.PI)%(2*Math.PI)+2*Math.PI)%(2*Math.PI)-Math.PI; const d=n(desired-h); return Math.abs(d)<=.02 || Math.sign(d)!==Math.sign(initial); }",
-                arg=[desired, difference],
-                timeout=4_000,
-            )
+            page.wait_for_timeout(pulse_ms)
         finally:
             page.keyboard.up(key)
-        page.wait_for_timeout(28)
+        page.wait_for_timeout(22)
     difference = abs(_normalize(desired - _heading(page)))
-    if difference > .04:
+    if difference > .08:
         raise AssertionError(f"continuous turn stopped {difference:.4f} radians from its target")
 
 
@@ -128,21 +132,10 @@ def fail_once(page, state_dir: Path, out_dir: Path, mechanic: str) -> None:
     _shot(page, out_dir, mechanic, "fail-fresh-facility")
     expect(page.locator(".lidar-verdict.is-fresh")).to_be_hidden(timeout=3_500)
 
-
-def solve(page, state_dir: Path, out_dir: Path, mechanic: str) -> None:
-    if mechanic != MECHANIC_ID:
-        raise AssertionError(f"unexpected mechanic {mechanic!r}")
-    expect(page.locator(".lidar-blacksite")).to_be_visible(timeout=6_000)
+    # Prove swept collision on this disposable facility. The damaged transcript
+    # is then abandoned so the accepted trajectory starts with a zero ledger.
     truth = _read(state_dir / "ground_truth.json")
     route = [list(map(float, point)) for point in truth["solution"]["route_points"]]
-    scan_indices = set(map(int, truth["solution"]["scan_route_indices"]))
-    beacon_index = int(truth["solution"]["beacon_route_index"])
-    if scan_indices != {0, 2, 4, 5} or beacon_index != 5:
-        raise AssertionError("hidden LIDAR verification route violates its solver contract")
-    _shot(page, out_dir, mechanic, "initial-lightless-facility")
-
-    # Prove that movement is fixed-tick and collision-backed: walk into the
-    # side wall, observe a real collision, then physically return to intake.
     first_heading = math.atan2(route[1][1] - route[0][1], route[1][0] - route[0][0])
     _turn_to(page, first_heading + math.pi / 2)
     prior_collisions = int(page.evaluate("() => window.lidarBlacksiteModel.player.collisions"))
@@ -156,10 +149,6 @@ def solve(page, state_dir: Path, out_dir: Path, mechanic: str) -> None:
     finally:
         page.keyboard.up("w")
     _shot(page, out_dir, mechanic, "swept-wall-collision")
-
-    # The collision above is evidence for the swept geometry, not part of the
-    # accepted solve. Discard that transcript and prove the authoritative path
-    # on a genuinely fresh facility with a zeroed collision ledger.
     before = str(truth["challenge_id"])
     page.locator("#lidar-abandon").click()
     expect(page.locator(".lidar-verdict.is-fail")).to_be_visible(timeout=7_000)
@@ -171,17 +160,27 @@ def solve(page, state_dir: Path, out_dir: Path, mechanic: str) -> None:
     else:
         raise AssertionError("collision smoke was not replaced by a fresh facility")
     truth = _read(state_dir / "ground_truth.json")
-    route = [list(map(float, point)) for point in truth["solution"]["route_points"]]
-    scan_indices = set(map(int, truth["solution"]["scan_route_indices"]))
-    beacon_index = int(truth["solution"]["beacon_route_index"])
-    if scan_indices != {0, 2, 4, 5} or beacon_index != 5:
-        raise AssertionError("fresh LIDAR verification route violates its solver contract")
     page.wait_for_function(
         "id => document.querySelector('.lidar-blacksite')?.dataset.challengeId === id",
         arg=str(truth["challenge_id"]),
         timeout=7_000,
     )
     expect(page.locator(".lidar-verdict.is-fresh")).to_be_hidden(timeout=3_500)
+    expect(page.locator("#lidar-collisions")).to_have_text("00")
+
+
+def solve(page, state_dir: Path, out_dir: Path, mechanic: str) -> None:
+    if mechanic != MECHANIC_ID:
+        raise AssertionError(f"unexpected mechanic {mechanic!r}")
+    expect(page.locator(".lidar-blacksite")).to_be_visible(timeout=6_000)
+    truth = _read(state_dir / "ground_truth.json")
+    route = [list(map(float, point)) for point in truth["solution"]["route_points"]]
+    scan_indices = set(map(int, truth["solution"]["scan_route_indices"]))
+    beacon_index = int(truth["solution"]["beacon_route_index"])
+    if scan_indices != {0, 2, 4, 5} or beacon_index != 5:
+        raise AssertionError("hidden LIDAR verification route violates its solver contract")
+    _shot(page, out_dir, mechanic, "initial-lightless-facility")
+
     expect(page.locator("#lidar-collisions")).to_have_text("00")
     _shot(page, out_dir, mechanic, "clean-acceptance-facility")
     first_heading = math.atan2(route[1][1] - route[0][1], route[1][0] - route[0][0])

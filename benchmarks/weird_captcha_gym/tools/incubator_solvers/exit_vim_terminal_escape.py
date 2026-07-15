@@ -46,6 +46,19 @@ def solve(page, state_dir: Path, out_dir: Path, mechanic: str) -> None:
     if truth["challenge_id"] != public["challenge_id"]:
         raise AssertionError("terminal public/private challenge mismatch")
     page.locator(".terminal-escape").click(position={"x": 420, "y": 250})
+
+    # Read all three distributed reference buffers through actual modal
+    # commands, then return to the writable manifest. The private truth only
+    # tells this smoke which visible text to type; it does not skip the UI.
+    for index in range(1, len(truth["reference_buffers"]) + 1):
+        page.keyboard.type(":bn", delay=18)
+        page.keyboard.press("Enter")
+        page.wait_for_function("index => window.exitVimTerminalModel.bufferIndex === index", arg=index)
+        if index == 2:
+            _shot(page, out_dir, mechanic, "active-reference-buffer")
+    page.keyboard.type(":bn", delay=18)
+    page.keyboard.press("Enter")
+    page.wait_for_function("() => window.exitVimTerminalModel.bufferIndex === 0")
     page.keyboard.press("g")
     page.keyboard.press("g")
     for index, line in enumerate(truth["target_buffer"]):
@@ -80,6 +93,9 @@ def solve(page, state_dir: Path, out_dir: Path, mechanic: str) -> None:
         elif layer == "ssh":
             page.keyboard.type("exit", delay=25)
             page.keyboard.press("Enter")
+        elif layer == "mux":
+            page.keyboard.press("Control+b")
+            page.keyboard.press("d")
         else:
             raise AssertionError(f"unknown generated terminal layer {layer!r}")
         page.wait_for_timeout(90)

@@ -362,8 +362,9 @@
     }
     model.eliminatedIds.push(result.hitId);
     updateHud();
-    setFeedback(`WARRANT CONFIRMED · ${model.eliminatedIds.length}/3`, "wanted", 1500);
-    model.helpers.setReadout(`WARRANT ${model.eliminatedIds.length}/3 CLEARED`, "idle");
+    const total = (model.state.wanted_posters || []).length;
+    setFeedback(`WARRANT CONFIRMED · ${model.eliminatedIds.length}/${total}`, "wanted", 1500);
+    model.helpers.setReadout(`WARRANT ${model.eliminatedIds.length}/${total} CLEARED`, "idle");
     if (model.eliminatedIds.length === (model.state.wanted_posters || []).length) {
       await submit(true);
     }
@@ -692,7 +693,7 @@
     helpers.app.innerHTML = `
       <section class="tiny-fps-customs" data-challenge-id="${clean(state.challenge_id)}">
         <header class="fps-masthead">
-          <div class="fps-seal"><i>03</i><span>INTERZONE<br>CUSTOMS</span></div>
+          <div class="fps-seal"><i>${String((state.wanted_posters || []).length).padStart(2, "0")}</i><span>INTERZONE<br>CUSTOMS</span></div>
           <div class="fps-title"><span>LIVE BORDER EXAM / BALLISTIC IDENTITY CHECK</span><h1>${clean(state.prompt)}</h1></div>
           <div class="fps-clearance"><span>MANIFEST</span><b>${clean(String(state.challenge_id).slice(0, 7).toUpperCase())}</b><i>RESTRICTED</i></div>
         </header>
@@ -720,7 +721,7 @@
           </section>
           <aside class="fps-ledger">
             <header><span>SHIFT LEDGER</span><i>ARMED</i></header>
-            <section><label>WARRANTS CLEARED</label><strong class="fps-warrant-count">0 / 3</strong></section>
+            <section><label>WARRANTS CLEARED</label><strong class="fps-warrant-count">0 / ${(state.wanted_posters || []).length}</strong></section>
             <section><label>CARTRIDGES</label><div class="fps-ammo-pips"></div></section>
             <section class="fps-bearing"><label>BEARING / SECTOR</label><div><strong class="fps-compass-bearing">E</strong><span class="fps-sector">01.01</span></div></section>
             <div class="fps-doctrine"><b>RULE 01</b><p>The center reticle owns the nearest unobstructed contact.</p><b>RULE 02</b><p>A protected hit revokes this dossier immediately.</p></div>

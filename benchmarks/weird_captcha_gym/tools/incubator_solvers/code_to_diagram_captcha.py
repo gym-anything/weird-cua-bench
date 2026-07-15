@@ -78,7 +78,8 @@ def solve(page, state_dir: Path, out_dir: Path, mechanic: str) -> None:
       probes: window.document.querySelectorAll('[data-probe-index][data-status="done"]').length,
       coverage: Number(document.getElementById('flow-coverage-count')?.textContent.split('/')[0].trim()),
     })""")
-    if counts != {"probes": 3, "coverage": 6}:
+    expected_counts = {"probes": len(truth["expected_probe_runs"]), "coverage": len(truth["node_ids"])}
+    if counts != expected_counts:
         raise AssertionError(f"debugger coverage did not complete: {counts}")
 
     for index, edge in enumerate(truth["expected_edges"]):

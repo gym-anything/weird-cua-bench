@@ -45,6 +45,30 @@
     return item.placed ? [item.x, item.y] : carouselPoint(item);
   }
 
+  function projectionPoint(item, view) {
+    const table = model.state.worktable_rect;
+    if (view === "front") return [
+      (item.x - table.x) / table.width * 100,
+      (item.y - table.y) / table.height * 100,
+    ];
+    return [item.depth, (item.y - table.y) / table.height * 100];
+  }
+
+  function updateProjections() {
+    for (const item of Object.values(model.objects)) {
+      for (const view of ["front", "side"]) {
+        const marker = document.querySelector(`.rel-live-mark[data-object-id="${CSS.escape(item.id)}"][data-view="${view}"]`);
+        if (!marker) continue;
+        marker.dataset.placed = item.placed ? "true" : "false";
+        if (item.placed) {
+          const [x, y] = projectionPoint(item, view);
+          marker.style.left = `${x}%`;
+          marker.style.top = `${y}%`;
+        }
+      }
+    }
+  }
+
   function applyObjectStyles() {
     for (const item of Object.values(model.objects)) {
       const node = document.querySelector(`.rel-object[data-object-id="${CSS.escape(item.id)}"]`);
@@ -61,6 +85,7 @@
     const placed = Object.values(model.objects).filter((item) => item.placed).length;
     const placedNode = document.querySelector(".rel-placed-count");
     if (placedNode) placedNode.textContent = `${placed}/5 ON TABLE`;
+    updateProjections();
   }
 
   function updateDepthConsole() {
@@ -251,19 +276,19 @@
     model.helpers.setReadout("REPLAYING GEOMETRY AND SETTLE FORCES…", "pending");
     try {
       const response = await fetch("/result", {method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({
-        mechanic_id:model.state.mechanic_id,challenge_id:model.state.challenge_id,events:model.events,final_states:stateSnapshot(),
+        mechanic_id:model.state.mechanic_id,task_id:model.state.task_id,challenge_id:model.state.challenge_id,events:model.events,final_states:stateSnapshot(),
         drag_count:model.dragCount,drag_samples:model.dragSamples,depth_samples:model.depthSamples,depth_distance:model.depthDistance,
         settle_samples:model.settleSamples,reset_count:model.resetCount,completed:model.settled,
       })});
       const outcome = await response.json();
       if (outcome.passed === true) {
         model.terminal = true;
-        document.querySelector(".relation-assembly-captcha")?.insertAdjacentHTML("beforeend",'<div class="rel-verdict"><span>STABLE RELATION GRAPH CERTIFIED</span><strong>PASS</strong><small>DRAG · DEPTH · SETTLE REPLAY VERIFIED</small></div>');
+        document.querySelector(".relation-assembly-captcha")?.insertAdjacentHTML("beforeend",'<div class="rel-verdict"><span>DUAL-PROJECTION SCULPTURE CERTIFIED</span><strong>PASS</strong><small>FRONT · SIDE · SETTLE REPLAY VERIFIED</small></div>');
         model.helpers.setReadout("PASS","passed");
       } else if (outcome.passed === false && outcome.state) {
         await model.helpers.render(outcome.state);
-        const shell=document.querySelector(".relation-assembly-captcha"); shell?.setAttribute("data-fresh-failure","true"); shell?.insertAdjacentHTML("afterbegin",'<div class="rel-failure-stamp"><b>FAIL</b><span>UNSTABLE GRAPH · FRESH CONTRACT ISSUED</span></div>');
-        const readout=document.querySelector(".readout"); if(readout){readout.textContent="FAIL · FRESH CONTRACT ISSUED";readout.dataset.status="error";}
+        const shell=document.querySelector(".relation-assembly-captcha"); shell?.setAttribute("data-fresh-failure","true"); shell?.insertAdjacentHTML("afterbegin",'<div class="rel-failure-stamp"><b>FAIL</b><span>PROJECTION MISMATCH · FRESH SEALS ISSUED</span></div>');
+        const readout=document.querySelector(".readout"); if(readout){readout.textContent="FAIL · FRESH PROJECTION SEALS ISSUED";readout.dataset.status="error";}
       } else { model.submitting=false; model.helpers.setReadout("FAIL · NO AUTHORITATIVE GRADE","error"); }
     } catch (_error) { model.submitting=false; model.helpers.setReadout("FAIL · GEOMETRY VERIFIER OFFLINE","error"); }
   }
@@ -272,13 +297,21 @@
     return `<div class="rel-object rel-shape-${clean(item.shape)} rel-color-${clean(item.color)}" data-object-id="${clean(item.id)}"><div class="rel-object-art"><i></i><b></b></div><span>${clean(item.label)}</span></div>`;
   }
 
+  function projectionMarkup(state, view) {
+    const table = state.worktable_rect;
+    const point = (item) => view === "front"
+      ? [(item.x - table.x) / table.width * 100, (item.y - table.y) / table.height * 100]
+      : [item.depth, (item.y - table.y) / table.height * 100];
+    return `<div class="rel-projection" data-view="${view}"><header><b>${view === "front" ? "FRONT / X·Y" : "SIDE / Z·Y"}</b><span>TARGET OUTLINE + LIVE SOLID</span></header><div>${state.projection_targets.map((item) => { const [x,y]=point(item); return `<i class="rel-target-mark rel-mini-${clean(item.shape)}" style="left:${x}%;top:${y}%"></i><i class="rel-live-mark rel-mini-${clean(item.shape)}" data-object-id="${clean(item.id)}" data-view="${view}" data-placed="false"></i>`; }).join("")}</div></div>`;
+  }
+
   async function render(state, helpers) {
     if (model?.carouselTimer) window.clearInterval(model.carouselTimer);
     if (model?.settleTimer) window.clearInterval(model.settleTimer);
     document.body.dataset.mechanic="relation-assembly"; document.body.dataset.cheatMode=helpers.isCheatMode()?"true":"false";
     model={state,helpers,objects:Object.fromEntries(state.objects.map((item)=>[item.id,{...item,x:null,y:null,depth:item.initial_depth,placed:false}])),events:[],carouselTick:0,carouselTimer:null,settleTimer:null,drag:null,depthDrag:null,selectedId:null,settling:false,settled:false,dragCount:0,dragSamples:0,depthSamples:0,depthDistance:0,settleSamples:0,resetCount:0,submitting:false,terminal:false};
     window.relationAssemblyModel=model;
-    helpers.app.innerHTML=`<section class="relation-assembly-captcha" data-challenge-id="${clean(state.challenge_id)}"><header class="rel-head"><div><span>RELATION ASSEMBLY TABLE / CONTRACT ${clean(state.challenge_id)}</span><h1>${clean(state.prompt)}</h1></div><div class="rel-contract">${state.constraints.map((item,index)=>`<div><b>R${index+1}</b><span>${clean(item.text)}</span></div>`).join("")}</div></header><main class="rel-main"><section class="rel-stage"><div class="rel-carousel"><span>ROTATING STAGING CAROUSEL</span><i></i></div><div class="rel-table"><span>STABLE WORKTABLE</span><div class="rel-depth-bands"><i>REAR</i><i>MID</i><i>FRONT</i></div></div>${state.objects.map(objectMarkup).join("")}<div class="rel-settle-overlay"><b>SETTLE / INSPECTION</b><span>MILD DETERMINISTIC FORCES ACTIVE</span></div></section><aside class="rel-console"><p>DEPTH CALIBRATION</p><h2>Position is only half the graph.</h2><div class="rel-depth-selection"><span>SELECTED OBJECT</span><b>NO OBJECT</b></div><div class="rel-depth-rig"><div><span>FRONT / 100</span><div class="rel-depth-track"><i></i><b class="rel-depth-knob"></b></div><span>REAR / 000</span></div><strong class="rel-depth-value">---</strong></div><div class="rel-object-list">${state.objects.map((item)=>`<button type="button" class="rel-select" data-object-id="${clean(item.id)}"><i class="rel-mini-${clean(item.shape)}"></i><span>${clean(item.label)}</span></button>`).join("")}</div><div class="rel-settle-meter"><span>SETTLE OBSERVATION</span><b><i></i></b></div><button type="button" class="rel-settle" disabled>START SETTLE / INSPECTION</button><p class="rel-console-note">All five objects must leave the moving carousel. The verifier reconstructs centers, contact radii, containment, depth, and every settle displacement.</p></aside></main><footer class="rel-foot"><button type="button" class="rel-reset">RESET ASSEMBLY</button><div><span class="rel-placed-count" data-ready="false">0/5 ON TABLE</span><div class="readout" data-status="idle">MOVE EVERY OBJECT FROM THE CAROUSEL</div></div><button type="button" class="rel-submit">${clean(state.submit_label)}</button></footer>${helpers.cheatPanelTemplate()}</section>`;
+    helpers.app.innerHTML=`<section class="relation-assembly-captcha" data-challenge-id="${clean(state.challenge_id)}"><header class="rel-head"><div><span>DUAL-PROJECTION SCULPTURE RIG / ${clean(state.challenge_id)}</span><h1>${clean(state.prompt)}</h1></div><div class="rel-projections">${projectionMarkup(state,"front")}${projectionMarkup(state,"side")}</div></header><main class="rel-main"><section class="rel-stage"><div class="rel-carousel"><span>ROTATING STAGING CAROUSEL</span><i></i></div><div class="rel-table"><span>SCULPTURE WORKTABLE</span><div class="rel-depth-bands"><i>REAR</i><i>MID</i><i>FRONT</i></div></div>${state.objects.map(objectMarkup).join("")}<div class="rel-settle-overlay"><b>FORCE / INSPECTION</b><span>SEALS DESCRIBE THE FINAL SETTLED STATE</span></div></section><aside class="rel-console"><p>DEPTH CALIBRATION</p><h2>Make both camera seals coincide.</h2><div class="rel-depth-selection"><span>SELECTED OBJECT</span><b>NO OBJECT</b></div><div class="rel-depth-rig"><div><span>FRONT / 100</span><div class="rel-depth-track"><i></i><b class="rel-depth-knob"></b></div><span>REAR / 000</span></div><strong class="rel-depth-value">---</strong></div><div class="rel-object-list">${state.objects.map((item)=>`<button type="button" class="rel-select" data-object-id="${clean(item.id)}"><i class="rel-mini-${clean(item.shape)}"></i><span>${clean(item.label)}</span></button>`).join("")}</div><div class="rel-settle-meter"><span>FORCE-SETTLE OBSERVATION</span><b><i></i></b></div><button type="button" class="rel-settle" disabled>RUN FORCE / INSPECTION</button><p class="rel-console-note">Outlined marks are target projections; solid marks are your live sculpture. FRONT fixes X/Y. SIDE fixes depth/Y. Anticipate the visible settle drift.</p></aside></main><footer class="rel-foot"><button type="button" class="rel-reset">RESET SCULPTURE</button><div><span class="rel-placed-count" data-ready="false">0/5 ON TABLE</span><div class="readout" data-status="idle">MOVE EVERY OBJECT FROM THE CAROUSEL</div></div><button type="button" class="rel-submit">${clean(state.submit_label)}</button></footer>${helpers.cheatPanelTemplate()}</section>`;
     const stage=document.querySelector(".rel-stage"); stage.addEventListener("pointerdown",dragStart);stage.addEventListener("pointermove",dragMove);stage.addEventListener("pointerup",dragEnd);stage.addEventListener("pointercancel",dragEnd);
     const depth=document.querySelector(".rel-depth-track");depth.addEventListener("pointerdown",depthStart);depth.addEventListener("pointermove",depthMove);depth.addEventListener("pointerup",depthEnd);depth.addEventListener("pointercancel",depthEnd);
     document.querySelectorAll(".rel-console .rel-select").forEach((button)=>button.addEventListener("click",()=>selectObject(button.dataset.objectId)));

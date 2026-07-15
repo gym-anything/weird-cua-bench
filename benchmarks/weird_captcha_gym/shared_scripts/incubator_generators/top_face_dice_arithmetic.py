@@ -6,11 +6,11 @@ from typing import Any
 
 
 MECHANIC_ID = "top_face_dice_arithmetic"
-VARIANT_COUNT = 24**3 * 7**3 * 10_000_000
+VARIANT_COUNT = 24**4 * 7**4 * 10_000_000
 FACE_NAMES = ("top", "bottom", "north", "south", "east", "west")
 CANONICAL = {"top": 1, "bottom": 6, "north": 2, "south": 5, "east": 3, "west": 4}
 DELTAS = {"N": (0, -1), "E": (1, 0), "S": (0, 1), "W": (-1, 0)}
-LABELS = ("ALPHA", "BRAVO", "CHARLIE")
+LABELS = ("ALPHA", "BRAVO", "CHARLIE", "DELTA")
 COLORWAYS = (
     ("verdigris", "#45b9a8"),
     ("vermilion", "#e05a3f"),
@@ -134,7 +134,7 @@ def generate(task: dict[str, Any], seed: str) -> tuple[dict[str, Any], dict[str,
         total = sum(item[2]["top"] for item in candidate)
         tops = {item[2]["top"] for item in candidate}
         chosen = candidate
-        if 7 <= total <= 15 and len(tops) >= 2:
+        if 10 <= total <= 20 and len(tops) >= 3:
             break
     if chosen is None:
         raise RuntimeError("could not construct a solver-backed foundry lot")
@@ -159,7 +159,7 @@ def generate(task: dict[str, Any], seed: str) -> tuple[dict[str, Any], dict[str,
         "asset_manifest": "shared_runtime/assets/provenance/incubator_full_build_v1.json",
         "prompt": task.get("natural_language")
         or "Route all three foundry dice to their docks, rotate the table, and settle the displayed top-face sum.",
-        "generator": {"name": "three_die_foundry_scale_v1", "variant_count": VARIANT_COUNT},
+        "generator": {"name": "four_die_foundry_scale_v2", "variant_count": VARIANT_COUNT},
         "foundry_serial": f"F-{challenge_id[:4].upper()}-{rng.randint(100, 999)}",
         "palette": palette,
         "board": {"columns": 6, "rows": 3},
@@ -183,7 +183,7 @@ def generate(task: dict[str, Any], seed: str) -> tuple[dict[str, Any], dict[str,
         "settle_profile": [26, -16, 10, -6, 3, -1, 0],
         "variant_count": VARIANT_COUNT,
     }
-    assert len(dice) == 3
+    assert len(dice) == 4
     assert all(len(plan["world_directions"]) >= 5 for plan in solution_plans)
     assert sum(plan["final_top"] for plan in solution_plans) == target_sum
     return public_state, ground_truth

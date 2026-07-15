@@ -73,6 +73,30 @@ def _assert_ui_identity(page, truth: dict[str, Any]) -> None:
         raise AssertionError(f"UI challenge {challenge!r} does not match hidden state {truth.get('challenge_id')!r}")
 
 
+def _assert_all_warrants_fully_visible(page) -> None:
+    cards = page.locator(".fps-warrant")
+    expect(cards).to_have_count(4)
+    bounds = page.evaluate(
+        """() => {
+          const dossier = document.querySelector('.fps-dossier')?.getBoundingClientRect();
+          const cards = [...document.querySelectorAll('.fps-warrant')].map(node => node.getBoundingClientRect());
+          return {dossier, cards};
+        }"""
+    )
+    dossier = bounds.get("dossier")
+    card_bounds = bounds.get("cards") or []
+    if not dossier or len(card_bounds) != 4:
+        raise AssertionError("customs warrant dossier did not expose four measurable cards")
+    for index, card in enumerate(card_bounds, start=1):
+        if (
+            card["left"] < dossier["left"] - 1
+            or card["right"] > dossier["right"] + 1
+            or card["top"] < dossier["top"] - 1
+            or card["bottom"] > dossier["bottom"] + 1
+        ):
+            raise AssertionError(f"warrant {index} is clipped outside the visible dossier: {card} vs {dossier}")
+
+
 def fail_once(page, state_dir: Path, out_dir: Path, mechanic: str) -> None:
     state_dir = Path(state_dir)
     out_dir = Path(out_dir)
@@ -80,6 +104,7 @@ def fail_once(page, state_dir: Path, out_dir: Path, mechanic: str) -> None:
     before = str(truth["challenge_id"])
     _assert_ui_identity(page, truth)
     expect(page.locator(".fps-world")).to_be_visible()
+    _assert_all_warrants_fully_visible(page)
     current_angle = int(truth["initial_pose"]["angle_mdeg"])
     current_angle = _follow_segment(page, truth["protected_test_plan"], current_angle)
     del current_angle
@@ -104,11 +129,13 @@ def solve(page, state_dir: Path, out_dir: Path, mechanic: str) -> None:
     truth = _read(state_dir / "ground_truth.json")
     _assert_ui_identity(page, truth)
     expect(page.locator(".fps-world")).to_be_visible()
+    _assert_all_warrants_fully_visible(page)
     _screenshot(page, out_dir, mechanic, "initial-dossier")
     current_angle = int(truth["initial_pose"]["angle_mdeg"])
     plan = truth.get("solver_plan") or []
-    if len(plan) < 3:
-        raise AssertionError("hidden customs solver must contain three warranted contacts")
+    total = len(truth.get("wanted_ids") or [])
+    if len(plan) != total or total < 4:
+        raise AssertionError("hidden customs solver must contain four warranted contacts")
 
     for index, segment in enumerate(plan):
         current_angle = _follow_segment(page, segment, current_angle)
@@ -119,9 +146,9 @@ def solve(page, state_dir: Path, out_dir: Path, mechanic: str) -> None:
             page.locator(".fps-world").click(position={"x": 360, "y": 210})
         else:
             page.keyboard.press("Space")
-            expect(page.locator(".fps-warrant-count")).to_have_text(f"{index + 1} / 3")
+            expect(page.locator(".fps-warrant-count")).to_have_text(f"{index + 1} / {total}")
 
     expect(page.locator('.fps-terminal[data-state="pass"]')).to_be_visible(timeout=10_000)
     expect(page.locator(".readout")).to_contain_text("PASS")
-    expect(page.locator(".fps-warrant-count")).to_have_text("3 / 3")
+    expect(page.locator(".fps-warrant-count")).to_have_text(f"{total} / {total}")
     _screenshot(page, out_dir, mechanic, "pass")
