@@ -258,7 +258,7 @@ class WeirdCaptchaDashboardTests(unittest.TestCase):
         self.assertEqual(catalog["stats"]["scaffolds"], 0)
         self.assertEqual(catalog["stats"]["concepts"], 0)
         self.assertEqual(catalog["stats"]["incubator_candidates"], 0)
-        self.assertEqual(catalog["stats"]["implementation_reviewed"], 70)
+        self.assertEqual(catalog["stats"]["implementation_reviewed"], 75)
         self.assertEqual(len(catalog["capabilities"]), 7)
         self.assertEqual({capability["code"] for capability in catalog["capabilities"]}, {"V", "S", "T", "R", "P", "I", "A"})
         self.assertEqual(catalog["stats"]["human_touched"], 6)
@@ -313,8 +313,8 @@ class WeirdCaptchaDashboardTests(unittest.TestCase):
             self.assertIn("/incubator_batch_revived_v1/", environment["cover"], mechanic)
 
         reviewed = [environment for environment in catalog["environments"] if environment["behavior_review"]]
-        self.assertEqual(len(reviewed), 70)
-        self.assertEqual({environment["behavior_review"]["number"] for environment in reviewed}, set(range(1, 71)))
+        self.assertEqual(len(reviewed), 75)
+        self.assertEqual({environment["behavior_review"]["number"] for environment in reviewed}, set(range(1, 76)))
         for environment in reviewed:
             behavior = environment["behavior_review"]
             self.assertTrue(behavior["capabilities"], environment["mechanic_id"])
@@ -322,6 +322,32 @@ class WeirdCaptchaDashboardTests(unittest.TestCase):
             self.assertEqual(behavior["status"], "implementation_reviewed")
             for field in ("passing_behavior", "observation", "action", "enforced"):
                 self.assertTrue(behavior[field], f"{environment['mechanic_id']}:{field}")
+
+        domino = next(environment for environment in reviewed if environment["mechanic_id"] == "domino_autopsy")
+        self.assertEqual(domino["behavior_review"]["capabilities"], [
+            "visual_understanding_grounding", "spatial_reasoning", "reasoning",
+            "planning", "interaction_control",
+        ])
+        semantic_probe = next(environment for environment in reviewed if environment["mechanic_id"] == "semantic_drag_drop_absurdity")
+        self.assertEqual(semantic_probe["behavior_review"]["capabilities"], [
+            "visual_understanding_grounding", "temporal_understanding_memory", "reasoning",
+            "interaction_control", "adaptation_feedback",
+        ])
+        alchemy = next(environment for environment in reviewed if environment["mechanic_id"] == "craftcha_alchemy_bench")
+        self.assertEqual(alchemy["behavior_review"]["capabilities"], [
+            "visual_understanding_grounding", "reasoning", "planning",
+            "interaction_control", "adaptation_feedback",
+        ])
+        doppelganger = next(environment for environment in reviewed if environment["mechanic_id"] == "clockwork_doppelganger_customs")
+        self.assertEqual(doppelganger["behavior_review"]["capabilities"], [
+            "visual_understanding_grounding", "spatial_reasoning", "temporal_understanding_memory",
+            "reasoning", "planning", "interaction_control",
+        ])
+        active_lidar = next(environment for environment in reviewed if environment["mechanic_id"] == "lidar_blacksite")
+        self.assertEqual(active_lidar["behavior_review"]["capabilities"], [
+            "visual_understanding_grounding", "spatial_reasoning", "planning",
+            "interaction_control", "adaptation_feedback",
+        ])
 
         lidar = next(environment for environment in reviewed if environment["mechanic_id"] == "lidar_blacksite")
         self.assertFalse(lidar["behavior_review"]["real_time"]["required"])
@@ -455,6 +481,41 @@ class WeirdCaptchaDashboardTests(unittest.TestCase):
         ])
         self.assertEqual(sculpture["behavior_review"]["real_time"]["id"], "moving_target")
         self.assertIn("no drift prediction", sculpture["behavior_review"]["enforced"])
+        material = next(environment for environment in reviewed if environment["mechanic_id"] == "rorschach_fixed_rubric")
+        self.assertEqual(material["behavior_review"]["capabilities"], [
+            "visual_understanding_grounding", "temporal_understanding_memory", "reasoning",
+            "interaction_control", "adaptation_feedback",
+        ])
+        self.assertEqual(material["behavior_review"]["real_time"]["id"], "timed_input")
+        self.assertIn("persistent text label", material["behavior_review"]["enforced"])
+        mosaic = next(environment for environment in reviewed if environment["mechanic_id"] == "single_scene_split_boxes")
+        self.assertEqual(mosaic["behavior_review"]["capabilities"], [
+            "visual_understanding_grounding", "spatial_reasoning",
+            "temporal_understanding_memory", "interaction_control",
+        ])
+        self.assertEqual(mosaic["behavior_review"]["real_time"]["id"], "timed_input")
+        self.assertIn("4 to 8 swaps", mosaic["behavior_review"]["enforced"])
+        dice = next(environment for environment in reviewed if environment["mechanic_id"] == "top_face_dice_arithmetic")
+        self.assertEqual(dice["behavior_review"]["capabilities"], [
+            "visual_understanding_grounding", "temporal_understanding_memory", "reasoning",
+            "planning", "interaction_control", "adaptation_feedback",
+        ])
+        self.assertFalse(dice["behavior_review"]["real_time"]["required"])
+        self.assertIn("all 5,000 generated instances", dice["behavior_review"]["enforced"])
+        corridor = next(environment for environment in reviewed if environment["mechanic_id"] == "trace_shape_without_walls")
+        self.assertEqual(corridor["behavior_review"]["capabilities"], [
+            "visual_understanding_grounding", "spatial_reasoning",
+            "temporal_understanding_memory", "interaction_control", "adaptation_feedback",
+        ])
+        self.assertEqual(corridor["behavior_review"]["real_time"]["id"], "timed_input")
+        self.assertIn("passed 4,926", corridor["behavior_review"]["enforced"])
+        wizard = next(environment for environment in reviewed if environment["mechanic_id"] == "wizard_critter_capture")
+        self.assertEqual(wizard["behavior_review"]["capabilities"], [
+            "visual_understanding_grounding", "spatial_reasoning", "temporal_understanding_memory",
+            "reasoning", "planning", "interaction_control", "adaptation_feedback",
+        ])
+        self.assertEqual(wizard["behavior_review"]["real_time"]["id"], "moving_target")
+        self.assertIn("ten valid interception windows", wizard["behavior_review"]["enforced"])
 
     def test_all_thirty_selected_pack_three_through_eight_designs_are_promoted(self) -> None:
         selected = PACK_III | PACK_IV | PACK_V | PACK_VI | PACK_VII | PACK_VIII

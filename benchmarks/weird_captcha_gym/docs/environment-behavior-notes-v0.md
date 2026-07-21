@@ -731,3 +731,55 @@ For every environment the review reads the task contract, challenge generator, v
 **What must be done.** Catch each object on the carousel and drag it until its live front mark overlaps the matching target outline. Select the placed object and adjust depth until its side mark also overlaps. After all five objects match both seals, run the settle inspection and submit.
 
 **What is actually enforced.** The verifier replays every moving-carousel pickup, sampled drag, depth change, settle tick, and final three-dimensional position. The projection outlines describe the final settled positions, but the generated force shift is at most ten units on either visible axis while the tolerance is 11. Placing every object directly on its target outline before settling therefore needs no drift prediction or corrective second attempt. That first-pass strategy passed all 1,000 generated instances tested, with a minimum total drag distance of 2,142.48 units. The real-time requirement is acquiring objects from the moving carousel; the settle phase runs without agent intervention.
+
+## Environments 71–75
+
+### 71. Rorschach / Subjective Prompt With a Fixed Rubric
+
+**Passing behavior.** Apply both generated tools to all five specimens. Each tool invocation must complete its seven-frame response cycle. Then drag the verification stamp onto the only specimen whose two recorded responses satisfy the displayed rubric.
+
+**What must be observed.** The objective names two required response properties. After each cycle, the corresponding specimen card retains a text label such as `RETAIN`, `SYMM`, or `INVERT`. These ten persistent labels identify the only row that satisfies both properties.
+
+**What must be done.** Select each specimen and physically apply the two required tools. A fold requires at least three pointer moves across 190 track units. Pressure requires a hold of at least 620 milliseconds when that tool is selected. Cooling requires one click. After all ten probes, drag the stamp with at least three movements onto the matching card.
+
+**What is actually enforced.** The verifier replays all tool gestures, all 70 automatically generated response frames, and the final stamp drag. The transient animation itself need not be interpreted because its final response is copied into a persistent text label. Across 5,000 generated instances, all three tool pairs appeared and exactly one specimen matched both rubric properties every time. Pressure appeared in 3,363 instances, making timed input conditional on the generated tool pair.
+
+### 72. Live Shattered-Scene Synchronizer
+
+**Passing behavior.** Put nine animated shards in their source positions. Clear every 180-degree rotation and every temporal offset. Then hold scene sync for at least 660 milliseconds while recording at least six coherent samples.
+
+**What must be observed.** Each shard is a crop from one continuously animated scene. Spatial placement is determined by the continuity of the fixed scene and its moving content across tile boundaries. An inverted shard displays `180°`. Selecting a shard exposes its current phase on a track with a marked master position. Separate indicators report whether space, rotation, phase, and seams are locked.
+
+**What must be done.** Exchange shards until the nine crops form one scene. Flip every shard marked as inverted. Move every noncentral phase handle to the master mark. Hold the sync control after all four indicators lock.
+
+**What is actually enforced.** The verifier replays every swap, rotation, phase change, coherence sample, and the final hold. It also requires every initially misplaced, rotated, or phase-shifted shard to be touched. In 5,000 generated instances, the solution required 4 to 8 swaps, 3 to 5 flips, and phase correction on 7 or 8 shards. The sample contained 4,952 distinct starting permutations and 5,000 distinct phase vectors. Rotation and phase do not require inference because their current states are exposed directly. The remaining temporal evidence is the animated scene used for spatial assembly plus the sampled final hold.
+
+### 73. Top-Face Dice Arithmetic
+
+**Passing behavior.** Route four dice from the left clamp to the right dock. The four visible top faces at the docks must sum to the displayed target. Every die must make at least two accepted rolls before the automatic scale settlement.
+
+**What must be observed.** The target sum remains visible. A die's top face is shown at the start, at two scanner columns, and at the dock. It is hidden under the intervening housings. Reset restores every die to the same initial orientation for the current challenge.
+
+**What must be done.** Use route outcomes to determine which final top values each die can produce. Retain those route-to-value results across resets. Choose one route per die whose four values reach the target, execute the four routes, and weigh the lot.
+
+**What is actually enforced.** The verifier replays every selection, roll, reset, hidden orientation, dock state, and scale sample. The table rotation is optional and settlement runs without agent intervention. The rail geometry and seven useful route programs are fixed across instances. A strategy that tested all seven programs on each die, reset after each observation, and then selected a target-sum combination passed all 5,000 generated instances with 309 to 325 events against the 500-event limit. Thus spatial route construction and real-time control are unnecessary. The surviving requirements are retaining experimental outcomes, combining four values to meet the target, executing the selected programs, and using feedback from the scanner and dock faces.
+
+### 74. Blind Corridor Oscilloscope
+
+**Passing behavior.** Record at least 24 sonar probes across 14 screen cells while revealing enough of the hidden main corridor. Then maintain one pointer hold from start to exit with at least 62 move samples, 620 milliseconds of elapsed time, the required path distance, and all hidden checkpoints crossed in order.
+
+**What must be observed.** Hovering reveals only nearby corridor edges. Green edges belong to the main route and amber edges are false branches. Each reveal fades after 780 milliseconds. During the committed trace, the interface shows both the raw cursor and the displaced effective probe together with the current displacement vector.
+
+**What must be done.** Explore the stage to recover the green route. Retain that route after its local echoes fade. Press start and trace the recovered curve continuously to exit while keeping the effective probe inside the corridor. Release only at the exit and certify the record.
+
+**What is actually enforced.** The verifier reconstructs sonar coverage, every raw and displaced trace point, wall distance, ordered checkpoints, total distance, and hold duration. All 5,000 sampled generators produced different 92-point main paths. Following each generated path without compensating the displayed displacement still passed 4,926 of those instances; the other 74 missed a hidden checkpoint. The displacement therefore does not justify a general reasoning or planning label. Active sonar feedback, retention of fading geometry, spatial trajectory control, and a continuous timed hold remain necessary.
+
+### 75. Wizard Interception Observatory
+
+**Passing behavior.** Place one lure. Spend at least ten freeze ticks and release the freeze key. Allow the marked familiar to spend at least three ticks under cover and cross a portal. Then hit that familiar with a net that travels for twelve world ticks.
+
+**What must be observed.** A reference portrait identifies one of five closely related familiars. The portrait and mnemonic remain visible after the opening preview despite text claiming that the identity vanishes. Every familiar moves continuously, can disappear behind three occluders, and wraps between the east and west portals. The interface also shows the freeze budget, world clock, nets, projectile progress, and proof state.
+
+**What must be done.** Match the reference to the moving familiar and preserve its identity through occlusion and portal wraparound. Place a lure that changes its velocity. Hold and release freeze for the required duration. Observe the resulting trajectory and launch at a future interception point rather than at the target's current position.
+
+**What is actually enforced.** The verifier replays the opening preview, lure acceleration, every 70-millisecond world tick, finite freeze use, all five trajectories, cover and portal history, projectile flight, and collision identity. A decoy consumes a net and an early target hit fails if the required history is incomplete. Across 500 generated instances, every challenge contained ten valid interception windows. Their shot ticks ranged from 16 through 51 and 460 distinct lure positions appeared. The target portrait remaining visible removes the advertised identity-memory requirement, but continuous target tracking, predictive interception, action sequencing, and adjustment to lure-altered motion remain.
