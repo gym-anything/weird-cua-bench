@@ -258,7 +258,7 @@ class WeirdCaptchaDashboardTests(unittest.TestCase):
         self.assertEqual(catalog["stats"]["scaffolds"], 0)
         self.assertEqual(catalog["stats"]["concepts"], 0)
         self.assertEqual(catalog["stats"]["incubator_candidates"], 0)
-        self.assertEqual(catalog["stats"]["implementation_reviewed"], 40)
+        self.assertEqual(catalog["stats"]["implementation_reviewed"], 45)
         self.assertEqual(len(catalog["capabilities"]), 7)
         self.assertEqual({capability["code"] for capability in catalog["capabilities"]}, {"V", "S", "T", "R", "P", "I", "A"})
         self.assertEqual(catalog["stats"]["human_touched"], 6)
@@ -313,8 +313,8 @@ class WeirdCaptchaDashboardTests(unittest.TestCase):
             self.assertIn("/incubator_batch_revived_v1/", environment["cover"], mechanic)
 
         reviewed = [environment for environment in catalog["environments"] if environment["behavior_review"]]
-        self.assertEqual(len(reviewed), 40)
-        self.assertEqual({environment["behavior_review"]["number"] for environment in reviewed}, set(range(1, 41)))
+        self.assertEqual(len(reviewed), 45)
+        self.assertEqual({environment["behavior_review"]["number"] for environment in reviewed}, set(range(1, 46)))
         for environment in reviewed:
             behavior = environment["behavior_review"]
             self.assertTrue(behavior["capabilities"], environment["mechanic_id"])
@@ -329,6 +329,13 @@ class WeirdCaptchaDashboardTests(unittest.TestCase):
         cable = next(environment for environment in reviewed if environment["mechanic_id"] == "zero_g_cable_autopsy")
         self.assertEqual(cable["behavior_review"]["capabilities"], ["interaction_control"])
         self.assertIn("fixed open-loop script", cable["behavior_review"]["enforced"])
+        wind = next(environment for environment in reviewed if environment["mechanic_id"] == "wind_tunnel_seed_courier")
+        self.assertTrue(wind["behavior_review"]["real_time"]["required"])
+        self.assertIn("all 256 direction assignments", wind["behavior_review"]["enforced"])
+        orbital = next(environment for environment in reviewed if environment["mechanic_id"] == "orbital_docking_customs")
+        self.assertEqual(orbital["behavior_review"]["capabilities"], ["visual_understanding_grounding", "interaction_control"])
+        self.assertFalse(orbital["behavior_review"]["real_time"]["required"])
+        self.assertIn("2,000 generated instances", orbital["behavior_review"]["enforced"])
 
     def test_all_thirty_selected_pack_three_through_eight_designs_are_promoted(self) -> None:
         selected = PACK_III | PACK_IV | PACK_V | PACK_VI | PACK_VII | PACK_VIII

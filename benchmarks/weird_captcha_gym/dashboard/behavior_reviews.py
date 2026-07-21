@@ -146,6 +146,11 @@ REVIEWED_MECHANICS: tuple[str, ...] = (
     "three_camera_claw_machine",
     "zero_g_cable_autopsy",
     "portal_freight_oversized_parcel",
+    "specular_lighthouse_relay",
+    "wind_tunnel_seed_courier",
+    "hologram_silhouette_foundry",
+    "orbital_docking_customs",
+    "gravity_room_freight",
 )
 
 
@@ -190,6 +195,11 @@ CAPABILITY_ASSIGNMENTS: dict[str, tuple[tuple[str, ...], str]] = {
     "three_camera_claw_machine": (("visual_understanding_grounding", "spatial_reasoning", "temporal_understanding_memory", "planning", "interaction_control"), "none"),
     "zero_g_cable_autopsy": (("interaction_control",), "none"),
     "portal_freight_oversized_parcel": (("visual_understanding_grounding", "spatial_reasoning", "interaction_control"), "none"),
+    "specular_lighthouse_relay": (("visual_understanding_grounding", "spatial_reasoning", "temporal_understanding_memory", "interaction_control"), "moving_target"),
+    "wind_tunnel_seed_courier": (("visual_understanding_grounding", "spatial_reasoning", "temporal_understanding_memory", "planning", "interaction_control"), "changing_world"),
+    "hologram_silhouette_foundry": (("visual_understanding_grounding", "spatial_reasoning", "interaction_control"), "none"),
+    "orbital_docking_customs": (("visual_understanding_grounding", "interaction_control"), "none"),
+    "gravity_room_freight": (("visual_understanding_grounding", "spatial_reasoning", "planning", "interaction_control"), "none"),
 }
 
 

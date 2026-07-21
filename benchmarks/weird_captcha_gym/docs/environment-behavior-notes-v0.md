@@ -419,3 +419,55 @@ For every environment the review reads the task contract, challenge generator, v
 **What must be done.** Aim each tool at the required wall and place its portal with enough clearance. Rotate the parcel until it is perpendicular to the Chamber A source wall. Repeatedly push it along its long axis while the front portion appears in the destination frame. Continue until the transformed parcel is fully contained in the receiver.
 
 **What is actually enforced.** The verifier reconstructs both ray casts, the right-handed portal transform, every parcel sample, swept aperture collision, split occupancy, transformed velocity, and final containment. None of these states advances with wall-clock time. Every rotation or push is a separate button-triggered transition. Across 100 generated instances, the successful action counts were always the same: two aim steps for each portal, four rotations, and 31 forward pushes. The sign of each aim correction and rotation is visible from the rays and parcel angle. An agent need not derive the coordinate transform or react while the parcel spans the frames; it only needs target alignment followed by a fixed action sequence.
+
+## Environments 41–45
+
+### 41. Specular Lighthouse Relay
+
+**Passing behavior.** Complete four optical rounds. In every round, set three mirrors in one-degree increments so the analytic beam reaches a vertically moving receiver. Open the shutter and accumulate 52 contact ticks. A hit adds one charge unit while a miss removes two.
+
+**What must be observed.** The complete beam path, all three mirrors, the receiver, its vertical travel line, and the charge meter are visible. Beam color and receiver color report current contact. The first two reflected segments remain fixed within a round. Only the final segment must follow receiver motion after the static path has been aligned.
+
+**What must be done.** Align the three-bounce path with discrete mirror controls. Open the shutter so the receiver begins advancing. Correct the final mirror as the receiver moves. Close or reopen the shutter when useful while preserving the accumulated charge.
+
+**What is actually enforced.** The verifier replays every mirror step and every 80-millisecond contact sample against the analytic reflection geometry. Receiver time advances only while the shutter is open. Closing the shutter freezes the receiver and preserves charge. A direct grader transcript that repeatedly paused, realigned, and opened the shutter for fixed 12-tick bursts passed all 500 generated instances tested. The longest such transcript contained 1,405 events, below the 2,600-event limit. The environment therefore enforces repeated time-bounded steering but not uninterrupted tracking of a continuously advancing receiver.
+
+### 42. Wind-Tunnel Seed Courier
+
+**Passing behavior.** Carry a light thistle and a slower heavy acorn through four ordered apertures each and into their separate docks. Both pods move automatically for at most 466 physics ticks of 38 milliseconds. A collision, missed dock, or overheated fan ends the attempt.
+
+**What must be observed.** Both pod positions and velocities are drawn in one shared field. Every gate contains a separately colored moving aperture for each pod. Four local fans expose their commanded direction and accumulated heat. The interface also reports the current tick and each pod's gate count.
+
+**What must be done.** Launch both pods. Set each fan to lift, coast, or press while the two pods approach it at different times and respond with different strengths. Predict the future aperture position from its motion. Remove power early enough to avoid thermal trip while preserving the required trajectory for the later pod.
+
+**What is actually enforced.** The verifier independently replays fan spool, heat, gusts, both pod trajectories, eight gate crossings, and both docks. Once launched, the plant cannot be paused and failures terminate the run. The pod x positions and velocities are fixed, so the 16 fan transition times are identical across seeds; only the eight nonzero fan directions change. An exhaustive test of all 256 direction assignments at those authored times found exactly one passing assignment for each of 40 generated instances and no assignment shared by all 40. A benchmark-aware agent can memorize when to act, but it must still determine the seed-specific directions while two bodies and moving apertures advance in real time.
+
+### 43. Hologram Silhouette Foundry
+
+**Passing behavior.** Place six uniquely colored three-cell rods inside a seven-by-seven-by-seven grid. Their final cells must not overlap. The frontmost color along every ray must exactly match the displayed front, side, and top target masks.
+
+**What must be observed.** Each panel draws the colored target cells as outlines and the current projected cells as fills. Every rod remains associated with one unique color. The control panel displays the selected rod's exact x, y, z center and its current x, y, or z axis. The interface explicitly announces when all three masks match.
+
+**What must be done.** Reconstruct each rod's axis and center from its colored cells across the three orthographic targets. Select the rod. Translate it one grid unit at a time and cycle its axis until its projections agree. Repeat for all six rods and cast the final arrangement.
+
+**What is actually enforced.** The verifier checks the final occupied cells, bounds, non-overlap, nearest-color masks, and the complete discrete transform transcript. Intermediate rods may pass through one another, action order is unrestricted, and there is no timing requirement. Direct enumeration across 1,000 generated instances found that 5,987 of 6,000 rods had exactly one compatible axis and center from the displayed target cells. In 988 of those 1,000 instances all six rods were independently determined this way. Most instances therefore reduce to six multi-view coordinate matches rather than a coupled construction plan; the remaining ambiguous rods are resolved by the other colors, non-overlap, or the exact readiness indicator.
+
+### 44. Orbital Docking Customs
+
+**Passing behavior.** Pass through two scan beacons in order without touching either debris field. Reach the moving customs station within 22 pixels at speed no greater than 0.12. Match its orientation within eight degrees and request a hard dock before 760 simulation ticks or 64 fuel units are exhausted.
+
+**What must be observed.** A complete top-down field shows the ship, velocity vector, debris, beacons, and station. Telemetry exposes remaining fuel, current speed, scan count, port angle, and accumulated coast ticks. Station position and angle change only when a coast control advances the simulation.
+
+**What must be done.** Under the intended procedure, combine thrust, transverse impulses, coasting, counter-burns, and rotation to follow an S-shaped route and stop at the port. Each control is a discrete button press. Coast advances either ten or thirty ticks atomically while every other control advances zero ticks.
+
+**What is actually enforced.** The verifier exactly replays impulses, coasts, swept collisions, beacon contacts, fuel, final speed, distance, and orientation. The generated route is structurally identical for every seed: six thrusts, five upward impulses, 60 coast ticks, five downward impulses, 120 coast ticks, ten downward impulses, 60 coast ticks, ten upward impulses, 360 coast ticks, and six counter-burns. Only the final port angle varies, and that angle is displayed after coasting. This fixed program followed by visible angle matching passed the grader on all 2,000 generated instances tested. The environment does not require wall-clock control, route discovery, or online correction of an inertial trajectory.
+
+### 45. Gravity-Room Freight
+
+**Passing behavior.** Clear four numbered cells in order with the cargo. Finish with the cargo and an isolated counterweight on their separate target cells. Every clockwise or counterclockwise quarter-turn changes the gravity direction and slides both bodies until a wall stops them.
+
+**What must be observed.** The complete eight-by-eight board remains visible. It shows all walls, both bodies, four ordered gate cells, and both targets. The room drawing rotates after each action. A ledger exposes gate progress, room orientation, and the counterweight's current coordinates.
+
+**What must be done.** Predict the stopping cell of both bodies under each possible gravity direction. Choose a sequence of clockwise and counterclockwise turns that routes the cargo through the four gates while also bringing the counterweight to its target. Update the joint plan after every persistent state transition.
+
+**What is actually enforced.** Each click applies the complete slide atomically before a 620-millisecond presentation animation blocks the next click. Nothing changes during that animation, so there is no wall-clock control problem. The verifier replays the two coupled positions, room orientation, ordered gate progress, and final certificate. The generated reference solutions range from 14 to 30 turns; all 1,000 generated solutions examined were different. Repeated certification attempts are allowed, but no fixed route or output claim bypasses the generated spatial planning problem.
