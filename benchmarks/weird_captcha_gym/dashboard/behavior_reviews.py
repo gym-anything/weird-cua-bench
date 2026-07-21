@@ -171,6 +171,11 @@ REVIEWED_MECHANICS: tuple[str, ...] = (
     "fake_desktop_automation_inversion",
     "impossible_ecology",
     "moving_checkbox_evasive_button",
+    "reverse_identity_gate",
+    "jigsaw_slider_alignment",
+    "microgame_gauntlet",
+    "minecraft_block_grid",
+    "relation_prompt_grounding",
 )
 
 
@@ -240,6 +245,11 @@ CAPABILITY_ASSIGNMENTS: dict[str, tuple[tuple[str, ...], str]] = {
     "fake_desktop_automation_inversion": (("visual_understanding_grounding", "spatial_reasoning", "interaction_control"), "none"),
     "impossible_ecology": (("visual_understanding_grounding", "spatial_reasoning", "temporal_understanding_memory", "reasoning", "interaction_control", "adaptation_feedback"), "changing_world"),
     "moving_checkbox_evasive_button": (("visual_understanding_grounding", "spatial_reasoning", "temporal_understanding_memory", "interaction_control", "adaptation_feedback"), "changing_world"),
+    "reverse_identity_gate": (("visual_understanding_grounding", "temporal_understanding_memory", "interaction_control", "adaptation_feedback"), "changing_world"),
+    "jigsaw_slider_alignment": (("visual_understanding_grounding", "spatial_reasoning", "temporal_understanding_memory", "interaction_control", "adaptation_feedback"), "timed_input"),
+    "microgame_gauntlet": (("visual_understanding_grounding", "spatial_reasoning", "temporal_understanding_memory", "interaction_control"), "changing_world"),
+    "minecraft_block_grid": (("visual_understanding_grounding", "spatial_reasoning", "planning", "interaction_control", "adaptation_feedback"), "none"),
+    "relation_prompt_grounding": (("visual_understanding_grounding", "spatial_reasoning", "temporal_understanding_memory", "interaction_control"), "moving_target"),
 }
 
 

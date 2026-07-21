@@ -258,7 +258,7 @@ class WeirdCaptchaDashboardTests(unittest.TestCase):
         self.assertEqual(catalog["stats"]["scaffolds"], 0)
         self.assertEqual(catalog["stats"]["concepts"], 0)
         self.assertEqual(catalog["stats"]["incubator_candidates"], 0)
-        self.assertEqual(catalog["stats"]["implementation_reviewed"], 65)
+        self.assertEqual(catalog["stats"]["implementation_reviewed"], 70)
         self.assertEqual(len(catalog["capabilities"]), 7)
         self.assertEqual({capability["code"] for capability in catalog["capabilities"]}, {"V", "S", "T", "R", "P", "I", "A"})
         self.assertEqual(catalog["stats"]["human_touched"], 6)
@@ -313,8 +313,8 @@ class WeirdCaptchaDashboardTests(unittest.TestCase):
             self.assertIn("/incubator_batch_revived_v1/", environment["cover"], mechanic)
 
         reviewed = [environment for environment in catalog["environments"] if environment["behavior_review"]]
-        self.assertEqual(len(reviewed), 65)
-        self.assertEqual({environment["behavior_review"]["number"] for environment in reviewed}, set(range(1, 66)))
+        self.assertEqual(len(reviewed), 70)
+        self.assertEqual({environment["behavior_review"]["number"] for environment in reviewed}, set(range(1, 71)))
         for environment in reviewed:
             behavior = environment["behavior_review"]
             self.assertTrue(behavior["capabilities"], environment["mechanic_id"])
@@ -420,6 +420,41 @@ class WeirdCaptchaDashboardTests(unittest.TestCase):
             "interaction_control", "adaptation_feedback",
         ])
         self.assertEqual(checkbox["behavior_review"]["real_time"]["id"], "changing_world")
+        handshake = next(environment for environment in reviewed if environment["mechanic_id"] == "reverse_identity_gate")
+        self.assertEqual(handshake["behavior_review"]["capabilities"], [
+            "visual_understanding_grounding", "temporal_understanding_memory",
+            "interaction_control", "adaptation_feedback",
+        ])
+        self.assertEqual(handshake["behavior_review"]["real_time"]["id"], "changing_world")
+        self.assertIn("fixed D-first strategy", handshake["behavior_review"]["enforced"])
+        jigsaw = next(environment for environment in reviewed if environment["mechanic_id"] == "jigsaw_slider_alignment")
+        self.assertEqual(jigsaw["behavior_review"]["capabilities"], [
+            "visual_understanding_grounding", "spatial_reasoning", "temporal_understanding_memory",
+            "interaction_control", "adaptation_feedback",
+        ])
+        self.assertEqual(jigsaw["behavior_review"]["real_time"]["id"], "timed_input")
+        self.assertIn("minimum rail travel", jigsaw["behavior_review"]["enforced"])
+        gauntlet = next(environment for environment in reviewed if environment["mechanic_id"] == "microgame_gauntlet")
+        self.assertEqual(gauntlet["behavior_review"]["capabilities"], [
+            "visual_understanding_grounding", "spatial_reasoning",
+            "temporal_understanding_memory", "interaction_control",
+        ])
+        self.assertEqual(gauntlet["behavior_review"]["real_time"]["id"], "changing_world")
+        self.assertIn("all 120 round orders", gauntlet["behavior_review"]["enforced"])
+        voxel = next(environment for environment in reviewed if environment["mechanic_id"] == "minecraft_block_grid")
+        self.assertEqual(voxel["behavior_review"]["capabilities"], [
+            "visual_understanding_grounding", "spatial_reasoning", "planning",
+            "interaction_control", "adaptation_feedback",
+        ])
+        self.assertFalse(voxel["behavior_review"]["real_time"]["required"])
+        self.assertIn("194 of 200", voxel["behavior_review"]["enforced"])
+        sculpture = next(environment for environment in reviewed if environment["mechanic_id"] == "relation_prompt_grounding")
+        self.assertEqual(sculpture["behavior_review"]["capabilities"], [
+            "visual_understanding_grounding", "spatial_reasoning",
+            "temporal_understanding_memory", "interaction_control",
+        ])
+        self.assertEqual(sculpture["behavior_review"]["real_time"]["id"], "moving_target")
+        self.assertIn("no drift prediction", sculpture["behavior_review"]["enforced"])
 
     def test_all_thirty_selected_pack_three_through_eight_designs_are_promoted(self) -> None:
         selected = PACK_III | PACK_IV | PACK_V | PACK_VI | PACK_VII | PACK_VIII

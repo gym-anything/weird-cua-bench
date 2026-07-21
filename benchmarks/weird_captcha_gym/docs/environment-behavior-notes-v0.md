@@ -679,3 +679,55 @@ For every environment the review reads the task contract, challenge generator, v
 **What must be done.** Adjust adjacent shafts until every gate reports open. Steer the checkbox to the visible height of the next portal by positioning the repulsive cursor field behind the needed acceleration. Cross each wall from left to right, then correct position and velocity until the body enters the final clamp.
 
 **What is actually enforced.** The verifier replays every scroll change, cursor state, fixed physics tick, wall collision, portal crossing, clamp capture, check action, and verification. Across 10,000 generated instances, all 210 portal-height routes appeared, along with 4,941 relative alignment patterns and 8,340 initial offset vectors. After using the generated portal heights and an aligned offset vector, one closed-loop controller passed all 5,000 additional instances tested in 242 to 293 ticks. The route order is always left to right, so advance planning is unnecessary. The remaining task is real-time feedback control of a moving body through generated spatial constraints.
+
+## Environments 66–70
+
+### 66. Four-Tab Robot Handshake
+
+**Passing behavior.** Open four limb tabs and complete eight relays in their generated station order. For each relay, hold the mouse contact while driving the receiver in the same direction as the moving pulse until 16 accepted 50-millisecond ticks accumulate. Return to the master tab and verify after all eight relays seal.
+
+**What must be observed.** The master tab identifies the active limb with a glyph. Each limb tab shows the pulse, receiver, angular error, relay charge, and stage tick. A sealed relay identifies the next limb, while an unsuccessful drive leaves the current stage active.
+
+**What must be done.** Deploy all four tabs and switch to the active one. Hold D plus the contact until the relay seals. If it has not sealed by tick 180, switch to A while keeping contact pressed. Follow the next limb glyph and repeat.
+
+**What is actually enforced.** The verifier replays deployment, input transitions, every physics tick, lock state, charge, relay order, and final verification. Precise phase interception is unnecessary because the receiver moves faster than the pulse and snaps onto it whenever the direction is correct. A fixed D-first strategy that changed to A only when the relay remained active after 180 ticks passed all 1,000 generated instances tested. It used no focus events and needed at most 324 ticks for a stage. The remaining requirements are following changing limb state, sustaining simultaneous mouse and keyboard input, and changing direction when the first drive does not seal.
+
+### 67. Parallax / Inertial Jigsaw Alignment
+
+**Passing behavior.** Place the fragment within 10 pixels of the gap on the horizontal axis, within 35 depth units, and within three degrees of the target rotation. Then hold the optical lock for at least 660 milliseconds while recording at least six stable samples.
+
+**What must be observed.** The scene shows the fragment and its matching cutout while rail and depth changes alter their position, size, height, and parallax. Three independent indicators report whether horizontal position, depth, and orientation are coincident. A separate display reports whether the rail is still coasting.
+
+**What must be done.** Adjust the depth grip, horizontal carriage, and 15-degree rotation controls until all three indicators lock. Release the rail slowly or wait for any coast to finish. Hold the optical-lock button through the required scan interval.
+
+**What is actually enforced.** The verifier reconstructs every drag sample, optional coast step, rotation, scan sample, and final geometry. The minimum rail travel, depth travel, and inertia sample counts are all zero. The three coincidence indicators allow each axis to be found through direct feedback rather than by deriving the projection equations. A direct stable alignment with no inertia passed all 1,000 generated instances tested. The only wall-clock requirement is the sampled optical-lock hold.
+
+### 68. Five-System Verification Reactor
+
+**Passing behavior.** Complete one pressure round, one chord round, one dial round, one intercept round, and one route round in a generated order. The five successful rounds consume 40 of 100 stability units. Certification passes if the complete replay is valid and any stability remains.
+
+**What must be observed.** Every round displays its complete rule and target. The pressure round lights numbered sockets. The chord round names three key pairs and shows their charge. The dial shows its angle and brake sector. The intercept round shows a moving packet and capture gate. The route round draws the entire corridor and all numbered hoops.
+
+**What must be done.** Hold Space while clicking the pressure sockets in order. Hold and release each displayed two-key chord after it charges. Spin the dial and brake it in the marked sector. Click each moving packet inside its current gate. Drag the capsule through the visible route.
+
+**What is actually enforced.** The verifier separately replays each round plus the shared stability ledger. Pressure requires the exact hold and click order. Each chord requires four generated hold ticks. The dial requires two drag movements, at least one coast tick, and a brake within 13 degrees. Each packet requires two motion ticks before capture. The route requires every checkpoint and at least nine move samples. Direct transcripts following these displayed rules passed all 1,000 generated instances tested. Across 10,000 generated instances, all 120 round orders appeared, while route geometry, packet speed, and gate position varied. No rule inference or stability allocation plan is needed on a successful run.
+
+### 69. Isometric Voxel Extraction Mine
+
+**Passing behavior.** Extract all four diamond voxels without collapsing a yellow support. The pick begins with ten durability units. Every hit on stone, diamond, lava, or support consumes one unit, and the final durability may be zero.
+
+**What must be observed.** Four rotatable isometric views expose different frontmost voxel faces. Diamond, stone, lava, and support use distinct visual materials. Mining removes the frontmost hit voxel and immediately changes the visible depth order. The inventory shows how many diamonds remain.
+
+**What must be done.** Rotate through the views and extract every visible diamond. Reinspect the pile after each extraction because removal can expose another target. If one diamond remains fully occluded, identify and remove the raised stone that blocks its capped column, then rotate back and extract it. Avoid spending the limited pick on unrelated stone or the support lattice.
+
+**What is actually enforced.** The verifier independently ray-casts every click against the current orientation and voxel set, then replays removal, hazards, durability, collapse, and inventory. It does not require visiting all views, removing the four authored blockers, or following the authored eight-step solution. Repeatedly extracting any diamond visible from any view collected all four without mining stone in 194 of 200 generated instances tested. Each of the other six instances left exactly the specially screened first target hidden and required exposing it through a blocker. The surviving task is limited-action spatial search under changing occlusion, not real-time control or a prescribed mining sequence.
+
+### 70. Dual-Projection Sculpture Rig
+
+**Passing behavior.** Carry five moving objects onto the worktable with at least 15 drag samples and 900 total stage units of pointer travel. Match every object to its final front-projection position within 11 units, side-projection depth within three units, and shared vertical position within 11 units. Run all eight force-settle ticks and submit the settled assembly.
+
+**What must be observed.** Five visually distinct objects move around a carousel every 95 milliseconds. The front seal shows target and live X-Y marks for every object. The side seal shows target and live depth-Y marks. Both projections update continuously while an object is moved or its depth is adjusted.
+
+**What must be done.** Catch each object on the carousel and drag it until its live front mark overlaps the matching target outline. Select the placed object and adjust depth until its side mark also overlaps. After all five objects match both seals, run the settle inspection and submit.
+
+**What is actually enforced.** The verifier replays every moving-carousel pickup, sampled drag, depth change, settle tick, and final three-dimensional position. The projection outlines describe the final settled positions, but the generated force shift is at most ten units on either visible axis while the tolerance is 11. Placing every object directly on its target outline before settling therefore needs no drift prediction or corrective second attempt. That first-pass strategy passed all 1,000 generated instances tested, with a minimum total drag distance of 2,142.48 units. The real-time requirement is acquiring objects from the moving carousel; the settle phase runs without agent intervention.
