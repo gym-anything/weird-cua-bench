@@ -471,3 +471,55 @@ For every environment the review reads the task contract, challenge generator, v
 **What must be done.** Predict the stopping cell of both bodies under each possible gravity direction. Choose a sequence of clockwise and counterclockwise turns that routes the cargo through the four gates while also bringing the counterweight to its target. Update the joint plan after every persistent state transition.
 
 **What is actually enforced.** Each click applies the complete slide atomically before a 620-millisecond presentation animation blocks the next click. Nothing changes during that animation, so there is no wall-clock control problem. The verifier replays the two coupled positions, room orientation, ordered gate progress, and final certificate. The generated reference solutions range from 14 to 30 turns; all 1,000 generated solutions examined were different. Repeated certification attempts are allowed, but no fixed route or output claim bypasses the generated spatial planning problem.
+
+## Environments 46–50
+
+### 46. Floodgate Archive Rescue
+
+**Passing behavior.** Move the amber capsule from Vault 1 to Vault 5 and the cyan capsule from Vault 5 to Vault 1. A capsule crosses only when its approaching lock is open and the two adjacent water levels differ by at most 0.055. Every pump moves 0.05 units between its labeled pair of vaults. No vault may leave its visible safe range.
+
+**What must be observed.** Five water columns show the current levels. Capsule markers show their current vaults. The control panel shows the five directed pump circuits and four locks. The open lock and every successful capsule transfer remain visible.
+
+**What must be done.** Choose pump transfers that equalize the next required pair of vaults without exhausting another vault's safe range. Open that lock and transfer the approaching capsule or capsules. Preserve useful water levels for the later locks until both capsules reach their docks.
+
+**What is actually enforced.** The verifier replays every pump, safe-range check, lock state, level vector, conserved total, and capsule transfer. Nothing changes between clicks, so the task has no wall-clock requirement. The successful lock order is always 1, 4, 2, 3, 2, 4, 1; this was identical across 1,000 generated instances. The generated water states still change the pump sequence: those instances contained 948 distinct authored pump programs ranging from 10 to 30 pump actions. Memorizing the lock order therefore removes route discovery but does not remove the need to choose a multi-step pump sequence for the displayed levels.
+
+### 47. Elastic Membrane Sorter
+
+**Passing behavior.** Capture three marbles in their highlighted wells. Each marble must cross two numbered rings in order before entering its well within a 30-pixel radius at speed 2.8 or below. The ball advances every 35 milliseconds for at most 720 ticks. All four tension sliders remain active after release.
+
+**What must be observed.** The canvas shows the marble, its two ordered rings, the highlighted destination well, and the four membrane post heights. Telemetry shows the current ring count, speed, and tick. The ball position and membrane slope change continuously after release.
+
+**What must be done.** Select the course from the visible ring and well arrangement. Change the four post heights while the marble moves so it reaches both rings. Reverse or reduce the slope near the destination to remove enough momentum for capture.
+
+**What is actually enforced.** The verifier replays every post change at its simulation tick, the damped trajectory, boundary rebounds, ordered ring crossings, and slow capture. The three course geometries and their physics are fixed; generated instances only shuffle their order and change the initial post heights. Overwriting those initial heights and running one precomputed six-tick control program for each course passed all 500 generated instances tested, with 600 events per complete task. The environment therefore requires selecting and executing a time-indexed control program while the ball advances, but it does not require online trajectory estimation or planning after the course is identified.
+
+### 48. Pheromone Dispatch
+
+**Passing behavior.** Paint separate amber and violet paths from the nest through the matching cache to the dock without crossing either salt block. After dispatch, deliver at least seven keys from each ten-ant team. Amber stops whenever its path is more than 96 ticks old. Violet stops after 112 ticks. Only a complete path of the matching color refreshes that team.
+
+**What must be observed.** The canvas shows the nest, dock, two caches, salt blocks, both painted paths, and every moving ant. Separate readouts show the freshness and delivered-key count for each color. The active brush selection remains visible.
+
+**What must be done.** Draw one continuous safe path for each color and release both teams. Continue drawing complete paths while the ants advance. Alternate colors often enough that neither team remains stopped before reaching the dock.
+
+**What is actually enforced.** The verifier checks every pointer sample, path continuity, cache visit, obstacle intersection, refresh tick, ant position, carrying state, and delivery count. The small geometric randomization does not change the required path family. Two fixed screen paths with 34 samples each were valid on all 2,000 generated instances tested. Replaying those paths for both colors at ticks 80, 160, 240, and 320 produced completion at tick 359 on every instance. Thus the accepted task can be reduced to repeated fixed traces on a fixed timeline; observing the ants, obstacles, or freshness readouts is unnecessary once that program is known.
+
+### 49. Clockwork Clutch Safe
+
+**Passing behavior.** Release all four shafts and stop with every shaft within 13 degrees of the zero witness mark. The drive advances every 85 milliseconds for at most 170 ticks. Releasing a shaft increases the speed of every shaft that remains engaged.
+
+**What must be observed.** Every dial shows its live angle, witness mark, engagement state, and current degrees per tick. The panel shows the current drive tick, number of coupled shafts, and shared speed factor. A released shaft stops immediately while the others continue rotating.
+
+**What must be done.** Start the drive. Watch the four dials and release a shaft when it enters the visible zero window. Continue until all four are stopped near zero, then brake and try the safe.
+
+**What is actually enforced.** The verifier replays elapsed drive ticks, the active shaft set, load redistribution, all four phases, and the final tolerance check. The generated ratios, phases, release order, and release ticks vary. They do not require a computed schedule: the seed-independent rule of releasing any engaged shaft already within the 13-degree witness window passed all 5,000 generated instances tested. Each passing transcript contained only seven events. The task therefore enforces timely visual responses to changing dials but not coupled-gear reasoning or advance planning.
+
+### 50. Marionette Checkpoint
+
+**Passing behavior.** Clear three moving inspection acts. In each act, all four puppet endpoints must remain within the four moving rings until progress reaches 68 accepted samples. A miss removes two progress units. The rings advance every 55 milliseconds and each string is limited to lengths from 20 through 80.
+
+**What must be observed.** The canvas simultaneously shows the puppet's two hands and two feet, the four matching rings, the current act, the current frame, and accumulated progress. The rings follow four independently generated sinusoidal paths. The sliders show the current string lengths while each endpoint responds to its associated string and one coupled string.
+
+**What must be done.** Compare every endpoint with its corresponding moving ring. Adjust all four sliders so the puppet follows the changing target pose. Keep the four spatial errors small enough for progress to grow faster than it decays across all three acts.
+
+**What is actually enforced.** The verifier replays every string value and every 55-millisecond geometry sample. It independently reconstructs all endpoint and target coordinates before updating progress. A controller that set each slider to the rounded next-frame target value passed all 1,000 generated instances tested, always with 1,023 events. The target trajectories vary across seeds, so the controls cannot be replaced by one fixed pose or one seed-independent slider schedule. The enforced problem is simultaneous spatial tracking of four moving targets rather than pose planning or learning from failed attempts.

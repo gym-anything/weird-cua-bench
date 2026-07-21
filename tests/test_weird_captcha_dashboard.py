@@ -258,7 +258,7 @@ class WeirdCaptchaDashboardTests(unittest.TestCase):
         self.assertEqual(catalog["stats"]["scaffolds"], 0)
         self.assertEqual(catalog["stats"]["concepts"], 0)
         self.assertEqual(catalog["stats"]["incubator_candidates"], 0)
-        self.assertEqual(catalog["stats"]["implementation_reviewed"], 45)
+        self.assertEqual(catalog["stats"]["implementation_reviewed"], 50)
         self.assertEqual(len(catalog["capabilities"]), 7)
         self.assertEqual({capability["code"] for capability in catalog["capabilities"]}, {"V", "S", "T", "R", "P", "I", "A"})
         self.assertEqual(catalog["stats"]["human_touched"], 6)
@@ -313,8 +313,8 @@ class WeirdCaptchaDashboardTests(unittest.TestCase):
             self.assertIn("/incubator_batch_revived_v1/", environment["cover"], mechanic)
 
         reviewed = [environment for environment in catalog["environments"] if environment["behavior_review"]]
-        self.assertEqual(len(reviewed), 45)
-        self.assertEqual({environment["behavior_review"]["number"] for environment in reviewed}, set(range(1, 46)))
+        self.assertEqual(len(reviewed), 50)
+        self.assertEqual({environment["behavior_review"]["number"] for environment in reviewed}, set(range(1, 51)))
         for environment in reviewed:
             behavior = environment["behavior_review"]
             self.assertTrue(behavior["capabilities"], environment["mechanic_id"])
@@ -336,6 +336,19 @@ class WeirdCaptchaDashboardTests(unittest.TestCase):
         self.assertEqual(orbital["behavior_review"]["capabilities"], ["visual_understanding_grounding", "interaction_control"])
         self.assertFalse(orbital["behavior_review"]["real_time"]["required"])
         self.assertIn("2,000 generated instances", orbital["behavior_review"]["enforced"])
+        pheromone = next(environment for environment in reviewed if environment["mechanic_id"] == "pheromone_dispatch")
+        self.assertEqual(pheromone["behavior_review"]["capabilities"], ["temporal_understanding_memory", "interaction_control"])
+        self.assertTrue(pheromone["behavior_review"]["real_time"]["required"])
+        self.assertIn("2,000 generated instances", pheromone["behavior_review"]["enforced"])
+        clutch = next(environment for environment in reviewed if environment["mechanic_id"] == "clockwork_clutch_safe")
+        self.assertEqual(clutch["behavior_review"]["real_time"]["id"], "timed_input")
+        self.assertIn("5,000 generated instances", clutch["behavior_review"]["enforced"])
+        marionette = next(environment for environment in reviewed if environment["mechanic_id"] == "marionette_checkpoint")
+        self.assertEqual(marionette["behavior_review"]["capabilities"], [
+            "visual_understanding_grounding", "spatial_reasoning",
+            "temporal_understanding_memory", "interaction_control",
+        ])
+        self.assertEqual(marionette["behavior_review"]["real_time"]["id"], "moving_target")
 
     def test_all_thirty_selected_pack_three_through_eight_designs_are_promoted(self) -> None:
         selected = PACK_III | PACK_IV | PACK_V | PACK_VI | PACK_VII | PACK_VIII

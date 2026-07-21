@@ -151,6 +151,11 @@ REVIEWED_MECHANICS: tuple[str, ...] = (
     "hologram_silhouette_foundry",
     "orbital_docking_customs",
     "gravity_room_freight",
+    "floodgate_archive_rescue",
+    "elastic_membrane_sorter",
+    "pheromone_dispatch",
+    "clockwork_clutch_safe",
+    "marionette_checkpoint",
 )
 
 
@@ -200,6 +205,11 @@ CAPABILITY_ASSIGNMENTS: dict[str, tuple[tuple[str, ...], str]] = {
     "hologram_silhouette_foundry": (("visual_understanding_grounding", "spatial_reasoning", "interaction_control"), "none"),
     "orbital_docking_customs": (("visual_understanding_grounding", "interaction_control"), "none"),
     "gravity_room_freight": (("visual_understanding_grounding", "spatial_reasoning", "planning", "interaction_control"), "none"),
+    "floodgate_archive_rescue": (("visual_understanding_grounding", "planning", "interaction_control"), "none"),
+    "elastic_membrane_sorter": (("visual_understanding_grounding", "temporal_understanding_memory", "interaction_control"), "changing_world"),
+    "pheromone_dispatch": (("temporal_understanding_memory", "interaction_control"), "changing_world"),
+    "clockwork_clutch_safe": (("visual_understanding_grounding", "temporal_understanding_memory", "interaction_control"), "timed_input"),
+    "marionette_checkpoint": (("visual_understanding_grounding", "spatial_reasoning", "temporal_understanding_memory", "interaction_control"), "moving_target"),
 }
 
 
