@@ -575,3 +575,55 @@ For every environment the review reads the task contract, challenge generator, v
 **What must be done.** Solve the visible two-crate Sokoban layout. Issue the directions of that ordinary solution in their original order. The first input only enters the queue, each later input executes its predecessor, and one final flush executes the last direction.
 
 **What is actually enforced.** The verifier reconstructs the queue, forklift position, crate pushes, collisions, resets, and final state from every issued command. The one-cycle delay does not require transforming or reordering the Sokoban plan: the generated ordinary solution followed by `FLUSH` is already the generated delayed-control solution. Exhaustive enumeration of the 12 layouts under four spatial transforms produced 48 physical boards, 48 distinct shortest command programs, and solution lengths from 23 to 34 directions. The four palettes raise the declared variant count to 192 but do not change behavior. The task tests instance-specific spatial planning and precise sequence execution; it does not require real-time control or memory of an invisible pending command.
+
+## Environments 56–60
+
+### 56. Insider Trading CAPTCHA
+
+**Passing behavior.** Trade through a stream of 34 to 38 prices. Every order settles three quote ticks after it is placed. The final account must contain both a buy and a sell, hold no position, and exceed the displayed profit target.
+
+**What must be observed.** One new price appears every 640, 680, or 720 milliseconds. The display shows the revealed price history, current cash, settled position, pending orders, remaining ticks, and target profit. Future prices are not drawn before their ticks.
+
+**What must be done.** Retain the price from two ticks earlier and account for orders that have not settled. A seed-independent passing policy targets a committed position of four after a two-tick rise of at least 72 cents, zero after a fall of at least 72 cents, and the current committed position otherwise. It begins returning to zero early enough for the delayed orders to settle before the stream ends.
+
+**What is actually enforced.** The verifier replays the complete delayed order tape, fees, cash, position, settlement ledger, and final profit. The generator sets the target to no more than 75 percent of the profit earned by the same causal momentum policy. That policy passed all 1,000 generated instances tested, earning between 1.27 and 1.36 times the required profit with 10 to 16 non-hold orders. This removes the need to predict future prices or create a new trading plan for each instance. The live stream still advances between actions, so the agent must read successive quotes and choose each order before the next tick.
+
+### 57. Polyrhythm Customs
+
+**Passing behavior.** Inspect four separately previewed lanes and then reproduce their combined score on the A, S, D, and F keys. Note starts must fall within 240 milliseconds of their targets. Both two-key chords must be started within 180 milliseconds and the final accuracy must reach 86 percent.
+
+**What must be observed.** Each lane is previewed alone before the performance begins. The score then disappears. The agent must preserve the lane identity and start time of each note across the separate previews.
+
+**What must be done.** Produce 20 to 22 key presses on the recorded performance timeline. Start simultaneous notes together and retain the complete four-lane schedule until it is executed. Accurate hold durations are optional under the current scoring rule.
+
+**What is actually enforced.** The verifier reconstructs every key-down and key-up time, matches note starts, awards a separate duration point for each of two holds, and checks both chords. Missing both hold-duration points still leaves enough credit to pass. Playing every expected note as a 100-millisecond tap passed all 1,000 generated instances tested with 91.7 to 92.3 percent accuracy. The environment therefore enforces memory for a temporal pattern and action on a wall-clock timeline, but it does not enforce sustained holds.
+
+### 58. Exact-Change Candy Cascade
+
+**Passing behavior.** Reach the displayed score after exactly four valid adjacent swaps. At least one cascade must contain two waves. Moving the black licorice fails immediately and exceeding the target or finishing four moves below it ends the attempt.
+
+**What must be observed.** The five-by-five board shows candy identities, adjacency, the forbidden cell, current score, remaining valid moves, cascade receipts, and the next five refill candies. Each accepted swap changes the board through deterministic removal, gravity, refill, and repeated matching.
+
+**What must be done.** Identify swaps that create matches and reason through how each cascade changes later choices. Coordinate four valid swaps so their scores total the exact target. Use harmless rejected swaps and same-instance resets to inspect deterministic outcomes when the refill information visible before a choice is insufficient.
+
+**What is actually enforced.** The verifier replays every swap, cascade wave, refill position, score, board, move counter, and licorice contact. Invalid swaps are unlimited and do not change the board. Reset restores the same challenge until a terminal fourth move is made. Across 100 generated instances, the authored four-swap sequence differed every time. The instances had 14 to 1,998 valid four-move routes but only one to six routes that reached the target. Their authored solutions consumed 21 to 61 refill candies even though only five future candies are shown at once. The task therefore requires sequential spatial reasoning, exact multi-step choice, and revision from observed outcomes, but no wall-clock action.
+
+### 59. Tiny FPS Customs
+
+**Passing behavior.** Eliminate the four creatures shown on the warrant posters while preserving four protected lookalikes. A protected hit ends the attempt. The verifier also requires at least one movement and at least four shots.
+
+**What must be observed.** A first-person view shows static maze walls and creatures. The four warrant portraits remain visible beside the view. Wanted and protected members of each pair share a palette and differ in one trait among horn shape, eye count, chest mark, or stripe.
+
+**What must be done.** Navigate with discrete moves and turns. Compare encountered creatures with the four visible portraits and fire only when the centered unobstructed creature matches a warrant. Local wall following is sufficient to traverse the generated maze.
+
+**What is actually enforced.** The verifier replays every discrete movement, turn, collision, ray cast, ammunition change, elimination, reset, and final pose. The world never advances between inputs. A right-hand wall-following policy visited every open cell and every creature location in all 5,000 generated mazes tested. It took 189 cell transitions in every instance. The task therefore retains visual lookalike matching, local spatial judgment, and first-person control, but it does not require route planning or real-time control.
+
+### 60. Thirty-Year Time Wheel
+
+**Passing behavior.** Set a date between 1996 and 2025 to the displayed target. Each of the day, month, and year rings must produce at least one hand-driven detent. The wheel must be stationary when it is locked.
+
+**What must be observed.** The interface shows the current date, target date, real month length, three concentric rings, proof lamps for ring use, and any active momentum. Month and year changes visibly clamp a day that is invalid in the resulting month.
+
+**What must be done.** Select the correct concentric ring and drag it through angular detents. Set month and year before making the final day adjustment so a later calendar clamp cannot undo the day. Release slowly enough to avoid coast or stop any coast before locking.
+
+**What is actually enforced.** The verifier replays hand detents, optional coast detents, optional brakes, calendar clamping, three-ring coverage, and the final date. It does not require inertia, a coast event, or an effective brake. A transcript containing only hand detents in month, year, and day order passed all 1,000 generated instances tested without any inertia or brake event. The task is a static radial-manipulation problem rather than a real-time momentum-control problem.

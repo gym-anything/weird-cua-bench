@@ -161,6 +161,11 @@ REVIEWED_MECHANICS: tuple[str, ...] = (
     "dead_mans_switch",
     "blind_dice_courier",
     "input_lag_forklift",
+    "insider_trading_captcha",
+    "polyrhythm_customs",
+    "exact_change_candy_cascade",
+    "tiny_fps_customs",
+    "thirty_year_time_wheel",
 )
 
 
@@ -220,6 +225,11 @@ CAPABILITY_ASSIGNMENTS: dict[str, tuple[tuple[str, ...], str]] = {
     "dead_mans_switch": (("visual_understanding_grounding", "temporal_understanding_memory", "interaction_control"), "moving_target"),
     "blind_dice_courier": (("visual_understanding_grounding", "spatial_reasoning", "temporal_understanding_memory", "planning", "interaction_control"), "none"),
     "input_lag_forklift": (("visual_understanding_grounding", "spatial_reasoning", "planning", "interaction_control"), "none"),
+    "insider_trading_captcha": (("visual_understanding_grounding", "temporal_understanding_memory", "reasoning", "interaction_control"), "changing_world"),
+    "polyrhythm_customs": (("visual_understanding_grounding", "temporal_understanding_memory", "interaction_control"), "recorded_timing"),
+    "exact_change_candy_cascade": (("visual_understanding_grounding", "spatial_reasoning", "reasoning", "planning", "interaction_control", "adaptation_feedback"), "none"),
+    "tiny_fps_customs": (("visual_understanding_grounding", "spatial_reasoning", "interaction_control"), "none"),
+    "thirty_year_time_wheel": (("visual_understanding_grounding", "spatial_reasoning", "interaction_control"), "none"),
 }
 
 

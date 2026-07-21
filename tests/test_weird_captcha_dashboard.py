@@ -258,7 +258,7 @@ class WeirdCaptchaDashboardTests(unittest.TestCase):
         self.assertEqual(catalog["stats"]["scaffolds"], 0)
         self.assertEqual(catalog["stats"]["concepts"], 0)
         self.assertEqual(catalog["stats"]["incubator_candidates"], 0)
-        self.assertEqual(catalog["stats"]["implementation_reviewed"], 55)
+        self.assertEqual(catalog["stats"]["implementation_reviewed"], 60)
         self.assertEqual(len(catalog["capabilities"]), 7)
         self.assertEqual({capability["code"] for capability in catalog["capabilities"]}, {"V", "S", "T", "R", "P", "I", "A"})
         self.assertEqual(catalog["stats"]["human_touched"], 6)
@@ -313,8 +313,8 @@ class WeirdCaptchaDashboardTests(unittest.TestCase):
             self.assertIn("/incubator_batch_revived_v1/", environment["cover"], mechanic)
 
         reviewed = [environment for environment in catalog["environments"] if environment["behavior_review"]]
-        self.assertEqual(len(reviewed), 55)
-        self.assertEqual({environment["behavior_review"]["number"] for environment in reviewed}, set(range(1, 56)))
+        self.assertEqual(len(reviewed), 60)
+        self.assertEqual({environment["behavior_review"]["number"] for environment in reviewed}, set(range(1, 61)))
         for environment in reviewed:
             behavior = environment["behavior_review"]
             self.assertTrue(behavior["capabilities"], environment["mechanic_id"])
@@ -366,6 +366,33 @@ class WeirdCaptchaDashboardTests(unittest.TestCase):
         ])
         self.assertFalse(forklift["behavior_review"]["real_time"]["required"])
         self.assertIn("does not require transforming or reordering", forklift["behavior_review"]["enforced"])
+        market = next(environment for environment in reviewed if environment["mechanic_id"] == "insider_trading_captcha")
+        self.assertEqual(market["behavior_review"]["capabilities"], [
+            "visual_understanding_grounding", "temporal_understanding_memory", "reasoning", "interaction_control",
+        ])
+        self.assertEqual(market["behavior_review"]["real_time"]["id"], "changing_world")
+        rhythm = next(environment for environment in reviewed if environment["mechanic_id"] == "polyrhythm_customs")
+        self.assertEqual(rhythm["behavior_review"]["capabilities"], [
+            "visual_understanding_grounding", "temporal_understanding_memory", "interaction_control",
+        ])
+        self.assertEqual(rhythm["behavior_review"]["real_time"]["id"], "recorded_timing")
+        candy = next(environment for environment in reviewed if environment["mechanic_id"] == "exact_change_candy_cascade")
+        self.assertEqual(candy["behavior_review"]["capabilities"], [
+            "visual_understanding_grounding", "spatial_reasoning", "reasoning", "planning",
+            "interaction_control", "adaptation_feedback",
+        ])
+        self.assertFalse(candy["behavior_review"]["real_time"]["required"])
+        fps = next(environment for environment in reviewed if environment["mechanic_id"] == "tiny_fps_customs")
+        self.assertEqual(fps["behavior_review"]["capabilities"], [
+            "visual_understanding_grounding", "spatial_reasoning", "interaction_control",
+        ])
+        self.assertIn("right-hand wall-following", fps["behavior_review"]["enforced"])
+        wheel = next(environment for environment in reviewed if environment["mechanic_id"] == "thirty_year_time_wheel")
+        self.assertEqual(wheel["behavior_review"]["capabilities"], [
+            "visual_understanding_grounding", "spatial_reasoning", "interaction_control",
+        ])
+        self.assertFalse(wheel["behavior_review"]["real_time"]["required"])
+        self.assertIn("without any inertia or brake event", wheel["behavior_review"]["enforced"])
 
     def test_all_thirty_selected_pack_three_through_eight_designs_are_promoted(self) -> None:
         selected = PACK_III | PACK_IV | PACK_V | PACK_VI | PACK_VII | PACK_VIII
