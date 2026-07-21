@@ -1,14 +1,8 @@
 from __future__ import annotations
 
 import json
-from collections import Counter
 from pathlib import Path
 from typing import Any
-
-try:  # Package import in tests; local import when the dashboard is executed directly.
-    from .capabilities import capability_definitions, capability_record, validate_capability_assignments
-except ImportError:  # pragma: no cover - exercised by the script entrypoint.
-    from capabilities import capability_definitions, capability_record, validate_capability_assignments  # type: ignore[no-redef]
 
 
 DASHBOARD_ROOT = Path(__file__).resolve().parent
@@ -1203,7 +1197,6 @@ def build_catalog() -> dict[str, Any]:
             "stage": "built" if built else ("rejected" if rejected else "scaffold"),
             "group": group,
             "axes": profile.get("axes") or ["incubator"],
-            "capability": capability_record(mechanic_id),
             "difficulty": profile.get("difficulty") or "unrated",
             "accent": profile.get("accent") or "#82908c",
             "human_status": profile.get("human") or ("archived" if rejected else "not-tested"),
@@ -1239,7 +1232,6 @@ def build_catalog() -> dict[str, Any]:
             "stage": stage,
             "group": concept["group"],
             "axes": concept["axes"],
-            "capability": capability_record(mechanic_id),
             "difficulty": concept["difficulty"],
             "accent": concept["accent"],
             "human_status": "design-selected" if roadmap else "incubator-candidate",
@@ -1259,13 +1251,6 @@ def build_catalog() -> dict[str, Any]:
             "motif": concept["motif"],
         })
 
-    built_mechanics = {item["mechanic_id"] for item in environments if item["stage"] == "built"}
-    validate_capability_assignments(built_mechanics)
-    primary_counts = Counter(
-        item["capability"]["primary"]
-        for item in environments
-        if item["stage"] == "built" and item.get("capability")
-    )
     environments.sort(key=lambda item: (item["order"], item["title"].lower()))
     groups: list[dict[str, Any]] = []
     for group_name in ("Interaction I", "Interaction II", "Interaction III", "Interaction IV", "Interaction V", "Interaction VI", "Interaction VII", "Interaction VIII", "Interaction IX", "Source-Grounded", "Visual Core", "Incubator", "Archive"):
@@ -1291,7 +1276,6 @@ def build_catalog() -> dict[str, Any]:
             "principle": "A screenshot should not be enough.",
         },
         "stats": stats,
-        "capabilities": capability_definitions(primary_counts),
         "groups": groups,
         "environments": environments,
     }

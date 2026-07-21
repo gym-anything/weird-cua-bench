@@ -60,7 +60,7 @@ const state = {
     lastAttempt: 0,
   },
   route: {name: "observatory", id: null},
-  filters: {query: "", group: "All", capability: "All", stage: "built", review: "all", view: "grid", starredOnly: initialSharedStars.size > 0},
+  filters: {query: "", group: "All", stage: "built", review: "all", view: "grid", starredOnly: initialSharedStars.size > 0},
   reviewFilters: {query: "", status: "pending"},
   stars: {
     personal: loadPersonalStars(),
@@ -106,34 +106,6 @@ function formatBytes(value) {
 
 function titleCase(value) {
   return String(value || "").replaceAll("_", " ").replaceAll("-", " ").replace(/\b\w/g, (letter) => letter.toUpperCase());
-}
-
-function capabilityDefinition(capabilityId) {
-  return state.catalog?.capabilities?.find((capability) => capability.id === capabilityId) || null;
-}
-
-function primaryCapability(environment) {
-  return capabilityDefinition(environment.capability?.primary);
-}
-
-function capabilityBadgeMarkup(environment, context = "card") {
-  const capability = primaryCapability(environment);
-  if (!capability) return "";
-  return `<span class="capability-badge capability-badge-${escapeHtml(context)}" style="--capability-color:${escapeHtml(capability.color)}" title="Primary capability · ${escapeHtml(capability.name)}"><b>${escapeHtml(capability.code)}</b><span>${escapeHtml(capability.short_name)}</span></span>`;
-}
-
-function capabilityPanelMarkup(environment) {
-  const annotation = environment.capability;
-  const primary = primaryCapability(environment);
-  if (!annotation || !primary) return "";
-  const supporting = annotation.supporting.map(capabilityDefinition).filter(Boolean);
-  return `<section class="capability-panel" style="--capability-color:${escapeHtml(primary.color)}">
-    <header><div><p class="eyebrow">Working capability annotation</p><h2>What this environment currently measures</h2></div><span>PRIMARY</span></header>
-    <div class="capability-primary"><b>${escapeHtml(primary.code)}</b><div><h3>${escapeHtml(primary.name)}</h3><p>${escapeHtml(primary.description)}</p></div></div>
-    <blockquote>${escapeHtml(annotation.rationale)}</blockquote>
-    <div class="capability-supporting"><small>Material supporting capabilities</small><div>${supporting.map((capability) => `<span style="--support-color:${escapeHtml(capability.color)}"><b>${escapeHtml(capability.code)}</b>${escapeHtml(capability.short_name)}</span>`).join("") || "<em>None assigned</em>"}</div></div>
-    <footer>Real time is treated as a shared evaluation condition across all seven capabilities. These labels are working research annotations for human inspection.</footer>
-  </section>`;
 }
 
 function elapsedLabel(seconds) {
@@ -437,7 +409,6 @@ function environmentCard(environment, index = 0) {
       </div>
       <div class="card-content">
         <div class="card-overline"><span>${escapeHtml(environment.group)}</span><span>${escapeHtml(environment.difficulty)}</span></div>
-        ${capabilityBadgeMarkup(environment)}
         <h3>${escapeHtml(environment.title)}</h3>
         <p>${escapeHtml(environment.summary)}</p>
         <div class="tag-row">${environment.axes.slice(0, 3).map((axis) => `<span class="tag">${escapeHtml(axis)}</span>`).join("")}</div>
@@ -494,11 +465,6 @@ function renderObservatory() {
         <div class="stat-cell"><b>${formatNumber(catalog.stats.human_touched)}</b><span>human-touched</span></div>
       </section>
 
-      <section class="capability-spectrum" aria-labelledby="capability-spectrum-title">
-        <div class="capability-spectrum-copy"><p class="eyebrow">Seven capability view</p><h2 id="capability-spectrum-title">One benchmark. Seven ways to fail.</h2><p>Every environment has one primary capability plus material supporting capabilities. Real time remains the shared evaluation condition.</p></div>
-        <div class="capability-spectrum-grid">${catalog.capabilities.map((capability) => `<button type="button" data-capability-browse="${escapeHtml(capability.id)}" style="--capability-color:${escapeHtml(capability.color)}"><b>${escapeHtml(capability.code)}</b><span><strong>${escapeHtml(capability.short_name)}</strong><small>${capability.primary_count} primary environment${capability.primary_count === 1 ? "" : "s"}</small></span></button>`).join("")}</div>
-      </section>
-
       <section>
         <div class="section-heading"><div><p class="eyebrow">Collection 01</p><h2>Perception under motion</h2></div><p>Five puzzles where every action changes what can be known: motion fields, cursor search, parallel timers, moving keys, and transient symbols.</p></div>
         ${renderRail(firstPack)}
@@ -551,13 +517,11 @@ function filteredEnvironments() {
   const stars = activeStars();
   return state.catalog.environments.filter((environment) => {
     const groupMatch = state.filters.group === "All" || environment.group === state.filters.group;
-    const capabilityMatch = state.filters.capability === "All" || environment.capability?.primary === state.filters.capability;
     const stageMatch = state.filters.stage === "all" || environment.stage === state.filters.stage;
     const reviewMatch = state.filters.review === "all" || (environment.stage === "built" && reviewFor(environment.id).status === state.filters.review);
     const starMatch = !state.filters.starredOnly || stars.has(environment.id);
-    const capabilityTerms = [environment.capability?.rationale, primaryCapability(environment)?.name, ...((environment.capability?.supporting || []).map((capabilityId) => capabilityDefinition(capabilityId)?.name))];
-    const haystack = [environment.title, environment.summary, environment.mechanic_id, environment.group, ...environment.axes, ...capabilityTerms].join(" ").toLowerCase();
-    return groupMatch && capabilityMatch && stageMatch && reviewMatch && starMatch && (!query || haystack.includes(query));
+    const haystack = [environment.title, environment.summary, environment.mechanic_id, environment.group, ...environment.axes].join(" ").toLowerCase();
+    return groupMatch && stageMatch && reviewMatch && starMatch && (!query || haystack.includes(query));
   });
 }
 
@@ -584,8 +548,6 @@ function refreshEnvironmentCatalog({rebuild = true} = {}) {
   refreshStarChrome();
   const stage = document.getElementById("stage-filter");
   if (stage && stage.value !== state.filters.stage) stage.value = state.filters.stage;
-  const capability = document.getElementById("capability-filter");
-  if (capability && capability.value !== state.filters.capability) capability.value = state.filters.capability;
   const review = document.getElementById("review-filter");
   if (review && review.value !== state.filters.review) review.value = state.filters.review;
 }
@@ -605,10 +567,6 @@ function renderEnvironments() {
       ${sharedStarsBannerMarkup()}
       <div class="catalog-toolbar">
         <label class="search-field">${searchIcon}<input id="environment-search" type="search" value="${escapeHtml(state.filters.query)}" placeholder="Search motion, physics, memory…" aria-label="Search environments"></label>
-        <select class="filter-select capability-filter" id="capability-filter" aria-label="Filter by primary capability">
-          <option value="All" ${state.filters.capability === "All" ? "selected" : ""}>All capabilities</option>
-          ${state.catalog.capabilities.map((capability) => `<option value="${escapeHtml(capability.id)}" ${state.filters.capability === capability.id ? "selected" : ""}>${escapeHtml(capability.code)} · ${escapeHtml(capability.short_name)} (${capability.primary_count})</option>`).join("")}
-        </select>
         <select class="filter-select" id="stage-filter" aria-label="Filter by stage">
           <option value="all" ${state.filters.stage === "all" ? "selected" : ""}>All stages</option>
           <option value="built" ${state.filters.stage === "built" ? "selected" : ""}>Built designs</option>
@@ -839,8 +797,6 @@ function renderEnvironmentDetail(environmentId) {
             <section><h2>What makes it difficult</h2><p>${escapeHtml(environment.summary)}</p><div class="tag-row" style="margin-top:18px">${environment.axes.map((axis) => `<span class="tag">${escapeHtml(axis)}</span>`).join("")}</div></section>
             <aside class="instruction-card"><small>Agent-visible instruction</small><blockquote>${escapeHtml(environment.instruction || "No instruction recorded.")}</blockquote></aside>
           </div>
-
-          ${capabilityPanelMarkup(environment)}
 
           ${environment.known_limitations?.length ? `<aside class="fidelity-note"><div><small>Known fidelity boundary</small><b>Do not mistake this verifier for open-world judgment.</b></div><p>${environment.known_limitations.map((limitation) => escapeHtml(limitation)).join(" ")}</p></aside>` : ""}
 
@@ -1435,11 +1391,6 @@ document.addEventListener("click", async (event) => {
     if (!stageStillMatches) state.filters.stage = "all";
     refreshEnvironmentCatalog(); return;
   }
-  if (target.dataset.capabilityBrowse) {
-    state.filters.capability = target.dataset.capabilityBrowse;
-    navigate("environments");
-    return;
-  }
   if (target.dataset.view) { state.filters.view = target.dataset.view; refreshEnvironmentCatalog({rebuild: false}); return; }
   if (target.dataset.paletteEnvironment) {
     const environment = findEnvironment(target.dataset.paletteEnvironment);
@@ -1517,7 +1468,6 @@ document.addEventListener("input", (event) => {
 });
 
 document.addEventListener("change", (event) => {
-  if (event.target.id === "capability-filter") { state.filters.capability = event.target.value; refreshEnvironmentCatalog(); }
   if (event.target.id === "stage-filter") { state.filters.stage = event.target.value; refreshEnvironmentCatalog(); }
   if (event.target.id === "review-filter") { state.filters.review = event.target.value; refreshEnvironmentCatalog(); }
 });

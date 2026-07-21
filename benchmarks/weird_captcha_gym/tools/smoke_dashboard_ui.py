@@ -36,8 +36,6 @@ def main() -> None:
     }
     for name in (
         "observatory.png",
-        "capability-filter.png",
-        "capability-detail.png",
         "starred-shortlist.png",
         "shared-starred-shortlist.png",
         "environment-search.png",
@@ -91,7 +89,6 @@ def main() -> None:
         expect(page.locator('[data-nav="atlas"]')).to_have_count(0)
         expect(page.locator('[data-nav="reviews"]')).to_be_visible()
         expect(page.locator(".specimen-card")).to_have_count(3)
-        expect(page.locator(".capability-spectrum-grid button")).to_have_count(7)
         expect(page.locator(".atlas-home-portal")).to_have_count(0)
         expect(page.locator('[data-open-env="shadow_crime_lab_env"]')).to_have_count(1)
         expect(page.locator('[data-open-env="robot_art_critic_env"]')).to_have_count(1)
@@ -153,22 +150,6 @@ def main() -> None:
         if json.loads(saved_shared_stars or "[]") != ["domino_autopsy_env", "funeral_ritual_env"]:
             raise AssertionError(f"shared shortlist did not save locally: {saved_shared_stars}")
         shared_stars_context.close()
-
-        capability_page = browser.new_page(viewport={"width": 1600, "height": 1000}, device_scale_factor=1)
-        capability_page.on("pageerror", lambda exc: errors.append(f"capabilities: {exc}"))
-        capability_page.goto(f"{args.base_url}/#/environments", wait_until="networkidle")
-        expect(capability_page.locator(".capability-badge-card")).to_have_count(75)
-        capability_page.locator("#capability-filter").select_option("adaptation_feedback")
-        expect(capability_page.locator(".environment-card")).to_have_count(6)
-        expect(capability_page.locator(".capability-badge-card b")).to_have_text(["A"] * 6)
-        capture(capability_page, output, "capability-filter")
-        capability_page.locator('[data-open-env="robot_art_critic_env"] .card-media').click()
-        expect(capability_page.locator(".capability-panel")).to_be_visible()
-        expect(capability_page.locator(".capability-primary h3")).to_have_text("Adaptation from feedback")
-        expect(capability_page.locator(".capability-panel blockquote")).to_contain_text("Revise a drawing")
-        expect(capability_page.locator(".capability-supporting span")).to_have_count(3)
-        capture(capability_page, output, "capability-detail")
-        capability_page.close()
 
         if args.exercise_reviews:
             expect(page.locator("#nav-review-count")).to_have_text("75")
@@ -543,10 +524,6 @@ def main() -> None:
             "starred-only catalog filtering",
             "public shortlist URL generation",
             "shared shortlist isolation and save-to-personal flow",
-            "seven-capability observatory overview",
-            "primary capability badges on all 75 environments",
-            "primary capability filtering",
-            "environment capability rationale and supporting labels",
             "environment search",
             "catalog controls without page reconstruction",
             "screenshot detail gallery",

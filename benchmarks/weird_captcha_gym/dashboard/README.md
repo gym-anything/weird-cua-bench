@@ -36,7 +36,6 @@ python benchmarks/weird_captcha_gym/dashboard/export_static.py \
 The export contains:
 
 - the full 75-environment catalog;
-- the seven-capability working annotation for every environment;
 - every catalog screenshot and all 75 solution reels;
 - Observatory, Environments, Review queue, Live sessions, and Evaluations;
 - four deterministic generated challenges for each of the 75 built environments;
@@ -112,10 +111,10 @@ The Live sessions page manages both kinds together. It keeps the existing two-ac
 
 ## Product surfaces
 
-- **Observatory** — screenshot-first overview of the interaction-first benchmark principles, all six packs, and the seven-capability distribution.
-- **Environments** — searchable and filterable collection of all 75 built candidates, including primary-capability filters and two complete replacements whose rejected-pilot history remains documented.
+- **Observatory** — screenshot-first overview of the interaction-first benchmark principles and all six packs.
+- **Environments** — searchable and filterable collection of all 75 built candidates, including two complete replacements whose rejected-pilot history remains documented.
 - **Review queue** — pending, looks-good, approved, and revision-requested lanes with notes and decision history.
-- **Environment dossier** — evidence filmstrip, solution reel when available, task instruction, working primary and supporting capability annotations, verifier state, launch controls, and review desk.
+- **Environment dossier** — evidence filmstrip, solution reel when available, task instruction, verifier state, launch controls, and review desk.
 - **Live sessions** — local-browser and VNC process lifecycle, addresses, passwords, logs, reconnect, and teardown.
 - **Evaluations** — safe command previews by default, with explicit opt-in to execute the existing `gym_anything.cli benchmark` path locally.
 

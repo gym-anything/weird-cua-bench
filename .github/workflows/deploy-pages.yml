@@ -44,7 +44,6 @@ jobs:
           import json
           from pathlib import Path
           manifest = json.loads(Path("_site/manifest.json").read_text())
-          catalog = json.loads(Path("_site/data/catalog.json").read_text())
           assert manifest["survey_included"] is False
           assert manifest["catalog"] == {
               "total": 75,
@@ -59,13 +58,6 @@ jobs:
               "grader_files": 69,
               "python_runtime": "pyodide@314.0.2",
           }
-          assert len(catalog["capabilities"]) == 7
-          assert sum(item["primary_count"] for item in catalog["capabilities"]) == 75
-          assert all(
-              environment["capability"]["status"] == "working_annotation"
-              for environment in catalog["environments"]
-              if environment["stage"] == "built"
-          )
           challenges = sorted(Path("_site/play/challenges").glob("*.json"))
           assert len(challenges) == 75
           for path in challenges:
