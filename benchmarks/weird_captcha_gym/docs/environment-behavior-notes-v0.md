@@ -523,3 +523,55 @@ For every environment the review reads the task contract, challenge generator, v
 **What must be done.** Compare every endpoint with its corresponding moving ring. Adjust all four sliders so the puppet follows the changing target pose. Keep the four spatial errors small enough for progress to grow faster than it decays across all three acts.
 
 **What is actually enforced.** The verifier replays every string value and every 55-millisecond geometry sample. It independently reconstructs all endpoint and target coordinates before updating progress. A controller that set each slider to the rounded next-frame target value passed all 1,000 generated instances tested, always with 1,023 events. The target trajectories vary across seeds, so the controls cannot be replaced by one fixed pose or one seed-independent slider schedule. The enforced problem is simultaneous spatial tracking of four moving targets rather than pose planning or learning from failed attempts.
+
+## Environments 51–55
+
+### 51. Wrong Number
+
+**Passing behavior.** Select the one authorized carrier among seven lines. Match its waveform phase and shape to the reference. During a 4.8-second test, obtain at least 30 locked samples and at least seven locked samples in the final ten-sample window. Consecutive samples may be no more than 175 milliseconds apart.
+
+**What must be observed.** The oscilloscope draws the cyan reference and amber candidate waveforms together. Seven patch selectors change the candidate. Phase and shape sliders change the overlay while a lock meter reports the current residual. During testing, the candidate phase continues drifting and the progress strip shows the remaining interval.
+
+**What must be done.** Examine the seven lines and find the only waveform that can fully match the reference. Set its shape and initial phase. Start the test and continue correcting phase while the carrier drifts for the complete interval.
+
+**What is actually enforced.** The verifier reconstructs the selected carrier, every control value, the wall-clock sample times, the drifting target phase, and every reported lock result. Each impostor has an irreducible distortion of at least 1.38, so it can never enter the lock threshold even at its best phase and shape. The authentic line can be found before starting a test by scanning controls until the visible lock indicator activates. Holding any single phase throughout the trial is insufficient: across 2,000 generated instances, the best fixed phase produced only 11 to 16 locked samples against the required 30. The remaining requirement is sustained visual phase tracking during one timed test.
+
+### 52. Bomb Manual From Hell
+
+**Passing behavior.** Seat five transparent plates on their three matching physical pins. Each plate may be rotated in 45-degree steps, flipped, and dragged. Seating is accepted only when the largest pin error is at most 24 pixels. After all plates are fixed, select and cut the only wire visible through an aperture on every plate.
+
+**What must be observed.** The active plate shows three differently shaped keyholes and five circular apertures. Three matching pins are drawn in fixed device coordinates. The nine colored wires remain visible beneath the transparent plate. Locked plates accumulate on the device and the final stack exposes the shared wire.
+
+**What must be done.** Determine the flip state and rotation that make the triangle, square, and circle keyholes agree with their matching pins. Drag the plate so the three pairs coincide, then seat it. Repeat independently for all five plates. Inspect the completed aperture intersection, select the exposed wire, and commit the cut.
+
+**What is actually enforced.** The verifier replays every discrete transform, sampled drag, seating attempt, snapped pose, wire selection coordinate, and final cut. No state changes between actions and there is no time limit. Intermediate plates may overlap freely and their order does not matter. Enumerating all eight rotations and two flip states from the visible shape correspondences produced exactly one acceptable orientation for every one of 5,000 generated plates tested. All nine wire positions occurred as the final answer across the same generated sample. The task reduces to five independent two-dimensional registrations followed by a visible intersection choice.
+
+### 53. Dead Man's Switch
+
+**Passing behavior.** Hold the moving pressure pad continuously for at least 5.2 seconds while moving the vehicle through five ordered checkpoints and into its dock. Valid pointer samples must remain on the pad with no gap above 360 milliseconds. Leaving the pad for more than 310 milliseconds, releasing the pointer, or losing capture resets the route.
+
+**What must be observed.** The full 18-by-10 course shows every wall, checkpoint, vehicle position, and dock. A separate pressure panel shows a pad moving in two dimensions. The interface reports hold duration, checkpoint progress, and route resets.
+
+**What must be done.** Press and retain the pointer on the moving pad. Follow it while simultaneously issuing keyboard directions. Keep the pointer inside the pad until the route is complete and the minimum continuous duration has elapsed.
+
+**What is actually enforced.** The verifier replays the pointer position against the analytic moving pad, all sample gaps, hold duration, every collision, checkpoint order, and final position. Wall collisions do not end the attempt and do not consume a failure budget. A fixed 132-command wall-sweeping prefix cleared every checkpoint and reached coordinate x16, y7 on all 5,000 generated instances tested. After the 5.2-second threshold, one final south input covers the alternate y8 dock; automatic submission suppresses that input when y7 is correct. When paired with valid pressure samples, the resulting 185- or 186-event transcripts all passed. The generated course therefore does not require visual navigation or route planning. The enforced task is simultaneous moving-target pointer tracking, a continuous hold, and a fixed keyboard sequence.
+
+### 54. Blind Dice Courier
+
+**Passing behavior.** Roll a labeled die through five barriers in order and reach dispatch. Each barrier accepts entry only when the die's top face after that roll equals its displayed number. A rejected wall or gate move leaves both position and orientation unchanged.
+
+**What must be observed.** The complete warehouse shows its corridors, five numbered gate cells, four scanners, the die, and the destination. All six labeled faces are visible before the first roll. Afterward they are hidden except when the die occupies a scanner. Gate rejection explicitly reports the required top value.
+
+**What must be done.** Preserve the die's six-face orientation after each accepted north, east, south, or west roll. Choose a route that approaches each barrier at its only opening with the required face ready to become the top. Use scanner observations to confirm or restore the tracked state when useful, then continue to dispatch.
+
+**What is actually enforced.** Every key press applies one atomic roll; nothing advances with wall-clock time. The verifier replays the position, complete hidden orientation, gate acceptance, crossing order, resets, and delivery. Across 500 generated instances, all 500 authored solution paths were distinct and ranged from 52 to 69 rolls. Those instances covered all 24 physical die orientations and 486 distinct five-gate number sequences. Their authored paths visited between two and four scanners, but the verifier does not require scanner use. A solver may instead track orientation exactly from the initial reveal. The persistent requirement is joint spatial planning over position and hidden die orientation.
+
+### 55. Input-Lag Forklift
+
+**Passing behavior.** Push two crates onto two loading bays. Every directional input executes the previously queued direction and then becomes the new queued direction. The final pending direction must be executed with the flush control. Certification passes only when both crates are docked, the queue is empty, and the final command was that flush.
+
+**What must be observed.** The complete nine-by-seven warehouse shows the forklift, both crates, both goals, and every rack. A control panel separately displays the direction pressed now, the direction executed now, and the pending direction. The command tape reports every physical result and collision.
+
+**What must be done.** Solve the visible two-crate Sokoban layout. Issue the directions of that ordinary solution in their original order. The first input only enters the queue, each later input executes its predecessor, and one final flush executes the last direction.
+
+**What is actually enforced.** The verifier reconstructs the queue, forklift position, crate pushes, collisions, resets, and final state from every issued command. The one-cycle delay does not require transforming or reordering the Sokoban plan: the generated ordinary solution followed by `FLUSH` is already the generated delayed-control solution. Exhaustive enumeration of the 12 layouts under four spatial transforms produced 48 physical boards, 48 distinct shortest command programs, and solution lengths from 23 to 34 directions. The four palettes raise the declared variant count to 192 but do not change behavior. The task tests instance-specific spatial planning and precise sequence execution; it does not require real-time control or memory of an invisible pending command.

@@ -156,6 +156,11 @@ REVIEWED_MECHANICS: tuple[str, ...] = (
     "pheromone_dispatch",
     "clockwork_clutch_safe",
     "marionette_checkpoint",
+    "wrong_number",
+    "bomb_manual_from_hell",
+    "dead_mans_switch",
+    "blind_dice_courier",
+    "input_lag_forklift",
 )
 
 
@@ -210,6 +215,11 @@ CAPABILITY_ASSIGNMENTS: dict[str, tuple[tuple[str, ...], str]] = {
     "pheromone_dispatch": (("temporal_understanding_memory", "interaction_control"), "changing_world"),
     "clockwork_clutch_safe": (("visual_understanding_grounding", "temporal_understanding_memory", "interaction_control"), "timed_input"),
     "marionette_checkpoint": (("visual_understanding_grounding", "spatial_reasoning", "temporal_understanding_memory", "interaction_control"), "moving_target"),
+    "wrong_number": (("visual_understanding_grounding", "temporal_understanding_memory", "interaction_control"), "moving_target"),
+    "bomb_manual_from_hell": (("visual_understanding_grounding", "spatial_reasoning", "interaction_control"), "none"),
+    "dead_mans_switch": (("visual_understanding_grounding", "temporal_understanding_memory", "interaction_control"), "moving_target"),
+    "blind_dice_courier": (("visual_understanding_grounding", "spatial_reasoning", "temporal_understanding_memory", "planning", "interaction_control"), "none"),
+    "input_lag_forklift": (("visual_understanding_grounding", "spatial_reasoning", "planning", "interaction_control"), "none"),
 }
 
 

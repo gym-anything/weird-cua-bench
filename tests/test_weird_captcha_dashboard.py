@@ -258,7 +258,7 @@ class WeirdCaptchaDashboardTests(unittest.TestCase):
         self.assertEqual(catalog["stats"]["scaffolds"], 0)
         self.assertEqual(catalog["stats"]["concepts"], 0)
         self.assertEqual(catalog["stats"]["incubator_candidates"], 0)
-        self.assertEqual(catalog["stats"]["implementation_reviewed"], 50)
+        self.assertEqual(catalog["stats"]["implementation_reviewed"], 55)
         self.assertEqual(len(catalog["capabilities"]), 7)
         self.assertEqual({capability["code"] for capability in catalog["capabilities"]}, {"V", "S", "T", "R", "P", "I", "A"})
         self.assertEqual(catalog["stats"]["human_touched"], 6)
@@ -313,8 +313,8 @@ class WeirdCaptchaDashboardTests(unittest.TestCase):
             self.assertIn("/incubator_batch_revived_v1/", environment["cover"], mechanic)
 
         reviewed = [environment for environment in catalog["environments"] if environment["behavior_review"]]
-        self.assertEqual(len(reviewed), 50)
-        self.assertEqual({environment["behavior_review"]["number"] for environment in reviewed}, set(range(1, 51)))
+        self.assertEqual(len(reviewed), 55)
+        self.assertEqual({environment["behavior_review"]["number"] for environment in reviewed}, set(range(1, 56)))
         for environment in reviewed:
             behavior = environment["behavior_review"]
             self.assertTrue(behavior["capabilities"], environment["mechanic_id"])
@@ -349,6 +349,23 @@ class WeirdCaptchaDashboardTests(unittest.TestCase):
             "temporal_understanding_memory", "interaction_control",
         ])
         self.assertEqual(marionette["behavior_review"]["real_time"]["id"], "moving_target")
+        dead_switch = next(environment for environment in reviewed if environment["mechanic_id"] == "dead_mans_switch")
+        self.assertEqual(dead_switch["behavior_review"]["capabilities"], [
+            "visual_understanding_grounding", "temporal_understanding_memory", "interaction_control",
+        ])
+        self.assertEqual(dead_switch["behavior_review"]["real_time"]["id"], "moving_target")
+        self.assertIn("fixed 132-command", dead_switch["behavior_review"]["enforced"])
+        blind_dice = next(environment for environment in reviewed if environment["mechanic_id"] == "blind_dice_courier")
+        self.assertEqual(blind_dice["behavior_review"]["capabilities"], [
+            "visual_understanding_grounding", "spatial_reasoning",
+            "temporal_understanding_memory", "planning", "interaction_control",
+        ])
+        forklift = next(environment for environment in reviewed if environment["mechanic_id"] == "input_lag_forklift")
+        self.assertEqual(forklift["behavior_review"]["capabilities"], [
+            "visual_understanding_grounding", "spatial_reasoning", "planning", "interaction_control",
+        ])
+        self.assertFalse(forklift["behavior_review"]["real_time"]["required"])
+        self.assertIn("does not require transforming or reordering", forklift["behavior_review"]["enforced"])
 
     def test_all_thirty_selected_pack_three_through_eight_designs_are_promoted(self) -> None:
         selected = PACK_III | PACK_IV | PACK_V | PACK_VI | PACK_VII | PACK_VIII
