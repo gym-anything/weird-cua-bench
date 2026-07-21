@@ -627,3 +627,55 @@ For every environment the review reads the task contract, challenge generator, v
 **What must be done.** Select the correct concentric ring and drag it through angular detents. Set month and year before making the final day adjustment so a later calendar clamp cannot undo the day. Release slowly enough to avoid coast or stop any coast before locking.
 
 **What is actually enforced.** The verifier replays hand detents, optional coast detents, optional brakes, calendar clamping, three-ring coverage, and the final date. It does not require inertia, a coast event, or an effective brake. A transcript containing only hand detents in month, year, and day order passed all 1,000 generated instances tested without any inertia or brake event. The task is a static radial-manipulation problem rather than a real-time momentum-control problem.
+
+## Environments 61–65
+
+### 61. Live Control-Flow Wiring Lab
+
+**Passing behavior.** Complete four debugger probes that each contain seven steps and collectively cover nine nodes. Then connect all ten output ports to the exact destination nodes and validate the harness.
+
+**What must be observed.** Nine cards expose a generated node identifier, a fixed semantic role, and the available output ports. Node identifiers and card positions change across instances. The debugger also flashes each active node, branch, and accumulator state for 720 milliseconds after a step.
+
+**What must be done.** Select each probe and press the step control until the run halts. Then connect the visible roles using the fixed template: Entry to Gate alpha, its two branches to the corresponding bays, both bays to Gate beta, its two branches to the corresponding audits, both audits to Checksum, and Checksum to Emit.
+
+**What is actually enforced.** The runtime copies every authoritative debugger step into the submitted trace when the step button is pressed. The agent does not need to read the transient display. The semantic-role topology is identical on every instance even though node identifiers and positions are randomized. Wiring that fixed role template passed the verifier on all 10,000 generated instances tested. All 10,000 had different identifier and position layouts. The environment therefore requires visual role grounding and ten directed drags, but not temporal memory, graph inference, or real-time observation.
+
+### 62. Modal Terminal Escape
+
+**Passing behavior.** Visit the writable manifest and all three read-only reference buffers. Replace all six manifest lines with their authoritative values, save through `:wq`, and then exit four nested terminal layers in their generated order.
+
+**What must be observed.** Each reference buffer shows two authoritative name-value fields. The writable buffer shows six incorrect fields and marks a line clean only when it matches its target. The active Vim mode, buffer name, nested layer, and valid escape keys remain visible.
+
+**What must be done.** Preserve the two values seen in a reference while returning to the writable buffer and typing them into the matching lines. Repeat for all three references. Use Vim navigation and editing commands, then apply the displayed exit operation for each active pager, job, SSH, or tmux layer.
+
+**What is actually enforced.** The verifier replays every raw key event, buffer switch, mode transition, cleared line, inserted character, save command, and outer-layer exit. It requires all four buffers to be visited, at least four buffer switches, all six lines to be cleared and fully retyped, and the exact generated target text. Across 10,000 instances, 9,300 distinct target manifests occurred and all 24 outer-layer orders appeared. No state changes between key presses and there is no deadline. The persistent requirement is retaining text across buffer changes and controlling a modal keyboard interface.
+
+### 63. Fake Desktop / Automation Inversion
+
+**Passing behavior.** Close the interceptor. Move both the vault and verifier windows by at least 44 desktop units while causing at least two z-order changes. Transfer two named keyfiles in order through the first two pointer mappings, then arm manual control through the third mapping.
+
+**What must be observed.** The desktop shows four overlapping windows, four named files, the ordered two-file directive, the current mapping label, and separate physical and remote cursors. Each accepted file changes the pointer mapping. The work order explicitly states the required workflow.
+
+**What must be done.** Convert each desired remote target through the current direct, horizontal mirror, vertical mirror, or 180-degree mapping. Use the resulting physical positions to close a window, reposition two title bars, drag both requested files into the verifier, and click the final arm control.
+
+**What is actually enforced.** The verifier independently maps every pointer coordinate, replays hit testing, window motion, z-order, closing, file order, workflow boundaries, and the final arm state. Nothing moves between pointer events. The mapping badge and both cursor positions remain visible, so previous mappings need not be remembered. Across 10,000 generated instances, all 24 ordered three-mapping sequences and all 30 ordered target-file pairs occurred. The task tests transformed spatial targeting and pointer control without real-time action or instance-specific planning.
+
+### 64. Impossible Ecology
+
+**Passing behavior.** Move five labeled organisms into their matching sanctuaries. One selected global field affects every uncaptured organism at once. Captured organisms lock permanently and no longer respond.
+
+**What must be observed.** A three-stage calibration film shows how every organism moves under Climate, Food, and Light. Each organism has one strong field response that may attract it toward the pointer or repel it away. The arena continuously shows organism positions, trails, matching sanctuaries, the central obstacle, and capture state.
+
+**What must be done.** Associate each organism with its strongest field and response sign. Select that field and place the pointer on the appropriate side of the organism so attraction or repulsion accelerates it toward its sanctuary. Continue correcting the pointer from the changing position and velocity until capture, then repeat for another organism.
+
+**What is actually enforced.** The verifier replays every 50-millisecond physics tick, selected field, pointer position, coupled response, velocity, obstacle collision, boundary rebound, and sanctuary capture. The response coefficients are present in browser state for simulation but are never rendered numerically. Across 10,000 generated instances, all 720 possible assignments of five distinct field-sign signatures occurred and every target geometry differed. A fixed A-through-E capture order with the same closed-loop steering rule passed all 5,000 additional instances tested in 43 to 121 ticks. Instance-specific planning is therefore unnecessary, but visual calibration, causal response identification, memory, feedback-based correction, and real-time spatial control remain required.
+
+### 65. Scroll-Cage Checkbox
+
+**Passing behavior.** Scroll four shafts until the three adjacent portal pairs align. Repel a moving checkbox forward through all three gates and into the final clamp. Only then may the checkbox be checked and verified.
+
+**What must be observed.** The complete arena shows the checkbox position, three portal walls, four scroll offsets, each gate's open or split state, the final clamp, the cursor field, current velocity, and physics tick. The checkbox continues moving under inertia every 50 milliseconds.
+
+**What must be done.** Adjust adjacent shafts until every gate reports open. Steer the checkbox to the visible height of the next portal by positioning the repulsive cursor field behind the needed acceleration. Cross each wall from left to right, then correct position and velocity until the body enters the final clamp.
+
+**What is actually enforced.** The verifier replays every scroll change, cursor state, fixed physics tick, wall collision, portal crossing, clamp capture, check action, and verification. Across 10,000 generated instances, all 210 portal-height routes appeared, along with 4,941 relative alignment patterns and 8,340 initial offset vectors. After using the generated portal heights and an aligned offset vector, one closed-loop controller passed all 5,000 additional instances tested in 242 to 293 ticks. The route order is always left to right, so advance planning is unnecessary. The remaining task is real-time feedback control of a moving body through generated spatial constraints.

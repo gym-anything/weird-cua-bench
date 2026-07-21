@@ -166,6 +166,11 @@ REVIEWED_MECHANICS: tuple[str, ...] = (
     "exact_change_candy_cascade",
     "tiny_fps_customs",
     "thirty_year_time_wheel",
+    "code_to_diagram_captcha",
+    "exit_vim_terminal_escape",
+    "fake_desktop_automation_inversion",
+    "impossible_ecology",
+    "moving_checkbox_evasive_button",
 )
 
 
@@ -230,6 +235,11 @@ CAPABILITY_ASSIGNMENTS: dict[str, tuple[tuple[str, ...], str]] = {
     "exact_change_candy_cascade": (("visual_understanding_grounding", "spatial_reasoning", "reasoning", "planning", "interaction_control", "adaptation_feedback"), "none"),
     "tiny_fps_customs": (("visual_understanding_grounding", "spatial_reasoning", "interaction_control"), "none"),
     "thirty_year_time_wheel": (("visual_understanding_grounding", "spatial_reasoning", "interaction_control"), "none"),
+    "code_to_diagram_captcha": (("visual_understanding_grounding", "interaction_control"), "none"),
+    "exit_vim_terminal_escape": (("visual_understanding_grounding", "temporal_understanding_memory", "interaction_control"), "none"),
+    "fake_desktop_automation_inversion": (("visual_understanding_grounding", "spatial_reasoning", "interaction_control"), "none"),
+    "impossible_ecology": (("visual_understanding_grounding", "spatial_reasoning", "temporal_understanding_memory", "reasoning", "interaction_control", "adaptation_feedback"), "changing_world"),
+    "moving_checkbox_evasive_button": (("visual_understanding_grounding", "spatial_reasoning", "temporal_understanding_memory", "interaction_control", "adaptation_feedback"), "changing_world"),
 }
 
 

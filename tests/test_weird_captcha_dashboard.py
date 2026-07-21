@@ -258,7 +258,7 @@ class WeirdCaptchaDashboardTests(unittest.TestCase):
         self.assertEqual(catalog["stats"]["scaffolds"], 0)
         self.assertEqual(catalog["stats"]["concepts"], 0)
         self.assertEqual(catalog["stats"]["incubator_candidates"], 0)
-        self.assertEqual(catalog["stats"]["implementation_reviewed"], 60)
+        self.assertEqual(catalog["stats"]["implementation_reviewed"], 65)
         self.assertEqual(len(catalog["capabilities"]), 7)
         self.assertEqual({capability["code"] for capability in catalog["capabilities"]}, {"V", "S", "T", "R", "P", "I", "A"})
         self.assertEqual(catalog["stats"]["human_touched"], 6)
@@ -313,8 +313,8 @@ class WeirdCaptchaDashboardTests(unittest.TestCase):
             self.assertIn("/incubator_batch_revived_v1/", environment["cover"], mechanic)
 
         reviewed = [environment for environment in catalog["environments"] if environment["behavior_review"]]
-        self.assertEqual(len(reviewed), 60)
-        self.assertEqual({environment["behavior_review"]["number"] for environment in reviewed}, set(range(1, 61)))
+        self.assertEqual(len(reviewed), 65)
+        self.assertEqual({environment["behavior_review"]["number"] for environment in reviewed}, set(range(1, 66)))
         for environment in reviewed:
             behavior = environment["behavior_review"]
             self.assertTrue(behavior["capabilities"], environment["mechanic_id"])
@@ -393,6 +393,33 @@ class WeirdCaptchaDashboardTests(unittest.TestCase):
         ])
         self.assertFalse(wheel["behavior_review"]["real_time"]["required"])
         self.assertIn("without any inertia or brake event", wheel["behavior_review"]["enforced"])
+        flow = next(environment for environment in reviewed if environment["mechanic_id"] == "code_to_diagram_captcha")
+        self.assertEqual(flow["behavior_review"]["capabilities"], [
+            "visual_understanding_grounding", "interaction_control",
+        ])
+        self.assertFalse(flow["behavior_review"]["real_time"]["required"])
+        self.assertIn("fixed role template", flow["behavior_review"]["enforced"])
+        terminal = next(environment for environment in reviewed if environment["mechanic_id"] == "exit_vim_terminal_escape")
+        self.assertEqual(terminal["behavior_review"]["capabilities"], [
+            "visual_understanding_grounding", "temporal_understanding_memory", "interaction_control",
+        ])
+        desktop = next(environment for environment in reviewed if environment["mechanic_id"] == "fake_desktop_automation_inversion")
+        self.assertEqual(desktop["behavior_review"]["capabilities"], [
+            "visual_understanding_grounding", "spatial_reasoning", "interaction_control",
+        ])
+        self.assertFalse(desktop["behavior_review"]["real_time"]["required"])
+        ecology = next(environment for environment in reviewed if environment["mechanic_id"] == "impossible_ecology")
+        self.assertEqual(ecology["behavior_review"]["capabilities"], [
+            "visual_understanding_grounding", "spatial_reasoning", "temporal_understanding_memory",
+            "reasoning", "interaction_control", "adaptation_feedback",
+        ])
+        self.assertEqual(ecology["behavior_review"]["real_time"]["id"], "changing_world")
+        checkbox = next(environment for environment in reviewed if environment["mechanic_id"] == "moving_checkbox_evasive_button")
+        self.assertEqual(checkbox["behavior_review"]["capabilities"], [
+            "visual_understanding_grounding", "spatial_reasoning", "temporal_understanding_memory",
+            "interaction_control", "adaptation_feedback",
+        ])
+        self.assertEqual(checkbox["behavior_review"]["real_time"]["id"], "changing_world")
 
     def test_all_thirty_selected_pack_three_through_eight_designs_are_promoted(self) -> None:
         selected = PACK_III | PACK_IV | PACK_V | PACK_VI | PACK_VII | PACK_VIII
