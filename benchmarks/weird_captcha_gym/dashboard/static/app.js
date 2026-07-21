@@ -108,6 +108,52 @@ function titleCase(value) {
   return String(value || "").replaceAll("_", " ").replaceAll("-", " ").replace(/\b\w/g, (letter) => letter.toUpperCase());
 }
 
+function capabilityDefinition(capabilityId) {
+  return state.catalog?.capabilities?.find((capability) => capability.id === capabilityId) || null;
+}
+
+function behaviorReviewCardMarkup(environment) {
+  const review = environment.behavior_review;
+  if (!review) return "";
+  return `<div class="behavior-review-card-mark"><span>Implementation reviewed</span><b>${String(review.number).padStart(2, "0")}</b></div>`;
+}
+
+function behaviorReviewMarkup(environment) {
+  const review = environment.behavior_review;
+  if (!review) {
+    return `<section class="behavior-review-pending">
+      <small>Implementation review pending</small>
+      <p>This environment has not yet been assigned capability labels. Its runtime and verifier still need to be reviewed before those labels are added.</p>
+    </section>`;
+  }
+  const capabilities = review.capabilities.map(capabilityDefinition).filter(Boolean);
+  const realTime = review.real_time;
+  return `<section class="behavior-review-panel">
+    <header>
+      <div><p class="eyebrow">Implementation review ${String(review.number).padStart(2, "0")} of ${state.catalog.stats.total}</p><h2>What a passing run currently requires</h2></div>
+      <span class="behavior-review-status"><i></i>Reviewed</span>
+    </header>
+    <div class="behavior-capability-row">
+      <div class="behavior-capabilities">
+        <small>Capabilities required by the easiest established passing strategy</small>
+        <div>${capabilities.map((capability) => `<span class="behavior-capability" style="--capability-color:${escapeHtml(capability.color)}" title="${escapeHtml(capability.description)}"><b>${escapeHtml(capability.code)}</b>${escapeHtml(capability.name)}</span>`).join("")}</div>
+      </div>
+      <div class="behavior-realtime ${realTime.required ? "is-required" : ""}">
+        <small>Real-time condition</small>
+        <b>${escapeHtml(realTime.label)}</b>
+        <p>${escapeHtml(realTime.description)}</p>
+      </div>
+    </div>
+    <div class="behavior-review-grid">
+      <article><small>Passing behavior</small><p>${escapeHtml(review.passing_behavior)}</p></article>
+      <article><small>What must be observed</small><p>${escapeHtml(review.observation)}</p></article>
+      <article><small>What must be done</small><p>${escapeHtml(review.action)}</p></article>
+      <article class="behavior-enforced"><small>What the implementation enforces</small><p>${escapeHtml(review.enforced)}</p></article>
+    </div>
+    <footer>The labels follow the easiest passing strategy supported by the current runtime and verifier. They do not credit a capability that an intended solution uses when a simpler passing strategy removes it.</footer>
+  </section>`;
+}
+
 function elapsedLabel(seconds) {
   const value = Number(seconds || 0);
   if (value < 60) return `${value}s`;
@@ -409,6 +455,7 @@ function environmentCard(environment, index = 0) {
       </div>
       <div class="card-content">
         <div class="card-overline"><span>${escapeHtml(environment.group)}</span><span>${escapeHtml(environment.difficulty)}</span></div>
+        ${behaviorReviewCardMarkup(environment)}
         <h3>${escapeHtml(environment.title)}</h3>
         <p>${escapeHtml(environment.summary)}</p>
         <div class="tag-row">${environment.axes.slice(0, 3).map((axis) => `<span class="tag">${escapeHtml(axis)}</span>`).join("")}</div>
@@ -462,7 +509,7 @@ function renderObservatory() {
         <div class="stat-cell"><b>${formatNumber(catalog.stats.built)}</b><span>working designs</span></div>
         <div class="stat-cell"><b>${formatNumber(catalog.stats.evidence_frames)}</b><span>evidence frames</span></div>
         <div class="stat-cell"><b>${formatNumber(catalog.stats.browser_verified)}</b><span>script-verified</span></div>
-        <div class="stat-cell"><b>${formatNumber(catalog.stats.human_touched)}</b><span>human-touched</span></div>
+        <div class="stat-cell"><b>${formatNumber(catalog.stats.implementation_reviewed)}</b><span>implementation-reviewed</span></div>
       </section>
 
       <section>
@@ -520,7 +567,9 @@ function filteredEnvironments() {
     const stageMatch = state.filters.stage === "all" || environment.stage === state.filters.stage;
     const reviewMatch = state.filters.review === "all" || (environment.stage === "built" && reviewFor(environment.id).status === state.filters.review);
     const starMatch = !state.filters.starredOnly || stars.has(environment.id);
-    const haystack = [environment.title, environment.summary, environment.mechanic_id, environment.group, ...environment.axes].join(" ").toLowerCase();
+    const behavior = environment.behavior_review;
+    const behaviorTerms = behavior ? [behavior.passing_behavior, behavior.observation, behavior.action, behavior.enforced, behavior.real_time?.label, ...behavior.capabilities.map((capabilityId) => capabilityDefinition(capabilityId)?.name)] : [];
+    const haystack = [environment.title, environment.summary, environment.mechanic_id, environment.group, ...environment.axes, ...behaviorTerms].join(" ").toLowerCase();
     return groupMatch && stageMatch && reviewMatch && starMatch && (!query || haystack.includes(query));
   });
 }
@@ -561,7 +610,7 @@ function renderEnvironments() {
   app.innerHTML = `
     <div class="page environments-page">
       <header class="page-head">
-        <div><p class="eyebrow">Environment collection</p><h1 class="page-title">Strange machines,<br>ready to disturb.</h1><p class="page-copy">Every working card comes from a real environment, task, verifier, and evidence run. Human approval is tracked separately, so a green scripted solve never silently becomes a usability claim.</p></div>
+        <div><p class="eyebrow">Environment collection</p><h1 class="page-title">Strange machines,<br>ready to disturb.</h1><p class="page-copy">Every working card comes from a real environment, task, verifier, and evidence run. ${state.catalog.stats.implementation_reviewed} environments now include an implementation-level account of the capabilities a passing strategy actually requires.</p></div>
         <div class="page-head-actions">${state.stars.sharedView ? "" : `<button class="button button-star-share" type="button" data-action="share-stars" ${personalStarCount ? "" : "disabled"}>${starIcon}<span>Share stars</span><b data-personal-star-count>${personalStarCount}</b></button>`}<button class="button button-acid" type="button" data-action="open-launch-picker">Quick launch ${arrowIcon}</button></div>
       </header>
       ${sharedStarsBannerMarkup()}
@@ -797,6 +846,8 @@ function renderEnvironmentDetail(environmentId) {
             <section><h2>What makes it difficult</h2><p>${escapeHtml(environment.summary)}</p><div class="tag-row" style="margin-top:18px">${environment.axes.map((axis) => `<span class="tag">${escapeHtml(axis)}</span>`).join("")}</div></section>
             <aside class="instruction-card"><small>Agent-visible instruction</small><blockquote>${escapeHtml(environment.instruction || "No instruction recorded.")}</blockquote></aside>
           </div>
+
+          ${behaviorReviewMarkup(environment)}
 
           ${environment.known_limitations?.length ? `<aside class="fidelity-note"><div><small>Known fidelity boundary</small><b>Do not mistake this verifier for open-world judgment.</b></div><p>${environment.known_limitations.map((limitation) => escapeHtml(limitation)).join(" ")}</p></aside>` : ""}
 

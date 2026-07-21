@@ -258,6 +258,9 @@ class WeirdCaptchaDashboardTests(unittest.TestCase):
         self.assertEqual(catalog["stats"]["scaffolds"], 0)
         self.assertEqual(catalog["stats"]["concepts"], 0)
         self.assertEqual(catalog["stats"]["incubator_candidates"], 0)
+        self.assertEqual(catalog["stats"]["implementation_reviewed"], 40)
+        self.assertEqual(len(catalog["capabilities"]), 7)
+        self.assertEqual({capability["code"] for capability in catalog["capabilities"]}, {"V", "S", "T", "R", "P", "I", "A"})
         self.assertEqual(catalog["stats"]["human_touched"], 6)
         self.assertEqual(catalog["stats"]["solution_videos"], 75)
         self.assertEqual(sum(group["count"] for group in catalog["groups"]), 75)
@@ -308,6 +311,24 @@ class WeirdCaptchaDashboardTests(unittest.TestCase):
             self.assertTrue(environment["validation"]["ok"], mechanic)
             self.assertTrue(environment["solution_video"]["frozen_contract_verified"], mechanic)
             self.assertIn("/incubator_batch_revived_v1/", environment["cover"], mechanic)
+
+        reviewed = [environment for environment in catalog["environments"] if environment["behavior_review"]]
+        self.assertEqual(len(reviewed), 40)
+        self.assertEqual({environment["behavior_review"]["number"] for environment in reviewed}, set(range(1, 41)))
+        for environment in reviewed:
+            behavior = environment["behavior_review"]
+            self.assertTrue(behavior["capabilities"], environment["mechanic_id"])
+            self.assertIn(behavior["real_time"]["required"], {True, False})
+            self.assertEqual(behavior["status"], "implementation_reviewed")
+            for field in ("passing_behavior", "observation", "action", "enforced"):
+                self.assertTrue(behavior[field], f"{environment['mechanic_id']}:{field}")
+
+        lidar = next(environment for environment in reviewed if environment["mechanic_id"] == "lidar_blacksite")
+        self.assertFalse(lidar["behavior_review"]["real_time"]["required"])
+        self.assertIn("active sensing", lidar["behavior_review"]["enforced"])
+        cable = next(environment for environment in reviewed if environment["mechanic_id"] == "zero_g_cable_autopsy")
+        self.assertEqual(cable["behavior_review"]["capabilities"], ["interaction_control"])
+        self.assertIn("fixed open-loop script", cable["behavior_review"]["enforced"])
 
     def test_all_thirty_selected_pack_three_through_eight_designs_are_promoted(self) -> None:
         selected = PACK_III | PACK_IV | PACK_V | PACK_VI | PACK_VII | PACK_VIII
