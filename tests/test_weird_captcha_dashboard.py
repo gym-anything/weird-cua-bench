@@ -309,6 +309,25 @@ class WeirdCaptchaDashboardTests(unittest.TestCase):
             self.assertTrue(environment["solution_video"]["frozen_contract_verified"], mechanic)
             self.assertIn("/incubator_batch_revived_v1/", environment["cover"], mechanic)
 
+    def test_catalog_exposes_one_working_primary_capability_for_every_environment(self) -> None:
+        catalog = build_catalog()
+        capability_ids = {capability["id"] for capability in catalog["capabilities"]}
+        self.assertEqual(len(capability_ids), 7)
+        self.assertEqual(
+            {capability["code"]: capability["primary_count"] for capability in catalog["capabilities"]},
+            {"V": 7, "S": 17, "T": 15, "R": 5, "P": 8, "I": 17, "A": 6},
+        )
+        built = [environment for environment in catalog["environments"] if environment["stage"] == "built"]
+        self.assertEqual(len(built), 75)
+        for environment in built:
+            annotation = environment["capability"]
+            self.assertEqual(annotation["status"], "working_annotation", environment["mechanic_id"])
+            self.assertIn(annotation["primary"], capability_ids, environment["mechanic_id"])
+            self.assertTrue(annotation["rationale"].strip(), environment["mechanic_id"])
+            self.assertNotIn(annotation["primary"], annotation["supporting"], environment["mechanic_id"])
+            self.assertEqual(len(annotation["supporting"]), len(set(annotation["supporting"])), environment["mechanic_id"])
+            self.assertTrue(set(annotation["supporting"]).issubset(capability_ids), environment["mechanic_id"])
+
     def test_all_thirty_selected_pack_three_through_eight_designs_are_promoted(self) -> None:
         selected = PACK_III | PACK_IV | PACK_V | PACK_VI | PACK_VII | PACK_VIII
         environments = {
