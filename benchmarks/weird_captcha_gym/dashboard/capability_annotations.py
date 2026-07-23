@@ -280,7 +280,7 @@ ANNOTATIONS: dict[str, dict[str, Any]] = {
         "visual": "2D",
         "temporal": False,
         "reasoning_planning": False,
-        "exploration_interface": False,
+        "exploration_interface": True,
     },
     "temporal_memory_first_change": {
         "public_name": "First Change Memory",
