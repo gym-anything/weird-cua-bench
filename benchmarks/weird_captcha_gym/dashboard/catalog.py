@@ -4,6 +4,11 @@ import json
 from pathlib import Path
 from typing import Any
 
+try:  # Package import in tests; local import when the dashboard is executed directly.
+    from .capability_annotations import build_capability_annotations, capability_definitions
+except ImportError:  # pragma: no cover - exercised by the script entrypoint.
+    from capability_annotations import build_capability_annotations, capability_definitions  # type: ignore[no-redef]
+
 
 DASHBOARD_ROOT = Path(__file__).resolve().parent
 BENCHMARK_ROOT = DASHBOARD_ROOT.parent
@@ -1149,6 +1154,7 @@ def _solution_videos() -> dict[str, dict[str, Any]]:
 def build_catalog() -> dict[str, Any]:
     validation = _validation_summaries()
     solution_videos = _solution_videos()
+    capability_annotations = build_capability_annotations()
     environments: list[dict[str, Any]] = []
     for environment_dir in sorted(ENVIRONMENTS_ROOT.glob("*_env")):
         env_data = _read_json(environment_dir / "env.json")
@@ -1168,6 +1174,7 @@ def build_catalog() -> dict[str, Any]:
         primary = tasks[0] if tasks else {"metadata": {}, "description": "", "instruction": ""}
         metadata = primary.get("metadata") or {}
         mechanic_id = str(metadata.get("mechanic_id") or environment_dir.name.removesuffix("_env"))
+        capability_annotation = capability_annotations.get(mechanic_id)
         profile = (
             PROFILES.get(mechanic_id)
             or INCUBATOR_PROFILES.get(mechanic_id)
@@ -1190,7 +1197,7 @@ def build_catalog() -> dict[str, Any]:
             "id": environment_dir.name,
             "spec_id": env_data.get("id", environment_dir.name),
             "mechanic_id": mechanic_id,
-            "title": profile.get("title") or _title(mechanic_id),
+            "title": capability_annotation["public_name"] if capability_annotation else profile.get("title") or _title(mechanic_id),
             "summary": profile.get("summary") or primary.get("description") or primary.get("instruction") or "Mechanic definition in the Weird CAPTCHA Gym incubator.",
             "instruction": primary.get("instruction", ""),
             "status": status,
@@ -1212,6 +1219,7 @@ def build_catalog() -> dict[str, Any]:
             "solution_video": solution_videos.get(mechanic_id),
             "launchable": bool(tasks),
             "environment_path": str(environment_dir.relative_to(REPO_ROOT)),
+            "capability_annotation": capability_annotation,
         })
 
     existing_mechanics = {item["mechanic_id"] for item in environments}
@@ -1247,6 +1255,7 @@ def build_catalog() -> dict[str, Any]:
             "solution_video": None,
             "launchable": False,
             "environment_path": None,
+            "capability_annotation": None,
             "concept_index": concept["concept_index"],
             "motif": concept["motif"],
         })
@@ -1277,6 +1286,7 @@ def build_catalog() -> dict[str, Any]:
         },
         "stats": stats,
         "groups": groups,
+        "capability_definitions": capability_definitions(),
         "environments": environments,
     }
 

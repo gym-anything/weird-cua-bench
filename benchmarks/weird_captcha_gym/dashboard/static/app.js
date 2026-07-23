@@ -736,6 +736,45 @@ function reviewDeskMarkup(environment) {
   </section>`;
 }
 
+function capabilityValue(value) {
+  if (value === true) return "Yes";
+  if (value === false) return "No";
+  if (value === "yes") return "Yes";
+  if (value === "no") return "No";
+  if (value === "observation_only") return "Observation only";
+  return String(value || "Not recorded");
+}
+
+function capabilityAssessmentMarkup(environment) {
+  const annotation = environment.capability_annotation;
+  if (!annotation) return "";
+  return `<section class="capability-assessment" aria-labelledby="capability-assessment-title">
+    <header class="capability-assessment-head">
+      <div><p class="eyebrow">Benchmark framework</p><h2 id="capability-assessment-title">What this environment measures</h2></div>
+      <span>3 knobs · 4 capabilities</span>
+    </header>
+    <div class="capability-groups">
+      <section class="capability-group">
+        <header><small>Controllable knobs</small><b>3</b></header>
+        <dl class="capability-list capability-knob-list">
+          <div><dt>Real time</dt><dd class="capability-value">${escapeHtml(capabilityValue(annotation.real_time))}</dd></div>
+          <div><dt>Interaction</dt><dd>${escapeHtml(annotation.interaction)}</dd></div>
+          <div><dt>Difficulty / complexity</dt><dd>${escapeHtml(annotation.difficulty)}</dd></div>
+        </dl>
+      </section>
+      <section class="capability-group">
+        <header><small>Core capabilities</small><b>4</b></header>
+        <dl class="capability-list capability-core-list">
+          <div><dt><i>V</i>Visual understanding</dt><dd class="capability-value">${escapeHtml(capabilityValue(annotation.visual))}</dd></div>
+          <div><dt><i>T</i>Temporal understanding and memory</dt><dd class="capability-value">${escapeHtml(capabilityValue(annotation.temporal))}</dd></div>
+          <div><dt><i>R</i>Reasoning and planning</dt><dd class="capability-value">${escapeHtml(capabilityValue(annotation.reasoning_planning))}</dd></div>
+          <div><dt><i>E</i>Exploration and interface understanding</dt><dd class="capability-value">${escapeHtml(capabilityValue(annotation.exploration_interface))}</dd></div>
+        </dl>
+      </section>
+    </div>
+  </section>`;
+}
+
 function renderEnvironmentDetail(environmentId) {
   const environment = findEnvironment(environmentId);
   if (!environment) {
@@ -797,6 +836,8 @@ function renderEnvironmentDetail(environmentId) {
             <section><h2>What makes it difficult</h2><p>${escapeHtml(environment.summary)}</p><div class="tag-row" style="margin-top:18px">${environment.axes.map((axis) => `<span class="tag">${escapeHtml(axis)}</span>`).join("")}</div></section>
             <aside class="instruction-card"><small>Agent-visible instruction</small><blockquote>${escapeHtml(environment.instruction || "No instruction recorded.")}</blockquote></aside>
           </div>
+
+          ${capabilityAssessmentMarkup(environment)}
 
           ${environment.known_limitations?.length ? `<aside class="fidelity-note"><div><small>Known fidelity boundary</small><b>Do not mistake this verifier for open-world judgment.</b></div><p>${environment.known_limitations.map((limitation) => escapeHtml(limitation)).join(" ")}</p></aside>` : ""}
 

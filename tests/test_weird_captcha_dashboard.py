@@ -309,6 +309,42 @@ class WeirdCaptchaDashboardTests(unittest.TestCase):
             self.assertTrue(environment["solution_video"]["frozen_contract_verified"], mechanic)
             self.assertIn("/incubator_batch_revived_v1/", environment["cover"], mechanic)
 
+    def test_every_built_environment_has_the_seven_framework_fields(self) -> None:
+        catalog = build_catalog()
+        self.assertEqual(len(catalog["capability_definitions"]), 4)
+        self.assertEqual(
+            {definition["name"] for definition in catalog["capability_definitions"]},
+            {
+                "Visual understanding",
+                "Temporal understanding and memory",
+                "Reasoning and planning",
+                "Exploration and interface understanding",
+            },
+        )
+        built = [environment for environment in catalog["environments"] if environment["stage"] == "built"]
+        self.assertEqual(len(built), 75)
+        expected_fields = {
+            "public_name",
+            "real_time",
+            "interaction",
+            "difficulty",
+            "visual",
+            "temporal",
+            "reasoning_planning",
+            "exploration_interface",
+        }
+        for environment in built:
+            annotation = environment["capability_annotation"]
+            self.assertIsNotNone(annotation, environment["mechanic_id"])
+            self.assertEqual(set(annotation), expected_fields, environment["mechanic_id"])
+            self.assertEqual(annotation["public_name"], environment["title"], environment["mechanic_id"])
+            self.assertIn(annotation["real_time"], {"yes", "no", "observation_only"}, environment["mechanic_id"])
+            self.assertIn(annotation["visual"], {"2D", "3D"}, environment["mechanic_id"])
+            self.assertTrue(annotation["interaction"], environment["mechanic_id"])
+            self.assertTrue(annotation["difficulty"], environment["mechanic_id"])
+            for field in ("temporal", "reasoning_planning", "exploration_interface"):
+                self.assertIs(type(annotation[field]), bool, f"{environment['mechanic_id']}:{field}")
+
     def test_all_thirty_selected_pack_three_through_eight_designs_are_promoted(self) -> None:
         selected = PACK_III | PACK_IV | PACK_V | PACK_VI | PACK_VII | PACK_VIII
         environments = {
@@ -726,9 +762,16 @@ class WeirdCaptchaDashboardTests(unittest.TestCase):
             self.assertIn("starredShareUrl", app)
             self.assertIn("Someone starred these for you", app)
             self.assertIn('data-action="toggle-star-filter"', app)
+            self.assertIn("What this environment measures", app)
             self.assertIn('\"mode\":\"shared\"', config)
             self.assertIn('\"browserPlayUrl\":\"play/\"', config)
             self.assertEqual(catalog["stats"]["built"], 75)
+            self.assertEqual(len(catalog["capability_definitions"]), 4)
+            self.assertTrue(all(
+                environment["capability_annotation"] is not None
+                for environment in catalog["environments"]
+                if environment["stage"] == "built"
+            ))
             self.assertTrue((output / "play" / "index.html").is_file())
             self.assertTrue((output / "play" / "runtime" / "browser_adapter.js").is_file())
             self.assertTrue((output / "play" / "runtime" / "grader_worker.js").is_file())

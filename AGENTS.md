@@ -2,6 +2,36 @@
 
 This repository contains only Weird CUA Bench: interaction-first visual puzzles for evaluating screenshot-driven computer-use agents.
 
+## Current benchmark framework
+
+Preserve the following framework verbatim. Do not replace these broad categories with narrower hand-engineered definitions.
+
+cool! so i think, the way it should work is following:
+
+there are three controllable knobs that we can control in any game:
+1. real time: sometimes without even changing code, we can pause frames or provide a set of continous frames to model,a dn while we wait for its actions we pause the whole game.
+2. interaction: example, does it need to drag and rop, are there buttons on the side, etc
+3. difficulty/complexity: we can add more stages, more variables to handle simultaneously, etc etc at a per app level.
+
+there there are 3 or 4 core capabilities that each game is trying to test:
+1. visual understanding: can be again classified into 2d vs 3d. basically 2d would be present in almost all games. in general visaul understanding means spatial understanding etc etc generally.
+2. temporal understanding and memory. simple sequence is not really counted here. but say which direction is fish moving, is temporal understanding.
+3. reasoning and planning. kind of many things other than this benchmark also test it. but still a category of its own.
+4. exploration and interface understanding: this to some extent is also controllable, but still i would consider a part of game itself. can contain things like model has to explore the game and figure out things, or even for understanding the game rules, it has to do some exploration, etc.
+
+## Capability annotation guidelines
+
+- Use the exact public environment name shown by the dashboard.
+- Treat real time, interaction, and difficulty or complexity as controllable knobs. Do not present them as core capabilities.
+- Classify visual understanding as 2D or 3D. Spatial understanding belongs inside visual understanding.
+- Count temporal understanding and memory only when a solution needs change across frames, motion, duration, hidden past state, or another nontrivial temporal relationship. A simple visible sequence does not count.
+- Combine reasoning and planning into one broad capability.
+- Count exploration and interface understanding when the agent must interact to reveal relevant information or learn how the interface behaves before it can solve the task.
+- Do not count ordinary feedback, a routine state transition, or reacting to a new visible state as exploration and interface understanding.
+- Read the generator, visible browser implementation, grader, verifier, and solver where present before assigning labels. Do not classify from the task description alone.
+- Describe what a normal screenshot-only UI solution requires. A solver that reads private state is implementation evidence rather than the behavior being classified.
+- Record when continuous frames are needed only for observation even though the physical action itself is untimed.
+
 ## Binding design doctrine
 
 Before changing or adding a puzzle, read `benchmarks/weird_captcha_gym/docs/interaction-puzzle-field-notes.md` in full. Its one-sentence principle, human-feedback ledger, fairness rules, prohibited shortcuts, validation boundaries, and definition of done are binding.
