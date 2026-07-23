@@ -345,6 +345,18 @@ class WeirdCaptchaDashboardTests(unittest.TestCase):
             for field in ("temporal", "reasoning_planning", "exploration_interface"):
                 self.assertIs(type(annotation[field]), bool, f"{environment['mechanic_id']}:{field}")
 
+    def test_rorschach_annotation_matches_the_visible_passing_strategy(self) -> None:
+        environment = next(
+            item
+            for item in build_catalog()["environments"]
+            if item["mechanic_id"] == "rorschach_fixed_rubric"
+        )
+        annotation = environment["capability_annotation"]
+        self.assertEqual(annotation["real_time"], "yes")
+        self.assertFalse(annotation["temporal"])
+        self.assertIn("archived response labels", annotation["interaction"])
+        self.assertNotIn("observe every response film", annotation["interaction"])
+
     def test_all_thirty_selected_pack_three_through_eight_designs_are_promoted(self) -> None:
         selected = PACK_III | PACK_IV | PACK_V | PACK_VI | PACK_VII | PACK_VIII
         environments = {
