@@ -4,11 +4,6 @@ import json
 from pathlib import Path
 from typing import Any
 
-try:  # Package import in tests; local import when the dashboard is executed directly.
-    from .behavior_reviews import build_behavior_reviews, capability_definitions
-except ImportError:  # pragma: no cover - exercised by the script entrypoint.
-    from behavior_reviews import build_behavior_reviews, capability_definitions  # type: ignore[no-redef]
-
 
 DASHBOARD_ROOT = Path(__file__).resolve().parent
 BENCHMARK_ROOT = DASHBOARD_ROOT.parent
@@ -1152,7 +1147,6 @@ def _solution_videos() -> dict[str, dict[str, Any]]:
 
 
 def build_catalog() -> dict[str, Any]:
-    behavior_reviews = build_behavior_reviews()
     validation = _validation_summaries()
     solution_videos = _solution_videos()
     environments: list[dict[str, Any]] = []
@@ -1203,7 +1197,6 @@ def build_catalog() -> dict[str, Any]:
             "stage": "built" if built else ("rejected" if rejected else "scaffold"),
             "group": group,
             "axes": profile.get("axes") or ["incubator"],
-            "behavior_review": behavior_reviews.get(mechanic_id),
             "difficulty": profile.get("difficulty") or "unrated",
             "accent": profile.get("accent") or "#82908c",
             "human_status": profile.get("human") or ("archived" if rejected else "not-tested"),
@@ -1239,7 +1232,6 @@ def build_catalog() -> dict[str, Any]:
             "stage": stage,
             "group": concept["group"],
             "axes": concept["axes"],
-            "behavior_review": behavior_reviews.get(mechanic_id),
             "difficulty": concept["difficulty"],
             "accent": concept["accent"],
             "human_status": "design-selected" if roadmap else "incubator-candidate",
@@ -1275,7 +1267,6 @@ def build_catalog() -> dict[str, Any]:
         "scaffolds": sum(item["stage"] == "scaffold" for item in environments),
         "concepts": sum(item["stage"] == "concept" for item in environments),
         "incubator_candidates": sum(item["stage"] == "incubator" for item in environments),
-        "implementation_reviewed": sum(bool(item.get("behavior_review")) for item in environments),
     }
     return {
         "benchmark": {
@@ -1285,7 +1276,6 @@ def build_catalog() -> dict[str, Any]:
             "principle": "A screenshot should not be enough.",
         },
         "stats": stats,
-        "capabilities": capability_definitions(),
         "groups": groups,
         "environments": environments,
     }
