@@ -260,6 +260,7 @@ class WeirdCaptchaDashboardTests(unittest.TestCase):
         self.assertEqual(catalog["stats"]["incubator_candidates"], 0)
         self.assertEqual(catalog["stats"]["human_touched"], 6)
         self.assertEqual(catalog["stats"]["solution_videos"], 75)
+        self.assertEqual(catalog["stats"]["difficulty_controlled"], 5)
         self.assertEqual(sum(group["count"] for group in catalog["groups"]), 75)
         recordings = [environment for environment in catalog["environments"] if environment["solution_video"]]
         self.assertEqual(len(recordings), 75)
@@ -765,8 +766,10 @@ class WeirdCaptchaDashboardTests(unittest.TestCase):
             self.assertEqual(manifest["browser_play"], {
                 "enabled": True,
                 "environments": 75,
-                "challenges": 300,
+                "challenges": 400,
                 "challenges_per_environment": 4,
+                "controlled_environments": 5,
+                "difficulty_profiles": 25,
                 "grader_files": 69,
                 "python_runtime": "pyodide@314.0.2",
             })
@@ -778,6 +781,8 @@ class WeirdCaptchaDashboardTests(unittest.TestCase):
             self.assertNotIn("/api/atlas", app)
             self.assertIn("Browser play needs no setup", app)
             self.assertIn("browserPlayHref", app)
+            self.assertIn("Select difficulty", app)
+            self.assertIn("data-difficulty-level", app)
             self.assertIn("python run.py --hosted", app)
             self.assertIn("consumePairingFragment", app)
             self.assertIn("captcha-bench-starred-environments:v1", app)
@@ -802,12 +807,27 @@ class WeirdCaptchaDashboardTests(unittest.TestCase):
             self.assertTrue((output / "play" / "index.html").is_file())
             self.assertTrue((output / "play" / "runtime" / "browser_adapter.js").is_file())
             self.assertTrue((output / "play" / "runtime" / "grader_worker.js").is_file())
+            browser_adapter = (output / "play" / "runtime" / "browser_adapter.js").read_text(encoding="utf-8")
+            self.assertIn("requestedDifficulty", browser_adapter)
             challenge_files = sorted((output / "play" / "challenges").glob("*.json"))
             self.assertEqual(len(challenge_files), 75)
             for challenge_file in challenge_files:
                 bundle = json.loads(challenge_file.read_text(encoding="utf-8"))
                 self.assertEqual(len(bundle["challenges"]), 4, challenge_file.name)
                 self.assertEqual(len({item["ground_truth"]["challenge_id"] for item in bundle["challenges"]}), 4)
+                if bundle["difficulty_profiles"]:
+                    self.assertEqual(set(bundle["difficulty_profiles"]), {"1", "2", "3", "4", "5"})
+                    controlled_challenges = [
+                        challenge
+                        for profile in bundle["difficulty_profiles"].values()
+                        for challenge in profile["challenges"]
+                    ]
+                    self.assertEqual(len(controlled_challenges), 20)
+                    self.assertEqual(
+                        len({item["ground_truth"]["challenge_id"] for item in controlled_challenges}),
+                        20,
+                    )
+                    self.assertIn(str(bundle["default_difficulty"]), bundle["difficulty_profiles"])
                 self.assertTrue((output / "play" / bundle["grader"]).is_file(), challenge_file.name)
             self.assertTrue(all(
                 not str(environment.get("cover") or "").startswith("/media/")
@@ -921,6 +941,38 @@ class WeirdCaptchaDashboardTests(unittest.TestCase):
             self.assertTrue(cancel_observed.wait(timeout=5))
             self.assertEqual(manager.get(session["id"])["status"], "stopped")
             self.assertFalse(Path(session["state_dir"]).exists())
+            popen.assert_not_called()
+
+    def test_controlled_browser_session_uses_selected_difficulty_task(self) -> None:
+        manager = SessionManager("local")
+        setup_started = threading.Event()
+        release_setup = threading.Event()
+
+        def delayed_setup(*_args: object, **_kwargs: object) -> subprocess.CompletedProcess[str]:
+            setup_started.set()
+            self.assertTrue(release_setup.wait(timeout=5))
+            return subprocess.CompletedProcess([], 0, "", "")
+
+        with (
+            mock.patch("benchmarks.weird_captcha_gym.dashboard.server.subprocess.run", side_effect=delayed_setup),
+            mock.patch("benchmarks.weird_captcha_gym.dashboard.server.subprocess.Popen") as popen,
+        ):
+            session = manager.start_browser(
+                "input_lag_forklift_env",
+                "input_lag_forklift_seed_0001",
+                difficulty=5,
+                seed=91,
+                auto_open=False,
+            )
+            self.assertTrue(setup_started.wait(timeout=5))
+            self.assertEqual(session["task_id"], "input_lag_forklift_d5_full_seed_0001")
+            self.assertEqual(session["difficulty"], 5)
+            task = json.loads(Path(session["task_json"]).read_text(encoding="utf-8"))
+            condition = task["metadata"]["control_condition"]
+            self.assertEqual(condition["difficulty"], 5)
+            self.assertEqual(condition["difficulty_parameters"]["control_lag"], 2)
+            manager.cleanup()
+            release_setup.set()
             popen.assert_not_called()
 
     def test_companion_requires_pairing_key_and_exact_allowed_origin(self) -> None:

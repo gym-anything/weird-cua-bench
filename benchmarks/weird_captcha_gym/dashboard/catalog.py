@@ -979,6 +979,45 @@ def _title(value: str) -> str:
     return " ".join(part.capitalize() for part in value.replace("_env", "").split("_"))
 
 
+def _difficulty_control(
+    environment_dir: Path,
+    mechanic_id: str,
+    fallback_instruction: str,
+) -> dict[str, Any] | None:
+    controls = _read_json(environment_dir / "controls.json")
+    if not controls:
+        return None
+    if controls.get("mechanic_id") != mechanic_id:
+        raise ValueError(f"{environment_dir.name}: controls mechanic does not match catalog mechanic")
+    baseline = controls.get("baseline") or {}
+    baseline_level = int(baseline.get("difficulty") or 0)
+    interaction = str(baseline.get("interaction") or "")
+    if baseline_level not in {1, 2, 3, 4, 5} or interaction not in {"simplified", "full"}:
+        raise ValueError(f"{environment_dir.name}: controls baseline is invalid")
+    profiles = controls.get("difficulty") or {}
+    if set(profiles) != {"1", "2", "3", "4", "5"}:
+        raise ValueError(f"{environment_dir.name}: controls must define five difficulty levels")
+    difficulty_profiles = []
+    for level in range(1, 6):
+        profile = profiles[str(level)]
+        task_id = f"{mechanic_id}_d{level}_{interaction}_seed_0001"
+        difficulty_profiles.append({
+            "level": level,
+            "label": str(profile["label"]),
+            "task_id": task_id,
+            "instruction": str(profile.get("natural_language") or fallback_instruction),
+            "summary": str(profile.get("summary") or ""),
+            "parameters": profile.get("parameters") or {},
+            "current_implementation": level == baseline_level,
+        })
+    return {
+        "baseline_level": baseline_level,
+        "interaction": interaction,
+        "real_time": str(baseline.get("real_time") or "live"),
+        "profiles": difficulty_profiles,
+    }
+
+
 def _media_url(path: Path) -> str:
     relative = path.resolve().relative_to(BENCHMARK_ROOT.resolve())
     return f"/media/{relative.as_posix()}"
@@ -1181,6 +1220,11 @@ def build_catalog() -> dict[str, Any]:
             or ROADMAP_PROFILES.get(mechanic_id, {})
         )
         status = str(metadata.get("status") or "scaffolded")
+        difficulty_control = _difficulty_control(
+            environment_dir,
+            mechanic_id,
+            str(primary.get("instruction") or ""),
+        )
         evidence = _evidence_paths(mechanic_id, environment_dir)
         cover = _cover_path(mechanic_id, evidence)
         built = status == "prototype_visual_candidate"
@@ -1220,6 +1264,7 @@ def build_catalog() -> dict[str, Any]:
             "launchable": bool(tasks),
             "environment_path": str(environment_dir.relative_to(REPO_ROOT)),
             "capability_annotation": capability_annotation,
+            "difficulty_control": difficulty_control,
         })
 
     existing_mechanics = {item["mechanic_id"] for item in environments}
@@ -1256,6 +1301,7 @@ def build_catalog() -> dict[str, Any]:
             "launchable": False,
             "environment_path": None,
             "capability_annotation": None,
+            "difficulty_control": None,
             "concept_index": concept["concept_index"],
             "motif": concept["motif"],
         })
@@ -1276,6 +1322,7 @@ def build_catalog() -> dict[str, Any]:
         "scaffolds": sum(item["stage"] == "scaffold" for item in environments),
         "concepts": sum(item["stage"] == "concept" for item in environments),
         "incubator_candidates": sum(item["stage"] == "incubator" for item in environments),
+        "difficulty_controlled": sum(item["difficulty_control"] is not None for item in environments),
     }
     return {
         "benchmark": {

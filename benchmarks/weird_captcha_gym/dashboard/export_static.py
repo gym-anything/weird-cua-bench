@@ -12,11 +12,13 @@ try:  # Package import in tests; local import when executed as a script.
     from .catalog import BENCHMARK_ROOT, REPO_ROOT, build_catalog
     from ..shared_runtime.server.legacy_browser_grader import GRADERS as LEGACY_BROWSER_GRADERS
     from ..shared_scripts.setup_task import generate_task_state, load_task
+    from ..tools.materialize_controlled_tasks import controlled_task
 except ImportError:  # pragma: no cover - exercised by the script entrypoint.
     sys.path.insert(0, str(Path(__file__).resolve().parents[3]))
     from catalog import BENCHMARK_ROOT, REPO_ROOT, build_catalog  # type: ignore[no-redef]
     from benchmarks.weird_captcha_gym.shared_runtime.server.legacy_browser_grader import GRADERS as LEGACY_BROWSER_GRADERS  # type: ignore[no-redef]
     from benchmarks.weird_captcha_gym.shared_scripts.setup_task import generate_task_state, load_task  # type: ignore[no-redef]
+    from benchmarks.weird_captcha_gym.tools.materialize_controlled_tasks import controlled_task  # type: ignore[no-redef]
 
 
 DASHBOARD_ROOT = Path(__file__).resolve().parent
@@ -83,6 +85,8 @@ def _export_browser_play(output: Path, catalog: dict[str, Any]) -> dict[str, Any
 
     legacy_copied = False
     challenge_count = 0
+    difficulty_profile_count = 0
+    controlled_environment_count = 0
     grader_files: set[str] = set()
     built = [environment for environment in catalog["environments"] if environment.get("stage") == "built"]
     for environment in built:
@@ -94,21 +98,62 @@ def _export_browser_play(output: Path, catalog: dict[str, Any]) -> dict[str, Any
         task_id = str(tasks[0]["id"])
         task_path = REPO_ROOT / str(environment["environment_path"]) / "tasks" / task_id / "task.json"
         task = load_task(task_path)
-        challenges = []
         challenge_ids: set[str] = set()
-        for attempt in range(BROWSER_CHALLENGES_PER_ENVIRONMENT):
-            seed = f"browser-play:{environment_id}:{attempt}"
-            public_state, ground_truth = generate_task_state(task, seed)
-            if public_state.get("status") == "not_benchmark_ready":
-                raise ValueError(f"browser-play generator unavailable: {environment_id}")
-            if public_state.get("mechanic_id") != mechanic_id or ground_truth.get("mechanic_id") != mechanic_id:
-                raise ValueError(f"browser-play mechanic mismatch: {environment_id}")
-            challenge_id = str(ground_truth.get("challenge_id") or "")
-            if not challenge_id or challenge_id in challenge_ids:
-                raise ValueError(f"browser-play challenge IDs are not unique: {environment_id}")
-            challenge_ids.add(challenge_id)
-            challenges.append({"public_state": public_state, "ground_truth": ground_truth})
-            challenge_count += 1
+
+        def generate_challenges(selected_task: dict[str, Any], seed_label: str | None) -> list[dict[str, Any]]:
+            nonlocal challenge_count
+            challenges: list[dict[str, Any]] = []
+            for attempt in range(BROWSER_CHALLENGES_PER_ENVIRONMENT):
+                seed = (
+                    f"browser-play:{environment_id}:{seed_label}:{attempt}"
+                    if seed_label
+                    else f"browser-play:{environment_id}:{attempt}"
+                )
+                public_state, ground_truth = generate_task_state(selected_task, seed)
+                if public_state.get("status") == "not_benchmark_ready":
+                    raise ValueError(f"browser-play generator unavailable: {environment_id}")
+                if public_state.get("mechanic_id") != mechanic_id or ground_truth.get("mechanic_id") != mechanic_id:
+                    raise ValueError(f"browser-play mechanic mismatch: {environment_id}")
+                challenge_id = str(ground_truth.get("challenge_id") or "")
+                if not challenge_id or challenge_id in challenge_ids:
+                    raise ValueError(f"browser-play challenge IDs are not unique: {environment_id}")
+                challenge_ids.add(challenge_id)
+                challenges.append({"public_state": public_state, "ground_truth": ground_truth})
+                challenge_count += 1
+            return challenges
+
+        difficulty_control = environment.get("difficulty_control")
+        difficulty_profiles: dict[str, dict[str, Any]] = {}
+        challenges = generate_challenges(task, None)
+        browser_task_id = task_id
+        if difficulty_control:
+            controlled_environment_count += 1
+            interaction = str(difficulty_control["interaction"])
+            for profile in difficulty_control["profiles"]:
+                level = int(profile["level"])
+                profile_task = controlled_task(
+                    task,
+                    mechanic_id=mechanic_id,
+                    level=level,
+                    interaction=interaction,
+                    profile={
+                        "label": profile["label"],
+                        "natural_language": profile["instruction"],
+                        "parameters": profile["parameters"],
+                    },
+                    task_dir_name=str(profile["task_id"]),
+                )
+                difficulty_profiles[str(level)] = {
+                    "level": level,
+                    "label": profile["label"],
+                    "task_id": profile["task_id"],
+                    "instruction": profile["instruction"],
+                    "challenges": generate_challenges(profile_task, f"d{level}"),
+                }
+                difficulty_profile_count += 1
+            default_difficulty = int(difficulty_control["baseline_level"])
+        else:
+            default_difficulty = None
 
         grader_source = GRADER_ROOT / f"{mechanic_id}.py"
         if grader_source.is_file():
@@ -123,11 +168,14 @@ def _export_browser_play(output: Path, catalog: dict[str, Any]) -> dict[str, Any
                 legacy_copied = True
         grader_files.add(grader_name)
         bundle = {
-            "version": 1,
+            "version": 2,
             "environment_id": environment_id,
             "mechanic_id": mechanic_id,
             "title": environment["title"],
-            "task_id": task_id,
+            "task_id": browser_task_id,
+            "base_task_id": task_id,
+            "default_difficulty": default_difficulty,
+            "difficulty_profiles": difficulty_profiles,
             "grader": f"graders/{grader_name}",
             "challenges": challenges,
         }
@@ -141,6 +189,8 @@ def _export_browser_play(output: Path, catalog: dict[str, Any]) -> dict[str, Any
         "environments": len(built),
         "challenges": challenge_count,
         "challenges_per_environment": BROWSER_CHALLENGES_PER_ENVIRONMENT,
+        "controlled_environments": controlled_environment_count,
+        "difficulty_profiles": difficulty_profile_count,
         "grader_files": len(grader_files),
         "python_runtime": "pyodide@314.0.2",
     }

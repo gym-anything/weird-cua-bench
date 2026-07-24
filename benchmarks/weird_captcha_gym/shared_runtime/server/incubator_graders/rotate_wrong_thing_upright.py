@@ -21,6 +21,9 @@ def grade(payload: dict[str, Any], ground_truth: dict[str, Any], public_state: d
     angles = {key: float(value) for key, value in dict(contract.get("initial") or {}).items()}
     target = {key: float(value) for key, value in dict(contract.get("target") or {}).items()}
     coupling = dict(contract.get("coupling") or {})
+    active_axes = {str(axis) for axis in contract.get("active_axes") or angles}
+    if not active_axes or not active_axes <= set(angles):
+        return {"graded": True, "passed": False, "feedback": "gimbal active-axis contract is invalid"}
     views: set[str] = set()
     events = payload.get("events")
     if not isinstance(events, list) or not 3 <= len(events) <= 120:
@@ -41,7 +44,7 @@ def grade(payload: dict[str, Any], ground_truth: dict[str, Any], public_state: d
                 delta = float(event.get("delta"))
             except (TypeError, ValueError):
                 return {"graded": True, "passed": False, "feedback": "gimbal drag is invalid"}
-            if axis not in angles or not math.isfinite(delta) or abs(delta) > float(contract.get("max_drag_delta") or 180):
+            if axis not in active_axes or not math.isfinite(delta) or abs(delta) > float(contract.get("max_drag_delta") or 180):
                 return {"graded": True, "passed": False, "feedback": "gimbal drag exceeded physical limits"}
             angles[axis] = _wrap(angles[axis] + delta)
             if axis == "outer":

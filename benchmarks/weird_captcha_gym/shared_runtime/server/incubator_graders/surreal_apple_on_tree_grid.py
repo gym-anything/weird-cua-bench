@@ -74,7 +74,7 @@ def grade(payload: dict[str, Any], ground_truth: dict[str, Any], public_state: d
         apples = [dict(item) for item in ground_truth["apples"]]
         apple_by_id = {str(item["id"]): item for item in apples}
         attached = {str(item) for item in ground_truth["attached_ids"]}
-        if len(apples) != 5 or len(apple_by_id) != 5 or len(attached) != 3 or not attached <= set(apple_by_id):
+        if not 3 <= len(apples) <= 9 or len(apple_by_id) != len(apples) or not 1 <= len(attached) < len(apples) or not attached <= set(apple_by_id):
             raise ValueError("fruit contract is incomplete")
         for key in ("stage", "basket", "requirements", "apples", "branches"):
             if public_state.get(key) != ground_truth.get(key):

@@ -5,6 +5,7 @@
   const parameters = new URLSearchParams(window.location.search);
   const environmentId = String(parameters.get("environment") || "");
   const requestedAttempt = Number.parseInt(parameters.get("attempt") || "", 10);
+  const requestedDifficulty = Number.parseInt(parameters.get("difficulty") || "", 10);
   const validEnvironment = /^[a-z0-9_]+_env$/.test(environmentId);
   const pageBase = new URL("./", window.location.href);
   const runtimeBase = new URL("runtime/", pageBase);
@@ -14,6 +15,7 @@
   window.WEIRD_CAPTCHA_BROWSER_PLAY = true;
 
   let bundle = null;
+  let activeProfile = null;
   let bundleError = null;
   let challengeIndex = 0;
   let stateReadCount = 0;
@@ -46,10 +48,17 @@
         .then((value) => {
           if (!Array.isArray(value.challenges) || !value.challenges.length) throw new Error("browser challenge pool is empty");
           bundle = value;
+          const selectedDifficulty = Number.isInteger(requestedDifficulty) ? requestedDifficulty : null;
+          if (Number.isInteger(selectedDifficulty)) {
+            activeProfile = bundle.difficulty_profiles?.[String(selectedDifficulty)] || null;
+            if (!activeProfile) throw new Error(`difficulty ${selectedDifficulty} is unavailable for this environment`);
+          }
+          const challenges = activeProfile?.challenges || bundle.challenges;
+          if (!Array.isArray(challenges) || !challenges.length) throw new Error("selected difficulty has no browser challenges");
           challengeIndex = Number.isInteger(requestedAttempt)
-            ? Math.abs(requestedAttempt) % bundle.challenges.length
-            : crypto.getRandomValues(new Uint32Array(1))[0] % bundle.challenges.length;
-          document.title = `${bundle.title || "Weird CUA Bench"} · Browser Play`;
+            ? Math.abs(requestedAttempt) % challenges.length
+            : crypto.getRandomValues(new Uint32Array(1))[0] % challenges.length;
+          document.title = `${bundle.title || "Weird CUA Bench"}${activeProfile ? ` · L${activeProfile.level}` : ""} · Browser Play`;
           return bundle;
         })
     : Promise.reject(new Error("A valid environment was not selected")))
@@ -62,7 +71,7 @@
   function currentChallenge() {
     if (bundleError) throw bundleError;
     if (!bundle) throw new Error("browser challenge is not ready");
-    return bundle.challenges[challengeIndex];
+    return (activeProfile?.challenges || bundle.challenges)[challengeIndex];
   }
 
   function ensureWorker() {
@@ -111,7 +120,8 @@
 
   async function handleState() {
     await bundlePromise;
-    if (stateReadCount > 0) challengeIndex = (challengeIndex + 1) % bundle.challenges.length;
+    const challenges = activeProfile?.challenges || bundle.challenges;
+    if (stateReadCount > 0) challengeIndex = (challengeIndex + 1) % challenges.length;
     stateReadCount += 1;
     return jsonResponse(currentChallenge().public_state);
   }
@@ -150,7 +160,7 @@
       const passed = grade?.passed === true;
       lastResult = {...payload, browser_grade: grade, submitted_at: new Date().toISOString()};
       if (passed) {
-        const storageKey = `weird-cua-browser-results:${environmentId}`;
+        const storageKey = `weird-cua-browser-results:${environmentId}${activeProfile ? `:d${activeProfile.level}` : ""}`;
         localStorage.setItem(storageKey, JSON.stringify(lastResult));
         window.dispatchEvent(new CustomEvent("weird-cua-browser-grade", {detail: {passed: true, grade}}));
         return jsonResponse({ok: true, passed: true, feedback: grade.feedback || "pass"});

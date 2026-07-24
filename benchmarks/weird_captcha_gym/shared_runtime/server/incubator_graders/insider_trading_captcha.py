@@ -127,7 +127,7 @@ def grade(payload: dict[str, Any], ground_truth: dict[str, Any], public_state: d
         target = int(ground_truth.get("target_profit_cents"))
     except (TypeError, ValueError):
         return {"graded": True, "passed": False, "feedback": "hidden market contract is malformed"}
-    if not prices or delay < 3 or fee < 0 or max_position < 4:
+    if not prices or not 1 <= delay <= 6 or fee < 0 or not 1 <= max_position <= 8:
         return {"graded": True, "passed": False, "feedback": "hidden market contract is invalid"}
     if public_state.get("runtime_price_stream_cents") != prices:
         return {"graded": True, "passed": False, "feedback": "public quote commitment does not match hidden tape"}

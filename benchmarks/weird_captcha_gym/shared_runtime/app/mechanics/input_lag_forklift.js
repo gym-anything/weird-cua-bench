@@ -27,6 +27,11 @@
     };
   }
 
+  function pendingSnapshot() {
+    if (Number(model.state.control_lag || 1) === 1) return model.pending[0] || null;
+    return [...model.pending];
+  }
+
   function samePoint(first, second) {
     return first[0] === second[0] && first[1] === second[1];
   }
@@ -98,15 +103,17 @@
     if (pressed) pressed.innerHTML = issued ? `<b>${GLYPHS[issued] || "⟲"}</b><span>${issued}</span>` : '<b>—</b><span>WAITING</span>';
     if (ran) ran.innerHTML = executed ? `<b>${GLYPHS[executed]}</b><span>${executed}<small>${outcomeLabel(outcome)}</small></span>` : `<b>∅</b><span>${outcomeLabel(outcome || "queued")}</span>`;
     if (queue) {
-      queue.dataset.empty = model.pending ? "false" : "true";
-      queue.innerHTML = model.pending ? `<span>${GLYPHS[model.pending]}</span><b>${model.pending}</b>` : "<span>∅</span><b>EMPTY</b>";
+      queue.dataset.empty = model.pending.length ? "false" : "true";
+      if (!model.pending.length) queue.innerHTML = "<span>∅</span><b>EMPTY</b>";
+      else if (model.state.queue_visibility === "length") queue.innerHTML = `<span>${model.pending.length}</span><b>QUEUED</b>`;
+      else queue.innerHTML = `<span>${model.pending.map((item) => GLYPHS[item]).join(" ")}</span><b>${model.pending.join(" · ")}</b>`;
     }
     if (collisionCounter) collisionCounter.textContent = String(model.collisions).padStart(2, "0");
     if (resetCounter) resetCounter.textContent = String(model.calibrationHistory.length).padStart(2, "0");
   }
 
   function updateCertification() {
-    const ready = allCratesDocked() && model.pending === null && model.events.at(-1)?.issued === "FLUSH";
+    const ready = allCratesDocked() && model.pending.length === 0 && model.events.at(-1)?.issued === "FLUSH";
     const button = document.getElementById("forklift-certify");
     const manifest = document.getElementById("forklift-manifest-state");
     if (button) button.classList.toggle("is-ready", ready);
@@ -120,35 +127,34 @@
     if (!model || model.submitting || model.terminal) return;
     const sequence = model.events.length + 1;
     const before = snapshot();
-    const pendingBefore = model.pending;
+    const pendingBefore = pendingSnapshot();
     let executed = null;
     let outcome;
     let type;
 
     if (issued in DELTAS) {
       type = "direction";
-      if (model.pending === null) {
+      if (model.pending.length < Number(model.state.control_lag || 1)) {
         outcome = "queued";
       } else {
-        executed = model.pending;
+        executed = model.pending.shift();
         outcome = executeDirection(executed);
       }
-      model.pending = issued;
+      model.pending.push(issued);
     } else if (issued === "FLUSH") {
       type = "flush";
-      if (model.pending === null) {
+      if (model.pending.length === 0) {
         outcome = "flushed_empty";
       } else {
-        executed = model.pending;
+        executed = model.pending.shift();
         outcome = executeDirection(executed);
       }
-      model.pending = null;
     } else if (issued === "RESET") {
       type = "reset";
       outcome = "recalibrated";
       model.player = [...model.initial.player];
       model.crates = clonePoints(model.initial.crates);
-      model.pending = null;
+      model.pending = [];
       model.calibrationHistory.push({sequence, reason: "operator_recalibration"});
     } else {
       return;
@@ -170,7 +176,7 @@
       outcome,
       before,
       after: snapshot(),
-      pending_after: model.pending,
+      pending_after: pendingSnapshot(),
     });
     renderBoard();
     renderTape();
@@ -178,8 +184,8 @@
     updateCertification();
     helpersCache.setReadout(
       outcome.startsWith("collision_") ? `${outcomeLabel(outcome)} · STATE HELD` :
-        allCratesDocked() && model.pending === null ? "LOAD ALIGNED · READY TO CERTIFY" :
-          "ONE-CYCLE DELAY ACTIVE",
+        allCratesDocked() && model.pending.length === 0 ? "LOAD ALIGNED · READY TO CERTIFY" :
+          `${Number(model.state.control_lag || 1)}-CYCLE DELAY ACTIVE`,
       outcome.startsWith("collision_") ? "error" : "idle",
     );
   }
@@ -190,14 +196,14 @@
     const button = document.getElementById("forklift-certify");
     if (button) button.disabled = true;
     helpersCache.setReadout("AUDITING COMMAND TAPE…", "idle");
-    const completed = allCratesDocked() && model.pending === null && model.events.at(-1)?.issued === "FLUSH";
+    const completed = allCratesDocked() && model.pending.length === 0 && model.events.at(-1)?.issued === "FLUSH";
     const payload = {
       mechanic_id: model.state.mechanic_id,
       task_id: model.state.task_id,
       challenge_id: model.state.challenge_id,
       issued_commands: model.events,
       final_state: snapshot(),
-      pending_command: model.pending,
+      pending_command: pendingSnapshot(),
       collisions: model.collisions,
       reset_count: model.calibrationHistory.length,
       calibration_history: model.calibrationHistory,
@@ -267,7 +273,7 @@
       crates: clonePoints(warehouse.crates),
       walls: new Set((warehouse.walls || []).map(pointKey)),
       goals: new Set((warehouse.goals || []).map(pointKey)),
-      pending: null,
+      pending: [],
       events: [],
       collisions: 0,
       calibrationHistory: [],
@@ -278,7 +284,7 @@
     helpersCache.app.innerHTML = `<section class="forklift-captcha" data-challenge-id="${helpersCache.text(state.challenge_id)}" tabindex="0">
       <header class="forklift-head">
         <div class="forklift-brand"><span>SHIFT CONTROL / BAY 04</span><h1>${helpersCache.text(state.prompt)}</h1></div>
-        <div class="forklift-lag-badge"><i></i><span>CONTROL LINK</span><b>+1 CYCLE</b></div>
+        <div class="forklift-lag-badge"><i></i><span>CONTROL LINK</span><b>+${Number(state.control_lag || 1)} CYCLE${Number(state.control_lag || 1) === 1 ? "" : "S"}</b></div>
       </header>
       <main class="forklift-workspace">
         <section class="forklift-board-shell" aria-label="warehouse floor">
@@ -307,7 +313,7 @@
       <section class="forklift-tape-wrap"><div><label>COMMAND TAPE</label><p>INPUT</p><p>EXECUTED</p><p>PHYSICAL RESULT</p></div><ol id="forklift-tape"></ol></section>
       <footer class="forklift-foot">
         <button class="forklift-reset" id="forklift-reset" type="button">↺ RECALIBRATE</button>
-        <div><span id="forklift-manifest-state">LOAD IN TRANSIT</span><div class="readout" data-status="idle">ONE-CYCLE DELAY ACTIVE</div></div>
+        <div><span id="forklift-manifest-state">LOAD IN TRANSIT</span><div class="readout" data-status="idle">${Number(state.control_lag || 1)}-CYCLE DELAY ACTIVE</div></div>
         <button class="forklift-certify" id="forklift-certify" type="button">${helpersCache.text(state.submit_label || "CERTIFY LOAD")} →</button>
       </footer>
     </section>`;

@@ -2656,7 +2656,7 @@ function renderRotatingKeyboard(state) {
       <header class="interaction-head rotating-head"><p>COORDINATE CHECK / 04</p><h1>${text(state.prompt)}</h1></header>
       <section class="rotating-stage">
         <div class="rotating-fixed"><span>CONFIRM</span><strong>${text(keyboard.target)}</strong><div class="rotating-entry"></div></div>
-        <div class="rotating-perspective"><div class="rotating-deck" style="--spin-direction:${Number(keyboard.direction || 1)};--spin-duration:${Number(keyboard.duration_ms || 9400)}ms">
+        <div class="rotating-perspective"><div class="rotating-deck motion-${text(keyboard.motion_profile || "current")}" style="--spin-direction:${Number(keyboard.direction || 1)};--spin-duration:${Number(keyboard.duration_ms || 9400)}ms;--key-width:${Number(keyboard.key_width || 38)}px;--key-height:${Number(keyboard.key_height || 45)}px">
           ${(keyboard.rows || []).map((row) => `<div class="rotating-row">${row.split("").map((key) => `<button type="button" class="rotating-key" data-key="${text(key)}">${text(key)}</button>`).join("")}</div>`).join("")}
           <div class="rotating-row rotating-row-short"><button type="button" class="rotating-key rotating-delete" data-key="BACKSPACE">ERASE</button></div>
         </div></div>
@@ -2665,13 +2665,15 @@ function renderRotatingKeyboard(state) {
       ${cheatPanelTemplate()}
     </section>`;
   const deck = document.querySelector(".rotating-deck");
+  const spinAfter = Math.max(0, Number(keyboard.spin_after_characters ?? 1));
+  if (spinAfter === 0) deck.classList.add("is-spinning");
   updateRotatingKeyboardDisplay(keyboard.target || "");
   document.querySelectorAll(".rotating-key").forEach((button) => {
     button.addEventListener("click", () => {
       const key = button.dataset.key;
       if (key === "BACKSPACE") rotatingKeyboardModel.input = rotatingKeyboardModel.input.slice(0, -1);
       else if (rotatingKeyboardModel.input.length < String(keyboard.target || "").length) rotatingKeyboardModel.input += key;
-      if (rotatingKeyboardModel.input.length > 0) deck.classList.add("is-spinning");
+      if (rotatingKeyboardModel.input.length >= spinAfter) deck.classList.add("is-spinning");
       updateRotatingKeyboardDisplay(keyboard.target || "");
       setReadout("", "idle");
     });

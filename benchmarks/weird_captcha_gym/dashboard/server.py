@@ -37,9 +37,11 @@ sys.path.insert(0, str(DASHBOARD_ROOT))
 try:  # Package import in tests; local import when executed as a script.
     from .catalog import BENCHMARK_ROOT, REPO_ROOT, build_catalog, environment_index
     from .reviews import EnvironmentReviewStore
+    from ..tools.materialize_controlled_tasks import controlled_task
 except ImportError:  # pragma: no cover - exercised by the script entrypoint.
     from catalog import BENCHMARK_ROOT, REPO_ROOT, build_catalog, environment_index  # type: ignore[no-redef]
     from reviews import EnvironmentReviewStore  # type: ignore[no-redef]
+    from benchmarks.weird_captcha_gym.tools.materialize_controlled_tasks import controlled_task  # type: ignore[no-redef]
 
 
 EVENT_PREFIX = "__CAPTCHA_HUB_EVENT__"
@@ -241,7 +243,15 @@ class SessionManager:
             threading.Thread(target=self._read_worker, args=(job_id,), daemon=True).start()
             return self._snapshot(job)
 
-    def start_browser(self, environment_id: str, task_id: str, *, seed: int, auto_open: bool) -> dict[str, Any]:
+    def start_browser(
+        self,
+        environment_id: str,
+        task_id: str,
+        *,
+        seed: int,
+        auto_open: bool,
+        difficulty: int | None = None,
+    ) -> dict[str, Any]:
         catalog = environment_index()
         environment = catalog.get(environment_id)
         if environment is None or environment.get("stage") != "built":
@@ -251,6 +261,31 @@ class SessionManager:
         task_json = REPO_ROOT / environment["environment_path"] / "tasks" / task_id / "task.json"
         if not task_json.is_file():
             raise ValueError("task definition is missing")
+        selected_task: dict[str, Any] | None = None
+        selected_task_id = task_id
+        if difficulty is not None:
+            control = environment.get("difficulty_control")
+            if not control:
+                raise ValueError("this environment has no controlled difficulty profiles")
+            profile = next(
+                (item for item in control["profiles"] if int(item["level"]) == difficulty),
+                None,
+            )
+            if profile is None:
+                raise ValueError("difficulty must be 1 through 5")
+            selected_task_id = str(profile["task_id"])
+            selected_task = controlled_task(
+                json.loads(task_json.read_text(encoding="utf-8")),
+                mechanic_id=str(environment["mechanic_id"]),
+                level=difficulty,
+                interaction=str(control["interaction"]),
+                profile={
+                    "label": profile["label"],
+                    "natural_language": profile["instruction"],
+                    "parameters": profile["parameters"],
+                },
+                task_dir_name=selected_task_id,
+            )
 
         with self._lock:
             active = [job for job in self._jobs.values() if job["status"] in {"queued", "booting", "running", "stopping"}]
@@ -261,6 +296,9 @@ class SessionManager:
 
             job_id = uuid.uuid4().hex[:10]
             state_dir = Path(tempfile.mkdtemp(prefix=f"captcha-bench-{job_id}-"))
+            if selected_task is not None:
+                task_json = state_dir / "controlled_task.json"
+                task_json.write_text(json.dumps(selected_task, indent=2) + "\n", encoding="utf-8")
             port = reserve_local_port()
             command = [
                 sys.executable,
@@ -281,8 +319,9 @@ class SessionManager:
                 "environment_id": environment_id,
                 "mechanic_id": environment["mechanic_id"],
                 "title": environment["title"],
-                "task_id": task_id,
+                "task_id": selected_task_id,
                 "task_json": str(task_json),
+                "difficulty": difficulty,
                 "seed": seed,
                 "runner": "local browser",
                 "status": "queued",
@@ -914,13 +953,21 @@ class DashboardHandler(BaseHTTPRequestHandler):
                 mode = str(payload.get("mode") or "vnc")
                 if mode not in {"browser", "vnc"}:
                     raise ValueError("session mode must be browser or vnc")
-                starter = self.server.sessions.start_browser if mode == "browser" else self.server.sessions.start
-                result = starter(
-                    environment_id,
-                    task_id,
-                    seed=max(0, min(int(payload.get("seed", 42)), 2_147_483_647)),
-                    auto_open=bool(payload.get("auto_open", True)),
-                )
+                session_args = {
+                    "seed": max(0, min(int(payload.get("seed", 42)), 2_147_483_647)),
+                    "auto_open": bool(payload.get("auto_open", True)),
+                }
+                if mode == "browser":
+                    raw_difficulty = payload.get("difficulty")
+                    difficulty = int(raw_difficulty) if raw_difficulty is not None else None
+                    result = self.server.sessions.start_browser(
+                        environment_id,
+                        task_id,
+                        difficulty=difficulty,
+                        **session_args,
+                    )
+                else:
+                    result = self.server.sessions.start(environment_id, task_id, **session_args)
                 self._send_json(result, status=HTTPStatus.ACCEPTED)
                 return
             if path == "/api/evaluations":
