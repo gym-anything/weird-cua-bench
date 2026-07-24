@@ -60,7 +60,17 @@ const state = {
     lastAttempt: 0,
   },
   route: {name: "observatory", id: null},
-  filters: {query: "", group: "All", stage: "built", review: "all", view: "grid", starredOnly: initialSharedStars.size > 0},
+  filters: {
+    query: "",
+    group: "All",
+    stage: "built",
+    review: "all",
+    view: "grid",
+    starredOnly: initialSharedStars.size > 0,
+    capabilityRealTime: "all",
+    capabilityVisual: "all",
+    capabilityCore: new Set(),
+  },
   reviewFilters: {query: "", status: "pending"},
   stars: {
     personal: loadPersonalStars(),
@@ -512,6 +522,77 @@ function renderObservatory() {
     </div>`;
 }
 
+function capabilityFilterCount(field, value) {
+  return state.catalog.environments.filter((environment) => (
+    environment.stage === "built"
+    && environment.capability_annotation
+    && environment.capability_annotation[field] === value
+  )).length;
+}
+
+function capabilityFilterPressed(group, value) {
+  if (group === "real_time") return state.filters.capabilityRealTime === value;
+  if (group === "visual") return state.filters.capabilityVisual === value;
+  return state.filters.capabilityCore.has(value);
+}
+
+function hasCapabilityFilters() {
+  return (
+    state.filters.capabilityRealTime !== "all"
+    || state.filters.capabilityVisual !== "all"
+    || state.filters.capabilityCore.size > 0
+  );
+}
+
+function capabilityFilterButton(group, value, label, count) {
+  const pressed = capabilityFilterPressed(group, value);
+  return `<button class="capability-filter-chip ${pressed ? "is-active" : ""}" type="button" data-capability-group="${escapeHtml(group)}" data-capability-value="${escapeHtml(value)}" aria-pressed="${pressed}"><span>${escapeHtml(label)}</span><b>${count}</b></button>`;
+}
+
+function capabilityFilterMarkup() {
+  return `<section class="capability-filter-console" aria-labelledby="capability-filter-title">
+    <header class="capability-filter-console-head">
+      <div><p class="eyebrow">Benchmark framework</p><h2 id="capability-filter-title">Filter by capability</h2></div>
+      <span>Selections combine</span>
+    </header>
+    <div class="capability-filter-groups">
+      <fieldset>
+        <legend>Real time</legend>
+        <div class="capability-filter-options">
+          ${capabilityFilterButton("real_time", "yes", "Real time", capabilityFilterCount("real_time", "yes"))}
+          ${capabilityFilterButton("real_time", "observation_only", "Observation only", capabilityFilterCount("real_time", "observation_only"))}
+          ${capabilityFilterButton("real_time", "no", "Not real time", capabilityFilterCount("real_time", "no"))}
+        </div>
+      </fieldset>
+      <fieldset>
+        <legend>Visual understanding</legend>
+        <div class="capability-filter-options">
+          ${capabilityFilterButton("visual", "2D", "2D", capabilityFilterCount("visual", "2D"))}
+          ${capabilityFilterButton("visual", "3D", "3D", capabilityFilterCount("visual", "3D"))}
+        </div>
+      </fieldset>
+      <fieldset>
+        <legend>Core capabilities</legend>
+        <div class="capability-filter-options">
+          ${capabilityFilterButton("core", "temporal", "Temporal", capabilityFilterCount("temporal", true))}
+          ${capabilityFilterButton("core", "reasoning_planning", "Reasoning", capabilityFilterCount("reasoning_planning", true))}
+          ${capabilityFilterButton("core", "exploration_interface", "Exploration", capabilityFilterCount("exploration_interface", true))}
+        </div>
+      </fieldset>
+      <button class="capability-filter-clear" type="button" data-action="clear-capability-filters" ${hasCapabilityFilters() ? "" : "disabled"}>Clear</button>
+    </div>
+  </section>`;
+}
+
+function environmentMatchesCapabilityFilters(environment) {
+  const annotation = environment.capability_annotation;
+  if (!hasCapabilityFilters()) return true;
+  if (!annotation) return false;
+  if (state.filters.capabilityRealTime !== "all" && annotation.real_time !== state.filters.capabilityRealTime) return false;
+  if (state.filters.capabilityVisual !== "all" && annotation.visual !== state.filters.capabilityVisual) return false;
+  return [...state.filters.capabilityCore].every((field) => annotation[field] === true);
+}
+
 function filteredEnvironments() {
   const query = state.filters.query.trim().toLowerCase();
   const stars = activeStars();
@@ -520,8 +601,9 @@ function filteredEnvironments() {
     const stageMatch = state.filters.stage === "all" || environment.stage === state.filters.stage;
     const reviewMatch = state.filters.review === "all" || (environment.stage === "built" && reviewFor(environment.id).status === state.filters.review);
     const starMatch = !state.filters.starredOnly || stars.has(environment.id);
+    const capabilityMatch = environmentMatchesCapabilityFilters(environment);
     const haystack = [environment.title, environment.summary, environment.mechanic_id, environment.group, ...environment.axes].join(" ").toLowerCase();
-    return groupMatch && stageMatch && reviewMatch && starMatch && (!query || haystack.includes(query));
+    return groupMatch && stageMatch && reviewMatch && starMatch && capabilityMatch && (!query || haystack.includes(query));
   });
 }
 
@@ -529,6 +611,16 @@ function environmentGridMarkup(environments) {
   return environments.length
     ? environments.map((environment, index) => environmentCard(environment, index)).join("")
     : `<div class="empty-catalog"><b>${state.filters.starredOnly ? "No starred machines match." : "No strange machines found."}</b><span>${state.filters.starredOnly && !activeStars().size ? "Use the star on any environment card to build your shortlist." : "Try a wider search or filter."}</span></div>`;
+}
+
+function refreshCapabilityFilterChrome() {
+  document.querySelectorAll("[data-capability-group][data-capability-value]").forEach((button) => {
+    const pressed = capabilityFilterPressed(button.dataset.capabilityGroup, button.dataset.capabilityValue);
+    button.classList.toggle("is-active", pressed);
+    button.setAttribute("aria-pressed", String(pressed));
+  });
+  const clear = document.querySelector('[data-action="clear-capability-filters"]');
+  if (clear) clear.disabled = !hasCapabilityFilters();
 }
 
 function refreshEnvironmentCatalog({rebuild = true} = {}) {
@@ -550,6 +642,7 @@ function refreshEnvironmentCatalog({rebuild = true} = {}) {
   if (stage && stage.value !== state.filters.stage) stage.value = state.filters.stage;
   const review = document.getElementById("review-filter");
   if (review && review.value !== state.filters.review) review.value = state.filters.review;
+  refreshCapabilityFilterChrome();
 }
 
 function renderEnvironments() {
@@ -582,7 +675,8 @@ function renderEnvironments() {
         <button class="star-filter-button ${state.filters.starredOnly ? "is-active" : ""}" type="button" data-action="toggle-star-filter" aria-pressed="${state.filters.starredOnly}" ${state.stars.sharedView ? "disabled" : ""}>${starIcon}<span>${state.stars.sharedView ? "Shared picks" : "Starred only"}</span><b data-star-filter-count>${effectiveStarCount}</b></button>
         <div class="view-toggle" aria-label="Catalog view"><button type="button" data-view="grid" class="${state.filters.view === "grid" ? "is-active" : ""}" aria-label="Grid view">${gridIcon}</button><button type="button" data-view="compact" class="${state.filters.view === "compact" ? "is-active" : ""}" aria-label="Wide card view">${listIcon}</button></div>
       </div>
-      <div class="filter-pills">${groupButtons.map((group) => `<button class="filter-pill ${state.filters.group === group ? "is-active" : ""}" type="button" data-filter-group="${escapeHtml(group)}">${escapeHtml(group)}</button>`).join("")}<span class="catalog-count">${filtered.length} / ${state.catalog.stats.total}</span></div>
+      ${capabilityFilterMarkup()}
+      <div class="filter-pills">${groupButtons.map((group) => `<button class="filter-pill ${state.filters.group === group ? "is-active" : ""}" type="button" data-filter-group="${escapeHtml(group)}">${escapeHtml(group)}</button>`).join("")}<span class="catalog-count" aria-live="polite">${filtered.length} / ${state.catalog.stats.total}</span></div>
       <section class="environment-grid ${state.filters.view === "compact" ? "is-compact" : ""}" id="environment-grid">
         ${environmentGridMarkup(filtered)}
       </section>
@@ -1432,6 +1526,20 @@ document.addEventListener("click", async (event) => {
     if (!stageStillMatches) state.filters.stage = "all";
     refreshEnvironmentCatalog(); return;
   }
+  if (target.dataset.capabilityGroup && target.dataset.capabilityValue) {
+    const group = target.dataset.capabilityGroup;
+    const value = target.dataset.capabilityValue;
+    if (group === "real_time") {
+      state.filters.capabilityRealTime = state.filters.capabilityRealTime === value ? "all" : value;
+    } else if (group === "visual") {
+      state.filters.capabilityVisual = state.filters.capabilityVisual === value ? "all" : value;
+    } else if (group === "core") {
+      state.filters.capabilityCore.has(value)
+        ? state.filters.capabilityCore.delete(value)
+        : state.filters.capabilityCore.add(value);
+    }
+    refreshEnvironmentCatalog(); return;
+  }
   if (target.dataset.view) { state.filters.view = target.dataset.view; refreshEnvironmentCatalog({rebuild: false}); return; }
   if (target.dataset.paletteEnvironment) {
     const environment = findEnvironment(target.dataset.paletteEnvironment);
@@ -1457,6 +1565,12 @@ document.addEventListener("click", async (event) => {
       }
     }
     else if (action === "share-stars") openStarShareDialog();
+    else if (action === "clear-capability-filters") {
+      state.filters.capabilityRealTime = "all";
+      state.filters.capabilityVisual = "all";
+      state.filters.capabilityCore.clear();
+      refreshEnvironmentCatalog();
+    }
     else if (action === "save-shared-stars") saveSharedStars();
     else if (action === "exit-shared-stars") exitSharedStars();
     else if (action === "forget-companion") {

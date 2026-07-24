@@ -344,6 +344,16 @@ class WeirdCaptchaDashboardTests(unittest.TestCase):
             self.assertTrue(annotation["difficulty"], environment["mechanic_id"])
             for field in ("temporal", "reasoning_planning", "exploration_interface"):
                 self.assertIs(type(annotation[field]), bool, f"{environment['mechanic_id']}:{field}")
+        annotations = [environment["capability_annotation"] for environment in built]
+        self.assertEqual(Counter(annotation["real_time"] for annotation in annotations), {
+            "yes": 37,
+            "no": 33,
+            "observation_only": 5,
+        })
+        self.assertEqual(Counter(annotation["visual"] for annotation in annotations), {"2D": 55, "3D": 20})
+        self.assertEqual(sum(annotation["temporal"] for annotation in annotations), 46)
+        self.assertEqual(sum(annotation["reasoning_planning"] for annotation in annotations), 54)
+        self.assertEqual(sum(annotation["exploration_interface"] for annotation in annotations), 28)
 
     def test_rorschach_annotation_matches_the_visible_passing_strategy(self) -> None:
         environment = next(
@@ -774,6 +784,11 @@ class WeirdCaptchaDashboardTests(unittest.TestCase):
             self.assertIn("starredShareUrl", app)
             self.assertIn("Someone starred these for you", app)
             self.assertIn('data-action="toggle-star-filter"', app)
+            self.assertIn("Filter by capability", app)
+            self.assertIn('capabilityFilterButton("real_time", "no", "Not real time"', app)
+            self.assertIn('capabilityFilterButton("visual", "3D", "3D"', app)
+            self.assertIn('capabilityFilterButton("core", "temporal", "Temporal"', app)
+            self.assertIn('data-action="clear-capability-filters"', app)
             self.assertIn("What this environment measures", app)
             self.assertIn('\"mode\":\"shared\"', config)
             self.assertIn('\"browserPlayUrl\":\"play/\"', config)
