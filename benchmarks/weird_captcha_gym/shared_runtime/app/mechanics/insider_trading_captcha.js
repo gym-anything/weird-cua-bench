@@ -64,7 +64,9 @@
   }
 
   function chartMarkup() {
-    const values = model.quotes.map((quote) => Number(quote.price));
+    const visible = Number(model.state.visible_chart_ticks || 0);
+    const quotes = visible > 0 ? model.quotes.slice(-visible) : model.quotes;
+    const values = quotes.map((quote) => Number(quote.price));
     if (!values.length) return "";
     const minimum = Math.min(...values) - 80;
     const maximum = Math.max(...values) + 80;
@@ -72,7 +74,7 @@
     const width = 650;
     const height = 250;
     const points = values.map((value, index) => {
-      const x = values.length === 1 ? 24 : 24 + index * (width - 48) / Math.max(1, Number(model.state.tick_count) - 1);
+      const x = values.length === 1 ? 24 : 24 + index * (width - 48) / Math.max(1, values.length - 1);
       const y = height - 24 - (value - minimum) * (height - 48) / spread;
       return `${x.toFixed(1)},${y.toFixed(1)}`;
     }).join(" ");

@@ -29,11 +29,29 @@ def _project(point: list[float], angle_deg: float) -> list[float]:
 
 def generate(task: dict[str, Any], seed: str) -> tuple[dict[str, Any], dict[str, Any]]:
     rng = random.Random(_seed(seed))
+    condition = task.get("_control_condition")
+    parameters = dict((condition or {}).get("difficulty_parameters") or {})
     task_id = str(task.get("id") or "surreal_apple_on_tree_grid_seed_0001@0.1")
-    challenge_id = hashlib.sha256(f"{seed}|{MECHANIC_ID}".encode()).hexdigest()[:13]
-    attached_indexes = set(rng.sample(range(5), 3))
-    xs = [-250, -132, -8, 126, 248]
-    ys = [-64, -134, -164, -118, -54]
+    condition_token = f"|d{condition['difficulty']}|{task_id}" if condition else ""
+    challenge_id = hashlib.sha256(f"{seed}|{MECHANIC_ID}{condition_token}".encode()).hexdigest()[:13]
+    fruit_count = int(parameters.get("fruit_count", 5))
+    attached_count = int(parameters.get("attached_count", 3))
+    depth_gap_min = int(parameters.get("depth_gap_min", 68))
+    depth_gap_max = int(parameters.get("depth_gap_max", 112))
+    view_limit = int(parameters.get("view_limit_deg", VIEW_LIMIT))
+    radius_min = int(parameters.get("fruit_radius_min", 20))
+    radius_max = int(parameters.get("fruit_radius_max", 24))
+    if not 3 <= fruit_count <= 9 or not 1 <= attached_count < fruit_count:
+        raise ValueError("parallax orchard fruit counts are outside supported limits")
+    if not 30 <= view_limit <= 80 or not 20 <= depth_gap_min <= depth_gap_max <= 180:
+        raise ValueError("parallax orchard geometry is outside supported limits")
+    attached_indexes = set(rng.sample(range(fruit_count), attached_count))
+    if fruit_count == 5:
+        xs = [-250, -132, -8, 126, 248]
+        ys = [-64, -134, -164, -118, -54]
+    else:
+        xs = [round(-270 + index * 540 / (fruit_count - 1)) for index in range(fruit_count)]
+        ys = [rng.randint(-168, -52) for _ in range(fruit_count)]
     rng.shuffle(ys)
     apples: list[dict[str, Any]] = []
     branches: list[dict[str, Any]] = []
@@ -43,13 +61,13 @@ def generate(task: dict[str, Any], seed: str) -> tuple[dict[str, Any], dict[str,
         apples.append({
             "id": apple_id,
             "position": [x + rng.randint(-7, 7), y, z],
-            "radius": rng.randint(20, 24),
+            "radius": rng.randint(radius_min, radius_max),
             "hue": rng.choice(("ruby", "gold", "rose")),
             "scar": rng.randint(0, 3),
         })
         fruit = apples[-1]
         fx, fy, fz = fruit["position"]
-        tip_z = fz if index in attached_indexes else fz + rng.choice((-1, 1)) * rng.randint(68, 112)
+        tip_z = fz if index in attached_indexes else fz + rng.choice((-1, 1)) * rng.randint(depth_gap_min, depth_gap_max)
         # At the head-on view a detached branch tip has the same projection as
         # the apple stem. Orbiting exposes the real depth separation.
         tip_y = fy - 28 - 0.10 * (tip_z - fz)
@@ -66,10 +84,13 @@ def generate(task: dict[str, Any], seed: str) -> tuple[dict[str, Any], dict[str,
         })
 
     rng.shuffle(apples)
-    basket = {"x": 762, "y": 358, "width": 172, "height": 132}
+    basket_width = int(parameters.get("basket_width", 172))
+    basket_height = int(parameters.get("basket_height", 132))
+    basket = {"x": 960 - basket_width - 26, "y": 520 - basket_height - 30, "width": basket_width, "height": basket_height}
+    minimum_span = 96 if view_limit == VIEW_LIMIT else min(96, round(view_limit * 1.55))
     requirements = {
-        "minimum_orbit_span_deg": 96,
-        "minimum_orbit_travel_deg": 155,
+        "minimum_orbit_span_deg": minimum_span,
+        "minimum_orbit_travel_deg": 155 if view_limit == VIEW_LIMIT else round(minimum_span * 1.62),
         "minimum_view_sectors": 4,
         "minimum_orbit_samples": 18,
         "minimum_pluck_moves": 4,
@@ -85,7 +106,7 @@ def generate(task: dict[str, Any], seed: str) -> tuple[dict[str, Any], dict[str,
         "asset_manifest": "shared_runtime/assets/provenance/incubator_full_build_v1.json",
         "generator": {"name": "analytic_parallax_orchard_v2", "variant_count": VARIANT_COUNT},
         "stage": STAGE,
-        "view_limit_deg": VIEW_LIMIT,
+        "view_limit_deg": view_limit,
         "initial_angle_deg": 0,
         "apples": copy.deepcopy(apples),
         "branches": copy.deepcopy(branches),
@@ -101,7 +122,7 @@ def generate(task: dict[str, Any], seed: str) -> tuple[dict[str, Any], dict[str,
         "seed": seed,
         "challenge_id": challenge_id,
         "stage": STAGE,
-        "view_limit_deg": VIEW_LIMIT,
+        "view_limit_deg": view_limit,
         "apples": copy.deepcopy(apples),
         "branches": copy.deepcopy(branches),
         "basket": basket,
@@ -115,5 +136,8 @@ def generate(task: dict[str, Any], seed: str) -> tuple[dict[str, Any], dict[str,
         head = _project([fruit["position"][0], fruit["position"][1] - 28, fruit["position"][2]], 0)
         tip = _project(branch["points"][-1], 0)
         assert abs(head[0] - tip[0]) < 0.01 and abs(head[1] - tip[1]) < 0.01
-    assert len(attached_ids) == 3
+    assert len(attached_ids) == attached_count
+    if condition:
+        public_state["control_condition"] = copy.deepcopy(condition)
+        ground_truth["control_condition"] = copy.deepcopy(condition)
     return public_state, ground_truth

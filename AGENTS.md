@@ -19,6 +19,10 @@ there there are 3 or 4 core capabilities that each game is trying to test:
 3. reasoning and planning. kind of many things other than this benchmark also test it. but still a category of its own.
 4. exploration and interface understanding: this to some extent is also controllable, but still i would consider a part of game itself. can contain things like model has to explore the game and figure out things, or even for understanding the game rules, it has to do some exploration, etc.
 
+## Controllability plan
+
+Before adding difficulty, interaction, or real-time variants, read `benchmarks/weird_captcha_gym/docs/controllability-plan.md` in full. Do not assume that the current interface is the full-interaction variant. Do not assume that the current difficulty is level 3. Both must be judged independently for every environment.
+
 ## Capability annotation guidelines
 
 - Use the exact public environment name shown by the dashboard.

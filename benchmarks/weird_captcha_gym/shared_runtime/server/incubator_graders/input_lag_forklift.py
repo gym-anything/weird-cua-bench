@@ -89,8 +89,17 @@ def grade(payload: dict[str, Any], ground_truth: dict[str, Any], public_state: d
         return {"graded": True, "passed": False, "feedback": "task identity mismatch"}
     if public_state.get("warehouse") != ground_truth.get("initial_state"):
         return {"graded": True, "passed": False, "feedback": "public/private warehouse contract skew"}
-    if public_state.get("control_lag") != ground_truth.get("control_lag") or ground_truth.get("control_lag") != 1:
+    if public_state.get("control_lag") != ground_truth.get("control_lag"):
         return {"graded": True, "passed": False, "feedback": "public/private delay contract skew"}
+    try:
+        control_lag = int(ground_truth.get("control_lag"))
+    except (TypeError, ValueError):
+        control_lag = 0
+    if not 1 <= control_lag <= 3:
+        return {"graded": True, "passed": False, "feedback": "unsupported delay contract"}
+
+    def pending_snapshot(queue: list[str]) -> str | list[str] | None:
+        return (queue[0] if queue else None) if control_lag == 1 else list(queue)
 
     try:
         initial_player, initial_crates, walls, goals = _initial(ground_truth)
@@ -103,7 +112,7 @@ def grade(payload: dict[str, Any], ground_truth: dict[str, Any], public_state: d
 
     player = initial_player
     crates = initial_crates
-    pending: str | None = None
+    pending: list[str] = []
     collisions = 0
     reset_sequences: list[int] = []
     direction_count = 0
@@ -117,34 +126,33 @@ def grade(payload: dict[str, Any], ground_truth: dict[str, Any], public_state: d
             return _mismatch(index, "sequence", index, event.get("sequence"))
         issued = str(event.get("issued") or "")
         before = _snapshot(player, crates)
-        pending_before = pending
+        pending_before = pending_snapshot(pending)
         executed: str | None = None
 
         if issued in DELTAS:
             direction_count += 1
-            if pending is None:
+            if len(pending) < control_lag:
                 outcome = "queued"
                 saw_initial_queue = True
             else:
-                executed = pending
+                executed = pending.pop(0)
                 player, crates, outcome = _move(player, crates, walls, executed)
-            pending = issued
+            pending.append(issued)
             event_type = "direction"
         elif issued == "FLUSH":
             flush_count += 1
             event_type = "flush"
-            if pending is None:
+            if not pending:
                 outcome = "flushed_empty"
             else:
-                executed = pending
+                executed = pending.pop(0)
                 player, crates, outcome = _move(player, crates, walls, executed)
-            pending = None
         elif issued == "RESET":
             event_type = "reset"
             outcome = "recalibrated"
             player = initial_player
             crates = initial_crates
-            pending = None
+            pending = []
             reset_sequences.append(index)
         else:
             return {"graded": True, "passed": False, "feedback": f"command {index} has invalid issued value"}
@@ -159,7 +167,7 @@ def grade(payload: dict[str, Any], ground_truth: dict[str, Any], public_state: d
             "outcome": outcome,
             "before": before,
             "after": _snapshot(player, crates),
-            "pending_after": pending,
+            "pending_after": pending_snapshot(pending),
         }
         for field, expected in expected_fields.items():
             if event.get(field) != expected:
@@ -168,7 +176,7 @@ def grade(payload: dict[str, Any], ground_truth: dict[str, Any], public_state: d
     expected_final = _snapshot(player, crates)
     if payload.get("final_state") != expected_final:
         return {"graded": True, "passed": False, "feedback": "submitted final state does not match replay"}
-    if payload.get("pending_command") != pending:
+    if payload.get("pending_command") != pending_snapshot(pending):
         return {"graded": True, "passed": False, "feedback": "submitted queue does not match replay"}
     if payload.get("collisions") != collisions:
         return {"graded": True, "passed": False, "feedback": "collision count does not match replay"}
@@ -184,7 +192,7 @@ def grade(payload: dict[str, Any], ground_truth: dict[str, Any], public_state: d
     passed = (
         completed
         and on_bays
-        and pending is None
+        and not pending
         and last_is_flush
         and direction_count > 0
         and flush_count > 0
@@ -196,7 +204,7 @@ def grade(payload: dict[str, Any], ground_truth: dict[str, Any], public_state: d
         "feedback": (
             f"crate bays {len(set(crates) & set(goals))}/{len(goals)}; "
             f"commands {len(events)}; collisions {collisions}; resets {len(reset_sequences)}; "
-            f"queue {'empty' if pending is None else 'occupied'}"
+            f"queue {'empty' if not pending else 'occupied'}"
         ),
     }
 
@@ -205,6 +213,6 @@ def cheat(public_state: dict[str, Any], ground_truth: dict[str, Any]) -> dict[st
     solution = [str(command) for command in ground_truth.get("solution_issued_commands") or []]
     return {
         "route": solution,
-        "instruction": "Issue each direction in order, then EXECUTE QUEUE.",
+        "instruction": "Issue each direction in order, then execute every required FLUSH command.",
         "answers": [],
     }

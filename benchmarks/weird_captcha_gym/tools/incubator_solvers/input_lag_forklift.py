@@ -54,13 +54,14 @@ def solve(page, state_dir: Path, out_dir: Path, mechanic: str) -> None:
         if index == 0:
             after_first = page.evaluate("() => [...window.inputLagForkliftModel.player]")
             pending = page.evaluate("() => window.inputLagForkliftModel.pending")
-            if after_first != initial_player or pending != command:
+            if after_first != initial_player or pending != [command]:
                 raise AssertionError("first direction did not behave as a queued no-op")
         if index == min(3, len(route) - 1):
             _screenshot(page, out_dir, mechanic, "active-delay")
 
-    page.keyboard.press("f")
-    page.wait_for_timeout(120)
+    for _ in range(int(truth.get("control_lag") or 1)):
+        page.keyboard.press("f")
+        page.wait_for_timeout(120)
     contract = page.evaluate(
         """() => ({
             pending: window.inputLagForkliftModel.pending,
@@ -69,7 +70,7 @@ def solve(page, state_dir: Path, out_dir: Path, mechanic: str) -> None:
             last: window.inputLagForkliftModel.events.at(-1)?.issued,
         })"""
     )
-    if contract["pending"] is not None or contract["last"] != "FLUSH" or contract["docked"] != contract["crates"]:
+    if contract["pending"] != [] or contract["last"] != "FLUSH" or contract["docked"] != contract["crates"]:
         raise AssertionError(f"forklift route did not finish docked with an empty queue: {contract}")
     _screenshot(page, out_dir, mechanic, "solved")
     page.locator("#forklift-certify").click()

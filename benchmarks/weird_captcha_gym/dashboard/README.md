@@ -18,6 +18,12 @@ The local dashboard deliberately generates links against the canonical GitHub Pa
 
 The Environment collection exposes the benchmark annotations as composable filters. Real-time status and visual dimensionality are single-choice filters. Temporal understanding and memory, reasoning and planning, plus exploration and interface understanding can be selected together; an environment must match every active selection. Capability filters also compose with search, collection, stage, review, and starred-only filters.
 
+## Play controlled difficulty levels
+
+Five pilot environments expose difficulty levels 1 through 5 on their environment dossiers: Input-Lag Forklift, Parallax Orchard, Rotating On-Screen Keyboard, Rotate The Wrong Thing Upright, and Insider Trading CAPTCHA. Choose a level in the runtime console before selecting **Play in browser**. The selected task summary, agent instruction, task identity, generated challenge, and grader all use the same level.
+
+Public browser play bundles four deterministic challenges for every level. A connected local dashboard generates a fresh controlled challenge in the session's temporary directory. The original 75-task corpus remains unchanged.
+
 ## Run the complete dashboard locally
 
 From the repository root:

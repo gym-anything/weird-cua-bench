@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import argparse
+import copy
 import hashlib
 import importlib.util
 import json
@@ -36,6 +37,7 @@ def has_incubator_generator(mechanic_id: str) -> bool:
 
 
 def generate_incubator_candidate(task: dict[str, Any], seed: str) -> tuple[dict[str, Any], dict[str, Any]]:
+    task = task_with_control_condition(task)
     mechanic_id = str((task.get("metadata") or {}).get("mechanic_id") or "")
     module = _load_incubator_generator(mechanic_id)
     generator = getattr(module, "generate", None) if module is not None else None
@@ -170,6 +172,42 @@ SLIME_VARIANT_COUNT = 9 ** 8 * 6
 
 def load_task(path: Path) -> dict[str, Any]:
     return json.loads(path.read_text(encoding="utf-8"))
+
+
+def control_condition(task: dict[str, Any]) -> dict[str, Any] | None:
+    raw = dict((task.get("metadata") or {}).get("control_condition") or {})
+    if not raw:
+        return None
+    try:
+        difficulty = int(raw.get("difficulty"))
+    except (TypeError, ValueError) as exc:
+        raise ValueError("controlled task difficulty must be an integer") from exc
+    interaction = str(raw.get("interaction") or "")
+    real_time = str(raw.get("real_time") or "")
+    parameters = raw.get("difficulty_parameters")
+    if difficulty not in {1, 2, 3, 4, 5}:
+        raise ValueError("controlled task difficulty must be 1 through 5")
+    if interaction not in {"simplified", "full"}:
+        raise ValueError("controlled task interaction must be simplified or full")
+    if real_time != "live":
+        raise ValueError("task specifications use live real time; paused mode belongs to the runner")
+    if not isinstance(parameters, dict):
+        raise ValueError("controlled task difficulty parameters must be an object")
+    return {
+        "difficulty": difficulty,
+        "interaction": interaction,
+        "real_time": real_time,
+        "difficulty_parameters": copy.deepcopy(parameters),
+    }
+
+
+def task_with_control_condition(task: dict[str, Any]) -> dict[str, Any]:
+    condition = control_condition(task)
+    if condition is None:
+        return task
+    enriched = copy.deepcopy(task)
+    enriched["_control_condition"] = condition
+    return enriched
 
 
 def challenge_seed(task: dict[str, Any], explicit_seed: str | None) -> str:
@@ -1325,10 +1363,44 @@ def generate_parallel_grillmaster(task: dict[str, Any], seed: str) -> tuple[dict
 
 def generate_rotating_keyboard(task: dict[str, Any], seed: str) -> tuple[dict[str, Any], dict[str, Any]]:
     rng = random.Random(seed_int(seed, "rotating-keyboard"))
-    target = "".join(rng.choice(ROTATING_KEYBOARD_ALPHABET) for _ in range(5))
+    condition = control_condition(task)
+    parameters = dict((condition or {}).get("difficulty_parameters") or {})
+    key_count = int(parameters.get("key_count", len(ROTATING_KEYBOARD_ALPHABET)))
+    code_length = int(parameters.get("code_length", 5))
+    if not 8 <= key_count <= len(ROTATING_KEYBOARD_ALPHABET) or not 2 <= code_length <= 12:
+        raise ValueError("rotating keyboard difficulty parameters are outside supported limits")
+    alphabet = ROTATING_KEYBOARD_ALPHABET[:key_count]
+    target = "".join(rng.choice(alphabet) for _ in range(code_length))
     direction = rng.choice((-1, 1))
-    duration_ms = rng.choice((8800, 9400, 10000))
-    challenge_id = hashlib.sha256(f"{seed}|rotating-keyboard".encode("utf-8")).hexdigest()[:12]
+    duration_values = parameters.get("duration_ms_values")
+    if isinstance(duration_values, list) and duration_values:
+        duration_ms = int(rng.choice(duration_values))
+    elif parameters:
+        duration_ms = rng.randint(int(parameters["duration_ms_min"]), int(parameters["duration_ms_max"]))
+    else:
+        duration_ms = rng.choice((8800, 9400, 10000))
+    if not condition or int(condition["difficulty"]) == 4:
+        rows = ["23456789", "ABCDEFGHJKLM", "NPQRSTUVWXYZ"]
+    else:
+        row_count = 2 if key_count <= 20 else 3
+        base, extra = divmod(key_count, row_count)
+        rows = []
+        offset = 0
+        for index in range(row_count):
+            size = base + (1 if index < extra else 0)
+            rows.append(alphabet[offset:offset + size])
+            offset += size
+    condition_token = f"|d{condition['difficulty']}|{task.get('id')}" if condition else ""
+    challenge_id = hashlib.sha256(f"{seed}|rotating-keyboard{condition_token}".encode("utf-8")).hexdigest()[:12]
+    variant_count = ROTATING_KEYBOARD_VARIANT_COUNT if not condition or int(condition["difficulty"]) == 4 else key_count ** code_length * 2
+    keyboard = {"target": target, "rows": rows, "direction": direction, "duration_ms": duration_ms}
+    if condition:
+        keyboard.update({
+            "motion_profile": str(parameters.get("motion_profile", "current")),
+            "spin_after_characters": int(parameters.get("spin_after_characters", 1)),
+            "key_width": int(parameters.get("key_width", 38)),
+            "key_height": int(parameters.get("key_height", 45)),
+        })
     public_state = {
         "benchmark": "weird_captcha_gym",
         "mechanic_id": "rotating_keyboard",
@@ -1337,8 +1409,8 @@ def generate_rotating_keyboard(task: dict[str, Any], seed: str) -> tuple[dict[st
         "prompt": task.get("natural_language") or f"Confirm code {target} using the on-screen keyboard.",
         "submit_label": "CONFIRM",
         "asset_manifest": "shared_runtime/assets/provenance/interaction_first_five_v0.json",
-        "generator": {"name": "rotating_keyboard_v1", "variant_count": ROTATING_KEYBOARD_VARIANT_COUNT},
-        "keyboard": {"target": target, "rows": ["23456789", "ABCDEFGHJKLM", "NPQRSTUVWXYZ"], "direction": direction, "duration_ms": duration_ms},
+        "generator": {"name": "rotating_keyboard_v2" if condition else "rotating_keyboard_v1", "variant_count": variant_count},
+        "keyboard": keyboard,
     }
     ground_truth = {
         "mechanic_id": "rotating_keyboard",
@@ -1346,8 +1418,11 @@ def generate_rotating_keyboard(task: dict[str, Any], seed: str) -> tuple[dict[st
         "seed": seed,
         "challenge_id": challenge_id,
         "target": target,
-        "variant_count": ROTATING_KEYBOARD_VARIANT_COUNT,
+        "variant_count": variant_count,
     }
+    if condition:
+        public_state["control_condition"] = copy.deepcopy(condition)
+        ground_truth["control_condition"] = copy.deepcopy(condition)
     return public_state, ground_truth
 
 
@@ -1651,6 +1726,7 @@ def generate_unavailable(task: dict[str, Any], seed: str) -> tuple[dict[str, Any
 def generate_task_state(task: dict[str, Any], seed: str) -> tuple[dict[str, Any], dict[str, Any]]:
     """Generate one challenge without coupling the generator to filesystem state."""
 
+    task = task_with_control_condition(task)
     mechanic_id = (task.get("metadata") or {}).get("mechanic_id")
     generators = {
         "surreal_apple_on_tree_grid": generate_surreal_apple_on_tree_grid,

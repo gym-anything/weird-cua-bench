@@ -79,6 +79,7 @@ const state = {
   },
   environmentReturn: "environments",
   gallery: {},
+  difficultySelections: {},
   expandedLogs: new Set(),
   previousSessionStatus: new Map(),
 };
@@ -749,6 +750,25 @@ function findEnvironment(id) {
   return state.catalog.environments.find((environment) => environment.id === id || environment.mechanic_id === id);
 }
 
+function selectedDifficultyProfile(environment) {
+  const control = environment?.difficulty_control;
+  if (!control) return null;
+  const selectedLevel = Number(state.difficultySelections[environment.id] || control.baseline_level);
+  return control.profiles.find((profile) => Number(profile.level) === selectedLevel) || control.profiles[0];
+}
+
+function difficultyControlMarkup(environment, selectedProfile) {
+  const control = environment.difficulty_control;
+  if (!control || !selectedProfile) return "";
+  return `<section class="difficulty-control" aria-label="Select difficulty">
+    <div class="difficulty-control-head"><span>Difficulty</span><b>Current implementation · L${control.baseline_level}</b></div>
+    <div class="difficulty-scale" role="group" aria-label="Difficulty level">
+      ${control.profiles.map((profile) => `<button type="button" class="${Number(profile.level) === Number(selectedProfile.level) ? "is-active" : ""}" data-difficulty-environment="${escapeHtml(environment.id)}" data-difficulty-level="${profile.level}" aria-pressed="${Number(profile.level) === Number(selectedProfile.level)}"><b>${profile.level}</b><span>${escapeHtml(titleCase(profile.label))}</span>${profile.current_implementation ? "<i>current</i>" : ""}</button>`).join("")}
+    </div>
+    <div class="difficulty-selection"><span>Playing</span><b>L${selectedProfile.level} · ${escapeHtml(titleCase(selectedProfile.label))}</b></div>
+  </section>`;
+}
+
 function detailHero(environment, selectedIndex) {
   const selected = environment.screenshots[selectedIndex] || environment.screenshots[0];
   if (!selected) return `<div class="hero-frame">${coverMarkup(environment)}</div>`;
@@ -877,7 +897,12 @@ function renderEnvironmentDetail(environmentId) {
   }
   setChrome("environments", environment.title);
   const selectedIndex = Math.min(state.gallery[environment.id] || 0, Math.max(0, environment.screenshots.length - 1));
-  const task = environment.tasks[0] || {};
+  const selectedDifficulty = selectedDifficultyProfile(environment);
+  const task = selectedDifficulty
+    ? {id: selectedDifficulty.task_id, instruction: selectedDifficulty.instruction, summary: selectedDifficulty.summary}
+    : environment.tasks[0] || {};
+  const difficultyAttribute = selectedDifficulty ? ` data-difficulty="${selectedDifficulty.level}"` : "";
+  const browserPlayLabel = selectedDifficulty ? `Play L${selectedDifficulty.level} in browser` : "One-click browser play";
   const validation = environment.validation || {};
   const review = reviewFor(environment.id);
   const archived = environment.stage === "rejected";
@@ -885,7 +910,7 @@ function renderEnvironmentDetail(environmentId) {
   const serverFeedback = validation.server_grade?.feedback || (validation.ok ? "Browser evidence present" : archived ? "Rejected infrastructure pilot" : "Not yet verified");
   const detailStar = starToggleMarkup(environment, "detail");
   const headerActions = environment.stage === "built" && environment.launchable
-    ? `<div class="detail-actions">${detailStar}<button class="button button-review" type="button" data-action="open-review-desk" style="--review-color:${reviewStatusColor(review.status)}">Review · ${escapeHtml(reviewStatusShort(review.status))}</button><button class="button button-ghost" type="button" data-open-eval="${escapeHtml(environment.id)}">Evaluate</button><button class="button button-acid" type="button" data-quick-launch="${escapeHtml(environment.id)}">Try in browser ${arrowIcon}</button></div>`
+    ? `<div class="detail-actions">${detailStar}<button class="button button-review" type="button" data-action="open-review-desk" style="--review-color:${reviewStatusColor(review.status)}">Review · ${escapeHtml(reviewStatusShort(review.status))}</button><button class="button button-ghost" type="button" data-open-eval="${escapeHtml(environment.id)}">Evaluate</button><button class="button button-acid" type="button" data-quick-launch="${escapeHtml(environment.id)}"${difficultyAttribute}>Try in browser ${arrowIcon}</button></div>`
     : `<div class="detail-actions">${detailStar}<div class="archive-chip"><i></i>REJECTED INFRASTRUCTURE PILOT</div></div>`;
   const consoleMarkup = archived
     ? `<aside class="launch-console archive-console">
@@ -904,11 +929,12 @@ function renderEnvironmentDetail(environmentId) {
         <div class="launch-console-body">
           <div class="console-row"><span>${config.mode === "shared" ? "Runtime" : "Runner"}</span><b>${config.mode === "shared" ? "browser / WASM" : escapeHtml(state.system.runner)}</b></div>
           <div class="console-row"><span>Resolution</span><b>1280 × 720</b></div>
-          <div class="console-row"><span>Tasks</span><b>${environment.task_count}</b></div>
+          <div class="console-row"><span>Tasks</span><b>${environment.difficulty_control ? "5 difficulty levels" : environment.task_count}</b></div>
           <div class="console-row"><span>Evidence</span><b>${environment.screenshots.length} frames</b></div>
-          <div class="console-row"><span>Difficulty</span><b>${escapeHtml(environment.difficulty)}</b></div>
+          <div class="console-row"><span>Difficulty</span><b>${selectedDifficulty ? `L${selectedDifficulty.level} · ${escapeHtml(titleCase(selectedDifficulty.label))}` : escapeHtml(environment.difficulty)}</b></div>
+          ${difficultyControlMarkup(environment, selectedDifficulty)}
           ${validation.ok ? `<div class="validation-mark">WIRING REPLAY PASSED · HUMAN REVIEW PENDING</div>` : ""}
-          <div class="console-actions"><button class="button button-acid button-wide" type="button" data-quick-launch="${escapeHtml(environment.id)}">One-click browser play ${arrowIcon}</button><button class="button button-ghost button-wide" type="button" data-config-launch="${escapeHtml(environment.id)}">Advanced local / VNC</button><button class="button button-ghost button-wide" type="button" data-open-eval="${escapeHtml(environment.id)}">Prepare evaluation</button></div>
+          <div class="console-actions"><button class="button button-acid button-wide" type="button" data-quick-launch="${escapeHtml(environment.id)}"${difficultyAttribute}>${browserPlayLabel} ${arrowIcon}</button><button class="button button-ghost button-wide" type="button" data-config-launch="${escapeHtml(environment.id)}">Advanced local / VNC</button><button class="button button-ghost button-wide" type="button" data-open-eval="${escapeHtml(environment.id)}">Prepare evaluation</button></div>
           <p class="console-note">Browser play runs the real task UI and its existing Python grader entirely inside this tab. Advanced controls preserve local VNC and evaluation workflows.</p>
         </div>
       </aside>`;
@@ -927,8 +953,8 @@ function renderEnvironmentDetail(environmentId) {
           ${solutionVideoMarkup(environment)}
 
           <div class="detail-copy-grid">
-            <section><h2>What makes it difficult</h2><p>${escapeHtml(environment.summary)}</p><div class="tag-row" style="margin-top:18px">${environment.axes.map((axis) => `<span class="tag">${escapeHtml(axis)}</span>`).join("")}</div></section>
-            <aside class="instruction-card"><small>Agent-visible instruction</small><blockquote>${escapeHtml(environment.instruction || "No instruction recorded.")}</blockquote></aside>
+            <section><h2>What makes it difficult</h2><p>${escapeHtml(task.summary || environment.summary)}</p><div class="tag-row" style="margin-top:18px">${environment.axes.map((axis) => `<span class="tag">${escapeHtml(axis)}</span>`).join("")}</div></section>
+            <aside class="instruction-card"><small>Agent-visible instruction${selectedDifficulty ? ` · L${selectedDifficulty.level}` : ""}</small><blockquote>${escapeHtml(task.instruction || environment.instruction || "No instruction recorded.")}</blockquote></aside>
           </div>
 
           ${capabilityAssessmentMarkup(environment)}
@@ -1238,10 +1264,15 @@ async function connectCompanion({interactive = false} = {}) {
 function openLaunchDialog(environment) {
   if (!ensureCompanion()) return;
   const taskOptions = environment.tasks.map((task) => `<option value="${escapeHtml(task.id)}">${escapeHtml(task.id)}</option>`).join("");
+  const selectedProfile = selectedDifficultyProfile(environment);
+  const difficultyField = environment.difficulty_control
+    ? `<div class="form-field is-wide"><label for="launch-difficulty">Difficulty · browser mode</label><select id="launch-difficulty" name="difficulty">${environment.difficulty_control.profiles.map((profile) => `<option value="${profile.level}" ${Number(profile.level) === Number(selectedProfile.level) ? "selected" : ""}>L${profile.level} · ${escapeHtml(titleCase(profile.label))}${profile.current_implementation ? " · current implementation" : ""}</option>`).join("")}</select></div>`
+    : "";
   modalShell(`<header class="modal-head"><div><small>Launch environment</small><h2>${escapeHtml(environment.title)}</h2></div><button class="modal-close" type="button" data-action="close-modal" aria-label="Close">×</button></header><form class="modal-body" id="launch-form" data-environment="${escapeHtml(environment.id)}">
     <div class="modal-callout">Browser mode starts the task's real local UI and grader immediately on localhost. VNC mode keeps the existing isolated ${escapeHtml(state.system.runner.toUpperCase())} workflow for runner-faithful inspection.</div>
     <div class="form-grid">
       <div class="form-field is-wide"><label for="launch-task">Task</label><select id="launch-task" name="task_id">${taskOptions}</select></div>
+      ${difficultyField}
       <div class="form-field is-wide"><label for="launch-mode">Launch mode</label><select id="launch-mode" name="mode"><option value="browser" selected>Local browser · instant</option><option value="vnc">Isolated VNC guest · ${escapeHtml(state.system.runner)}</option></select></div>
       <div class="form-field"><label for="launch-seed">Seed</label><input id="launch-seed" name="seed" type="number" min="0" max="2147483647" value="${Math.floor(Math.random() * 1_000_000)}"></div>
       <div class="form-field"><label>Runner</label><input value="${escapeHtml(state.system.runner)}" disabled></div>
@@ -1296,29 +1327,37 @@ function paletteItems(environments, mode) {
   return environments.map((environment) => `<button class="palette-item" type="button" data-palette-mode="${mode}" data-palette-environment="${escapeHtml(environment.id)}"><span class="palette-thumb">${coverMarkup(environment)}</span><span><b>${escapeHtml(environment.title)}</b><span>${escapeHtml(environment.axes.join(" · "))}</span></span><em>${mode === "launch" ? config.mode === "shared" ? "play ↗" : "launch ↗" : mode === "eval" ? "evaluate ↗" : "open ↗"}</em></button>`).join("");
 }
 
-function browserPlayHref(environmentId) {
+function browserPlayHref(environmentId, difficulty = null) {
   const url = new URL(String(config.browserPlayUrl || "play/"), location.href);
   url.searchParams.set("environment", environmentId);
+  if (difficulty !== null && difficulty !== "" && Number.isInteger(Number(difficulty))) {
+    url.searchParams.set("difficulty", String(Number(difficulty)));
+  }
   url.hash = "";
   return url.href;
 }
 
-async function quickLaunch(environmentId) {
+async function quickLaunch(environmentId, difficulty = null) {
   const environment = findEnvironment(environmentId);
   if (!environment || !environment.tasks.length) return;
+  const profile = selectedDifficultyProfile(environment);
+  const selectedDifficulty = difficulty !== null && difficulty !== "" && Number.isInteger(Number(difficulty))
+    ? Number(difficulty)
+    : profile ? Number(profile.level) : null;
+  const selectedLabel = selectedDifficulty ? ` at L${selectedDifficulty}` : "";
   if (config.mode === "shared" && config.browserPlayUrl) {
     const link = document.createElement("a");
-    link.href = browserPlayHref(environment.id);
+    link.href = browserPlayHref(environment.id, selectedDifficulty);
     link.target = "_blank";
     link.rel = "noopener";
     link.click();
-    toast("Browser puzzle opened", `${environment.title} is running in a new tab.`, "success");
+    toast("Browser puzzle opened", `${environment.title}${selectedLabel} is running in a new tab.`, "success");
     return;
   }
   if (!ensureCompanion()) return;
-  toast("Local launch requested", `${environment.title} is preparing in your browser.`, "info");
+  toast("Local launch requested", `${environment.title}${selectedLabel} is preparing in your browser.`, "info");
   try {
-    const session = await api("/api/sessions", {method: "POST", body: JSON.stringify({environment_id: environment.id, task_id: environment.tasks[0].id, seed: Math.floor(Math.random() * 1_000_000), mode: "browser", auto_open: true})});
+    const session = await api("/api/sessions", {method: "POST", body: JSON.stringify({environment_id: environment.id, task_id: environment.tasks[0].id, difficulty: selectedDifficulty, seed: Math.floor(Math.random() * 1_000_000), mode: "browser", auto_open: true})});
     state.sessions.unshift(session);
     updateCounts();
     navigate("sessions");
@@ -1334,7 +1373,8 @@ async function submitLaunch(form) {
   const data = new FormData(form);
   try {
     const mode = String(data.get("mode") || "browser");
-    const session = await api("/api/sessions", {method: "POST", body: JSON.stringify({environment_id: form.dataset.environment, task_id: data.get("task_id"), seed: Number(data.get("seed")), mode, auto_open: data.get("auto_open") === "on"})});
+    const difficulty = data.get("difficulty") ? Number(data.get("difficulty")) : null;
+    const session = await api("/api/sessions", {method: "POST", body: JSON.stringify({environment_id: form.dataset.environment, task_id: data.get("task_id"), difficulty, seed: Number(data.get("seed")), mode, auto_open: data.get("auto_open") === "on"})});
     state.sessions.unshift(session);
     closeModal();
     toast("Environment queued", mode === "browser" ? "A local browser tab will open when the puzzle is ready." : "TigerVNC will open when the guest is ready.", "success");
@@ -1492,7 +1532,16 @@ document.addEventListener("click", async (event) => {
   if (target.dataset.starEnvironment) { event.stopPropagation(); togglePersonalStar(target.dataset.starEnvironment); return; }
   if (target.dataset.reviewChoice) { selectReviewChoice(target); return; }
   if (target.dataset.reviewFilter) { state.reviewFilters.status = target.dataset.reviewFilter; refreshReviewQueue(); return; }
-  if (target.dataset.quickLaunch) { event.stopPropagation(); await quickLaunch(target.dataset.quickLaunch); return; }
+  if (target.dataset.quickLaunch) { event.stopPropagation(); await quickLaunch(target.dataset.quickLaunch, target.dataset.difficulty || null); return; }
+  if (target.dataset.difficultyEnvironment && target.dataset.difficultyLevel) {
+    const environment = findEnvironment(target.dataset.difficultyEnvironment);
+    if (!environment?.difficulty_control) return;
+    const level = Number(target.dataset.difficultyLevel);
+    if (!environment.difficulty_control.profiles.some((profile) => Number(profile.level) === level)) return;
+    state.difficultySelections[environment.id] = level;
+    renderEnvironmentDetail(environment.id);
+    return;
+  }
   if (target.dataset.configLaunch) { const environment = findEnvironment(target.dataset.configLaunch); if (environment) openLaunchDialog(environment); return; }
   if (target.dataset.openEval) { const environment = findEnvironment(target.dataset.openEval); if (environment) openEvalDialog(environment); return; }
   if (target.dataset.openSession) {
