@@ -710,7 +710,7 @@ ANNOTATIONS: dict[str, dict[str, Any]] = {
         "visual": "3D",
         "temporal": False,
         "reasoning_planning": False,
-        "exploration_interface": False,
+        "exploration_interface": True,
     },
     "microgame_gauntlet": {
         "public_name": "Five-System Verification Reactor",

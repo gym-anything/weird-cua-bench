@@ -39,6 +39,7 @@ def main() -> None:
         "starred-shortlist.png",
         "shared-starred-shortlist.png",
         "environment-search.png",
+        "capability-filtered.png",
         "environment-detail.png",
         "review-queue.png",
         "environment-review-revision.png",
@@ -215,6 +216,29 @@ def main() -> None:
         expect(page.locator(".environment-card")).to_have_count(75)
         expect(page.locator('#stage-filter option[value="concept"]')).to_have_count(0)
         expect(page.locator('#stage-filter option[value="scaffold"]')).to_have_count(0)
+        not_real_time = page.locator('[data-capability-group="real_time"][data-capability-value="no"]')
+        visual_3d = page.locator('[data-capability-group="visual"][data-capability-value="3D"]')
+        reasoning = page.locator('[data-capability-group="core"][data-capability-value="reasoning_planning"]')
+        exploration = page.locator('[data-capability-group="core"][data-capability-value="exploration_interface"]')
+        expect(not_real_time.locator("b")).to_have_text("33")
+        expect(visual_3d.locator("b")).to_have_text("20")
+        expect(reasoning.locator("b")).to_have_text("54")
+        expect(exploration.locator("b")).to_have_text("28")
+        not_real_time.click()
+        expect(not_real_time).to_have_attribute("aria-pressed", "true")
+        expect(page.locator(".environment-card")).to_have_count(33)
+        visual_3d.click()
+        expect(page.locator(".environment-card")).to_have_count(13)
+        reasoning.click()
+        expect(page.locator(".environment-card")).to_have_count(11)
+        exploration.click()
+        expect(page.locator(".environment-card")).to_have_count(5)
+        expect(page.locator(".catalog-count")).to_have_text("5 / 75")
+        capture(page, output, "capability-filtered")
+        page.locator('[data-action="clear-capability-filters"]').click()
+        expect(page.locator(".environment-card")).to_have_count(75)
+        expect(not_real_time).to_have_attribute("aria-pressed", "false")
+        expect(page.locator('[data-action="clear-capability-filters"]')).to_be_disabled()
         page.locator(".environments-page").evaluate("node => { node.dataset.stabilityProbe = 'catalog'; }")
         page.locator("#environment-search").fill("domino")
         expect(page.locator(".environment-card")).to_have_count(1)
@@ -400,7 +424,7 @@ def main() -> None:
         expect(interaction_five.locator('[data-open-env="forced_perspective_moving_day_env"]')).to_have_count(1)
         capture(interaction_five, output, "interaction-five-built")
         interaction_five.locator('[data-open-env="photograph_eats_the_room_env"] .card-media').click()
-        expect(interaction_five.locator(".detail-title")).to_have_text("The Photograph Eats the Room")
+        expect(interaction_five.locator(".detail-title")).to_have_text("Photograph Eats the Room")
         expect(interaction_five.locator(".launch-console")).to_contain_text("WIRING REPLAY PASSED · HUMAN REVIEW PENDING")
         expect(interaction_five.locator("[data-config-launch]")).to_have_count(1)
         expect(interaction_five.locator(".archive-chip")).to_have_count(0)
@@ -525,6 +549,7 @@ def main() -> None:
             "public shortlist URL generation",
             "shared shortlist isolation and save-to-personal flow",
             "environment search",
+            "composable capability filtering",
             "catalog controls without page reconstruction",
             "screenshot detail gallery",
             "gallery swap without page-level transition",

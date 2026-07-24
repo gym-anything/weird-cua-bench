@@ -14,6 +14,10 @@ From the Environment collection, **Share stars** creates a public dashboard URL 
 
 The local dashboard deliberately generates links against the canonical GitHub Pages site. A static deployment generates links against its own host and path, so the feature remains portable to mirrors.
 
+## Filter by capability
+
+The Environment collection exposes the benchmark annotations as composable filters. Real-time status and visual dimensionality are single-choice filters. Temporal understanding and memory, reasoning and planning, plus exploration and interface understanding can be selected together; an environment must match every active selection. Capability filters also compose with search, collection, stage, review, and starred-only filters.
+
 ## Run the complete dashboard locally
 
 From the repository root:
