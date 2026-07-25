@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import copy
 import hashlib
 import math
 import random
@@ -135,13 +136,19 @@ def _voxel(voxel_id: str, x: int, y: int, z: int, material: str, role: str = "pi
     return {"id": voxel_id, "x": x, "y": y, "z": z, "material": material, "role": role}
 
 
-def _build_layout(rng: random.Random, target_count: int) -> tuple[list[dict[str, Any]], list[dict[str, Any]], dict[str, Any]] | None:
+def _build_layout(
+    rng: random.Random,
+    target_count: int,
+    screen_count: int,
+    lava_count: int,
+    support_count: int,
+) -> tuple[list[dict[str, Any]], list[dict[str, Any]], dict[str, Any] | None] | None:
     voxels: dict[str, dict[str, Any]] = {}
     reserved_columns: set[tuple[int, int]] = set()
     target_specs: list[dict[str, Any]] = []
     remaining_orientations = [1, 2, 3]
     rng.shuffle(remaining_orientations)
-    orientations = [0, *remaining_orientations]
+    orientations = [0, *remaining_orientations] if target_count == 4 else [*remaining_orientations, 0]
     for target_index in range(target_count):
         target_view = orientations[target_index]
         found = False
@@ -154,9 +161,9 @@ def _build_layout(rng: random.Random, target_count: int) -> tuple[list[dict[str,
             blocker_x, blocker_y = _inverse(rx + 1, ry, target_view)
             screen_x, screen_y = _inverse(rx, min(GRID - 1, ry + 1), target_view)
             columns = {(x, y), (blocker_x, blocker_y)}
-            if target_index == 0:
+            if target_index < screen_count:
                 columns.add((screen_x, screen_y))
-            if any(column in reserved_columns for column in columns) or len(columns) != (3 if target_index == 0 else 2):
+            if any(column in reserved_columns for column in columns) or len(columns) != (3 if target_index < screen_count else 2):
                 continue
             reserved_columns.update(columns)
             target_id = f"diamond-{target_index}-{rng.randint(100, 999)}"
@@ -165,7 +172,7 @@ def _build_layout(rng: random.Random, target_count: int) -> tuple[list[dict[str,
             voxels[target_id] = _voxel(target_id, x, y, 1, "diamond", "target")
             voxels[blocker_id] = _voxel(blocker_id, blocker_x, blocker_y, 1, "stone", "blocker")
             voxels[cap_id] = _voxel(cap_id, x, y, 2, "stone", "cap")
-            if target_index == 0:
+            if target_index < screen_count:
                 screen_id = f"screen-{rng.randint(100, 999)}"
                 voxels[screen_id] = _voxel(screen_id, screen_x, screen_y, 1, "stone", "screen")
             target_specs.append({
@@ -181,15 +188,15 @@ def _build_layout(rng: random.Random, target_count: int) -> tuple[list[dict[str,
 
     hazard_columns = [(x, y) for x in range(GRID) for y in range(GRID) if (x, y) not in reserved_columns]
     rng.shuffle(hazard_columns)
-    lava_column = hazard_columns.pop()
-    support_column = hazard_columns.pop()
+    lava_columns = {hazard_columns.pop() for _ in range(lava_count)}
+    support_columns = {hazard_columns.pop() for _ in range(support_count)}
     for y in range(GRID):
         for x in range(GRID):
             material = "stone"
             role = "foundation"
-            if (x, y) == lava_column:
+            if (x, y) in lava_columns:
                 material, role = "lava", "hazard"
-            elif (x, y) == support_column:
+            elif (x, y) in support_columns:
                 material, role = "support", "fragile_support"
             voxel_id = f"base-{x}-{y}-{rng.randint(10, 99)}"
             voxels[voxel_id] = _voxel(voxel_id, x, y, 0, material, role)
@@ -220,47 +227,58 @@ def _build_layout(rng: random.Random, target_count: int) -> tuple[list[dict[str,
         })
         del simulation[spec["target_id"]]
 
-    lava_id = next(voxel_id for voxel_id, voxel in voxels.items() if voxel["material"] == "lava")
-    lava_point = _find_point(voxels, 0, lava_id)
-    if lava_point is None:
+    lava_id = next((voxel_id for voxel_id, voxel in voxels.items() if voxel["material"] == "lava"), None)
+    lava_point = _find_point(voxels, 0, lava_id) if lava_id else None
+    if lava_id and lava_point is None:
         return None
     initial_visible_targets = sum(_find_point(voxels, 0, spec["target_id"]) is not None for spec in target_specs)
-    if initial_visible_targets >= target_count:
+    if target_count > 1 and initial_visible_targets >= target_count:
         return None
-    return list(voxels.values()), solution_steps, {
+    edge_case = None if not lava_id or not lava_point else {
         "orientation": 0,
         "voxel_id": lava_id,
         "click": [lava_point[0], lava_point[1]],
         "face": lava_point[2],
     }
+    return list(voxels.values()), solution_steps, edge_case
 
 
 def generate(task: dict[str, Any], seed: str) -> tuple[dict[str, Any], dict[str, Any]]:
     base_rng = random.Random(_seed_int(seed, MECHANIC_ID))
-    # Four independent view-bound ore pockets are the minimum useful spatial
-    # workload; the old two/three-target lots were tutorial scale.
-    target_count = 4
+    condition = task.get("_control_condition")
+    parameters = dict((condition or {}).get("difficulty_parameters") or {})
+    target_count = int(parameters.get("target_count", 4))
+    screen_count = int(parameters.get("screen_count", 1))
+    lava_count = int(parameters.get("lava_count", 1))
+    support_count = int(parameters.get("support_count", 1))
+    durability_margin = int(parameters.get("durability_margin", 2))
+    if not 1 <= target_count <= 4 or not 0 <= screen_count <= min(1, target_count):
+        raise ValueError("voxel extraction pockets are outside supported limits")
+    if not 0 <= lava_count <= 2 or not 0 <= support_count <= 2 or not 1 <= durability_margin <= 8:
+        raise ValueError("voxel mine risk parameters are outside supported limits")
     built = None
     for attempt in range(120):
         rng = random.Random(_seed_int(seed, f"{MECHANIC_ID}|layout|{attempt}"))
-        built = _build_layout(rng, target_count)
+        built = _build_layout(rng, target_count, screen_count, lava_count, support_count)
         if built is not None:
             palette = rng.choice(("cavern", "deep-slate", "ember"))
             break
     if built is None:
         raise RuntimeError("could not generate a ray-solvable voxel extraction mine")
     voxels, solution_steps, edge_case = built
-    challenge_id = hashlib.sha256(f"{seed}|{MECHANIC_ID}".encode("utf-8")).hexdigest()[:12]
+    condition_token = f"|d{condition['difficulty']}|{task.get('id')}" if condition else ""
+    challenge_id = hashlib.sha256(f"{seed}|{MECHANIC_ID}{condition_token}".encode("utf-8")).hexdigest()[:12]
     task_id = str(task.get("id") or "")
-    durability = target_count * 2 + 2
+    durability = target_count * 2 + durability_margin
+    controlled_prompt = f"Rotate the mine, expose and extract {target_count} diamond block{'s' if target_count != 1 else ''}, and exit before the pick is exhausted."
     public_state = {
         "benchmark": "weird_captcha_gym",
         "mechanic_id": MECHANIC_ID,
         "task_id": task_id,
         "challenge_id": challenge_id,
-        "prompt": task.get("natural_language") or "Rotate the mine, expose every diamond, and extract it without breaking the support lattice.",
+        "prompt": controlled_prompt if condition else task.get("natural_language") or "Rotate the mine, expose every diamond, and extract it without breaking the support lattice.",
         "asset_manifest": "shared_runtime/assets/provenance/incubator_full_build_v1.json",
-        "generator": {"name": "isometric_voxel_extraction_mine_v2", "variant_count": 9_000_000_000},
+        "generator": {"name": "isometric_voxel_extraction_mine_v3" if condition else "isometric_voxel_extraction_mine_v2", "variant_count": 9_000_000_000},
         "palette": palette,
         "grid_size": [GRID, GRID, 3],
         "canvas_size": [CANVAS_WIDTH, CANVAS_HEIGHT],
@@ -268,6 +286,7 @@ def generate(task: dict[str, Any], seed: str) -> tuple[dict[str, Any], dict[str,
         "starting_orientation": 0,
         "starting_durability": durability,
         "target_count": target_count,
+        "hazards": {"lava_count": lava_count, "support_count": support_count, "screen_count": screen_count},
         "submit_label": "EXIT MINE",
     }
     ground_truth = {
@@ -284,6 +303,9 @@ def generate(task: dict[str, Any], seed: str) -> tuple[dict[str, Any], dict[str,
         "projection": {"width": CANVAS_WIDTH, "height": CANVAS_HEIGHT, "tile_w": TILE_W, "tile_h": TILE_H, "cube_h": CUBE_H},
         "variant_count": 9_000_000_000,
     }
+    if condition:
+        public_state["control_condition"] = copy.deepcopy(condition)
+        ground_truth["control_condition"] = copy.deepcopy(condition)
     assert len(ground_truth["diamond_ids"]) == target_count
     assert len(solution_steps) == target_count * 2
     return public_state, ground_truth

@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import copy
 import hashlib
 import random
 from typing import Any
@@ -14,19 +15,38 @@ def _seed(seed: str) -> int:
 
 def generate(task: dict[str, Any], seed: str) -> tuple[dict[str, Any], dict[str, Any]]:
     rng = random.Random(_seed(seed))
-    lane_templates = [
-        (9, "road", 0.045, 0.82, [0.0, 3.2, 6.4]),
-        (8, "road", -0.036, 1.05, [1.1, 5.4]),
-        (6, "water", 0.026, 2.35, [0.1, 3.25, 6.35]),
-        (5, "water", -0.021, 2.7, [1.0, 5.0, 8.1]),
-        (3, "rail", 0.082, 1.65, [1.0, 6.5]),
-        (2, "road", -0.048, 0.9, [0.4, 3.7, 7.0]),
-    ]
+    condition = task.get("_control_condition")
+    parameters = dict((condition or {}).get("difficulty_parameters") or {})
+    templates = {
+        9: (9, "road", 0.045, 0.82, [0.0, 3.2, 6.4]),
+        8: (8, "road", -0.036, 1.05, [1.1, 5.4]),
+        7: (7, "rail", 0.064, 1.45, [0.6, 4.7]),
+        6: (6, "water", 0.026, 2.35, [0.1, 3.25, 6.35]),
+        5: (5, "water", -0.021, 2.7, [1.0, 5.0, 8.1]),
+        4: (4, "water", 0.032, 2.2, [0.2, 3.1, 6.2]),
+        3: (3, "rail", 0.082, 1.65, [1.0, 6.5]),
+        2: (2, "road", -0.048, 0.9, [0.4, 3.7, 7.0]),
+    }
+    lane_rows = [int(row) for row in parameters.get("lane_rows", [9, 8, 6, 5, 3, 2])]
+    if not 1 <= len(lane_rows) <= 8 or len(set(lane_rows)) != len(lane_rows) or any(row not in templates for row in lane_rows):
+        raise ValueError("slime lane selection is outside supported limits")
+    lane_templates = [templates[row] for row in lane_rows]
+    speed_multiplier = float(parameters.get("speed_multiplier", 1))
+    hazard_length_multiplier = float(parameters.get("hazard_length_multiplier", 1))
+    log_length_multiplier = float(parameters.get("log_length_multiplier", 1))
+    hop_cooldown_ticks = int(parameters.get("hop_cooldown_ticks", 2))
+    max_deaths = int(parameters.get("max_deaths", 4))
+    if not .4 <= speed_multiplier <= 1.5 or not .6 <= hazard_length_multiplier <= 1.4 or not .7 <= log_length_multiplier <= 1.4:
+        raise ValueError("slime motion parameters are outside supported limits")
+    if not 1 <= hop_cooldown_ticks <= 4 or not 2 <= max_deaths <= 10:
+        raise ValueError("slime control parameters are outside supported limits")
     lanes = []
     for row, kind, speed, length, offsets in lane_templates:
         phase = round(rng.uniform(0, 9), 4)
         if rng.choice((False, True)):
             speed *= -1
+        speed *= speed_multiplier
+        length *= log_length_multiplier if kind == "water" else hazard_length_multiplier
         lanes.append({
             "row": row,
             "kind": kind,
@@ -36,7 +56,8 @@ def generate(task: dict[str, Any], seed: str) -> tuple[dict[str, Any], dict[str,
             "phase": phase,
         })
     start_x, goal_x = rng.randrange(2, 7), rng.randrange(1, 8)
-    challenge_id = hashlib.sha256(f"{seed}|{MECHANIC_ID}|challenge".encode()).hexdigest()[:12]
+    condition_token = f"|d{condition['difficulty']}|{task.get('id')}" if condition else ""
+    challenge_id = hashlib.sha256(f"{seed}|{MECHANIC_ID}|challenge{condition_token}".encode()).hexdigest()[:12]
     board = {
         "columns": 9,
         "rows": 11,
@@ -47,9 +68,9 @@ def generate(task: dict[str, Any], seed: str) -> tuple[dict[str, Any], dict[str,
         # 44 px avatar on a 720 px / 9-column field: the visible body and
         # independent replay collider are the same 0.275-cell radius.
         "player_radius": 0.275,
-        "max_deaths": 4,
+        "max_deaths": max_deaths,
         "max_ticks": 2400,
-        "hop_cooldown_ticks": 2,
+        "hop_cooldown_ticks": hop_cooldown_ticks,
     }
     public = {
         "benchmark": "weird_captcha_gym",
@@ -58,7 +79,7 @@ def generate(task: dict[str, Any], seed: str) -> tuple[dict[str, Any], dict[str,
         "challenge_id": challenge_id,
         "prompt": "Get home.",
         "asset_manifest": "shared_runtime/assets/provenance/reviewed_overhaul_v1.json",
-        "generator": {"name": "fixed_step_crossing_v2", "variant_count": 9**8},
+        "generator": {"name": "fixed_step_crossing_v3" if condition else "fixed_step_crossing_v2", "variant_count": 9**8},
         "board": board,
     }
     truth = {
@@ -68,4 +89,7 @@ def generate(task: dict[str, Any], seed: str) -> tuple[dict[str, Any], dict[str,
         "challenge_id": challenge_id,
         "board": board,
     }
+    if condition:
+        public["control_condition"] = copy.deepcopy(condition)
+        truth["control_condition"] = copy.deepcopy(condition)
     return public, truth

@@ -113,7 +113,8 @@
   }
 
   function refillMarkup() {
-    return model.state.refill_stream.slice(model.refillIndex, model.refillIndex + 5)
+    const previewCount = Number(model.state.refill_preview_count || 5);
+    return model.state.refill_stream.slice(model.refillIndex, model.refillIndex + previewCount)
       .map((candy) => `<i class="next-${clean(candy)}"></i>`).join("");
   }
 
@@ -438,7 +439,7 @@
         </main>
         <footer class="candy-foot">
           <button type="button" class="candy-reset" id="candy-reset">↺ RESET BOARD</button>
-          <div class="readout" data-status="idle">REGISTER OPEN · TWO EXACT SWAPS</div>
+          <div class="readout" data-status="idle">REGISTER OPEN · ${Number(state.move_budget)} EXACT SWAP${Number(state.move_budget) === 1 ? "" : "S"}</div>
           <button type="button" class="candy-certify" id="candy-certify">${clean(state.submit_label || "STAMP EXACT")}</button>
         </footer>
         ${helpers.cheatPanelTemplate()}

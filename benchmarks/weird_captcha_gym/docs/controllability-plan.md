@@ -1,6 +1,6 @@
 # Controllability Plan
 
-Status: design recorded; ten starred environments have difficulty controls
+Status: design recorded; fifteen starred environments have difficulty controls
 
 This document records how Weird CUA Bench should vary difficulty, interaction, and real time without duplicating puzzle implementations.
 
@@ -38,6 +38,14 @@ The second set adds five more starred environments:
 4. Specular Lighthouse Relay
 5. Motion-Only Ghost Jigsaw
 
+The third set completes the starred group:
+
+1. Cursor Constellation Hunt
+2. Polarized Palimpsest
+3. Exact-Change Candy Cascade
+4. Isometric Voxel Extraction Mine
+5. Slime Commute
+
 Each environment now has a `controls.json` file with an independently assigned baseline and five difficulty profiles. The profiles change several relevant parameters where appropriate. This includes task size, required precision, action delay, motion speed, available information, visual ambiguity, and the number of variables that must be handled.
 
 The existing task remains unchanged. Controlled tasks are materialized into a separate output directory with:
@@ -48,7 +56,7 @@ python3 benchmarks/weird_captcha_gym/tools/materialize_controlled_tasks.py \
   --output-root /tmp/weird-cua-controlled
 ```
 
-The command currently writes five tasks per controlled environment because only each environment's existing interaction mode has been implemented. It writes 50 tasks in total. It will write both interaction modes after those interfaces exist.
+The command currently writes five tasks per controlled environment because only each environment's existing interaction mode has been implemented. It writes 75 tasks in total. It will write both interaction modes after those interfaces exist.
 
 The selected condition is copied into the task metadata, public state, and hidden state. Difficulty-specific instructions replace the baseline instructions when a profile changes a rule that the agent must know.
 
@@ -250,7 +258,7 @@ The controlled benchmark should verify all of the following:
 
 ## Implementation order
 
-1. Add the control specification and deterministic task generator. Ten starred environments are complete.
+1. Add the control specification and deterministic task generator. Fifteen starred environments are complete.
 2. Add framework pause, advance, and multi-frame observation support.
 3. Test the complete structure on Board Game CAPTCHA, Motion-Only Ghost Jigsaw, Dead Man's Switch, Domino Autopsy, and Tiny FPS Customs.
 4. Use the existing difficulty annotations to define the five levels for the remaining environments.

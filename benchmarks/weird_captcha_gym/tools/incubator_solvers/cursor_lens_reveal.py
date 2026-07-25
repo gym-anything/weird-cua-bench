@@ -58,7 +58,7 @@ def _tune(page, target: int) -> None:
         page.locator("#pol-right" if clockwise <= counter else "#pol-left").click()
 
 
-def _capture(page, node: dict, *, short: bool = False) -> None:
+def _capture(page, node: dict, requirements: dict, *, short: bool = False) -> None:
     box = _box(page)
     start = _position(node, _elapsed(page))
     page.mouse.move(*_screen(box, start))
@@ -67,8 +67,10 @@ def _capture(page, node: dict, *, short: bool = False) -> None:
         page.wait_for_timeout(120)
         page.mouse.up()
         return
-    for _ in range(7):
-        page.wait_for_timeout(82)
+    track_ms = 90
+    track_count = max(int(requirements["minimum_track_samples"]) + 2, math.ceil(int(requirements["minimum_hold_ms"]) / track_ms) + 1)
+    for _ in range(track_count):
+        page.wait_for_timeout(track_ms)
         target = _position(node, _elapsed(page))
         page.mouse.move(*_screen(box, target), steps=2)
     page.mouse.up()
@@ -92,18 +94,19 @@ def solve(page, state_dir: Path, out_dir: Path, mechanic: str) -> None:
     page.wait_for_function("() => document.querySelector('.moving-palimpsest')?.dataset.freshFailure === 'false'", timeout=4_000)
     box = _box(page)
     # A broad, real scan establishes local coverage before any answer hold.
-    for row in range(5):
-        for column in range(7):
-            page.mouse.move(*_screen(box, [65 + column * 132, 52 + row * 98]), steps=1)
+    for row in range(6):
+        for column in range(8):
+            page.mouse.move(*_screen(box, [55 + column * 116, 42 + row * 82]), steps=1)
             page.wait_for_timeout(12)
     _shot(page, out_dir, mechanic, "active-local-scan")
 
     first = truth["nodes"][0]
     _tune(page, int(first["polarization_deg"]))
-    _capture(page, first, short=True)
+    requirements = truth["requirements"]
+    _capture(page, first, requirements, short=True)
     page.wait_for_function("() => movingPalimpsestModel.misses === 1")
     _shot(page, out_dir, mechanic, "early-hold-decay")
-    _capture(page, first)
+    _capture(page, first, requirements)
     page.wait_for_function("() => movingPalimpsestModel.current === 1")
     page.locator("#palimpsest-reset").click()
     page.wait_for_function("() => movingPalimpsestModel.current === 0 && movingPalimpsestModel.resetCount === 1")
@@ -116,12 +119,11 @@ def solve(page, state_dir: Path, out_dir: Path, mechanic: str) -> None:
             page.mouse.move(*_screen(box, position))
             page.wait_for_timeout(80)
             _shot(page, out_dir, mechanic, "tuned-moving-echo")
-        _capture(page, node)
+        _capture(page, node, requirements)
         page.wait_for_function("count => movingPalimpsestModel.current === count", arg=index + 1)
     expect(page.locator('.moving-palimpsest[data-completed="true"]')).to_be_visible()
     state = page.evaluate("() => ({probes:movingPalimpsestModel.probes,cells:movingPalimpsestModel.cells.size,turns:movingPalimpsestModel.tuningChanges,locked:movingPalimpsestModel.locked.length})")
-    requirements = truth["requirements"]
-    if state["probes"] < requirements["minimum_probe_samples"] or state["cells"] < requirements["minimum_probe_cells"] or state["turns"] < requirements["minimum_tuning_changes"] or state["locked"] != 5:
+    if state["probes"] < requirements["minimum_probe_samples"] or state["cells"] < requirements["minimum_probe_cells"] or state["turns"] < requirements["minimum_tuning_changes"] or state["locked"] != len(truth["nodes"]):
         raise AssertionError(f"palimpsest interaction contract is incomplete: {state}")
     _shot(page, out_dir, mechanic, "five-echoes-fixed")
     page.locator("#palimpsest-submit").click()
