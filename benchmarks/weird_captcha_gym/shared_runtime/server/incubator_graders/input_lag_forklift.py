@@ -91,6 +91,14 @@ def grade(payload: dict[str, Any], ground_truth: dict[str, Any], public_state: d
         return {"graded": True, "passed": False, "feedback": "public/private warehouse contract skew"}
     if public_state.get("control_lag") != ground_truth.get("control_lag"):
         return {"graded": True, "passed": False, "feedback": "public/private delay contract skew"}
+    truth_condition = ground_truth.get("control_condition")
+    public_condition = public_state.get("control_condition")
+    if truth_condition != public_condition:
+        return {"graded": True, "passed": False, "feedback": "public interaction condition differs from forklift contract"}
+    interaction = str((truth_condition or {}).get("interaction") or "")
+    expected_source = {"simplified": "control_buttons", "full": "keyboard"}.get(interaction)
+    if truth_condition is not None and expected_source is None:
+        return {"graded": True, "passed": False, "feedback": "forklift interaction condition is invalid"}
     try:
         control_lag = int(ground_truth.get("control_lag"))
     except (TypeError, ValueError):
@@ -125,6 +133,8 @@ def grade(payload: dict[str, Any], ground_truth: dict[str, Any], public_state: d
         if event.get("sequence") != index:
             return _mismatch(index, "sequence", index, event.get("sequence"))
         issued = str(event.get("issued") or "")
+        if expected_source is not None and event.get("input_source") != expected_source:
+            return {"graded": True, "passed": False, "feedback": f"command {index} uses the wrong interaction input"}
         before = _snapshot(player, crates)
         pending_before = pending_snapshot(pending)
         executed: str | None = None

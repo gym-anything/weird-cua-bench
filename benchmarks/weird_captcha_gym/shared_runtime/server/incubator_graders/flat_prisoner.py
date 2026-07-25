@@ -341,6 +341,12 @@ def grade(payload: dict[str, Any], ground_truth: dict[str, Any], public_state: d
         return _fail("task binding mismatch")
     if not challenge_id or str(payload.get("challenge_id") or "") != challenge_id or str(public_state.get("challenge_id") or "") != challenge_id:
         return _fail("stale or cross-seed challenge")
+    truth_condition = ground_truth.get("control_condition")
+    if truth_condition != public_state.get("control_condition"):
+        return _fail("public interaction condition differs from flat-prison contract")
+    interaction = str((truth_condition or {}).get("interaction") or "")
+    if truth_condition is not None and interaction not in {"simplified", "full"}:
+        return _fail("flat-prison interaction condition is invalid")
     try:
         platforms, viewport, initial, controls, physics, requirements = _contract(ground_truth, public_state)
     except (KeyError, TypeError, ValueError) as exc:
@@ -375,6 +381,10 @@ def grade(payload: dict[str, Any], ground_truth: dict[str, Any], public_state: d
             return _fail(f"event {sequence} reverses or exceeds the session clock")
         kind = str(event.get("kind") or "")
         if kind in {"orbit", "pan", "dolly"}:
+            if truth_condition is not None:
+                expected_source = "camera_button" if interaction == "simplified" else "camera_wheel" if kind == "dolly" else "camera_drag"
+                if event.get("input_source") != expected_source:
+                    return _fail(f"event {sequence} uses the wrong camera input")
             if mode != "camera":
                 return _fail(f"event {sequence} moves the 3D camera while projection is frozen")
             if last_camera_elapsed >= 0 and elapsed - last_camera_elapsed < 18:
@@ -434,6 +444,8 @@ def grade(payload: dict[str, Any], ground_truth: dict[str, Any], public_state: d
                 and elapsed - first_camera_elapsed >= int(requirements["minimum_camera_elapsed_ms"])
             )
         elif kind in {"key_down", "key_up"}:
+            if truth_condition is not None and event.get("input_source") != "keyboard":
+                return _fail(f"event {sequence} uses the wrong prisoner input")
             if mode != "flat" or prisoner is None:
                 return _fail(f"event {sequence} sends prisoner controls outside flat mode")
             try:

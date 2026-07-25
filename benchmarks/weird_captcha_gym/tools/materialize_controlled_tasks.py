@@ -43,6 +43,14 @@ def validate_controls(controls: dict[str, Any], env_root: Path) -> None:
         raise ValueError(f"{env_root.name}: baseline difficulty must be 1 through 5")
     if baseline.get("interaction") not in {"simplified", "full"}:
         raise ValueError(f"{env_root.name}: baseline interaction is invalid")
+    interactions = controls.get("interaction")
+    if not isinstance(interactions, dict) or set(interactions) != {"simplified", "full"}:
+        raise ValueError(f"{env_root.name}: simplified and full interaction definitions are required")
+    for name, interaction in interactions.items():
+        if not isinstance(interaction, dict) or not isinstance(interaction.get("implemented"), bool):
+            raise ValueError(f"{env_root.name}: {name} interaction has no implementation status")
+    if interactions[baseline["interaction"]]["implemented"] is not True:
+        raise ValueError(f"{env_root.name}: baseline interaction is not implemented")
     profiles = controls.get("difficulty")
     if not isinstance(profiles, dict) or set(profiles) != {str(level) for level in LEVELS}:
         raise ValueError(f"{env_root.name}: exactly five difficulty profiles are required")
@@ -79,7 +87,8 @@ def controlled_task(
     task = copy.deepcopy(base)
     task["id"] = f"{task_dir_name}@0.2"
     task["version"] = "0.2"
-    task["name"] = f"{base['name']} · Difficulty {level}"
+    interaction_label = interaction.replace("_", " ").title()
+    task["name"] = f"{base['name']} · Difficulty {level} · {interaction_label} Interaction"
     task["difficulty"] = DIFFICULTY_NAMES[level]
     if profile.get("natural_language"):
         task["natural_language"] = str(profile["natural_language"])
@@ -105,35 +114,37 @@ def materialize_environment(env_root: Path, output_root: Path) -> list[Path]:
     controls = _read_json(controls_path)
     validate_controls(controls, env_root)
     mechanic_id = str(controls["mechanic_id"])
-    interaction = str(controls["baseline"]["interaction"])
-    interaction_spec = dict((controls.get("interaction") or {}).get(interaction) or {})
-    if interaction_spec.get("implemented") is not True:
-        raise ValueError(f"{env_root.name}: baseline interaction is not implemented")
     base_dir, base_task = _base_task(env_root, mechanic_id)
     destination_tasks = output_root / env_root.name / "tasks"
     written: list[Path] = []
-    for level in LEVELS:
-        task_dir_name = f"{mechanic_id}_d{level}_{interaction}_seed_0001"
-        destination = destination_tasks / task_dir_name
-        destination.mkdir(parents=True, exist_ok=True)
-        for source in sorted(base_dir.iterdir()):
-            if source.name == "task.json" or not source.is_file():
-                continue
-            target = destination / source.name
-            shutil.copy2(source, target)
-            if source.suffix == ".sh":
-                text = target.read_text(encoding="utf-8").replace(base_dir.name, task_dir_name)
-                target.write_text(text, encoding="utf-8")
-        task = controlled_task(
-            base_task,
-            mechanic_id=mechanic_id,
-            level=level,
-            interaction=interaction,
-            profile=controls["difficulty"][str(level)],
-            task_dir_name=task_dir_name,
-        )
-        _write_json(destination / "task.json", task)
-        written.append(destination)
+    implemented_interactions = [
+        name
+        for name in ("simplified", "full")
+        if controls["interaction"][name]["implemented"] is True
+    ]
+    for interaction in implemented_interactions:
+        for level in LEVELS:
+            task_dir_name = f"{mechanic_id}_d{level}_{interaction}_seed_0001"
+            destination = destination_tasks / task_dir_name
+            destination.mkdir(parents=True, exist_ok=True)
+            for source in sorted(base_dir.iterdir()):
+                if source.name == "task.json" or not source.is_file():
+                    continue
+                target = destination / source.name
+                shutil.copy2(source, target)
+                if source.suffix == ".sh":
+                    text = target.read_text(encoding="utf-8").replace(base_dir.name, task_dir_name)
+                    target.write_text(text, encoding="utf-8")
+            task = controlled_task(
+                base_task,
+                mechanic_id=mechanic_id,
+                level=level,
+                interaction=interaction,
+                profile=controls["difficulty"][str(level)],
+                task_dir_name=task_dir_name,
+            )
+            _write_json(destination / "task.json", task)
+            written.append(destination)
     return written
 
 

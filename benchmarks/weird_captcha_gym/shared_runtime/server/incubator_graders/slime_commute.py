@@ -23,6 +23,13 @@ def grade(payload: dict[str, Any], ground_truth: dict[str, Any], public_state: d
     if not challenge_id or str(payload.get("challenge_id") or "") != challenge_id or str(public_state.get("challenge_id") or "") != challenge_id:
         return {"graded": True, "passed": False, "feedback": "stale challenge"}
     board = dict(ground_truth.get("board") or {})
+    condition = ground_truth.get("control_condition")
+    if public_state.get("control_condition") != condition:
+        return {"graded": True, "passed": False, "feedback": "public interaction condition differs from crossing contract"}
+    interaction = str((condition or {}).get("interaction") or "")
+    expected_source = {"simplified": "direction_buttons", "full": "keyboard"}.get(interaction)
+    if condition is not None and expected_source is None:
+        return {"graded": True, "passed": False, "feedback": "crossing interaction condition is invalid"}
     try:
         columns = int(board["columns"])
         max_ticks = int(board["max_ticks"])
@@ -97,6 +104,8 @@ def grade(payload: dict[str, Any], ground_truth: dict[str, Any], public_state: d
     for sequence, action in enumerate(actions, start=1):
         if not isinstance(action, dict) or action.get("sequence") != sequence:
             return {"graded": True, "passed": False, "feedback": f"action {sequence} sequence mismatch"}
+        if expected_source is not None and action.get("input_source") != expected_source:
+            return {"graded": True, "passed": False, "feedback": f"action {sequence} uses the wrong interaction input"}
         try:
             action_tick = int(action.get("tick"))
         except (TypeError, ValueError):

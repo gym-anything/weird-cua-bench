@@ -251,6 +251,7 @@ class SessionManager:
         seed: int,
         auto_open: bool,
         difficulty: int | None = None,
+        interaction: str | None = None,
     ) -> dict[str, Any]:
         catalog = environment_index()
         environment = catalog.get(environment_id)
@@ -263,22 +264,27 @@ class SessionManager:
             raise ValueError("task definition is missing")
         selected_task: dict[str, Any] | None = None
         selected_task_id = task_id
-        if difficulty is not None:
+        selected_interaction: str | None = None
+        if difficulty is not None or interaction is not None:
             control = environment.get("difficulty_control")
             if not control:
-                raise ValueError("this environment has no controlled difficulty profiles")
+                raise ValueError("this environment has no controlled task profiles")
+            difficulty = int(difficulty if difficulty is not None else control["baseline_level"])
+            selected_interaction = str(interaction or control["baseline_interaction"])
             profile = next(
                 (item for item in control["profiles"] if int(item["level"]) == difficulty),
                 None,
             )
             if profile is None:
                 raise ValueError("difficulty must be 1 through 5")
-            selected_task_id = str(profile["task_id"])
+            if selected_interaction not in control["interactions"]:
+                raise ValueError("interaction must be simplified or full")
+            selected_task_id = str(profile["task_ids"][selected_interaction])
             selected_task = controlled_task(
                 json.loads(task_json.read_text(encoding="utf-8")),
                 mechanic_id=str(environment["mechanic_id"]),
                 level=difficulty,
-                interaction=str(control["interaction"]),
+                interaction=selected_interaction,
                 profile={
                     "label": profile["label"],
                     "natural_language": profile["instruction"],
@@ -322,6 +328,7 @@ class SessionManager:
                 "task_id": selected_task_id,
                 "task_json": str(task_json),
                 "difficulty": difficulty,
+                "interaction": selected_interaction,
                 "seed": seed,
                 "runner": "local browser",
                 "status": "queued",
@@ -960,10 +967,13 @@ class DashboardHandler(BaseHTTPRequestHandler):
                 if mode == "browser":
                     raw_difficulty = payload.get("difficulty")
                     difficulty = int(raw_difficulty) if raw_difficulty is not None else None
+                    raw_interaction = payload.get("interaction")
+                    interaction = str(raw_interaction) if raw_interaction is not None else None
                     result = self.server.sessions.start_browser(
                         environment_id,
                         task_id,
                         difficulty=difficulty,
+                        interaction=interaction,
                         **session_args,
                     )
                 else:

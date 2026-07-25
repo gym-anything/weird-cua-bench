@@ -123,7 +123,7 @@
     }
   }
 
-  function recordCommand(issued) {
+  function recordCommand(issued, inputSource) {
     if (!model || model.submitting || model.terminal) return;
     const sequence = model.events.length + 1;
     const before = snapshot();
@@ -177,6 +177,7 @@
       before,
       after: snapshot(),
       pending_after: pendingSnapshot(),
+      input_source: inputSource,
     });
     renderBoard();
     renderTape();
@@ -266,8 +267,10 @@
     document.body.dataset.mechanic = "input-lag-forklift";
     document.body.dataset.forkliftPalette = state.palette || "amber";
     document.body.dataset.cheatMode = helpersCache.isCheatMode() ? "true" : "false";
+    const interaction = state.control_condition?.interaction || "simplified";
     model = {
       state,
+      interaction,
       initial: {player: clonePoints([warehouse.player])[0], crates: clonePoints(warehouse.crates)},
       player: clonePoints([warehouse.player])[0],
       crates: clonePoints(warehouse.crates),
@@ -281,7 +284,14 @@
       terminal: false,
     };
     window.inputLagForkliftModel = model;
-    helpersCache.app.innerHTML = `<section class="forklift-captcha" data-challenge-id="${helpersCache.text(state.challenge_id)}" tabindex="0">
+    const commandControls = interaction === "simplified" ? `<div class="forklift-keypad" aria-label="forklift direction controls">
+            <button type="button" data-command="UP" aria-label="queue up"><kbd>W</kbd><b>↑</b></button>
+            <button type="button" data-command="LEFT" aria-label="queue left"><kbd>A</kbd><b>←</b></button>
+            <button type="button" data-command="DOWN" aria-label="queue down"><kbd>S</kbd><b>↓</b></button>
+            <button type="button" data-command="RIGHT" aria-label="queue right"><kbd>D</kbd><b>→</b></button>
+          </div>
+          <button class="forklift-flush" id="forklift-flush" type="button"><kbd>F</kbd><span>EXECUTE QUEUE</span><small>RUN PENDING · ADD NOTHING</small></button>` : `<div class="forklift-direct-controls"><b>DRIVE WITH THE KEYBOARD</b><span>ARROWS / WASD · F EXECUTES QUEUE · R RECALIBRATES</span></div>`;
+    helpersCache.app.innerHTML = `<section class="forklift-captcha" data-interaction="${helpersCache.text(interaction)}" data-challenge-id="${helpersCache.text(state.challenge_id)}" tabindex="0">
       <header class="forklift-head">
         <div class="forklift-brand"><span>SHIFT CONTROL / BAY 04</span><h1>${helpersCache.text(state.prompt)}</h1></div>
         <div class="forklift-lag-badge"><i></i><span>CONTROL LINK</span><b>+${Number(state.control_lag || 1)} CYCLE${Number(state.control_lag || 1) === 1 ? "" : "S"}</b></div>
@@ -300,30 +310,24 @@
             <section><label>EXECUTED NOW</label><div id="forklift-executed"><b>∅</b><span>NOTHING / QUEUED</span></div></section>
           </div>
           <div class="forklift-queue-panel"><label>PENDING / NEXT CYCLE</label><div id="forklift-pending" data-empty="true"><span>∅</span><b>EMPTY</b></div></div>
-          <div class="forklift-keypad" aria-label="forklift direction controls">
-            <button type="button" data-command="UP" aria-label="queue up"><kbd>W</kbd><b>↑</b></button>
-            <button type="button" data-command="LEFT" aria-label="queue left"><kbd>A</kbd><b>←</b></button>
-            <button type="button" data-command="DOWN" aria-label="queue down"><kbd>S</kbd><b>↓</b></button>
-            <button type="button" data-command="RIGHT" aria-label="queue right"><kbd>D</kbd><b>→</b></button>
-          </div>
-          <button class="forklift-flush" id="forklift-flush" type="button"><kbd>F</kbd><span>EXECUTE QUEUE</span><small>RUN PENDING · ADD NOTHING</small></button>
+          ${commandControls}
           <div class="forklift-counters"><span>IMPACTS <b id="forklift-collisions">00</b></span><span>RESETS <b id="forklift-resets">00</b></span></div>
         </aside>
       </main>
       <section class="forklift-tape-wrap"><div><label>COMMAND TAPE</label><p>INPUT</p><p>EXECUTED</p><p>PHYSICAL RESULT</p></div><ol id="forklift-tape"></ol></section>
       <footer class="forklift-foot">
-        <button class="forklift-reset" id="forklift-reset" type="button">↺ RECALIBRATE</button>
+        ${interaction === "simplified" ? '<button class="forklift-reset" id="forklift-reset" type="button">↺ RECALIBRATE</button>' : '<div class="forklift-reset forklift-reset-note">R · RECALIBRATE</div>'}
         <div><span id="forklift-manifest-state">LOAD IN TRANSIT</span><div class="readout" data-status="idle">${Number(state.control_lag || 1)}-CYCLE DELAY ACTIVE</div></div>
         <button class="forklift-certify" id="forklift-certify" type="button">${helpersCache.text(state.submit_label || "CERTIFY LOAD")} →</button>
       </footer>
     </section>`;
 
-    document.querySelectorAll("[data-command]").forEach((button) => button.addEventListener("click", () => recordCommand(button.dataset.command)));
-    document.getElementById("forklift-flush")?.addEventListener("click", () => recordCommand("FLUSH"));
-    document.getElementById("forklift-reset")?.addEventListener("click", () => recordCommand("RESET"));
+    document.querySelectorAll("[data-command]").forEach((button) => button.addEventListener("click", () => recordCommand(button.dataset.command, "control_buttons")));
+    document.getElementById("forklift-flush")?.addEventListener("click", () => recordCommand("FLUSH", "control_buttons"));
+    document.getElementById("forklift-reset")?.addEventListener("click", () => recordCommand("RESET", "control_buttons"));
     document.getElementById("forklift-certify")?.addEventListener("click", certify);
     keyHandler = (event) => {
-      if (event.repeat || model?.submitting || model?.terminal) return;
+      if (event.repeat || model?.submitting || model?.terminal || model?.interaction !== "full") return;
       const key = event.key.toLowerCase();
       const command = {
         arrowup: "UP", w: "UP",
@@ -333,13 +337,13 @@
       }[key];
       if (command) {
         event.preventDefault();
-        recordCommand(command);
+        recordCommand(command, "keyboard");
       } else if (key === "f") {
         event.preventDefault();
-        recordCommand("FLUSH");
+        recordCommand("FLUSH", "keyboard");
       } else if (key === "r") {
         event.preventDefault();
-        recordCommand("RESET");
+        recordCommand("RESET", "keyboard");
       }
     };
     window.addEventListener("keydown", keyHandler);

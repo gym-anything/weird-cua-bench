@@ -18,6 +18,13 @@ def grade(payload: dict[str, Any], ground_truth: dict[str, Any], public_state: d
     if not challenge_id or str(payload.get("challenge_id") or "") != challenge_id or str(public_state.get("challenge_id") or "") != challenge_id:
         return {"graded": True, "passed": False, "feedback": "stale challenge"}
     contract = dict(ground_truth.get("gimbal") or {})
+    condition = ground_truth.get("control_condition")
+    if public_state.get("control_condition") != condition:
+        return {"graded": True, "passed": False, "feedback": "public interaction condition differs from gimbal contract"}
+    interaction = str((condition or {}).get("interaction") or "")
+    expected_source = {"simplified": "axis_controls", "full": "gimbal_ring_drag"}.get(interaction)
+    if condition is not None and expected_source is None:
+        return {"graded": True, "passed": False, "feedback": "gimbal interaction condition is invalid"}
     angles = {key: float(value) for key, value in dict(contract.get("initial") or {}).items()}
     target = {key: float(value) for key, value in dict(contract.get("target") or {}).items()}
     coupling = dict(contract.get("coupling") or {})
@@ -39,6 +46,8 @@ def grade(payload: dict[str, Any], ground_truth: dict[str, Any], public_state: d
             views.add(view)
             continue
         if kind == "drag":
+            if expected_source is not None and event.get("input_source") != expected_source:
+                return {"graded": True, "passed": False, "feedback": "gimbal drag uses the wrong interaction input"}
             axis = str(event.get("axis") or "")
             try:
                 delta = float(event.get("delta"))

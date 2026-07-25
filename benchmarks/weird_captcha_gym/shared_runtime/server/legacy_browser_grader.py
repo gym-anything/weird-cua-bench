@@ -4,18 +4,38 @@ import math
 from typing import Any, Callable
 
 
-def _ghost(result: dict[str, Any], truth: dict[str, Any], _state: dict[str, Any]) -> dict[str, Any]:
+def _ghost(result: dict[str, Any], truth: dict[str, Any], state: dict[str, Any]) -> dict[str, Any]:
     expected = {str(key): int(value) for key, value in (truth.get("expected_positions") or {}).items()}
     try:
         placements = {str(key): int(value) for key, value in (result.get("placements") or {}).items()}
     except (TypeError, ValueError):
         placements = {}
+    condition = truth.get("control_condition")
+    if condition is not None:
+        if state.get("control_condition") != condition:
+            return {"graded": True, "passed": False, "feedback": "public interaction condition differs from ghost-jigsaw contract"}
+        expected_source = {"simplified": "piece_slot_clicks", "full": "piece_drag"}.get(str(condition.get("interaction") or ""))
+        if expected_source is None:
+            return {"graded": True, "passed": False, "feedback": "ghost-jigsaw interaction condition is invalid"}
+        sources = result.get("placement_sources") or {}
+        if not isinstance(sources, dict) or any(sources.get(piece_id) != expected_source for piece_id in expected):
+            return {"graded": True, "passed": False, "feedback": "ghost-jigsaw placement uses the wrong interaction input"}
     correct = sum(1 for key, value in expected.items() if placements.get(key) == value)
     passed = bool(expected) and placements == expected
     return {"graded": True, "passed": passed, "feedback": f"pieces {correct}/{len(expected)}"}
 
 
-def _constellation(result: dict[str, Any], truth: dict[str, Any], _state: dict[str, Any]) -> dict[str, Any]:
+def _constellation(result: dict[str, Any], truth: dict[str, Any], state: dict[str, Any]) -> dict[str, Any]:
+    condition = truth.get("control_condition")
+    if condition is not None:
+        if state.get("control_condition") != condition:
+            return {"graded": True, "passed": False, "feedback": "public interaction condition differs from constellation contract"}
+        interaction = str(condition.get("interaction") or "")
+        expected_source = {"simplified": "coordinate_controls", "full": "canvas_pointer"}.get(interaction)
+        if expected_source is None:
+            return {"graded": True, "passed": False, "feedback": "constellation interaction condition is invalid"}
+        if result.get("input_source") != expected_source:
+            return {"graded": True, "passed": False, "feedback": "constellation submission uses the wrong interaction input"}
     expected = truth.get("expected_click") or {}
     click = result.get("click") or {}
     try:
@@ -48,9 +68,16 @@ def _grillmaster(result: dict[str, Any], truth: dict[str, Any], _state: dict[str
     return {"graded": True, "passed": passed, "feedback": f"foods {correct}/{len(targets)}"}
 
 
-def _rotating_keyboard(result: dict[str, Any], truth: dict[str, Any], _state: dict[str, Any]) -> dict[str, Any]:
+def _rotating_keyboard(result: dict[str, Any], truth: dict[str, Any], state: dict[str, Any]) -> dict[str, Any]:
     expected = str(truth.get("target") or "")
     submitted = str(result.get("text") or "").upper()
+    condition = truth.get("control_condition")
+    if condition is not None:
+        if state.get("control_condition") != condition:
+            return {"graded": True, "passed": False, "feedback": "public interaction condition differs from rotating-keyboard contract"}
+        expected_source = {"simplified": "physical_keyboard", "full": "onscreen_keys"}.get(str(condition.get("interaction") or ""))
+        if expected_source is None or result.get("input_source") != expected_source:
+            return {"graded": True, "passed": False, "feedback": "rotating-keyboard code uses the wrong interaction input"}
     passed = bool(expected) and submitted == expected
     return {"graded": True, "passed": passed, "feedback": "code accepted" if passed else "code rejected"}
 

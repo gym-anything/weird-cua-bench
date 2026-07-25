@@ -197,12 +197,12 @@
     tape.innerHTML = events.length ? events.map((item) => `<li data-action="${esc(item.action)}"><i>${String(item.sequence).padStart(2, "0")}</i><b>${esc(item.action.toUpperCase())}</b><span>${esc(item.outcome || (item.action === "rotate" ? `VIEW ${item.orientation_after}` : "MINE REBUILT"))}</span></li>`).join("") : '<li class="is-empty">NO TOOL EVENTS</li>';
   }
 
-  function rotateView(delta) {
+  function rotateView(delta, inputSource) {
     if (!model || model.submitting || model.terminal) return;
     clearFreshFailure();
     const before = model.orientation;
     model.orientation = (model.orientation + delta + 4) % 4;
-    model.events.push({sequence: model.events.length + 1, action: "rotate", delta, orientation_before: before, orientation_after: model.orientation});
+    model.events.push({sequence: model.events.length + 1, action: "rotate", delta, orientation_before: before, orientation_after: model.orientation, input_source: inputSource});
     model.visited.add(model.orientation);
     helpersCache.setReadout(`CAMERA ROTATED · VIEW ${model.orientation + 1}/4`, "idle");
     renderHud(); drawMine();
@@ -239,6 +239,7 @@
       outcome,
       durability_after: model.durability,
       inventory_after: [...model.inventory].sort(),
+      input_source: "canvas_click",
     };
     model.events.push(event);
     model.lastClick = {x, y, outcome};
@@ -250,7 +251,7 @@
   function resetMine() {
     if (!model || model.submitting || model.terminal) return;
     clearFreshFailure();
-    model.events.push({sequence: model.events.length + 1, action: "reset"});
+    model.events.push({sequence: model.events.length + 1, action: "reset", input_source: "reset_button"});
     model.voxels = new Map((model.state.voxels || []).map((voxel) => [String(voxel.id), {...voxel}]));
     model.orientation = Number(model.state.starting_orientation || 0);
     model.durability = Number(model.state.starting_durability || 0);
@@ -301,14 +302,38 @@
     document.body.dataset.minePalette = String(state.palette || "cavern");
     document.body.dataset.cheatMode = helpersCache.isCheatMode() ? "true" : "false";
     const sealIds = new Set(Object.values(state.extraction_prerequisites || {}).flat().map(String));
-    model = {state, voxels: new Map((state.voxels || []).map((voxel) => [String(voxel.id), {...voxel}])), sealIds, orientation: Number(state.starting_orientation || 0), durability: Number(state.starting_durability || 0), inventory: [], collapsed: false, events: [], lastClick: null, visited: new Set([Number(state.starting_orientation || 0)]), submitting: false, terminal: false};
+    const interaction = state.control_condition?.interaction || "simplified";
+    model = {state, interaction, voxels: new Map((state.voxels || []).map((voxel) => [String(voxel.id), {...voxel}])), sealIds, orientation: Number(state.starting_orientation || 0), durability: Number(state.starting_durability || 0), inventory: [], collapsed: false, events: [], lastClick: null, visited: new Set([Number(state.starting_orientation || 0)]), submitting: false, terminal: false, dragStart: null, suppressClick: false};
     const firstProcedure = sealIds.size ? "Remove every stone marked with a yellow cross." : "Mine frontmost stone blockers.";
-    helpersCache.app.innerHTML = `<section class="voxel-mine" data-challenge-id="${esc(state.challenge_id)}" data-fresh-failure="false"><header class="voxel-head"><div><span>ISOMETRIC VOXEL EXTRACTION MINE / SHAFT ${esc(state.challenge_id).toUpperCase()}</span><h1>${esc(state.prompt)}</h1></div><aside><span>PICK DURABILITY</span><div id="voxel-durability"></div><b id="voxel-durability-value"></b></aside></header><main class="voxel-main"><section class="voxel-view"><div class="voxel-canvas-shell"><canvas id="voxel-canvas" width="900" height="500"></canvas><div class="voxel-view-tag">CLICK RAY / FRONTMOST EXPOSED FACE</div></div><div class="voxel-camera"><button type="button" id="voxel-left">↶ ROTATE</button><div class="voxel-compass-shell"><i id="voxel-compass">▲</i><span>CAMERA</span></div><div class="voxel-view-pips">${[0,1,2,3].map((view) => `<i data-view="${view}">${view + 1}</i>`).join("")}</div><button type="button" id="voxel-right">ROTATE ↷</button></div></section><aside class="voxel-console"><div class="voxel-console-title"><span>EXTRACTION MANIFEST</span><i>${state.target_count} TARGETS</i></div><ol id="voxel-inventory"></ol><div class="voxel-legend"><span>MATERIAL HAZARDS</span><p><i class="is-stone"></i> STONE / COST 1</p><p><i class="is-diamond"></i> DIAMOND / EXTRACT</p><p><i class="is-lava"></i> LAVA / DAMAGES PICK</p><p><i class="is-support"></i> FRAGILE SUPPORT / COLLAPSE</p></div><div class="voxel-procedure"><span>FIELD PROCEDURE</span><ol><li>Rotate all four viewpoints.</li><li>${firstProcedure}</li><li>Recheck the changed depth order.</li><li>Preserve yellow supports.</li></ol></div><button type="button" id="voxel-reset">↺ REBUILD MINE</button><div class="voxel-tape-title"><span>TOOL TAPE</span><b>EVENTS <i id="voxel-event-count">00</i></b></div><ol id="voxel-tape"></ol></aside></main><footer class="voxel-foot"><div class="readout" data-status="idle">MINE LIVE · ROTATE / RAYCAST / EXTRACT</div><span>5×5×3 / DEPTH-SORTED CLICK RAYS / LIMITED TOOL</span><button type="button" id="voxel-exit">${esc(state.submit_label || "EXIT MINE")} →</button></footer>${helpersCache.cheatPanelTemplate()}</section>`;
-    document.getElementById("voxel-left")?.addEventListener("click", () => rotateView(-1));
-    document.getElementById("voxel-right")?.addEventListener("click", () => rotateView(1));
+    const cameraControls = interaction === "simplified" ? `<button type="button" id="voxel-left">↶ ROTATE</button><div class="voxel-compass-shell"><i id="voxel-compass">▲</i><span>CAMERA</span></div><div class="voxel-view-pips">${[0,1,2,3].map((view) => `<i data-view="${view}">${view + 1}</i>`).join("")}</div><button type="button" id="voxel-right">ROTATE ↷</button>` : `<div class="voxel-drag-note">DRAG THE MINE LEFT OR RIGHT TO ROTATE</div><div class="voxel-compass-shell"><i id="voxel-compass">▲</i><span>CAMERA</span></div><div class="voxel-view-pips">${[0,1,2,3].map((view) => `<i data-view="${view}">${view + 1}</i>`).join("")}</div>`;
+    helpersCache.app.innerHTML = `<section class="voxel-mine" data-interaction="${esc(interaction)}" data-challenge-id="${esc(state.challenge_id)}" data-fresh-failure="false"><header class="voxel-head"><div><span>ISOMETRIC VOXEL EXTRACTION MINE / SHAFT ${esc(state.challenge_id).toUpperCase()}</span><h1>${esc(state.prompt)}</h1></div><aside><span>PICK DURABILITY</span><div id="voxel-durability"></div><b id="voxel-durability-value"></b></aside></header><main class="voxel-main"><section class="voxel-view"><div class="voxel-canvas-shell"><canvas id="voxel-canvas" width="900" height="500"></canvas><div class="voxel-view-tag">${interaction === "full" ? "DRAG TO ROTATE · CLICK TO MINE" : "CLICK RAY / FRONTMOST EXPOSED FACE"}</div></div><div class="voxel-camera${interaction === "full" ? " is-direct" : ""}">${cameraControls}</div></section><aside class="voxel-console"><div class="voxel-console-title"><span>EXTRACTION MANIFEST</span><i>${state.target_count} TARGETS</i></div><ol id="voxel-inventory"></ol><div class="voxel-legend"><span>MATERIAL HAZARDS</span><p><i class="is-stone"></i> STONE / COST 1</p><p><i class="is-diamond"></i> DIAMOND / EXTRACT</p><p><i class="is-lava"></i> LAVA / DAMAGES PICK</p><p><i class="is-support"></i> FRAGILE SUPPORT / COLLAPSE</p></div><div class="voxel-procedure"><span>FIELD PROCEDURE</span><ol><li>Rotate all four viewpoints.</li><li>${firstProcedure}</li><li>Recheck the changed depth order.</li><li>Preserve yellow supports.</li></ol></div><button type="button" id="voxel-reset">↺ REBUILD MINE</button><div class="voxel-tape-title"><span>TOOL TAPE</span><b>EVENTS <i id="voxel-event-count">00</i></b></div><ol id="voxel-tape"></ol></aside></main><footer class="voxel-foot"><div class="readout" data-status="idle">MINE LIVE · ROTATE / RAYCAST / EXTRACT</div><span>5×5×3 / DEPTH-SORTED CLICK RAYS / LIMITED TOOL</span><button type="button" id="voxel-exit">${esc(state.submit_label || "EXIT MINE")} →</button></footer>${helpersCache.cheatPanelTemplate()}</section>`;
+    document.getElementById("voxel-left")?.addEventListener("click", () => rotateView(-1, "rotation_buttons"));
+    document.getElementById("voxel-right")?.addEventListener("click", () => rotateView(1, "rotation_buttons"));
     document.getElementById("voxel-reset")?.addEventListener("click", resetMine);
     document.getElementById("voxel-exit")?.addEventListener("click", exitMine);
-    document.getElementById("voxel-canvas")?.addEventListener("click", (clickEvent) => {
+    const canvas = document.getElementById("voxel-canvas");
+    canvas?.addEventListener("pointerdown", (event) => {
+      if (interaction !== "full") return;
+      model.dragStart = {x: event.clientX, y: event.clientY, pointerId: event.pointerId};
+      canvas.setPointerCapture(event.pointerId);
+    });
+    canvas?.addEventListener("pointerup", (event) => {
+      if (interaction !== "full" || !model.dragStart) return;
+      const start = model.dragStart;
+      model.dragStart = null;
+      const dx = event.clientX - start.x;
+      const dy = event.clientY - start.y;
+      if (Math.abs(dx) >= 48 && Math.abs(dx) > Math.abs(dy)) {
+        model.suppressClick = true;
+        rotateView(dx < 0 ? 1 : -1, "canvas_drag");
+      }
+    });
+    canvas?.addEventListener("pointercancel", () => { model.dragStart = null; });
+    canvas?.addEventListener("click", (clickEvent) => {
+      if (model.suppressClick) {
+        model.suppressClick = false;
+        return;
+      }
       const rect = clickEvent.currentTarget.getBoundingClientRect();
       mineAt((clickEvent.clientX - rect.left) / rect.width * WIDTH, (clickEvent.clientY - rect.top) / rect.height * HEIGHT);
     });

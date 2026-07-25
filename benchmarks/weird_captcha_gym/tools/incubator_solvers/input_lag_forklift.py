@@ -42,11 +42,12 @@ def solve(page, state_dir: Path, out_dir: Path, mechanic: str) -> None:
         raise AssertionError(f"unexpected mechanic {mechanic!r}")
     truth = _read_json(state_dir / "ground_truth.json")
     route = [str(command) for command in truth["solution"]]
+    interaction = str((truth.get("control_condition") or {}).get("interaction") or "simplified")
     if not route:
         raise AssertionError("generated forklift route is empty")
     initial_player = page.evaluate("() => [...window.inputLagForkliftModel.player]")
     for index, command in enumerate(route):
-        if index % 2 == 0:
+        if interaction == "full":
             page.keyboard.press(KEYS[command])
         else:
             page.locator(f'[data-command="{command}"]').click()
@@ -60,7 +61,10 @@ def solve(page, state_dir: Path, out_dir: Path, mechanic: str) -> None:
             _screenshot(page, out_dir, mechanic, "active-delay")
 
     for _ in range(int(truth.get("control_lag") or 1)):
-        page.keyboard.press("f")
+        if interaction == "full":
+            page.keyboard.press("f")
+        else:
+            page.locator("#forklift-flush").click()
         page.wait_for_timeout(120)
     contract = page.evaluate(
         """() => ({

@@ -7,6 +7,13 @@ MECHANIC_ID = "slime_commute"
 KEYS = {"w": (0, -1), "s": (0, 1), "a": (-1, 0), "d": (1, 0)}
 
 
+def _issue_move(page, key: str, interaction: str) -> None:
+    if interaction == "simplified":
+        page.locator(f'[data-slime-key="{key}"]').click()
+    else:
+        page.keyboard.press(key)
+
+
 def _distance(a: float, b: float, period: float) -> float:
     raw = abs(a - b)
     return min(raw, period - raw)
@@ -114,6 +121,8 @@ def fail_once(page, state_dir: Path, out_dir: Path, mechanic: str) -> None:
 
     assert mechanic == MECHANIC_ID
     state = read_json(state_dir / "public_state.json")
+    truth = read_json(state_dir / "ground_truth.json")
+    interaction = str((truth.get("control_condition") or {}).get("interaction") or "full")
     before, board = state["challenge_id"], state["board"]
     lane = _lane(board, 9)
     assert lane
@@ -124,7 +133,7 @@ def fail_once(page, state_dir: Path, out_dir: Path, mechanic: str) -> None:
             tick = _tick(page)
             dangerous = not _safe(board, float(board["start_x"]), 9, tick)
             if dangerous:
-                page.keyboard.press("w")
+                _issue_move(page, "w", interaction)
                 break
             page.wait_for_timeout(25)
         expect(page.locator(".slime-deaths b")).to_have_text(str(wipe + 1), timeout=4_000)
@@ -144,6 +153,8 @@ def solve(page, state_dir: Path, out_dir: Path, mechanic: str) -> None:
 
     assert mechanic == MECHANIC_ID
     state = read_json(state_dir / "public_state.json")
+    truth = read_json(state_dir / "ground_truth.json")
+    interaction = str((truth.get("control_condition") or {}).get("interaction") or "full")
     plan = _plan(state["board"])
     page.locator(".slime-start-v2").click()
     for action_tick, key in plan:
@@ -151,5 +162,5 @@ def solve(page, state_dir: Path, out_dir: Path, mechanic: str) -> None:
         current = _tick(page)
         if current != action_tick:
             raise AssertionError(f"browser missed deterministic crossing tick {action_tick}; reached {current}")
-        page.keyboard.press(key)
+        _issue_move(page, key, interaction)
     shot(page, out_dir, mechanic, "fixed-step-route-complete")

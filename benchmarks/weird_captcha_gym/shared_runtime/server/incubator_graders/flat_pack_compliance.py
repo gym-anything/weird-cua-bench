@@ -77,6 +77,14 @@ def grade(payload: dict[str, Any], ground_truth: dict[str, Any], public_state: d
     task_id = str(ground_truth.get("task_id") or "")
     if not task_id or str(payload.get("task_id") or "") != task_id:
         return {"graded": True, "passed": False, "feedback": "task identity mismatch"}
+    truth_condition = ground_truth.get("control_condition")
+    if truth_condition != public_state.get("control_condition"):
+        return {"graded": True, "passed": False, "feedback": "public interaction condition differs from flat-pack contract"}
+    interaction = str((truth_condition or {}).get("interaction") or "")
+    rotate_source = {"simplified": "side_rotation_buttons", "full": "part_right_click"}.get(interaction)
+    joint_source = {"simplified": "side_mate_button", "full": "automatic_socket"}.get(interaction)
+    if truth_condition is not None and (rotate_source is None or joint_source is None):
+        return {"graded": True, "passed": False, "feedback": "flat-pack interaction condition is invalid"}
     for field in ("task_id", "stage", "parts", "joints", "load_steps", "compliance_model", "requirements"):
         if public_state.get(field) != ground_truth.get(field):
             return {"graded": True, "passed": False, "feedback": f"public/private flat-pack {field} contract skew"}
@@ -121,6 +129,8 @@ def grade(payload: dict[str, Any], ground_truth: dict[str, Any], public_state: d
             contacts += 1
             continue
         if kind == "drag_start":
+            if truth_condition is not None and event.get("input_source") != "canvas_drag":
+                return {"graded": True, "passed": False, "feedback": "drag uses the wrong interaction input"}
             part_id, point = str(event.get("part_id") or ""), event.get("point")
             if drag is not None or load_active or part_id not in parts or not isinstance(point, list) or len(point) != 2:
                 return {"graded": True, "passed": False, "feedback": "invalid drag start"}
@@ -129,6 +139,8 @@ def grade(payload: dict[str, Any], ground_truth: dict[str, Any], public_state: d
             drag = {"part": part_id, "last": [float(point[0]), float(point[1])], "last_pose": list(poses[part_id]), "samples": 0}
             continue
         if kind == "drag_sample":
+            if truth_condition is not None and event.get("input_source") != "canvas_drag":
+                return {"graded": True, "passed": False, "feedback": "drag uses the wrong interaction input"}
             point, sample_pose = event.get("point"), event.get("pose")
             if drag is None or not isinstance(point, list) or len(point) != 2 or not isinstance(sample_pose, list) or len(sample_pose) != 3:
                 return {"graded": True, "passed": False, "feedback": "orphan drag sample"}
@@ -146,6 +158,8 @@ def grade(payload: dict[str, Any], ground_truth: dict[str, Any], public_state: d
             poses[drag["part"]] = body_pose
             continue
         if kind == "drag_end":
+            if truth_condition is not None and event.get("input_source") != "canvas_drag":
+                return {"graded": True, "passed": False, "feedback": "drag uses the wrong interaction input"}
             pose = event.get("pose")
             if drag is None or drag["samples"] < 1 or not isinstance(pose, list) or len(pose) != 3 or event.get("part_id") != drag["part"]:
                 return {"graded": True, "passed": False, "feedback": "invalid drag release"}
@@ -158,6 +172,8 @@ def grade(payload: dict[str, Any], ground_truth: dict[str, Any], public_state: d
             drag = None
             continue
         if kind == "rotate":
+            if rotate_source is not None and event.get("input_source") != rotate_source:
+                return {"graded": True, "passed": False, "feedback": "rotation uses the wrong interaction input"}
             part_id, pose = str(event.get("part_id") or ""), event.get("pose")
             delta = float(event.get("delta") or 0)
             if drag is not None or load_active or part_id not in parts or abs(abs(delta) - math.pi / 2) > 0.001 or not isinstance(pose, list) or len(pose) != 3:
@@ -170,6 +186,8 @@ def grade(payload: dict[str, Any], ground_truth: dict[str, Any], public_state: d
             poses[part_id] = [float(pose[0]), float(pose[1]), float(pose[2])]
             continue
         if kind == "joint_attempt":
+            if joint_source is not None and event.get("input_source") != joint_source:
+                return {"graded": True, "passed": False, "feedback": "socket mating uses the wrong interaction input"}
             joint_id, accepted = str(event.get("joint_id") or ""), event.get("accepted") is True
             if load_active:
                 return {"graded": True, "passed": False, "feedback": "joint mutated during compliance load"}

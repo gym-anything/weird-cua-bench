@@ -58,7 +58,20 @@ def _tune(page, target: int) -> None:
         page.locator("#pol-right" if clockwise <= counter else "#pol-left").click()
 
 
-def _capture(page, node: dict, requirements: dict, *, short: bool = False) -> None:
+def _place_coordinate_lens(page, point: list[float]) -> None:
+    page.locator("#palimpsest-x").fill(str(round(point[0], 2)))
+    page.locator("#palimpsest-y").fill(str(round(point[1], 2)))
+    page.locator("#palimpsest-move").click()
+
+
+def _capture(page, node: dict, requirements: dict, interaction: str, *, short: bool = False) -> None:
+    if interaction == "simplified":
+        _place_coordinate_lens(page, _position(node, _elapsed(page)))
+        page.locator("#palimpsest-capture").click()
+        if short:
+            page.wait_for_timeout(120)
+            page.locator("#palimpsest-capture").click()
+        return
     box = _box(page)
     start = _position(node, _elapsed(page))
     page.mouse.move(*_screen(box, start))
@@ -91,22 +104,27 @@ def solve(page, state_dir: Path, out_dir: Path, mechanic: str) -> None:
     if mechanic != MECHANIC_ID:
         raise AssertionError(f"unexpected mechanic {mechanic!r}")
     truth = _read(state_dir / "ground_truth.json")
+    interaction = str((truth.get("control_condition") or {}).get("interaction") or "full")
     page.wait_for_function("() => document.querySelector('.moving-palimpsest')?.dataset.freshFailure === 'false'", timeout=4_000)
-    box = _box(page)
+    box = _box(page) if interaction == "full" else None
     # A broad, real scan establishes local coverage before any answer hold.
     for row in range(6):
         for column in range(8):
-            page.mouse.move(*_screen(box, [55 + column * 116, 42 + row * 82]), steps=1)
-            page.wait_for_timeout(12)
+            point = [55 + column * 116, 42 + row * 82]
+            if interaction == "simplified":
+                _place_coordinate_lens(page, point)
+            else:
+                page.mouse.move(*_screen(box, point), steps=1)
+                page.wait_for_timeout(12)
     _shot(page, out_dir, mechanic, "active-local-scan")
 
     first = truth["nodes"][0]
     _tune(page, int(first["polarization_deg"]))
     requirements = truth["requirements"]
-    _capture(page, first, requirements, short=True)
+    _capture(page, first, requirements, interaction, short=True)
     page.wait_for_function("() => movingPalimpsestModel.misses === 1")
     _shot(page, out_dir, mechanic, "early-hold-decay")
-    _capture(page, first, requirements)
+    _capture(page, first, requirements, interaction)
     page.wait_for_function("() => movingPalimpsestModel.current === 1")
     page.locator("#palimpsest-reset").click()
     page.wait_for_function("() => movingPalimpsestModel.current === 0 && movingPalimpsestModel.resetCount === 1")
@@ -116,10 +134,13 @@ def solve(page, state_dir: Path, out_dir: Path, mechanic: str) -> None:
         # Capture a tuned-lens frame while the moving mark is actually visible.
         if index == 2:
             position = _position(node, _elapsed(page))
-            page.mouse.move(*_screen(box, position))
+            if interaction == "simplified":
+                _place_coordinate_lens(page, position)
+            else:
+                page.mouse.move(*_screen(box, position))
             page.wait_for_timeout(80)
             _shot(page, out_dir, mechanic, "tuned-moving-echo")
-        _capture(page, node, requirements)
+        _capture(page, node, requirements, interaction)
         page.wait_for_function("count => movingPalimpsestModel.current === count", arg=index + 1)
     expect(page.locator('.moving-palimpsest[data-completed="true"]')).to_be_visible()
     state = page.evaluate("() => ({probes:movingPalimpsestModel.probes,cells:movingPalimpsestModel.cells.size,turns:movingPalimpsestModel.tuningChanges,locked:movingPalimpsestModel.locked.length})")

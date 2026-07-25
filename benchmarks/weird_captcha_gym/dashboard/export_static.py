@@ -86,6 +86,7 @@ def _export_browser_play(output: Path, catalog: dict[str, Any]) -> dict[str, Any
     legacy_copied = False
     challenge_count = 0
     difficulty_profile_count = 0
+    interaction_profile_count = 0
     controlled_environment_count = 0
     grader_files: set[str] = set()
     built = [environment for environment in catalog["environments"] if environment.get("stage") == "built"]
@@ -128,32 +129,44 @@ def _export_browser_play(output: Path, catalog: dict[str, Any]) -> dict[str, Any
         browser_task_id = task_id
         if difficulty_control:
             controlled_environment_count += 1
-            interaction = str(difficulty_control["interaction"])
+            default_interaction = str(difficulty_control["baseline_interaction"])
             for profile in difficulty_control["profiles"]:
                 level = int(profile["level"])
-                profile_task = controlled_task(
-                    task,
-                    mechanic_id=mechanic_id,
-                    level=level,
-                    interaction=interaction,
-                    profile={
-                        "label": profile["label"],
-                        "natural_language": profile["instruction"],
-                        "parameters": profile["parameters"],
-                    },
-                    task_dir_name=str(profile["task_id"]),
-                )
+                interaction_profiles: dict[str, dict[str, Any]] = {}
+                for interaction in difficulty_control["interactions"]:
+                    profile_task = controlled_task(
+                        task,
+                        mechanic_id=mechanic_id,
+                        level=level,
+                        interaction=str(interaction),
+                        profile={
+                            "label": profile["label"],
+                            "natural_language": profile["instruction"],
+                            "parameters": profile["parameters"],
+                        },
+                        task_dir_name=str(profile["task_ids"][interaction]),
+                    )
+                    interaction_profiles[str(interaction)] = {
+                        "interaction": str(interaction),
+                        "task_id": profile["task_ids"][interaction],
+                        "instruction": profile["instruction"],
+                        "challenges": generate_challenges(profile_task, f"d{level}-{interaction}"),
+                    }
+                    interaction_profile_count += 1
+                default_profile = interaction_profiles[default_interaction]
                 difficulty_profiles[str(level)] = {
                     "level": level,
                     "label": profile["label"],
-                    "task_id": profile["task_id"],
+                    "task_id": default_profile["task_id"],
                     "instruction": profile["instruction"],
-                    "challenges": generate_challenges(profile_task, f"d{level}"),
+                    "challenges": default_profile["challenges"],
+                    "interaction_profiles": interaction_profiles,
                 }
                 difficulty_profile_count += 1
             default_difficulty = int(difficulty_control["baseline_level"])
         else:
             default_difficulty = None
+            default_interaction = None
 
         grader_source = GRADER_ROOT / f"{mechanic_id}.py"
         if grader_source.is_file():
@@ -168,13 +181,14 @@ def _export_browser_play(output: Path, catalog: dict[str, Any]) -> dict[str, Any
                 legacy_copied = True
         grader_files.add(grader_name)
         bundle = {
-            "version": 2,
+            "version": 3,
             "environment_id": environment_id,
             "mechanic_id": mechanic_id,
             "title": environment["title"],
             "task_id": browser_task_id,
             "base_task_id": task_id,
             "default_difficulty": default_difficulty,
+            "default_interaction": default_interaction,
             "difficulty_profiles": difficulty_profiles,
             "grader": f"graders/{grader_name}",
             "challenges": challenges,
@@ -191,6 +205,7 @@ def _export_browser_play(output: Path, catalog: dict[str, Any]) -> dict[str, Any
         "challenges_per_environment": BROWSER_CHALLENGES_PER_ENVIRONMENT,
         "controlled_environments": controlled_environment_count,
         "difficulty_profiles": difficulty_profile_count,
+        "interaction_profiles": interaction_profile_count,
         "grader_files": len(grader_files),
         "python_runtime": "pyodide@314.0.2",
     }

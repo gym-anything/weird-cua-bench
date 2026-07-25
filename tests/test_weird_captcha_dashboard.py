@@ -356,6 +356,31 @@ class WeirdCaptchaDashboardTests(unittest.TestCase):
         self.assertEqual(sum(annotation["reasoning_planning"] for annotation in annotations), 54)
         self.assertEqual(sum(annotation["exploration_interface"] for annotation in annotations), 28)
 
+    def test_controlled_environment_cards_use_the_current_profile_label(self) -> None:
+        controlled = [
+            environment
+            for environment in build_catalog()["environments"]
+            if environment.get("difficulty_control")
+        ]
+        self.assertEqual(len(controlled), 15)
+        for environment in controlled:
+            self.assertEqual(environment["difficulty_control"]["interactions"], ["simplified", "full"])
+            self.assertIn(
+                environment["difficulty_control"]["baseline_interaction"],
+                environment["difficulty_control"]["interactions"],
+            )
+            current = [
+                profile
+                for profile in environment["difficulty_control"]["profiles"]
+                if profile["current_implementation"]
+            ]
+            self.assertEqual(len(current), 1, environment["mechanic_id"])
+            self.assertEqual(
+                environment["difficulty"],
+                current[0]["label"].replace("_", " "),
+                environment["mechanic_id"],
+            )
+
     def test_rorschach_annotation_matches_the_visible_passing_strategy(self) -> None:
         environment = next(
             item
@@ -766,11 +791,12 @@ class WeirdCaptchaDashboardTests(unittest.TestCase):
             self.assertEqual(manifest["browser_play"], {
                 "enabled": True,
                 "environments": 75,
-                "challenges": 600,
+                "challenges": 900,
                 "challenges_per_environment": 4,
                 "controlled_environments": 15,
                 "difficulty_profiles": 75,
-                "grader_files": 69,
+                "interaction_profiles": 150,
+                "grader_files": 70,
                 "python_runtime": "pyodide@314.0.2",
             })
             html = (output / "index.html").read_text(encoding="utf-8")
@@ -783,6 +809,8 @@ class WeirdCaptchaDashboardTests(unittest.TestCase):
             self.assertIn("browserPlayHref", app)
             self.assertIn("Select difficulty", app)
             self.assertIn("data-difficulty-level", app)
+            self.assertIn("Select interaction", app)
+            self.assertIn("data-interaction-mode", app)
             self.assertIn("python run.py --hosted", app)
             self.assertIn("consumePairingFragment", app)
             self.assertIn("captcha-bench-starred-environments:v1", app)
@@ -809,6 +837,7 @@ class WeirdCaptchaDashboardTests(unittest.TestCase):
             self.assertTrue((output / "play" / "runtime" / "grader_worker.js").is_file())
             browser_adapter = (output / "play" / "runtime" / "browser_adapter.js").read_text(encoding="utf-8")
             self.assertIn("requestedDifficulty", browser_adapter)
+            self.assertIn("requestedInteraction", browser_adapter)
             challenge_files = sorted((output / "play" / "challenges").glob("*.json"))
             self.assertEqual(len(challenge_files), 75)
             for challenge_file in challenge_files:
@@ -820,14 +849,20 @@ class WeirdCaptchaDashboardTests(unittest.TestCase):
                     controlled_challenges = [
                         challenge
                         for profile in bundle["difficulty_profiles"].values()
-                        for challenge in profile["challenges"]
+                        for interaction_profile in profile["interaction_profiles"].values()
+                        for challenge in interaction_profile["challenges"]
                     ]
-                    self.assertEqual(len(controlled_challenges), 20)
+                    self.assertEqual(len(controlled_challenges), 40)
                     self.assertEqual(
                         len({item["ground_truth"]["challenge_id"] for item in controlled_challenges}),
-                        20,
+                        40,
                     )
                     self.assertIn(str(bundle["default_difficulty"]), bundle["difficulty_profiles"])
+                    self.assertIn(bundle["default_interaction"], {"simplified", "full"})
+                    self.assertTrue(all(
+                        set(profile["interaction_profiles"]) == {"simplified", "full"}
+                        for profile in bundle["difficulty_profiles"].values()
+                    ))
                 self.assertTrue((output / "play" / bundle["grader"]).is_file(), challenge_file.name)
             self.assertTrue(all(
                 not str(environment.get("cover") or "").startswith("/media/")
@@ -961,15 +996,18 @@ class WeirdCaptchaDashboardTests(unittest.TestCase):
                 "input_lag_forklift_env",
                 "input_lag_forklift_seed_0001",
                 difficulty=5,
+                interaction="full",
                 seed=91,
                 auto_open=False,
             )
             self.assertTrue(setup_started.wait(timeout=5))
             self.assertEqual(session["task_id"], "input_lag_forklift_d5_full_seed_0001")
             self.assertEqual(session["difficulty"], 5)
+            self.assertEqual(session["interaction"], "full")
             task = json.loads(Path(session["task_json"]).read_text(encoding="utf-8"))
             condition = task["metadata"]["control_condition"]
             self.assertEqual(condition["difficulty"], 5)
+            self.assertEqual(condition["interaction"], "full")
             self.assertEqual(condition["difficulty_parameters"]["control_lag"], 2)
             manager.cleanup()
             release_setup.set()

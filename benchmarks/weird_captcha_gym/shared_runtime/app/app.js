@@ -36,6 +36,8 @@ const temporalModel = {
 const ghostModel = {
   state: null,
   placements: {},
+  placementSources: {},
+  selectedPieceId: null,
   frame: 0,
   animationFrame: 0,
 };
@@ -43,6 +45,7 @@ const constellationModel = {
   state: null,
   pointer: null,
   pendingClick: null,
+  inputSource: null,
   animationFrame: 0,
 };
 const grillModel = {
@@ -52,6 +55,8 @@ const grillModel = {
 };
 const rotatingKeyboardModel = {
   input: "",
+  inputSource: null,
+  keyHandler: null,
 };
 const slotModel = {
   state: null,
@@ -2414,7 +2419,7 @@ function animateGhostJigsaw() {
   ghostModel.animationFrame = requestAnimationFrame(animateGhostJigsaw);
 }
 
-function ghostDropTarget(target, pieceId) {
+function ghostDropTarget(target, pieceId, inputSource) {
   const piece = document.querySelector(`.ghost-piece[data-piece-id="${CSS.escape(pieceId)}"]`);
   const bank = document.querySelector(".ghost-piece-bank");
   if (!piece || !bank) return;
@@ -2422,15 +2427,26 @@ function ghostDropTarget(target, pieceId) {
     const existing = target.querySelector(".ghost-piece");
     if (existing && existing !== piece) {
       delete ghostModel.placements[existing.dataset.pieceId];
+      delete ghostModel.placementSources[existing.dataset.pieceId];
       bank.appendChild(existing);
     }
     target.appendChild(piece);
     ghostModel.placements[pieceId] = Number(target.dataset.slotIndex);
+    ghostModel.placementSources[pieceId] = inputSource;
   } else {
     bank.appendChild(piece);
     delete ghostModel.placements[pieceId];
+    delete ghostModel.placementSources[pieceId];
   }
+  ghostModel.selectedPieceId = null;
+  document.querySelectorAll(".ghost-piece").forEach((item) => item.classList.remove("is-selected"));
   setReadout("", "idle");
+}
+
+function selectGhostPiece(piece) {
+  ghostModel.selectedPieceId = String(piece.dataset.pieceId);
+  document.querySelectorAll(".ghost-piece").forEach((item) => item.classList.toggle("is-selected", item === piece));
+  setReadout("PIECE SELECTED · CLICK A DESTINATION SLOT", "idle");
 }
 
 function renderMotionOnlyGhostJigsaw(state) {
@@ -2439,9 +2455,12 @@ function renderMotionOnlyGhostJigsaw(state) {
   document.body.dataset.cheatMode = isCheatMode() ? "true" : "false";
   ghostModel.state = state;
   ghostModel.placements = {};
+  ghostModel.placementSources = {};
+  ghostModel.selectedPieceId = null;
   ghostModel.frame = 0;
+  const interaction = state.control_condition?.interaction || "full";
   app.innerHTML = `
-    <section class="interaction-captcha ghost-captcha" data-mechanic="${text(state.mechanic_id)}" data-challenge-id="${text(state.challenge_id)}">
+    <section class="interaction-captcha ghost-captcha" data-interaction="${text(interaction)}" data-mechanic="${text(state.mechanic_id)}" data-challenge-id="${text(state.challenge_id)}">
       <header class="interaction-head ghost-head"><p>MOTION CHECK / 01</p><h1>${text(state.prompt)}</h1></header>
       <section class="ghost-stage">
         <div class="ghost-reference-wrap"><span>LIVE REFERENCE</span><canvas class="ghost-reference" width="168" height="168"></canvas></div>
@@ -2449,25 +2468,35 @@ function renderMotionOnlyGhostJigsaw(state) {
           ${Array.from({length: state.pieces.length}, (_, index) => `<div class="ghost-slot" data-slot-index="${index}" aria-label="position ${index + 1}"></div>`).join("")}
         </div>
         <div class="ghost-piece-bank" aria-label="moving jigsaw pieces" style="--ghost-columns:${Number(state.visual?.columns || 3)};--ghost-count:${state.pieces.length}">
-          ${(state.pieces || []).map((piece) => `<div class="ghost-piece" draggable="true" data-piece-id="${text(piece.id)}" data-source-index="${text(piece.source_index)}" data-noise-seed="${text(piece.noise_seed)}" data-phase="${text(piece.phase)}"><canvas width="58" height="58"></canvas></div>`).join("")}
+          ${(state.pieces || []).map((piece) => `<div class="ghost-piece" draggable="${interaction === "full"}" data-piece-id="${text(piece.id)}" data-source-index="${text(piece.source_index)}" data-noise-seed="${text(piece.noise_seed)}" data-phase="${text(piece.phase)}"><canvas width="58" height="58"></canvas></div>`).join("")}
         </div>
       </section>
       <footer class="interaction-foot"><div class="readout" data-status="idle"></div><button class="interaction-submit" id="submit-ghost" type="button">${text(state.submit_label || "VERIFY")}</button></footer>
       ${cheatPanelTemplate()}
     </section>`;
   document.querySelectorAll(".ghost-piece").forEach((piece) => {
-    piece.addEventListener("dragstart", (event) => event.dataTransfer.setData("text/plain", piece.dataset.pieceId));
-  });
-  document.querySelectorAll(".ghost-slot, .ghost-piece-bank").forEach((target) => {
-    target.addEventListener("dragover", (event) => event.preventDefault());
-    target.addEventListener("drop", (event) => {
-      event.preventDefault();
-      ghostDropTarget(target, event.dataTransfer.getData("text/plain"));
+    if (interaction === "full") piece.addEventListener("dragstart", (event) => event.dataTransfer.setData("text/plain", piece.dataset.pieceId));
+    else piece.addEventListener("click", (event) => {
+      event.stopPropagation();
+      selectGhostPiece(piece);
     });
   });
+  if (interaction === "full") {
+    document.querySelectorAll(".ghost-slot, .ghost-piece-bank").forEach((target) => {
+      target.addEventListener("dragover", (event) => event.preventDefault());
+      target.addEventListener("drop", (event) => {
+        event.preventDefault();
+        ghostDropTarget(target, event.dataTransfer.getData("text/plain"), "piece_drag");
+      });
+    });
+  } else {
+    document.querySelectorAll(".ghost-slot").forEach((slot) => slot.addEventListener("click", () => {
+      if (ghostModel.selectedPieceId) ghostDropTarget(slot, ghostModel.selectedPieceId, "piece_slot_clicks");
+    }));
+  }
   document.getElementById("submit-ghost").addEventListener("click", async () => {
     try {
-      const response = await fetch("/result", {method: "POST", headers: {"content-type": "application/json"}, body: JSON.stringify({mechanic_id: state.mechanic_id, challenge_id: state.challenge_id, placements: ghostModel.placements})});
+      const response = await fetch("/result", {method: "POST", headers: {"content-type": "application/json"}, body: JSON.stringify({mechanic_id: state.mechanic_id, challenge_id: state.challenge_id, placements: ghostModel.placements, placement_sources: ghostModel.placementSources})});
       const outcome = await response.json();
       if (outcome.passed === true) setReadout("PASS", "passed");
       else if (outcome.passed === false) { if (outcome.state) renderMotionOnlyGhostJigsaw(outcome.state); setReadout("FAIL", "error"); }
@@ -2545,24 +2574,51 @@ function renderCursorConstellationHunt(state) {
   if (constellationModel.animationFrame) cancelAnimationFrame(constellationModel.animationFrame);
   document.body.dataset.mechanic = "constellation-hunt";
   document.body.dataset.cheatMode = isCheatMode() ? "true" : "false";
-  constellationModel.state = state; constellationModel.pointer = null; constellationModel.pendingClick = null;
+  constellationModel.state = state; constellationModel.pointer = null; constellationModel.pendingClick = null; constellationModel.inputSource = null;
   const surface = state.surface || {};
+  const interaction = state.control_condition?.interaction || "full";
+  const coordinateControls = interaction === "simplified" ? `
+      <section class="constellation-coordinate-controls" aria-label="Coordinate lens controls">
+        <label>X <input id="constellation-x" type="number" min="0" max="${text(surface.width || 680)}" step="1" value="${Math.round(Number(surface.width || 680) / 2)}"></label>
+        <label>Y <input id="constellation-y" type="number" min="0" max="${text(surface.height || 410)}" step="1" value="${Math.round(Number(surface.height || 410) / 2)}"></label>
+        <button id="move-constellation-lens" type="button">MOVE LENS</button>
+        <button id="select-constellation-point" type="button">SELECT THIS POINT</button>
+      </section>` : "";
   app.innerHTML = `
-    <section class="interaction-captcha constellation-captcha" data-mechanic="${text(state.mechanic_id)}" data-challenge-id="${text(state.challenge_id)}">
+    <section class="interaction-captcha constellation-captcha" data-mechanic="${text(state.mechanic_id)}" data-challenge-id="${text(state.challenge_id)}" data-interaction="${text(interaction)}">
       <header class="interaction-head constellation-head"><p>ACTIVE VISION / 02</p><h1>${text(state.prompt)}</h1></header>
       <section class="constellation-stage"><canvas class="constellation-canvas" width="${text(surface.width || 680)}" height="${text(surface.height || 410)}"></canvas><div class="constellation-reticle"></div></section>
+      ${coordinateControls}
       <footer class="interaction-foot"><div class="readout" data-status="idle"></div><button class="interaction-submit" id="submit-constellation" type="button">${text(state.submit_label || "VERIFY")}</button></footer>
       ${cheatPanelTemplate()}
     </section>`;
   const canvas = document.querySelector(".constellation-canvas");
-  canvas.addEventListener("mousemove", (event) => { constellationModel.pointer = constellationPoint(canvas, event); });
-  canvas.addEventListener("mouseleave", () => { constellationModel.pointer = null; });
-  canvas.addEventListener("click", (event) => { constellationModel.pendingClick = constellationPoint(canvas, event); setReadout("", "idle"); });
+  if (interaction === "full") {
+    canvas.addEventListener("mousemove", (event) => { constellationModel.pointer = constellationPoint(canvas, event); });
+    canvas.addEventListener("mouseleave", () => { constellationModel.pointer = null; });
+    canvas.addEventListener("click", (event) => { constellationModel.pendingClick = constellationPoint(canvas, event); constellationModel.inputSource = "canvas_pointer"; setReadout("", "idle"); });
+  } else {
+    const coordinate = (axis, limit) => Math.max(0, Math.min(limit, Number(document.getElementById(`constellation-${axis}`).value)));
+    document.getElementById("move-constellation-lens").addEventListener("click", () => {
+      const point = {x: coordinate("x", Number(surface.width || 680)), y: coordinate("y", Number(surface.height || 410))};
+      if (!Number.isFinite(point.x) || !Number.isFinite(point.y)) return;
+      constellationModel.pointer = point;
+      constellationModel.pendingClick = null;
+      constellationModel.inputSource = null;
+      setReadout("", "idle");
+    });
+    document.getElementById("select-constellation-point").addEventListener("click", () => {
+      if (!constellationModel.pointer) return;
+      constellationModel.pendingClick = {...constellationModel.pointer};
+      constellationModel.inputSource = "coordinate_controls";
+      setReadout("", "idle");
+    });
+  }
   drawConstellationCanvas(canvas);
   document.getElementById("submit-constellation").addEventListener("click", async () => {
     const click = constellationModel.pendingClick || {x: -999, y: -999};
     try {
-      const response = await fetch("/result", {method: "POST", headers: {"content-type": "application/json"}, body: JSON.stringify({mechanic_id: state.mechanic_id, challenge_id: state.challenge_id, click: {x: Number(click.x.toFixed(2)), y: Number(click.y.toFixed(2))}})});
+      const response = await fetch("/result", {method: "POST", headers: {"content-type": "application/json"}, body: JSON.stringify({mechanic_id: state.mechanic_id, task_id: state.task_id, challenge_id: state.challenge_id, input_source: constellationModel.inputSource, click: {x: Number(click.x.toFixed(2)), y: Number(click.y.toFixed(2))}})});
       const outcome = await response.json();
       if (outcome.passed === true) setReadout("PASS", "passed");
       else if (outcome.passed === false) { if (outcome.state) renderCursorConstellationHunt(outcome.state); setReadout("FAIL", "error"); }
@@ -2652,15 +2708,18 @@ function updateRotatingKeyboardDisplay(target) {
 }
 
 function renderRotatingKeyboard(state) {
+  if (rotatingKeyboardModel.keyHandler) window.removeEventListener("keydown", rotatingKeyboardModel.keyHandler);
   document.body.dataset.mechanic = "rotating-keyboard";
   document.body.dataset.cheatMode = isCheatMode() ? "true" : "false";
   rotatingKeyboardModel.input = "";
+  rotatingKeyboardModel.inputSource = null;
   const keyboard = state.keyboard || {};
+  const interaction = state.control_condition?.interaction || "full";
   app.innerHTML = `
-    <section class="interaction-captcha rotating-captcha" data-mechanic="${text(state.mechanic_id)}" data-challenge-id="${text(state.challenge_id)}">
+    <section class="interaction-captcha rotating-captcha" data-interaction="${text(interaction)}" data-mechanic="${text(state.mechanic_id)}" data-challenge-id="${text(state.challenge_id)}">
       <header class="interaction-head rotating-head"><p>COORDINATE CHECK / 04</p><h1>${text(state.prompt)}</h1></header>
       <section class="rotating-stage">
-        <div class="rotating-fixed"><span>CONFIRM</span><strong>${text(keyboard.target)}</strong><div class="rotating-entry"></div></div>
+        <div class="rotating-fixed"><span>${interaction === "simplified" ? "TYPE ON YOUR KEYBOARD" : "CONFIRM"}</span><strong>${text(keyboard.target)}</strong><div class="rotating-entry"></div></div>
         <div class="rotating-perspective"><div class="rotating-deck motion-${text(keyboard.motion_profile || "current")}" style="--spin-direction:${Number(keyboard.direction || 1)};--spin-duration:${Number(keyboard.duration_ms || 9400)}ms;--key-width:${Number(keyboard.key_width || 38)}px;--key-height:${Number(keyboard.key_height || 45)}px">
           ${(keyboard.rows || []).map((row) => `<div class="rotating-row">${row.split("").map((key) => `<button type="button" class="rotating-key" data-key="${text(key)}">${text(key)}</button>`).join("")}</div>`).join("")}
           <div class="rotating-row rotating-row-short"><button type="button" class="rotating-key rotating-delete" data-key="BACKSPACE">ERASE</button></div>
@@ -2675,17 +2734,36 @@ function renderRotatingKeyboard(state) {
   updateRotatingKeyboardDisplay(keyboard.target || "");
   document.querySelectorAll(".rotating-key").forEach((button) => {
     button.addEventListener("click", () => {
+      if (interaction !== "full") return;
       const key = button.dataset.key;
       if (key === "BACKSPACE") rotatingKeyboardModel.input = rotatingKeyboardModel.input.slice(0, -1);
       else if (rotatingKeyboardModel.input.length < String(keyboard.target || "").length) rotatingKeyboardModel.input += key;
+      rotatingKeyboardModel.inputSource = "onscreen_keys";
       if (rotatingKeyboardModel.input.length >= spinAfter) deck.classList.add("is-spinning");
       updateRotatingKeyboardDisplay(keyboard.target || "");
       setReadout("", "idle");
     });
   });
+  if (interaction === "simplified") {
+    const alphabet = new Set((keyboard.rows || []).join("").split(""));
+    rotatingKeyboardModel.keyHandler = (event) => {
+      if (event.repeat) return;
+      const raw = String(event.key || "");
+      const key = raw.length === 1 ? raw.toUpperCase() : raw.toUpperCase();
+      if (key === "BACKSPACE") rotatingKeyboardModel.input = rotatingKeyboardModel.input.slice(0, -1);
+      else if (alphabet.has(key) && rotatingKeyboardModel.input.length < String(keyboard.target || "").length) rotatingKeyboardModel.input += key;
+      else return;
+      event.preventDefault();
+      rotatingKeyboardModel.inputSource = "physical_keyboard";
+      if (rotatingKeyboardModel.input.length >= spinAfter) deck.classList.add("is-spinning");
+      updateRotatingKeyboardDisplay(keyboard.target || "");
+      setReadout("", "idle");
+    };
+    window.addEventListener("keydown", rotatingKeyboardModel.keyHandler);
+  }
   document.getElementById("submit-rotating").addEventListener("click", async () => {
     try {
-      const response = await fetch("/result", {method: "POST", headers: {"content-type": "application/json"}, body: JSON.stringify({mechanic_id: state.mechanic_id, challenge_id: state.challenge_id, text: rotatingKeyboardModel.input})});
+      const response = await fetch("/result", {method: "POST", headers: {"content-type": "application/json"}, body: JSON.stringify({mechanic_id: state.mechanic_id, challenge_id: state.challenge_id, text: rotatingKeyboardModel.input, input_source: rotatingKeyboardModel.inputSource})});
       const outcome = await response.json();
       if (outcome.passed === true) setReadout("PASS", "passed");
       else if (outcome.passed === false) { if (outcome.state) renderRotatingKeyboard(outcome.state); setReadout("FAIL", "error"); }

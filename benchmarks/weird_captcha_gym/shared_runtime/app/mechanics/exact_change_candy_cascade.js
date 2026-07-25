@@ -18,6 +18,7 @@
     terminal: false,
     ready: false,
     forbiddenActivated: false,
+    interaction: "simplified",
     helpers: null,
   };
 
@@ -103,7 +104,7 @@
   function boardMarkup() {
     return model.board.map((row, rowIndex) => row.map((candy, columnIndex) => {
       const selected = sameCoord(model.selected, [rowIndex, columnIndex]);
-      return `<button type="button" draggable="true" class="candy-cell${selected ? " is-selected" : ""}" data-row="${rowIndex}" data-column="${columnIndex}" aria-label="${clean(candy)} row ${rowIndex + 1} column ${columnIndex + 1}">${candyMarkup(candy)}</button>`;
+      return `<button type="button" draggable="${model.interaction === "full"}" class="candy-cell${selected ? " is-selected" : ""}" data-row="${rowIndex}" data-column="${columnIndex}" aria-label="${clean(candy)} row ${rowIndex + 1} column ${columnIndex + 1}">${candyMarkup(candy)}</button>`;
     }).join("")).join("");
   }
 
@@ -144,9 +145,9 @@
 
   function bindCells() {
     document.querySelectorAll(".candy-cell").forEach((button) => {
-      button.addEventListener("click", () => selectCell(cellCoord(button)));
+      if (model.interaction === "simplified") button.addEventListener("click", () => selectCell(cellCoord(button)));
       button.addEventListener("dragstart", (event) => {
-        if (model.busy || model.terminal) {
+        if (model.interaction !== "full" || model.busy || model.terminal) {
           event.preventDefault();
           return;
         }
@@ -160,7 +161,7 @@
         event.preventDefault();
         const raw = event.dataTransfer.getData("text/plain").split(",").map(Number);
         const destination = cellCoord(button);
-        if (raw.length === 2 && adjacent(raw, destination)) attemptSwap(raw, destination);
+        if (model.interaction === "full" && raw.length === 2 && adjacent(raw, destination)) attemptSwap(raw, destination, "candy_drag");
         else flashMessage("ADJACENT TILES ONLY", "error");
       });
     });
@@ -238,7 +239,7 @@
     }
   }
 
-  async function forbiddenFailure(first, second) {
+  async function forbiddenFailure(first, second, inputSource) {
     model.forbiddenActivated = true;
     model.terminal = true;
     model.swaps.push({
@@ -248,6 +249,7 @@
       outcome: "forbidden",
       score_after: model.score,
       wave_count: 0,
+      input_source: inputSource,
     });
     const shell = document.querySelector(".candy-cascade-captcha");
     shell?.classList.add("is-licorice-fail");
@@ -257,7 +259,7 @@
     await submit(false);
   }
 
-  async function attemptSwap(first, second) {
+  async function attemptSwap(first, second, inputSource) {
     if (model.busy || model.terminal || !adjacent(first, second)) return;
     clearFreshFailure();
     model.busy = true;
@@ -266,7 +268,7 @@
     const secondCandy = model.board[second[0]][second[1]];
     if (firstCandy === FORBIDDEN || secondCandy === FORBIDDEN) {
       model.busy = false;
-      await forbiddenFailure(first, second);
+      await forbiddenFailure(first, second, inputSource);
       return;
     }
 
@@ -284,6 +286,7 @@
         outcome: "invalid",
         score_after: model.score,
         wave_count: 0,
+        input_source: inputSource,
       });
       document.getElementById("candy-board")?.classList.add("is-invalid");
       flashMessage("NO MATCH · SWAP RETURNED", "error");
@@ -324,6 +327,7 @@
       outcome: "valid",
       score_after: model.score,
       wave_count: wave,
+      input_source: inputSource,
     });
     model.ready = model.validMoves === Number(model.state.move_budget) && model.score === Number(model.state.target_score);
     model.busy = false;
@@ -368,7 +372,7 @@
     }
     const first = model.selected;
     model.selected = null;
-    attemptSwap(first, coord);
+    attemptSwap(first, coord, "cell_clicks");
   }
 
   function resetBoard() {
@@ -395,6 +399,7 @@
     document.body.dataset.mechanic = "exact-change-candy-cascade";
     document.body.dataset.candyPalette = String(state.palette || "soda-pop");
     document.body.dataset.cheatMode = helpers.isCheatMode() ? "true" : "false";
+    const interaction = state.control_condition?.interaction || "simplified";
     Object.assign(model, {
       state,
       board: cloneBoard(state.board),
@@ -409,10 +414,11 @@
       terminal: false,
       ready: false,
       forbiddenActivated: false,
+      interaction,
       helpers,
     });
     helpers.app.innerHTML = `
-      <section class="candy-cascade-captcha" data-challenge-id="${clean(state.challenge_id)}">
+      <section class="candy-cascade-captcha" data-interaction="${clean(interaction)}" data-challenge-id="${clean(state.challenge_id)}">
         <header class="candy-head">
           <div class="candy-brand"><span>NO. 36 / CONFECTIONERY CASHIER TEST</span><h1>${clean(state.prompt)}</h1></div>
           <div class="candy-target-ticket"><small>EXACT TOTAL</small><strong>${Number(state.target_score)}</strong><i>POINTS</i></div>
@@ -426,7 +432,7 @@
             <div class="candy-exact-state" id="candy-exact-state" data-state="under">${Number(state.target_score)} STILL OWED</div>
           </aside>
           <section class="candy-board-case">
-            <div class="candy-board-top"><span>SWAP NEIGHBORS · CASCADES PAY MORE</span><b>5 × 5</b></div>
+            <div class="candy-board-top"><span>${interaction === "full" ? "DRAG CANDY ONTO A NEIGHBOR" : "CLICK A CANDY THEN ITS NEIGHBOR"} · CASCADES PAY MORE</span><b>5 × 5</b></div>
             <div class="candy-board" id="candy-board">${boardMarkup()}</div>
             <div class="candy-danger-strip"><i>${candyMarkup(FORBIDDEN)}</i><p><b>BLACK LICORICE</b><span>TOUCHING IT VOIDS THE RUN</span></p></div>
           </section>

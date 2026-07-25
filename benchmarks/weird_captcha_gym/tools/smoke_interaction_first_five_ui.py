@@ -124,20 +124,31 @@ def solve_constellation(page, state_dir: Path, out_dir: Path, mechanic: str) -> 
     state = read_json(state_dir / "public_state.json")
     truth = read_json(state_dir / "ground_truth.json")
     expected = truth["expected_click"]
-    canvas = page.locator(".constellation-canvas")
-    box = canvas.bounding_box()
-    if not box:
-        raise AssertionError("constellation canvas has no bounding box")
+    interaction = str((truth.get("control_condition") or {}).get("interaction") or "full")
     decoys = state["surface"]["decoys"]
     probe = decoys[0] if decoys else {"x": 48, "y": 48}
-    page.mouse.move(box["x"] + probe["x"] * box["width"] / 680, box["y"] + probe["y"] * box["height"] / 410)
-    page.wait_for_timeout(300)
-    screenshot(page, out_dir, mechanic, "active-decoy")
-    x = box["x"] + expected["x"] * box["width"] / 680
-    y = box["y"] + expected["y"] * box["height"] / 410
-    page.mouse.move(x, y)
-    page.wait_for_timeout(350)
-    page.mouse.click(x, y)
+    if interaction == "simplified":
+        for point in (probe, expected):
+            page.locator("#constellation-x").fill(str(point["x"]))
+            page.locator("#constellation-y").fill(str(point["y"]))
+            page.locator("#move-constellation-lens").click()
+            page.wait_for_timeout(300)
+            if point is probe:
+                screenshot(page, out_dir, mechanic, "active-decoy")
+        page.locator("#select-constellation-point").click()
+    else:
+        canvas = page.locator(".constellation-canvas")
+        box = canvas.bounding_box()
+        if not box:
+            raise AssertionError("constellation canvas has no bounding box")
+        page.mouse.move(box["x"] + probe["x"] * box["width"] / 680, box["y"] + probe["y"] * box["height"] / 410)
+        page.wait_for_timeout(300)
+        screenshot(page, out_dir, mechanic, "active-decoy")
+        x = box["x"] + expected["x"] * box["width"] / 680
+        y = box["y"] + expected["y"] * box["height"] / 410
+        page.mouse.move(x, y)
+        page.wait_for_timeout(350)
+        page.mouse.click(x, y)
     screenshot(page, out_dir, mechanic, "solved-state")
     page.locator("#submit-constellation").click()
 

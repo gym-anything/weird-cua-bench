@@ -13,7 +13,7 @@
     return item;
   };
   const shell = (state, eyebrow, title, instruction, body, controls = "") => `
-    <section class="ivv ivv-${esc(state.mechanic_id.replaceAll("_", "-"))}" data-challenge-id="${esc(state.challenge_id)}">
+    <section class="ivv ivv-${esc(state.mechanic_id.replaceAll("_", "-"))}" data-interaction="${esc(state.control_condition?.interaction || "")}" data-challenge-id="${esc(state.challenge_id)}">
       <header class="ivv-head"><div><span>${esc(eyebrow)}</span><h1>${esc(title)}</h1></div><p>${esc(instruction)}</p></header>
       <main class="ivv-stage">${body}<aside class="ivv-console">${controls}</aside></main>
       <footer class="ivv-foot"><span>${esc(state.challenge_id.toUpperCase())} · LOCAL PHYSICAL TRIAL</span><div class="readout" data-status="idle">READY</div></footer>
@@ -93,7 +93,8 @@
 
   registry.specular_lighthouse_relay = async (state, helpers) => {
     document.body.dataset.mechanic = "specular-lighthouse-relay";
-    const model = {state, helpers, events: [], roundIndex: 0, angles: state.rounds[0].mirrors.map((item) => Number(item.angle_deg)), charge: 0, tick: 0, shutterOpen: false, terminal: false, submitting: false, timer: null};
+    const interaction = state.control_condition?.interaction || "simplified";
+    const model = {state, helpers, interaction, events: [], roundIndex: 0, angles: state.rounds[0].mirrors.map((item) => Number(item.angle_deg)), charge: 0, tick: 0, shutterOpen: false, terminal: false, submitting: false, timer: null, mirrorDrag: null};
     window.specularLighthouseRelayModel = model;
     helpers.app.innerHTML = shell(state, "COASTAL OPTICS AUTHORITY", "SPECULAR LIGHTHOUSE RELAY", `Build the ${state.rounds[0].mirrors.length}-mirror path, open the shutter, then keep steering the live receiver while charge leaks on every miss.`, `<canvas id="specular-canvas" width="900" height="480"></canvas>`, `
       <h2>GIMBAL BANK</h2><div id="specular-controls"></div>
@@ -101,13 +102,17 @@
       <div class="ivv-meter"><i id="specular-meter"></i></div>
       <button id="specular-abandon" class="ivv-danger">ABANDON / FRESH RELAY</button>`);
     const current = () => state.rounds[model.roundIndex];
+    const adjustMirror = (index, delta, inputSource) => {
+      if (model.terminal) return;
+      const before = model.angles[index];
+      model.angles[index] = (before + Number(delta) + 180) % 180;
+      event(model, "mirror_adjust", {round_id: current().id, tick: model.tick, mirror_id: current().mirrors[index].id, before: round(before, 2), after: round(model.angles[index], 2), input_source: inputSource});
+    };
     const renderControls = () => {
-      const step = Number(current().angle_step_deg || 1); document.getElementById("specular-controls").innerHTML = current().mirrors.map((mirror, index) => `<div class="ivv-control-row"><b>${esc(mirror.id.toUpperCase())}</b><button data-mirror="${index}" data-delta="${-step}">−${step}°</button><span>${model.angles[index].toFixed(0)}°</span><button data-mirror="${index}" data-delta="${step}">+${step}°</button></div>`).join("");
+      const step = Number(current().angle_step_deg || 1); document.getElementById("specular-controls").innerHTML = interaction === "simplified" ? current().mirrors.map((mirror, index) => `<div class="ivv-control-row"><b>${esc(mirror.id.toUpperCase())}</b><button data-mirror="${index}" data-delta="${-step}">−${step}°</button><span>${model.angles[index].toFixed(0)}°</span><button data-mirror="${index}" data-delta="${step}">+${step}°</button></div>`).join("") : `<p class="specular-drag-note">DRAG EACH MIRROR LEFT OR RIGHT ON THE OPTICAL BENCH.</p>${current().mirrors.map((mirror, index) => `<div class="specular-angle-row"><b>${esc(mirror.id.toUpperCase())}</b><span>${model.angles[index].toFixed(0)}°</span></div>`).join("")}`;
       document.querySelectorAll("[data-mirror]").forEach((button) => button.addEventListener("click", () => {
-        if (model.terminal) return;
-        const index = Number(button.dataset.mirror), before = model.angles[index];
-        model.angles[index] = (before + Number(button.dataset.delta) + 180) % 180;
-        event(model, "mirror_adjust", {round_id: current().id, tick: model.tick, mirror_id: current().mirrors[index].id, before: round(before, 2), after: round(model.angles[index], 2)});
+        const index = Number(button.dataset.mirror);
+        adjustMirror(index, Number(button.dataset.delta), "gimbal_buttons");
         renderControls(); draw();
       }));
     };
@@ -139,6 +144,33 @@
     };
     document.getElementById("specular-charge").addEventListener("click", () => model.shutterOpen ? closeShutter() : openShutter());
     document.getElementById("specular-abandon").addEventListener("click", () => submit(model, {mechanic_id: state.mechanic_id, task_id: state.task_id, challenge_id: state.challenge_id, events: [...model.events, {seq: model.events.length + 1, type: "abandon"}], completed: false}, "", ""));
+    const opticalCanvas = document.getElementById("specular-canvas");
+    opticalCanvas.addEventListener("pointerdown", (pointerEvent) => {
+      if (interaction !== "full" || model.terminal) return;
+      const box = opticalCanvas.getBoundingClientRect();
+      const x = (pointerEvent.clientX - box.left) / box.width * opticalCanvas.width;
+      const y = (pointerEvent.clientY - box.top) / box.height * opticalCanvas.height;
+      const distances = current().mirrors.map((mirror) => Math.hypot(x - Number(mirror.center[0]), y - Number(mirror.center[1])));
+      const index = distances.indexOf(Math.min(...distances));
+      if (distances[index] > 72) return;
+      pointerEvent.preventDefault(); opticalCanvas.setPointerCapture(pointerEvent.pointerId);
+      model.mirrorDrag = {index, lastX: pointerEvent.clientX, accumulator: 0};
+    });
+    opticalCanvas.addEventListener("pointermove", (pointerEvent) => {
+      if (!model.mirrorDrag) return;
+      model.mirrorDrag.accumulator += pointerEvent.clientX - model.mirrorDrag.lastX;
+      model.mirrorDrag.lastX = pointerEvent.clientX;
+      const step = Number(current().angle_step_deg || 1);
+      while (Math.abs(model.mirrorDrag.accumulator) >= 8) {
+        const direction = Math.sign(model.mirrorDrag.accumulator);
+        adjustMirror(model.mirrorDrag.index, direction * step, "mirror_drag");
+        model.mirrorDrag.accumulator -= direction * 8;
+      }
+      renderControls(); draw();
+    });
+    const endMirrorDrag = () => { model.mirrorDrag = null; };
+    opticalCanvas.addEventListener("pointerup", endMirrorDrag);
+    opticalCanvas.addEventListener("pointercancel", endMirrorDrag);
     renderControls(); draw(); model.animation = setInterval(draw, 90);
   };
 

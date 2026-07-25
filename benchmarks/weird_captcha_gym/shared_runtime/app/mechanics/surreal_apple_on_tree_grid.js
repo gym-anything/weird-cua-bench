@@ -43,6 +43,7 @@
     context.beginPath(); context.ellipse(center[0], center[1], radius, radius * .92, 0, 0, Math.PI * 2); context.fillStyle = gradient; context.shadowColor = "rgba(48,12,18,.45)"; context.shadowBlur = 12; context.fill(); context.shadowBlur = 0;
     context.beginPath(); context.ellipse(center[0] - radius * .25, center[1] - radius * .28, radius * .16, radius * .25, -.6, 0, Math.PI * 2); context.fillStyle = "rgba(255,255,255,.34)"; context.fill();
     if (apple.scar) { context.fillStyle = "rgba(74,22,22,.62)"; context.fillRect(center[0] + radius * .25, center[1] + radius * .05, 3 + apple.scar, 2); }
+    if (model.selectedFruit === apple.id) { context.beginPath(); context.arc(center[0], center[1], radius + 8, 0, Math.PI * 2); context.strokeStyle = "#e9c86f"; context.lineWidth = 4; context.setLineDash([5, 5]); context.stroke(); context.setLineDash([]); }
   }
   function drawBasket(context) {
     const basket = model.state.basket;
@@ -77,8 +78,9 @@
     const instruction = document.getElementById("orchard-status");
     if (model.strikeActive) instruction.textContent = "FALSE DEPTH CONTACT — RESET THE HARVEST";
     else if (model.plucked.size === model.attached.size) instruction.textContent = "ALL TRUE STEMS HARVESTED";
-    else if (ready) instruction.textContent = "DEPTH BASELINE ACQUIRED — DRAG JOINED FRUIT INTO BASKET";
-    else instruction.textContent = "DRAG THE ORCHARD LEFT AND RIGHT TO EXPOSE DEPTH";
+    else if (model.interaction === "simplified" && model.selectedFruit) instruction.textContent = "FRUIT SELECTED — CLICK THE BASKET TO HARVEST";
+    else if (ready) instruction.textContent = model.interaction === "simplified" ? "DEPTH BASELINE ACQUIRED — CLICK FRUIT THEN BASKET" : "DEPTH BASELINE ACQUIRED — DRAG JOINED FRUIT INTO BASKET";
+    else instruction.textContent = model.interaction === "simplified" ? "USE ORBIT BUTTONS TO EXPOSE DEPTH" : "DRAG THE ORCHARD LEFT AND RIGHT TO EXPOSE DEPTH";
     draw();
   }
 
@@ -87,32 +89,53 @@
     return candidates[0]?.apple || null;
   }
   function pointerDown(event) {
-    if (!model || model.submitting || model.terminal || model.hold) return; const point = stagePoint(event), apple = exploredEnough() && !model.strikeActive ? hitApple(point) : null;
-    if (apple) { model.hold = {kind: "pluck", pointerId: event.pointerId, appleId: apple.id, startedAt: performance.now(), moves: 0}; model.dragFruit = {appleId: apple.id, point}; record("pluck_start", {apple_id: apple.id, point, angle: model.angle}); }
-    else { model.hold = {kind: "orbit", pointerId: event.pointerId, start: point, last: point, baseAngle: model.angle}; record("orbit_start", {point, angle_before: model.angle}); }
+    if (!model || model.submitting || model.terminal || model.hold) return; const point = stagePoint(event);
+    if (model.interaction === "simplified") {
+      if (!exploredEnough() || model.strikeActive) return;
+      const basket = model.state.basket;
+      const inBasket = point[0] >= basket.x && point[0] <= basket.x + basket.width && point[1] >= basket.y && point[1] <= basket.y + basket.height;
+      if (inBasket && model.selectedFruit) {
+        const appleId = model.selectedFruit;
+        const accepted = model.attached.has(appleId);
+        record("basket_click", {apple_id: appleId, point, accepted, input_source: "fruit_basket_clicks"});
+        if (accepted) { model.plucked.add(appleId); model.helpers.setReadout("TRUE STEM RELEASED", "idle"); }
+        else { model.invalidPlucks += 1; model.strikeActive = true; model.helpers.setReadout("FALSE CONTACT / HARVEST QUARANTINED", "error"); }
+        model.selectedFruit = null; updateInterface(); event.preventDefault(); return;
+      }
+      const apple = hitApple(point);
+      if (apple) { model.selectedFruit = apple.id; record("pluck_select", {apple_id: apple.id, point, angle: model.angle, input_source: "fruit_basket_clicks"}); model.helpers.setReadout("FRUIT SELECTED / CLICK BASKET", "idle"); updateInterface(); event.preventDefault(); }
+      return;
+    }
+    const apple = exploredEnough() && !model.strikeActive ? hitApple(point) : null;
+    if (apple) { model.hold = {kind: "pluck", pointerId: event.pointerId, appleId: apple.id, startedAt: performance.now(), moves: 0}; model.dragFruit = {appleId: apple.id, point}; record("pluck_start", {apple_id: apple.id, point, angle: model.angle, input_source: "fruit_drag"}); }
+    else { model.hold = {kind: "orbit", pointerId: event.pointerId, start: point, last: point, baseAngle: model.angle}; record("orbit_start", {point, angle_before: model.angle, input_source: "canvas_drag"}); }
     event.currentTarget.setPointerCapture?.(event.pointerId); event.preventDefault(); updateInterface();
   }
   function pointerMove(event) {
     if (!model?.hold || model.hold.pointerId !== event.pointerId) return; const point = stagePoint(event);
-    if (model.hold.kind === "orbit") { if (distance(point, model.hold.last) < 2) return; model.angle = round2(clamp(model.hold.baseAngle + (point[0] - model.hold.start[0]) * .24, -model.state.view_limit_deg, model.state.view_limit_deg)); model.hold.last = point; model.orbitSamples += 1; model.angles.push(model.angle); model.sectors.add(sector(model.angle)); record("orbit_move", {point, angle_after: model.angle}); }
-    else { if (distance(point, model.dragFruit.point) < 4) return; model.dragFruit.point = point; model.hold.moves += 1; record("pluck_move", {apple_id: model.hold.appleId, point, elapsed_ms: Math.round(performance.now() - model.hold.startedAt)}); }
+    if (model.hold.kind === "orbit") { if (distance(point, model.hold.last) < 2) return; model.angle = round2(clamp(model.hold.baseAngle + (point[0] - model.hold.start[0]) * .24, -model.state.view_limit_deg, model.state.view_limit_deg)); model.hold.last = point; model.orbitSamples += 1; model.angles.push(model.angle); model.sectors.add(sector(model.angle)); record("orbit_move", {point, angle_after: model.angle, input_source: "canvas_drag"}); }
+    else { if (distance(point, model.dragFruit.point) < 4) return; model.dragFruit.point = point; model.hold.moves += 1; record("pluck_move", {apple_id: model.hold.appleId, point, elapsed_ms: Math.round(performance.now() - model.hold.startedAt), input_source: "fruit_drag"}); }
     if (model.hold.kind === "orbit") model.helpers.setReadout(exploredEnough() ? "DEPTH BASELINE ACQUIRED" : "PARALLAX SWEEP IN PROGRESS", exploredEnough() ? "idle" : "pending");
     updateInterface(); event.preventDefault();
   }
   function pointerUp(event) {
     if (!model?.hold || model.hold.pointerId !== event.pointerId) return; const point = stagePoint(event), hold = model.hold; model.hold = null; event.currentTarget.releasePointerCapture?.(event.pointerId);
-    if (hold.kind === "orbit") record("orbit_end", {point, angle: model.angle});
+    if (hold.kind === "orbit") record("orbit_end", {point, angle: model.angle, input_source: "canvas_drag"});
     else {
       const b = model.state.basket, inBasket = point[0] >= b.x && point[0] <= b.x + b.width && point[1] >= b.y && point[1] <= b.y + b.height;
       const accepted = inBasket && model.attached.has(hold.appleId) && hold.moves >= model.state.requirements.minimum_pluck_moves && performance.now() - hold.startedAt >= model.state.requirements.minimum_pluck_ms;
-      record("pluck_end", {apple_id: hold.appleId, point, duration_ms: Math.round(performance.now() - hold.startedAt), in_basket: inBasket, accepted});
+      record("pluck_end", {apple_id: hold.appleId, point, duration_ms: Math.round(performance.now() - hold.startedAt), in_basket: inBasket, accepted, input_source: "fruit_drag"});
       if (accepted) { model.plucked.add(hold.appleId); model.helpers.setReadout("TRUE STEM RELEASED", "idle"); }
       else if (inBasket) { model.invalidPlucks += 1; model.strikeActive = true; model.helpers.setReadout("FALSE CONTACT / HARVEST QUARANTINED", "error"); }
       model.dragFruit = null;
     }
     updateInterface();
   }
-  function resetHarvest() { if (!model || model.hold || model.submitting || model.terminal) return; record("reset"); model.plucked.clear(); model.strikeActive = false; model.resetCount += 1; model.helpers.setReadout("HARVEST RESET / CAMERA BASELINE RETAINED", "idle"); updateInterface(); }
+  function orbitStep(delta) {
+    if (!model || model.interaction !== "simplified" || model.hold || model.submitting || model.terminal) return;
+    const before = model.angle; model.angle = round2(clamp(before + Number(delta), -model.state.view_limit_deg, model.state.view_limit_deg)); model.orbitSamples += 1; model.angles.push(model.angle); model.sectors.add(sector(model.angle)); record("orbit_step", {angle_before: before, angle_after: model.angle, input_source: "orbit_buttons"}); model.helpers.setReadout(exploredEnough() ? "DEPTH BASELINE ACQUIRED" : "PARALLAX SWEEP IN PROGRESS", exploredEnough() ? "idle" : "pending"); updateInterface();
+  }
+  function resetHarvest() { if (!model || model.hold || model.submitting || model.terminal) return; record("reset"); model.plucked.clear(); model.selectedFruit = null; model.strikeActive = false; model.resetCount += 1; model.helpers.setReadout("HARVEST RESET / CAMERA BASELINE RETAINED", "idle"); updateInterface(); }
   function payload() { const s = stats(); return {mechanic_id: model.state.mechanic_id, task_id: model.state.task_id, challenge_id: model.state.challenge_id, events: model.events, final_angle_deg: model.angle, orbit_samples: model.orbitSamples, orbit_span_deg: s.span, orbit_travel_deg: s.travel, view_sector_count: model.sectors.size, plucked_ids: [...model.plucked].sort(), invalid_plucks: model.invalidPlucks, reset_count: model.resetCount, seal_count: model.sealCount, completed: model.plucked.size === model.attached.size && !model.strikeActive}; }
   async function submit() {
     if (!model || model.submitting || model.terminal || model.hold) return; record("seal"); model.sealCount += 1; const current = model; current.submitting = true; current.helpers.setReadout("REPLAYING CAMERA PARALLAX AND HARVEST GEOMETRY…", "pending");
@@ -121,12 +144,15 @@
 
   async function render(state, helpers, options = {}) {
     document.body.dataset.mechanic = "parallax-orchard"; document.body.dataset.cheatMode = helpers.isCheatMode() ? "true" : "false";
-    model = {state, helpers, appleMap: Object.fromEntries(state.apples.map((apple) => [apple.id, apple])), attached: new Set(), angle: Number(state.initial_angle_deg), angles: [Number(state.initial_angle_deg)], sectors: new Set([sector(Number(state.initial_angle_deg))]), orbitSamples: 0, events: [], hold: null, dragFruit: null, plucked: new Set(), invalidPlucks: 0, strikeActive: false, resetCount: 0, sealCount: 0, submitting: false, terminal: false}; window.parallaxOrchardModel = model;
+    const interaction = state.control_condition?.interaction || "full";
+    model = {state, helpers, interaction, appleMap: Object.fromEntries(state.apples.map((apple) => [apple.id, apple])), attached: new Set(), angle: Number(state.initial_angle_deg), angles: [Number(state.initial_angle_deg)], sectors: new Set([sector(Number(state.initial_angle_deg))]), orbitSamples: 0, events: [], hold: null, dragFruit: null, selectedFruit: null, plucked: new Set(), invalidPlucks: 0, strikeActive: false, resetCount: 0, sealCount: 0, submitting: false, terminal: false}; window.parallaxOrchardModel = model;
     // Attachment is derived from exact 3-D branch/stem contact, not a public
     // answer flag. This is also what the player sees after orbiting.
     const branchByFruit = Object.fromEntries(state.branches.map((branch) => [branch.fruit_id, branch])); state.apples.forEach((apple) => { const tip = branchByFruit[apple.id].points.at(-1); if (Math.abs(tip[2] - apple.position[2]) < .01) model.attached.add(apple.id); });
-    helpers.app.innerHTML = `<section class="parallax-orchard" data-fresh-failure="${options.freshFailure ? "true" : "false"}" data-verdict=""><div class="orchard-verdict"><b>${options.freshFailure ? "FAIL" : ""}</b><span>${options.freshFailure ? "FRESH ORCHARD ISSUED" : ""}</span></div><header class="orchard-head"><div><span>PARALLAX ORCHARD / ${clean(state.challenge_id)}</span><h1>${clean(state.prompt)}</h1></div><div class="orchard-dial"><span>VIEW</span><b id="orchard-angle">0°</b><i></i></div></header><main class="orchard-main"><section class="orchard-stage"><canvas id="orchard-canvas" width="${state.stage.width}" height="${state.stage.height}"></canvas><div class="orbit-gesture"><i>↔</i><span>DRAG SPACE TO ORBIT<br>DRAG FRUIT TO HARVEST</span></div></section><aside class="orchard-console"><span>DEPTH NOTE</span><h2>Projection lies.<br>Parallax does not.</h2><div class="orchard-rule"></div><dl><div><dt>BASELINE</dt><dd id="orchard-span">0°</dd></div><div><dt>VIEWS</dt><dd id="orchard-views">1/5</dd></div><div><dt>TRUE STEMS</dt><dd id="orchard-count">0/${model.attached.size}</dd></div></dl><p>A branch that only touches a stem from one viewpoint is not joined to it.</p><button id="orchard-reset">RESET HARVEST</button></aside></main><footer class="orchard-foot"><div><span id="orchard-status">DRAG THE ORCHARD LEFT AND RIGHT TO EXPOSE DEPTH</span><div class="readout" data-status="idle">ORBIT LOCK RELEASED</div></div><button id="orchard-submit">${clean(state.submit_label)}</button></footer>${helpers.cheatPanelTemplate()}</section>`;
-    const canvas = document.getElementById("orchard-canvas"); canvas.addEventListener("pointerdown", pointerDown); canvas.addEventListener("pointermove", pointerMove); canvas.addEventListener("pointerup", pointerUp); canvas.addEventListener("pointercancel", pointerUp); document.getElementById("orchard-reset").addEventListener("click", resetHarvest); document.getElementById("orchard-submit").addEventListener("click", submit); helpers.installCheatPanel(); updateInterface();
+    const gesture = interaction === "simplified" ? "USE ORBIT BUTTONS<br>CLICK FRUIT THEN BASKET" : "DRAG SPACE TO ORBIT<br>DRAG FRUIT TO HARVEST";
+    const orbitControls = interaction === "simplified" ? `<div class="orchard-orbit-controls"><button id="orchard-orbit-left">ORBIT LEFT</button><button id="orchard-orbit-right">ORBIT RIGHT</button></div>` : "";
+    helpers.app.innerHTML = `<section class="parallax-orchard" data-interaction="${clean(interaction)}" data-fresh-failure="${options.freshFailure ? "true" : "false"}" data-verdict=""><div class="orchard-verdict"><b>${options.freshFailure ? "FAIL" : ""}</b><span>${options.freshFailure ? "FRESH ORCHARD ISSUED" : ""}</span></div><header class="orchard-head"><div><span>PARALLAX ORCHARD / ${clean(state.challenge_id)}</span><h1>${clean(state.prompt)}</h1></div><div class="orchard-dial"><span>VIEW</span><b id="orchard-angle">0°</b><i></i></div></header><main class="orchard-main"><section class="orchard-stage"><canvas id="orchard-canvas" width="${state.stage.width}" height="${state.stage.height}"></canvas><div class="orbit-gesture"><i>↔</i><span>${gesture}</span></div></section><aside class="orchard-console"><span>DEPTH NOTE</span><h2>Projection lies.<br>Parallax does not.</h2><div class="orchard-rule"></div><dl><div><dt>BASELINE</dt><dd id="orchard-span">0°</dd></div><div><dt>VIEWS</dt><dd id="orchard-views">1/5</dd></div><div><dt>TRUE STEMS</dt><dd id="orchard-count">0/${model.attached.size}</dd></div></dl><p>A branch that only touches a stem from one viewpoint is not joined to it.</p>${orbitControls}<button id="orchard-reset">RESET HARVEST</button></aside></main><footer class="orchard-foot"><div><span id="orchard-status">${interaction === "simplified" ? "USE ORBIT BUTTONS TO EXPOSE DEPTH" : "DRAG THE ORCHARD LEFT AND RIGHT TO EXPOSE DEPTH"}</span><div class="readout" data-status="idle">ORBIT LOCK RELEASED</div></div><button id="orchard-submit">${clean(state.submit_label)}</button></footer>${helpers.cheatPanelTemplate()}</section>`;
+    const canvas = document.getElementById("orchard-canvas"); canvas.addEventListener("pointerdown", pointerDown); canvas.addEventListener("pointermove", pointerMove); canvas.addEventListener("pointerup", pointerUp); canvas.addEventListener("pointercancel", pointerUp); document.getElementById("orchard-orbit-left")?.addEventListener("click", () => orbitStep(-6)); document.getElementById("orchard-orbit-right")?.addEventListener("click", () => orbitStep(6)); document.getElementById("orchard-reset").addEventListener("click", resetHarvest); document.getElementById("orchard-submit").addEventListener("click", submit); helpers.installCheatPanel(); updateInterface();
     if (options.freshFailure) { const current = model; setTimeout(() => { if (model !== current) return; document.querySelector(".parallax-orchard")?.setAttribute("data-fresh-failure", "false"); if (!current.events.length) current.helpers.setReadout("ORBIT LOCK RELEASED", "idle"); }, 1350); }
   }
 

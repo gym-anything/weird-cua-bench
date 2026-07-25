@@ -5,6 +5,11 @@ from typing import Any
 
 
 MECHANIC_ID = "board_game_captcha"
+COMPASS_TILTS = {
+    (-0.71, -0.71), (0.0, -1.0), (0.71, -0.71),
+    (-1.0, 0.0), (0.0, 0.0), (1.0, 0.0),
+    (-0.71, 0.71), (0.0, 1.0), (0.71, 0.71),
+}
 
 
 def _fail(message: str) -> dict[str, Any]:
@@ -121,6 +126,14 @@ def grade(payload: dict[str, Any], ground_truth: dict[str, Any], public_state: d
         return _fail("stale tilt-board challenge")
     if not task_id or str(payload.get("task_id") or "") != task_id or str(public_state.get("task_id") or "") != task_id:
         return _fail("task identity mismatch")
+    truth_condition = ground_truth.get("control_condition")
+    public_condition = public_state.get("control_condition")
+    if truth_condition != public_condition:
+        return _fail("public interaction condition differs from replay contract")
+    interaction = str((truth_condition or {}).get("interaction") or "")
+    if truth_condition is not None and interaction not in {"simplified", "full"}:
+        return _fail("tilt-board interaction condition is invalid")
+    expected_input_source = {"simplified": "compass_button", "full": "analog_drag"}.get(interaction)
     try:
         contract = {key: ground_truth[key] for key in ("stage", "start", "goal", "switches", "walls", "hazards", "physics", "requirements")}
         for key in contract:
@@ -153,6 +166,10 @@ def grade(payload: dict[str, Any], ground_truth: dict[str, Any], public_state: d
                 before, after = _pair(event.get("from"), "old tilt"), _pair(event.get("to"), "new tilt")
                 if before != tilt or math.hypot(*after) > 1.011:
                     return _fail(f"event {sequence} reports an invalid tilt vector")
+                if expected_input_source is not None and event.get("input_source") != expected_input_source:
+                    return _fail(f"event {sequence} uses the wrong interaction input")
+                if interaction == "simplified" and tuple(after) not in COMPASS_TILTS:
+                    return _fail(f"event {sequence} reports a non-compass simplified tilt")
                 tilt = after
                 controls += 1
             elif kind == "physics_tick":

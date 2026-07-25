@@ -66,6 +66,12 @@ def grade(payload: dict[str, Any], ground_truth: dict[str, Any], public_state: d
     if not task_id or str(payload.get("task_id") or "") != task_id or str(public_state.get("task_id") or "") != task_id:
         return _fail("task identity mismatch")
     try:
+        condition = dict(ground_truth.get("control_condition") or {})
+        if dict(public_state.get("control_condition") or {}) != condition:
+            raise ValueError("public control condition differs from replay contract")
+        interaction = str(condition.get("interaction") or "full")
+        if interaction not in {"simplified", "full"}:
+            raise ValueError("interaction condition is unsupported")
         stage = dict(ground_truth["stage"])
         width, height = int(stage["width"]), int(stage["height"])
         limit = float(ground_truth["view_limit_deg"])
@@ -91,6 +97,7 @@ def grade(payload: dict[str, Any], ground_truth: dict[str, Any], public_state: d
     orbit_samples = 0
     orbit: dict[str, Any] | None = None
     pluck: dict[str, Any] | None = None
+    selected: str | None = None
     plucked: set[str] = set()
     invalid_plucks = reset_count = seal_count = 0
     strike_active = False
@@ -101,6 +108,8 @@ def grade(payload: dict[str, Any], ground_truth: dict[str, Any], public_state: d
         kind = str(event.get("kind") or "")
         try:
             if kind == "orbit_start":
+                if interaction != "full" or event.get("input_source") != "canvas_drag":
+                    return _fail(f"event {sequence} uses the wrong orbit interaction")
                 if orbit is not None or pluck is not None:
                     return _fail(f"event {sequence} overlaps a pointer hold")
                 point = _point(event.get("point"), width, height, "orbit start")
@@ -109,6 +118,8 @@ def grade(payload: dict[str, Any], ground_truth: dict[str, Any], public_state: d
                     return _fail(f"event {sequence} starts from a stale view")
                 orbit = {"start": point, "angle": angle, "last": point}
             elif kind == "orbit_move":
+                if interaction != "full" or event.get("input_source") != "canvas_drag":
+                    return _fail(f"event {sequence} uses the wrong orbit interaction")
                 if orbit is None or pluck is not None:
                     return _fail(f"event {sequence} moves no active orbit")
                 point = _point(event.get("point"), width, height, "orbit move")
@@ -124,13 +135,33 @@ def grade(payload: dict[str, Any], ground_truth: dict[str, Any], public_state: d
                 angles.append(angle)
                 sectors.add(_sector(angle))
             elif kind == "orbit_end":
+                if interaction != "full" or event.get("input_source") != "canvas_drag":
+                    return _fail(f"event {sequence} uses the wrong orbit interaction")
                 if orbit is None:
                     return _fail(f"event {sequence} ends no active orbit")
                 _point(event.get("point"), width, height, "orbit end")
                 if abs(_number(event.get("angle"), "final orbit angle") - angle) > 0.03:
                     return _fail(f"event {sequence} ends at a false view")
                 orbit = None
+            elif kind == "orbit_step":
+                if interaction != "simplified" or event.get("input_source") != "orbit_buttons":
+                    return _fail(f"event {sequence} uses the wrong orbit interaction")
+                if orbit is not None or pluck is not None:
+                    return _fail(f"event {sequence} overlaps a pointer hold")
+                before = _number(event.get("angle_before"), "orbit angle")
+                after = _number(event.get("angle_after"), "orbit result")
+                if abs(before - angle) > 0.02:
+                    return _fail(f"event {sequence} starts from a stale view")
+                possible = {max(-limit, min(limit, angle - 6)), max(-limit, min(limit, angle + 6))}
+                if not any(abs(after - candidate) <= 0.03 for candidate in possible):
+                    return _fail(f"event {sequence} reports a false orbit button step")
+                angle = after
+                orbit_samples += 1
+                angles.append(angle)
+                sectors.add(_sector(angle))
             elif kind == "pluck_start":
+                if interaction != "full" or event.get("input_source") != "fruit_drag":
+                    return _fail(f"event {sequence} uses the wrong harvest interaction")
                 if orbit is not None or pluck is not None or strike_active or not _explored(orbit_samples, angles, sectors, requirements):
                     return _fail(f"event {sequence} plucks before a valid depth inspection")
                 apple_id = str(event.get("apple_id") or "")
@@ -143,6 +174,8 @@ def grade(payload: dict[str, Any], ground_truth: dict[str, Any], public_state: d
                     return _fail(f"event {sequence} misses the visible apple")
                 pluck = {"apple_id": apple_id, "moves": 0, "last_elapsed": 0}
             elif kind == "pluck_move":
+                if interaction != "full" or event.get("input_source") != "fruit_drag":
+                    return _fail(f"event {sequence} uses the wrong harvest interaction")
                 if pluck is None or str(event.get("apple_id") or "") != pluck["apple_id"]:
                     return _fail(f"event {sequence} moves no matching fruit")
                 _point(event.get("point"), width, height, "pluck move")
@@ -152,6 +185,8 @@ def grade(payload: dict[str, Any], ground_truth: dict[str, Any], public_state: d
                 pluck["last_elapsed"] = elapsed
                 pluck["moves"] += 1
             elif kind == "pluck_end":
+                if interaction != "full" or event.get("input_source") != "fruit_drag":
+                    return _fail(f"event {sequence} uses the wrong harvest interaction")
                 if pluck is None or str(event.get("apple_id") or "") != pluck["apple_id"]:
                     return _fail(f"event {sequence} releases no matching fruit")
                 point = _point(event.get("point"), width, height, "pluck end")
@@ -171,10 +206,42 @@ def grade(payload: dict[str, Any], ground_truth: dict[str, Any], public_state: d
                     invalid_plucks += 1
                     strike_active = True
                 pluck = None
+            elif kind == "pluck_select":
+                if interaction != "simplified" or event.get("input_source") != "fruit_basket_clicks":
+                    return _fail(f"event {sequence} uses the wrong harvest interaction")
+                if orbit is not None or pluck is not None or strike_active or not _explored(orbit_samples, angles, sectors, requirements):
+                    return _fail(f"event {sequence} selects fruit before a valid depth inspection")
+                apple_id = str(event.get("apple_id") or "")
+                if apple_id not in apple_by_id or apple_id in plucked:
+                    return _fail(f"event {sequence} selects unavailable fruit")
+                point = _point(event.get("point"), width, height, "fruit selection")
+                reported_angle = _number(event.get("angle"), "selection view")
+                center = _project(apple_by_id[apple_id]["position"], angle)
+                if abs(reported_angle - angle) > 0.03 or math.hypot(point[0] - center[0], point[1] - center[1]) > float(apple_by_id[apple_id]["radius"]) + 9:
+                    return _fail(f"event {sequence} misses the visible apple")
+                selected = apple_id
+            elif kind == "basket_click":
+                if interaction != "simplified" or event.get("input_source") != "fruit_basket_clicks":
+                    return _fail(f"event {sequence} uses the wrong harvest interaction")
+                apple_id = str(event.get("apple_id") or "")
+                if selected is None or apple_id != selected:
+                    return _fail(f"event {sequence} has no matching selected fruit")
+                point = _point(event.get("point"), width, height, "basket click")
+                in_basket = _inside(point, basket)
+                accepted = in_basket and apple_id in attached
+                if not in_basket or bool(event.get("accepted")) != accepted:
+                    return _fail(f"event {sequence} lies about the button harvest")
+                if accepted:
+                    plucked.add(apple_id)
+                else:
+                    invalid_plucks += 1
+                    strike_active = True
+                selected = None
             elif kind == "reset":
                 if orbit is not None or pluck is not None:
                     return _fail(f"event {sequence} resets during a pointer hold")
                 plucked.clear()
+                selected = None
                 strike_active = False
                 reset_count += 1
             elif kind == "seal":
@@ -206,6 +273,7 @@ def grade(payload: dict[str, Any], ground_truth: dict[str, Any], public_state: d
         payload.get("completed") is True
         and orbit is None
         and pluck is None
+        and selected is None
         and not strike_active
         and plucked == attached
         and seal_count >= 1
