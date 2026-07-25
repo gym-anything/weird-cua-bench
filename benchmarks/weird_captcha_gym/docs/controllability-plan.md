@@ -1,6 +1,6 @@
 # Controllability Plan
 
-Status: design recorded; five-environment difficulty pilot implemented
+Status: design recorded; ten starred environments have difficulty controls
 
 This document records how Weird CUA Bench should vary difficulty, interaction, and real time without duplicating puzzle implementations.
 
@@ -22,13 +22,21 @@ Seeds remain separate from tasks. A task identifies a condition. A runtime seed 
 
 ## Implemented difficulty pilot
 
-The first pilot covers five environments selected from the starred set:
+The first pilot covered five environments selected from the starred set:
 
 1. Input-Lag Forklift
 2. Parallax Orchard
 3. Rotating On-Screen Keyboard
 4. Rotate The Wrong Thing Upright
 5. Insider Trading CAPTCHA
+
+The second set adds five more starred environments:
+
+1. Flat Prisoner
+2. Board Game CAPTCHA
+3. Flat Pack Compliance
+4. Specular Lighthouse Relay
+5. Motion-Only Ghost Jigsaw
 
 Each environment now has a `controls.json` file with an independently assigned baseline and five difficulty profiles. The profiles change several relevant parameters where appropriate. This includes task size, required precision, action delay, motion speed, available information, visual ambiguity, and the number of variables that must be handled.
 
@@ -40,13 +48,13 @@ python3 benchmarks/weird_captcha_gym/tools/materialize_controlled_tasks.py \
   --output-root /tmp/weird-cua-controlled
 ```
 
-The command currently writes five tasks per pilot environment because only each environment's existing interaction mode has been implemented. It writes 25 tasks in total. It will write both interaction modes after those interfaces exist.
+The command currently writes five tasks per controlled environment because only each environment's existing interaction mode has been implemented. It writes 50 tasks in total. It will write both interaction modes after those interfaces exist.
 
 The selected condition is copied into the task metadata, public state, and hidden state. Difficulty-specific instructions replace the baseline instructions when a profile changes a rule that the agent must know.
 
 Focused tests are in `tests/test_weird_captcha_controls.py`. They check deterministic materialization, baseline preservation, profile parameters, challenge identity, and successful grader replay across all five levels.
 
-The public dashboard exposes these five levels through a selector on each pilot environment dossier. Static browser play ships four generated challenges per level. Local browser play creates the selected controlled task inside the temporary session directory. Neither path adds generated task folders to the original corpus.
+The public dashboard exposes these five levels through a selector on each controlled environment dossier. Static browser play ships four generated challenges per level. Local browser play creates the selected controlled task inside the temporary session directory. Neither path adds generated task folders to the original corpus.
 
 ## The current task is a reference point
 
@@ -242,7 +250,7 @@ The controlled benchmark should verify all of the following:
 
 ## Implementation order
 
-1. Add the control specification and deterministic task generator. The five-environment difficulty pilot is complete.
+1. Add the control specification and deterministic task generator. Ten starred environments are complete.
 2. Add framework pause, advance, and multi-frame observation support.
 3. Test the complete structure on Board Game CAPTCHA, Motion-Only Ghost Jigsaw, Dead Man's Switch, Domino Autopsy, and Tiny FPS Customs.
 4. Use the existing difficulty annotations to define the five levels for the remaining environments.

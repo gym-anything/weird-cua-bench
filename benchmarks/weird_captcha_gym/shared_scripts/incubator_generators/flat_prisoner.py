@@ -249,8 +249,14 @@ def topology(platforms: list[dict[str, Any]], camera: dict[str, Any], viewport: 
 
 def generate(task: dict[str, Any], seed: str) -> tuple[dict[str, Any], dict[str, Any]]:
     rng = random.Random(_seed_int(seed, MECHANIC_ID))
+    condition = task.get("_control_condition")
+    parameters = dict((condition or {}).get("difficulty_parameters") or {})
+    decoy_count = int(parameters.get("decoy_count", 3))
+    if not 0 <= decoy_count <= 4:
+        raise ValueError("flat prisoner decoy_count must be between zero and four")
     task_id = str(task.get("id") or "flat_prisoner_seed_0001@0.1")
-    challenge_id = hashlib.sha256(f"{seed}|{MECHANIC_ID}|matrix-prison-v1".encode("utf-8")).hexdigest()[:14]
+    condition_token = f"|d{condition['difficulty']}|{task.get('id')}" if condition else ""
+    challenge_id = hashlib.sha256(f"{seed}|{MECHANIC_ID}|matrix-prison-v1{condition_token}".encode("utf-8")).hexdigest()[:14]
     layout_index = rng.randrange(len(LAYOUTS))
     depth_index = rng.randrange(len(DEPTH_STACKS))
     mirror = rng.choice((-1, 1))
@@ -263,23 +269,23 @@ def generate(task: dict[str, Any], seed: str) -> tuple[dict[str, Any], dict[str,
         "target": [0.0, 1.0, 0.0],
     }
     initial_camera = {
-        "yaw_deg": solution_camera["yaw_deg"] + mirror * 24.0,
-        "pitch_deg": solution_camera["pitch_deg"] + 12.0,
-        "distance": solution_camera["distance"] + 3.0,
-        "target": [mirror * 2.4, 1.8, 0.0],
+        "yaw_deg": solution_camera["yaw_deg"] + mirror * float(parameters.get("yaw_offset_deg", 24.0)),
+        "pitch_deg": solution_camera["pitch_deg"] + float(parameters.get("pitch_offset_deg", 12.0)),
+        "distance": solution_camera["distance"] + float(parameters.get("distance_offset", 3.0)),
+        "target": [mirror * float(parameters.get("target_x_offset", 2.4)), float(parameters.get("target_y", 1.8)), 0.0],
     }
     roles = ("start", "bridge", "bridge", "bridge", "exit")
     platforms = [
         _platform(f"surface-{index + 1:02d}", roles[index], tuple(float(value) for value in screen), DEPTH_STACKS[depth_index][index], solution_camera, viewport, rng.randrange(4))
         for index, screen in enumerate(LAYOUTS[layout_index])
     ]
-    decoys = ((108, 268, 176, 9.7), (574, 778, 178, 11.4), (332, 478, 411, 7.1))
-    for index, (left, right, top, depth) in enumerate(decoys, start=1):
+    decoys = ((108, 268, 176, 9.7), (574, 778, 178, 11.4), (332, 478, 411, 7.1), (704, 838, 405, 12.2))
+    for index, (left, right, top, depth) in enumerate(decoys[:decoy_count], start=1):
         platforms.append(_platform(f"decoy-{index:02d}", "decoy", (left, right, top), depth + (depth_index % 2) * .55, solution_camera, viewport, rng.randrange(4)))
     controls = {
-        "orbit_step_deg": 3.0,
-        "pan_step": .4,
-        "dolly_step": .5,
+        "orbit_step_deg": float(parameters.get("orbit_step_deg", 3.0)),
+        "pan_step": float(parameters.get("pan_step", .4)),
+        "dolly_step": float(parameters.get("dolly_step", .5)),
         "yaw_min": -70.0,
         "yaw_max": 70.0,
         "pitch_min": -35.0,
@@ -289,25 +295,25 @@ def generate(task: dict[str, Any], seed: str) -> tuple[dict[str, Any], dict[str,
     }
     physics = {
         "tick_ms": 20,
-        "move_speed": 116.0,
-        "gravity": 780.0,
-        "jump_velocity": -338.0,
+        "move_speed": float(parameters.get("move_speed", 116.0)),
+        "gravity": float(parameters.get("gravity", 780.0)),
+        "jump_velocity": float(parameters.get("jump_velocity", -338.0)),
         "player_width": 16.0,
         "player_height": 28.0,
         "death_y": 515.0,
-        "exit_radius": 24.0,
-        "maximum_deaths": 3,
+        "exit_radius": float(parameters.get("exit_radius", 24.0)),
+        "maximum_deaths": int(parameters.get("maximum_deaths", 3)),
     }
     requirements = {
-        "minimum_camera_events": 18,
-        "minimum_camera_elapsed_ms": 520,
+        "minimum_camera_events": int(parameters.get("minimum_camera_events", 18)),
+        "minimum_camera_elapsed_ms": int(parameters.get("minimum_camera_elapsed_ms", 520)),
         "minimum_freeze_settle_ms": 55,
         "minimum_screen_joins": 2,
-        "minimum_traversal_ticks": 130,
-        "maximum_traversal_ticks": 1800,
-        "minimum_key_transitions": 5,
-        "minimum_jumps": 2,
-        "maximum_event_gap_ticks": 650,
+        "minimum_traversal_ticks": int(parameters.get("minimum_traversal_ticks", 130)),
+        "maximum_traversal_ticks": int(parameters.get("maximum_traversal_ticks", 1800)),
+        "minimum_key_transitions": int(parameters.get("minimum_key_transitions", 5)),
+        "minimum_jumps": int(parameters.get("minimum_jumps", 2)),
+        "maximum_event_gap_ticks": int(parameters.get("maximum_event_gap_ticks", 650)),
         "camera_claim_tolerance": .0005,
     }
     target_topology = topology(platforms, solution_camera, viewport)
@@ -360,6 +366,9 @@ def generate(task: dict[str, Any], seed: str) -> tuple[dict[str, Any], dict[str,
         "variant_count": VARIANT_COUNT,
         "transform_convention": "right-handed world; row-major matrices times column vectors; OpenGL clip; +Y up; camera forward is -view-Z; screen Y down",
     }
+    if condition:
+        public_state["control_condition"] = copy.deepcopy(condition)
+        ground_truth["control_condition"] = copy.deepcopy(condition)
     assert target_topology["valid"] and len(target_topology["joins"]) >= 2
     assert not initial_topology["valid"]
     assert len({round(DEPTH_STACKS[depth_index][index], 1) for index in range(5)}) >= 5

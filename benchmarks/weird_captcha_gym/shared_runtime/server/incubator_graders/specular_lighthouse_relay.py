@@ -81,7 +81,7 @@ def grade(payload: dict[str, Any], truth: dict[str, Any], public: dict[str, Any]
         return _fail("stale task or challenge")
     events = payload.get("events")
     rounds = public.get("rounds") or []
-    if not isinstance(events, list) or len(events) > 2600 or len(rounds) != 4:
+    if not isinstance(events, list) or len(events) > 5000 or not 1 <= len(rounds) <= 5:
         return _fail("live optical transcript malformed")
     round_index = 0
     angles = [float(item["angle_deg"]) for item in rounds[0]["mirrors"]]
@@ -109,7 +109,8 @@ def grade(payload: dict[str, Any], truth: dict[str, Any], public: dict[str, Any]
             if not _close(item.get("before"), angles[index]):
                 return _fail("gimbal adjustment starts from stale geometry")
             after = float(item.get("after")) % 180
-            if min(_angle_error(after, (angles[index] + 1) % 180), _angle_error(after, (angles[index] - 1) % 180)) > .03:
+            step = float(current.get("angle_step_deg") or 1)
+            if min(_angle_error(after, (angles[index] + step) % 180), _angle_error(after, (angles[index] - step) % 180)) > .03:
                 return _fail("gimbal moved by an impossible step")
             angles[index] = after
         elif action == "shutter":
@@ -121,7 +122,7 @@ def grade(payload: dict[str, Any], truth: dict[str, Any], public: dict[str, Any]
                 return _fail("charge sample occurred outside sequential open-shutter time")
             tick += 1
             reported_angles = item.get("angles")
-            if not isinstance(reported_angles, list) or len(reported_angles) != 3 or any(not _close(value, angles[index]) for index, value in enumerate(reported_angles)):
+            if not isinstance(reported_angles, list) or len(reported_angles) != len(current["mirrors"]) or any(not _close(value, angles[index]) for index, value in enumerate(reported_angles)):
                 return _fail("charge sample reports false mirror geometry")
             hit = _trace_hit(current, angles, tick)
             if bool(item.get("hit")) != hit:
@@ -140,4 +141,4 @@ def grade(payload: dict[str, Any], truth: dict[str, Any], public: dict[str, Any]
         else:
             return _fail(f"unknown optical event {action!r}")
     passed = charged == [item["id"] for item in rounds] and payload.get("completed") is True
-    return {"graded": True, "passed": passed, "feedback": "four moving receivers sustained independently replayed reflected-beam charge" if passed else f"charged {len(charged)}/4 moving receivers"}
+    return {"graded": True, "passed": passed, "feedback": f"{len(rounds)} moving receivers sustained independently replayed reflected-beam charge" if passed else f"charged {len(charged)}/{len(rounds)} moving receivers"}

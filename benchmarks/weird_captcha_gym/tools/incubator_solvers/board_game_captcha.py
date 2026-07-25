@@ -44,19 +44,20 @@ def _move_pad(page, center_x: float, center_y: float, radius: float, tilt: tuple
     page.mouse.move(center_x + x * radius, center_y + y * radius, steps=1)
 
 
-def _drive(page, waypoints: list[list[float]], switch_targets: set[int], timeout_s: float = 38.0) -> None:
+def _drive(page, waypoints: list[list[float]], switch_targets: list[int], timeout_s: float = 38.0) -> None:
     _, cx, cy, radius = _pad(page)
     page.mouse.move(cx, cy)
     page.mouse.down()
     deadline = time.time() + timeout_s
     try:
+        expected_switches = {waypoint: sequence + 1 for sequence, waypoint in enumerate(switch_targets)}
         for index, target in enumerate(waypoints):
             while time.time() < deadline:
                 state = page.evaluate("() => ({position:gyroBoardModel.position,velocity:gyroBoardModel.velocity,switchIndex:gyroBoardModel.switchIndex,completed:gyroBoardModel.completed,deaths:gyroBoardModel.deaths})")
                 if state["completed"]:
                     return
-                if index in switch_targets:
-                    expected_switch = {0: 1, 2: 2, 4: 3}[index]
+                if index in expected_switches:
+                    expected_switch = expected_switches[index]
                     if state["switchIndex"] >= expected_switch:
                         break
                 elif math.hypot(target[0] - state["position"][0], target[1] - state["position"][1]) < 31:
@@ -107,12 +108,13 @@ def solve(page, state_dir: Path, out_dir: Path, mechanic: str) -> None:
     page.locator("#gyro-reset").click()
     page.wait_for_function("() => gyroBoardModel.manualResets === 1 && gyroBoardModel.switchIndex === 0")
 
-    _drive(page, truth["solver_waypoints"], {0, 2, 4})
+    switch_waypoints = truth.get("solver_switch_waypoint_indices") or [0, 2, 4]
+    _drive(page, truth["solver_waypoints"], switch_waypoints)
     expect(page.locator('.gyro-board[data-completed="true"]')).to_be_visible(timeout=4_000)
     state = page.evaluate("() => ({ticks:gyroBoardModel.tickCount,controls:gyroBoardModel.controlChanges,switches:gyroBoardModel.switchIndex,deaths:gyroBoardModel.deaths,collisions:gyroBoardModel.collisions,resets:gyroBoardModel.manualResets})")
-    if state["ticks"] < truth["requirements"]["minimum_ticks"] or state["controls"] < truth["requirements"]["minimum_control_changes"] or state["switches"] != 3 or state["resets"] != 1 or state["collisions"] < 1:
+    if state["ticks"] < truth["requirements"]["minimum_ticks"] or state["controls"] < truth["requirements"]["minimum_control_changes"] or state["switches"] != len(truth["switches"]) or state["resets"] != 1 or state["collisions"] < 1:
         raise AssertionError(f"gyro run lacks physical evidence: {state}")
-    _shot(page, out_dir, mechanic, "three-lamps-and-cup")
+    _shot(page, out_dir, mechanic, "all-lamps-and-cup")
     page.locator("#gyro-submit").click()
     expect(page.locator(".readout")).to_have_text("PASS", timeout=8_000)
     expect(page.locator(".gyro-verdict")).to_contain_text("PASS")

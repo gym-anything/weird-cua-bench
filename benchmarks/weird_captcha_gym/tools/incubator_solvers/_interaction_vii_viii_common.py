@@ -77,9 +77,10 @@ def _specular(page, state_dir: Path, out_dir: Path, mechanic: str) -> None:
     _shot(page, out_dir, mechanic, "initial-fresh-optical-bench")
     def aim(mirror_index: int, target: float) -> None:
         current = float(page.evaluate("i => window.specularLighthouseRelayModel.angles[i]", mirror_index))
-        plus_steps = round((float(target) - current) % 180)
-        minus_steps = round((current - float(target)) % 180)
-        selector = f'[data-mirror="{mirror_index}"][data-delta="{1 if plus_steps <= minus_steps else -1}"]'
+        step = float(truth["rounds"][int(page.evaluate("() => window.specularLighthouseRelayModel.roundIndex"))]["angle_step_deg"])
+        plus_steps = round(((float(target) - current) % 180) / step)
+        minus_steps = round(((current - float(target)) % 180) / step)
+        selector = f'[data-mirror="{mirror_index}"][data-delta="{step if plus_steps <= minus_steps else -step:g}"]'
         _click_many(page.locator(selector), min(plus_steps, minus_steps))
 
     for round_index, solution in enumerate(truth["solutions"]):
@@ -99,12 +100,13 @@ def _specular(page, state_dir: Path, out_dir: Path, mechanic: str) -> None:
             round_data = truth["rounds"][round_index]
             receiver = round_data["receiver"]
             receiver_y = float(receiver["center"][1]) + float(receiver["amplitude"]) * math.sin(int(snapshot["tick"]) * float(receiver["angular_rate"]) + float(receiver["phase"]))
-            previous = round_data["mirrors"][1]["center"]
-            center = round_data["mirrors"][2]["center"]
+            last_index = len(round_data["mirrors"]) - 1
+            previous = round_data["emitter"] if last_index == 0 else round_data["mirrors"][last_index - 1]["center"]
+            center = round_data["mirrors"][last_index]["center"]
             incoming = math.atan2(float(center[1]) - float(previous[1]), float(center[0]) - float(previous[0]))
             outgoing = math.atan2(receiver_y - float(center[1]), float(receiver["center"][0]) - float(center[0]))
             target = (math.degrees((incoming + outgoing) / 2 + math.pi / 2) + 90) % 180
-            aim(2, target)
+            aim(last_index, target)
             if round_index == 0 and int(snapshot["charge"]) > 18 and not photographed:
                 _shot(page, out_dir, mechanic, "live-moving-receiver-track")
                 photographed = True

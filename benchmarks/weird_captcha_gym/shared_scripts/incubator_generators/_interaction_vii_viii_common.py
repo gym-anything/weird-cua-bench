@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import copy
 import hashlib
 import math
 import random
@@ -49,36 +50,47 @@ def _mirror_angle(previous: tuple[float, float], center: tuple[float, float], fo
 def _specular(task: dict[str, Any], seed: str):
     mechanic = "specular_lighthouse_relay"
     rng, public, truth = _identity(mechanic, task, seed)
+    condition = task.get("_control_condition")
+    parameters = dict((condition or {}).get("difficulty_parameters") or {})
+    if condition:
+        challenge_id = hashlib.sha256(f"{seed}|{mechanic}|d{condition['difficulty']}|{task.get('id')}".encode()).hexdigest()[:12]
+        public["challenge_id"] = challenge_id
+        truth["challenge_id"] = challenge_id
+    round_count = int(parameters.get("round_count", 4))
+    mirror_count = int(parameters.get("mirror_count", 3))
+    if not 1 <= round_count <= 5 or not 1 <= mirror_count <= 4:
+        raise ValueError("specular relay counts are outside supported limits")
+    mirror_x = {1: (455.0,), 2: (330.0, 600.0), 3: (250.0, 455.0, 660.0), 4: (205.0, 375.0, 545.0, 715.0)}[mirror_count]
+    mirror_y_ranges = ((80, 190), (265, 395), (85, 225), (260, 390))
+    amplitudes = tuple(parameters.get("receiver_amplitudes") or (38, 42, 46))
+    angular_rates = tuple(parameters.get("receiver_angular_rates") or (0.044, 0.048, 0.052))
+    initial_offsets = tuple(parameters.get("initial_angle_offsets") or (-58, -42, 37, 53))
     rounds = []
     solutions = []
-    for index in range(4):
+    for index in range(round_count):
         emitter = (70.0, float(rng.randint(150, 330)))
-        mirrors = [
-            (250.0, float(rng.randint(80, 190))),
-            (455.0, float(rng.randint(265, 395))),
-            (660.0, float(rng.randint(85, 225))),
-        ]
+        mirrors = [(x, float(rng.randint(*mirror_y_ranges[n]))) for n, x in enumerate(mirror_x)]
         receiver = (845.0, float(rng.randint(165, 335)))
         points = [emitter, *mirrors, receiver]
-        angles = [_mirror_angle(points[i], points[i + 1], points[i + 2]) for i in range(3)]
-        initial = [round(_angle(value + rng.choice((-58, -42, 37, 53))), 2) for value in angles]
+        angles = [_mirror_angle(points[i], points[i + 1], points[i + 2]) for i in range(mirror_count)]
+        initial = [round(_angle(value + rng.choice(initial_offsets)), 2) for value in angles]
         round_id = f"lamp-{index + 1}-{hashlib.sha1(f'{seed}|lamp|{index}'.encode()).hexdigest()[:5]}"
         rounds.append({
             "id": round_id,
             "emitter": list(emitter),
-            "mirrors": [{"id": f"m{n + 1}", "center": list(center), "length": 118, "angle_deg": initial[n]} for n, center in enumerate(mirrors)],
+            "mirrors": [{"id": f"m{n + 1}", "center": list(center), "length": int(parameters.get("mirror_length", 118)), "angle_deg": initial[n]} for n, center in enumerate(mirrors)],
             "receiver": {
                 "center": list(receiver),
-                "radius": 23,
+                "radius": int(parameters.get("receiver_radius", 23)),
                 "motion_axis": "y",
-                "amplitude": rng.choice((38, 42, 46)),
-                "angular_rate": rng.choice((0.044, 0.048, 0.052)),
+                "amplitude": rng.choice(amplitudes),
+                "angular_rate": rng.choice(angular_rates),
                 "phase": round(rng.random() * math.tau, 5),
             },
-            "angle_step_deg": 1,
-            "tolerance_px": 15,
-            "required_charge_ticks": 52,
-            "miss_decay_ticks": 2,
+            "angle_step_deg": int(parameters.get("angle_step_deg", 1)),
+            "tolerance_px": int(parameters.get("tolerance_px", 15)),
+            "required_charge_ticks": int(parameters.get("required_charge_ticks", 52)),
+            "miss_decay_ticks": int(parameters.get("miss_decay_ticks", 2)),
         })
         solutions.append({"round_id": round_id, "angles": angles})
     public.update({
@@ -87,7 +99,10 @@ def _specular(task: dict[str, Any], seed: str):
         "round_count": len(rounds),
         "palette": rng.choice(("storm-lantern", "salt-glass", "signal-oxide")),
     })
-    truth.update({"rounds": rounds, "solutions": solutions, "angle_tolerance_deg": 3.25})
+    truth.update({"rounds": rounds, "solutions": solutions, "angle_tolerance_deg": float(parameters.get("angle_tolerance_deg", 3.25))})
+    if condition:
+        public["control_condition"] = copy.deepcopy(condition)
+        truth["control_condition"] = copy.deepcopy(condition)
     return public, truth
 
 

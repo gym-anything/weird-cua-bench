@@ -95,14 +95,14 @@
     document.body.dataset.mechanic = "specular-lighthouse-relay";
     const model = {state, helpers, events: [], roundIndex: 0, angles: state.rounds[0].mirrors.map((item) => Number(item.angle_deg)), charge: 0, tick: 0, shutterOpen: false, terminal: false, submitting: false, timer: null};
     window.specularLighthouseRelayModel = model;
-    helpers.app.innerHTML = shell(state, "COASTAL OPTICS AUTHORITY", "SPECULAR LIGHTHOUSE RELAY", "Build the three-bounce path, open the shutter, then keep steering the live receiver while charge leaks on every miss.", `<canvas id="specular-canvas" width="900" height="480"></canvas>`, `
+    helpers.app.innerHTML = shell(state, "COASTAL OPTICS AUTHORITY", "SPECULAR LIGHTHOUSE RELAY", `Build the ${state.rounds[0].mirrors.length}-mirror path, open the shutter, then keep steering the live receiver while charge leaks on every miss.`, `<canvas id="specular-canvas" width="900" height="480"></canvas>`, `
       <h2>GIMBAL BANK</h2><div id="specular-controls"></div>
       <button id="specular-charge" class="ivv-primary">OPEN TRACKING SHUTTER</button>
       <div class="ivv-meter"><i id="specular-meter"></i></div>
       <button id="specular-abandon" class="ivv-danger">ABANDON / FRESH RELAY</button>`);
     const current = () => state.rounds[model.roundIndex];
     const renderControls = () => {
-      document.getElementById("specular-controls").innerHTML = current().mirrors.map((mirror, index) => `<div class="ivv-control-row"><b>${esc(mirror.id.toUpperCase())}</b><button data-mirror="${index}" data-delta="-1">−1°</button><span>${model.angles[index].toFixed(0)}°</span><button data-mirror="${index}" data-delta="1">+1°</button></div>`).join("");
+      const step = Number(current().angle_step_deg || 1); document.getElementById("specular-controls").innerHTML = current().mirrors.map((mirror, index) => `<div class="ivv-control-row"><b>${esc(mirror.id.toUpperCase())}</b><button data-mirror="${index}" data-delta="${-step}">−${step}°</button><span>${model.angles[index].toFixed(0)}°</span><button data-mirror="${index}" data-delta="${step}">+${step}°</button></div>`).join("");
       document.querySelectorAll("[data-mirror]").forEach((button) => button.addEventListener("click", () => {
         if (model.terminal) return;
         const index = Number(button.dataset.mirror), before = model.angles[index];

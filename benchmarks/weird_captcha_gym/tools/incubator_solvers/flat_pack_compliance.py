@@ -32,7 +32,11 @@ def fail_once(page, state_dir: Path, out_dir: Path, mechanic: str) -> None:
     # Prove the reversible physical failure path on the kit that will be
     # discarded. The later passing assembly should not be forced to sabotage
     # itself merely to satisfy smoke coverage.
-    _mate(page, "wing-l", "wing-r"); expect(page.locator(".readout")).to_contain_text("REJECTED")
+    truth = _read(state_dir / "ground_truth.json")
+    joint_pairs = {frozenset((str(item["a"]), str(item["b"]))) for item in truth["joints"]}
+    part_ids = [str(item["id"]) for item in truth["parts"]]
+    invalid_pair = next((first, second) for index, first in enumerate(part_ids) for second in part_ids[index + 1:] if frozenset((first, second)) not in joint_pairs)
+    _mate(page, *invalid_pair); expect(page.locator(".readout")).to_contain_text("REJECTED")
     page.locator(".flat-load").click(); expect(page.locator(".flat-failure[data-visible='true']")).to_be_visible(); _shot(page, out_dir, mechanic, "wrong-joint-load-failure")
     page.locator(".flat-reset").click(); expect(page.locator(".readout")).to_contain_text("REWOUND")
     before = str(_read(state_dir / "ground_truth.json")["challenge_id"])

@@ -126,6 +126,24 @@ def main() -> None:
                         )
                         if not puzzle.locator("#app").inner_text().strip():
                             raise AssertionError("rendered app is empty")
+                        bundle = json.loads((challenge_root / f"{environment_id}.json").read_text(encoding="utf-8"))
+                        for level in sorted(bundle.get("difficulty_profiles") or {}, key=int):
+                            puzzle.goto(
+                                f"{base_url}/play/?environment={environment_id}&attempt=0&difficulty={level}",
+                                wait_until="domcontentloaded",
+                                timeout=15_000,
+                            )
+                            puzzle.wait_for_function(
+                                "document.body.dataset.mechanic && document.body.dataset.mechanic !== 'waiting'",
+                                timeout=10_000,
+                            )
+                            selected = puzzle.evaluate(
+                                "async () => (await (await fetch(`/state?ts=${Date.now()}`)).json()).control_condition?.difficulty"
+                            )
+                            if int(selected or 0) != int(level):
+                                raise AssertionError(f"requested difficulty {level} rendered difficulty {selected}")
+                            if not puzzle.locator("#app").inner_text().strip():
+                                raise AssertionError(f"difficulty {level} rendered an empty app")
                     except Exception as error:  # noqa: BLE001 - aggregate all environments before failing.
                         failures.append({
                             "environment": environment_id,
