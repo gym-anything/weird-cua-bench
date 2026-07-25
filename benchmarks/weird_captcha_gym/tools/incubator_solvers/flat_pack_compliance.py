@@ -33,10 +33,12 @@ def fail_once(page, state_dir: Path, out_dir: Path, mechanic: str) -> None:
     # discarded. The later passing assembly should not be forced to sabotage
     # itself merely to satisfy smoke coverage.
     truth = _read(state_dir / "ground_truth.json")
-    joint_pairs = {frozenset((str(item["a"]), str(item["b"]))) for item in truth["joints"]}
-    part_ids = [str(item["id"]) for item in truth["parts"]]
-    invalid_pair = next((first, second) for index, first in enumerate(part_ids) for second in part_ids[index + 1:] if frozenset((first, second)) not in joint_pairs)
-    _mate(page, *invalid_pair); expect(page.locator(".readout")).to_contain_text("REJECTED")
+    interaction = str((truth.get("control_condition") or {}).get("interaction") or "simplified")
+    if interaction == "simplified":
+        joint_pairs = {frozenset((str(item["a"]), str(item["b"]))) for item in truth["joints"]}
+        part_ids = [str(item["id"]) for item in truth["parts"]]
+        invalid_pair = next((first, second) for index, first in enumerate(part_ids) for second in part_ids[index + 1:] if frozenset((first, second)) not in joint_pairs)
+        _mate(page, *invalid_pair); expect(page.locator(".readout")).to_contain_text("REJECTED")
     page.locator(".flat-load").click(); expect(page.locator(".flat-failure[data-visible='true']")).to_be_visible(); _shot(page, out_dir, mechanic, "wrong-joint-load-failure")
     page.locator(".flat-reset").click(); expect(page.locator(".readout")).to_contain_text("REWOUND")
     before = str(_read(state_dir / "ground_truth.json")["challenge_id"])
@@ -60,12 +62,17 @@ def _select_only(page, part_id: str) -> None:
     page.locator(f'.flat-part-chip[data-part-id="{part_id}"]').click()
 
 
-def _rotate_to_target(page, part: dict) -> None:
+def _rotate_to_target(page, part: dict, interaction: str, box: dict, stage: dict) -> None:
     current = page.evaluate("part => window.flatPackComplianceModel.bodies.find(body => body.label === part).angle", part["id"])
     steps = _angle_steps(float(current), float(part["target_pose"][2]))
     if steps:
-        _select_only(page, part["id"])
-        for _ in range(steps): page.locator(".flat-rotate-right").click()
+        if interaction == "simplified":
+            _select_only(page, part["id"])
+            for _ in range(steps): page.locator(".flat-rotate-right").click()
+        else:
+            for _ in range(steps):
+                current_position = page.evaluate("part => { const b=window.flatPackComplianceModel.bodies.find(body=>body.label===part); return [b.position.x,b.position.y]; }", part["id"])
+                page.mouse.click(*_screen(box, stage, current_position), button="right")
 
 
 def _drag_to(page, box: dict, stage: dict, part: dict) -> None:
@@ -87,13 +94,14 @@ def _mate(page, first: str, second: str) -> None:
 
 def solve(page, state_dir: Path, out_dir: Path, mechanic: str) -> None:
     if mechanic != MECHANIC_ID: raise AssertionError(mechanic)
-    truth = _read(state_dir / "ground_truth.json"); stage = truth["stage"]; box = page.locator(".flat-canvas").bounding_box()
+    truth = _read(state_dir / "ground_truth.json"); interaction = str((truth.get("control_condition") or {}).get("interaction") or "simplified"); stage = truth["stage"]; box = page.locator(".flat-canvas").bounding_box()
     if not box: raise AssertionError("flat-pack Matter canvas missing")
     parts = {part["id"]: part for part in truth["parts"]}
     for part in truth["parts"]:
-        _rotate_to_target(page, part); _drag_to(page, box, stage, part); _rotate_to_target(page, part)
-    for joint in truth["joints"]:
-        _mate(page, str(joint["a"]), str(joint["b"]))
+        _rotate_to_target(page, part, interaction, box, stage); _drag_to(page, box, stage, part); _rotate_to_target(page, part, interaction, box, stage)
+    if interaction == "simplified":
+        for joint in truth["joints"]:
+            _mate(page, str(joint["a"]), str(joint["b"]))
     _shot(page, out_dir, mechanic, "physical-assembly-aligned")
     expected_count = len(truth["joints"])
     expect(page.locator(".flat-graph-value")).to_have_text(f"{expected_count}/{expected_count}")

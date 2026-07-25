@@ -85,6 +85,13 @@ def _pluck(page, apple: dict, angle: float, basket: dict) -> None:
     page.mouse.up()
 
 
+def _click_harvest(page, apple: dict, angle: float, basket: dict) -> None:
+    box = _box(page)
+    page.mouse.click(*_screen(box, _project(apple["position"], angle)))
+    destination = [basket["x"] + basket["width"] / 2, basket["y"] + basket["height"] / 2]
+    page.mouse.click(*_screen(box, destination))
+
+
 def fail_once(page, state_dir: Path, out_dir: Path, mechanic: str) -> None:
     if mechanic != MECHANIC_ID:
         raise AssertionError(f"unexpected mechanic {mechanic!r}")
@@ -100,14 +107,22 @@ def solve(page, state_dir: Path, out_dir: Path, mechanic: str) -> None:
     if mechanic != MECHANIC_ID:
         raise AssertionError(f"unexpected mechanic {mechanic!r}")
     truth = _read(state_dir / "ground_truth.json")
+    interaction = str((truth.get("control_condition") or {}).get("interaction") or "full")
     page.wait_for_function("() => document.querySelector('.parallax-orchard')?.dataset.freshFailure === 'false'", timeout=4_000)
     by_id = {apple["id"]: apple for apple in truth["apples"]}
     attached = set(truth["attached_ids"])
 
-    # Three real drags sweep both sides and then return to a useful harvest view.
-    _orbit(page, [430, 270], [710, 270], 14)
-    _orbit(page, [620, 300], [90, 300], 24)
-    _orbit(page, [240, 250], [610, 250], 18)
+    if interaction == "simplified":
+        limit = float(truth["view_limit_deg"])
+        for _ in range(math.ceil(limit / 6)):
+            page.locator("#orchard-orbit-right").click()
+        for _ in range(math.ceil(2 * limit / 6)):
+            page.locator("#orchard-orbit-left").click()
+    else:
+        # Three real drags sweep both sides and then return to a useful harvest view.
+        _orbit(page, [430, 270], [710, 270], 14)
+        _orbit(page, [620, 300], [90, 300], 24)
+        _orbit(page, [240, 250], [610, 250], 18)
     page.wait_for_function("() => document.querySelector('.parallax-orchard')?.dataset.ready === 'true'")
     angle = float(page.evaluate("() => parallaxOrchardModel.angle"))
     audit = page.evaluate("() => ({samples:parallaxOrchardModel.orbitSamples,sectors:parallaxOrchardModel.sectors.size})")
@@ -116,7 +131,7 @@ def solve(page, state_dir: Path, out_dir: Path, mechanic: str) -> None:
     _shot(page, out_dir, mechanic, "active-side-parallax")
 
     detached = _frontmost([apple for apple in truth["apples"] if apple["id"] not in attached], truth["apples"], angle)
-    _pluck(page, detached, angle, truth["basket"])
+    (_click_harvest if interaction == "simplified" else _pluck)(page, detached, angle, truth["basket"])
     expect(page.locator('.parallax-orchard[data-strike="true"]')).to_be_visible()
     _shot(page, out_dir, mechanic, "false-contact-recovery")
     page.locator("#orchard-reset").click()
@@ -124,7 +139,7 @@ def solve(page, state_dir: Path, out_dir: Path, mechanic: str) -> None:
 
     harvest = sorted((by_id[apple_id] for apple_id in attached), key=lambda item: _depth(item["position"], angle), reverse=True)
     for index, apple in enumerate(harvest):
-        _pluck(page, apple, angle, truth["basket"])
+        (_click_harvest if interaction == "simplified" else _pluck)(page, apple, angle, truth["basket"])
         page.wait_for_function("count => parallaxOrchardModel.plucked.size === count", arg=index + 1)
     expect(page.locator('.parallax-orchard[data-completed="true"]')).to_be_visible()
     _shot(page, out_dir, mechanic, "three-true-stems-harvested")

@@ -46,6 +46,7 @@ def solve(page, state_dir: Path, out_dir: Path, mechanic: str) -> None:
         raise AssertionError(f"unexpected mechanic {mechanic!r}")
     truth = _read(state_dir / "ground_truth.json")
     actions = [str(action) for action in truth["solver_actions"]]
+    interaction = str((truth.get("control_condition") or {}).get("interaction") or "simplified")
     page.locator(".market-start").click()
     count = len(actions)
     captured = False
@@ -56,10 +57,13 @@ def solve(page, state_dir: Path, out_dir: Path, mechanic: str) -> None:
             timeout=5_000,
         )
         if tick < count - int(truth["order_delay_ticks"]):
-            button = page.locator(f'.market-order-button[data-side="{side}"]')
-            if button.is_disabled():
-                raise AssertionError(f"solver action {side} was disabled at tick {tick}")
-            button.click()
+            if interaction == "full":
+                button = page.locator(f'.market-order-button[data-side="{side}"]')
+                if button.is_disabled():
+                    raise AssertionError(f"solver action {side} was disabled at tick {tick}")
+                button.click()
+            else:
+                page.keyboard.press({"buy": "b", "hold": "h", "sell": "s"}[side])
         if not captured and tick >= max(4, count // 3) and page.locator(".market-ledger-list li[data-side]").count() >= 2:
             _screenshot(page, out_dir, mechanic, "active-delayed-ledger")
             captured = True
@@ -72,7 +76,11 @@ def solve(page, state_dir: Path, out_dir: Path, mechanic: str) -> None:
     _screenshot(page, out_dir, mechanic, "solved-final-settlement")
     page.wait_for_function("() => document.querySelector('.readout')?.textContent.startsWith('PASS')", timeout=8_000)
     result = _read(state_dir / "result.json")
-    if result.get("orders") != [{"tick": index, "side": side} for index, side in enumerate(actions)]:
+    if [(row.get("tick"), row.get("side")) for row in result.get("orders") or []] != list(enumerate(actions)):
         raise AssertionError("browser order tape differs from the generated solver strategy")
+    expected_source = "order_buttons" if interaction == "full" else "keyboard_hotkeys"
+    for row in (result.get("orders") or [])[:-int(truth["order_delay_ticks"])]:
+        if row.get("input_source") != expected_source:
+            raise AssertionError(f"market order used the wrong interaction input: {row}")
     if int((result.get("final") or {}).get("position", -1)) != 0:
         raise AssertionError("market solver did not close flat")

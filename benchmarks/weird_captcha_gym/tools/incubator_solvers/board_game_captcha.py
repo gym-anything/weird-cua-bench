@@ -44,10 +44,23 @@ def _move_pad(page, center_x: float, center_y: float, radius: float, tilt: tuple
     page.mouse.move(center_x + x * radius, center_y + y * radius, steps=1)
 
 
-def _drive(page, waypoints: list[list[float]], switch_targets: list[int], timeout_s: float = 38.0) -> None:
-    _, cx, cy, radius = _pad(page)
-    page.mouse.move(cx, cy)
-    page.mouse.down()
+def _compass_name(tilt: tuple[float, float]) -> str:
+    if math.hypot(*tilt) < 0.12:
+        return "level"
+    names = ("e", "se", "s", "sw", "w", "nw", "n", "ne")
+    return names[round(math.atan2(tilt[1], tilt[0]) / (math.pi / 4)) % 8]
+
+
+def _choose_compass(page, tilt: tuple[float, float]) -> None:
+    page.locator(f'.tilt-choice[data-compass="{_compass_name(tilt)}"]').click()
+
+
+def _drive(page, waypoints: list[list[float]], switch_targets: list[int], interaction: str, timeout_s: float = 38.0) -> None:
+    analog = interaction == "full"
+    if analog:
+        _, cx, cy, radius = _pad(page)
+        page.mouse.move(cx, cy)
+        page.mouse.down()
     deadline = time.time() + timeout_s
     try:
         expected_switches = {waypoint: sequence + 1 for sequence, waypoint in enumerate(switch_targets)}
@@ -65,7 +78,10 @@ def _drive(page, waypoints: list[list[float]], switch_targets: list[int], timeou
                 dx, dy = target[0] - state["position"][0], target[1] - state["position"][1]
                 vx, vy = state["velocity"]
                 command = (dx * 0.018 - vx * 0.0105, dy * 0.018 - vy * 0.0105)
-                _move_pad(page, cx, cy, radius, command)
+                if analog:
+                    _move_pad(page, cx, cy, radius, command)
+                else:
+                    _choose_compass(page, command)
                 page.wait_for_timeout(95)
             else:
                 raise AssertionError(f"gyro controller timed out at waypoint {index}: {target}")
@@ -73,12 +89,18 @@ def _drive(page, waypoints: list[list[float]], switch_targets: list[int], timeou
             state = page.evaluate("() => ({position:gyroBoardModel.position,velocity:gyroBoardModel.velocity})")
             target = waypoints[-1]
             command = ((target[0] - state["position"][0]) * 0.018 - state["velocity"][0] * 0.011, (target[1] - state["position"][1]) * 0.018 - state["velocity"][1] * 0.011)
-            _move_pad(page, cx, cy, radius, command)
+            if analog:
+                _move_pad(page, cx, cy, radius, command)
+            else:
+                _choose_compass(page, command)
             page.wait_for_timeout(95)
         if not page.evaluate("() => gyroBoardModel.completed"):
             raise AssertionError("ball never settled in the goal cup")
     finally:
-        page.mouse.up()
+        if analog:
+            page.mouse.up()
+        elif page.locator('.tilt-choice[data-compass="level"]').count():
+            page.locator('.tilt-choice[data-compass="level"]').click()
 
 
 def fail_once(page, state_dir: Path, out_dir: Path, mechanic: str) -> None:
@@ -96,20 +118,27 @@ def solve(page, state_dir: Path, out_dir: Path, mechanic: str) -> None:
     if mechanic != MECHANIC_ID:
         raise AssertionError(f"unexpected mechanic {mechanic!r}")
     truth = _read(state_dir / "ground_truth.json")
+    interaction = str((truth.get("control_condition") or {}).get("interaction") or "full")
     page.wait_for_function("() => document.querySelector('.gyro-board')?.dataset.freshFailure === 'false'", timeout=4_000)
 
     # Exercise a genuine rim collision and the explicit recovery contract.
-    _, cx, cy, radius = _pad(page)
     outward = -1 if truth["start"][0] < truth["stage"]["width"] / 2 else 1
-    page.mouse.move(cx, cy); page.mouse.down(); _move_pad(page, cx, cy, radius, (outward, 0.2))
+    if interaction == "full":
+        _, cx, cy, radius = _pad(page)
+        page.mouse.move(cx, cy); page.mouse.down(); _move_pad(page, cx, cy, radius, (outward, 0.2))
+    else:
+        _choose_compass(page, (outward, 0))
     page.wait_for_function("() => gyroBoardModel.collisions > 0", timeout=6_000)
-    page.mouse.up()
+    if interaction == "full":
+        page.mouse.up()
+    else:
+        _choose_compass(page, (0, 0))
     _shot(page, out_dir, mechanic, "real-rim-contact")
     page.locator("#gyro-reset").click()
     page.wait_for_function("() => gyroBoardModel.manualResets === 1 && gyroBoardModel.switchIndex === 0")
 
     switch_waypoints = truth.get("solver_switch_waypoint_indices") or [0, 2, 4]
-    _drive(page, truth["solver_waypoints"], switch_waypoints)
+    _drive(page, truth["solver_waypoints"], switch_waypoints, interaction)
     expect(page.locator('.gyro-board[data-completed="true"]')).to_be_visible(timeout=4_000)
     state = page.evaluate("() => ({ticks:gyroBoardModel.tickCount,controls:gyroBoardModel.controlChanges,switches:gyroBoardModel.switchIndex,deaths:gyroBoardModel.deaths,collisions:gyroBoardModel.collisions,resets:gyroBoardModel.manualResets})")
     if state["ticks"] < truth["requirements"]["minimum_ticks"] or state["controls"] < truth["requirements"]["minimum_control_changes"] or state["switches"] != len(truth["switches"]) or state["resets"] != 1 or state["collisions"] < 1:

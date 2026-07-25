@@ -79,6 +79,13 @@ def grade(payload: dict[str, Any], truth: dict[str, Any], public: dict[str, Any]
         return _fail("mechanic mismatch")
     if payload.get("task_id") != truth.get("task_id") or payload.get("challenge_id") != truth.get("challenge_id") or public.get("challenge_id") != truth.get("challenge_id"):
         return _fail("stale task or challenge")
+    condition = truth.get("control_condition")
+    if public.get("control_condition") != condition:
+        return _fail("public interaction condition differs from lighthouse contract")
+    interaction = str((condition or {}).get("interaction") or "")
+    expected_source = {"simplified": "gimbal_buttons", "full": "mirror_drag"}.get(interaction)
+    if condition is not None and expected_source is None:
+        return _fail("lighthouse interaction condition is invalid")
     events = payload.get("events")
     rounds = public.get("rounds") or []
     if not isinstance(events, list) or len(events) > 5000 or not 1 <= len(rounds) <= 5:
@@ -100,6 +107,8 @@ def grade(payload: dict[str, Any], truth: dict[str, Any], public: dict[str, Any]
         if item.get("round_id") != current["id"]:
             return _fail("optical event bound to wrong receiver")
         if action == "mirror_adjust":
+            if expected_source is not None and item.get("input_source") != expected_source:
+                return _fail("mirror adjustment uses the wrong interaction input")
             if item.get("tick") != tick:
                 return _fail("gimbal adjustment has a false tracking tick")
             try:

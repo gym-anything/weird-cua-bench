@@ -1,6 +1,6 @@
 # Controllability Plan
 
-Status: design recorded; fifteen starred environments have difficulty controls
+Status: fifteen starred environments have complete difficulty and interaction controls
 
 This document records how Weird CUA Bench should vary difficulty, interaction, and real time without duplicating puzzle implementations.
 
@@ -46,6 +46,28 @@ The third set completes the starred group:
 4. Isometric Voxel Extraction Mine
 5. Slime Commute
 
+The approved baseline assignments are:
+
+| Environment | Current level |
+|---|---:|
+| Gyroscopic Tilt Board | L3 |
+| Cursor-Controlled Constellation Hunt | L2 |
+| Polarized Palimpsest | L3 |
+| Exact-Change Candy Cascade | L5 |
+| Flat-Pack Compliance Test | L4 |
+| The Flat Prisoner | L4 |
+| Input-Lag Forklift | L4 |
+| Insider Trading CAPTCHA | L2 |
+| Isometric Voxel Extraction Mine | L1 |
+| Motion-Only Ghost Jigsaw | L4 |
+| Rotate The Wrong Thing Upright | L4 |
+| Rotating On-Screen Keyboard | L4 |
+| Slime Commute | L4 |
+| Specular Lighthouse Relay | L3 |
+| Parallax Orchard | L4 |
+
+These assignments describe the exact current configurations. They do not rank the environment ideas in isolation. They also do not claim that an L5 profile is the hardest version that could be built.
+
 Each environment now has a `controls.json` file with an assigned baseline and five difficulty profiles. A level describes the complete task at that setting. The assignment considers the number of required stages, the work needed within each stage, the information available, required precision, motion speed, and time pressure together.
 
 The existing task remains unchanged. Controlled tasks are materialized into a separate output directory with:
@@ -56,13 +78,13 @@ python3 benchmarks/weird_captcha_gym/tools/materialize_controlled_tasks.py \
   --output-root /tmp/weird-cua-controlled
 ```
 
-The command currently writes five tasks per controlled environment because only each environment's existing interaction mode has been implemented. It writes 75 tasks in total. It will write both interaction modes after those interfaces exist.
+The command writes five tasks for every implemented interaction mode. Every controlled environment now implements both modes. The complete fifteen-environment matrix contains 150 tasks.
 
 The selected condition is copied into the task metadata, public state, and hidden state. Difficulty-specific instructions replace the baseline instructions when a profile changes a rule that the agent must know.
 
 Focused tests are in `tests/test_weird_captcha_controls.py`. They check deterministic materialization, baseline preservation, profile parameters, challenge identity, and successful grader replay across all five levels.
 
-The public dashboard exposes these five levels through a selector on each controlled environment dossier. Static browser play ships four generated challenges per level. Local browser play creates the selected controlled task inside the temporary session directory. Neither path adds generated task folders to the original corpus.
+The public dashboard exposes difficulty and interaction selectors on each controlled environment dossier. Static browser play ships four generated challenges for every difficulty and interaction pair. Local browser play creates the selected controlled task inside the temporary session directory. Neither path adds generated task folders to the original corpus.
 
 ## The current task is a reference point
 
@@ -182,6 +204,30 @@ Its full interaction variant should preserve the same facility, scan behavior, b
 
 This is only the mapping for LIDAR Blacksite. Other environments require their own simplified-to-full mapping based on the actions represented in their interfaces. The benchmark should not impose LIDAR's gestures on unrelated tasks.
 
+### Implemented interaction assignments
+
+The baseline column classifies the interface that existed before its missing counterpart was added. Full does not mean harder. It means the task-appropriate direct mouse or keyboard action.
+
+| Public environment name | Baseline | Simplified interaction | Full interaction |
+|---|---|---|---|
+| Gyroscopic Tilt Board | Full | Compass direction buttons | Direct analog knob dragging |
+| Cursor-Controlled Constellation Hunt | Full | X and Y controls with move and select buttons | Direct canvas pointer movement and selection |
+| Polarized Palimpsest | Full | X and Y controls with a capture button | Direct pointer-held lens movement and capture |
+| Exact-Change Candy Cascade | Simplified | Click one candy then click its destination | Drag one candy onto its adjacent destination |
+| Flat-Pack Compliance Test | Simplified | Side-panel rotation and mate controls | Direct part dragging with right-click rotation and contact-based mating |
+| The Flat Prisoner | Simplified | Side-panel camera controls | Direct camera dragging and wheel zoom |
+| Input-Lag Forklift | Simplified | Clickable command controls | Keyboard driving |
+| Insider Trading CAPTCHA | Simplified | B H and S keyboard shortcuts | Visible order buttons |
+| Isometric Voxel Extraction Mine | Simplified | Rotation buttons with canvas mining | Direct canvas rotation dragging with canvas mining |
+| Motion-Only Ghost Jigsaw | Full | Click a piece then click its slot | Drag a piece into its slot |
+| Rotate The Wrong Thing Upright | Simplified | Footer axis controls | Direct gimbal-ring dragging |
+| Rotating On-Screen Keyboard | Full | Physical keyboard typing | Clicking the moving on-screen keys |
+| Slime Commute | Full | On-screen direction buttons | Keyboard movement |
+| Specular Lighthouse Relay | Simplified | Side-panel gimbal buttons | Direct mirror dragging on the optical canvas |
+| Parallax Orchard | Full | Orbit buttons followed by fruit and basket clicks | Direct orchard orbit dragging followed by fruit dragging |
+
+The generator must produce the same world for both modes at a fixed seed and difficulty. The browser must record which input surface produced each controlled action. The grader must reject a transcript from the wrong interaction mode.
+
 ## Real time
 
 Real time does not create more tasks. The runner should accept:
@@ -264,12 +310,9 @@ The controlled benchmark should verify all of the following:
 
 ## Implementation order
 
-1. Add the control specification and deterministic task generator. Fifteen starred environments are complete.
+1. Extend the control specification to the remaining environments.
 2. Add framework pause, advance, and multi-frame observation support.
-3. Test the complete structure on Board Game CAPTCHA, Motion-Only Ghost Jigsaw, Dead Man's Switch, Domino Autopsy, and Tiny FPS Customs.
-4. Use the existing difficulty annotations to define the five levels for the remaining environments.
-5. Classify the current interaction interface of every environment before designing its missing interaction variant.
-6. Generate the complete task matrix.
-7. Calibrate the levels with human completion rates and completion times.
+3. Test the complete structure on tasks outside the initial fifteen.
+4. Calibrate the levels with human completion rates and completion times.
 
 The current evaluation manifests fingerprint the existing 75-task corpus. The controlled benchmark must use a new version so existing evaluation results remain reproducible.

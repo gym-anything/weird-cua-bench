@@ -49,6 +49,14 @@ def grade(payload: dict[str, Any], ground_truth: dict[str, Any], public_state: d
         return _fail("stale palimpsest challenge")
     if not task_id or str(payload.get("task_id") or "") != task_id or str(public_state.get("task_id") or "") != task_id:
         return _fail("task identity mismatch")
+    truth_condition = ground_truth.get("control_condition")
+    if truth_condition != public_state.get("control_condition"):
+        return _fail("public interaction condition differs from palimpsest contract")
+    interaction = str((truth_condition or {}).get("interaction") or "")
+    if truth_condition is not None and interaction not in {"simplified", "full"}:
+        return _fail("palimpsest interaction condition is invalid")
+    probe_source = {"simplified": "coordinate_controls", "full": "canvas_pointer"}.get(interaction)
+    capture_source = {"simplified": "coordinate_capture", "full": "canvas_pointer"}.get(interaction)
     try:
         stage = dict(ground_truth["stage"])
         width, height = int(stage["width"]), int(stage["height"])
@@ -97,6 +105,8 @@ def grade(payload: dict[str, Any], ground_truth: dict[str, Any], public_state: d
             elif kind == "lens_probe":
                 if hold is not None:
                     return _fail(f"event {sequence} probes during a capture hold")
+                if probe_source is not None and event.get("input_source") != probe_source:
+                    return _fail(f"event {sequence} uses the wrong lens input")
                 point = _point(event.get("point"), width, height, "lens probe")
                 if int(event.get("polarization_deg")) % 180 != polarization:
                     return _fail(f"event {sequence} reports stale polarization")
@@ -105,6 +115,8 @@ def grade(payload: dict[str, Any], ground_truth: dict[str, Any], public_state: d
             elif kind == "lock_start":
                 if hold is not None or current >= len(nodes):
                     return _fail(f"event {sequence} starts an impossible echo hold")
+                if capture_source is not None and event.get("input_source") != capture_source:
+                    return _fail(f"event {sequence} uses the wrong capture input")
                 node = nodes[current]
                 point = _point(event.get("point"), width, height, "capture start")
                 expected = _position(node, event_time)
@@ -118,6 +130,8 @@ def grade(payload: dict[str, Any], ground_truth: dict[str, Any], public_state: d
             elif kind == "lock_track":
                 if hold is None or str(event.get("node_id") or "") != str(hold["node"]["id"]):
                     return _fail(f"event {sequence} tracks no matching echo")
+                if capture_source is not None and event.get("input_source") != capture_source:
+                    return _fail(f"event {sequence} uses the wrong capture input")
                 point = _point(event.get("point"), width, height, "capture track")
                 expected = _position(hold["node"], event_time)
                 if math.hypot(point[0] - expected[0], point[1] - expected[1]) > float(requirements["lock_radius"]):
@@ -129,6 +143,8 @@ def grade(payload: dict[str, Any], ground_truth: dict[str, Any], public_state: d
             elif kind in {"lock_end", "lock_cancel"}:
                 if hold is None or str(event.get("node_id") or "") != str(hold["node"]["id"]):
                     return _fail(f"event {sequence} releases no matching echo")
+                if capture_source is not None and event.get("input_source") != capture_source:
+                    return _fail(f"event {sequence} uses the wrong capture input")
                 point = _point(event.get("point"), width, height, "capture release")
                 duration = event_time - float(hold["started"])
                 expected = _position(hold["node"], event_time)

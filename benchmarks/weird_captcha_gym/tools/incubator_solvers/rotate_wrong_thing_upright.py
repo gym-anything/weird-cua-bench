@@ -34,9 +34,25 @@ def fail_once(page, state_dir: Path, out_dir: Path, mechanic: str) -> None:
     shot(page, out_dir, mechanic, "real-single-view-rejection")
 
 
+def _drag_ring(page, axis: str, dx: float) -> None:
+    stage = page.locator(".gimbal-stage")
+    box = stage.bounding_box()
+    if not box:
+        raise AssertionError("gimbal stage has no physical geometry")
+    radius = {"outer": 135.0, "middle": 98.0, "inner": 48.0}[axis]
+    start = (box["x"] + box["width"] / 2 + radius, box["y"] + box["height"] / 2)
+    page.mouse.move(*start)
+    page.mouse.down()
+    page.mouse.move(start[0] + dx, start[1], steps=max(2, math.ceil(abs(dx) / 20)))
+    page.wait_for_timeout(60)
+    page.mouse.up()
+
+
 def solve(page, state_dir: Path, out_dir: Path, mechanic: str) -> None:
     assert mechanic == MECHANIC_ID
     contract = read_json(state_dir / "public_state.json")["gimbal"]
+    truth = read_json(state_dir / "ground_truth.json")
+    interaction = str((truth.get("control_condition") or {}).get("interaction") or "simplified")
     for view in contract["views"]:
         page.locator(f'.gimbal-view[data-view="{view}"]').click()
     c = contract["coupling"]
@@ -54,7 +70,11 @@ def solve(page, state_dir: Path, out_dir: Path, mechanic: str) -> None:
         maximum = float(contract["max_drag_delta"])
         while abs(remaining) > 1e-6:
             chunk = math.copysign(min(abs(remaining), maximum * 0.9), remaining)
-            drag_delta(page, page.locator(f'.gimbal-control[data-axis="{axis}"]'), chunk / float(contract["degrees_per_pixel"]), 0, maximum_step=20)
+            dx = chunk / float(contract["degrees_per_pixel"])
+            if interaction == "full":
+                _drag_ring(page, axis, dx)
+            else:
+                drag_delta(page, page.locator(f'.gimbal-control[data-axis="{axis}"]'), dx, 0, maximum_step=20)
             remaining -= chunk
     shot(page, out_dir, mechanic, "tri-view-coupled-alignment")
     page.locator(".gimbal-submit").click()

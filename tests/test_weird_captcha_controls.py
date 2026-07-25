@@ -27,6 +27,32 @@ CONTROLLED_ENVIRONMENTS = (
     "slime_commute_env",
 )
 
+APPROVED_BASELINE_LEVELS = {
+    "board_game_captcha_env": 3,
+    "cursor_constellation_hunt_env": 2,
+    "cursor_lens_reveal_env": 3,
+    "exact_change_candy_cascade_env": 5,
+    "flat_pack_compliance_env": 4,
+    "flat_prisoner_env": 4,
+    "input_lag_forklift_env": 4,
+    "insider_trading_captcha_env": 2,
+    "minecraft_block_grid_env": 1,
+    "motion_only_ghost_jigsaw_env": 4,
+    "rotate_wrong_thing_upright_env": 4,
+    "rotating_keyboard_env": 4,
+    "slime_commute_env": 4,
+    "specular_lighthouse_relay_env": 3,
+    "surreal_apple_on_tree_grid_env": 4,
+}
+
+DIFFICULTY_NAMES = {
+    1: "very_easy",
+    2: "easy",
+    3: "medium",
+    4: "hard",
+    5: "very_hard",
+}
+
 
 def load_module(name: str, path: Path):
     spec = importlib.util.spec_from_file_location(name, path)
@@ -61,10 +87,10 @@ def base_task_for(env_name: str, mechanic: str) -> dict:
     )
 
 
-def task_for_level(env_name: str, level: int) -> dict:
+def task_for_level(env_name: str, level: int, interaction: str | None = None) -> dict:
     controls = controls_for(env_name)
     mechanic = controls["mechanic_id"]
-    interaction = controls["baseline"]["interaction"]
+    interaction = interaction or controls["baseline"]["interaction"]
     return MATERIALIZER.controlled_task(
         base_task_for(env_name, mechanic),
         mechanic_id=mechanic,
@@ -95,7 +121,16 @@ def test_control_files_have_one_baseline_and_five_profiles() -> None:
         assert controls["interaction"][controls["baseline"]["interaction"]]["implemented"] is True
 
 
-def test_materializer_writes_75_deterministic_tasks(tmp_path: Path) -> None:
+def test_approved_baselines_match_control_files_and_original_tasks() -> None:
+    assert set(APPROVED_BASELINE_LEVELS) == set(CONTROLLED_ENVIRONMENTS)
+    for env_name, level in APPROVED_BASELINE_LEVELS.items():
+        controls = controls_for(env_name)
+        assert controls["baseline"]["difficulty"] == level
+        task = base_task_for(env_name, controls["mechanic_id"])
+        assert task["difficulty"] == DIFFICULTY_NAMES[level]
+
+
+def test_materializer_writes_every_implemented_interaction_deterministically(tmp_path: Path) -> None:
     first = tmp_path / "first"
     second = tmp_path / "second"
     for env_name in CONTROLLED_ENVIRONMENTS:
@@ -104,7 +139,11 @@ def test_materializer_writes_75_deterministic_tasks(tmp_path: Path) -> None:
         MATERIALIZER.materialize_environment(env_root, second)
     first_tasks = sorted(first.glob("*_env/tasks/*/task.json"))
     second_tasks = sorted(second.glob("*_env/tasks/*/task.json"))
-    assert len(first_tasks) == len(second_tasks) == 75
+    expected_task_count = sum(
+        5 * sum(bool(mode.get("implemented")) for mode in controls_for(env_name)["interaction"].values())
+        for env_name in CONTROLLED_ENVIRONMENTS
+    )
+    assert len(first_tasks) == len(second_tasks) == expected_task_count
     for left, right in zip(first_tasks, second_tasks):
         assert left.relative_to(first) == right.relative_to(second)
         assert left.read_bytes() == right.read_bytes()
@@ -156,6 +195,32 @@ def test_original_tasks_match_their_independently_assigned_baselines() -> None:
         else:
             assert without_control_identity(baseline_public) == without_control_identity(original_public)
             assert without_control_identity(baseline_truth) == without_control_identity(original_truth)
+
+
+def test_implemented_interaction_pairs_share_generated_worlds_and_goals() -> None:
+    seed = "interaction-pair-equivalence"
+    paired = 0
+    for env_name in CONTROLLED_ENVIRONMENTS:
+        controls = controls_for(env_name)
+        interactions = [
+            name
+            for name, mode in controls["interaction"].items()
+            if mode.get("implemented")
+        ]
+        if len(interactions) < 2:
+            continue
+        paired += 1
+        level = int(controls["baseline"]["difficulty"])
+        first_public, first_truth = SETUP.generate_task_state(
+            task_for_level(env_name, level, interactions[0]), seed
+        )
+        for interaction in interactions[1:]:
+            public, truth = SETUP.generate_task_state(
+                task_for_level(env_name, level, interaction), seed
+            )
+            assert without_control_identity(public) == without_control_identity(first_public)
+            assert without_control_identity(truth) == without_control_identity(first_truth)
+    assert paired >= 1
 
 
 def test_forklift_profiles_match_board_route_and_delay_contracts() -> None:
@@ -251,7 +316,12 @@ def test_market_profiles_match_time_state_and_price_contracts() -> None:
             assert public["tick_ms"] in parameters["tick_ms_values"]
         else:
             assert parameters["tick_ms_min"] <= public["tick_ms"] <= parameters["tick_ms_max"]
-        orders = [{"tick": index, "side": side} for index, side in enumerate(truth["solver_actions"])]
+        interaction = truth["control_condition"]["interaction"]
+        input_source = "keyboard_hotkeys" if interaction == "simplified" else "order_buttons"
+        orders = [
+            {"tick": index, "side": side, "input_source": input_source}
+            for index, side in enumerate(truth["solver_actions"])
+        ]
         payload = {
             "mechanic_id": public["mechanic_id"],
             "task_id": public["task_id"],
@@ -290,6 +360,83 @@ def test_board_game_profiles_match_lamp_obstacle_and_physics_contracts() -> None
         for key in ("tick_ms", "acceleration", "friction", "maximum_speed", "bounce", "ball_radius"):
             assert public["physics"][key] == parameters[key]
         assert len(truth["solver_switch_waypoint_indices"]) == parameters["lamp_count"]
+
+
+def test_board_game_grader_enforces_the_selected_interaction_mode() -> None:
+    grader = load_module(
+        "controlled_board_game_grader",
+        BENCHMARK / "shared_runtime" / "server" / "incubator_graders" / "board_game_captcha.py",
+    )
+    for interaction, wrong_source in (("simplified", "analog_drag"), ("full", "compass_button")):
+        public, truth = SETUP.generate_task_state(
+            task_for_level("board_game_captcha_env", 3, interaction),
+            f"board-interaction-{interaction}",
+        )
+        payload = {
+            "mechanic_id": public["mechanic_id"],
+            "task_id": public["task_id"],
+            "challenge_id": public["challenge_id"],
+            "events": [{
+                "sequence": 1,
+                "kind": "tilt_change",
+                "t_ms": 0,
+                "from": [0, 0],
+                "to": [1, 0],
+                "input_source": wrong_source,
+            }],
+        }
+        result = grader.grade(payload, truth, public)
+        assert result["passed"] is False
+        assert result["feedback"] == "event 1 uses the wrong interaction input"
+
+    public, truth = SETUP.generate_task_state(
+        task_for_level("board_game_captcha_env", 3, "simplified"),
+        "board-interaction-non-compass",
+    )
+    payload = {
+        "mechanic_id": public["mechanic_id"],
+        "task_id": public["task_id"],
+        "challenge_id": public["challenge_id"],
+        "events": [{
+            "sequence": 1,
+            "kind": "tilt_change",
+            "t_ms": 0,
+            "from": [0, 0],
+            "to": [0.5, 0],
+            "input_source": "compass_button",
+        }],
+    }
+    result = grader.grade(payload, truth, public)
+    assert result["passed"] is False
+    assert result["feedback"] == "event 1 reports a non-compass simplified tilt"
+
+
+def test_constellation_grader_enforces_the_selected_interaction_mode() -> None:
+    grader = load_module(
+        "controlled_constellation_grader",
+        BENCHMARK / "shared_runtime" / "server" / "incubator_graders" / "cursor_constellation_hunt.py",
+    )
+    for interaction, source, wrong_source in (
+        ("simplified", "coordinate_controls", "canvas_pointer"),
+        ("full", "canvas_pointer", "coordinate_controls"),
+    ):
+        public, truth = SETUP.generate_task_state(
+            task_for_level("cursor_constellation_hunt_env", 2, interaction),
+            f"constellation-interaction-{interaction}",
+        )
+        expected = truth["expected_click"]
+        payload = {
+            "mechanic_id": public["mechanic_id"],
+            "task_id": public["task_id"],
+            "challenge_id": public["challenge_id"],
+            "input_source": source,
+            "click": {"x": expected["x"], "y": expected["y"]},
+        }
+        assert grader.grade(payload, truth, public)["passed"] is True
+        payload["input_source"] = wrong_source
+        result = grader.grade(payload, truth, public)
+        assert result["passed"] is False
+        assert result["feedback"] == "constellation submission uses the wrong interaction input"
 
 
 def test_flat_pack_profiles_match_part_socket_and_load_contracts() -> None:
@@ -449,6 +596,7 @@ def test_sealed_voxel_cannot_be_extracted_before_its_marked_stones() -> None:
             "delta": 1,
             "orientation_before": before,
             "orientation_after": current_orientation,
+            "input_source": "rotation_buttons",
         })
     durability = int(truth["starting_durability"]) - 1
     events.append({
@@ -462,6 +610,7 @@ def test_sealed_voxel_cannot_be_extracted_before_its_marked_stones() -> None:
         "outcome": "diamond_sealed",
         "durability_after": durability,
         "inventory_after": [],
+        "input_source": "canvas_click",
     })
     payload = {
         "mechanic_id": public["mechanic_id"],
@@ -505,6 +654,8 @@ def test_controlled_forklift_grader_replays_every_delay_level() -> None:
     for public, truth in generated_levels("input_lag_forklift_env", "forklift-grader-levels"):
         player, crates, walls, goals = grader._initial(truth)
         lag = int(truth["control_lag"])
+        interaction = truth["control_condition"]["interaction"]
+        input_source = "control_buttons" if interaction == "simplified" else "keyboard"
         pending: list[str] = []
         events = []
 
@@ -540,6 +691,7 @@ def test_controlled_forklift_grader_replays_every_delay_level() -> None:
                 "before": before,
                 "after": grader._snapshot(player, crates),
                 "pending_after": pending_snapshot(),
+                "input_source": input_source,
             })
         payload = {
             "mechanic_id": public["mechanic_id"],
@@ -561,65 +713,76 @@ def test_controlled_orchard_grader_accepts_each_target_count() -> None:
         "controlled_orchard_grader",
         BENCHMARK / "shared_runtime" / "server" / "incubator_graders" / "surreal_apple_on_tree_grid.py",
     )
-    for public, truth in generated_levels("surreal_apple_on_tree_grid_env", "orchard-grader-levels"):
-        events = []
-
-        def record(kind: str, **details) -> None:
-            events.append({"sequence": len(events) + 1, "kind": kind, **details})
-
-        limit = float(public["view_limit_deg"])
-        start = [480.0, 260.0]
-        record("orbit_start", point=start, angle_before=0.0)
-        xs = [360, 240, 120, 0, 120, 240, 360, 480, 600, 720, 840, 960]
-        xs.extend(950 if index % 2 == 0 else 960 for index in range(8))
-        angles = [0.0]
-        for x in xs:
-            angle = max(-limit, min(limit, (x - start[0]) * 0.24))
-            record("orbit_move", point=[float(x), 260.0], angle_after=round(angle, 2))
-            angles.append(round(angle, 2))
-        record("orbit_end", point=[float(xs[-1]), 260.0], angle=angles[-1])
-        apple_by_id = {apple["id"]: apple for apple in truth["apples"]}
-        basket = truth["basket"]
-        destination = [basket["x"] + basket["width"] / 2, basket["y"] + basket["height"] / 2]
-        for apple_id in truth["attached_ids"]:
-            center = list(grader._project(apple_by_id[apple_id]["position"], angles[-1]))
-            record("pluck_start", apple_id=apple_id, point=center, angle=angles[-1])
-            for index in range(1, 5):
-                fraction = index / 5
-                point = [
-                    center[0] + (destination[0] - center[0]) * fraction,
-                    center[1] + (destination[1] - center[1]) * fraction,
-                ]
-                record("pluck_move", apple_id=apple_id, point=point, elapsed_ms=index * 20)
-            record(
-                "pluck_end",
-                apple_id=apple_id,
-                point=destination,
-                duration_ms=100,
-                in_basket=True,
-                accepted=True,
+    seed = "orchard-grader-levels"
+    for level in range(1, 6):
+        for interaction in ("simplified", "full"):
+            public, truth = SETUP.generate_task_state(
+                task_for_level("surreal_apple_on_tree_grid_env", level, interaction), seed
             )
-        record("seal")
-        travel = round(sum(abs(right - left) for left, right in zip(angles, angles[1:])), 2)
-        span = round(max(angles) - min(angles), 2)
-        sectors = {grader._sector(angle) for angle in angles}
-        payload = {
-            "mechanic_id": public["mechanic_id"],
-            "task_id": public["task_id"],
-            "challenge_id": public["challenge_id"],
-            "events": events,
-            "final_angle_deg": angles[-1],
-            "orbit_samples": len(xs),
-            "orbit_span_deg": span,
-            "orbit_travel_deg": travel,
-            "view_sector_count": len(sectors),
-            "plucked_ids": sorted(truth["attached_ids"]),
-            "invalid_plucks": 0,
-            "reset_count": 0,
-            "seal_count": 1,
-            "completed": True,
-        }
-        assert grader.grade(payload, truth, public)["passed"] is True
+            events = []
+
+            def record(kind: str, **details) -> None:
+                events.append({"sequence": len(events) + 1, "kind": kind, **details})
+
+            limit = float(public["view_limit_deg"])
+            angles = [0.0]
+            if interaction == "full":
+                start = [480.0, 260.0]
+                record("orbit_start", point=start, angle_before=0.0, input_source="canvas_drag")
+                xs = [360, 240, 120, 0, 120, 240, 360, 480, 600, 720, 840, 960]
+                xs.extend(950 if index % 2 == 0 else 960 for index in range(8))
+                for x in xs:
+                    angle = max(-limit, min(limit, (x - start[0]) * 0.24))
+                    record("orbit_move", point=[float(x), 260.0], angle_after=round(angle, 2), input_source="canvas_drag")
+                    angles.append(round(angle, 2))
+                record("orbit_end", point=[float(xs[-1]), 260.0], angle=angles[-1], input_source="canvas_drag")
+            else:
+                targets = [6.0] * math.ceil(limit / 6) + [-6.0] * math.ceil(2 * limit / 6)
+                for delta in targets:
+                    before = angles[-1]
+                    after = round(max(-limit, min(limit, before + delta)), 2)
+                    record("orbit_step", angle_before=before, angle_after=after, input_source="orbit_buttons")
+                    angles.append(after)
+
+            apple_by_id = {apple["id"]: apple for apple in truth["apples"]}
+            basket = truth["basket"]
+            destination = [basket["x"] + basket["width"] / 2, basket["y"] + basket["height"] / 2]
+            for apple_id in truth["attached_ids"]:
+                center = list(grader._project(apple_by_id[apple_id]["position"], angles[-1]))
+                if interaction == "simplified":
+                    record("pluck_select", apple_id=apple_id, point=center, angle=angles[-1], input_source="fruit_basket_clicks")
+                    record("basket_click", apple_id=apple_id, point=destination, accepted=True, input_source="fruit_basket_clicks")
+                else:
+                    record("pluck_start", apple_id=apple_id, point=center, angle=angles[-1], input_source="fruit_drag")
+                    for index in range(1, 5):
+                        fraction = index / 5
+                        point = [
+                            center[0] + (destination[0] - center[0]) * fraction,
+                            center[1] + (destination[1] - center[1]) * fraction,
+                        ]
+                        record("pluck_move", apple_id=apple_id, point=point, elapsed_ms=index * 20, input_source="fruit_drag")
+                    record("pluck_end", apple_id=apple_id, point=destination, duration_ms=100, in_basket=True, accepted=True, input_source="fruit_drag")
+            record("seal")
+            travel = round(sum(abs(right - left) for left, right in zip(angles, angles[1:])), 2)
+            span = round(max(angles) - min(angles), 2)
+            sectors = {grader._sector(angle) for angle in angles}
+            payload = {
+                "mechanic_id": public["mechanic_id"],
+                "task_id": public["task_id"],
+                "challenge_id": public["challenge_id"],
+                "events": events,
+                "final_angle_deg": angles[-1],
+                "orbit_samples": len(angles) - 1,
+                "orbit_span_deg": span,
+                "orbit_travel_deg": travel,
+                "view_sector_count": len(sectors),
+                "plucked_ids": sorted(truth["attached_ids"]),
+                "invalid_plucks": 0,
+                "reset_count": 0,
+                "seal_count": 1,
+                "completed": True,
+            }
+            assert grader.grade(payload, truth, public)["passed"] is True
 
 
 def solve_linear(matrix: list[list[float]], right: list[float]) -> list[float]:
@@ -662,7 +825,9 @@ def test_controlled_gimbal_grader_accepts_each_axis_and_coupling_profile() -> No
             remaining = delta
             while abs(remaining) > 1e-8:
                 chunk = math.copysign(min(abs(remaining), maximum * 0.9), remaining)
-                events.append({"sequence": len(events) + 1, "kind": "drag", "axis": axis, "delta": chunk})
+                interaction = truth["control_condition"]["interaction"]
+                input_source = "axis_controls" if interaction == "simplified" else "gimbal_ring_drag"
+                events.append({"sequence": len(events) + 1, "kind": "drag", "axis": axis, "delta": chunk, "input_source": input_source})
                 remaining -= chunk
         payload = {
             "mechanic_id": public["mechanic_id"],

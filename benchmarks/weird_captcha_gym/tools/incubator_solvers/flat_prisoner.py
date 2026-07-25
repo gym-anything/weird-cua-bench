@@ -37,6 +37,17 @@ def _click_many(page, selector: str, count: int, *, out_dir: Path | None = None,
             _screenshot(page, out_dir, MECHANIC_ID, label)
 
 
+def _direct_drag_step(page, box: dict, dx: float, dy: float) -> None:
+    x, y = box["x"] + box["width"] * 0.5, box["y"] + box["height"] * 0.5
+    page.mouse.move(x, y)
+    page.mouse.down()
+    page.wait_for_timeout(24)
+    page.mouse.move(x + dx, y + dy)
+    page.wait_for_timeout(25)
+    page.mouse.up()
+    page.wait_for_timeout(25)
+
+
 def _align_camera(page, truth: dict, out_dir: Path) -> None:
     initial = truth["initial_camera"]
     target = truth["solution"]["camera"]
@@ -44,17 +55,38 @@ def _align_camera(page, truth: dict, out_dir: Path) -> None:
     orbit = float(controls["orbit_step_deg"])
     pan = float(controls["pan_step"])
     dolly = float(controls["dolly_step"])
+    interaction = str((truth.get("control_condition") or {}).get("interaction") or "simplified")
 
     yaw_steps = round((float(target["yaw_deg"]) - float(initial["yaw_deg"])) / orbit)
-    _click_many(page, "#orbit-right" if yaw_steps > 0 else "#orbit-left", abs(yaw_steps), out_dir=out_dir, label="active-camera-orbit")
     pitch_steps = round((float(target["pitch_deg"]) - float(initial["pitch_deg"])) / orbit)
-    _click_many(page, "#orbit-down" if pitch_steps > 0 else "#orbit-up", abs(pitch_steps))
     x_steps = round((float(target["target"][0]) - float(initial["target"][0])) / pan)
-    _click_many(page, "#pan-right" if x_steps > 0 else "#pan-left", abs(x_steps))
     y_steps = round((float(target["target"][1]) - float(initial["target"][1])) / pan)
-    _click_many(page, "#pan-up" if y_steps > 0 else "#pan-down", abs(y_steps))
     dolly_steps = round((float(target["distance"]) - float(initial["distance"])) / dolly)
-    _click_many(page, "#dolly-out" if dolly_steps > 0 else "#dolly-in", abs(dolly_steps))
+    if interaction == "simplified":
+        _click_many(page, "#orbit-right" if yaw_steps > 0 else "#orbit-left", abs(yaw_steps), out_dir=out_dir, label="active-camera-orbit")
+        _click_many(page, "#orbit-down" if pitch_steps > 0 else "#orbit-up", abs(pitch_steps))
+        _click_many(page, "#pan-right" if x_steps > 0 else "#pan-left", abs(x_steps))
+        _click_many(page, "#pan-up" if y_steps > 0 else "#pan-down", abs(y_steps))
+        _click_many(page, "#dolly-out" if dolly_steps > 0 else "#dolly-in", abs(dolly_steps))
+    else:
+        box = page.locator("#flat-prison-canvas").bounding_box()
+        if not box:
+            raise AssertionError("flat-prison canvas is not visible")
+        for index in range(abs(yaw_steps)):
+            _direct_drag_step(page, box, (1 if yaw_steps > 0 else -1) * orbit / 0.12, 0)
+            if index == max(0, abs(yaw_steps) // 2):
+                _screenshot(page, out_dir, MECHANIC_ID, "active-camera-orbit")
+        for _ in range(abs(pitch_steps)):
+            _direct_drag_step(page, box, 0, (1 if pitch_steps > 0 else -1) * orbit / 0.12)
+        page.locator('[data-drag-mode="pan"]').click()
+        for _ in range(abs(x_steps)):
+            _direct_drag_step(page, box, -(1 if x_steps > 0 else -1) * pan / 0.018, 0)
+        for _ in range(abs(y_steps)):
+            _direct_drag_step(page, box, 0, (1 if y_steps > 0 else -1) * pan / 0.018)
+        page.mouse.move(box["x"] + box["width"] * 0.5, box["y"] + box["height"] * 0.5)
+        for _ in range(abs(dolly_steps)):
+            page.mouse.wheel(0, 1 if dolly_steps > 0 else -1)
+            page.wait_for_timeout(30)
     page.wait_for_timeout(90)
 
     camera = page.evaluate("() => window.flatPrisonerModel.camera")

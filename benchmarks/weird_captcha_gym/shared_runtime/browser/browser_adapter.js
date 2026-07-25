@@ -6,6 +6,7 @@
   const environmentId = String(parameters.get("environment") || "");
   const requestedAttempt = Number.parseInt(parameters.get("attempt") || "", 10);
   const requestedDifficulty = Number.parseInt(parameters.get("difficulty") || "", 10);
+  const requestedInteraction = String(parameters.get("interaction") || "");
   const validEnvironment = /^[a-z0-9_]+_env$/.test(environmentId);
   const pageBase = new URL("./", window.location.href);
   const runtimeBase = new URL("runtime/", pageBase);
@@ -16,6 +17,8 @@
 
   let bundle = null;
   let activeProfile = null;
+  let activeInteractionProfile = null;
+  let selectedInteraction = "";
   let bundleError = null;
   let challengeIndex = 0;
   let stateReadCount = 0;
@@ -48,17 +51,25 @@
         .then((value) => {
           if (!Array.isArray(value.challenges) || !value.challenges.length) throw new Error("browser challenge pool is empty");
           bundle = value;
-          const selectedDifficulty = Number.isInteger(requestedDifficulty) ? requestedDifficulty : null;
+          const selectedDifficulty = Number.isInteger(requestedDifficulty)
+            ? requestedDifficulty
+            : requestedInteraction ? Number(bundle.default_difficulty) : null;
           if (Number.isInteger(selectedDifficulty)) {
             activeProfile = bundle.difficulty_profiles?.[String(selectedDifficulty)] || null;
             if (!activeProfile) throw new Error(`difficulty ${selectedDifficulty} is unavailable for this environment`);
           }
-          const challenges = activeProfile?.challenges || bundle.challenges;
+          selectedInteraction = requestedInteraction || String(bundle.default_interaction || "");
+          if (requestedInteraction && !["simplified", "full"].includes(requestedInteraction)) throw new Error(`interaction ${requestedInteraction} is unavailable for this environment`);
+          if (activeProfile?.interaction_profiles) {
+            activeInteractionProfile = activeProfile.interaction_profiles[selectedInteraction] || null;
+            if (!activeInteractionProfile) throw new Error(`interaction ${selectedInteraction} is unavailable at difficulty ${selectedDifficulty}`);
+          }
+          const challenges = activeInteractionProfile?.challenges || activeProfile?.challenges || bundle.challenges;
           if (!Array.isArray(challenges) || !challenges.length) throw new Error("selected difficulty has no browser challenges");
           challengeIndex = Number.isInteger(requestedAttempt)
             ? Math.abs(requestedAttempt) % challenges.length
             : crypto.getRandomValues(new Uint32Array(1))[0] % challenges.length;
-          document.title = `${bundle.title || "Weird CUA Bench"}${activeProfile ? ` · L${activeProfile.level}` : ""} · Browser Play`;
+          document.title = `${bundle.title || "Weird CUA Bench"}${activeProfile ? ` · L${activeProfile.level}` : ""}${activeInteractionProfile ? ` · ${selectedInteraction}` : ""} · Browser Play`;
           return bundle;
         })
     : Promise.reject(new Error("A valid environment was not selected")))
@@ -71,7 +82,7 @@
   function currentChallenge() {
     if (bundleError) throw bundleError;
     if (!bundle) throw new Error("browser challenge is not ready");
-    return (activeProfile?.challenges || bundle.challenges)[challengeIndex];
+    return (activeInteractionProfile?.challenges || activeProfile?.challenges || bundle.challenges)[challengeIndex];
   }
 
   function ensureWorker() {
@@ -120,14 +131,15 @@
 
   async function handleState() {
     await bundlePromise;
-    const challenges = activeProfile?.challenges || bundle.challenges;
+    const challenges = activeInteractionProfile?.challenges || activeProfile?.challenges || bundle.challenges;
     if (stateReadCount > 0) challengeIndex = (challengeIndex + 1) % challenges.length;
     stateReadCount += 1;
     return jsonResponse(currentChallenge().public_state);
   }
 
   function failedResult(feedback, grade = null) {
-    challengeIndex = (challengeIndex + 1) % bundle.challenges.length;
+    const challenges = activeInteractionProfile?.challenges || activeProfile?.challenges || bundle.challenges;
+    challengeIndex = (challengeIndex + 1) % challenges.length;
     if (grade) window.dispatchEvent(new CustomEvent("weird-cua-browser-grade", {detail: {passed: false, grade}}));
     return jsonResponse({
       ok: true,
@@ -160,7 +172,7 @@
       const passed = grade?.passed === true;
       lastResult = {...payload, browser_grade: grade, submitted_at: new Date().toISOString()};
       if (passed) {
-        const storageKey = `weird-cua-browser-results:${environmentId}${activeProfile ? `:d${activeProfile.level}` : ""}`;
+        const storageKey = `weird-cua-browser-results:${environmentId}${activeProfile ? `:d${activeProfile.level}` : ""}${activeInteractionProfile ? `:i${selectedInteraction}` : ""}`;
         localStorage.setItem(storageKey, JSON.stringify(lastResult));
         window.dispatchEvent(new CustomEvent("weird-cua-browser-grade", {detail: {passed: true, grade}}));
         return jsonResponse({ok: true, passed: true, feedback: grade.feedback || "pass"});

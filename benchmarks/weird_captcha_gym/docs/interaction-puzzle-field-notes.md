@@ -29,6 +29,55 @@ The conversation was reconstructed from the complete local Codex rollout at:
 
 The transcript was then checked against the current generators, browser runtime, live server, exported verifiers, task metadata, provenance manifests, browser smoke tools, screenshots, and tests. Chat recollection alone is not treated as proof.
 
+## Research and controllability decisions added July 25
+
+### Purpose
+
+The long-term target is real-time computer use. Video games provide an evaluation setting for agents that act while the world changes. Robotics provides the corresponding physical-world motivation. Weird CAPTCHAs and short interactive puzzles provide small controlled problems that sit between static grounding benchmarks and large video-game benchmarks.
+
+The source survey matters because it supplies many independently created puzzle ideas. The procedural pipeline matters because it can generate varied instances and expose task-specific controls. Neither fact alone establishes the capability taxonomy. The benchmark still needs an external data-backed justification for why its selected capabilities cover the intended problem.
+
+### Seven-part framework
+
+The framework contains three controls:
+
+1. Real time.
+2. Interaction.
+3. Difficulty or complexity.
+
+It contains four capabilities:
+
+1. Visual understanding. This is recorded as 2D or 3D and includes spatial understanding.
+2. Temporal understanding and memory. This requires information about motion, duration, change across frames, or hidden past state. A visible sequence alone does not qualify.
+3. Reasoning and planning.
+4. Exploration and interface understanding. This applies when interaction reveals relevant information or teaches how the interface behaves.
+
+Real time is a framework-level choice between a live environment and a paused environment that advances for an observation window. Interaction describes how the computer-use agent uses mouse and keyboard to make an intended action happen. A simplified interface exposes proxy controls. A full interface requires the task-appropriate direct manipulation.
+
+### Capability annotation lessons
+
+Spatial reasoning is part of visual understanding rather than a separate top-level category. Two-dimensional visual understanding is present in nearly every screenshot-based task. Rotating On-Screen Keyboard is classified as 3D because its key plane changes under three-dimensional projection. Temporal understanding is absent when the answer can be recovered from static images even if those images show several states. Exploration and interface understanding must not be attached to every interactive task.
+
+Capability assignments require the generator, visible runtime, grader, verifier, and solver. Task titles and descriptions are insufficient. The judged behavior is the normal screenshot-only solution. Private state used by a scripted solver provides implementation evidence but does not describe what the computer-use agent sees.
+
+### Difficulty lessons
+
+A baseline level describes the exact current configuration. It does not describe the environment idea in isolation. The current task can occupy any level. L5 does not mean that no harder version can be created.
+
+Repeated independent steps do not establish higher difficulty. Active parameters must change the visual, temporal, reasoning, or control problem within the task. Exact-Change Candy Cascade is different because each accepted swap changes the board used by later decisions. Grader quotas, inactive parameters, minimum-action counters, and repeated rounds are not evidence of difficulty unless they change the visible solution problem.
+
+Every assignment should follow complete code reading. The audit should state what the current configuration requires. It should then compare that configuration with concrete easier and harder alternatives. Calibration data from humans and computer-use agents can later revise the levels.
+
+The approved current levels are recorded in `controllability-plan.md` and `AGENTS.md`. The control files and original task metadata are tested against that table.
+
+### Research language and collaboration lessons
+
+Use established technical terms or describe the implemented variable directly. Do not create scientific-sounding constructs such as “interaction debt.” Do not use subjective qualifiers such as “ordinary” or “genuine” as if they define an experimental boundary. Do not use phrases such as “clean formulation,” “conclusion,” or “inference” to certify an answer.
+
+Answer the question that was asked before offering anything else. Do not replace a requested explanation with recommendations. When the user identifies a flaw, investigate and improve the answer rather than merely agreeing. Random audits must not search for a quota of mistakes.
+
+Repository exploration should prioritize purpose, principles, architecture, components, and current position. An ongoing experiment is unfinished work rather than a defect. Referenced papers must be read end to end including their appendices. Task judgments must use complete code rather than keyword searches or descriptions.
+
 ## What the benchmark is—and is not
 
 ### It is

@@ -41,9 +41,19 @@ def _click_internal(page, point: list[float]) -> None:
     page.wait_for_timeout(65)
 
 
-def _rotate_to(page, current: int, target: int) -> int:
+def _rotate_to(page, current: int, target: int, interaction: str) -> int:
     while current != target:
-        page.locator("#voxel-right").click()
+        if interaction == "simplified":
+            page.locator("#voxel-right").click()
+        else:
+            canvas = page.locator("#voxel-canvas")
+            box = canvas.bounding_box()
+            if not box:
+                raise AssertionError("voxel canvas has no physical geometry")
+            page.mouse.move(box["x"] + box["width"] * 0.65, box["y"] + box["height"] * 0.5)
+            page.mouse.down()
+            page.mouse.move(box["x"] + box["width"] * 0.35, box["y"] + box["height"] * 0.5, steps=8)
+            page.mouse.up()
         current = (current + 1) % 4
         page.wait_for_timeout(45)
     return current
@@ -64,9 +74,10 @@ def solve(page, state_dir: Path, out_dir: Path, mechanic: str) -> None:
     if mechanic != MECHANIC_ID:
         raise AssertionError(f"unexpected mechanic {mechanic!r}")
     truth = _read(state_dir / "ground_truth.json")
+    interaction = str((truth.get("control_condition") or {}).get("interaction") or "simplified")
     orientation = int(truth["starting_orientation"])
     for index, step in enumerate(truth["solution_steps"]):
-        orientation = _rotate_to(page, orientation, int(step["orientation"]))
+        orientation = _rotate_to(page, orientation, int(step["orientation"]), interaction)
         _click_internal(page, step["click"])
         last = page.evaluate("() => window.voxelMineModel?.events.at(-1)")
         expected_outcome = "diamond_extracted" if step["kind"] == "extract" else "stone_removed"

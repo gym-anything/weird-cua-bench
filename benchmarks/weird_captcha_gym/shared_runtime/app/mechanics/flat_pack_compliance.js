@@ -54,14 +54,23 @@
     updateRack();
   }
 
-  function rotateSelected(direction) {
+  function rotateSelected(direction, inputSource = "side_rotation_buttons") {
     if (model.loading || model.completed || model.selected.length !== 1) { setMessage("SELECT ONE PART BEFORE APPLYING A 90° ROTATION", "pending"); return; }
     const body = model.bodies.find(item => item.label === model.selected[0]);
     const delta = direction * Math.PI / 2;
     Matter.Body.setAngle(body, body.angle + delta);
     Matter.Body.setAngularVelocity(body, 0);
-    record("rotate", {part_id: body.label, delta: round(delta), pose: pose(body)});
+    record("rotate", {part_id: body.label, delta: round(delta), pose: pose(body), input_source: inputSource});
     setMessage(`KEYED ROTATION APPLIED TO ${body.label.toUpperCase()} · COLLISIONS REMAIN ACTIVE`);
+  }
+
+  function lockJoint(joint, bodies) {
+    const constraint = Matter.Constraint.create({
+      label: joint.id, bodyA: bodies[joint.a], pointA: constraintOffset(bodies[joint.a], joint.socket_a),
+      bodyB: bodies[joint.b], pointB: constraintOffset(bodies[joint.b], joint.socket_b), length: 0,
+      stiffness: 1, damping: 0.34,
+    });
+    model.constraints.push(constraint); Matter.Composite.add(model.engine.world, constraint); model.connected.add(joint.id);
   }
 
   function mateSelected() {
@@ -74,20 +83,40 @@
       const a = worldPoint(bodies[joint.a], joint.socket_a), b = worldPoint(bodies[joint.b], joint.socket_b);
       distance = Math.hypot(a[0] - b[0], a[1] - b[1]);
       accepted = distance <= joint.max_distance && angleError(bodies[joint.a].angle, parts[joint.a].target_pose[2]) <= joint.max_angle_error && angleError(bodies[joint.b].angle, parts[joint.b].target_pose[2]) <= joint.max_angle_error;
-      if (accepted) {
-        const constraint = Matter.Constraint.create({
-          label: joint.id, bodyA: bodies[joint.a], pointA: constraintOffset(bodies[joint.a], joint.socket_a),
-          bodyB: bodies[joint.b], pointB: constraintOffset(bodies[joint.b], joint.socket_b), length: 0,
-          stiffness: 1, damping: 0.34,
-        });
-        model.constraints.push(constraint); Matter.Composite.add(model.engine.world, constraint); model.connected.add(joint.id);
-      }
+      if (accepted) lockJoint(joint, bodies);
     }
-    record("joint_attempt", {joint_id: joint ? joint.id : `invalid:${[first, second].sort().join("+")}`, accepted, distance: round(distance)});
+    record("joint_attempt", {joint_id: joint ? joint.id : `invalid:${[first, second].sort().join("+")}`, accepted, distance: round(distance), input_source: "side_mate_button"});
     model.selected = [];
     if (accepted) setMessage(`SOCKET ${joint.id.toUpperCase()} LOCKED · LOAD PATH CONNECTED`, "passed");
     else { model.rejected += 1; document.querySelector(".flat-stage")?.classList.add("socket-reject"); setTimeout(() => document.querySelector(".flat-stage")?.classList.remove("socket-reject"), 420); setMessage("KEYS / ORIENTATION DO NOT MATCH · JOINT REJECTED", "error"); }
     updateRack();
+  }
+
+  function mateDirect(partId) {
+    const bodies = bodyMap(), parts = partMap();
+    for (const joint of model.state.joints) {
+      if (model.connected.has(joint.id) || ![joint.a, joint.b].includes(partId)) continue;
+      const a = worldPoint(bodies[joint.a], joint.socket_a), b = worldPoint(bodies[joint.b], joint.socket_b);
+      const distance = Math.hypot(a[0] - b[0], a[1] - b[1]);
+      const accepted = distance <= joint.max_distance && angleError(bodies[joint.a].angle, parts[joint.a].target_pose[2]) <= joint.max_angle_error && angleError(bodies[joint.b].angle, parts[joint.b].target_pose[2]) <= joint.max_angle_error;
+      if (!accepted) continue;
+      lockJoint(joint, bodies);
+      record("joint_attempt", {joint_id: joint.id, accepted: true, distance: round(distance), input_source: "automatic_socket"});
+      setMessage(`SOCKET ${joint.id.toUpperCase()} LOCKED BY DIRECT CONTACT`, "passed");
+    }
+    updateRack();
+  }
+
+  function rotateDirect(event) {
+    event.preventDefault();
+    if (!model || model.interaction !== "full" || model.loading || model.completed) return;
+    const point = canvasPoint(event), body = Matter.Query.point(model.bodies, {x: point[0], y: point[1]})[0];
+    if (!body) return;
+    model.selected = [body.label];
+    const delta = Math.PI / 2;
+    Matter.Body.setAngle(body, body.angle + delta); Matter.Body.setAngularVelocity(body, 0);
+    record("rotate", {part_id: body.label, delta: round(delta), pose: pose(body), input_source: "part_right_click"});
+    setMessage(`DIRECT ROTATION APPLIED TO ${body.label.toUpperCase()}`); updateRack();
   }
 
   function resetAssembly() {
@@ -190,32 +219,34 @@
   function bindPointer() {
     const canvas = model.canvas;
     canvas.addEventListener("pointerdown", event => {
-      if (model.loading || model.completed) return; const point = canvasPoint(event); const body = Matter.Query.point(model.bodies, {x: point[0], y: point[1]})[0]; if (!body) return;
+      if (event.button !== 0 || model.loading || model.completed) return; const point = canvasPoint(event); const body = Matter.Query.point(model.bodies, {x: point[0], y: point[1]})[0]; if (!body) return;
       selectPart(body.label); Matter.Body.setStatic(body, false); const originalInertia = body.inertia; Matter.Body.setInertia(body, Infinity); const local = {x: 0, y: 0};
       model.drag = {body, last: point, originalInertia, constraint: Matter.Constraint.create({label: "pointer-spring", pointA: {x: point[0], y: point[1]}, bodyB: body, pointB: local, stiffness: 0.78, damping: 0.28})};
-      Matter.Composite.add(model.engine.world, model.drag.constraint); record("drag_start", {part_id: body.label, point: point.map(round)}); canvas.setPointerCapture(event.pointerId);
+      Matter.Composite.add(model.engine.world, model.drag.constraint); record("drag_start", {part_id: body.label, point: point.map(round), input_source: "canvas_drag"}); canvas.setPointerCapture(event.pointerId);
     });
     canvas.addEventListener("pointermove", event => {
       if (!model.drag) return; const point = canvasPoint(event); model.drag.constraint.pointA.x = point[0]; model.drag.constraint.pointA.y = point[1];
-      if (Math.hypot(point[0] - model.drag.last[0], point[1] - model.drag.last[1]) >= 6) { model.drag.last = point; record("drag_sample", {point: point.map(round), pose: pose(model.drag.body)}); }
+      if (Math.hypot(point[0] - model.drag.last[0], point[1] - model.drag.last[1]) >= 6) { model.drag.last = point; record("drag_sample", {point: point.map(round), pose: pose(model.drag.body), input_source: "canvas_drag"}); }
     });
-    const end = event => { if (!model.drag) return; const drag = model.drag; const point = canvasPoint(event); Matter.Body.setVelocity(drag.body, {x: 0, y: 0}); Matter.Body.setAngularVelocity(drag.body, 0); Matter.Body.setInertia(drag.body, drag.originalInertia); record("drag_sample", {point: point.map(round), pose: pose(drag.body)}); Matter.Composite.remove(model.engine.world, drag.constraint); model.drag = null; record("drag_end", {part_id: drag.body.label, pose: pose(drag.body)}); Matter.Body.setStatic(drag.body, true);
+    const end = event => { if (!model.drag) return; const drag = model.drag; const point = canvasPoint(event); Matter.Body.setVelocity(drag.body, {x: 0, y: 0}); Matter.Body.setAngularVelocity(drag.body, 0); Matter.Body.setInertia(drag.body, drag.originalInertia); record("drag_sample", {point: point.map(round), pose: pose(drag.body), input_source: "canvas_drag"}); Matter.Composite.remove(model.engine.world, drag.constraint); model.drag = null; record("drag_end", {part_id: drag.body.label, pose: pose(drag.body), input_source: "canvas_drag"}); Matter.Body.setStatic(drag.body, true); if (model.interaction === "full") mateDirect(drag.body.label);
       try { canvas.releasePointerCapture(event.pointerId); } catch (_) {} };
     canvas.addEventListener("pointerup", end); canvas.addEventListener("pointercancel", end);
+    canvas.addEventListener("contextmenu", rotateDirect);
   }
 
   async function render(state, helpers) {
     if (model?.raf) cancelAnimationFrame(model.raf); if (model?.engineTimer) clearInterval(model.engineTimer); if (model?.loadTimer) clearInterval(model.loadTimer);
     document.body.dataset.mechanic = "flat-pack-compliance"; document.body.dataset.cheatMode = helpers.isCheatMode() ? "true" : "false";
-    helpers.app.innerHTML = `<section class="flat-pack-captcha" data-challenge-id="${clean(state.challenge_id)}"><header class="flat-head"><div><span>COMPLIANCE BAY / KIT ${clean(state.challenge_id)}</span><h1>${clean(state.prompt)}</h1></div><div class="flat-rule"><b>LOAD-BEARING KIT</b><span>Fit the asymmetric parts before testing the assembly.</span></div></header><main class="flat-main"><section class="flat-stage"><canvas class="flat-canvas" width="${state.stage.width}" height="${state.stage.height}"></canvas><div class="flat-stage-label">DRAG PARTS ONTO THE DASHED BLUEPRINT</div><div class="flat-failure" data-visible="false"><b>COMPLIANCE FAIL</b><span>OPEN / MISKEYED SOCKET · REWIND AND REPAIR</span></div><div class="flat-complete" data-visible="false"><b>LOAD SURVIVED</b><span>ALL ${state.joints.length} SOCKETS HELD</span></div></section><aside class="flat-console"><p>KEYED PARTS</p><h2>Fit, orient, connect—then prove it under force.</h2><div class="flat-parts">${state.parts.map(part => `<button type="button" class="flat-part-chip" data-part-id="${clean(part.id)}" data-selected="false" data-connected="false" style="--part:${clean(part.color)}"><i></i><span>${clean(part.label)}</span><b>${clean(part.id)}</b></button>`).join("")}</div><div class="flat-controls"><button type="button" class="flat-rotate-left">↶ 90°</button><button type="button" class="flat-rotate-right">90° ↷</button><button type="button" class="flat-mate">LOCK SELECTED SOCKETS</button></div><div class="flat-audit"><div><span>SOCKETS</span><b class="flat-graph-value">0/${state.joints.length}</b></div><div><span>LOAD</span><b class="flat-strain-value">0.0 / ${state.requirements.strain_limit}</b></div><em class="flat-load-meter"><i></i></em></div><ol><li>Place and rotate each part on its dashed pose.</li><li>Select touching parts and lock their matching sockets.</li><li>Run the load test; rewind freely if anything slips.</li></ol><button type="button" class="flat-reset">REWIND / REPAIR</button></aside></main><footer class="flat-foot"><div><span>ASSEMBLY STATUS</span><div class="readout" data-status="idle">DRAG A PART TO BEGIN</div><small class="flat-live-note">COLLISIONS ACTIVE</small></div><button type="button" class="flat-load">BEGIN COMPLIANCE TEST</button><button type="button" class="flat-submit">${clean(state.submit_label)}</button></footer>${helpers.cheatPanelTemplate()}</section>`;
+    const interaction = state.control_condition?.interaction || "simplified";
+    const interactionControls = interaction === "simplified" ? `<div class="flat-controls"><button type="button" class="flat-rotate-left">↶ 90°</button><button type="button" class="flat-rotate-right">90° ↷</button><button type="button" class="flat-mate">LOCK SELECTED SOCKETS</button></div>` : `<div class="flat-direct-note">RIGHT-CLICK A PART TO ROTATE IT 90°. MATCHING SOCKETS LOCK ON CONTACT.</div>`;
+    helpers.app.innerHTML = `<section class="flat-pack-captcha" data-interaction="${clean(interaction)}" data-challenge-id="${clean(state.challenge_id)}"><header class="flat-head"><div><span>COMPLIANCE BAY / KIT ${clean(state.challenge_id)}</span><h1>${clean(state.prompt)}</h1></div><div class="flat-rule"><b>LOAD-BEARING KIT</b><span>Fit the asymmetric parts before testing the assembly.</span></div></header><main class="flat-main"><section class="flat-stage"><canvas class="flat-canvas" width="${state.stage.width}" height="${state.stage.height}"></canvas><div class="flat-stage-label">DRAG PARTS ONTO THE DASHED BLUEPRINT</div><div class="flat-failure" data-visible="false"><b>COMPLIANCE FAIL</b><span>OPEN / MISKEYED SOCKET · REWIND AND REPAIR</span></div><div class="flat-complete" data-visible="false"><b>LOAD SURVIVED</b><span>ALL ${state.joints.length} SOCKETS HELD</span></div></section><aside class="flat-console"><p>KEYED PARTS</p><h2>Fit, orient, connect—then prove it under force.</h2><div class="flat-parts">${state.parts.map(part => `<button type="button" class="flat-part-chip" data-part-id="${clean(part.id)}" data-selected="false" data-connected="false" style="--part:${clean(part.color)}"><i></i><span>${clean(part.label)}</span><b>${clean(part.id)}</b></button>`).join("")}</div>${interactionControls}<div class="flat-audit"><div><span>SOCKETS</span><b class="flat-graph-value">0/${state.joints.length}</b></div><div><span>LOAD</span><b class="flat-strain-value">0.0 / ${state.requirements.strain_limit}</b></div><em class="flat-load-meter"><i></i></em></div><ol>${interaction === "full" ? "<li>Right-click parts until their keyed orientation matches.</li><li>Drag matching sockets together to lock them.</li>" : "<li>Place and rotate each part on its dashed pose.</li><li>Select touching parts and lock their matching sockets.</li>"}<li>Run the load test; rewind freely if anything slips.</li></ol><button type="button" class="flat-reset">REWIND / REPAIR</button></aside></main><footer class="flat-foot"><div><span>ASSEMBLY STATUS</span><div class="readout" data-status="idle">DRAG A PART TO BEGIN</div><small class="flat-live-note">COLLISIONS ACTIVE</small></div><button type="button" class="flat-load">BEGIN COMPLIANCE TEST</button><button type="button" class="flat-submit">${clean(state.submit_label)}</button></footer>${helpers.cheatPanelTemplate()}</section>`;
     const engine = Matter.Engine.create({enableSleeping: false}); engine.gravity.y = 0; engine.positionIterations = 10; engine.velocityIterations = 8; engine.constraintIterations = 8;
     const walls = [Matter.Bodies.rectangle(450, -16, 940, 32, {isStatic: true, label: "wall"}), Matter.Bodies.rectangle(450, 496, 940, 32, {isStatic: true, label: "wall"}), Matter.Bodies.rectangle(-16, 240, 32, 520, {isStatic: true, label: "wall"}), Matter.Bodies.rectangle(916, 240, 32, 520, {isStatic: true, label: "wall"})]; Matter.Composite.add(engine.world, walls);
-    model = {state, helpers, engine, walls, bodies: [], constraints: [], selected: [], connected: new Set(), events: [], drag: null, contacts: 0, rejected: 0, resets: 0, loadTick: 0, maxStrain: 0, loading: false, completed: false, failure: false, submitting: false, terminal: false, loadTimer: null, raf: null, canvas: document.querySelector(".flat-canvas")};
+    model = {state, helpers, interaction, engine, walls, bodies: [], constraints: [], selected: [], connected: new Set(), events: [], drag: null, contacts: 0, rejected: 0, resets: 0, loadTick: 0, maxStrain: 0, loading: false, completed: false, failure: false, submitting: false, terminal: false, loadTimer: null, raf: null, canvas: document.querySelector(".flat-canvas")};
     window.flatPackComplianceModel = model; createBodies();
     Matter.Events.on(engine, "collisionStart", event => { for (const pair of event.pairs) { const ids = [pair.bodyA.label, pair.bodyB.label].filter(id => model.state.parts.some(part => part.id === id)); if (ids.length === 2 && ids[0] !== ids[1]) { const sorted = ids.sort(); record("contact", {pair: sorted, tick: model.loadTick}); model.contacts += 1; document.querySelector(".flat-stage")?.classList.add("contact-flash"); setTimeout(() => document.querySelector(".flat-stage")?.classList.remove("contact-flash"), 110); } } });
     model.engineTimer = setInterval(() => Matter.Engine.update(engine, 1000 / 60), 1000 / 60);
-    bindPointer(); document.querySelectorAll(".flat-part-chip").forEach(button => button.addEventListener("click", () => selectPart(button.dataset.partId)));
-    document.querySelector(".flat-rotate-left").addEventListener("click", () => rotateSelected(-1)); document.querySelector(".flat-rotate-right").addEventListener("click", () => rotateSelected(1)); document.querySelector(".flat-mate").addEventListener("click", mateSelected); document.querySelector(".flat-reset").addEventListener("click", resetAssembly); document.querySelector(".flat-load").addEventListener("click", beginLoad); document.querySelector(".flat-submit").addEventListener("click", submit); helpers.installCheatPanel(); model.raf = requestAnimationFrame(draw);
+    bindPointer(); if (interaction === "simplified") { document.querySelectorAll(".flat-part-chip").forEach(button => button.addEventListener("click", () => selectPart(button.dataset.partId))); document.querySelector(".flat-rotate-left").addEventListener("click", () => rotateSelected(-1)); document.querySelector(".flat-rotate-right").addEventListener("click", () => rotateSelected(1)); document.querySelector(".flat-mate").addEventListener("click", mateSelected); } document.querySelector(".flat-reset").addEventListener("click", resetAssembly); document.querySelector(".flat-load").addEventListener("click", beginLoad); document.querySelector(".flat-submit").addEventListener("click", submit); helpers.installCheatPanel(); model.raf = requestAnimationFrame(draw);
   }
   window.WeirdCaptchaMechanics = window.WeirdCaptchaMechanics || {}; window.WeirdCaptchaMechanics.flat_pack_compliance = {rootSelector: ".flat-pack-captcha", render};
 })();

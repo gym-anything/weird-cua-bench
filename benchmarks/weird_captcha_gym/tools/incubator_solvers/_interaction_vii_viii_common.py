@@ -74,14 +74,36 @@ def _adjust_range(page, selector: str, target: int) -> None:
 
 def _specular(page, state_dir: Path, out_dir: Path, mechanic: str) -> None:
     truth = _read(state_dir / "ground_truth.json")
+    interaction = str((truth.get("control_condition") or {}).get("interaction") or "simplified")
     _shot(page, out_dir, mechanic, "initial-fresh-optical-bench")
+    def drag_steps(mirror_index: int, signed_steps: int) -> None:
+        canvas = page.locator("#specular-canvas")
+        box = canvas.bounding_box()
+        if not box:
+            raise AssertionError("specular canvas has no physical geometry")
+        remaining = int(signed_steps)
+        while remaining:
+            chunk = max(-16, min(16, remaining))
+            round_index = int(page.evaluate("() => window.specularLighthouseRelayModel.roundIndex"))
+            center = truth["rounds"][round_index]["mirrors"][mirror_index]["center"]
+            start_x = box["x"] + float(center[0]) / 900 * box["width"]
+            start_y = box["y"] + float(center[1]) / 480 * box["height"]
+            page.mouse.move(start_x, start_y)
+            page.mouse.down()
+            page.mouse.move(start_x + chunk * 8, start_y, steps=max(2, abs(chunk)))
+            page.mouse.up()
+            remaining -= chunk
     def aim(mirror_index: int, target: float) -> None:
         current = float(page.evaluate("i => window.specularLighthouseRelayModel.angles[i]", mirror_index))
         step = float(truth["rounds"][int(page.evaluate("() => window.specularLighthouseRelayModel.roundIndex"))]["angle_step_deg"])
         plus_steps = round(((float(target) - current) % 180) / step)
         minus_steps = round(((current - float(target)) % 180) / step)
-        selector = f'[data-mirror="{mirror_index}"][data-delta="{step if plus_steps <= minus_steps else -step:g}"]'
-        _click_many(page.locator(selector), min(plus_steps, minus_steps))
+        signed_steps = plus_steps if plus_steps <= minus_steps else -minus_steps
+        if interaction == "full":
+            drag_steps(mirror_index, signed_steps)
+        else:
+            selector = f'[data-mirror="{mirror_index}"][data-delta="{step if plus_steps <= minus_steps else -step:g}"]'
+            _click_many(page.locator(selector), min(plus_steps, minus_steps))
 
     for round_index, solution in enumerate(truth["solutions"]):
         for mirror_index, target in enumerate(solution["angles"]):

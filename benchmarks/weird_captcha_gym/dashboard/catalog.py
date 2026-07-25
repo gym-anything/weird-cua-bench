@@ -994,6 +994,14 @@ def _difficulty_control(
     interaction = str(baseline.get("interaction") or "")
     if baseline_level not in {1, 2, 3, 4, 5} or interaction not in {"simplified", "full"}:
         raise ValueError(f"{environment_dir.name}: controls baseline is invalid")
+    interaction_modes = controls.get("interaction") or {}
+    interactions = [
+        mode
+        for mode in ("simplified", "full")
+        if bool((interaction_modes.get(mode) or {}).get("implemented"))
+    ]
+    if interaction not in interactions:
+        raise ValueError(f"{environment_dir.name}: baseline interaction is not implemented")
     profiles = controls.get("difficulty") or {}
     if set(profiles) != {"1", "2", "3", "4", "5"}:
         raise ValueError(f"{environment_dir.name}: controls must define five difficulty levels")
@@ -1005,6 +1013,7 @@ def _difficulty_control(
             "level": level,
             "label": str(profile["label"]),
             "task_id": task_id,
+            "task_ids": {mode: f"{mechanic_id}_d{level}_{mode}_seed_0001" for mode in interactions},
             "instruction": str(profile.get("natural_language") or fallback_instruction),
             "summary": str(profile.get("summary") or ""),
             "parameters": profile.get("parameters") or {},
@@ -1013,6 +1022,8 @@ def _difficulty_control(
     return {
         "baseline_level": baseline_level,
         "interaction": interaction,
+        "baseline_interaction": interaction,
+        "interactions": interactions,
         "real_time": str(baseline.get("real_time") or "live"),
         "profiles": difficulty_profiles,
     }
@@ -1225,6 +1236,14 @@ def build_catalog() -> dict[str, Any]:
             mechanic_id,
             str(primary.get("instruction") or ""),
         )
+        controlled_difficulty = next(
+            (
+                str(item["label"]).replace("_", " ")
+                for item in (difficulty_control or {}).get("profiles", [])
+                if item.get("current_implementation")
+            ),
+            None,
+        )
         evidence = _evidence_paths(mechanic_id, environment_dir)
         cover = _cover_path(mechanic_id, evidence)
         built = status == "prototype_visual_candidate"
@@ -1248,7 +1267,7 @@ def build_catalog() -> dict[str, Any]:
             "stage": "built" if built else ("rejected" if rejected else "scaffold"),
             "group": group,
             "axes": profile.get("axes") or ["incubator"],
-            "difficulty": profile.get("difficulty") or "unrated",
+            "difficulty": controlled_difficulty or profile.get("difficulty") or "unrated",
             "accent": profile.get("accent") or "#82908c",
             "human_status": profile.get("human") or ("archived" if rejected else "not-tested"),
             "order": int(profile.get("order", 1000)),

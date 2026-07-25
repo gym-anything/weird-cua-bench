@@ -142,6 +142,13 @@ def grade(payload: dict[str, Any], ground_truth: dict[str, Any], public_state: d
     binding_error = _bind(payload, ground_truth, public_state)
     if binding_error:
         return _fail(binding_error)
+    truth_condition = ground_truth.get("control_condition")
+    if truth_condition != public_state.get("control_condition"):
+        return _fail("public interaction condition differs from candy contract")
+    interaction = str((truth_condition or {}).get("interaction") or "")
+    expected_source = {"simplified": "cell_clicks", "full": "candy_drag"}.get(interaction)
+    if truth_condition is not None and expected_source is None:
+        return _fail("candy interaction condition is invalid")
     try:
         board, refill, target, move_budget = _contract(ground_truth, public_state)
     except (TypeError, ValueError) as exc:
@@ -163,6 +170,8 @@ def grade(payload: dict[str, Any], ground_truth: dict[str, Any], public_state: d
             return _fail("transcript continues after a terminal outcome")
         if not isinstance(event, dict) or event.get("sequence") != index:
             return _fail(f"swap {index} has an invalid sequence")
+        if expected_source is not None and event.get("input_source") != expected_source:
+            return _fail(f"swap {index} uses the wrong interaction input")
         try:
             first = _coord(event.get("from"))
             second = _coord(event.get("to"))

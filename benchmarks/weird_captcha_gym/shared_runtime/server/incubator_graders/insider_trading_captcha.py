@@ -34,7 +34,9 @@ def _identity_error(
     return None
 
 
-def _normalize_orders(raw: Any, count: int, delay: int) -> tuple[list[str] | None, str | None]:
+def _normalize_orders(
+    raw: Any, count: int, delay: int, expected_source: str | None
+) -> tuple[list[str] | None, str | None]:
     if not isinstance(raw, list) or len(raw) != count:
         return None, f"order tape must contain exactly {count} ticks"
     actions: list[str] = []
@@ -50,6 +52,12 @@ def _normalize_orders(raw: Any, count: int, delay: int) -> tuple[list[str] | Non
             return None, "order tape is not a monotonic tick-indexed transcript"
         if index >= count - delay and side != "hold":
             return None, "an order was placed too late to settle"
+        input_source = str(item.get("input_source") or "")
+        if expected_source is not None:
+            if side == "hold" and input_source == "automatic_hold":
+                pass
+            elif input_source != expected_source:
+                return None, f"order {index + 1} uses the wrong interaction input"
         actions.append(side)
     return actions, None
 
@@ -131,8 +139,16 @@ def grade(payload: dict[str, Any], ground_truth: dict[str, Any], public_state: d
         return {"graded": True, "passed": False, "feedback": "hidden market contract is invalid"}
     if public_state.get("runtime_price_stream_cents") != prices:
         return {"graded": True, "passed": False, "feedback": "public quote commitment does not match hidden tape"}
+    truth_condition = ground_truth.get("control_condition")
+    public_condition = public_state.get("control_condition")
+    if truth_condition != public_condition:
+        return {"graded": True, "passed": False, "feedback": "public interaction condition differs from market contract"}
+    interaction = str((truth_condition or {}).get("interaction") or "")
+    expected_source = {"simplified": "keyboard_hotkeys", "full": "order_buttons"}.get(interaction)
+    if truth_condition is not None and expected_source is None:
+        return {"graded": True, "passed": False, "feedback": "market interaction condition is invalid"}
 
-    actions, order_error = _normalize_orders(payload.get("orders"), len(prices), delay)
+    actions, order_error = _normalize_orders(payload.get("orders"), len(prices), delay, expected_source)
     if order_error or actions is None:
         return {"graded": True, "passed": False, "feedback": order_error or "invalid order tape"}
     valid, cash, position, expected_ledger, replay_feedback = _replay(

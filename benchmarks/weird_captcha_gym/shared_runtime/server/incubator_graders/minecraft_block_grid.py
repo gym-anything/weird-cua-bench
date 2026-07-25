@@ -117,6 +117,14 @@ def grade(payload: dict[str, Any], ground_truth: dict[str, Any], public_state: d
     public_prerequisites = public_state.get("extraction_prerequisites") or {}
     if not isinstance(prerequisites, dict) or public_prerequisites != prerequisites:
         return {"graded": True, "passed": False, "feedback": "public extraction seals differ from replay contract"}
+    truth_condition = ground_truth.get("control_condition")
+    public_condition = public_state.get("control_condition")
+    if truth_condition != public_condition:
+        return {"graded": True, "passed": False, "feedback": "public interaction condition differs from voxel contract"}
+    interaction = str((truth_condition or {}).get("interaction") or "")
+    rotation_source = {"simplified": "rotation_buttons", "full": "canvas_drag"}.get(interaction)
+    if truth_condition is not None and rotation_source is None:
+        return {"graded": True, "passed": False, "feedback": "voxel interaction condition is invalid"}
     for target_id, required_ids in prerequisites.items():
         if (
             str(target_id) not in voxels
@@ -141,6 +149,8 @@ def grade(payload: dict[str, Any], ground_truth: dict[str, Any], public_state: d
             return {"graded": True, "passed": False, "feedback": f"mine event {sequence} has invalid sequence"}
         action = str(event.get("action") or "")
         if action == "rotate":
+            if rotation_source is not None and event.get("input_source") != rotation_source:
+                return {"graded": True, "passed": False, "feedback": f"rotation {sequence} uses the wrong interaction input"}
             delta = event.get("delta")
             if delta not in {-1, 1} or event.get("orientation_before") != orientation:
                 return {"graded": True, "passed": False, "feedback": f"rotation {sequence} is malformed"}
@@ -150,6 +160,8 @@ def grade(payload: dict[str, Any], ground_truth: dict[str, Any], public_state: d
             rotations += 1
             visited.add(orientation)
         elif action == "reset":
+            if truth_condition is not None and event.get("input_source") != "reset_button":
+                return {"graded": True, "passed": False, "feedback": f"reset {sequence} uses the wrong interaction input"}
             orientation = int(ground_truth.get("starting_orientation") or 0)
             durability = int(ground_truth.get("starting_durability") or 0)
             inventory = []
@@ -159,6 +171,8 @@ def grade(payload: dict[str, Any], ground_truth: dict[str, Any], public_state: d
             visited = {orientation}
             resets += 1
         elif action == "mine":
+            if truth_condition is not None and event.get("input_source") != "canvas_click":
+                return {"graded": True, "passed": False, "feedback": f"mine event {sequence} uses the wrong interaction input"}
             try:
                 click_x, click_y = float(event["x"]), float(event["y"])
             except (KeyError, TypeError, ValueError):

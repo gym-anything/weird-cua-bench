@@ -7,6 +7,7 @@
     cash: 0,
     position: 0,
     selected: "hold",
+    selectedSource: "automatic_hold",
     orders: [],
     ledger: [],
     quotes: [],
@@ -16,6 +17,7 @@
     running: false,
     submitting: false,
   };
+  let keyHandler = null;
   window.insiderTradingCaptchaModel = model;
 
   function clean(value) {
@@ -204,6 +206,7 @@
       return;
     }
     model.selected = "hold";
+    model.selectedSource = "automatic_hold";
     model.quotes.push({index: tick, price: Number(model.state.runtime_price_stream_cents[tick])});
     model.deadline = performance.now() + Number(model.state.tick_ms);
     updateDashboard();
@@ -218,7 +221,7 @@
   function commitTick(helpers) {
     if (!model.running || model.submitting) return;
     if (model.frame) cancelAnimationFrame(model.frame);
-    model.orders.push({tick: model.tick, side: model.selected});
+    model.orders.push({tick: model.tick, side: model.selected, input_source: model.selectedSource});
     renderOrders();
     const next = model.tick + 1;
     if (next < Number(model.state.tick_count)) {
@@ -278,6 +281,7 @@
     model.position = 0;
     model.tick = -1;
     model.selected = "hold";
+    model.selectedSource = "automatic_hold";
     model.orders = [];
     model.ledger = [];
     model.quotes = [];
@@ -289,6 +293,7 @@
 
   async function render(state, helpers) {
     clearClock();
+    if (keyHandler) window.removeEventListener("keydown", keyHandler);
     document.body.dataset.mechanic = "insider-trading-captcha";
     document.body.dataset.cheatMode = helpers.isCheatMode() ? "true" : "false";
     model.state = state;
@@ -296,13 +301,20 @@
     model.cash = Number(state.initial_cash_cents);
     model.position = 0;
     model.selected = "hold";
+    model.selectedSource = "automatic_hold";
     model.orders = [];
     model.ledger = [];
     model.quotes = [];
     model.running = false;
     model.submitting = false;
+    model.interaction = state.control_condition?.interaction || "simplified";
+    const orderControls = model.interaction === "full" ? `<div class="market-order-controls">
+            <button type="button" class="market-order-button" data-side="buy"><span>▲</span><b>BUY 1</b><i>B</i></button>
+            <button type="button" class="market-order-button" data-side="hold"><span>•</span><b>HOLD</b><i>H</i></button>
+            <button type="button" class="market-order-button" data-side="sell"><span>▼</span><b>SELL 1</b><i>S</i></button>
+          </div>` : `<div class="market-hotkey-controls"><b>KEYBOARD ORDER ENTRY</b><span>B · BUY 1</span><span>H · HOLD</span><span>S · SELL 1</span></div>`;
     helpers.app.innerHTML = `
-      <section class="insider-market-captcha" data-challenge-id="${clean(state.challenge_id)}">
+      <section class="insider-market-captcha" data-interaction="${clean(model.interaction)}" data-challenge-id="${clean(state.challenge_id)}">
         <div class="market-grain"></div>
         <header class="market-head">
           <div class="market-brand"><span>AFTERHOURS CLEARING OFFICE</span><h1>${clean(state.prompt)}</h1></div>
@@ -342,11 +354,7 @@
         </main>
         <section class="market-dealing-desk">
           <div class="market-rule-plate"><b>THE CATCH</b><span>Every order executes exactly <strong>${state.order_delay_ticks} market ticks later</strong> at that future quote.</span></div>
-          <div class="market-order-controls">
-            <button type="button" class="market-order-button" data-side="buy"><span>▲</span><b>BUY 1</b><i>B</i></button>
-            <button type="button" class="market-order-button" data-side="hold"><span>•</span><b>HOLD</b><i>H</i></button>
-            <button type="button" class="market-order-button" data-side="sell"><span>▼</span><b>SELL 1</b><i>S</i></button>
-          </div>
+          ${orderControls}
           <div class="market-queue-status"><span class="market-queued-badge">BOOK CLOSED</span><div class="market-tick-meter"><i></i></div><b class="market-clock">—</b></div>
           <button type="button" class="market-force-close">FORCE CLOSE</button>
         </section>
@@ -363,22 +371,25 @@
       button.addEventListener("click", () => {
         if (button.disabled || !model.running) return;
         model.selected = String(button.dataset.side);
+        model.selectedSource = "order_buttons";
         updateControls();
         renderOrders();
       });
     });
-    const keyHandler = (event) => {
-      if (event.repeat || !model.running) return;
+    keyHandler = (event) => {
+      if (event.repeat || !model.running || model.interaction !== "simplified") return;
       const map = {b: "buy", h: "hold", s: "sell"};
       const side = map[String(event.key).toLowerCase()];
       if (!side) return;
-      const button = document.querySelector(`.market-order-button[data-side="${side}"]`);
-      if (button && !button.disabled) {
-        event.preventDefault();
-        button.click();
-      }
+      const projected = projectedPosition(side);
+      if (side !== "hold" && (projected < 0 || projected > Number(model.state.max_position))) return;
+      event.preventDefault();
+      model.selected = side;
+      model.selectedSource = "keyboard_hotkeys";
+      updateControls();
+      renderOrders();
     };
-    document.querySelector(".insider-market-captcha").addEventListener("keydown", keyHandler);
+    window.addEventListener("keydown", keyHandler);
     document.querySelector(".insider-market-captcha").setAttribute("tabindex", "0");
     updateDashboard();
     helpers.installCheatPanel();

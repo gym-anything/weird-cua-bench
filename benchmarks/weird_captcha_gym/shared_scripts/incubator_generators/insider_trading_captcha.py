@@ -250,7 +250,7 @@ def generate(task: dict[str, Any], seed: str) -> tuple[dict[str, Any], dict[str,
             continue
         causal_profit = causal_cash - initial_cash
         if (
-            causal_profit >= (1_400 if not condition or int(condition["difficulty"]) == 4 else max(400, int(target_floor / target_fraction)))
+            causal_profit >= (1_400 if not condition or int(condition["difficulty"]) == 2 else max(400, int(target_floor / target_fraction)))
             and len(causal_ledger) >= reference_settlements_min
             and "buy" in causal_actions
             and "sell" in causal_actions

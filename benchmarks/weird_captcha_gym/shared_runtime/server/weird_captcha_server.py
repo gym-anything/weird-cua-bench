@@ -249,6 +249,7 @@ class PuzzleServer(BaseHTTPRequestHandler):
             "bureaucratic_signature_trap",
             "wonky_text_hostile_rendering",
             "temporal_memory_first_change",
+            "cursor_constellation_hunt",
         }
         if mechanic_id in reviewed_overhauls:
             return self._grade_incubator_submission(payload)

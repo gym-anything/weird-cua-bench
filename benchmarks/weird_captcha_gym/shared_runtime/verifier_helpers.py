@@ -414,6 +414,7 @@ def _verify_temporal_memory_first_change_v1(exported: dict[str, Any]) -> dict[st
 def verify_motion_only_ghost_jigsaw(exported: dict[str, Any]) -> dict[str, Any]:
     result = exported.get("result") or {}
     ground_truth = exported.get("ground_truth") or {}
+    public_state = exported.get("public_state") or {}
     if not result:
         return {"passed": False, "score": 0, "feedback": "No submitted UI result found."}
     expected = {str(key): int(value) for key, value in (ground_truth.get("expected_positions") or {}).items()}
@@ -421,12 +422,22 @@ def verify_motion_only_ghost_jigsaw(exported: dict[str, Any]) -> dict[str, Any]:
         placements = {str(key): int(value) for key, value in (result.get("placements") or {}).items()}
     except (TypeError, ValueError):
         placements = {}
+    condition = ground_truth.get("control_condition")
+    if condition is not None:
+        if public_state.get("control_condition") != condition:
+            return {"passed": False, "score": 0, "feedback": "public interaction condition differs from ghost-jigsaw contract"}
+        expected_source = {"simplified": "piece_slot_clicks", "full": "piece_drag"}.get(str(condition.get("interaction") or ""))
+        sources = result.get("placement_sources") or {}
+        if expected_source is None or not isinstance(sources, dict) or any(sources.get(piece_id) != expected_source for piece_id in expected):
+            return {"passed": False, "score": 0, "feedback": "ghost-jigsaw placement uses the wrong interaction input"}
     correct = sum(1 for key, value in expected.items() if placements.get(key) == value)
     passed = bool(expected) and placements == expected
     return {"passed": passed, "score": 100 if passed else int(round(100 * correct / max(1, len(expected)))), "feedback": f"pieces {correct}/{len(expected)}"}
 
 
 def verify_cursor_constellation_hunt(exported: dict[str, Any]) -> dict[str, Any]:
+    if (exported.get("ground_truth") or {}).get("control_condition") is not None:
+        return verify_external_mechanic(exported, "cursor_constellation_hunt")
     result = exported.get("result") or {}
     ground_truth = exported.get("ground_truth") or {}
     if not result:
@@ -468,10 +479,16 @@ def verify_parallel_grillmaster(exported: dict[str, Any]) -> dict[str, Any]:
 def verify_rotating_keyboard(exported: dict[str, Any]) -> dict[str, Any]:
     result = exported.get("result") or {}
     ground_truth = exported.get("ground_truth") or {}
+    public_state = exported.get("public_state") or {}
     if not result:
         return {"passed": False, "score": 0, "feedback": "No submitted UI result found."}
     expected = str(ground_truth.get("target") or "")
     submitted = str(result.get("text") or "").upper()
+    condition = ground_truth.get("control_condition")
+    if condition is not None:
+        expected_source = {"simplified": "physical_keyboard", "full": "onscreen_keys"}.get(str(condition.get("interaction") or ""))
+        if public_state.get("control_condition") != condition or expected_source is None or result.get("input_source") != expected_source:
+            return {"passed": False, "score": 0, "feedback": "rotating-keyboard code uses the wrong interaction input"}
     correct = sum(1 for left, right in zip(expected, submitted) if left == right)
     passed = bool(expected) and submitted == expected
     return {"passed": passed, "score": 100 if passed else int(round(100 * correct / max(1, len(expected)))), "feedback": f"characters {correct}/{len(expected)}"}

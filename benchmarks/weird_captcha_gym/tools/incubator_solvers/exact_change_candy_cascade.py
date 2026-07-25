@@ -21,10 +21,25 @@ def _click_cell(page, coordinate: list[int]) -> None:
     page.locator(f'.candy-cell[data-row="{row}"][data-column="{column}"]').click()
 
 
+def _move_candy(page, first: list[int], second: list[int], interaction: str) -> None:
+    if interaction == "full":
+        first_row, first_column = (int(value) for value in first)
+        second_row, second_column = (int(value) for value in second)
+        page.locator(
+            f'.candy-cell[data-row="{first_row}"][data-column="{first_column}"]'
+        ).drag_to(
+            page.locator(f'.candy-cell[data-row="{second_row}"][data-column="{second_column}"]')
+        )
+    else:
+        _click_cell(page, first)
+        _click_cell(page, second)
+
+
 def fail_once(page, state_dir: Path, out_dir: Path, mechanic: str) -> None:
     if mechanic != MECHANIC_ID:
         raise AssertionError(f"unexpected mechanic {mechanic!r}")
     truth = _read_json(state_dir / "ground_truth.json")
+    interaction = str((truth.get("control_condition") or {}).get("interaction") or "simplified")
     before = str(truth["challenge_id"])
     row, column = (int(value) for value in truth["forbidden_position"])
     if column + 1 < 5:
@@ -35,8 +50,7 @@ def fail_once(page, state_dir: Path, out_dir: Path, mechanic: str) -> None:
         neighbor = [row + 1, column]
     else:
         neighbor = [row - 1, column]
-    _click_cell(page, [row, column])
-    _click_cell(page, neighbor)
+    _move_candy(page, [row, column], neighbor, interaction)
     page.wait_for_function(
         "() => document.querySelector('.readout')?.textContent.includes('FAIL')",
         timeout=8000,
@@ -51,13 +65,13 @@ def solve(page, state_dir: Path, out_dir: Path, mechanic: str) -> None:
     if mechanic != MECHANIC_ID:
         raise AssertionError(f"unexpected mechanic {mechanic!r}")
     truth = _read_json(state_dir / "ground_truth.json")
+    interaction = str((truth.get("control_condition") or {}).get("interaction") or "simplified")
     swaps = truth.get("solution_swaps") or []
     move_budget = int(truth["move_budget"])
     if len(swaps) != move_budget:
         raise AssertionError(f"expected a {move_budget}-swap solution, got {swaps!r}")
     for index, swap in enumerate(swaps, start=1):
-        _click_cell(page, swap[0])
-        _click_cell(page, swap[1])
+        _move_candy(page, swap[0], swap[1], interaction)
         page.wait_for_function(
             "expected => !window.exactChangeCandyModel.busy && window.exactChangeCandyModel.validMoves === expected",
             arg=index,
