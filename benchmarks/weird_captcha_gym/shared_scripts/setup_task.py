@@ -1286,12 +1286,24 @@ def _constellation_point(shape: str, t: float) -> tuple[float, float]:
 
 def generate_cursor_constellation_hunt(task: dict[str, Any], seed: str) -> tuple[dict[str, Any], dict[str, Any]]:
     rng = random.Random(seed_int(seed, "cursor-constellation-hunt"))
+    condition = control_condition(task)
+    parameters = dict((condition or {}).get("difficulty_parameters") or {})
     width, height = 680, 410
     shape = pick(rng, CONSTELLATION_SHAPES)
-    solution = {"x": round(rng.uniform(110, width - 110), 2), "y": round(rng.uniform(90, height - 90), 2), "radius": 28}
+    accepted_radius = float(parameters.get("accepted_radius", 28))
+    decoy_count = int(parameters.get("decoy_count", 2))
+    noise_star_count = int(parameters.get("noise_star_count", 26))
+    reveal_radius = float(parameters.get("reveal_radius", 112))
+    decoy_radius = float(parameters.get("decoy_radius", 72))
+    decoy_strength = float(parameters.get("decoy_strength", .34))
+    if not 0 <= decoy_count <= 6 or not 0 <= noise_star_count <= 80:
+        raise ValueError("constellation field counts are outside supported limits")
+    if not 12 <= accepted_radius <= 60 or not 60 <= reveal_radius <= 180 or not 45 <= decoy_radius <= 110 or not 0 <= decoy_strength <= .6:
+        raise ValueError("constellation visual parameters are outside supported limits")
+    solution = {"x": round(rng.uniform(110, width - 110), 2), "y": round(rng.uniform(90, height - 90), 2), "radius": accepted_radius}
     decoys = [
         {"x": round(rng.uniform(70, width - 70), 2), "y": round(rng.uniform(70, height - 70), 2)}
-        for _ in range(2)
+        for _ in range(decoy_count)
     ]
     stars = []
     for index in range(112):
@@ -1305,7 +1317,7 @@ def generate_cursor_constellation_hunt(task: dict[str, Any], seed: str) -> tuple
             "twinkle": round(rng.uniform(0, math.tau), 3),
             "noise": False,
         })
-    for index in range(26):
+    for index in range(noise_star_count):
         stars.append({
             "id": f"noise-{hashlib.sha256(f'{seed}|noise-star|{index}'.encode('utf-8')).hexdigest()[:8]}",
             "base_x": round(rng.uniform(12, width - 12), 2),
@@ -1315,7 +1327,8 @@ def generate_cursor_constellation_hunt(task: dict[str, Any], seed: str) -> tuple
             "twinkle": round(rng.uniform(0, math.tau), 3),
             "noise": True,
         })
-    challenge_id = hashlib.sha256(f"{seed}|constellation".encode("utf-8")).hexdigest()[:12]
+    condition_token = f"|d{condition['difficulty']}|{task.get('id')}" if condition else ""
+    challenge_id = hashlib.sha256(f"{seed}|constellation{condition_token}".encode("utf-8")).hexdigest()[:12]
     public_state = {
         "benchmark": "weird_captcha_gym",
         "mechanic_id": "cursor_constellation_hunt",
@@ -1325,7 +1338,16 @@ def generate_cursor_constellation_hunt(task: dict[str, Any], seed: str) -> tuple
         "submit_label": "VERIFY",
         "asset_manifest": "shared_runtime/assets/provenance/interaction_first_five_v0.json",
         "generator": {"name": "cursor_constellation_hunt_v1", "variant_count": CONSTELLATION_VARIANT_COUNT},
-        "surface": {"width": width, "height": height, "solution": solution, "decoys": decoys, "stars": stars},
+        "surface": {
+            "width": width,
+            "height": height,
+            "solution": solution,
+            "decoys": decoys,
+            "stars": stars,
+            "reveal_radius": reveal_radius,
+            "decoy_radius": decoy_radius,
+            "decoy_strength": decoy_strength,
+        },
     }
     ground_truth = {
         "mechanic_id": "cursor_constellation_hunt",
@@ -1336,6 +1358,9 @@ def generate_cursor_constellation_hunt(task: dict[str, Any], seed: str) -> tuple
         "shape": shape,
         "variant_count": CONSTELLATION_VARIANT_COUNT,
     }
+    if condition:
+        public_state["control_condition"] = copy.deepcopy(condition)
+        ground_truth["control_condition"] = copy.deepcopy(condition)
     return public_state, ground_truth
 
 

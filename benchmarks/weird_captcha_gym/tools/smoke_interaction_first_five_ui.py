@@ -127,8 +127,9 @@ def solve_constellation(page, state_dir: Path, out_dir: Path, mechanic: str) -> 
     box = canvas.bounding_box()
     if not box:
         raise AssertionError("constellation canvas has no bounding box")
-    decoy = state["surface"]["decoys"][0]
-    page.mouse.move(box["x"] + decoy["x"] * box["width"] / 680, box["y"] + decoy["y"] * box["height"] / 410)
+    decoys = state["surface"]["decoys"]
+    probe = decoys[0] if decoys else {"x": 48, "y": 48}
+    page.mouse.move(box["x"] + probe["x"] * box["width"] / 680, box["y"] + probe["y"] * box["height"] / 410)
     page.wait_for_timeout(300)
     screenshot(page, out_dir, mechanic, "active-decoy")
     x = box["x"] + expected["x"] * box["width"] / 680

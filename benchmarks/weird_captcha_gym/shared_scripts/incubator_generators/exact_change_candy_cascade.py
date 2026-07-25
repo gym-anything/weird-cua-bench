@@ -1,7 +1,9 @@
 from __future__ import annotations
 
 from collections import Counter
+import copy
 import hashlib
+import math
 import random
 from typing import Any
 
@@ -96,7 +98,7 @@ def _serialize_swap(swap: Swap) -> list[list[int]]:
     return [[swap[0][0], swap[0][1]], [swap[1][0], swap[1][1]]]
 
 
-def _routes(board: list[list[str]], refill: list[str]) -> list[dict[str, Any]]:
+def _routes(board: list[list[str]], refill: list[str], move_budget: int) -> list[dict[str, Any]]:
     routes: list[dict[str, Any]] = []
 
     def walk(
@@ -107,7 +109,7 @@ def _routes(board: list[list[str]], refill: list[str]) -> list[dict[str, Any]]:
         scores: list[int],
         waves: list[int],
     ) -> None:
-        if depth == MOVE_BUDGET:
+        if depth == move_budget:
             routes.append(
                 {
                     "target_score": sum(scores),
@@ -130,19 +132,33 @@ def _routes(board: list[list[str]], refill: list[str]) -> list[dict[str, Any]]:
     return routes
 
 
-def _build_solved_instance(rng: random.Random) -> dict[str, Any]:
+def _build_solved_instance(
+    rng: random.Random,
+    *,
+    move_budget: int,
+    minimum_max_wave: int,
+    minimum_total_waves: int,
+    forbidden_count: int,
+    maximum_solution_count: int,
+) -> dict[str, Any]:
     best: tuple[int, dict[str, Any]] | None = None
     for attempt in range(160):
         board = [[rng.choice(CANDIES) for _ in range(WIDTH)] for _ in range(HEIGHT)]
-        forbidden = (rng.randrange(HEIGHT), rng.randrange(WIDTH))
-        board[forbidden[0]][forbidden[1]] = FORBIDDEN
+        forbidden_positions: list[Coord] = []
+        while len(forbidden_positions) < forbidden_count:
+            position = (rng.randrange(HEIGHT), rng.randrange(WIDTH))
+            if position not in forbidden_positions:
+                forbidden_positions.append(position)
+        for row, column in forbidden_positions:
+            board[row][column] = FORBIDDEN
         if _matches(board):
             continue
         refill = [rng.choice(CANDIES) for _ in range(900)]
         candidates = [
             route
-            for route in _routes(board, refill)
-            if max(route["wave_counts"], default=0) >= 3 and sum(route["wave_counts"]) >= 7
+            for route in _routes(board, refill, move_budget)
+            if max(route["wave_counts"], default=0) >= minimum_max_wave
+            and sum(route["wave_counts"]) >= minimum_total_waves
         ]
         if not candidates:
             continue
@@ -160,38 +176,63 @@ def _build_solved_instance(rng: random.Random) -> dict[str, Any]:
         record = {
             "board": board,
             "refill": refill,
-            "forbidden": [forbidden[0], forbidden[1]],
+            "forbidden": list(forbidden_positions[0]),
+            "forbidden_positions": [list(position) for position in forbidden_positions],
             "attempt": attempt,
             "solution_count_for_target": multiplicity,
             **chosen,
         }
-        if multiplicity <= 3:
+        preferred_solution_count = min(3, maximum_solution_count)
+        if multiplicity <= preferred_solution_count:
             return record
         if best is None or multiplicity < best[0]:
             best = (multiplicity, record)
-    if best is not None and best[0] <= 8:
+    if best is not None and best[0] <= maximum_solution_count:
         return best[1]
-    raise ValueError("could not produce an audited four-swap exact-change board")
+    raise ValueError(f"could not produce an audited {move_budget}-swap exact-change board")
 
 
 def generate(task: dict[str, Any], seed: str) -> tuple[dict[str, Any], dict[str, Any]]:
     digest = hashlib.sha256(f"{seed}|{MECHANIC_ID}|v2".encode("utf-8")).digest()
     rng = random.Random(int.from_bytes(digest[:8], "big"))
-    instance = _build_solved_instance(rng)
+    condition = task.get("_control_condition")
+    parameters = dict((condition or {}).get("difficulty_parameters") or {})
+    move_budget = int(parameters.get("move_budget", MOVE_BUDGET))
+    minimum_max_wave = int(parameters.get("minimum_max_wave", 3))
+    minimum_total_waves = int(parameters.get("minimum_total_waves", 7))
+    forbidden_count = int(parameters.get("forbidden_count", 1))
+    refill_preview_count = int(parameters.get("refill_preview_count", 5))
+    maximum_solution_count = int(parameters.get("maximum_solution_count", 8))
+    if not 1 <= move_budget <= 5 or not 1 <= minimum_max_wave <= 10 or not 1 <= minimum_total_waves <= 30:
+        raise ValueError("candy route parameters are outside supported limits")
+    if not 1 <= forbidden_count <= 3 or not 1 <= refill_preview_count <= 12 or not 1 <= maximum_solution_count <= 20:
+        raise ValueError("candy board parameters are outside supported limits")
+    instance = _build_solved_instance(
+        rng,
+        move_budget=move_budget,
+        minimum_max_wave=minimum_max_wave,
+        minimum_total_waves=minimum_total_waves,
+        forbidden_count=forbidden_count,
+        maximum_solution_count=maximum_solution_count,
+    )
     task_id = str(task.get("id") or "exact_change_candy_cascade_seed_0001@0.1")
-    challenge_id = hashlib.sha256(f"{seed}|exact-change-candy-cascade-v2".encode("utf-8")).hexdigest()[:12]
+    condition_token = f"|d{condition['difficulty']}|{task_id}" if condition else ""
+    challenge_id = hashlib.sha256(f"{seed}|exact-change-candy-cascade-v2{condition_token}".encode("utf-8")).hexdigest()[:12]
     palette = PALETTES[rng.randrange(len(PALETTES))]
-    variant_upper_bound = len(PALETTES) * HEIGHT * WIDTH * (len(CANDIES) ** (HEIGHT * WIDTH - 1))
+    variant_upper_bound = len(PALETTES) * math.comb(HEIGHT * WIDTH, forbidden_count) * (len(CANDIES) ** (HEIGHT * WIDTH - forbidden_count))
+    controlled_prompt = f"Make exactly the posted score in {move_budget} valid adjacent swap{'s' if move_budget != 1 else ''}. Cascades multiply; never move the black licorice."
+    if condition and int(condition["difficulty"]) == 4:
+        controlled_prompt = task.get("natural_language") or controlled_prompt
     public_state = {
         "benchmark": "weird_captcha_gym",
         "mechanic_id": MECHANIC_ID,
         "task_id": task_id,
         "challenge_id": challenge_id,
-        "prompt": task.get("natural_language") or "Make exactly the posted change in four valid swaps. Never disturb the black licorice.",
+        "prompt": controlled_prompt if condition else task.get("natural_language") or "Make exactly the posted change in four valid swaps. Never disturb the black licorice.",
         "submit_label": "STAMP EXACT",
         "asset_manifest": "shared_runtime/assets/provenance/incubator_puzzles_v1.json",
         "generator": {
-            "name": "exact_change_candy_cascade_v2",
+            "name": "exact_change_candy_cascade_v3" if condition else "exact_change_candy_cascade_v2",
             "search_attempt": instance["attempt"],
             "variant_count": variant_upper_bound,
             "variant_count_kind": "pre-search board/palette upper bound",
@@ -199,12 +240,14 @@ def generate(task: dict[str, Any], seed: str) -> tuple[dict[str, Any], dict[str,
         "board": instance["board"],
         "refill_stream": instance["refill"],
         "target_score": instance["target_score"],
-        "move_budget": MOVE_BUDGET,
+        "move_budget": move_budget,
         "forbidden": {
             "candy": FORBIDDEN,
             "position": instance["forbidden"],
+            "positions": instance["forbidden_positions"],
             "rule": "Swapping the black licorice voids the entire receipt immediately.",
         },
+        "refill_preview_count": refill_preview_count,
         "score_rule": "Each wave pays 10 points per candy multiplied by its cascade wave (1x, 2x, 3x…).",
         "palette": palette,
         "variant_count": variant_upper_bound,
@@ -218,9 +261,11 @@ def generate(task: dict[str, Any], seed: str) -> tuple[dict[str, Any], dict[str,
         "initial_board": instance["board"],
         "refill_stream": instance["refill"],
         "target_score": instance["target_score"],
-        "move_budget": MOVE_BUDGET,
+        "move_budget": move_budget,
         "forbidden_candy": FORBIDDEN,
         "forbidden_position": instance["forbidden"],
+        "forbidden_positions": instance["forbidden_positions"],
+        "minimum_max_wave": minimum_max_wave,
         "solution_swaps": instance["solution_swaps"],
         "solution_move_scores": instance["move_scores"],
         "solution_wave_counts": instance["wave_counts"],
@@ -231,4 +276,7 @@ def generate(task: dict[str, Any], seed: str) -> tuple[dict[str, Any], dict[str,
         "variant_count": variant_upper_bound,
         "variant_count_kind": "pre-search board/palette upper bound",
     }
+    if condition:
+        public_state["control_condition"] = copy.deepcopy(condition)
+        ground_truth["control_condition"] = copy.deepcopy(condition)
     return public_state, ground_truth

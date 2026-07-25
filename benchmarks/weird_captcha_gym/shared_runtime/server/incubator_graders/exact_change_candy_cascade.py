@@ -124,15 +124,17 @@ def _contract(ground_truth: dict[str, Any], public_state: dict[str, Any]) -> tup
     move_budget = ground_truth.get("move_budget")
     if isinstance(target, bool) or not isinstance(target, int) or target <= 0:
         raise ValueError("target score is malformed")
-    if move_budget != 4:
+    if isinstance(move_budget, bool) or not isinstance(move_budget, int) or not 1 <= move_budget <= 5:
         raise ValueError("move budget contract is malformed")
     if public_state.get("target_score") != target or public_state.get("move_budget") != move_budget:
         raise ValueError("public score contract differs from hidden contract")
     forbidden = public_state.get("forbidden")
     if not isinstance(forbidden, dict) or forbidden.get("candy") != FORBIDDEN:
         raise ValueError("forbidden-candy contract is malformed")
-    if forbidden.get("position") != ground_truth.get("forbidden_position"):
-        raise ValueError("forbidden-candy position mismatch")
+    hidden_positions = ground_truth.get("forbidden_positions") or [ground_truth.get("forbidden_position")]
+    public_positions = forbidden.get("positions") or [forbidden.get("position")]
+    if public_positions != hidden_positions:
+        raise ValueError("forbidden-candy positions mismatch")
     return board, list(refill), target, move_budget
 
 
@@ -218,7 +220,7 @@ def grade(payload: dict[str, Any], ground_truth: dict[str, Any], public_state: d
         and not forbidden_activated
         and valid_moves == move_budget
         and total_score == target
-        and max_wave >= 2
+        and max_wave >= int(ground_truth.get("minimum_max_wave") or 2)
     )
     return {
         "graded": True,
@@ -236,6 +238,6 @@ def cheat(public_state: dict[str, Any], ground_truth: dict[str, Any]) -> dict[st
         "swaps": ground_truth.get("solution_swaps") or [],
         "move_scores": ground_truth.get("solution_move_scores") or [],
         "wave_counts": ground_truth.get("solution_wave_counts") or [],
-        "instruction": "Perform the four adjacent swaps in order, then stamp the exact receipt.",
+        "instruction": f"Perform the {ground_truth.get('move_budget')} adjacent swaps in order, then stamp the exact receipt.",
         "answers": [],
     }

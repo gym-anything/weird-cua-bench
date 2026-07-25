@@ -2496,10 +2496,13 @@ function drawConstellationCanvas(canvas, now = performance.now()) {
   let falseProgress = 0;
   if (pointer) {
     const distance = Math.hypot(pointer.x - solution.x, pointer.y - solution.y);
-    progress = Math.exp(-(distance * distance) / (2 * 112 * 112));
+    const revealRadius = Number(surface.reveal_radius || 112);
+    const decoyRadius = Number(surface.decoy_radius || 72);
+    const decoyStrength = Number(surface.decoy_strength ?? 0.34);
+    progress = Math.exp(-(distance * distance) / (2 * revealRadius * revealRadius));
     (surface.decoys || []).forEach((decoy) => {
       const d = Math.hypot(pointer.x - decoy.x, pointer.y - decoy.y);
-      falseProgress = Math.max(falseProgress, 0.34 * Math.exp(-(d * d) / (2 * 72 * 72)));
+      falseProgress = Math.max(falseProgress, decoyStrength * Math.exp(-(d * d) / (2 * decoyRadius * decoyRadius)));
     });
   }
   const plotted = [];

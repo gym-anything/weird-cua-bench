@@ -20,6 +20,11 @@ CONTROLLED_ENVIRONMENTS = (
     "flat_pack_compliance_env",
     "specular_lighthouse_relay_env",
     "motion_only_ghost_jigsaw_env",
+    "cursor_constellation_hunt_env",
+    "cursor_lens_reveal_env",
+    "exact_change_candy_cascade_env",
+    "minecraft_block_grid_env",
+    "slime_commute_env",
 )
 
 
@@ -90,7 +95,7 @@ def test_control_files_have_one_baseline_and_five_profiles() -> None:
         assert controls["interaction"][controls["baseline"]["interaction"]]["implemented"] is True
 
 
-def test_materializer_writes_50_deterministic_tasks(tmp_path: Path) -> None:
+def test_materializer_writes_75_deterministic_tasks(tmp_path: Path) -> None:
     first = tmp_path / "first"
     second = tmp_path / "second"
     for env_name in CONTROLLED_ENVIRONMENTS:
@@ -99,7 +104,7 @@ def test_materializer_writes_50_deterministic_tasks(tmp_path: Path) -> None:
         MATERIALIZER.materialize_environment(env_root, second)
     first_tasks = sorted(first.glob("*_env/tasks/*/task.json"))
     second_tasks = sorted(second.glob("*_env/tasks/*/task.json"))
-    assert len(first_tasks) == len(second_tasks) == 50
+    assert len(first_tasks) == len(second_tasks) == 75
     for left, right in zip(first_tasks, second_tasks):
         assert left.relative_to(first) == right.relative_to(second)
         assert left.read_bytes() == right.read_bytes()
@@ -140,6 +145,14 @@ def test_original_tasks_match_their_independently_assigned_baselines() -> None:
         elif mechanic == "insider_trading_captcha":
             assert without_control_identity(baseline_public, extra=("visible_chart_ticks",)) == without_control_identity(original_public)
             assert without_control_identity(baseline_truth, extra=("visible_chart_ticks",)) == without_control_identity(original_truth)
+        elif mechanic in {"cursor_lens_reveal", "exact_change_candy_cascade", "minecraft_block_grid", "slime_commute"}:
+            normalized_original = without_control_identity(original_public)
+            normalized_baseline = without_control_identity(baseline_public)
+            normalized_original["generator"]["name"] = normalized_baseline["generator"]["name"]
+            if mechanic == "minecraft_block_grid":
+                normalized_original["prompt"] = normalized_baseline["prompt"]
+            assert normalized_baseline == normalized_original
+            assert without_control_identity(baseline_truth) == without_control_identity(original_truth)
         else:
             assert without_control_identity(baseline_public) == without_control_identity(original_public)
             assert without_control_identity(baseline_truth) == without_control_identity(original_truth)
@@ -333,6 +346,72 @@ def test_ghost_jigsaw_profiles_match_grid_size_and_motion_contracts() -> None:
         assert visual["fps"] == parameters["fps"]
         assert visual["frame_step"] == parameters["frame_step"]
         assert visual["scroll_speed"] in parameters["scroll_speeds"]
+
+
+def test_constellation_profiles_match_search_field_contracts() -> None:
+    controls = controls_for("cursor_constellation_hunt_env")
+    for level, (public, truth) in enumerate(generated_levels("cursor_constellation_hunt_env"), start=1):
+        parameters = controls["difficulty"][str(level)]["parameters"]
+        surface = public["surface"]
+        assert len(surface["decoys"]) == parameters["decoy_count"]
+        assert sum(bool(star["noise"]) for star in surface["stars"]) == parameters["noise_star_count"]
+        assert surface["reveal_radius"] == parameters["reveal_radius"]
+        assert surface["decoy_radius"] == parameters["decoy_radius"]
+        assert surface["decoy_strength"] == parameters["decoy_strength"]
+        assert truth["expected_click"]["radius"] == parameters["accepted_radius"]
+
+
+def test_palimpsest_profiles_match_motion_scan_and_hold_contracts() -> None:
+    controls = controls_for("cursor_lens_reveal_env")
+    for level, (public, truth) in enumerate(generated_levels("cursor_lens_reveal_env"), start=1):
+        parameters = controls["difficulty"][str(level)]["parameters"]
+        assert len(public["nodes"]) == parameters["echo_count"]
+        assert len(public["clutter"]) == parameters["clutter_count"]
+        assert public["lens_radius"] == parameters["lens_radius"]
+        for key in ("lock_radius", "minimum_hold_ms", "minimum_track_samples", "minimum_probe_samples", "minimum_probe_cells", "minimum_tuning_changes"):
+            assert truth["requirements"][key] == parameters[key]
+        for node in public["nodes"]:
+            motion = node["motion"]
+            assert parameters["motion_radius_x_min"] <= motion["radius_x"] <= parameters["motion_radius_x_max"]
+            assert parameters["motion_radius_y_min"] <= motion["radius_y"] <= parameters["motion_radius_y_max"]
+            assert parameters["motion_period_ms_min"] <= motion["period_ms"] <= parameters["motion_period_ms_max"]
+
+
+def test_candy_profiles_match_route_cascade_blocker_and_preview_contracts() -> None:
+    controls = controls_for("exact_change_candy_cascade_env")
+    for level, (public, truth) in enumerate(generated_levels("exact_change_candy_cascade_env"), start=1):
+        parameters = controls["difficulty"][str(level)]["parameters"]
+        assert public["move_budget"] == parameters["move_budget"]
+        assert len(truth["solution_swaps"]) == parameters["move_budget"]
+        assert max(truth["solution_wave_counts"]) >= parameters["minimum_max_wave"]
+        assert sum(truth["solution_wave_counts"]) >= parameters["minimum_total_waves"]
+        assert len(truth["forbidden_positions"]) == parameters["forbidden_count"]
+        assert public["refill_preview_count"] == parameters["refill_preview_count"]
+        assert truth["solution_count_for_target"] <= parameters["maximum_solution_count"]
+
+
+def test_voxel_profiles_match_extraction_risk_and_durability_contracts() -> None:
+    controls = controls_for("minecraft_block_grid_env")
+    for level, (public, truth) in enumerate(generated_levels("minecraft_block_grid_env"), start=1):
+        parameters = controls["difficulty"][str(level)]["parameters"]
+        materials = [voxel["material"] for voxel in public["voxels"]]
+        assert public["target_count"] == parameters["target_count"]
+        assert len(truth["solution_steps"]) == parameters["target_count"] * 2
+        assert materials.count("lava") == parameters["lava_count"]
+        assert materials.count("support") == parameters["support_count"]
+        assert sum(voxel["role"] == "screen" for voxel in public["voxels"]) == parameters["screen_count"]
+        assert public["starting_durability"] == parameters["target_count"] * 2 + parameters["durability_margin"]
+
+
+def test_slime_profiles_match_lane_motion_and_control_contracts() -> None:
+    controls = controls_for("slime_commute_env")
+    for level, (public, truth) in enumerate(generated_levels("slime_commute_env"), start=1):
+        parameters = controls["difficulty"][str(level)]["parameters"]
+        board = public["board"]
+        assert [lane["row"] for lane in board["lanes"]] == parameters["lane_rows"]
+        assert board["hop_cooldown_ticks"] == parameters["hop_cooldown_ticks"]
+        assert board["max_deaths"] == parameters["max_deaths"]
+        assert truth["board"] == board
 
 
 def test_controlled_forklift_grader_replays_every_delay_level() -> None:

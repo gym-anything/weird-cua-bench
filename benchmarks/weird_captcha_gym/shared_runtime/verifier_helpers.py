@@ -202,7 +202,7 @@ def verify_modifier_stack_image_grid(exported: dict[str, Any]) -> dict[str, Any]
 
 
 def verify_cursor_lens_reveal(exported: dict[str, Any]) -> dict[str, Any]:
-    if (exported.get("public_state") or {}).get("generator", {}).get("name") == "polarized_moving_palimpsest_v2":
+    if (exported.get("public_state") or {}).get("generator", {}).get("name") in {"polarized_moving_palimpsest_v2", "polarized_moving_palimpsest_v3"}:
         return verify_external_mechanic(exported, "cursor_lens_reveal")
     result = exported.get("result") or {}
     ground_truth = exported.get("ground_truth") or {}

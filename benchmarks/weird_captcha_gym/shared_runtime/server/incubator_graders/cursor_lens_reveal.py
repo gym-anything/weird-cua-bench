@@ -54,7 +54,7 @@ def grade(payload: dict[str, Any], ground_truth: dict[str, Any], public_state: d
         width, height = int(stage["width"]), int(stage["height"])
         nodes = [dict(item) for item in ground_truth["nodes"]]
         requirements = dict(ground_truth["requirements"])
-        if len(nodes) != 5 or [int(node["sequence"]) for node in nodes] != list(range(5)):
+        if not 2 <= len(nodes) <= 6 or [int(node["sequence"]) for node in nodes] != list(range(len(nodes))):
             raise ValueError("ordered echo contract is incomplete")
         for key in ("stage", "nodes", "clutter", "requirements"):
             if public_state.get(key) != ground_truth.get(key):
@@ -188,7 +188,7 @@ def grade(payload: dict[str, Any], ground_truth: dict[str, Any], public_state: d
         "graded": True,
         "passed": passed,
         "score": 100 if passed else 0,
-        "feedback": f"palimpsest replay: probes {probes}/{requirements['minimum_probe_samples']}; cells {len(cells)}/{requirements['minimum_probe_cells']}; turns {tuning_changes}; echoes {len(locked_ids)}/5; dropped holds {misses}; resets {reset_count}",
+        "feedback": f"palimpsest replay: probes {probes}/{requirements['minimum_probe_samples']}; cells {len(cells)}/{requirements['minimum_probe_cells']}; turns {tuning_changes}; echoes {len(locked_ids)}/{len(nodes)}; dropped holds {misses}; resets {reset_count}",
     }
 
 
