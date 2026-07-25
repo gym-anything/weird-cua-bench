@@ -122,21 +122,26 @@ def solve_ghost(page, state_dir: Path, out_dir: Path, mechanic: str) -> None:
 
 def solve_constellation(page, state_dir: Path, out_dir: Path, mechanic: str) -> None:
     state = read_json(state_dir / "public_state.json")
-    expected = read_json(state_dir / "ground_truth.json")["expected_click"]
+    truth = read_json(state_dir / "ground_truth.json")
+    expected_clicks = truth.get("expected_clicks") or [truth["expected_click"]]
     canvas = page.locator(".constellation-canvas")
     box = canvas.bounding_box()
     if not box:
         raise AssertionError("constellation canvas has no bounding box")
-    decoys = state["surface"]["decoys"]
+    decoys = (state.get("rounds") or [state["surface"]])[0]["decoys"]
     probe = decoys[0] if decoys else {"x": 48, "y": 48}
     page.mouse.move(box["x"] + probe["x"] * box["width"] / 680, box["y"] + probe["y"] * box["height"] / 410)
     page.wait_for_timeout(300)
     screenshot(page, out_dir, mechanic, "active-decoy")
-    x = box["x"] + expected["x"] * box["width"] / 680
-    y = box["y"] + expected["y"] * box["height"] / 410
-    page.mouse.move(x, y)
-    page.wait_for_timeout(350)
-    page.mouse.click(x, y)
+    for round_index, expected in enumerate(expected_clicks):
+        x = box["x"] + expected["x"] * box["width"] / 680
+        y = box["y"] + expected["y"] * box["height"] / 410
+        page.mouse.move(x, y)
+        page.wait_for_timeout(350)
+        page.mouse.click(x, y)
+        if round_index < len(expected_clicks) - 1:
+            page.locator("#submit-constellation").click()
+            page.wait_for_timeout(120)
     screenshot(page, out_dir, mechanic, "solved-state")
     page.locator("#submit-constellation").click()
 

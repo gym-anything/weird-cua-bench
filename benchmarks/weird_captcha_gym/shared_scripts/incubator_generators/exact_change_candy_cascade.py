@@ -137,7 +137,9 @@ def _build_solved_instance(
     *,
     move_budget: int,
     minimum_max_wave: int,
+    maximum_max_wave: int,
     minimum_total_waves: int,
+    maximum_total_waves: int,
     forbidden_count: int,
     maximum_solution_count: int,
 ) -> dict[str, Any]:
@@ -158,7 +160,9 @@ def _build_solved_instance(
             route
             for route in _routes(board, refill, move_budget)
             if max(route["wave_counts"], default=0) >= minimum_max_wave
+            and max(route["wave_counts"], default=0) <= maximum_max_wave
             and sum(route["wave_counts"]) >= minimum_total_waves
+            and sum(route["wave_counts"]) <= maximum_total_waves
         ]
         if not candidates:
             continue
@@ -199,11 +203,15 @@ def generate(task: dict[str, Any], seed: str) -> tuple[dict[str, Any], dict[str,
     parameters = dict((condition or {}).get("difficulty_parameters") or {})
     move_budget = int(parameters.get("move_budget", MOVE_BUDGET))
     minimum_max_wave = int(parameters.get("minimum_max_wave", 3))
+    maximum_max_wave = int(parameters.get("maximum_max_wave", 20))
     minimum_total_waves = int(parameters.get("minimum_total_waves", 7))
+    maximum_total_waves = int(parameters.get("maximum_total_waves", 80))
     forbidden_count = int(parameters.get("forbidden_count", 1))
     refill_preview_count = int(parameters.get("refill_preview_count", 5))
     maximum_solution_count = int(parameters.get("maximum_solution_count", 8))
-    if not 1 <= move_budget <= 5 or not 1 <= minimum_max_wave <= 10 or not 1 <= minimum_total_waves <= 30:
+    if not 1 <= move_budget <= 5 or not 1 <= minimum_max_wave <= maximum_max_wave <= 20:
+        raise ValueError("candy route parameters are outside supported limits")
+    if not 1 <= minimum_total_waves <= maximum_total_waves <= 100:
         raise ValueError("candy route parameters are outside supported limits")
     if not 1 <= forbidden_count <= 3 or not 1 <= refill_preview_count <= 12 or not 1 <= maximum_solution_count <= 20:
         raise ValueError("candy board parameters are outside supported limits")
@@ -211,7 +219,9 @@ def generate(task: dict[str, Any], seed: str) -> tuple[dict[str, Any], dict[str,
         rng,
         move_budget=move_budget,
         minimum_max_wave=minimum_max_wave,
+        maximum_max_wave=maximum_max_wave,
         minimum_total_waves=minimum_total_waves,
+        maximum_total_waves=maximum_total_waves,
         forbidden_count=forbidden_count,
         maximum_solution_count=maximum_solution_count,
     )
@@ -221,7 +231,7 @@ def generate(task: dict[str, Any], seed: str) -> tuple[dict[str, Any], dict[str,
     palette = PALETTES[rng.randrange(len(PALETTES))]
     variant_upper_bound = len(PALETTES) * math.comb(HEIGHT * WIDTH, forbidden_count) * (len(CANDIES) ** (HEIGHT * WIDTH - forbidden_count))
     controlled_prompt = f"Make exactly the posted score in {move_budget} valid adjacent swap{'s' if move_budget != 1 else ''}. Cascades multiply; never move the black licorice."
-    if condition and int(condition["difficulty"]) == 4:
+    if condition and int(condition["difficulty"]) == 5:
         controlled_prompt = task.get("natural_language") or controlled_prompt
     public_state = {
         "benchmark": "weird_captcha_gym",

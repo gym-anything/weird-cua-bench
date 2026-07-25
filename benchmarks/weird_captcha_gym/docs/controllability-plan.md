@@ -46,7 +46,7 @@ The third set completes the starred group:
 4. Isometric Voxel Extraction Mine
 5. Slime Commute
 
-Each environment now has a `controls.json` file with an independently assigned baseline and five difficulty profiles. The profiles change several relevant parameters where appropriate. This includes task size, required precision, action delay, motion speed, available information, visual ambiguity, and the number of variables that must be handled.
+Each environment now has a `controls.json` file with an assigned baseline and five difficulty profiles. A level describes the complete task at that setting. The assignment considers the number of required stages, the work needed within each stage, the information available, required precision, motion speed, and time pressure together.
 
 The existing task remains unchanged. Controlled tasks are materialized into a separate output directory with:
 
@@ -66,7 +66,7 @@ The public dashboard exposes these five levels through a selector on each contro
 
 ## The current task is a reference point
 
-The current difficulty level must be judged independently for every environment after inspecting its generated problem size and solution requirements. The current implementation might belong at any of the five levels. It must not automatically be placed at level 3.
+The current implementation might belong at any of the five levels. It must not automatically be placed at level 3. Its placement is judged as a complete task under the same live browser conditions used for every other environment.
 
 Whichever level is assigned to the current implementation should reproduce the current puzzle parameters for a fixed seed. The remaining levels are then defined above or below it as appropriate.
 
@@ -135,11 +135,23 @@ The parameter names inside each difficulty level remain specific to the environm
 
 ## Difficulty
 
-The five difficulty values are ordered within an environment.
+The five values have one meaning across the benchmark. They are not five equal divisions of each environment's possible parameter range. None of the values claims that an environment cannot be made harder than level 5.
 
-Levels can vary the number of objects, number of stages, number of variables, route length, simultaneous events, or other appropriate parameters. The independently assigned baseline level preserves the current generated task. Lower levels reduce relevant parameters. Higher levels increase them.
+The initial profiles use the following shared construction rule:
 
-The same number does not initially claim equal human difficulty across different environments. Human completion rates and completion times can later calibrate those relationships.
+| Level | Complete task at that setting |
+|---|---|
+| 1 | One short instance with broad tolerances and no avoidable complication |
+| 2 | One complete instance or two short stages with limited distraction or timing pressure |
+| 3 | Several dependent stages or a moderate combination of perception, state change, precision, and timing |
+| 4 | A sustained task with several dependent decisions under substantial visual, temporal, or interaction difficulty |
+| 5 | An extended stress test that remains intentionally solvable and avoids extreme parameter settings used only to manufacture failure |
+
+These descriptions are used together rather than as a checklist. A single exact-change swap can require more reasoning than several direct clicks. One parameter cannot determine the level of a heterogeneous task.
+
+The cross-environment calibration target is first-attempt human completion under the live setting. Completion rate is primary. Completion time distinguishes settings with similar completion rates. Human results should change the environment parameters rather than redefine the level numbers separately for each game.
+
+Levels can vary the number of objects, number of stages, number of variables, route length, simultaneous events, or other appropriate parameters. The assigned baseline level preserves the current generated task. Lower levels reduce the complete task. Higher levels increase it.
 
 The existing dashboard annotations already list potential difficulty parameters for all 75 environments. They provide the starting checklist for each `controls.json` file.
 

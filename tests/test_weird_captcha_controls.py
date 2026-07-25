@@ -352,13 +352,27 @@ def test_constellation_profiles_match_search_field_contracts() -> None:
     controls = controls_for("cursor_constellation_hunt_env")
     for level, (public, truth) in enumerate(generated_levels("cursor_constellation_hunt_env"), start=1):
         parameters = controls["difficulty"][str(level)]["parameters"]
-        surface = public["surface"]
-        assert len(surface["decoys"]) == parameters["decoy_count"]
-        assert sum(bool(star["noise"]) for star in surface["stars"]) == parameters["noise_star_count"]
-        assert surface["reveal_radius"] == parameters["reveal_radius"]
-        assert surface["decoy_radius"] == parameters["decoy_radius"]
-        assert surface["decoy_strength"] == parameters["decoy_strength"]
-        assert truth["expected_click"]["radius"] == parameters["accepted_radius"]
+        rounds = public.get("rounds") or [public["surface"]]
+        expected_clicks = truth.get("expected_clicks") or [truth["expected_click"]]
+        assert len(rounds) == len(expected_clicks) == parameters["round_count"]
+        for surface, expected in zip(rounds, expected_clicks):
+            assert len(surface["decoys"]) == parameters["decoy_count"]
+            assert sum(bool(star["noise"]) for star in surface["stars"]) == parameters["noise_star_count"]
+            assert surface["reveal_radius"] == parameters["reveal_radius"]
+            assert surface["decoy_radius"] == parameters["decoy_radius"]
+            assert surface["decoy_strength"] == parameters["decoy_strength"]
+            assert expected["radius"] == parameters["accepted_radius"]
+
+
+def test_constellation_grader_requires_every_generated_round() -> None:
+    grader = load_module(
+        "controlled_constellation_grader",
+        BENCHMARK / "shared_runtime" / "server" / "legacy_browser_grader.py",
+    )
+    public, truth = generated_levels("cursor_constellation_hunt_env", "constellation-multi-round-grade")[-1]
+    clicks = [{"x": expected["x"], "y": expected["y"]} for expected in truth["expected_clicks"]]
+    assert grader.grade({"clicks": clicks}, truth, public)["passed"] is True
+    assert grader.grade({"clicks": clicks[:-1]}, truth, public)["passed"] is False
 
 
 def test_palimpsest_profiles_match_motion_scan_and_hold_contracts() -> None:
@@ -384,7 +398,9 @@ def test_candy_profiles_match_route_cascade_blocker_and_preview_contracts() -> N
         assert public["move_budget"] == parameters["move_budget"]
         assert len(truth["solution_swaps"]) == parameters["move_budget"]
         assert max(truth["solution_wave_counts"]) >= parameters["minimum_max_wave"]
+        assert max(truth["solution_wave_counts"]) <= parameters["maximum_max_wave"]
         assert sum(truth["solution_wave_counts"]) >= parameters["minimum_total_waves"]
+        assert sum(truth["solution_wave_counts"]) <= parameters["maximum_total_waves"]
         assert len(truth["forbidden_positions"]) == parameters["forbidden_count"]
         assert public["refill_preview_count"] == parameters["refill_preview_count"]
         assert truth["solution_count_for_target"] <= parameters["maximum_solution_count"]

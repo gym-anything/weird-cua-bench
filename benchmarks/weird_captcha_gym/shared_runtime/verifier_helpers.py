@@ -431,16 +431,19 @@ def verify_cursor_constellation_hunt(exported: dict[str, Any]) -> dict[str, Any]
     ground_truth = exported.get("ground_truth") or {}
     if not result:
         return {"passed": False, "score": 0, "feedback": "No submitted UI result found."}
-    expected = ground_truth.get("expected_click") or {}
-    click = result.get("click") or {}
-    try:
-        distance = math.hypot(float(click.get("x")) - float(expected.get("x")), float(click.get("y")) - float(expected.get("y")))
-        radius = float(expected.get("radius"))
-    except (TypeError, ValueError):
-        return {"passed": False, "score": 0, "feedback": "Submitted click is missing or invalid."}
-    passed = distance <= radius
-    score = 100 if passed else max(0, int(round(100 * (1 - min(distance, radius * 6) / (radius * 6)))))
-    return {"passed": passed, "score": score, "feedback": f"click distance {distance:.2f}; accepted radius {radius:.2f}"}
+    expected_clicks = ground_truth.get("expected_clicks") or [ground_truth.get("expected_click") or {}]
+    submitted_clicks = result.get("clicks") or [result.get("click") or {}]
+    correct = 0
+    for expected, click in zip(expected_clicks, submitted_clicks):
+        try:
+            distance = math.hypot(float(click.get("x")) - float(expected.get("x")), float(click.get("y")) - float(expected.get("y")))
+            radius = float(expected.get("radius"))
+        except (TypeError, ValueError):
+            continue
+        correct += int(distance <= radius)
+    passed = bool(expected_clicks) and len(submitted_clicks) == len(expected_clicks) and correct == len(expected_clicks)
+    score = int(round(100 * correct / max(1, len(expected_clicks))))
+    return {"passed": passed, "score": score, "feedback": f"rounds {correct}/{len(expected_clicks)}"}
 
 
 def verify_parallel_grillmaster(exported: dict[str, Any]) -> dict[str, Any]:
