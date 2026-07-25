@@ -196,8 +196,8 @@ def _topology(platforms: list[dict[str, Any]], camera: dict[str, Any], viewport:
 
 
 def _validate_platforms(value: Any) -> list[dict[str, Any]]:
-    if not isinstance(value, list) or not 8 <= len(value) <= 12:
-        raise ValueError("platform bank must contain eight to twelve surfaces")
+    if not isinstance(value, list) or not 5 <= len(value) <= 9:
+        raise ValueError("platform bank must contain five to nine surfaces")
     ids: set[str] = set()
     roles: list[str] = []
     for platform in value:

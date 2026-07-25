@@ -114,8 +114,8 @@ def solve_ghost(page, state_dir: Path, out_dir: Path, mechanic: str) -> None:
         if index == 3:
             page.wait_for_timeout(450)
             screenshot(page, out_dir, mechanic, "active")
-    if page.locator(".ghost-slot .ghost-piece").count() != 9:
-        raise AssertionError("ghost jigsaw did not place all nine pieces")
+    if page.locator(".ghost-slot .ghost-piece").count() != len(expected):
+        raise AssertionError("ghost jigsaw did not place every piece")
     screenshot(page, out_dir, mechanic, "solved-state")
     page.locator("#submit-ghost").click()
 

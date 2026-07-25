@@ -2376,14 +2376,16 @@ function drawGhostCanvas(canvas, sourceIndex, frame, visual, full = false, piece
   const width = canvas.width;
   const height = canvas.height;
   const image = ctx.createImageData(width, height);
-  const tileRow = Math.floor(sourceIndex / 3);
-  const tileCol = sourceIndex % 3;
+  const rows = Number(visual.rows || 3);
+  const columns = Number(visual.columns || 3);
+  const tileRow = Math.floor(sourceIndex / columns);
+  const tileCol = sourceIndex % columns;
   const offset = frame * Number(visual.scroll_speed || 1.8);
   const seed = full ? Number(visual.global_seed || 1) : Number(pieceSeed || visual.global_seed || 1);
   for (let py = 0; py < height; py += 1) {
     for (let px = 0; px < width; px += 1) {
-      const gx = full ? (px / width) * 216 : ((tileCol + px / width) / 3) * 216;
-      const gy = full ? (py / height) * 216 : ((tileRow + py / height) / 3) * 216;
+      const gx = full ? (px / width) * 216 : ((tileCol + px / width) / columns) * 216;
+      const gy = full ? (py / height) * 216 : ((tileRow + py / height) / rows) * 216;
       const inside = ghostPatternMask(visual.theme, gx, gy);
       const sampleY = inside ? gy - offset : gy + offset;
       const value = ghostNoise(gx, sampleY, seed);
@@ -2400,7 +2402,7 @@ function drawGhostCanvas(canvas, sourceIndex, frame, visual, full = false, piece
 
 function animateGhostJigsaw() {
   if (!ghostModel.state || document.body.dataset.mechanic !== "ghost-jigsaw") return;
-  ghostModel.frame += 0.48;
+  ghostModel.frame += Number(ghostModel.state.visual?.frame_step || 0.48);
   const visual = ghostModel.state.visual || {};
   const reference = document.querySelector(".ghost-reference");
   if (reference) drawGhostCanvas(reference, 0, ghostModel.frame, visual, true);
@@ -2443,10 +2445,10 @@ function renderMotionOnlyGhostJigsaw(state) {
       <header class="interaction-head ghost-head"><p>MOTION CHECK / 01</p><h1>${text(state.prompt)}</h1></header>
       <section class="ghost-stage">
         <div class="ghost-reference-wrap"><span>LIVE REFERENCE</span><canvas class="ghost-reference" width="168" height="168"></canvas></div>
-        <div class="ghost-board" aria-label="jigsaw destination">
-          ${Array.from({length: 9}, (_, index) => `<div class="ghost-slot" data-slot-index="${index}" aria-label="position ${index + 1}"></div>`).join("")}
+        <div class="ghost-board" aria-label="jigsaw destination" style="--ghost-columns:${Number(state.visual?.columns || 3)};--ghost-rows:${Number(state.visual?.rows || 3)}">
+          ${Array.from({length: state.pieces.length}, (_, index) => `<div class="ghost-slot" data-slot-index="${index}" aria-label="position ${index + 1}"></div>`).join("")}
         </div>
-        <div class="ghost-piece-bank" aria-label="moving jigsaw pieces">
+        <div class="ghost-piece-bank" aria-label="moving jigsaw pieces" style="--ghost-columns:${Number(state.visual?.columns || 3)};--ghost-count:${state.pieces.length}">
           ${(state.pieces || []).map((piece) => `<div class="ghost-piece" draggable="true" data-piece-id="${text(piece.id)}" data-source-index="${text(piece.source_index)}" data-noise-seed="${text(piece.noise_seed)}" data-phase="${text(piece.phase)}"><canvas width="58" height="58"></canvas></div>`).join("")}
         </div>
       </section>

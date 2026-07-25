@@ -126,7 +126,7 @@ def grade(payload: dict[str, Any], ground_truth: dict[str, Any], public_state: d
         for key in contract:
             if public_state.get(key) != contract[key]:
                 raise ValueError(f"public {key} differs from replay contract")
-        if len(contract["switches"]) != 3 or int(contract["physics"]["tick_ms"]) != 50:
+        if not 1 <= len(contract["switches"]) <= 5 or not 20 <= int(contract["physics"]["tick_ms"]) <= 100:
             raise ValueError("board physics contract is incomplete")
     except (KeyError, TypeError, ValueError) as exc:
         return _fail(f"invalid tilt-board contract: {exc}")
@@ -187,8 +187,9 @@ def grade(payload: dict[str, Any], ground_truth: dict[str, Any], public_state: d
     for key, value in expected.items():
         if payload.get(key) != value:
             return _fail(f"submitted {key} does not match tilt-board replay")
-    passed = payload.get("completed") is True and state["completed"] and state["switch_index"] == 3 and ticks >= int(contract["requirements"]["minimum_ticks"]) and controls >= int(contract["requirements"]["minimum_control_changes"]) and seal_count >= 1
-    return {"graded": True, "passed": passed, "score": 100 if passed else 0, "feedback": f"tilt replay: ticks {ticks}; controls {controls}; lamps {state['switch_index']}/3; wall contacts {state['collisions']}; wells {state['deaths']}; manual resets {manual_resets}; cup={state['completed']}"}
+    lamp_count = len(contract["switches"])
+    passed = payload.get("completed") is True and state["completed"] and state["switch_index"] == lamp_count and ticks >= int(contract["requirements"]["minimum_ticks"]) and controls >= int(contract["requirements"]["minimum_control_changes"]) and seal_count >= 1
+    return {"graded": True, "passed": passed, "score": 100 if passed else 0, "feedback": f"tilt replay: ticks {ticks}; controls {controls}; lamps {state['switch_index']}/{lamp_count}; wall contacts {state['collisions']}; wells {state['deaths']}; manual resets {manual_resets}; cup={state['completed']}"}
 
 
 def cheat(public_state: dict[str, Any], ground_truth: dict[str, Any]) -> dict[str, Any]:

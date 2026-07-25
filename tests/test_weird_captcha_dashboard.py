@@ -260,7 +260,7 @@ class WeirdCaptchaDashboardTests(unittest.TestCase):
         self.assertEqual(catalog["stats"]["incubator_candidates"], 0)
         self.assertEqual(catalog["stats"]["human_touched"], 6)
         self.assertEqual(catalog["stats"]["solution_videos"], 75)
-        self.assertEqual(catalog["stats"]["difficulty_controlled"], 5)
+        self.assertEqual(catalog["stats"]["difficulty_controlled"], 10)
         self.assertEqual(sum(group["count"] for group in catalog["groups"]), 75)
         recordings = [environment for environment in catalog["environments"] if environment["solution_video"]]
         self.assertEqual(len(recordings), 75)
@@ -766,10 +766,10 @@ class WeirdCaptchaDashboardTests(unittest.TestCase):
             self.assertEqual(manifest["browser_play"], {
                 "enabled": True,
                 "environments": 75,
-                "challenges": 400,
+                "challenges": 500,
                 "challenges_per_environment": 4,
-                "controlled_environments": 5,
-                "difficulty_profiles": 25,
+                "controlled_environments": 10,
+                "difficulty_profiles": 50,
                 "grader_files": 69,
                 "python_runtime": "pyodide@314.0.2",
             })

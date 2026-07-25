@@ -89,7 +89,7 @@ def grade(payload: dict[str, Any], ground_truth: dict[str, Any], public_state: d
         load_steps = list(ground_truth["load_steps"])
         requirements = dict(ground_truth["requirements"])
         compliance = dict(ground_truth["compliance_model"])
-        if len(parts) < 7 or len(joints) != len(parts) - 1 or expected_joint_ids != set(joints):
+        if not 3 <= len(parts) <= 9 or len(joints) != len(parts) - 1 or expected_joint_ids != set(joints):
             raise ValueError("assembly topology is incomplete")
     except (KeyError, TypeError, ValueError) as exc:
         return {"graded": True, "passed": False, "feedback": f"invalid flat-pack contract: {exc}"}

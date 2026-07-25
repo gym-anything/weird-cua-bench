@@ -15,6 +15,11 @@ CONTROLLED_ENVIRONMENTS = (
     "rotating_keyboard_env",
     "rotate_wrong_thing_upright_env",
     "insider_trading_captcha_env",
+    "flat_prisoner_env",
+    "board_game_captcha_env",
+    "flat_pack_compliance_env",
+    "specular_lighthouse_relay_env",
+    "motion_only_ghost_jigsaw_env",
 )
 
 
@@ -85,7 +90,7 @@ def test_control_files_have_one_baseline_and_five_profiles() -> None:
         assert controls["interaction"][controls["baseline"]["interaction"]]["implemented"] is True
 
 
-def test_materializer_writes_25_deterministic_tasks(tmp_path: Path) -> None:
+def test_materializer_writes_50_deterministic_tasks(tmp_path: Path) -> None:
     first = tmp_path / "first"
     second = tmp_path / "second"
     for env_name in CONTROLLED_ENVIRONMENTS:
@@ -94,7 +99,7 @@ def test_materializer_writes_25_deterministic_tasks(tmp_path: Path) -> None:
         MATERIALIZER.materialize_environment(env_root, second)
     first_tasks = sorted(first.glob("*_env/tasks/*/task.json"))
     second_tasks = sorted(second.glob("*_env/tasks/*/task.json"))
-    assert len(first_tasks) == len(second_tasks) == 25
+    assert len(first_tasks) == len(second_tasks) == 50
     for left, right in zip(first_tasks, second_tasks):
         assert left.relative_to(first) == right.relative_to(second)
         assert left.read_bytes() == right.read_bytes()
@@ -243,6 +248,91 @@ def test_market_profiles_match_time_state_and_price_contracts() -> None:
             "final": {"cash_cents": truth["max_profit_cents"] + truth["initial_cash_cents"], "position": 0},
         }
         assert grader.grade(payload, truth, public)["passed"] is True
+
+
+def test_flat_prisoner_profiles_match_camera_decoy_and_traversal_contracts() -> None:
+    controls = controls_for("flat_prisoner_env")
+    for level, (public, truth) in enumerate(generated_levels("flat_prisoner_env"), start=1):
+        parameters = controls["difficulty"][str(level)]["parameters"]
+        assert len(public["platforms"]) == 5 + parameters["decoy_count"]
+        assert math.isclose(public["initial_camera"]["pitch_deg"] - truth["solution"]["camera"]["pitch_deg"], parameters["pitch_offset_deg"])
+        assert math.isclose(public["initial_camera"]["distance"] - truth["solution"]["camera"]["distance"], parameters["distance_offset"])
+        assert public["controls"]["orbit_step_deg"] == parameters["orbit_step_deg"]
+        assert public["controls"]["pan_step"] == parameters["pan_step"]
+        assert public["physics"]["move_speed"] == parameters["move_speed"]
+        assert public["physics"]["exit_radius"] == parameters["exit_radius"]
+        assert public["requirements"]["minimum_camera_events"] == parameters["minimum_camera_events"]
+        assert public["requirements"]["minimum_traversal_ticks"] == parameters["minimum_traversal_ticks"]
+
+
+def test_board_game_profiles_match_lamp_obstacle_and_physics_contracts() -> None:
+    controls = controls_for("board_game_captcha_env")
+    for level, (public, truth) in enumerate(generated_levels("board_game_captcha_env"), start=1):
+        parameters = controls["difficulty"][str(level)]["parameters"]
+        assert len(public["switches"]) == parameters["lamp_count"]
+        assert len(public["walls"]) == parameters["wall_count"]
+        assert len(public["hazards"]) == parameters["hazard_count"]
+        assert all(item["radius"] == parameters["lamp_radius"] for item in public["switches"])
+        assert public["goal"]["radius"] == parameters["goal_radius"]
+        for key in ("tick_ms", "acceleration", "friction", "maximum_speed", "bounce", "ball_radius"):
+            assert public["physics"][key] == parameters[key]
+        assert len(truth["solver_switch_waypoint_indices"]) == parameters["lamp_count"]
+
+
+def test_flat_pack_profiles_match_part_socket_and_load_contracts() -> None:
+    controls = controls_for("flat_pack_compliance_env")
+    for level, (public, truth) in enumerate(generated_levels("flat_pack_compliance_env"), start=1):
+        parameters = controls["difficulty"][str(level)]["parameters"]
+        assert [item["id"] for item in public["parts"]] == parameters["part_ids"]
+        assert len(public["joints"]) == len(parameters["part_ids"]) - 1
+        assert len(public["load_steps"]) == parameters["load_step_count"]
+        assert public["requirements"]["pose_tolerance"] == parameters["pose_tolerance"]
+        assert public["requirements"]["angle_tolerance"] == parameters["angle_tolerance"]
+        assert public["requirements"]["strain_limit"] == parameters["strain_limit"]
+        assert set(public["compliance_model"]["joint_factors"]) == set(truth["expected_joint_ids"])
+        compliance = public["compliance_model"]
+        peak_sensor_strain = max(
+            (
+                abs(step["force_x"]) * compliance["force_x_scale"]
+                + abs(step["force_y"]) * compliance["force_y_scale"]
+            ) * max(compliance["joint_factors"].values())
+            for step in public["load_steps"]
+        )
+        assert peak_sensor_strain <= public["requirements"]["strain_limit"]
+
+
+def test_specular_profiles_match_mirror_round_motion_and_tracking_contracts() -> None:
+    controls = controls_for("specular_lighthouse_relay_env")
+    for level, (public, truth) in enumerate(generated_levels("specular_lighthouse_relay_env"), start=1):
+        parameters = controls["difficulty"][str(level)]["parameters"]
+        assert len(public["rounds"]) == parameters["round_count"]
+        assert public["round_count"] == parameters["round_count"]
+        assert truth["angle_tolerance_deg"] == parameters["angle_tolerance_deg"]
+        for round_data in public["rounds"]:
+            assert len(round_data["mirrors"]) == parameters["mirror_count"]
+            assert all(item["length"] == parameters["mirror_length"] for item in round_data["mirrors"])
+            assert round_data["receiver"]["radius"] == parameters["receiver_radius"]
+            assert round_data["receiver"]["amplitude"] in parameters["receiver_amplitudes"]
+            assert round_data["receiver"]["angular_rate"] in parameters["receiver_angular_rates"]
+            assert round_data["angle_step_deg"] == parameters["angle_step_deg"]
+            assert round_data["tolerance_px"] == parameters["tolerance_px"]
+            assert round_data["required_charge_ticks"] == parameters["required_charge_ticks"]
+            assert round_data["miss_decay_ticks"] == parameters["miss_decay_ticks"]
+
+
+def test_ghost_jigsaw_profiles_match_grid_size_and_motion_contracts() -> None:
+    controls = controls_for("motion_only_ghost_jigsaw_env")
+    for level, (public, truth) in enumerate(generated_levels("motion_only_ghost_jigsaw_env"), start=1):
+        parameters = controls["difficulty"][str(level)]["parameters"]
+        visual = public["visual"]
+        assert len(public["pieces"]) == parameters["piece_count"]
+        assert len(truth["expected_positions"]) == parameters["piece_count"]
+        assert visual["rows"] == parameters["rows"]
+        assert visual["columns"] == parameters["columns"]
+        assert visual["frame_count"] == parameters["frame_count"]
+        assert visual["fps"] == parameters["fps"]
+        assert visual["frame_step"] == parameters["frame_step"]
+        assert visual["scroll_speed"] in parameters["scroll_speeds"]
 
 
 def test_controlled_forklift_grader_replays_every_delay_level() -> None:

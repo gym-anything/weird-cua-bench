@@ -1181,9 +1181,16 @@ def generate_temporal_memory_first_change(task: dict[str, Any], seed: str) -> tu
 
 def generate_motion_only_ghost_jigsaw(task: dict[str, Any], seed: str) -> tuple[dict[str, Any], dict[str, Any]]:
     rng = random.Random(seed_int(seed, "motion-only-ghost-jigsaw"))
+    condition = control_condition(task)
+    parameters = dict((condition or {}).get("difficulty_parameters") or {})
+    rows = int(parameters.get("rows", 3))
+    columns = int(parameters.get("columns", 3))
+    piece_count = int(parameters.get("piece_count", 9))
+    if not 2 <= rows <= 4 or not 2 <= columns <= 4 or piece_count != rows * columns:
+        raise ValueError("ghost jigsaw grid is outside supported limits")
     theme = pick(rng, GHOST_PATTERN_THEMES)
     pieces = []
-    for source_index in range(9):
+    for source_index in range(piece_count):
         piece_id = f"ghost-{hashlib.sha256(f'{seed}|ghost|{source_index}'.encode('utf-8')).hexdigest()[:10]}"
         pieces.append({
             "id": piece_id,
@@ -1193,7 +1200,8 @@ def generate_motion_only_ghost_jigsaw(task: dict[str, Any], seed: str) -> tuple[
         })
     rng.shuffle(pieces)
     expected_positions = {piece["id"]: int(piece["source_index"]) for piece in pieces}
-    challenge_id = hashlib.sha256(f"{seed}|ghost-jigsaw".encode("utf-8")).hexdigest()[:12]
+    condition_token = f"|d{condition['difficulty']}|{task.get('id')}" if condition else ""
+    challenge_id = hashlib.sha256(f"{seed}|ghost-jigsaw{condition_token}".encode("utf-8")).hexdigest()[:12]
     public_state = {
         "benchmark": "weird_captcha_gym",
         "mechanic_id": "motion_only_ghost_jigsaw",
@@ -1205,10 +1213,13 @@ def generate_motion_only_ghost_jigsaw(task: dict[str, Any], seed: str) -> tuple[
         "generator": {"name": "motion_only_ghost_jigsaw_v1", "variant_count": GHOST_JIGSAW_VARIANT_COUNT},
         "visual": {
             "theme": theme,
-            "frame_count": 90,
-            "fps": 30,
-            "scroll_speed": rng.choice((1.6, 1.8, 2.0, 2.2)),
+            "frame_count": int(parameters.get("frame_count", 90)),
+            "fps": int(parameters.get("fps", 30)),
+            "frame_step": float(parameters.get("frame_step", .48)),
+            "scroll_speed": rng.choice(parameters.get("scroll_speeds") or (1.6, 1.8, 2.0, 2.2)),
             "global_seed": seed_int(seed, "ghost-global") % 1000003,
+            "rows": rows,
+            "columns": columns,
         },
         "pieces": pieces,
     }
@@ -1221,6 +1232,9 @@ def generate_motion_only_ghost_jigsaw(task: dict[str, Any], seed: str) -> tuple[
         "theme": theme,
         "variant_count": GHOST_JIGSAW_VARIANT_COUNT,
     }
+    if condition:
+        public_state["control_condition"] = copy.deepcopy(condition)
+        ground_truth["control_condition"] = copy.deepcopy(condition)
     return public_state, ground_truth
 
 
