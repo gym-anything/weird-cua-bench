@@ -90,6 +90,11 @@
     return palettes[material]?.[face] || "#777";
   }
 
+  function targetIsSealed(targetId) {
+    const required = model.state.extraction_prerequisites?.[String(targetId)] || [];
+    return required.some((voxelId) => model.voxels.has(String(voxelId)));
+  }
+
   function polygon(context, points) {
     context.beginPath();
     points.forEach(([x, y], index) => index ? context.lineTo(x, y) : context.moveTo(x, y));
@@ -125,6 +130,14 @@
       context.fillStyle = "rgba(45,51,47,.22)";
       context.fillRect(cx - 10, cy - 2, 6, 6);
       context.fillRect(cx + 5, cy - 10, 4, 4);
+      if (model.sealIds.has(String(item.voxel.id))) {
+        context.strokeStyle = "#eaff6a";
+        context.lineWidth = 3;
+        context.beginPath();
+        context.moveTo(cx - 12, cy - 8); context.lineTo(cx + 12, cy + 8);
+        context.moveTo(cx + 12, cy - 8); context.lineTo(cx - 12, cy + 8);
+        context.stroke();
+      }
     }
   }
 
@@ -204,7 +217,9 @@
     else if (hit) {
       const voxel = hit.voxel;
       model.durability -= 1;
-      if (voxel.material === "diamond") {
+      if (voxel.material === "diamond" && targetIsSealed(voxel.id)) {
+        outcome = "diamond_sealed";
+      } else if (voxel.material === "diamond") {
         model.inventory.push(voxel.id);
         model.voxels.delete(voxel.id);
         outcome = "diamond_extracted";
@@ -227,7 +242,7 @@
     };
     model.events.push(event);
     model.lastClick = {x, y, outcome};
-    const labels = {diamond_extracted: "DIAMOND EXTRACTED", stone_removed: "STONE REMOVED · VISIBILITY CHANGED", lava_strike: "LAVA STRIKE · DURABILITY LOST", support_collapse: "SUPPORT COLLAPSE · REBUILD REQUIRED", tool_broken: "PICK EXHAUSTED", miss: "RAY MISS"};
+    const labels = {diamond_extracted: "DIAMOND EXTRACTED", diamond_sealed: "DIAMOND SEALED · REMOVE MARKED STONES", stone_removed: "STONE REMOVED · VISIBILITY CHANGED", lava_strike: "LAVA STRIKE · DURABILITY LOST", support_collapse: "SUPPORT COLLAPSE · REBUILD REQUIRED", tool_broken: "PICK EXHAUSTED", miss: "RAY MISS"};
     helpersCache.setReadout(labels[outcome], outcome === "diamond_extracted" || outcome === "stone_removed" ? "idle" : "error");
     renderHud(); drawMine();
   }
@@ -285,8 +300,10 @@
     document.body.dataset.mechanic = "voxel-extraction-mine";
     document.body.dataset.minePalette = String(state.palette || "cavern");
     document.body.dataset.cheatMode = helpersCache.isCheatMode() ? "true" : "false";
-    model = {state, voxels: new Map((state.voxels || []).map((voxel) => [String(voxel.id), {...voxel}])), orientation: Number(state.starting_orientation || 0), durability: Number(state.starting_durability || 0), inventory: [], collapsed: false, events: [], lastClick: null, visited: new Set([Number(state.starting_orientation || 0)]), submitting: false, terminal: false};
-    helpersCache.app.innerHTML = `<section class="voxel-mine" data-challenge-id="${esc(state.challenge_id)}" data-fresh-failure="false"><header class="voxel-head"><div><span>ISOMETRIC VOXEL EXTRACTION MINE / SHAFT ${esc(state.challenge_id).toUpperCase()}</span><h1>${esc(state.prompt)}</h1></div><aside><span>PICK DURABILITY</span><div id="voxel-durability"></div><b id="voxel-durability-value"></b></aside></header><main class="voxel-main"><section class="voxel-view"><div class="voxel-canvas-shell"><canvas id="voxel-canvas" width="900" height="500"></canvas><div class="voxel-view-tag">CLICK RAY / FRONTMOST EXPOSED FACE</div></div><div class="voxel-camera"><button type="button" id="voxel-left">↶ ROTATE</button><div class="voxel-compass-shell"><i id="voxel-compass">▲</i><span>CAMERA</span></div><div class="voxel-view-pips">${[0,1,2,3].map((view) => `<i data-view="${view}">${view + 1}</i>`).join("")}</div><button type="button" id="voxel-right">ROTATE ↷</button></div></section><aside class="voxel-console"><div class="voxel-console-title"><span>EXTRACTION MANIFEST</span><i>${state.target_count} TARGETS</i></div><ol id="voxel-inventory"></ol><div class="voxel-legend"><span>MATERIAL HAZARDS</span><p><i class="is-stone"></i> STONE / COST 1</p><p><i class="is-diamond"></i> DIAMOND / EXTRACT</p><p><i class="is-lava"></i> LAVA / DAMAGES PICK</p><p><i class="is-support"></i> FRAGILE SUPPORT / COLLAPSE</p></div><div class="voxel-procedure"><span>FIELD PROCEDURE</span><ol><li>Rotate all four viewpoints.</li><li>Mine frontmost stone blockers.</li><li>Recheck the changed depth order.</li><li>Preserve yellow supports.</li></ol></div><button type="button" id="voxel-reset">↺ REBUILD MINE</button><div class="voxel-tape-title"><span>TOOL TAPE</span><b>EVENTS <i id="voxel-event-count">00</i></b></div><ol id="voxel-tape"></ol></aside></main><footer class="voxel-foot"><div class="readout" data-status="idle">MINE LIVE · ROTATE / RAYCAST / EXTRACT</div><span>5×5×3 / DEPTH-SORTED CLICK RAYS / LIMITED TOOL</span><button type="button" id="voxel-exit">${esc(state.submit_label || "EXIT MINE")} →</button></footer>${helpersCache.cheatPanelTemplate()}</section>`;
+    const sealIds = new Set(Object.values(state.extraction_prerequisites || {}).flat().map(String));
+    model = {state, voxels: new Map((state.voxels || []).map((voxel) => [String(voxel.id), {...voxel}])), sealIds, orientation: Number(state.starting_orientation || 0), durability: Number(state.starting_durability || 0), inventory: [], collapsed: false, events: [], lastClick: null, visited: new Set([Number(state.starting_orientation || 0)]), submitting: false, terminal: false};
+    const firstProcedure = sealIds.size ? "Remove every stone marked with a yellow cross." : "Mine frontmost stone blockers.";
+    helpersCache.app.innerHTML = `<section class="voxel-mine" data-challenge-id="${esc(state.challenge_id)}" data-fresh-failure="false"><header class="voxel-head"><div><span>ISOMETRIC VOXEL EXTRACTION MINE / SHAFT ${esc(state.challenge_id).toUpperCase()}</span><h1>${esc(state.prompt)}</h1></div><aside><span>PICK DURABILITY</span><div id="voxel-durability"></div><b id="voxel-durability-value"></b></aside></header><main class="voxel-main"><section class="voxel-view"><div class="voxel-canvas-shell"><canvas id="voxel-canvas" width="900" height="500"></canvas><div class="voxel-view-tag">CLICK RAY / FRONTMOST EXPOSED FACE</div></div><div class="voxel-camera"><button type="button" id="voxel-left">↶ ROTATE</button><div class="voxel-compass-shell"><i id="voxel-compass">▲</i><span>CAMERA</span></div><div class="voxel-view-pips">${[0,1,2,3].map((view) => `<i data-view="${view}">${view + 1}</i>`).join("")}</div><button type="button" id="voxel-right">ROTATE ↷</button></div></section><aside class="voxel-console"><div class="voxel-console-title"><span>EXTRACTION MANIFEST</span><i>${state.target_count} TARGETS</i></div><ol id="voxel-inventory"></ol><div class="voxel-legend"><span>MATERIAL HAZARDS</span><p><i class="is-stone"></i> STONE / COST 1</p><p><i class="is-diamond"></i> DIAMOND / EXTRACT</p><p><i class="is-lava"></i> LAVA / DAMAGES PICK</p><p><i class="is-support"></i> FRAGILE SUPPORT / COLLAPSE</p></div><div class="voxel-procedure"><span>FIELD PROCEDURE</span><ol><li>Rotate all four viewpoints.</li><li>${firstProcedure}</li><li>Recheck the changed depth order.</li><li>Preserve yellow supports.</li></ol></div><button type="button" id="voxel-reset">↺ REBUILD MINE</button><div class="voxel-tape-title"><span>TOOL TAPE</span><b>EVENTS <i id="voxel-event-count">00</i></b></div><ol id="voxel-tape"></ol></aside></main><footer class="voxel-foot"><div class="readout" data-status="idle">MINE LIVE · ROTATE / RAYCAST / EXTRACT</div><span>5×5×3 / DEPTH-SORTED CLICK RAYS / LIMITED TOOL</span><button type="button" id="voxel-exit">${esc(state.submit_label || "EXIT MINE")} →</button></footer>${helpersCache.cheatPanelTemplate()}</section>`;
     document.getElementById("voxel-left")?.addEventListener("click", () => rotateView(-1));
     document.getElementById("voxel-right")?.addEventListener("click", () => rotateView(1));
     document.getElementById("voxel-reset")?.addEventListener("click", resetMine);
