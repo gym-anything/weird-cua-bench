@@ -142,7 +142,8 @@ def _build_layout(
     screen_count: int,
     lava_count: int,
     support_count: int,
-) -> tuple[list[dict[str, Any]], list[dict[str, Any]], dict[str, Any] | None] | None:
+    sealed_targets: bool,
+) -> tuple[list[dict[str, Any]], list[dict[str, Any]], dict[str, Any] | None, dict[str, list[str]]] | None:
     voxels: dict[str, dict[str, Any]] = {}
     reserved_columns: set[tuple[int, int]] = set()
     target_specs: list[dict[str, Any]] = []
@@ -183,6 +184,7 @@ def _build_layout(
             target_specs.append({
                 "target_id": target_id,
                 "blocker_id": blocker_id,
+                "cap_id": cap_id,
                 "target_view": target_view,
                 "blocker_view": (target_view + 1) % 4,
             })
@@ -208,7 +210,21 @@ def _build_layout(
 
     simulation = dict(voxels)
     solution_steps: list[dict[str, Any]] = []
+    extraction_prerequisites: dict[str, list[str]] = {}
     for spec in target_specs:
+        if sealed_targets:
+            cap_point = _find_point(simulation, spec["target_view"], spec["cap_id"])
+            if cap_point is None:
+                return None
+            solution_steps.append({
+                "kind": "unseal",
+                "orientation": spec["target_view"],
+                "voxel_id": spec["cap_id"],
+                "click": [cap_point[0], cap_point[1]],
+                "face": cap_point[2],
+            })
+            del simulation[spec["cap_id"]]
+            extraction_prerequisites[spec["target_id"]] = [spec["cap_id"], spec["blocker_id"]]
         blocker_point = _find_point(simulation, spec["blocker_view"], spec["blocker_id"])
         if blocker_point is None:
             return None
@@ -245,7 +261,7 @@ def _build_layout(
         "click": [lava_point[0], lava_point[1]],
         "face": lava_point[2],
     }
-    return list(voxels.values()), solution_steps, edge_case
+    return list(voxels.values()), solution_steps, edge_case, extraction_prerequisites
 
 
 def generate(task: dict[str, Any], seed: str) -> tuple[dict[str, Any], dict[str, Any]]:
@@ -257,6 +273,7 @@ def generate(task: dict[str, Any], seed: str) -> tuple[dict[str, Any], dict[str,
     lava_count = int(parameters.get("lava_count", 1))
     support_count = int(parameters.get("support_count", 1))
     durability_margin = int(parameters.get("durability_margin", 2))
+    sealed_targets = bool(parameters.get("sealed_targets", False))
     if not 1 <= target_count <= 5 or not 0 <= screen_count <= min(1, target_count):
         raise ValueError("voxel extraction pockets are outside supported limits")
     if not 0 <= lava_count <= 2 or not 0 <= support_count <= 2 or not 1 <= durability_margin <= 8:
@@ -264,18 +281,23 @@ def generate(task: dict[str, Any], seed: str) -> tuple[dict[str, Any], dict[str,
     built = None
     for attempt in range(400):
         rng = random.Random(_seed_int(seed, f"{MECHANIC_ID}|layout|{attempt}"))
-        built = _build_layout(rng, target_count, screen_count, lava_count, support_count)
+        built = _build_layout(rng, target_count, screen_count, lava_count, support_count, sealed_targets)
         if built is not None:
             palette = rng.choice(("cavern", "deep-slate", "ember"))
             break
     if built is None:
         raise RuntimeError("could not generate a ray-solvable voxel extraction mine")
-    voxels, solution_steps, edge_case = built
+    voxels, solution_steps, edge_case, extraction_prerequisites = built
     condition_token = f"|d{condition['difficulty']}|{task.get('id')}" if condition else ""
     challenge_id = hashlib.sha256(f"{seed}|{MECHANIC_ID}{condition_token}".encode("utf-8")).hexdigest()[:12]
     task_id = str(task.get("id") or "")
-    durability = target_count * 2 + durability_margin
-    controlled_prompt = f"Rotate the mine, expose and extract {target_count} diamond block{'s' if target_count != 1 else ''}, and exit before the pick is exhausted."
+    required_strikes = target_count * (3 if sealed_targets else 2)
+    durability = required_strikes + durability_margin
+    controlled_prompt = (
+        f"Clear marked seals. Extract {target_count} diamond block{'s' if target_count != 1 else ''} before the pick breaks."
+        if sealed_targets
+        else f"Rotate the mine, expose and extract {target_count} diamond block{'s' if target_count != 1 else ''}, and exit before the pick is exhausted."
+    )
     public_state = {
         "benchmark": "weird_captcha_gym",
         "mechanic_id": MECHANIC_ID,
@@ -308,9 +330,12 @@ def generate(task: dict[str, Any], seed: str) -> tuple[dict[str, Any], dict[str,
         "projection": {"width": CANVAS_WIDTH, "height": CANVAS_HEIGHT, "tile_w": TILE_W, "tile_h": TILE_H, "cube_h": CUBE_H},
         "variant_count": 9_000_000_000,
     }
+    if sealed_targets:
+        public_state["extraction_prerequisites"] = copy.deepcopy(extraction_prerequisites)
+        ground_truth["extraction_prerequisites"] = copy.deepcopy(extraction_prerequisites)
     if condition:
         public_state["control_condition"] = copy.deepcopy(condition)
         ground_truth["control_condition"] = copy.deepcopy(condition)
     assert len(ground_truth["diamond_ids"]) == target_count
-    assert len(solution_steps) == target_count * 2
+    assert len(solution_steps) == required_strikes
     return public_state, ground_truth

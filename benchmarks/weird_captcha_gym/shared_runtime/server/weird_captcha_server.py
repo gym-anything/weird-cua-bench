@@ -484,18 +484,16 @@ class PuzzleServer(BaseHTTPRequestHandler):
 
     def _grade_constellation_submission(self, payload: dict) -> dict:
         ground_truth = self._read_json_file(self.state_dir / "ground_truth.json")
-        expected_clicks = ground_truth.get("expected_clicks") or [ground_truth.get("expected_click") or {}]
-        submitted_clicks = payload.get("clicks") or [payload.get("click") or {}]
-        correct = 0
-        for expected, click in zip(expected_clicks, submitted_clicks):
-            try:
-                distance = math.hypot(float(click.get("x")) - float(expected.get("x")), float(click.get("y")) - float(expected.get("y")))
-                radius = float(expected.get("radius"))
-            except (TypeError, ValueError):
-                continue
-            correct += int(distance <= radius)
-        passed = bool(expected_clicks) and len(submitted_clicks) == len(expected_clicks) and correct == len(expected_clicks)
-        return {"graded": True, "passed": passed, "feedback": f"rounds {correct}/{len(expected_clicks)}"}
+        expected = ground_truth.get("expected_click") or {}
+        click = payload.get("click") or {}
+        try:
+            distance = math.hypot(float(click.get("x")) - float(expected.get("x")), float(click.get("y")) - float(expected.get("y")))
+            radius = float(expected.get("radius"))
+        except (TypeError, ValueError):
+            distance = math.inf
+            radius = 0.0
+        passed = distance <= radius
+        return {"graded": True, "passed": passed, "feedback": f"click distance {distance:.2f}px"}
 
     def _grade_grillmaster_submission(self, payload: dict) -> dict:
         ground_truth = self._read_json_file(self.state_dir / "ground_truth.json")

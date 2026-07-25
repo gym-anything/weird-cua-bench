@@ -137,19 +137,13 @@ The parameter names inside each difficulty level remain specific to the environm
 
 The five values have one meaning across the benchmark. They are not five equal divisions of each environment's possible parameter range. None of the values claims that an environment cannot be made harder than level 5.
 
-The initial profiles use the following shared construction rule:
+Task parameters create candidate profiles. They do not assign the level. Four direct clicks can be easier than one exact-score move.
 
-| Level | Complete task at that setting |
-|---|---|
-| 1 | One short instance with broad tolerances and no avoidable complication |
-| 2 | One complete instance or two short stages with limited distraction or timing pressure |
-| 3 | Several dependent stages or a moderate combination of perception, state change, precision, and timing |
-| 4 | A sustained task with several dependent decisions under substantial visual, temporal, or interaction difficulty |
-| 5 | An extended stress test that remains intentionally solvable and avoids extreme parameter settings used only to manufacture failure |
+Levels are assigned from completion rates on held-out seeds for a fixed set of computer-use agents under the same interaction and real-time setting. Action count and completion time separate profiles with similar completion rates. Human play checks that each profile is understandable, solvable, and free from interface defects.
 
-These descriptions are used together rather than as a checklist. A single exact-change swap can require more reasoning than several direct clicks. One parameter cannot determine the level of a heterogeneous task.
+Repeated independent copies of the same problem do not by themselves justify a high level. A harder profile should change the visual, temporal, reasoning, or interaction problem faced within the task.
 
-The cross-environment calibration target is first-attempt human completion under the live setting. Completion rate is primary. Completion time distinguishes settings with similar completion rates. Human results should change the environment parameters rather than redefine the level numbers separately for each game.
+Assignments remain provisional until enough evaluation runs exist. New trajectories can move an existing task up or down. The level parameters should change when measured results place two profiles in the wrong order.
 
 Levels can vary the number of objects, number of stages, number of variables, route length, simultaneous events, or other appropriate parameters. The assigned baseline level preserves the current generated task. Lower levels reduce the complete task. Higher levels increase it.
 

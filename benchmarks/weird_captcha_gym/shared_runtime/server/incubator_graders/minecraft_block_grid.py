@@ -113,6 +113,19 @@ def grade(payload: dict[str, Any], ground_truth: dict[str, Any], public_state: d
     voxels = {str(voxel.get("id") or ""): dict(voxel) for voxel in initial if isinstance(voxel, dict)}
     if not voxels or "" in voxels:
         return {"graded": True, "passed": False, "feedback": "private voxel pile is malformed"}
+    prerequisites = ground_truth.get("extraction_prerequisites") or {}
+    public_prerequisites = public_state.get("extraction_prerequisites") or {}
+    if not isinstance(prerequisites, dict) or public_prerequisites != prerequisites:
+        return {"graded": True, "passed": False, "feedback": "public extraction seals differ from replay contract"}
+    for target_id, required_ids in prerequisites.items():
+        if (
+            str(target_id) not in voxels
+            or voxels[str(target_id)].get("material") != "diamond"
+            or not isinstance(required_ids, list)
+            or not required_ids
+            or any(str(voxel_id) not in voxels or voxels[str(voxel_id)].get("material") != "stone" for voxel_id in required_ids)
+        ):
+            return {"graded": True, "passed": False, "feedback": "private extraction seals are malformed"}
     orientation = int(ground_truth.get("starting_orientation") or 0)
     durability = int(ground_truth.get("starting_durability") or 0)
     inventory: list[str] = []
@@ -164,7 +177,10 @@ def grade(payload: dict[str, Any], ground_truth: dict[str, Any], public_state: d
                 voxel = voxels[expected_id]
                 material = str(voxel.get("material") or "")
                 durability -= 1
-                if material == "diamond":
+                required_ids = prerequisites.get(expected_id) or []
+                if material == "diamond" and any(str(voxel_id) in voxels for voxel_id in required_ids):
+                    outcome = "diamond_sealed"
+                elif material == "diamond":
                     inventory.append(expected_id)
                     del voxels[expected_id]
                     outcome = "diamond_extracted"

@@ -352,27 +352,14 @@ def test_constellation_profiles_match_search_field_contracts() -> None:
     controls = controls_for("cursor_constellation_hunt_env")
     for level, (public, truth) in enumerate(generated_levels("cursor_constellation_hunt_env"), start=1):
         parameters = controls["difficulty"][str(level)]["parameters"]
-        rounds = public.get("rounds") or [public["surface"]]
-        expected_clicks = truth.get("expected_clicks") or [truth["expected_click"]]
-        assert len(rounds) == len(expected_clicks) == parameters["round_count"]
-        for surface, expected in zip(rounds, expected_clicks):
-            assert len(surface["decoys"]) == parameters["decoy_count"]
-            assert sum(bool(star["noise"]) for star in surface["stars"]) == parameters["noise_star_count"]
-            assert surface["reveal_radius"] == parameters["reveal_radius"]
-            assert surface["decoy_radius"] == parameters["decoy_radius"]
-            assert surface["decoy_strength"] == parameters["decoy_strength"]
-            assert expected["radius"] == parameters["accepted_radius"]
-
-
-def test_constellation_grader_requires_every_generated_round() -> None:
-    grader = load_module(
-        "controlled_constellation_grader",
-        BENCHMARK / "shared_runtime" / "server" / "legacy_browser_grader.py",
-    )
-    public, truth = generated_levels("cursor_constellation_hunt_env", "constellation-multi-round-grade")[-1]
-    clicks = [{"x": expected["x"], "y": expected["y"]} for expected in truth["expected_clicks"]]
-    assert grader.grade({"clicks": clicks}, truth, public)["passed"] is True
-    assert grader.grade({"clicks": clicks[:-1]}, truth, public)["passed"] is False
+        surface = public["surface"]
+        expected = truth["expected_click"]
+        assert len(surface["decoys"]) == parameters["decoy_count"]
+        assert sum(bool(star["noise"]) for star in surface["stars"]) == parameters["noise_star_count"]
+        assert surface["reveal_radius"] == parameters["reveal_radius"]
+        assert surface["decoy_radius"] == parameters["decoy_radius"]
+        assert surface["decoy_strength"] == parameters["decoy_strength"]
+        assert expected["radius"] == parameters["accepted_radius"]
 
 
 def test_palimpsest_profiles_match_motion_scan_and_hold_contracts() -> None:
@@ -411,12 +398,92 @@ def test_voxel_profiles_match_extraction_risk_and_durability_contracts() -> None
     for level, (public, truth) in enumerate(generated_levels("minecraft_block_grid_env"), start=1):
         parameters = controls["difficulty"][str(level)]["parameters"]
         materials = [voxel["material"] for voxel in public["voxels"]]
+        required_strikes = parameters["target_count"] * (3 if parameters["sealed_targets"] else 2)
         assert public["target_count"] == parameters["target_count"]
-        assert len(truth["solution_steps"]) == parameters["target_count"] * 2
+        assert len(truth["solution_steps"]) == required_strikes
         assert materials.count("lava") == parameters["lava_count"]
         assert materials.count("support") == parameters["support_count"]
         assert sum(voxel["role"] == "screen" for voxel in public["voxels"]) == parameters["screen_count"]
-        assert public["starting_durability"] == parameters["target_count"] * 2 + parameters["durability_margin"]
+        assert public["starting_durability"] == required_strikes + parameters["durability_margin"]
+        if parameters["sealed_targets"]:
+            assert public["extraction_prerequisites"] == truth["extraction_prerequisites"]
+            assert len(public["extraction_prerequisites"]) == parameters["target_count"]
+            assert all(len(required_ids) == 2 for required_ids in public["extraction_prerequisites"].values())
+        else:
+            assert "extraction_prerequisites" not in public
+            assert "extraction_prerequisites" not in truth
+
+
+def test_sealed_voxel_cannot_be_extracted_before_its_marked_stones() -> None:
+    grader = load_module(
+        "controlled_voxel_grader",
+        BENCHMARK / "shared_runtime" / "server" / "incubator_graders" / "minecraft_block_grid.py",
+    )
+    public, truth = generated_levels("minecraft_block_grid_env", "voxel-seal-replay")[1]
+    voxels = {str(voxel["id"]): dict(voxel) for voxel in truth["voxels"]}
+    target_ids = set(truth["extraction_prerequisites"])
+    visible_target = None
+    for orientation in range(4):
+        for face in grader._faces(voxels, orientation):
+            if str(face["voxel_id"]) not in target_ids:
+                continue
+            x = sum(point[0] for point in face["points"]) / len(face["points"])
+            y = sum(point[1] for point in face["points"]) / len(face["points"])
+            hit = grader._raycast(voxels, orientation, x, y)
+            if hit and hit["voxel_id"] == str(face["voxel_id"]):
+                visible_target = (orientation, x, y, hit)
+                break
+        if visible_target:
+            break
+    assert visible_target is not None
+
+    orientation, x, y, hit = visible_target
+    events = []
+    current_orientation = int(truth["starting_orientation"])
+    while current_orientation != orientation:
+        before = current_orientation
+        current_orientation = (current_orientation + 1) % 4
+        events.append({
+            "sequence": len(events) + 1,
+            "action": "rotate",
+            "delta": 1,
+            "orientation_before": before,
+            "orientation_after": current_orientation,
+        })
+    durability = int(truth["starting_durability"]) - 1
+    events.append({
+        "sequence": len(events) + 1,
+        "action": "mine",
+        "orientation": orientation,
+        "x": x,
+        "y": y,
+        "voxel_id": hit["voxel_id"],
+        "face": hit["face"],
+        "outcome": "diamond_sealed",
+        "durability_after": durability,
+        "inventory_after": [],
+    })
+    payload = {
+        "mechanic_id": public["mechanic_id"],
+        "task_id": public["task_id"],
+        "challenge_id": public["challenge_id"],
+        "events": events,
+        "final_state": {
+            "orientation": orientation,
+            "durability": durability,
+            "inventory": [],
+            "collapsed": False,
+            "remaining_voxel_ids": sorted(voxels),
+        },
+        "completed": True,
+    }
+    result = grader.grade(payload, truth, public)
+    assert result["passed"] is False
+    assert result["feedback"].startswith("diamonds 0/")
+
+    forged = copy.deepcopy(payload)
+    forged["events"][-1]["outcome"] = "diamond_extracted"
+    assert "material replay" in grader.grade(forged, truth, public)["feedback"]
 
 
 def test_slime_profiles_match_lane_motion_and_control_contracts() -> None:
