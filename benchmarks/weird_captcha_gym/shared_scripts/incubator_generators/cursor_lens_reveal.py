@@ -32,7 +32,7 @@ def generate(task: dict[str, Any], seed: str) -> tuple[dict[str, Any], dict[str,
     parameters = dict((condition or {}).get("difficulty_parameters") or {})
     echo_count = int(parameters.get("echo_count", 5))
     clutter_count = int(parameters.get("clutter_count", 145))
-    if not 2 <= echo_count <= 6 or not 20 <= clutter_count <= 240:
+    if not 1 <= echo_count <= 5 or not 20 <= clutter_count <= 240:
         raise ValueError("palimpsest counts are outside supported limits")
     task_id = str(task.get("id") or "cursor_lens_reveal_seed_0001@0.1")
     condition_token = f"|d{condition['difficulty']}|{task_id}" if condition else ""

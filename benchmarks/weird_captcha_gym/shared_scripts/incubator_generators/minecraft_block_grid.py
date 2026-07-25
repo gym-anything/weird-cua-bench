@@ -148,7 +148,12 @@ def _build_layout(
     target_specs: list[dict[str, Any]] = []
     remaining_orientations = [1, 2, 3]
     rng.shuffle(remaining_orientations)
-    orientations = [0, *remaining_orientations] if target_count == 4 else [*remaining_orientations, 0]
+    if target_count == 4:
+        orientations = [0, *remaining_orientations]
+    elif target_count <= 3:
+        orientations = [*remaining_orientations, 0]
+    else:
+        orientations = [0, *remaining_orientations, rng.choice((0, 1, 2, 3))]
     for target_index in range(target_count):
         target_view = orientations[target_index]
         found = False
@@ -252,12 +257,12 @@ def generate(task: dict[str, Any], seed: str) -> tuple[dict[str, Any], dict[str,
     lava_count = int(parameters.get("lava_count", 1))
     support_count = int(parameters.get("support_count", 1))
     durability_margin = int(parameters.get("durability_margin", 2))
-    if not 1 <= target_count <= 4 or not 0 <= screen_count <= min(1, target_count):
+    if not 1 <= target_count <= 5 or not 0 <= screen_count <= min(1, target_count):
         raise ValueError("voxel extraction pockets are outside supported limits")
     if not 0 <= lava_count <= 2 or not 0 <= support_count <= 2 or not 1 <= durability_margin <= 8:
         raise ValueError("voxel mine risk parameters are outside supported limits")
     built = None
-    for attempt in range(120):
+    for attempt in range(400):
         rng = random.Random(_seed_int(seed, f"{MECHANIC_ID}|layout|{attempt}"))
         built = _build_layout(rng, target_count, screen_count, lava_count, support_count)
         if built is not None:

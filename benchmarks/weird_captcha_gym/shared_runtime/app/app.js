@@ -43,6 +43,8 @@ const constellationModel = {
   state: null,
   pointer: null,
   pendingClick: null,
+  roundIndex: 0,
+  clicks: [],
   animationFrame: 0,
 };
 const grillModel = {
@@ -2482,10 +2484,16 @@ function constellationPoint(canvas, event) {
   return {x: (event.clientX - box.left) * canvas.width / box.width, y: (event.clientY - box.top) * canvas.height / box.height};
 }
 
+function activeConstellationSurface() {
+  const state = constellationModel.state || {};
+  const rounds = state.rounds || [];
+  return rounds[constellationModel.roundIndex] || state.surface || {};
+}
+
 function drawConstellationCanvas(canvas, now = performance.now()) {
   const state = constellationModel.state;
   if (!state) return;
-  const surface = state.surface || {};
+  const surface = activeConstellationSurface();
   const ctx = canvas.getContext("2d");
   const pointer = constellationModel.pointer || constellationModel.pendingClick;
   const solution = surface.solution || {x: 0, y: 0};
@@ -2546,12 +2554,14 @@ function renderCursorConstellationHunt(state) {
   document.body.dataset.mechanic = "constellation-hunt";
   document.body.dataset.cheatMode = isCheatMode() ? "true" : "false";
   constellationModel.state = state; constellationModel.pointer = null; constellationModel.pendingClick = null;
+  constellationModel.roundIndex = 0; constellationModel.clicks = [];
   const surface = state.surface || {};
+  const roundCount = (state.rounds || []).length || 1;
   app.innerHTML = `
     <section class="interaction-captcha constellation-captcha" data-mechanic="${text(state.mechanic_id)}" data-challenge-id="${text(state.challenge_id)}">
-      <header class="interaction-head constellation-head"><p>ACTIVE VISION / 02</p><h1>${text(state.prompt)}</h1></header>
+      <header class="interaction-head constellation-head"><p id="constellation-progress">ROUND 1 / ${text(roundCount)}</p><h1>${text(state.prompt)}</h1></header>
       <section class="constellation-stage"><canvas class="constellation-canvas" width="${text(surface.width || 680)}" height="${text(surface.height || 410)}"></canvas><div class="constellation-reticle"></div></section>
-      <footer class="interaction-foot"><div class="readout" data-status="idle"></div><button class="interaction-submit" id="submit-constellation" type="button">${text(state.submit_label || "VERIFY")}</button></footer>
+      <footer class="interaction-foot"><div class="readout" data-status="idle"></div><button class="interaction-submit" id="submit-constellation" type="button">${text(roundCount > 1 ? "LOCK ROUND" : (state.submit_label || "VERIFY"))}</button></footer>
       ${cheatPanelTemplate()}
     </section>`;
   const canvas = document.querySelector(".constellation-canvas");
@@ -2561,8 +2571,22 @@ function renderCursorConstellationHunt(state) {
   drawConstellationCanvas(canvas);
   document.getElementById("submit-constellation").addEventListener("click", async () => {
     const click = constellationModel.pendingClick || {x: -999, y: -999};
+    const recorded = {x: Number(click.x.toFixed(2)), y: Number(click.y.toFixed(2))};
+    if (roundCount > 1 && constellationModel.roundIndex < roundCount - 1) {
+      constellationModel.clicks.push(recorded);
+      constellationModel.roundIndex += 1;
+      constellationModel.pointer = null;
+      constellationModel.pendingClick = null;
+      document.getElementById("constellation-progress").textContent = `ROUND ${constellationModel.roundIndex + 1} / ${roundCount}`;
+      if (constellationModel.roundIndex === roundCount - 1) {
+        document.getElementById("submit-constellation").textContent = state.submit_label || "VERIFY";
+      }
+      setReadout("", "idle");
+      return;
+    }
     try {
-      const response = await fetch("/result", {method: "POST", headers: {"content-type": "application/json"}, body: JSON.stringify({mechanic_id: state.mechanic_id, challenge_id: state.challenge_id, click: {x: Number(click.x.toFixed(2)), y: Number(click.y.toFixed(2))}})});
+      const clicks = [...constellationModel.clicks, recorded];
+      const response = await fetch("/result", {method: "POST", headers: {"content-type": "application/json"}, body: JSON.stringify({mechanic_id: state.mechanic_id, challenge_id: state.challenge_id, click: recorded, clicks})});
       const outcome = await response.json();
       if (outcome.passed === true) setReadout("PASS", "passed");
       else if (outcome.passed === false) { if (outcome.state) renderCursorConstellationHunt(outcome.state); setReadout("FAIL", "error"); }

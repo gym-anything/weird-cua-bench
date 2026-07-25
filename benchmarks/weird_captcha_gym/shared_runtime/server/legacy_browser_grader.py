@@ -16,17 +16,21 @@ def _ghost(result: dict[str, Any], truth: dict[str, Any], _state: dict[str, Any]
 
 
 def _constellation(result: dict[str, Any], truth: dict[str, Any], _state: dict[str, Any]) -> dict[str, Any]:
-    expected = truth.get("expected_click") or {}
-    click = result.get("click") or {}
-    try:
-        distance = math.hypot(
-            float(click.get("x")) - float(expected.get("x")),
-            float(click.get("y")) - float(expected.get("y")),
-        )
-        radius = float(expected.get("radius"))
-    except (TypeError, ValueError):
-        return {"graded": True, "passed": False, "feedback": "click missing"}
-    return {"graded": True, "passed": distance <= radius, "feedback": f"distance {distance:.2f}"}
+    expected_clicks = truth.get("expected_clicks") or [truth.get("expected_click") or {}]
+    submitted_clicks = result.get("clicks") or [result.get("click") or {}]
+    correct = 0
+    for expected, click in zip(expected_clicks, submitted_clicks):
+        try:
+            distance = math.hypot(
+                float(click.get("x")) - float(expected.get("x")),
+                float(click.get("y")) - float(expected.get("y")),
+            )
+            radius = float(expected.get("radius"))
+        except (TypeError, ValueError):
+            continue
+        correct += int(distance <= radius)
+    passed = bool(expected_clicks) and len(submitted_clicks) == len(expected_clicks) and correct == len(expected_clicks)
+    return {"graded": True, "passed": passed, "feedback": f"rounds {correct}/{len(expected_clicks)}"}
 
 
 def _grillmaster(result: dict[str, Any], truth: dict[str, Any], _state: dict[str, Any]) -> dict[str, Any]:
