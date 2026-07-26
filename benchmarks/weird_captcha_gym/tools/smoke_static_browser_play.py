@@ -52,6 +52,32 @@ def main() -> None:
             with sync_playwright() as playwright:
                 browser = playwright.chromium.launch(headless=True)
                 context = browser.new_context(viewport={"width": 1440, "height": 1000})
+                context.add_init_script(
+                    """(() => {
+                      const canvas = document.createElement('canvas');
+                      canvas.width = 1280;
+                      canvas.height = 720;
+                      const context = canvas.getContext('2d');
+                      let frame = 0;
+                      setInterval(() => {
+                        frame += 1;
+                        context.fillStyle = frame % 2 ? '#102418' : '#182d3a';
+                        context.fillRect(0, 0, canvas.width, canvas.height);
+                        context.fillStyle = '#c7ff35';
+                        context.font = '48px monospace';
+                        context.fillText(`CAPTURE ${frame}`, 80, 120);
+                      }, 32);
+                      window.__WEIRD_CAPTURE_TEST_CANVAS = canvas;
+                      const mediaDevices = navigator.mediaDevices || {};
+                      Object.defineProperty(mediaDevices, 'getDisplayMedia', {
+                        configurable: true,
+                        value: async () => canvas.captureStream(30),
+                      });
+                      if (!navigator.mediaDevices) {
+                        Object.defineProperty(navigator, 'mediaDevices', {configurable: true, value: mediaDevices});
+                      }
+                    })()"""
+                )
                 dashboard = context.new_page()
                 dashboard.on("request", lambda request: dashboard_requests.append(request.url))
                 dashboard.on(
@@ -90,6 +116,26 @@ def main() -> None:
                     wait_until="networkidle",
                 )
                 puzzle.wait_for_selector(".rotating-captcha")
+                puzzle.get_by_role("button", name="Expand observation controls").click()
+                expect(puzzle.get_by_role("button", name="Capture model observation")).to_be_visible()
+                puzzle.get_by_role("button", name="Paused").click()
+                puzzle.wait_for_function("WeirdCaptchaTime.status().state === 'paused'")
+                paused_before = puzzle.evaluate("WeirdCaptchaTime.status().task_time_ms")
+                puzzle.wait_for_timeout(180)
+                paused_after = puzzle.evaluate("WeirdCaptchaTime.status().task_time_ms")
+                if abs(paused_after - paused_before) > 1:
+                    raise AssertionError(f"public paused clock advanced: {paused_before} -> {paused_after}")
+                puzzle.get_by_role("button", name="Capture model observation").click()
+                expect(puzzle.locator(".weird-demo-observation")).to_have_attribute("data-open", "true", timeout=10_000)
+                expect(puzzle.locator(".weird-demo-frame")).to_have_count(6)
+                expect(puzzle.locator("[data-demo-screen-label]")).to_contain_text("obs.screen")
+                if args.out_dir:
+                    puzzle.screenshot(path=str(args.out_dir / "browser-observation-viewer.png"), full_page=True)
+                if puzzle.evaluate("WeirdCaptchaTime.status().state") != "paused":
+                    raise AssertionError("paused browser observation did not stop after frame capture")
+                puzzle.get_by_role("button", name="Close").click()
+                puzzle.get_by_role("button", name="Live").click()
+                puzzle.wait_for_function("WeirdCaptchaTime.status().state === 'running'")
                 first_challenge = puzzle.locator(".rotating-captcha").get_attribute("data-challenge-id")
                 puzzle.locator("#submit-rotating").click()
                 expect(puzzle.locator(".readout")).to_have_text("FAIL", timeout=60_000)
@@ -215,6 +261,8 @@ def main() -> None:
             "dashboard_one_click": True,
             "loopback_contact_before_opt_in": False,
             "fresh_failure_challenge": True,
+            "browser_time_conditions": ["live", "paused"],
+            "browser_observation_frames": 6,
             "pyodide_grade": "PASS",
             "pyodide_graders_executed": grader_sweep["executed"],
             "rendered_environments": manifest["browser_play"]["environments"] - len({item["environment"] for item in failures}),

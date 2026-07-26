@@ -20,6 +20,7 @@
   const nativeDateOrigin = native.dateNow();
   const clientId = `${nativeDateOrigin}-${Math.random().toString(16).slice(2)}`;
 
+  let mode = initialMode;
   let running = initialMode === "live" && !startPaused;
   let accumulatedMs = 0;
   let runStartedAt = running ? native.performanceNow() : null;
@@ -115,10 +116,22 @@
     return status();
   }
 
+  function setMode(nextMode) {
+    if (nextMode !== "live" && nextMode !== "paused") {
+      throw new TypeError(`unsupported time mode: ${nextMode}`);
+    }
+    mode = nextMode;
+    runWindowToken += 1;
+    if (mode === "live") resume();
+    else pause();
+    postStatus();
+    return status();
+  }
+
   function status() {
     return {
       client_id: clientId,
-      mode: initialMode,
+      mode,
       state: running ? "running" : "paused",
       phase: commandPhase,
       ready,
@@ -314,6 +327,7 @@
   window.WeirdCaptchaTime = {
     pause,
     resume,
+    setMode,
     status,
     markReady,
     childWindows,

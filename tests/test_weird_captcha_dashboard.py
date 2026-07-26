@@ -798,6 +798,7 @@ class WeirdCaptchaDashboardTests(unittest.TestCase):
                 "interaction_profiles": 150,
                 "grader_files": 70,
                 "python_runtime": "pyodide@314.0.2",
+                "observation_inspector": True,
             })
             html = (output / "index.html").read_text(encoding="utf-8")
             app = (output / "static" / "app.js").read_text(encoding="utf-8")
@@ -834,14 +835,28 @@ class WeirdCaptchaDashboardTests(unittest.TestCase):
             ))
             self.assertTrue((output / "play" / "index.html").is_file())
             self.assertTrue((output / "play" / "runtime" / "browser_adapter.js").is_file())
+            self.assertTrue((output / "play" / "runtime" / "demo_controls.css").is_file())
+            self.assertTrue((output / "play" / "runtime" / "demo_controls.js").is_file())
             self.assertTrue((output / "play" / "runtime" / "grader_worker.js").is_file())
             browser_adapter = (output / "play" / "runtime" / "browser_adapter.js").read_text(encoding="utf-8")
+            browser_index = (output / "play" / "index.html").read_text(encoding="utf-8")
+            demo_controls = (output / "play" / "runtime" / "demo_controls.js").read_text(encoding="utf-8")
             self.assertIn("requestedDifficulty", browser_adapter)
             self.assertIn("requestedInteraction", browser_adapter)
+            self.assertIn("runtime/demo_controls.css", browser_index)
+            self.assertIn("runtime/demo_controls.js", browser_index)
+            self.assertIn("getDisplayMedia", demo_controls)
+            self.assertIn("Capture model observation", demo_controls)
             challenge_files = sorted((output / "play" / "challenges").glob("*.json"))
             self.assertEqual(len(challenge_files), 75)
             for challenge_file in challenge_files:
                 bundle = json.loads(challenge_file.read_text(encoding="utf-8"))
+                self.assertEqual(bundle["version"], 4)
+                self.assertEqual(set(bundle["real_time"]), {
+                    "play_time_seconds",
+                    "observation_window_ms",
+                    "frames_per_observation",
+                })
                 self.assertEqual(len(bundle["challenges"]), 4, challenge_file.name)
                 self.assertEqual(len({item["ground_truth"]["challenge_id"] for item in bundle["challenges"]}), 4)
                 if bundle["difficulty_profiles"]:

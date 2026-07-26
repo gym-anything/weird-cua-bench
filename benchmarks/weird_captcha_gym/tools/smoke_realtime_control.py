@@ -134,13 +134,27 @@ def main() -> None:
                 refrozen = page.evaluate("WeirdCaptchaTime.status().task_time_ms")
                 if abs(refrozen - advanced["task"]) > 1:
                     raise AssertionError(f"clock did not refreeze: {advanced['task']} -> {refrozen}")
+                switched_live = page.evaluate("WeirdCaptchaTime.setMode('live')")
+                page.wait_for_timeout(100)
+                live_task_time = page.evaluate("WeirdCaptchaTime.status().task_time_ms")
+                if switched_live["mode"] != "live" or live_task_time <= refrozen:
+                    raise AssertionError(f"browser mode switch did not resume task time: {switched_live}")
+                switched_paused = page.evaluate("WeirdCaptchaTime.setMode('paused')")
+                if switched_paused["mode"] != "paused" or switched_paused["state"] != "paused":
+                    raise AssertionError(f"browser mode switch did not pause task time: {switched_paused}")
                 browser.close()
         finally:
             server.shutdown()
             server.server_close()
             thread.join(timeout=3)
 
-    print(json.dumps({"ok": True, "paused": True, "advance_ms": 200, "refrozen": True}))
+    print(json.dumps({
+        "ok": True,
+        "paused": True,
+        "advance_ms": 200,
+        "refrozen": True,
+        "browser_mode_switch": True,
+    }))
 
 
 if __name__ == "__main__":
