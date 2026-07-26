@@ -3,7 +3,13 @@ set -euo pipefail
 
 STATE_DIR="${WEIRD_CAPTCHA_STATE_DIR:-/tmp/weird_captcha_gym}"
 PORT="${WEIRD_CAPTCHA_PORT:-8787}"
-URL="http://127.0.0.1:${PORT}/?task=$(date +%s)"
+TIME_MODE="${WEIRD_CAPTCHA_TIME_MODE:-live}"
+START_PAUSED="${WEIRD_CAPTCHA_START_PAUSED:-0}"
+if [ "$TIME_MODE" != "live" ] && [ "$TIME_MODE" != "paused" ]; then
+  echo "WEIRD_CAPTCHA_TIME_MODE must be live or paused" >&2
+  exit 2
+fi
+URL="http://127.0.0.1:${PORT}/?task=$(date +%s)&time_mode=${TIME_MODE}&start_paused=${START_PAUSED}&time_control=1"
 
 mkdir -p "$STATE_DIR"
 

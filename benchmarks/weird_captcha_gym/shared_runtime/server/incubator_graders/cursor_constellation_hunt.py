@@ -45,10 +45,11 @@ def grade(payload: dict[str, Any], ground_truth: dict[str, Any], public_state: d
         distance = math.inf
         radius = 0.0
     passed = distance <= radius
+    score = 0 if not math.isfinite(distance) else max(0, int(round(100 * (1 - distance / max(radius * 4, 1)))))
     return {
         "graded": True,
         "passed": passed,
-        "score": 100 if passed else max(0, int(round(100 * (1 - distance / max(radius * 4, 1))))),
+        "score": 100 if passed else score,
         "feedback": f"click distance {distance:.2f}px",
     }
 

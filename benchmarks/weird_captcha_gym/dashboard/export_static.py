@@ -78,6 +78,7 @@ def _export_browser_play(output: Path, catalog: dict[str, Any]) -> dict[str, Any
     shutil.copy2(BROWSER_SOURCE_ROOT / "PYODIDE-NOTICE.txt", play_root / "PYODIDE-NOTICE.txt")
     shutil.copy2(BROWSER_SOURCE_ROOT / "browser_adapter.js", runtime_root / "browser_adapter.js")
     shutil.copy2(BROWSER_SOURCE_ROOT / "grader_worker.js", runtime_root / "grader_worker.js")
+    shutil.copy2(BROWSER_APP_ROOT / "time_controller.js", runtime_root / "time_controller.js")
     shutil.copy2(BROWSER_APP_ROOT / "app.js", runtime_root / "app.js")
     shutil.copy2(BROWSER_APP_ROOT / "styles.css", runtime_root / "styles.css")
     shutil.copytree(BROWSER_APP_ROOT / "mechanics", runtime_root / "mechanics", dirs_exist_ok=True)
