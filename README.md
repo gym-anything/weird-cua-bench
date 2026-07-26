@@ -47,11 +47,31 @@ The launcher starts the authenticated loopback companion and opens an automatica
 
 The public browser runtime is an exploration surface, not a secure evaluation endpoint: because it has no server, its finite challenge pool and grading truth are inspectable in developer tools. Use the local/VNC benchmark path for authoritative agent runs.
 
+## Live and paused evaluation
+
+Every environment has a task-time limit, observation-window duration, and frame count in `benchmarks/weird_captcha_gym/real_time.json`. Live and paused runs use the same frame schedule. Live mode keeps the task running while the model responds; paused mode stops task time during the model response.
+
+Install the evaluation dependencies, then choose the condition with `--time-mode`:
+
+```bash
+python -m pip install -e ".[evaluation]"
+weird-cua-evaluate \
+  --env-dir benchmarks/weird_captcha_gym/environments/rotating_keyboard_env \
+  --task rotating_keyboard_seed_0001 \
+  --agent GeminiComputerUseAgent \
+  --agent-args '{"model":"gemini-3.5-flash"}' \
+  --time-mode live
+```
+
+The public dashboard remains live browser play. It does not expose the evaluation time condition.
+
 ## Validate
 
 ```bash
 python -m pip install -e ".[test]"
 python -m pytest tests -q
+python benchmarks/weird_captcha_gym/tools/smoke_realtime_control.py
+python benchmarks/weird_captcha_gym/tools/smoke_realtime_environments.py
 ```
 
 The strict promotion audit is deliberately red while the corpus remains candidate-only:

@@ -9,7 +9,7 @@ URL="http://127.0.0.1:${PORT}/"
 
 echo "=== Weird CAPTCHA Gym: setup shared runtime ==="
 mkdir -p "$STATE_DIR"
-rm -f "$STATE_DIR/result.json" /tmp/task_result.json
+rm -f "$STATE_DIR/result.json" "$STATE_DIR/time_command.json" "$STATE_DIR/time_status.json" /tmp/task_result.json
 
 if [ -f "$STATE_DIR/server.pid" ]; then
   old_pid="$(cat "$STATE_DIR/server.pid" 2>/dev/null || true)"

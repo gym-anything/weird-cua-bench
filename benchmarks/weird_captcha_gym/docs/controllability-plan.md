@@ -1,6 +1,6 @@
 # Controllability Plan
 
-Status: fifteen starred environments have complete difficulty and interaction controls
+Status: fifteen starred environments have complete difficulty and interaction controls. All 75 environments have real-time evaluation settings.
 
 This document records how Weird CUA Bench should vary difficulty, interaction, and real time without duplicating puzzle implementations.
 
@@ -276,6 +276,29 @@ resume_environment()
 
 Pausing must stop the puzzle clock. The clock must not jump forward by the duration of model inference when the environment resumes.
 
+### Implemented evaluation protocol
+
+The shared browser clock now controls JavaScript timers, animation frames, `performance.now`, `Date.now`, CSS animations, Web Animations, Matter.js updates, and browser audio contexts. Task implementations do not contain live-versus-paused branches.
+
+Both conditions use the same observation settings from `real_time.json`. Each observation collects `frames_per_observation` frames across `observation_window_ms`. The latest frame remains available as `obs["screen"]`; the chronological sequence is available as `obs["frames"]`.
+
+Both conditions start with the task paused until agent initialization is complete. Live mode then runs continuously through frame collection, model inference, and action execution. Paused mode runs during frame collection and action execution, then stops during model inference. `play_time_seconds` counts this task-active time, so model response time is excluded only in paused mode.
+
+Static tasks use a zero-length window with one frame. Public dashboard play remains live. The time condition is selected by the evaluation command rather than by creating another task or adding a dashboard task selector.
+
+Run an evaluation after installing the evaluation dependency with:
+
+```bash
+weird-cua-evaluate \
+  --env-dir benchmarks/weird_captcha_gym/environments/rotating_keyboard_env \
+  --task rotating_keyboard_seed_0001 \
+  --agent GeminiComputerUseAgent \
+  --agent-args '{"model":"gemini-3.5-flash"}' \
+  --time-mode paused
+```
+
+The run records the selected condition, task-time values, model wall time, action timing, frame offsets, provider deadline, and retry count in the episode artifacts.
+
 ## Generated tasks
 
 A deterministic repository tool should eventually expand `controls.json` into ten task specifications:
@@ -311,7 +334,7 @@ The controlled benchmark should verify all of the following:
 ## Implementation order
 
 1. Extend the control specification to the remaining environments.
-2. Add framework pause, advance, and multi-frame observation support.
+2. Add framework pause, advance, and multi-frame observation support. Complete.
 3. Test the complete structure on tasks outside the initial fifteen.
 4. Calibrate the levels with human completion rates and completion times.
 

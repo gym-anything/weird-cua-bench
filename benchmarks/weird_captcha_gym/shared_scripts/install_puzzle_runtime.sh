@@ -11,6 +11,11 @@ if ! command -v python3 >/dev/null 2>&1; then
   apt-get install -yq --no-install-recommends python3
 fi
 
+if ! command -v ffmpeg >/dev/null 2>&1; then
+  apt-get update -yq
+  apt-get install -yq --no-install-recommends ffmpeg
+fi
+
 if command -v google-chrome-stable >/dev/null 2>&1 ||
    command -v google-chrome >/dev/null 2>&1 ||
    command -v chromium >/dev/null 2>&1 ||

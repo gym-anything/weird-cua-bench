@@ -3441,4 +3441,4 @@ async function main() {
   }
 }
 
-main();
+main().finally(() => window.WeirdCaptchaTime?.markReady());

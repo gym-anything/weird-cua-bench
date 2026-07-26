@@ -8,6 +8,7 @@ import math
 import mimetypes
 import os
 import secrets
+import threading
 import time
 from http import HTTPStatus
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
@@ -20,6 +21,7 @@ class PuzzleServer(BaseHTTPRequestHandler):
     state_dir: Path
 
     server_version = "WeirdCaptchaServer/0.1"
+    time_control_lock = threading.Lock()
 
     def do_GET(self) -> None:
         parsed = urlparse(self.path)
@@ -36,10 +38,23 @@ class PuzzleServer(BaseHTTPRequestHandler):
         if parsed.path == "/result":
             self._send_json_file(self.state_dir / "result.json")
             return
+        if parsed.path == "/time-control":
+            command = self._read_json_file(self.state_dir / "time_command.json")
+            self._send_json(command or {"sequence": 0, "command": "status"})
+            return
+        if parsed.path == "/time-control/status":
+            self._send_json_file(self.state_dir / "time_status.json")
+            return
         self._send_static(parsed.path)
 
     def do_POST(self) -> None:
         parsed = urlparse(self.path)
+        if parsed.path == "/time-control":
+            self._handle_time_control()
+            return
+        if parsed.path == "/time-control/status":
+            self._handle_time_status()
+            return
         if parsed.path == "/cheat":
             self._handle_cheat()
             return
@@ -74,6 +89,56 @@ class PuzzleServer(BaseHTTPRequestHandler):
                 "passed": bool(grade.get("passed")),
             })
         self._send_json(response)
+
+    def _handle_time_control(self) -> None:
+        try:
+            payload = self._read_json()
+        except ValueError as exc:
+            self._send_json({"error": str(exc)}, status=HTTPStatus.BAD_REQUEST)
+            return
+        command = str(payload.get("command") or "")
+        if command not in {"pause", "resume", "run_for"}:
+            self._send_json({"error": "command must be pause, resume, or run_for"}, status=HTTPStatus.BAD_REQUEST)
+            return
+        normalized: dict[str, object] = {"command": command}
+        if command == "run_for":
+            try:
+                milliseconds = float(payload.get("milliseconds"))
+                start_delay_ms = float(payload.get("start_delay_ms") or 0)
+            except (TypeError, ValueError):
+                self._send_json({"error": "run_for timings must be numbers"}, status=HTTPStatus.BAD_REQUEST)
+                return
+            if not math.isfinite(milliseconds) or milliseconds < 0:
+                self._send_json({"error": "milliseconds must be a non-negative finite number"}, status=HTTPStatus.BAD_REQUEST)
+                return
+            if not math.isfinite(start_delay_ms) or start_delay_ms < 0:
+                self._send_json({"error": "start_delay_ms must be a non-negative finite number"}, status=HTTPStatus.BAD_REQUEST)
+                return
+            normalized.update({"milliseconds": milliseconds, "start_delay_ms": start_delay_ms})
+        with self.time_control_lock:
+            prior = self._read_json_file(self.state_dir / "time_command.json")
+            normalized["sequence"] = int(prior.get("sequence") or 0) + 1
+            normalized["issued_at"] = time.time()
+            self._write_json(self.state_dir / "time_command.json", normalized)
+        self._send_json(normalized)
+
+    def _handle_time_status(self) -> None:
+        try:
+            payload = self._read_json()
+        except ValueError as exc:
+            self._send_json({"error": str(exc)}, status=HTTPStatus.BAD_REQUEST)
+            return
+        payload["received_at"] = time.time()
+        with self.time_control_lock:
+            self._write_json(self.state_dir / "time_status.json", payload)
+            if payload.get("phase") == "completed":
+                command = self._read_json_file(self.state_dir / "time_command.json")
+                if int(command.get("sequence") or 0) == int(payload.get("sequence") or -1):
+                    command["command"] = "pause"
+                    command.pop("milliseconds", None)
+                    command.pop("start_delay_ms", None)
+                    self._write_json(self.state_dir / "time_command.json", command)
+        self._send_json({"ok": True})
 
     def _handle_cheat(self) -> None:
         expected_password = self._cheat_password()
