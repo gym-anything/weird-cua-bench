@@ -38,6 +38,8 @@ jobs:
           test -f _site/manifest.json
           test -f _site/play/index.html
           test -f _site/play/runtime/browser_adapter.js
+          test -f _site/play/runtime/demo_controls.css
+          test -f _site/play/runtime/demo_controls.js
           test -f _site/play/runtime/grader_worker.js
           test ! -e _site/survey
           python - <<'PY'
@@ -60,11 +62,18 @@ jobs:
               "interaction_profiles": 150,
               "grader_files": 70,
               "python_runtime": "pyodide@314.0.2",
+              "observation_inspector": True,
           }
           challenges = sorted(Path("_site/play/challenges").glob("*.json"))
           assert len(challenges) == 75
           for path in challenges:
               bundle = json.loads(path.read_text())
+              assert bundle["version"] == 4, path
+              assert set(bundle["real_time"]) == {
+                  "play_time_seconds",
+                  "observation_window_ms",
+                  "frames_per_observation",
+              }, path
               assert len(bundle["challenges"]) == 4, path
               assert len({item["ground_truth"]["challenge_id"] for item in bundle["challenges"]}) == 4, path
               if bundle["difficulty_profiles"]:
