@@ -284,7 +284,7 @@ Both conditions use the same observation settings from `real_time.json`. Each ob
 
 Both conditions start with the task paused until agent initialization is complete. Live mode then runs continuously through frame collection, model inference, and action execution. Paused mode runs during frame collection and action execution, then stops during model inference. `play_time_seconds` counts this task-active time, so model response time is excluded only in paused mode.
 
-Static tasks use a zero-length window with one frame. Public dashboard play remains live. The time condition is selected by the evaluation command rather than by creating another task or adding a dashboard task selector.
+Static tasks use a zero-length window with one frame. The public browser demo exposes live and paused controls for inspecting the configured model observation. It captures the current tab at 1280 by 720, hides the inspection interface from those frames, and shows the complete frame sequence with the final `obs.screen` frame identified. This does not create another task and does not replace the evaluation command or its timing artifacts.
 
 Run an evaluation after installing the evaluation dependency with:
 

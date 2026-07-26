@@ -10,12 +10,14 @@ from typing import Any, Iterable
 
 try:  # Package import in tests; local import when executed as a script.
     from .catalog import BENCHMARK_ROOT, REPO_ROOT, build_catalog
+    from ..realtime import load_real_time_settings
     from ..shared_runtime.server.legacy_browser_grader import GRADERS as LEGACY_BROWSER_GRADERS
     from ..shared_scripts.setup_task import generate_task_state, load_task
     from ..tools.materialize_controlled_tasks import controlled_task
 except ImportError:  # pragma: no cover - exercised by the script entrypoint.
     sys.path.insert(0, str(Path(__file__).resolve().parents[3]))
     from catalog import BENCHMARK_ROOT, REPO_ROOT, build_catalog  # type: ignore[no-redef]
+    from benchmarks.weird_captcha_gym.realtime import load_real_time_settings  # type: ignore[no-redef]
     from benchmarks.weird_captcha_gym.shared_runtime.server.legacy_browser_grader import GRADERS as LEGACY_BROWSER_GRADERS  # type: ignore[no-redef]
     from benchmarks.weird_captcha_gym.shared_scripts.setup_task import generate_task_state, load_task  # type: ignore[no-redef]
     from benchmarks.weird_captcha_gym.tools.materialize_controlled_tasks import controlled_task  # type: ignore[no-redef]
@@ -77,6 +79,8 @@ def _export_browser_play(output: Path, catalog: dict[str, Any]) -> dict[str, Any
     shutil.copy2(BROWSER_SOURCE_ROOT / "index.html", play_root / "index.html")
     shutil.copy2(BROWSER_SOURCE_ROOT / "PYODIDE-NOTICE.txt", play_root / "PYODIDE-NOTICE.txt")
     shutil.copy2(BROWSER_SOURCE_ROOT / "browser_adapter.js", runtime_root / "browser_adapter.js")
+    shutil.copy2(BROWSER_SOURCE_ROOT / "demo_controls.css", runtime_root / "demo_controls.css")
+    shutil.copy2(BROWSER_SOURCE_ROOT / "demo_controls.js", runtime_root / "demo_controls.js")
     shutil.copy2(BROWSER_SOURCE_ROOT / "grader_worker.js", runtime_root / "grader_worker.js")
     shutil.copy2(BROWSER_APP_ROOT / "time_controller.js", runtime_root / "time_controller.js")
     shutil.copy2(BROWSER_APP_ROOT / "app.js", runtime_root / "app.js")
@@ -182,7 +186,7 @@ def _export_browser_play(output: Path, catalog: dict[str, Any]) -> dict[str, Any
                 legacy_copied = True
         grader_files.add(grader_name)
         bundle = {
-            "version": 3,
+            "version": 4,
             "environment_id": environment_id,
             "mechanic_id": mechanic_id,
             "title": environment["title"],
@@ -191,6 +195,7 @@ def _export_browser_play(output: Path, catalog: dict[str, Any]) -> dict[str, Any
             "default_difficulty": default_difficulty,
             "default_interaction": default_interaction,
             "difficulty_profiles": difficulty_profiles,
+            "real_time": load_real_time_settings(mechanic_id).__dict__,
             "grader": f"graders/{grader_name}",
             "challenges": challenges,
         }
@@ -209,6 +214,7 @@ def _export_browser_play(output: Path, catalog: dict[str, Any]) -> dict[str, Any
         "interaction_profiles": interaction_profile_count,
         "grader_files": len(grader_files),
         "python_runtime": "pyodide@314.0.2",
+        "observation_inspector": True,
     }
 
 
