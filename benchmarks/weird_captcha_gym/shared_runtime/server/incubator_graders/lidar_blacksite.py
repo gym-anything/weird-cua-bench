@@ -148,8 +148,8 @@ def _contract(ground_truth: dict[str, Any], public_state: dict[str, Any]) -> tup
     world, initial, controls, requirements = (ground_truth.get(key) for key in ("world", "initial_player", "controls", "requirements"))
     if not all(isinstance(value, dict) for value in (world, initial, controls, requirements)):
         raise ValueError("world, player, controls, or requirements are malformed")
-    walls = _validate_geometry(ground_truth.get("walls"), "wall", 12, 90)
-    occluders = _validate_geometry(ground_truth.get("occluders"), "occluder", 1, 8)
+    walls = _validate_geometry(ground_truth.get("walls"), "wall", 6, 90)
+    occluders = _validate_geometry(ground_truth.get("occluders"), "occluder", 0, 8)
     objects = _validate_geometry(ground_truth.get("objects"), "object", 2, 8)
     kinds = [str(item.get("kind") or "") for item in objects]
     if kinds.count("beacon") != 1 or kinds.count("exit") != 1:
@@ -282,6 +282,16 @@ def grade(payload: dict[str, Any], ground_truth: dict[str, Any], public_state: d
         return _fail("task binding mismatch")
     if not challenge_id or str(payload.get("challenge_id") or "") != challenge_id or str(public_state.get("challenge_id") or "") != challenge_id:
         return _fail("stale or cross-seed challenge")
+    truth_condition = ground_truth.get("control_condition")
+    if truth_condition != public_state.get("control_condition"):
+        return _fail("public interaction condition differs from blacksite contract")
+    interaction = str((truth_condition or {}).get("interaction") or "")
+    if truth_condition is not None and interaction not in {"simplified", "full"}:
+        return _fail("blacksite interaction condition is invalid")
+    movement_source = {"simplified": "control_buttons", "full": "keyboard"}.get(interaction)
+    scan_source = {"simplified": "scan_button", "full": "viewport_scan"}.get(interaction)
+    pickup_source = {"simplified": "pickup_button", "full": "scene_beacon"}.get(interaction)
+    submit_source = {"simplified": "verify_button", "full": "physical_gate"}.get(interaction)
     try:
         world, walls, occluders, objects, initial, controls, requirements = _contract(ground_truth, public_state)
         player = _initial_player(initial)
@@ -319,12 +329,28 @@ def grade(payload: dict[str, Any], ground_truth: dict[str, Any], public_state: d
             control = str(event.get("control") or "")
             if control not in player["keys"]:
                 return _fail(f"event {sequence} invents movement control {control!r}")
+            if movement_source is not None and event.get("input_source") != movement_source:
+                return _fail(f"event {sequence} uses the wrong movement input")
+            if interaction == "full" and control in {"turn_left", "turn_right"}:
+                return _fail(f"event {sequence} uses keyboard turning in full interaction")
             down = kind == "key_down"
             if bool(player["keys"][control]) == down:
                 return _fail(f"event {sequence} duplicates a movement transition")
             player["keys"][control] = down
             key_transitions += 1
+        elif kind == "look":
+            if interaction != "full" or event.get("input_source") != "viewport_drag":
+                return _fail(f"event {sequence} uses the wrong look input")
+            try:
+                delta = _integer(event.get("delta_millirad"), "look delta")
+            except ValueError as exc:
+                return _fail(f"event {sequence}: {exc}")
+            if delta == 0 or abs(delta) > 600:
+                return _fail(f"event {sequence} reports an invalid viewport turn")
+            player["heading"] = _normalize_angle(float(player["heading"]) + delta / 1000)
         elif kind == "scan":
+            if scan_source is not None and event.get("input_source") != scan_source:
+                return _fail(f"event {sequence} uses the wrong scanner input")
             try:
                 aim = _integer(event.get("aim_millirad"), "scan aim")
             except ValueError as exc:
@@ -346,6 +372,8 @@ def grade(payload: dict[str, Any], ground_truth: dict[str, Any], public_state: d
                 target_seen = True
                 target_scan_origin = origin
         elif kind == "pickup":
+            if pickup_source is not None and event.get("input_source") != pickup_source:
+                return _fail(f"event {sequence} uses the wrong pickup input")
             if carrying:
                 return _fail(f"event {sequence} picks up an already carried beacon")
             distance = math.dist((float(player["x"]), float(player["y"])), beacon_center)
@@ -353,8 +381,12 @@ def grade(payload: dict[str, Any], ground_truth: dict[str, Any], public_state: d
                 return _fail(f"event {sequence} violates beacon reveal, range, or line of sight")
             carrying = True
         elif kind == "submit":
+            if submit_source is not None and event.get("input_source") != submit_source:
+                return _fail(f"event {sequence} uses the wrong extraction input")
             submitted = terminal = True
         elif kind == "abandon":
+            if truth_condition is not None and event.get("input_source") != "abandon_button":
+                return _fail(f"event {sequence} uses the wrong abandon input")
             abandoned = terminal = True
         elif kind == "stall":
             pass

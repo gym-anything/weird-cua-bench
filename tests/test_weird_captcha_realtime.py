@@ -13,6 +13,7 @@ from benchmarks.weird_captcha_gym.realtime import (
     mechanic_id_from_env_dir,
 )
 from benchmarks.weird_captcha_gym.shared_scripts import capture_observation_window as CAPTURE
+from benchmarks.weird_captcha_gym.shared_scripts.setup_task import generate_task_state
 from benchmarks.weird_captcha_gym.shared_runtime.server.weird_captcha_server import PuzzleServer
 
 
@@ -48,6 +49,49 @@ def test_existing_control_files_match_canonical_real_time_settings() -> None:
         mechanic_id = path.parent.name.removesuffix("_env")
         controls = json.loads(path.read_text(encoding="utf-8"))
         assert controls["real_time"] == load_real_time_settings(mechanic_id).__dict__
+
+
+def test_lidar_real_time_settings_cover_motion_before_the_replay_ceiling() -> None:
+    settings = load_real_time_settings("lidar_blacksite")
+    assert settings == RealTimeSettings(
+        play_time_seconds=90,
+        observation_window_ms=500,
+        frames_per_observation=5,
+    )
+    assert CAPTURE.frame_targets(0, settings.observation_window_ms, settings.frames_per_observation) == [
+        0,
+        125,
+        250,
+        375,
+        500,
+    ]
+
+    task_path = (
+        BENCHMARK
+        / "environments"
+        / "lidar_blacksite_env"
+        / "tasks"
+        / "lidar_blacksite_seed_0001"
+        / "task.json"
+    )
+    public_state, _ = generate_task_state(
+        json.loads(task_path.read_text(encoding="utf-8")),
+        "lidar-real-time-contract",
+    )
+    tick_ms = int(public_state["controls"]["tick_ms"])
+    maximum_replay_ms = int(public_state["requirements"]["maximum_session_ticks"]) * tick_ms
+    assert settings.observation_window_ms == 25 * tick_ms
+    assert settings.play_time_seconds * 1000 < maximum_replay_ms
+
+    mechanic_source = (
+        BENCHMARK / "shared_runtime" / "app" / "mechanics" / "lidar_blacksite.js"
+    ).read_text(encoding="utf-8")
+    for environment_time_branch in (
+        "time_mode",
+        "WEIRD_CAPTCHA_TIME_MODE",
+        "WeirdCaptchaTime",
+    ):
+        assert environment_time_branch not in mechanic_source
 
 
 def test_mechanic_id_comes_from_environment_directory() -> None:

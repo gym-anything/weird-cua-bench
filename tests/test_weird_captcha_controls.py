@@ -16,6 +16,7 @@ CONTROLLED_ENVIRONMENTS = (
     "rotate_wrong_thing_upright_env",
     "insider_trading_captcha_env",
     "flat_prisoner_env",
+    "lidar_blacksite_env",
     "board_game_captcha_env",
     "flat_pack_compliance_env",
     "specular_lighthouse_relay_env",
@@ -36,6 +37,7 @@ APPROVED_BASELINE_LEVELS = {
     "flat_prisoner_env": 4,
     "input_lag_forklift_env": 4,
     "insider_trading_captcha_env": 2,
+    "lidar_blacksite_env": 4,
     "minecraft_block_grid_env": 1,
     "motion_only_ghost_jigsaw_env": 4,
     "rotate_wrong_thing_upright_env": 4,
@@ -99,6 +101,10 @@ def task_for_level(env_name: str, level: int, interaction: str | None = None) ->
         profile=controls["difficulty"][str(level)],
         task_dir_name=f"{mechanic}_d{level}_{interaction}_seed_0001",
     )
+
+
+def lidar_interaction_task(interaction: str) -> dict:
+    return task_for_level("lidar_blacksite_env", 4, interaction)
 
 
 def generated_levels(env_name: str, seed: str = "controlled-profile-test"):
@@ -221,6 +227,271 @@ def test_implemented_interaction_pairs_share_generated_worlds_and_goals() -> Non
             assert without_control_identity(public) == without_control_identity(first_public)
             assert without_control_identity(truth) == without_control_identity(first_truth)
     assert paired >= 1
+
+
+def test_lidar_interaction_pair_preserves_the_generated_world_and_goal() -> None:
+    seed = "lidar-interaction-pair-equivalence"
+    original_public, original_truth = SETUP.generate_task_state(
+        base_task_for("lidar_blacksite_env", "lidar_blacksite"), seed
+    )
+    simplified_public, simplified_truth = SETUP.generate_task_state(
+        lidar_interaction_task("simplified"), seed
+    )
+    full_public, full_truth = SETUP.generate_task_state(
+        lidar_interaction_task("full"), seed
+    )
+    assert simplified_public["control_condition"]["interaction"] == "simplified"
+    assert full_public["control_condition"]["interaction"] == "full"
+    assert without_control_identity(simplified_public) == without_control_identity(full_public)
+    assert without_control_identity(simplified_truth) == without_control_identity(full_truth)
+    assert without_control_identity(simplified_public) == without_control_identity(original_public)
+    assert without_control_identity(simplified_truth) == without_control_identity(original_truth)
+
+
+def test_lidar_grader_enforces_every_selected_interaction_surface() -> None:
+    grader = load_module(
+        "controlled_lidar_grader",
+        BENCHMARK / "shared_runtime" / "server" / "incubator_graders" / "lidar_blacksite.py",
+    )
+    cases = (
+        ("simplified", "keyboard", "movement"),
+        ("full", "control_buttons", "movement"),
+        ("simplified", "viewport_scan", "scanner"),
+        ("full", "scan_button", "scanner"),
+        ("simplified", "scene_beacon", "pickup"),
+        ("full", "pickup_button", "pickup"),
+        ("simplified", "physical_gate", "extraction"),
+        ("full", "verify_button", "extraction"),
+    )
+    for interaction, source, action in cases:
+        public, truth = SETUP.generate_task_state(
+            lidar_interaction_task(interaction),
+            f"lidar-wrong-{action}-{interaction}",
+        )
+        if action == "movement":
+            event = {
+                "sequence": 1,
+                "kind": "key_down",
+                "tick": 0,
+                "elapsed_ms": 0,
+                "control": "forward",
+                "input_source": source,
+            }
+        elif action == "scanner":
+            event = {
+                "sequence": 1,
+                "kind": "scan",
+                "tick": 0,
+                "elapsed_ms": 0,
+                "aim_millirad": 0,
+                "visible_returns": [],
+                "input_source": source,
+            }
+        else:
+            event = {
+                "sequence": 1,
+                "kind": "pickup" if action == "pickup" else "submit",
+                "tick": 0,
+                "elapsed_ms": 0,
+                "input_source": source,
+            }
+        result = grader.grade(
+            {
+                "mechanic_id": public["mechanic_id"],
+                "task_id": public["task_id"],
+                "challenge_id": public["challenge_id"],
+                "events": [event],
+            },
+            truth,
+            public,
+        )
+        assert result["passed"] is False
+        assert f"wrong {action} input" in result["feedback"]
+
+
+def test_lidar_profiles_match_topology_sensing_persistence_and_precision_contracts() -> None:
+    controls = controls_for("lidar_blacksite_env")
+    expected_turn_counts = ({2}, {3}, {4}, {5, 6}, {7})
+    expected_branch_counts = (0, 0, 0, 0, 3)
+    for level, (public, truth) in enumerate(generated_levels("lidar_blacksite_env"), start=1):
+        parameters = controls["difficulty"][str(level)]["parameters"]
+        route = truth["solution"]["route_points"]
+        controls_state = public["controls"]
+        requirements = public["requirements"]
+        assert len(route) - 2 in expected_turn_counts[level - 1]
+        assert len(truth["solution"]["branch_routes"]) == expected_branch_counts[level - 1]
+        assert len(public["occluders"]) == parameters["occluder_count"]
+        for key in (
+            "scan_range",
+            "scan_rays",
+            "scan_half_angle_deg",
+            "point_lifetime_ticks",
+            "pickup_range",
+            "exit_radius",
+        ):
+            assert controls_state[key] == parameters[key]
+        for key in (
+            "minimum_scan_count",
+            "minimum_scan_stations",
+            "station_distance",
+            "minimum_target_scan_displacement",
+            "minimum_travel_distance",
+            "minimum_key_transitions",
+        ):
+            assert requirements[key] == parameters[key]
+        assert len(truth["solution"]["scan_route_indices"]) == parameters["minimum_scan_count"]
+        assert truth["control_condition"]["difficulty_parameters"]["layout_profile"] == parameters["layout_profile"]
+
+
+def test_lidar_grader_replays_every_difficulty_and_interaction_condition() -> None:
+    grader = load_module(
+        "controlled_lidar_profile_grader",
+        BENCHMARK / "shared_runtime" / "server" / "incubator_graders" / "lidar_blacksite.py",
+    )
+    seed = "lidar-controlled-grader-replay"
+    for level in range(1, 6):
+        for interaction in ("simplified", "full"):
+            public, truth = SETUP.generate_task_state(
+                task_for_level("lidar_blacksite_env", level, interaction),
+                seed,
+            )
+            world = truth["world"]
+            walls = truth["walls"]
+            occluders = truth["occluders"]
+            objects = truth["objects"]
+            controls = truth["controls"]
+            requirements = truth["requirements"]
+            player = grader._initial_player(truth["initial_player"])
+            events = []
+            key_transitions = 0
+            scan_count = 0
+            stations: list[tuple[float, float]] = []
+            target_seen = False
+            carrying = False
+
+            def record(kind: str, **details) -> None:
+                tick = int(player["tick"])
+                events.append({
+                    "sequence": len(events) + 1,
+                    "kind": kind,
+                    "tick": tick,
+                    "elapsed_ms": tick * int(controls["tick_ms"]),
+                    **details,
+                })
+
+            def transition(control: str, down: bool) -> None:
+                nonlocal key_transitions
+                source = "control_buttons" if interaction == "simplified" else "keyboard"
+                record("key_down" if down else "key_up", control=control, input_source=source)
+                player["keys"][control] = down
+                key_transitions += 1
+
+            def hold(control: str, ticks: int) -> None:
+                transition(control, True)
+                grader._advance(
+                    player,
+                    int(player["tick"]) + ticks,
+                    int(requirements["maximum_event_gap_ticks"]),
+                    controls,
+                    world,
+                    walls,
+                    occluders,
+                )
+                transition(control, False)
+
+            def turn_to(point: list[float]) -> None:
+                desired = math.atan2(
+                    float(point[1]) - float(player["y"]),
+                    float(point[0]) - float(player["x"]),
+                )
+                difference = grader._normalize_angle(desired - float(player["heading"]))
+                if abs(difference) < 0.0005:
+                    return
+                if interaction == "full":
+                    remaining = round(difference * 1000)
+                    while remaining:
+                        delta = int(math.copysign(min(600, abs(remaining)), remaining))
+                        record("look", delta_millirad=delta, input_source="viewport_drag")
+                        player["heading"] = grader._normalize_angle(float(player["heading"]) + delta / 1000)
+                        remaining -= delta
+                    return
+                radians_per_tick = math.radians(float(controls["turn_speed_deg"])) * float(controls["tick_ms"]) / 1000
+                ticks = max(1, round(abs(difference) / radians_per_tick))
+                hold("turn_right" if difference > 0 else "turn_left", ticks)
+
+            def move_to(point: list[float]) -> None:
+                turn_to(point)
+                remaining = math.dist(
+                    (float(player["x"]), float(player["y"])),
+                    (float(point[0]), float(point[1])),
+                )
+                distance_per_tick = float(controls["move_speed"]) * float(controls["tick_ms"]) / 1000
+                ticks = max(1, round(remaining / distance_per_tick))
+                first = max(1, ticks // 2)
+                hold("forward", first)
+                if ticks - first:
+                    hold("forward", ticks - first)
+
+            def scan() -> None:
+                nonlocal scan_count, target_seen
+                hits = grader._scan_hits(player, 0, controls, walls, occluders, objects)
+                visible_returns = [
+                    {
+                        "ray_index": int(hit["ray_index"]),
+                        "id": str(hit["id"]),
+                        "kind": str(hit["kind"]),
+                        "distance": round(float(hit["distance"]), 6),
+                        "x": round(float(hit["x"]), 6),
+                        "y": round(float(hit["y"]), 6),
+                    }
+                    for hit in hits
+                ]
+                source = "scan_button" if interaction == "simplified" else "viewport_scan"
+                record("scan", aim_millirad=0, visible_returns=visible_returns, input_source=source)
+                scan_count += 1
+                origin = (float(player["x"]), float(player["y"]))
+                if not stations or all(
+                    math.dist(origin, station) >= float(requirements["station_distance"])
+                    for station in stations
+                ):
+                    stations.append(origin)
+                target_seen = target_seen or any(hit["kind"] == "beacon" for hit in hits)
+
+            route = truth["solution"]["route_points"]
+            scan_indices = set(truth["solution"]["scan_route_indices"])
+            beacon_index = int(truth["solution"]["beacon_route_index"])
+            for index, waypoint in enumerate(route):
+                if index:
+                    move_to(waypoint)
+                if index in scan_indices:
+                    if index < len(route) - 1:
+                        turn_to(route[index + 1])
+                    scan()
+                if index == beacon_index:
+                    assert target_seen
+                    pickup_source = "pickup_button" if interaction == "simplified" else "scene_beacon"
+                    record("pickup", input_source=pickup_source)
+                    carrying = True
+
+            assert carrying
+            submit_source = "verify_button" if interaction == "simplified" else "physical_gate"
+            record("submit", input_source=submit_source)
+            payload = {
+                "mechanic_id": public["mechanic_id"],
+                "task_id": public["task_id"],
+                "challenge_id": public["challenge_id"],
+                "events": events,
+                "scan_count": scan_count,
+                "scan_station_count": len(stations),
+                "key_transition_count": key_transitions,
+                "collision_count": int(player["collisions"]),
+                "carrying": True,
+                "abandoned": False,
+                "accepted": True,
+                "completed": True,
+            }
+            decision = grader.grade(payload, truth, public)
+            assert decision["passed"] is True, (level, interaction, decision["feedback"])
 
 
 def test_forklift_profiles_match_board_route_and_delay_contracts() -> None:

@@ -6,6 +6,7 @@ import json
 import sys
 import tempfile
 import threading
+import time
 from functools import partial
 from http.server import SimpleHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
@@ -24,6 +25,7 @@ ENVIRONMENTS = (
     "rotating_keyboard_env",
     "motion_only_ghost_jigsaw_env",
     "slime_commute_env",
+    "lidar_blacksite_env",
     "domino_autopsy_env",
 )
 
@@ -58,11 +60,20 @@ def main() -> None:
                         f"{base}/play/?environment={environment}&attempt=0&time_mode=paused&start_paused=1",
                         wait_until="domcontentloaded",
                     )
-                    page.wait_for_function(
-                        "document.body.dataset.mechanic && document.body.dataset.mechanic !== 'waiting'"
-                    )
+                    deadline = time.monotonic() + 30
+                    while time.monotonic() < deadline:
+                        loaded = page.evaluate(
+                            "document.body.dataset.mechanic && document.body.dataset.mechanic !== 'waiting'"
+                        )
+                        if loaded:
+                            break
+                        time.sleep(.05)
+                    else:
+                        raise TimeoutError(f"{environment} did not finish rendering while initially paused")
                     if environment == "rotating_keyboard_env":
                         page.locator(".rotating-key:not(.rotating-delete)").first.click()
+                    elif environment == "lidar_blacksite_env":
+                        page.locator("#lidar-scan").click()
                     elif environment == "domino_autopsy_env":
                         page.locator("#domino-run").click()
                     page.wait_for_timeout(150)
