@@ -20,6 +20,53 @@ LAYOUTS = (
     {"route": ((2, 2), (2, 7), (6, 7), (6, 3), (12, 3), (12, 7), (13, 7), (13, 9)), "beacon_index": 5, "scan_indices": (0, 2, 4, 5)},
     {"route": ((12, 9), (12, 6), (8, 6), (8, 2), (3, 2), (3, 7), (1, 7), (1, 9)), "beacon_index": 5, "scan_indices": (0, 2, 4, 5)},
 )
+CONTROLLED_LAYOUTS = {
+    "introductory": (
+        {"route": ((1, 8), (6, 8), (6, 3), (12, 3)), "beacon_index": 2, "scan_indices": (0, 1)},
+        {"route": ((13, 8), (8, 8), (8, 3), (2, 3)), "beacon_index": 2, "scan_indices": (0, 1)},
+        {"route": ((2, 2), (2, 7), (10, 7), (10, 9)), "beacon_index": 2, "scan_indices": (0, 1)},
+        {"route": ((12, 2), (12, 7), (5, 7), (5, 9)), "beacon_index": 2, "scan_indices": (0, 1)},
+    ),
+    "short": (
+        {"route": ((1, 9), (6, 9), (6, 5), (11, 5), (11, 2)), "beacon_index": 3, "scan_indices": (0, 2, 3)},
+        {"route": ((13, 9), (9, 9), (9, 5), (4, 5), (4, 2)), "beacon_index": 3, "scan_indices": (0, 2, 3)},
+        {"route": ((2, 2), (2, 7), (7, 7), (7, 3), (12, 3)), "beacon_index": 3, "scan_indices": (0, 2, 3)},
+        {"route": ((12, 9), (12, 6), (7, 6), (7, 2), (3, 2)), "beacon_index": 3, "scan_indices": (0, 2, 3)},
+    ),
+    "intermediate": (
+        {"route": ((1, 9), (6, 9), (6, 5), (11, 5), (11, 2), (4, 2)), "beacon_index": 4, "scan_indices": (0, 2, 3)},
+        {"route": ((13, 9), (9, 9), (9, 5), (4, 5), (4, 2), (10, 2)), "beacon_index": 4, "scan_indices": (0, 2, 3)},
+        {"route": ((2, 2), (2, 7), (6, 7), (6, 3), (12, 3), (12, 8)), "beacon_index": 4, "scan_indices": (0, 2, 3)},
+        {"route": ((12, 9), (12, 6), (8, 6), (8, 2), (3, 2), (3, 7)), "beacon_index": 4, "scan_indices": (0, 2, 3)},
+    ),
+    "current": LAYOUTS,
+    "branched": (
+        {
+            "route": ((1, 9), (6, 9), (6, 6), (11, 6), (11, 2), (8, 2), (8, 4), (13, 4), (13, 2)),
+            "branches": (((3, 9), (3, 7)), ((9, 6), (9, 9)), ((10, 2), (10, 1))),
+            "beacon_index": 6,
+            "scan_indices": (0, 2, 4, 5, 6),
+        },
+        {
+            "route": ((13, 9), (9, 9), (9, 6), (4, 6), (4, 2), (7, 2), (7, 4), (1, 4), (1, 2)),
+            "branches": (((11, 9), (11, 7)), ((6, 6), (6, 8)), ((5, 2), (5, 1))),
+            "beacon_index": 6,
+            "scan_indices": (0, 2, 4, 5, 6),
+        },
+        {
+            "route": ((2, 2), (2, 7), (6, 7), (6, 3), (12, 3), (12, 7), (10, 7), (10, 9), (13, 9)),
+            "branches": (((2, 5), (4, 5)), ((6, 5), (9, 5)), ((9, 3), (9, 1))),
+            "beacon_index": 6,
+            "scan_indices": (0, 2, 4, 5, 6),
+        },
+        {
+            "route": ((12, 9), (12, 6), (8, 6), (8, 2), (3, 2), (3, 7), (5, 7), (5, 9), (1, 9)),
+            "branches": (((12, 8), (10, 8)), ((10, 6), (10, 4)), ((5, 2), (5, 4))),
+            "beacon_index": 6,
+            "scan_indices": (0, 2, 4, 5, 6),
+        },
+    ),
+}
 PALETTES = (
     {"name": "phosphor_crypt", "void": "#020708", "panel": "#081615", "point": "#68f5c4", "hot": "#ffcf65", "danger": "#ff625e", "cold": "#66cfff"},
     {"name": "cobalt_morgue", "void": "#02060b", "panel": "#091423", "point": "#7de8ff", "hot": "#ffd36c", "danger": "#ff6f75", "cold": "#7da7ff"},
@@ -218,16 +265,33 @@ def _turn_drift_samples(points: list[tuple[float, float]], drift: float = .12) -
 
 def generate(task: dict[str, Any], seed: str) -> tuple[dict[str, Any], dict[str, Any]]:
     rng = random.Random(_seed_int(seed, MECHANIC_ID))
+    condition = task.get("_control_condition")
+    parameters = dict((condition or {}).get("difficulty_parameters") or {})
     task_id = str(task.get("id") or "lidar_blacksite_seed_0001@0.1")
-    challenge_id = hashlib.sha256(f"{seed}|{MECHANIC_ID}|phosphor-v1".encode("utf-8")).hexdigest()[:14]
-    layout_index = rng.randrange(len(LAYOUTS))
+    condition_token = f"|difficulty={condition['difficulty']}" if condition else ""
+    challenge_id = hashlib.sha256(f"{seed}|{MECHANIC_ID}|phosphor-v1{condition_token}".encode("utf-8")).hexdigest()[:14]
+    layout_profile = str(parameters.get("layout_profile", "current"))
+    layouts = CONTROLLED_LAYOUTS.get(layout_profile)
+    if layouts is None:
+        raise ValueError(f"unknown LIDAR layout profile {layout_profile!r}")
+    occluder_count = int(parameters.get("occluder_count", 2))
+    if not 0 <= occluder_count <= 4:
+        raise ValueError("LIDAR occluder count must be between zero and four")
+    layout_index = rng.randrange(len(layouts))
     mirror = rng.choice((-1, 1))
     palette = copy.deepcopy(rng.choice(PALETTES))
-    layout = LAYOUTS[layout_index]
+    layout = layouts[layout_index]
     cell_route = [_transform_cell(cell, mirror) for cell in layout["route"]]
+    branch_routes = [
+        [_transform_cell(cell, mirror) for cell in branch]
+        for branch in layout.get("branches", ())
+    ]
     walkable: set[tuple[int, int]] = set()
     for first, second in zip(cell_route, cell_route[1:]):
         walkable.update(_cells_between(first, second))
+    for branch in branch_routes:
+        for first, second in zip(branch, branch[1:]):
+            walkable.update(_cells_between(first, second))
     beacon_cell = cell_route[int(layout["beacon_index"])]
     # Open a real room around the beacon. Two unused corners become occluders;
     # the centerline and its cardinal approaches remain clear.
@@ -259,7 +323,7 @@ def generate(task: dict[str, Any], seed: str) -> tuple[dict[str, Any], dict[str,
             center[1],
         ),
     )
-    occluder_centers = ranked_candidates[:2]
+    occluder_centers = ranked_candidates[:occluder_count]
     occluders = []
     for index, center in enumerate(occluder_centers, start=1):
         half = .22 + .02 * rng.randrange(3)
@@ -274,25 +338,41 @@ def generate(task: dict[str, Any], seed: str) -> tuple[dict[str, Any], dict[str,
         "turn_speed_deg": 100.0,
         "player_radius": PLAYER_RADIUS,
         "eye_height": 1.42,
-        "scan_range": 8.5,
-        "scan_rays": 73,
-        "scan_half_angle_deg": 52.0,
+        "scan_range": float(parameters.get("scan_range", 8.5)),
+        "scan_rays": int(parameters.get("scan_rays", 73)),
+        "scan_half_angle_deg": float(parameters.get("scan_half_angle_deg", 52.0)),
         "scan_cooldown_ticks": 7,
-        "point_lifetime_ticks": 500,
-        "pickup_range": .92,
-        "exit_radius": .56,
+        "point_lifetime_ticks": int(parameters.get("point_lifetime_ticks", 500)),
+        "pickup_range": float(parameters.get("pickup_range", .92)),
+        "exit_radius": float(parameters.get("exit_radius", .56)),
     }
     requirements = {
-        "minimum_scan_count": 4,
-        "minimum_scan_stations": 3,
-        "station_distance": 2.2,
-        "minimum_target_scan_displacement": 5.0,
-        "minimum_travel_distance": 12.0,
-        "minimum_key_transitions": 14,
+        "minimum_scan_count": int(parameters.get("minimum_scan_count", 4)),
+        "minimum_scan_stations": int(parameters.get("minimum_scan_stations", 3)),
+        "station_distance": float(parameters.get("station_distance", 2.2)),
+        "minimum_target_scan_displacement": float(parameters.get("minimum_target_scan_displacement", 5.0)),
+        "minimum_travel_distance": float(parameters.get("minimum_travel_distance", 12.0)),
+        "minimum_key_transitions": int(parameters.get("minimum_key_transitions", 14)),
         "minimum_session_ticks": 320,
         "maximum_session_ticks": 5000,
         "maximum_event_gap_ticks": 1100,
     }
+    if not 8 <= controls["scan_rays"] <= 181 or controls["scan_rays"] % 2 != 1:
+        raise ValueError("LIDAR scan ray count must be an odd value between 9 and 181")
+    if not 3.0 <= controls["scan_range"] <= 14.0 or not 20.0 <= controls["scan_half_angle_deg"] <= 80.0:
+        raise ValueError("LIDAR scan range or fan angle is outside supported bounds")
+    if controls["point_lifetime_ticks"] < 200 or controls["pickup_range"] <= controls["player_radius"] or controls["exit_radius"] <= controls["player_radius"]:
+        raise ValueError("LIDAR persistence, pickup range, or extraction radius is invalid")
+    variant_count = (
+        VARIANT_COUNT
+        if layout_profile == "current" and occluder_count == 2
+        else len(layouts) * 2 * len(PALETTES) * (3 ** occluder_count)
+    )
+    variant_count_kind = (
+        "4 layouts × 2 mirrors × 4 palettes × 3² independent occluder sizes; decorative wall height/tone excluded"
+        if layout_profile == "current" and occluder_count == 2
+        else f"{len(layouts)} {layout_profile} layouts × 2 mirrors × 4 palettes × 3^{occluder_count} independent occluder sizes; decorative wall height/tone excluded"
+    )
     public_state = {
         "benchmark": "weird_captcha_gym",
         "mechanic_id": MECHANIC_ID,
@@ -301,7 +381,7 @@ def generate(task: dict[str, Any], seed: str) -> tuple[dict[str, Any], dict[str,
         "asset_manifest": "shared_runtime/assets/provenance/incubator_full_build_v1.json",
         "prompt": "Map the lightless facility with fading LIDAR returns. Recover the verification beacon hidden beyond occlusion and physically carry it to extraction.",
         "submit_label": "VERIFY EXTRACTION",
-        "generator": {"name": "procedural_lidar_blacksite_v1", "variant_count": VARIANT_COUNT, "variant_count_kind": "4 layouts × 2 mirrors × 4 palettes × 3² independent occluder sizes; decorative wall height/tone excluded"},
+        "generator": {"name": "procedural_lidar_blacksite_v1", "variant_count": variant_count, "variant_count_kind": variant_count_kind},
         "palette": palette,
         "world": {"width": WORLD_WIDTH, "height": WORLD_HEIGHT, "wall_height": 3.0},
         "walls": copy.deepcopy(walls),
@@ -333,15 +413,19 @@ def generate(task: dict[str, Any], seed: str) -> tuple[dict[str, Any], dict[str,
         "variant": {"layout": layout_index, "mirror": mirror, "palette": palette["name"]},
         "solution": {
             "route_points": [[round(x, 4), round(y, 4)] for x, y in route_points],
+            "branch_routes": [
+                [[round(x, 4), round(y, 4)] for x, y in map(_center, branch)]
+                for branch in branch_routes
+            ],
             "beacon_route_index": int(layout["beacon_index"]),
             "scan_route_indices": list(layout["scan_indices"]),
             "beacon_center": [round(beacon_center[0], 4), round(beacon_center[1], 4)],
             "exit_center": [round(exit_center[0], 4), round(exit_center[1], 4)],
         },
-        "variant_count": VARIANT_COUNT,
+        "variant_count": variant_count,
         "browser_boundary": "The browser receives necessary wall, occluder, beacon-volume, and exit-volume geometry for local rendering; it never receives the hidden route or scan stations. The server replays all geometry independently.",
     }
-    assert len(walls) >= 12 and len(occluders) == 2
+    assert len(walls) >= 6 and len(occluders) == occluder_count
     assert all(position_clear(point, PLAYER_RADIUS, walls, occluders) for point in route_points)
     # The entire centerline has a 0.12-unit human drift reserve beyond the
     # player radius. The turn-ring check makes the guarantee explicit from
@@ -352,4 +436,8 @@ def generate(task: dict[str, Any], seed: str) -> tuple[dict[str, Any], dict[str,
     assert math.dist(start, beacon_center) >= 5.5
     assert line_of_sight(route_points[int(layout["beacon_index"]) - 1], beacon_center, walls, occluders)
     assert _route_length(route_points) >= requirements["minimum_travel_distance"] + 2
+    assert len(branch_routes) == (3 if layout_profile == "branched" else 0)
+    if condition:
+        public_state["control_condition"] = copy.deepcopy(condition)
+        ground_truth["control_condition"] = copy.deepcopy(condition)
     return public_state, ground_truth

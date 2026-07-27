@@ -23,6 +23,8 @@ there there are 3 or 4 core capabilities that each game is trying to test:
 
 Before adding difficulty, interaction, or real-time variants, read `benchmarks/weird_captcha_gym/docs/controllability-plan.md` in full. Do not assume that the current interface is the full-interaction variant. Do not assume that the current difficulty is level 3. Both must be judged independently for every environment.
 
+Environment-by-environment implementation work must also follow every file in `benchmarks/weird_captcha_gym/docs/controllability/`. That directory contains the reusable assignment prompt and the practical decision and validation rules distilled from the completed fifteen-environment implementation.
+
 ## Capability annotation guidelines
 
 - Use the exact public environment name shown by the dashboard.
@@ -95,7 +97,7 @@ The selection of benchmark capabilities still needs a convincing data-backed jus
 - L5 does not mean the hardest imaginable version of an environment. An environment can be made substantially harder than its L5 profile.
 - Difficulty labels remain subject to comparable human and computer-use-agent measurements. Parameter magnitude alone does not prove a level.
 
-## Approved baselines for the fifteen controlled environments
+## Approved baselines for the sixteen controlled environments
 
 | Public environment name | Baseline |
 |---|---:|
@@ -107,6 +109,7 @@ The selection of benchmark capabilities still needs a convincing data-backed jus
 | The Flat Prisoner | L4 |
 | Input-Lag Forklift | L4 |
 | Insider Trading CAPTCHA | L2 |
+| LIDAR Blacksite | L4 |
 | Isometric Voxel Extraction Mine | L1 |
 | Motion-Only Ghost Jigsaw | L4 |
 | Rotate The Wrong Thing Upright | L4 |
@@ -115,7 +118,7 @@ The selection of benchmark capabilities still needs a convincing data-backed jus
 | Specular Lighthouse Relay | L3 |
 | Parallax Orchard | L4 |
 
-## Approved interaction baselines for the fifteen controlled environments
+## Approved interaction baselines for the sixteen controlled environments
 
 | Public environment name | Current interface |
 |---|---|
@@ -127,6 +130,7 @@ The selection of benchmark capabilities still needs a convincing data-backed jus
 | The Flat Prisoner | Simplified |
 | Input-Lag Forklift | Simplified |
 | Insider Trading CAPTCHA | Simplified |
+| LIDAR Blacksite | Simplified |
 | Isometric Voxel Extraction Mine | Simplified |
 | Motion-Only Ghost Jigsaw | Full |
 | Rotate The Wrong Thing Upright | Simplified |
@@ -135,7 +139,7 @@ The selection of benchmark capabilities still needs a convincing data-backed jus
 | Specular Lighthouse Relay | Simplified |
 | Parallax Orchard | Full |
 
-Both interaction modes are implemented for all fifteen. The exact environment-specific mappings are recorded in `benchmarks/weird_captcha_gym/docs/controllability-plan.md`. Preserve the generated world, information, goal, and action effects across each pair. Bind browser events and grading to the selected input surface so one mode cannot pass with the other mode's transcript.
+Both interaction modes are implemented for all sixteen. The exact environment-specific mappings are recorded in `benchmarks/weird_captcha_gym/docs/controllability-plan.md`. Preserve the generated world, information, goal, and action effects across each pair. Bind browser events and grading to the selected input surface so one mode cannot pass with the other mode's transcript.
 
 ## Collaboration rules learned from the project
 

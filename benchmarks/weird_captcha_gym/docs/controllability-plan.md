@@ -1,6 +1,6 @@
 # Controllability Plan
 
-Status: fifteen starred environments have complete difficulty and interaction controls. All 75 environments have real-time evaluation settings.
+Status: sixteen environments have complete difficulty and interaction controls. All 75 environments have real-time evaluation settings.
 
 This document records how Weird CUA Bench should vary difficulty, interaction, and real time without duplicating puzzle implementations.
 
@@ -46,6 +46,8 @@ The third set completes the starred group:
 4. Isometric Voxel Extraction Mine
 5. Slime Commute
 
+The first extension beyond the starred group adds LIDAR Blacksite.
+
 The approved baseline assignments are:
 
 | Environment | Current level |
@@ -58,6 +60,7 @@ The approved baseline assignments are:
 | The Flat Prisoner | L4 |
 | Input-Lag Forklift | L4 |
 | Insider Trading CAPTCHA | L2 |
+| LIDAR Blacksite | L4 |
 | Isometric Voxel Extraction Mine | L1 |
 | Motion-Only Ghost Jigsaw | L4 |
 | Rotate The Wrong Thing Upright | L4 |
@@ -78,7 +81,7 @@ python3 benchmarks/weird_captcha_gym/tools/materialize_controlled_tasks.py \
   --output-root /tmp/weird-cua-controlled
 ```
 
-The command writes five tasks for every implemented interaction mode. Every controlled environment now implements both modes. The complete fifteen-environment matrix contains 150 tasks.
+The command writes five tasks for every implemented interaction mode. Every controlled environment now implements both modes. The complete sixteen-environment matrix contains 160 tasks.
 
 The selected condition is copied into the task metadata, public state, and hidden state. Difficulty-specific instructions replace the baseline instructions when a profile changes a rule that the agent must know.
 
@@ -218,6 +221,7 @@ The baseline column classifies the interface that existed before its missing cou
 | The Flat Prisoner | Simplified | Side-panel camera controls | Direct camera dragging and wheel zoom |
 | Input-Lag Forklift | Simplified | Clickable command controls | Keyboard driving |
 | Insider Trading CAPTCHA | Simplified | B H and S keyboard shortcuts | Visible order buttons |
+| LIDAR Blacksite | Simplified | Side-panel movement, scan, pickup, and verification controls | Held movement keys, viewport dragging, scene scanning and pickup, and physical gate entry |
 | Isometric Voxel Extraction Mine | Simplified | Rotation buttons with canvas mining | Direct canvas rotation dragging with canvas mining |
 | Motion-Only Ghost Jigsaw | Full | Click a piece then click its slot | Drag a piece into its slot |
 | Rotate The Wrong Thing Upright | Simplified | Footer axis controls | Direct gimbal-ring dragging |
