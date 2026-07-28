@@ -222,9 +222,9 @@ PROFILES: dict[str, dict[str, Any]] = {
     "modifier_stack_image_grid": {
         "title": "Kinetic Restoration Press",
         "group": "Visual Core",
-        "summary": "Watch transient corruption films, assemble each inverse stack in reverse order, and maintain contact while pulling three artifacts through a restoration rail.",
-        "axes": ["transient memory", "ordered manipulation", "continuous tracing"],
-        "difficulty": "hard",
+        "summary": "Follow the visible inverse template, assemble and invert each three-module stack, and maintain contact while pulling three artifacts through a restoration rail.",
+        "axes": ["ordered manipulation", "continuous tracing", "rail timing"],
+        "difficulty": "medium",
         "accent": "#66c6a4",
         "human": "next-ten-audit-pending-human",
         "order": 43,

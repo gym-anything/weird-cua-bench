@@ -31,8 +31,12 @@ def fail_once(page, state_dir: Path, out_dir: Path, mechanic: str) -> None:
 def solve(page, state_dir: Path, out_dir: Path, mechanic: str) -> None:
     truth = _read(state_dir / "ground_truth.json")
     route = [str(item) for item in truth["solution_path"]]
+    interaction = str((truth.get("control_condition") or {}).get("interaction") or "full")
     for index, direction in enumerate(route):
-        page.keyboard.press(KEYS[direction])
+        if interaction == "simplified":
+            page.locator(f'.dice-direction-button[data-direction="{direction}"]').click()
+        else:
+            page.keyboard.press(KEYS[direction])
         page.wait_for_timeout(55)
         if index == max(1, len(route) // 2):
             _screenshot(page, out_dir, mechanic, "active-blind-roll")

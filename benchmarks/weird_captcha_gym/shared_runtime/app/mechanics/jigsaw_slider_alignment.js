@@ -19,10 +19,16 @@
     busy: false,
     terminal: false,
     helpers: null,
+    interaction: "full",
   };
 
   const clamp = (value, minimum, maximum) => Math.max(minimum, Math.min(maximum, value));
   const px = (milli) => Number(milli) / 1000;
+  // A simplified rail button stands in for a visible, fixed-duration drag and
+  // release. Coarse releases can enter the same frictional coast as a fast
+  // direct drag; fine releases remain below every configured coast threshold.
+  const RAIL_PROXY_DRAG_MS = 200;
+  const RAIL_PROXY_DELTAS = new Set([-50000, -5000, 5000, 50000]);
 
   function clean(value) {
     return String(value == null ? "" : value)
@@ -254,7 +260,7 @@
       lastDelta: 0,
       lastDt: 1,
     };
-    record("rail_start");
+    record("rail_start", {input_source: "direct_rail_drag"});
     document.querySelector(".alignment-captcha")?.classList.add("is-rail-dragging");
     updatePanels("RAIL CLUTCH ENGAGED", "idle");
   }
@@ -274,7 +280,7 @@
     drag.lastTime = now;
     drag.lastDelta = delta;
     drag.lastDt = dtMs;
-    record("rail_sample", {delta_milli: delta, dt_ms: dtMs});
+    record("rail_sample", {delta_milli: delta, dt_ms: dtMs, input_source: "direct_rail_drag"});
     updatePanels(delta === 0 ? "RAIL HARD STOP" : "RAIL TRACKING", delta === 0 ? "error" : "idle");
   }
 
@@ -323,7 +329,7 @@
     const cap = Number(model.state.inertia.velocity_cap_milli_s);
     const velocity = clamp(Math.round(drag.lastDelta * 1000 / drag.lastDt), -cap, cap);
     model.railDrag = null;
-    record("rail_end", {velocity_milli_s: velocity});
+    record("rail_end", {velocity_milli_s: velocity, input_source: "direct_rail_drag"});
     if (Math.abs(velocity) >= Number(model.state.inertia.velocity_threshold_milli_s)) startInertia(velocity);
     else updatePanels("RAIL RELEASED · NO COAST", "idle");
   }
@@ -340,7 +346,7 @@
       lastTime: performance.now(),
       trackHeight: track?.getBoundingClientRect().height || 246,
     };
-    record("depth_start");
+    record("depth_start", {input_source: "direct_depth_drag"});
     document.querySelector(".alignment-captcha")?.classList.add("is-depth-dragging");
     updatePanels("DEPTH GRIP ENGAGED", "idle");
   }
@@ -358,7 +364,7 @@
     model.depthTravel += Math.abs(delta);
     drag.lastY = event.clientY;
     drag.lastTime = now;
-    record("depth_sample", {delta_milli: delta, dt_ms: dtMs});
+    record("depth_sample", {delta_milli: delta, dt_ms: dtMs, input_source: "direct_depth_drag"});
     updatePanels(delta === 0 ? "DEPTH HARD STOP" : "PARALLAX PLANES SHIFTING", delta === 0 ? "error" : "idle");
   }
 
@@ -368,8 +374,55 @@
     event.currentTarget.releasePointerCapture?.(event.pointerId);
     model.depthDrag = null;
     document.querySelector(".alignment-captcha")?.classList.remove("is-depth-dragging");
-    record("depth_end");
+    record("depth_end", {input_source: "direct_depth_drag"});
     updatePanels("DEPTH GRIP RELEASED", "idle");
+  }
+
+  function nudgeRail(delta) {
+    if (model.interaction !== "simplified" || model.busy || model.terminal || model.scan || model.inertia || model.railDrag || model.depthDrag) return;
+    if (!RAIL_PROXY_DELTAS.has(delta)) return;
+    clearFreshFailure();
+    const rail = model.state.scene.rail;
+    const next = clamp(model.rail + delta, Number(rail.minimum_milli), Number(rail.maximum_milli));
+    const applied = next - model.rail;
+    const velocity = applied === 0
+      ? 0
+      : clamp(
+        Math.round(applied * 1000 / RAIL_PROXY_DRAG_MS),
+        -Number(model.state.inertia.velocity_cap_milli_s),
+        Number(model.state.inertia.velocity_cap_milli_s),
+      );
+    model.rail = next;
+    model.railTravel += Math.abs(applied);
+    record("rail_nudge", {
+      requested_delta_milli: delta,
+      delta_milli: applied,
+      virtual_drag_ms: RAIL_PROXY_DRAG_MS,
+      velocity_milli_s: velocity,
+      input_source: "rail_nudge_button",
+    });
+    if (Math.abs(velocity) >= Number(model.state.inertia.velocity_threshold_milli_s)) {
+      startInertia(velocity);
+    } else {
+      updatePanels(
+        applied === 0
+          ? "RAIL HARD STOP"
+          : `SLOW RAIL RELEASE ${applied > 0 ? "+" : ""}${(applied / 1000).toFixed(0)} PX · NO COAST`,
+        applied === 0 ? "error" : "idle",
+      );
+    }
+  }
+
+  function nudgeDepth(delta) {
+    if (model.interaction !== "simplified" || model.busy || model.terminal || model.scan || model.inertia || model.railDrag || model.depthDrag) return;
+    clearFreshFailure();
+    const depth = model.state.scene.depth;
+    const next = clamp(model.depth + delta, Number(depth.minimum_milli), Number(depth.maximum_milli));
+    const applied = next - model.depth;
+    model.depth = next;
+    model.depthTravel += Math.abs(applied);
+    record("depth_nudge", {delta_milli: applied, input_source: "depth_nudge_button"});
+    updatePanels(applied === 0 ? "DEPTH HARD STOP" : `DEPTH NUDGED ${applied > 0 ? "+" : ""}${applied}`, applied === 0 ? "error" : "idle");
   }
 
   function rotateFragment(delta) {
@@ -377,7 +430,7 @@
     clearFreshFailure();
     const before = model.rotation;
     model.rotation = ((model.rotation + delta) % 360 + 360) % 360;
-    record("rotate", {delta_deg: delta, rotation_before: before, rotation_after: model.rotation});
+    record("rotate", {delta_deg: delta, rotation_before: before, rotation_after: model.rotation, input_source: "rotation_console_button"});
     updatePanels("FRAGMENT ORIENTATION CHANGED", "idle");
   }
 
@@ -417,7 +470,7 @@
       lastSampleAt: 0,
       samples: [],
     };
-    record("scan_start");
+    record("scan_start", {input_source: "optical_lock_button"});
     document.querySelector(".alignment-captcha")?.classList.add("is-scanning");
     takeScanSample();
     stopScanTimer();
@@ -493,7 +546,7 @@
     if (performance.now() - scan.lastSampleAt >= 45) takeScanSample();
     model.scan = null;
     document.querySelector(".alignment-captcha")?.classList.remove("is-scanning");
-    record("scan_end", {duration_ms: duration, sample_count: scan.samples.length});
+    record("scan_end", {duration_ms: duration, sample_count: scan.samples.length, input_source: "optical_lock_button"});
     const axes = axisState();
     const proofReady = axes.railStable && axes.depthStable && axes.rotationStable;
     const completed = duration >= Number(model.state.tolerances.hold_ms) - 40
@@ -530,6 +583,13 @@
   async function render(state, helpers) {
     stopInertiaTimer();
     stopScanTimer();
+    const interaction = state.control_condition?.interaction || "full";
+    const railControl = interaction === "simplified"
+      ? `<div class="alignment-rail alignment-rail-proxy"><div class="rail-proxy-title">RAIL / RELEASE PROXIES</div><div class="alignment-proxy-buttons"><button type="button" data-rail-nudge="-50000"><b>−50 PX</b><small>COAST</small></button><button type="button" data-rail-nudge="-5000"><b>−5 PX</b><small>SLOW</small></button><button type="button" data-rail-nudge="5000"><b>+5 PX</b><small>SLOW</small></button><button type="button" data-rail-nudge="50000"><b>+50 PX</b><small>COAST</small></button></div></div>`
+      : `<div class="alignment-rail"><div class="rail-scale">${Array.from({length: 25}, (_, index) => `<i class="${index % 5 === 0 ? "major" : ""}"></i>`).join("")}</div><div class="rail-track"></div><button type="button" class="rail-carriage" id="alignment-carriage"><i></i><b>◁ DRAG RAIL ▷</b></button></div>`;
+    const depthControl = interaction === "simplified"
+      ? `<div class="alignment-depth-rig alignment-depth-proxy"><div class="depth-label depth-far">FAR PLANE</div><div class="alignment-proxy-stack"><span>DEPTH / PROXY NUDGE</span><div><button type="button" data-depth-nudge="-100">FAR −100</button><button type="button" data-depth-nudge="-10">FAR −10</button></div><div><button type="button" data-depth-nudge="10">NEAR +10</button><button type="button" data-depth-nudge="100">NEAR +100</button></div></div><div class="depth-label depth-near">NEAR PLANE</div></div>`
+      : `<div class="alignment-depth-rig"><div class="depth-label depth-far">FAR PLANE</div><div class="depth-track" id="alignment-depth-track"><i></i><i></i><i></i><i></i><i></i><button type="button" id="alignment-depth-grip" class="depth-grip"><b>DEPTH</b><span>↕</span></button></div><div class="depth-label depth-near">NEAR PLANE</div></div>`;
     document.body.dataset.mechanic = "jigsaw-slider-alignment";
     document.body.dataset.alignmentPalette = String(state.palette || "oxide_cyan");
     document.body.dataset.alignmentTransform = String(state.scene.transform || "standard");
@@ -552,10 +612,11 @@
       busy: false,
       terminal: false,
       helpers,
+      interaction,
     });
     const scene = state.scene;
     helpers.app.innerHTML = `
-      <section class="alignment-captcha" data-challenge-id="${clean(state.challenge_id)}">
+      <section class="alignment-captcha" data-challenge-id="${clean(state.challenge_id)}" data-interaction="${clean(interaction)}">
         <header class="alignment-head"><div><span>PARALLAX CALIBRATION / FRAGMENT 10</span><h1>${clean(state.prompt)}</h1></div><div class="alignment-challenge"><small>OPTICAL LOT</small><b>${clean(state.challenge_id).toUpperCase()}</b><i>${clean(scene.transform).replaceAll("_", " ")}</i></div></header>
         <main class="alignment-workbench">
           <section class="alignment-stage">
@@ -565,13 +626,13 @@
               <div class="alignment-piece ${notchClass(scene.gap.notch)}" id="alignment-piece" aria-label="draggable missing scene fragment"><div class="fragment-orb"></div><div class="fragment-lines"><i></i><i></i><i></i></div><b>FRAGMENT</b></div>
               <div class="scene-chromatic chromatic-cyan"></div><div class="scene-chromatic chromatic-red"></div>
             </div>
-            <div class="alignment-rail"><div class="rail-scale">${Array.from({length: 25}, (_, index) => `<i class="${index % 5 === 0 ? "major" : ""}"></i>`).join("")}</div><div class="rail-track"></div><button type="button" class="rail-carriage" id="alignment-carriage"><i></i><b>◁ DRAG RAIL ▷</b></button></div>
+            ${railControl}
           </section>
           <aside class="alignment-console">
             <div class="alignment-console-title"><span>DEPTH PROJECTION</span><i>ANALYTIC</i></div>
             <div class="alignment-axis-pair"><div data-axis="rail"><i></i><span>HORIZONTAL</span><b>UNRESOLVED</b></div><div data-axis="depth"><i></i><span>DEPTH / SCALE</span><b>UNRESOLVED</b></div><div data-axis="rotation"><i></i><span>ORIENTATION</span><b>UNRESOLVED</b></div></div>
             <div class="alignment-rotation-rig"><button type="button" id="alignment-rotate-left">−15°</button><b id="alignment-rotation-value">000°</b><button type="button" id="alignment-rotate-right">+15°</button></div>
-            <div class="alignment-depth-rig"><div class="depth-label depth-far">FAR PLANE</div><div class="depth-track" id="alignment-depth-track"><i></i><i></i><i></i><i></i><i></i><button type="button" id="alignment-depth-grip" class="depth-grip"><b>DEPTH</b><span>↕</span></button></div><div class="depth-label depth-near">NEAR PLANE</div></div>
+            ${depthControl}
             <div class="alignment-inertia" id="alignment-inertia" data-active="false"><i></i><div><b>SETTLED</b><span>0 SAMPLES CAPTURED</span></div></div>
             <div class="alignment-proof"><span data-proof="rail"><i></i>RAIL LOCK</span><span data-proof="depth"><i></i>DEPTH LOCK</span><span data-proof="inertia"><i></i>ORIENTATION LOCK</span></div>
             <ol class="alignment-tape" id="alignment-tape">${tapeMarkup()}</ol>
@@ -582,17 +643,22 @@
       </section>`;
     const carriage = document.getElementById("alignment-carriage");
     const piece = document.getElementById("alignment-piece");
-    [carriage, piece].forEach((node) => {
-      node?.addEventListener("pointerdown", beginRail);
-      node?.addEventListener("pointermove", moveRail);
-      node?.addEventListener("pointerup", endRail);
-      node?.addEventListener("pointercancel", endRail);
-    });
-    const depthGrip = document.getElementById("alignment-depth-grip");
-    depthGrip?.addEventListener("pointerdown", beginDepth);
-    depthGrip?.addEventListener("pointermove", moveDepth);
-    depthGrip?.addEventListener("pointerup", endDepth);
-    depthGrip?.addEventListener("pointercancel", endDepth);
+    if (interaction === "full") {
+      [carriage, piece].forEach((node) => {
+        node?.addEventListener("pointerdown", beginRail);
+        node?.addEventListener("pointermove", moveRail);
+        node?.addEventListener("pointerup", endRail);
+        node?.addEventListener("pointercancel", endRail);
+      });
+      const depthGrip = document.getElementById("alignment-depth-grip");
+      depthGrip?.addEventListener("pointerdown", beginDepth);
+      depthGrip?.addEventListener("pointermove", moveDepth);
+      depthGrip?.addEventListener("pointerup", endDepth);
+      depthGrip?.addEventListener("pointercancel", endDepth);
+    } else {
+      document.querySelectorAll("[data-rail-nudge]").forEach((button) => button.addEventListener("click", () => nudgeRail(Number(button.dataset.railNudge))));
+      document.querySelectorAll("[data-depth-nudge]").forEach((button) => button.addEventListener("click", () => nudgeDepth(Number(button.dataset.depthNudge))));
+    }
     document.getElementById("alignment-rotate-left")?.addEventListener("click", () => rotateFragment(-Number(state.scene.piece.rotation_step_deg || 15)));
     document.getElementById("alignment-rotate-right")?.addEventListener("click", () => rotateFragment(Number(state.scene.piece.rotation_step_deg || 15)));
     const scan = document.getElementById("alignment-scan");

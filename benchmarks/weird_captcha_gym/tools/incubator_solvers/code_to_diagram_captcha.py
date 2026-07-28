@@ -56,6 +56,11 @@ def _drag(page, source_selector: str, target_selector: str) -> None:
     page.mouse.up()
 
 
+def _click_connect(page, source_selector: str, target_selector: str) -> None:
+    page.locator(source_selector).click()
+    page.locator(target_selector).click()
+
+
 def solve(page, state_dir: Path, out_dir: Path, mechanic: str) -> None:
     if mechanic != MECHANIC_ID:
         raise AssertionError(f"unexpected mechanic {mechanic!r}")
@@ -82,12 +87,14 @@ def solve(page, state_dir: Path, out_dir: Path, mechanic: str) -> None:
     if counts != expected_counts:
         raise AssertionError(f"debugger coverage did not complete: {counts}")
 
+    interaction = str((public.get("control_condition") or {}).get("interaction") or "full")
     for index, edge in enumerate(truth["expected_edges"]):
-        _drag(
-            page,
-            f'[data-port-id="{edge["from_port"]}"]',
-            f'.flow-port-in[data-node-id="{edge["to_node"]}"]',
-        )
+        source = f'[data-port-id="{edge["from_port"]}"]'
+        target = f'.flow-port-in[data-node-id="{edge["to_node"]}"]'
+        if interaction == "simplified":
+            _click_connect(page, source, target)
+        else:
+            _drag(page, source, target)
         page.wait_for_timeout(45)
         if index == 2:
             _shot(page, out_dir, mechanic, "active-wiring")

@@ -97,7 +97,7 @@ The selection of benchmark capabilities still needs a convincing data-backed jus
 - L5 does not mean the hardest imaginable version of an environment. An environment can be made substantially harder than its L5 profile.
 - Difficulty labels remain subject to comparable human and computer-use-agent measurements. Parameter magnitude alone does not prove a level.
 
-## Approved baselines for the sixteen controlled environments
+## Approved baselines for the twenty controlled environments
 
 | Public environment name | Baseline |
 |---|---:|
@@ -110,6 +110,10 @@ The selection of benchmark capabilities still needs a convincing data-backed jus
 | Input-Lag Forklift | L4 |
 | Insider Trading CAPTCHA | L2 |
 | LIDAR Blacksite | L4 |
+| Blind Dice Courier | L4 |
+| Bomb Manual From Hell | L4 |
+| Bureaucratic Signature Trap | L4 |
+| Clockwork Clutch Safe | L3 |
 | Isometric Voxel Extraction Mine | L1 |
 | Motion-Only Ghost Jigsaw | L4 |
 | Rotate The Wrong Thing Upright | L4 |
@@ -118,7 +122,7 @@ The selection of benchmark capabilities still needs a convincing data-backed jus
 | Specular Lighthouse Relay | L3 |
 | Parallax Orchard | L4 |
 
-## Approved interaction baselines for the sixteen controlled environments
+## Approved interaction baselines for the twenty controlled environments
 
 | Public environment name | Current interface |
 |---|---|
@@ -131,6 +135,10 @@ The selection of benchmark capabilities still needs a convincing data-backed jus
 | Input-Lag Forklift | Simplified |
 | Insider Trading CAPTCHA | Simplified |
 | LIDAR Blacksite | Simplified |
+| Blind Dice Courier | Full |
+| Bomb Manual From Hell | Simplified |
+| Bureaucratic Signature Trap | Full |
+| Clockwork Clutch Safe | Simplified |
 | Isometric Voxel Extraction Mine | Simplified |
 | Motion-Only Ghost Jigsaw | Full |
 | Rotate The Wrong Thing Upright | Simplified |
@@ -139,7 +147,7 @@ The selection of benchmark capabilities still needs a convincing data-backed jus
 | Specular Lighthouse Relay | Simplified |
 | Parallax Orchard | Full |
 
-Both interaction modes are implemented for all sixteen. The exact environment-specific mappings are recorded in `benchmarks/weird_captcha_gym/docs/controllability-plan.md`. Preserve the generated world, information, goal, and action effects across each pair. Bind browser events and grading to the selected input surface so one mode cannot pass with the other mode's transcript.
+Both interaction modes are implemented for all twenty. The exact environment-specific mappings are recorded in `benchmarks/weird_captcha_gym/docs/controllability-plan.md`. Preserve the generated world, information, goal, and action effects across each pair. Bind browser events and grading to the selected input surface so one mode cannot pass with the other mode's transcript.
 
 ## Collaboration rules learned from the project
 

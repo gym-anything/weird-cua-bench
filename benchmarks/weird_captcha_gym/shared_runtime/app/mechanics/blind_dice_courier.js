@@ -53,6 +53,20 @@
     return (model.state.board.scanners || []).find((scanner) => samePoint(scanner, model.position));
   }
 
+  function orientationRevealed() {
+    return model.orientationVisibility === "always" || model.initialReveal || Boolean(currentScanner());
+  }
+
+  function gateAccepts(gate, orientation) {
+    if (Number(orientation.top) !== Number(gate.required_top)) return false;
+    return gate.required_east == null || Number(orientation.east) === Number(gate.required_east);
+  }
+
+  function gateRequirement(gate) {
+    const top = `TOP ${Number(gate.required_top)}`;
+    return gate.required_east == null ? top : `${top} / EAST ${Number(gate.required_east)}`;
+  }
+
   function orientationMarkup(orientation, hidden) {
     const value = (face) => hidden ? "?" : Number(orientation[face]);
     return `
@@ -102,24 +116,35 @@
     const root = document.querySelector(".blind-dice-captcha");
     const token = document.querySelector(".courier-token");
     if (!root || !token) return;
+    const scanner = currentScanner();
+    const reveal = orientationRevealed();
     token.style.left = `${((model.position.x + 0.5) / Number(board.columns)) * 100}%`;
     token.style.top = `${((model.position.y + 0.5) / Number(board.rows)) * 100}%`;
-    token.dataset.blind = String(!(model.initialReveal || currentScanner()));
-    token.innerHTML = `<b>${model.initialReveal || currentScanner() ? model.orientation.top : "?"}</b><i></i>`;
+    token.dataset.blind = String(!reveal);
+    token.innerHTML = `<b>${reveal ? model.orientation.top : "?"}</b><i></i>`;
     document.querySelectorAll(".dice-gate").forEach((gate) => {
       gate.dataset.crossed = String(model.crossings.includes(gate.dataset.gateId));
       gate.dataset.blocked = String(blockedGate === gate.dataset.gateId);
     });
-    const reveal = model.initialReveal || Boolean(currentScanner());
     const panel = document.querySelector(".dice-orientation-panel");
     if (panel) {
       panel.dataset.revealed = String(reveal);
-      panel.innerHTML = `<span class="orientation-kicker">${model.initialReveal ? "INITIAL SEAL" : currentScanner() ? "SCANNER LIVE" : "SIGNAL LOST"}</span>${orientationMarkup(model.orientation, !reveal)}`;
+      const status = model.orientationVisibility === "always"
+        ? "ORIENTATION LIVE"
+        : model.initialReveal
+          ? "INITIAL SEAL"
+          : scanner
+            ? "SCANNER LIVE"
+            : "SIGNAL LOST";
+      panel.innerHTML = `<span class="orientation-kicker">${status}</span>${orientationMarkup(model.orientation, !reveal)}`;
     }
     const gates = document.querySelector(".dice-crossing-count b");
     if (gates) gates.textContent = `${model.crossings.length} / ${board.gates.length}`;
     const rolls = document.querySelector(".dice-roll-count b");
     if (rolls) rolls.textContent = String(model.actions.filter((item) => item.type === "move").length).padStart(2, "0");
+    document.querySelectorAll(".dice-direction-button").forEach((button) => {
+      button.disabled = model.completed || model.submitting;
+    });
     root.dataset.completed = String(model.completed);
   }
 
@@ -196,7 +221,7 @@
     }
   }
 
-  function move(direction) {
+  function move(direction, inputSource) {
     if (!model || model.completed) return;
     clearTerminalVerdict();
     model.initialReveal = false;
@@ -206,7 +231,7 @@
     let accepted = model.openCells.has(pointKey(candidate));
     let nextOrientation = accepted ? roll(model.orientation, direction) : cloneOrientation(model.orientation);
     const gate = accepted ? model.gatesByCell.get(pointKey(candidate)) : null;
-    if (gate && Number(nextOrientation.top) !== Number(gate.required_top)) {
+    if (gate && !gateAccepts(gate, nextOrientation)) {
       accepted = false;
       nextOrientation = cloneOrientation(model.orientation);
     }
@@ -214,15 +239,16 @@
       model.position = candidate;
       model.orientation = nextOrientation;
       if (gate && !model.crossings.includes(gate.id)) model.crossings.push(gate.id);
-      model.helpers.setReadout(currentScanner() ? "SCANNER LOCK · ORIENTATION REVEALED" : gate ? `GATE ${gate.required_top} CLEARED` : "ROLL ACCEPTED", "idle");
+      model.helpers.setReadout(currentScanner() ? "SCANNER LOCK · ORIENTATION REVEALED" : gate ? `GATE ${gateRequirement(gate)} CLEARED` : "ROLL ACCEPTED", "idle");
     } else if (gate) {
-      model.helpers.setReadout(`GATE REJECTED · NEED TOP ${gate.required_top}`, "error");
+      model.helpers.setReadout(`GATE REJECTED · NEED ${gateRequirement(gate)}`, "error");
     } else {
       model.helpers.setReadout("AISLE CLOSED", "error");
     }
     pushAction({
       type: "move",
       direction,
+      input_source: inputSource,
       from: before,
       to: clonePoint(model.position),
       accepted,
@@ -261,9 +287,13 @@
     const openCells = new Set((state.board.open_cells || []).map(pointKey));
     const gatesByCell = new Map((state.board.gates || []).map((gate) => [pointKey(gate), gate]));
     const scannersByCell = new Map((state.board.scanners || []).map((scanner) => [pointKey(scanner), scanner]));
+    const interaction = state.control_condition?.interaction || "full";
+    const orientationVisibility = state.control_condition?.difficulty_parameters?.orientation_visibility || "initial_and_scanners";
     model = {
       state,
       helpers,
+      interaction,
+      orientationVisibility,
       startedAt: performance.now(),
       actions: [],
       position: clonePoint(state.board.start),
@@ -287,12 +317,18 @@
         const start = Number(state.board.start.x) === x && Number(state.board.start.y) === y;
         const goal = Number(state.board.goal.x) === x && Number(state.board.goal.y) === y;
         const classes = ["dice-cell", open ? "is-open" : "is-void", gate ? "dice-gate" : "", scanner ? "dice-scanner" : "", start ? "is-start" : "", goal ? "is-goal" : ""].filter(Boolean).join(" ");
-        cells.push(`<div class="${classes}" data-gate-id="${gate ? gate.id : ""}" data-crossed="false" data-blocked="false">${gate ? `<span class="gate-face"><i>TOP</i><b>${gate.required_top}</b></span>` : ""}${scanner ? "<span class=\"scanner-mark\"><i></i><b>SCAN</b></span>" : ""}${goal ? "<span class=\"dispatch-mark\">DISPATCH</span>" : ""}</div>`);
+        const gateMarkup = gate
+          ? gate.required_east == null
+            ? `<span class="gate-face"><i>TOP</i><b>${gate.required_top}</b></span>`
+            : `<span class="gate-face is-dual"><i>TOP</i><b>${gate.required_top}</b><small>E ${gate.required_east}</small></span>`
+          : "";
+        cells.push(`<div class="${classes}" data-gate-id="${gate ? gate.id : ""}" data-crossed="false" data-blocked="false">${gateMarkup}${scanner ? "<span class=\"scanner-mark\"><i></i><b>SCAN</b></span>" : ""}${goal ? "<span class=\"dispatch-mark\">DISPATCH</span>" : ""}</div>`);
       }
     }
+    const dualFaceGates = (state.board.gates || []).some((gate) => gate.required_east != null);
 
     helpers.app.innerHTML = `
-      <section class="blind-dice-captcha" data-completed="false" tabindex="0">
+      <section class="blind-dice-captcha" data-completed="false" data-interaction="${helpers.text(interaction)}" data-orientation-visibility="${helpers.text(orientationVisibility)}" tabindex="0">
         <div class="dice-terminal-verdict" aria-live="assertive"></div>
         <header class="blind-dice-head">
           <div><span>ORIENTATION-SEALED FREIGHT / D6</span><h1>${helpers.text(state.prompt)}</h1></div>
@@ -304,19 +340,29 @@
               <div class="dice-grid">${cells.join("")}</div>
               <div class="courier-token" data-blind="false"><b>${Number(state.initial_orientation.top)}</b><i></i></div>
             </div>
-            <div class="dice-board-caption"><span>WASD / ARROWS TO ROLL</span><b>GATES READ THE TOP FACE AFTER THE ROLL</b></div>
+            <div class="dice-board-caption">
+              ${interaction === "simplified" ? `
+                <div class="dice-direction-controls" aria-label="Roll direction controls">
+                  <span>ROLL</span>
+                  <button class="dice-direction-button" type="button" data-direction="N" aria-label="Roll north">↑</button>
+                  <button class="dice-direction-button" type="button" data-direction="W" aria-label="Roll west">←</button>
+                  <button class="dice-direction-button" type="button" data-direction="S" aria-label="Roll south">↓</button>
+                  <button class="dice-direction-button" type="button" data-direction="E" aria-label="Roll east">→</button>
+                </div>` : "<span>WASD / ARROWS TO ROLL</span>"}
+              <b>${dualFaceGates ? "GATES READ TOP + EAST FACES AFTER THE ROLL" : "GATES READ THE TOP FACE AFTER THE ROLL"}</b>
+            </div>
           </div>
           <aside class="dice-console">
             <div class="dice-orientation-panel" data-revealed="true"></div>
             <div class="gate-orders">
               <span>FACE GATES</span>
-              ${(state.board.gates || []).map((gate, index) => `<div class="gate-order gate-${gate.tone}"><i>${index + 1}</i><b>TOP ${gate.required_top}</b></div>`).join("")}
+              ${(state.board.gates || []).map((gate, index) => `<div class="gate-order gate-${gate.tone}"><i>${index + 1}</i><b>TOP ${gate.required_top}${gate.required_east == null ? "" : `<small>EAST ${gate.required_east}</small>`}</b></div>`).join("")}
             </div>
             <div class="dice-console-stats"><span class="dice-crossing-count">CROSSED <b>0 / ${state.board.gates.length}</b></span><span class="dice-roll-count">ROLLS <b>00</b></span></div>
             <button type="button" class="dice-reset">RESET CRATE</button>
           </aside>
         </section>
-        <footer class="blind-dice-foot"><div class="readout" data-status="idle">INITIAL ORIENTATION UNSEALED UNTIL FIRST ROLL</div><button type="button" class="dice-abandon">REISSUE MANIFEST</button></footer>
+        <footer class="blind-dice-foot"><div class="readout" data-status="idle">${orientationVisibility === "always" ? "ORIENTATION DISPLAY REMAINS LIVE" : "INITIAL ORIENTATION UNSEALED UNTIL FIRST ROLL"}</div><button type="button" class="dice-abandon">REISSUE MANIFEST</button></footer>
         ${helpers.cheatPanelTemplate()}
       </section>
     `;
@@ -331,11 +377,14 @@
         return;
       }
       const direction = KEY_TO_DIRECTION[key];
-      if (!direction) return;
+      if (!direction || model.interaction !== "full") return;
       event.preventDefault();
-      move(direction);
+      move(direction, "keyboard");
     };
     window.addEventListener("keydown", keydown);
+    document.querySelectorAll(".dice-direction-button").forEach((button) => {
+      button.addEventListener("click", () => move(button.dataset.direction, "direction_buttons"));
+    });
     document.querySelector(".dice-reset")?.addEventListener("click", resetCourier);
     document.querySelector(".dice-abandon")?.addEventListener("click", abandonManifest);
     installDeveloperReveal();

@@ -1,6 +1,6 @@
 # Controllability Plan
 
-Status: sixteen environments have complete difficulty and interaction controls. All 75 environments have real-time evaluation settings.
+Status: twenty-four environments have complete difficulty and interaction controls. All 75 environments have real-time evaluation settings.
 
 This document records how Weird CUA Bench should vary difficulty, interaction, and real time without duplicating puzzle implementations.
 
@@ -48,12 +48,21 @@ The third set completes the starred group:
 
 The first extension beyond the starred group adds LIDAR Blacksite.
 
+The second extension adds four environments:
+
+1. Blind Dice Courier
+2. Bomb Manual From Hell
+3. Bureaucratic Signature Trap
+4. Clockwork Clutch Safe
+
 The approved baseline assignments are:
 
 | Environment | Current level |
 |---|---:|
 | Gyroscopic Tilt Board | L3 |
 | Cursor-Controlled Constellation Hunt | L2 |
+| Parallel Grillmaster | L2 |
+| Consequences Boss | L2 |
 | Polarized Palimpsest | L3 |
 | Exact-Change Candy Cascade | L5 |
 | Flat-Pack Compliance Test | L4 |
@@ -61,13 +70,19 @@ The approved baseline assignments are:
 | Input-Lag Forklift | L4 |
 | Insider Trading CAPTCHA | L2 |
 | LIDAR Blacksite | L4 |
+| Blind Dice Courier | L4 |
+| Bomb Manual From Hell | L4 |
+| Bureaucratic Signature Trap | L4 |
+| Clockwork Clutch Safe | L3 |
 | Isometric Voxel Extraction Mine | L1 |
 | Motion-Only Ghost Jigsaw | L4 |
 | Rotate The Wrong Thing Upright | L4 |
 | Rotating On-Screen Keyboard | L4 |
 | Slime Commute | L4 |
 | Specular Lighthouse Relay | L3 |
+| Gravity-Room Freight | L4 |
 | Parallax Orchard | L4 |
+| Slot-Reel Character Capture | L4 |
 
 These assignments describe the exact current configurations. They do not rank the environment ideas in isolation. They also do not claim that an L5 profile is the hardest version that could be built.
 
@@ -81,7 +96,7 @@ python3 benchmarks/weird_captcha_gym/tools/materialize_controlled_tasks.py \
   --output-root /tmp/weird-cua-controlled
 ```
 
-The command writes five tasks for every implemented interaction mode. Every controlled environment now implements both modes. The complete sixteen-environment matrix contains 160 tasks.
+The command writes five tasks for every implemented interaction mode. Every controlled environment now implements both modes. The complete twenty-four-environment matrix contains 240 tasks.
 
 The selected condition is copied into the task metadata, public state, and hidden state. Difficulty-specific instructions replace the baseline instructions when a profile changes a rule that the agent must know.
 
@@ -215,6 +230,8 @@ The baseline column classifies the interface that existed before its missing cou
 |---|---|---|---|
 | Gyroscopic Tilt Board | Full | Compass direction buttons | Direct analog knob dragging |
 | Cursor-Controlled Constellation Hunt | Full | X and Y controls with move and select buttons | Direct canvas pointer movement and selection |
+| Parallel Grillmaster | Full | Select a food, then use start-cooking and move-to-tray buttons | Drag food directly from the raw order to the grill and from the grill to the serving tray |
+| Consequences Boss | Full | Labelled socket and seal-state buttons | Drag the relic directly into a socket and rotate the seal directly |
 | Polarized Palimpsest | Full | X and Y controls with a capture button | Direct pointer-held lens movement and capture |
 | Exact-Change Candy Cascade | Simplified | Click one candy then click its destination | Drag one candy onto its adjacent destination |
 | Flat-Pack Compliance Test | Simplified | Side-panel rotation and mate controls | Direct part dragging with right-click rotation and contact-based mating |
@@ -222,13 +239,19 @@ The baseline column classifies the interface that existed before its missing cou
 | Input-Lag Forklift | Simplified | Clickable command controls | Keyboard driving |
 | Insider Trading CAPTCHA | Simplified | B H and S keyboard shortcuts | Visible order buttons |
 | LIDAR Blacksite | Simplified | Side-panel movement, scan, pickup, and verification controls | Held movement keys, viewport dragging, scene scanning and pickup, and physical gate entry |
+| Blind Dice Courier | Full | Visible north, west, south, and east roll buttons | WASD or arrow-key rolling |
+| Bomb Manual From Hell | Simplified | Drag the active plate, then use binder controls to rotate, flip, and seat it | Drag the active plate, right-click to rotate, Shift-right-click to flip, and release it on the pins |
+| Bureaucratic Signature Trap | Full | Per-sheet directional nudge buttons followed by direct autograph tracing | Direct registration-tab dragging followed by direct autograph tracing |
+| Clockwork Clutch Safe | Simplified | Labelled release and engage buttons | Direct clutch-lever dragging between coupled and free detents |
 | Isometric Voxel Extraction Mine | Simplified | Rotation buttons with canvas mining | Direct canvas rotation dragging with canvas mining |
 | Motion-Only Ghost Jigsaw | Full | Click a piece then click its slot | Drag a piece into its slot |
 | Rotate The Wrong Thing Upright | Simplified | Footer axis controls | Direct gimbal-ring dragging |
 | Rotating On-Screen Keyboard | Full | Physical keyboard typing | Clicking the moving on-screen keys |
 | Slime Commute | Full | On-screen direction buttons | Keyboard movement |
 | Specular Lighthouse Relay | Simplified | Side-panel gimbal buttons | Direct mirror dragging on the optical canvas |
+| Gravity-Room Freight | Simplified | Labelled clockwise and counter-clockwise rotation buttons | Direct horizontal drag across the room gimbal |
 | Parallax Orchard | Full | Orbit buttons followed by fruit and basket clicks | Direct orchard orbit dragging followed by fruit dragging |
+| Slot-Reel Character Capture | Full | Click one visible capture button when the active alphanumeric symbol is centered | Type the active alphanumeric symbol on the physical keyboard while it is centered |
 
 The generator must produce the same world for both modes at a fixed seed and difficulty. The browser must record which input surface produced each controlled action. The grader must reject a transcript from the wrong interaction mode.
 

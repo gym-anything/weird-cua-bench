@@ -1,0 +1,46 @@
+{
+  "schema_version": 1,
+  "base_manifest": "../gemini_3_5_flash_random15_20260715/manifest.json",
+  "experiment_id": "gemini-3.5-flash-random15-ui-only-fhd-retry-20260715T170806Z",
+  "purpose": "Rerun the identical frozen random 15-task sample with a standard 1920x1080 desktop and explicit transient provider request retries, while preserving the visible-task-UI-only policy and original task difficulty.",
+  "protocol": {
+    "agent": "GeminiComputerUseAgent",
+    "model": "gemini-3.5-flash",
+    "computer_use_environment": "desktop",
+    "display_resolution": [1920, 1080],
+    "thinking_level": "high",
+    "temperature": 1.0,
+    "runner": "avf",
+    "seed": 42,
+    "max_steps": 100,
+    "runs_per_task": 1,
+    "parallelism": 1,
+    "fast_io": false,
+    "post_reset_observation_delay_seconds": 3.0,
+    "max_no_candidate_retries_per_turn": 2,
+    "no_candidate_retry_delays_seconds": [2.0, 5.0],
+    "http_retry_options": {
+      "attempts": 5,
+      "initial_delay": 1.0,
+      "max_delay": 16.0,
+      "exp_base": 2.0,
+      "jitter": 1.0,
+      "http_status_codes": [408, 429, 500, 502, 503, 504]
+    },
+    "task_mutations_allowed": false,
+    "task_instruction": "MANDATORY VISIBLE-UI-ONLY POLICY: Complete this task exclusively through the visible controls in the task's browser webpage or webpages. Do not open or use Developer Tools, Console, Debugger, Inspector, Network, Sources, View Source, DOM inspection, page-state inspection, or implementation/source inspection. Do not use a terminal, shell, code, scripts, Python, automation, the address bar, URL or query-parameter edits, browser extensions, other applications, or external tools. Do not reload, navigate, or close task pages. Do not switch to or interact with any pre-existing, unrelated, blank, browser-settings, or non-task tab. If the visible task UI itself provides controls that open additional task tabs, you may use only those task-created tabs and their visible controls; never inspect their implementation. Ordinary browser zoom may be used solely to resize the visible task UI. Solve only by observing screenshots and interacting with visible task UI controls. If blocked, keep reasoning from the visible UI; do not bypass these rules.",
+    "stop_policy": "The model may finish early; otherwise stop after 100 logical model turns. Retry transient HTTP 408/429/500/502/503/504, timeout, and connection failures up to five total request attempts without consuming an environment step. Retry a candidate-less provider response after 2 and 5 seconds unless Google reports an explicit prompt block. A verifier failure is an experimental outcome; exhausted model-response retries are model API errors and are excluded from benchmark pass/fail counts."
+  },
+  "provenance": {
+    "benchmark_git_revision_at_draw": "2de3287b3df3bffcd7612f1f346277a77b6aa476",
+    "benchmark_working_branch": "codex/gemini35-random15-eval",
+    "gym_anything_git_revision": "c5bdbddce28584db6244fabc4f15987292a95eed",
+    "gym_anything_working_branch": "codex/gemini-agent-sync",
+    "gemini_agent_sha256": "ad5c8bf76f025f052328834228a4f44aeb1ace6bb7a2c8e1b973bb5a47bafb6a",
+    "python": "3.12.2",
+    "google_genai": "2.11.0",
+    "dependency_mode": "isolated benchmark-local virtual environment with editable links to this checkout and ../gym-anything",
+    "supersedes_ut_lab_run": "R2",
+    "supersession_reason": "Human requested a fresh run after standardizing every benchmark environment at 1920x1080 and enabling request-level transient HTTP retries."
+  }
+}

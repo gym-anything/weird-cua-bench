@@ -223,6 +223,18 @@ body[data-mechanic="grillmaster"] {
 .grill-captcha { background: #1c100b; border-color: #7b321c; }
 .grill-head { background: linear-gradient(90deg, #32150c, #17100d); color: #fff0d2; }
 .grill-head p { color: #ffb24a; }
+.grill-batch-rule {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 9px 18px;
+  border-bottom: 1px solid #7b321c;
+  background: #3b1c10;
+  color: #ffd49a;
+  font-family: "Courier New", Courier, monospace;
+  font-size: 12px;
+}
+.grill-batch-rule b { color: #ff8c49; letter-spacing: .12em; }
 .grill-stage {
   display: grid;
   grid-template-columns: 1fr 1.3fr 1fr;
@@ -273,6 +285,9 @@ body[data-mechanic="grillmaster"] {
   cursor: grab;
   transition: border-color .18s, background .18s, filter .18s, box-shadow .18s;
 }
+.grill-captcha[data-interaction="simplified"] .grill-food { cursor: pointer; }
+.grill-captcha[data-food-count="8"] .grill-food { min-height: 84px; }
+.grill-food[data-selected="true"] { outline: 3px solid #fff2aa; outline-offset: -4px; }
 
 .food-name { font-family: "Courier New", Courier, monospace; font-size: 10px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; }
 .food-art { position: relative; display: block; width: 62px; height: 48px; margin-bottom: 3px; filter: saturate(.9); transition: filter .25s; }
@@ -290,6 +305,10 @@ body[data-mechanic="grillmaster"] {
 .food-art-sausage::before { width: 58px; height: 21px; top: 14px; left: 2px; border-radius: 14px; rotate: -8deg; background: #b44e38; box-shadow: inset 0 -6px rgba(80,25,18,.25); }
 .food-art-naan::before { inset: 5px 2px; border-radius: 49% 55% 46% 52%; rotate: 8deg; background: #d9ad6c; box-shadow: inset -8px -5px rgba(118,68,23,.24); }
 .food-art-naan::after { width: 4px; height: 4px; border-radius: 50%; left: 20px; top: 15px; background: #765027; box-shadow: 17px 8px #765027, 5px 19px #765027; }
+.food-art-corn::before { width: 48px; height: 22px; left: 7px; top: 14px; border-radius: 50%; rotate: -7deg; background: repeating-linear-gradient(90deg, #efc63f 0 7px, #dcae2a 7px 10px); box-shadow: inset 0 -5px rgba(116,68,12,.25); }
+.food-art-corn::after { width: 14px; height: 34px; left: 1px; top: 8px; border-radius: 70% 15%; rotate: -18deg; background: #5e8d42; box-shadow: 44px 0 #5e8d42; }
+.food-art-fish::before { width: 46px; height: 27px; left: 5px; top: 10px; border-radius: 55% 45% 45% 55%; background: #7fa2a8; box-shadow: inset 0 -7px rgba(29,59,67,.3); }
+.food-art-fish::after { width: 22px; height: 26px; right: 0; top: 10px; clip-path: polygon(100% 0, 100% 100%, 0 50%); background: #62848b; }
 
 .grill-food[data-cook-state="warming"] { background: #542316; border-color: #bb5b2b; }
 .grill-food[data-cook-state="ready"] { background: #6b3b16; border-color: #ffd56a; box-shadow: 0 0 0 2px #ffbd39, 0 0 24px rgba(255,156,42,.72); animation: ready-pulse .7s infinite alternate; }
@@ -297,6 +316,20 @@ body[data-mechanic="grillmaster"] {
 .grill-food[data-cook-state="burnt"], .grill-food[data-cook-state="spoiled"] { background: #161312; border-color: #4f4641; filter: grayscale(.8) brightness(.55); }
 .grill-food[data-cook-state="served"] { border-color: #f4d67e; background: rgba(52,45,31,.75); }
 @keyframes ready-pulse { to { box-shadow: 0 0 0 2px #fff0a9, 0 0 32px rgba(255,156,42,.9); } }
+.grill-foot { gap: 12px; }
+.grill-captcha[data-interaction="simplified"] .grill-foot { grid-template-columns: auto 1fr 142px; }
+.grill-proxy-controls { display: flex; align-items: center; gap: 7px; }
+.grill-proxy-controls span { color: #c99b73; font: 700 10px "Courier New", Courier, monospace; letter-spacing: .1em; }
+.grill-proxy-controls button {
+  min-height: 40px;
+  padding: 0 11px;
+  border: 1px solid #bb794c;
+  background: #331c12;
+  color: #ffe2b8;
+  font: 800 10px "Courier New", Courier, monospace;
+  cursor: pointer;
+}
+.grill-proxy-controls button:disabled { opacity: .35; cursor: default; }
 
 body[data-mechanic="rotating-keyboard"] {
   background: radial-gradient(circle at 70% 10%, #edf8ff 0, #a9bdc7 38%, #53656e 100%);
@@ -366,12 +399,14 @@ body[data-mechanic="slot-reel"] {
 .slot-strikes-count { min-width: 24px; color: #ffe2a0; font-size: 10px; }
 .slot-strike-pip { display: block; width: 9px; height: 9px; border: 1px solid #a97d34; border-radius: 50%; background: #241013; box-shadow: inset 0 0 0 2px #12070a; transition: background .12s, box-shadow .12s; }
 .slot-strike-pip[data-active="true"] { border-color: #ff594d; background: #ff4b43; box-shadow: 0 0 10px rgba(255, 67, 58, .85), inset 0 0 0 2px #63140f; }
-.slot-reels { display: grid; grid-template-columns: repeat(5, 1fr); gap: 11px; padding: 20px; border: 3px solid #b98c3c; background: #13090b; box-shadow: inset 0 0 35px #000; }
+.slot-reels { display: grid; grid-template-columns: repeat(auto-fit, minmax(82px, 1fr)); gap: 11px; padding: 20px; border: 3px solid #b98c3c; background: #13090b; box-shadow: inset 0 0 35px #000; }
 .slot-reel { position: relative; min-width: 0; }
 .slot-window { position: relative; display: grid; place-items: center; height: 154px; overflow: hidden; border: 3px solid #29191a; background: linear-gradient(#a99d82 0, #f4e6c2 16%, #fff8df 50%, #d2c09a 84%, #796f5e 100%); box-shadow: inset 0 16px 22px rgba(0,0,0,.32), inset 0 -16px 22px rgba(0,0,0,.28); }
 .slot-window::before, .slot-window::after { content: ""; position: absolute; left: 0; right: 0; height: 2px; background: #c7282e; opacity: .65; }
 .slot-window::before { top: 48%; } .slot-window::after { top: 52%; }
-.slot-symbol { color: #241115; font-family: Georgia, serif; font-size: 64px; font-weight: 700; text-shadow: 0 2px #fff; }
+.slot-window[data-windowed="true"]::before { top: calc(50% - var(--slot-capture-half-span)); }
+.slot-window[data-windowed="true"]::after { top: calc(50% + var(--slot-capture-half-span)); }
+.slot-symbol { color: #241115; font-family: Georgia, serif; font-size: 64px; font-weight: 700; text-shadow: 0 2px #fff; transform: translateY(var(--slot-symbol-offset, 0)); }
 .slot-arrow { display: block; height: 22px; color: transparent; text-align: center; }
 .slot-reel[data-active="true"] .slot-arrow { color: #ffd568; animation: arrow-bob .45s infinite alternate; }
 @keyframes arrow-bob { to { translate: 0 4px; } }
@@ -382,6 +417,8 @@ body[data-mechanic="slot-reel"] {
 .slot-shock { animation: slot-shock .2s 2; }
 @keyframes slot-shock { 50% { translate: -6px 0; filter: saturate(1.8) brightness(1.18); } }
 .slot-submit { border-color: #d5ad4f; color: #ffe7a2; }
+.slot-captcha[data-interaction="simplified"] .slot-foot { grid-template-columns: 1fr 182px 142px; gap: 10px; }
+.slot-capture-button { border-color: #f2bf4f; background: #4a1118; color: #ffe7a2; }
 
 @media (max-width: 900px) {
   .ghost-stage { grid-template-columns: 1fr 1.2fr; }
@@ -1699,13 +1736,16 @@ body[data-mechanic="funeral-ritual"] { background:radial-gradient(circle at 50% 
 .ritual-brush { position:absolute;z-index:8;left:506px;top:276px;width:105px;height:24px;transform:rotate(-24deg);opacity:0;transition:opacity .6s;pointer-events:none; }.ritual-brush i { position:absolute;left:0;top:4px;width:72px;height:10px;border-radius:5px;background:linear-gradient(#8f6f47,#49331f); }.ritual-brush b { position:absolute;right:0;top:0;width:40px;height:22px;background:repeating-linear-gradient(90deg,#b89a68 0 4px,#66543a 5px 6px);clip-path:polygon(0 0,100% 14%,88% 100%,0 75%); }.funeral-stage[data-inspected="true"] .ritual-brush { opacity:.82; }
 .grave-candle { position:absolute;z-index:5;left:470px;top:310px;width:34px;height:66px;padding:0;border:0;background:transparent;opacity:.25;cursor:not-allowed;transition:opacity .5s; }.grave-candle b { position:absolute;left:7px;bottom:0;width:20px;height:47px;background:linear-gradient(90deg,#c7c4ae,#f2e7bd,#aaa795); }.grave-candle i { position:absolute;left:11px;top:1px;width:13px;height:23px;border-radius:50% 5% 50% 50%;background:#ffbc49;transform:rotate(45deg);opacity:0;filter:drop-shadow(0 0 10px #ff9f32);animation:flame .5s ease-in-out infinite alternate; }.funeral-stage[data-brushed="true"] .grave-candle { opacity:1;cursor:pointer; }.funeral-stage[data-lit="true"] .grave-candle i { opacity:1; }
 @keyframes flame { to { transform:rotate(42deg) scale(.85,1.1); } }
-.ritual-flower { position:absolute;z-index:5;width:36px;height:48px;padding:0;border:0;background:transparent;opacity:.35;filter:grayscale(.8);cursor:default;pointer-events:none;transition:opacity .3s,transform .3s,filter .3s; }.ritual-flower i { position:absolute;left:16px;top:13px;width:3px;height:34px;background:#49683e;transform:rotate(-8deg); }.ritual-flower b,.ritual-flower b::before,.ritual-flower b::after { position:absolute;left:7px;top:2px;width:20px;height:20px;border-radius:50% 10% 50% 10%;background:#b95664;content:""; }.ritual-flower b::before { left:8px;top:2px;transform:rotate(70deg); }.ritual-flower b::after { left:-1px;top:8px;transform:rotate(-65deg); }.flower-daisy b,.flower-daisy b::before,.flower-daisy b::after { background:#e7dfc7; }.flower-iris b,.flower-iris b::before,.flower-iris b::after { background:#7181bd; }.flower-lavender b,.flower-lavender b::before,.flower-lavender b::after { background:#9974a7; }
-.funeral-stage[data-lit="true"] .ritual-flower { opacity:1;filter:none;cursor:pointer;pointer-events:auto;animation:flower-breathe 2s ease-in-out infinite; }.ritual-flower[data-picked="true"] { opacity:0!important;transform:translateY(-40px) scale(.2);pointer-events:none; }
+.ritual-flower { position:absolute;z-index:5;width:36px;height:48px;padding:0;border:0;background:transparent;opacity:.35;filter:grayscale(.8);cursor:default;pointer-events:none;transition:opacity .3s,transform .3s,filter .3s; }.ritual-flower i { position:absolute;left:16px;top:13px;width:3px;height:34px;background:#49683e;transform:rotate(-8deg); }.ritual-flower b,.ritual-flower b::before,.ritual-flower b::after { position:absolute;left:7px;top:2px;width:20px;height:20px;border-radius:50% 10% 50% 10%;background:#b95664;content:""; }.ritual-flower b::before { left:8px;top:2px;transform:rotate(70deg); }.ritual-flower b::after { left:-1px;top:8px;transform:rotate(-65deg); }.flower-daisy b,.flower-daisy b::before,.flower-daisy b::after { background:#e7dfc7; }.flower-iris b,.flower-iris b::before,.flower-iris b::after { background:#7181bd; }.flower-lavender b,.flower-lavender b::before,.flower-lavender b::after { background:#9974a7; }.flower-lily b,.flower-lily b::before,.flower-lily b::after { background:#e4a9cf; }.flower-marigold b,.flower-marigold b::before,.flower-marigold b::after { background:#e2ad47; }
+.funeral-stage[data-lit="true"] .ritual-flower { opacity:1;filter:none;cursor:pointer;pointer-events:auto;animation:flower-breathe 2s ease-in-out infinite; }.funeral-captcha[data-interaction="simplified"] .ritual-flower { cursor:default;pointer-events:none; }.ritual-flower[data-picked="true"] { opacity:0!important;transform:translateY(-40px) scale(.2);pointer-events:none; }
 @keyframes flower-breathe { 50% { filter:drop-shadow(0 0 7px rgba(207,218,167,.65)); } }
-.grave-bed { position:absolute;z-index:3;left:250px;top:348px;width:270px;height:83px;border-radius:50%;background:radial-gradient(ellipse,#1c2a22,#080d0b 65%);box-shadow:inset 0 8px 14px #050807; }
-.ritual-bouquet { position:absolute;z-index:12;left:606px;top:318px;width:75px;height:95px;opacity:0;pointer-events:none;cursor:grab;transition:opacity .4s,transform .4s; }.ritual-bouquet i { position:absolute;left:18px;top:0;width:34px;height:34px;border-radius:50%;background:#a74f64;box-shadow:24px 9px #d9d0b5,8px 24px #727eb7,-12px 19px #92709d; }.ritual-bouquet b { position:absolute;left:32px;top:31px;width:9px;height:58px;background:#4d6945;transform:rotate(-5deg); }.funeral-stage[data-gathered="true"] .ritual-bouquet { opacity:1;pointer-events:auto;animation:bouquet-glow 1.8s ease-in-out infinite; }.funeral-stage[data-offered="true"] .ritual-bouquet { left:352px;top:335px;animation:none;transform:rotate(-12deg); }
+.grave-bed { position:absolute;z-index:3;left:var(--grave-bed-left,250px);top:348px;width:var(--grave-bed-width,270px);height:var(--grave-bed-height,83px);border-radius:50%;background:radial-gradient(ellipse,#1c2a22,#080d0b 65%);box-shadow:inset 0 8px 14px #050807; }
+.ritual-bouquet { position:absolute;z-index:12;left:606px;top:318px;width:75px;height:95px;opacity:0;pointer-events:none;cursor:grab;transition:opacity .4s,transform .4s; }.ritual-bouquet i { position:absolute;left:18px;top:0;width:34px;height:34px;border-radius:50%;background:#a74f64;box-shadow:24px 9px #d9d0b5,8px 24px #727eb7,-12px 19px #92709d; }.ritual-bouquet b { position:absolute;left:32px;top:31px;width:9px;height:58px;background:#4d6945;transform:rotate(-5deg); }.funeral-stage[data-gathered="true"] .ritual-bouquet { opacity:1;pointer-events:auto;animation:bouquet-glow 1.8s ease-in-out infinite; }.funeral-captcha[data-interaction="simplified"] .ritual-bouquet { cursor:default;pointer-events:none; }.funeral-stage[data-offered="true"] .ritual-bouquet { left:352px;top:335px;animation:none;transform:rotate(-12deg); }
 @keyframes bouquet-glow { 50% { filter:drop-shadow(0 0 14px rgba(216,209,163,.7)); } }
 .ritual-whisper { position:absolute;left:50%;bottom:9px;transform:translateX(-50%);color:#728082;font:italic 10px Baskerville,serif;letter-spacing:.2em;opacity:.55;transition:opacity .5s; }.funeral-stage[data-inspected="true"] .ritual-whisper { opacity:0; }
+.tribute-order { position:absolute;z-index:6;left:42px;right:42px;bottom:25px;display:flex;justify-content:center;gap:9px;opacity:0;transition:opacity .35s; }.funeral-stage[data-tribute-visible="true"] .tribute-order { opacity:1; }.tribute-token { display:block;width:14px;height:14px;border:1px solid rgba(20,28,30,.72);border-radius:50% 10% 50% 10%;background:#b95664;transform:rotate(25deg);box-shadow:0 1px rgba(255,255,255,.24); }.tribute-token.flower-daisy { background:#e7dfc7; }.tribute-token.flower-iris { background:#7181bd; }.tribute-token.flower-lavender { background:#9974a7; }.tribute-token.flower-lily { background:#e4a9cf; }.tribute-token.flower-marigold { background:#e2ad47; }
+.ritual-guidance { position:absolute;z-index:13;left:50%;bottom:24px;max-width:410px;transform:translateX(-50%);padding:6px 10px;border:1px solid rgba(183,202,192,.4);background:rgba(11,18,19,.72);color:#d8e1d5;font:italic 12px Baskerville,serif;text-align:center;box-shadow:0 4px 18px rgba(0,0,0,.34); }
+.funeral-proxy-controls { display:flex;align-items:center;justify-content:center;gap:8px;min-height:56px;padding:8px 16px;border-top:1px solid rgba(188,206,216,.14);background:#111b28; }.funeral-proxy-controls button { min-height:32px;padding:6px 9px;border:1px solid #728491;background:#26384a;color:#dce7e4;font:700 10px/1 "Courier New",monospace;letter-spacing:.04em;cursor:pointer; }.funeral-proxy-controls button:disabled { opacity:.36;cursor:not-allowed; }.proxy-flower-row { display:flex;gap:5px; }.funeral-proxy-controls .proxy-flower { display:grid;place-items:center;width:31px;padding:0; }.proxy-flower i { display:block;width:15px;height:15px;border-radius:50% 10% 50% 10%;background:#b95664;transform:rotate(25deg); }.proxy-flower.flower-daisy i { background:#e7dfc7; }.proxy-flower.flower-iris i { background:#7181bd; }.proxy-flower.flower-lavender i { background:#9974a7; }.proxy-flower.flower-lily i { background:#e4a9cf; }.proxy-flower.flower-marigold i { background:#e2ad47; }
 .funeral-foot { display:flex;justify-content:space-between;align-items:center;min-height:43px;padding:0 21px;border-top:1px solid rgba(188,206,216,.18);background:#0d1420; }.ritual-stars { color:#677b85;font-size:11px; }
 
 body[data-mechanic="slime-commute"] { background:linear-gradient(#192b43,#0c1725); }

@@ -72,11 +72,12 @@
       pad.style.top = `${center.y * 100}%`;
     }
     if (model.holding && !model.completed) {
+      if (model.interaction === "simplified") model.lastPointer = pressureCenter(tMs);
       const inside = pressureContains(model.lastPointer, tMs);
       if (inside) {
         model.outsideSince = null;
         if (tMs - model.lastPressureSample >= Number(model.state.pressure_motion.sample_ms)) {
-          pushEvent({type: "hold_sample", pointer: {x: Math.round(model.lastPointer.x * 1000), y: Math.round(model.lastPointer.y * 1000)}});
+          pushEvent({type: "hold_sample", input_source: model.holdInputSource, pointer: {x: Math.round(model.lastPointer.x * 1000), y: Math.round(model.lastPointer.y * 1000)}});
           model.lastPressureSample = tMs;
           model.pressureSamples += 1;
         }
@@ -146,6 +147,11 @@
     if (progress) progress.textContent = `${model.checkpointIndex} / ${board.checkpoints.length}`;
     const resets = document.querySelector(".switch-reset-count b");
     if (resets) resets.textContent = String(model.resetCount).padStart(2, "0");
+    const proxyArm = document.querySelector(".switch-proxy-arm");
+    if (proxyArm) proxyArm.disabled = model.holding || model.completed || model.submitting;
+    document.querySelectorAll(".switch-direction-controls button").forEach((button) => {
+      button.disabled = !model.holding || model.completed || model.submitting;
+    });
   }
 
   function showTerminalVerdict(kind, title, detail) {
@@ -169,12 +175,13 @@
 
   function resetSuccessfulRun(reason) {
     if (!model || !model.holding || model.completed) return;
-    pushEvent({type: "hold_end", reason, position: clonePoint(model.position)});
+    pushEvent({type: "hold_end", input_source: model.holdInputSource, reason, position: clonePoint(model.position)});
     model.holding = false;
     model.pointerId = null;
     model.position = clonePoint(model.state.board.start);
     model.checkpointIndex = 0;
     model.currentHoldStartSeq = null;
+    model.holdInputSource = null;
     model.lastPointer = null;
     model.lastPressureSample = 0;
     model.outsideSince = null;
@@ -199,6 +206,8 @@
       mechanic_id: model.state.mechanic_id,
       task_id: model.state.task_id,
       challenge_id: model.state.challenge_id,
+      interaction: model.interaction,
+      control_condition: model.state.control_condition || null,
       completed: true,
       holding: true,
       events: model.events,
@@ -250,7 +259,7 @@
     submitCompletion();
   }
 
-  function move(direction) {
+  function move(direction, inputSource) {
     if (!model || !model.holding || model.completed) return;
     const before = clonePoint(model.position);
     const [dx, dy] = DELTAS[direction];
@@ -276,6 +285,7 @@
     }
     pushEvent({
       type: "move",
+      input_source: inputSource,
       direction,
       from: before,
       to: clonePoint(model.position),
@@ -312,9 +322,11 @@
     document.body.dataset.mechanic = "dead-mans-switch";
     document.body.dataset.cheatMode = helpers.isCheatMode() ? "true" : "false";
     const walls = new Set((state.board.walls || []).map(pointKey));
+    const interaction = state.control_condition?.interaction || "full";
     model = {
       state,
       helpers,
+      interaction,
       startedAt: performance.now(),
       events: [],
       position: clonePoint(state.board.start),
@@ -325,6 +337,7 @@
       submitting: false,
       pointerId: null,
       currentHoldStartSeq: null,
+      holdInputSource: null,
       lastPointer: null,
       lastPressureSample: 0,
       outsideSince: null,
@@ -346,7 +359,7 @@
     }
 
     helpers.app.innerHTML = `
-      <section class="dead-switch-captcha" data-holding="false" data-completed="false">
+      <section class="dead-switch-captcha" data-holding="false" data-completed="false" data-interaction="${helpers.text(interaction)}">
         <div class="switch-terminal-verdict" aria-live="assertive"></div>
         <header class="dead-switch-head">
           <div><span>CONTINUITY TRIAL / HOLD-07</span><h1>${helpers.text(state.prompt)}</h1></div>
@@ -363,7 +376,16 @@
           <aside class="pressure-console">
             <div class="pressure-gauge"><i></i><b></b><span class="pressure-state">CIRCUIT OPEN</span></div>
             <div class="pressure-track"><button type="button" class="pressure-pad" aria-label="Track and hold the moving pressure plate"><span>KEEP<br>DEPRESSED</span><i></i><b></b></button><div class="pressure-continuity"><span></span><i></i><b>0.0 / ${(Number(state.pressure_motion.minimum_hold_ms) / 1000).toFixed(1)}s</b></div></div>
-            <p>Follow the moving plate while held.<br>Steer with WASD or arrows.</p>
+            ${interaction === "simplified" ? `
+              <div class="switch-proxy-controls">
+                <button type="button" class="switch-proxy-arm">ENGAGE TRACKER</button>
+                <div class="switch-direction-controls" aria-label="Vehicle direction controls">
+                  <button type="button" data-direction="N" aria-label="Move north">↑</button>
+                  <button type="button" data-direction="W" aria-label="Move west">←</button>
+                  <button type="button" data-direction="S" aria-label="Move south">↓</button>
+                  <button type="button" data-direction="E" aria-label="Move east">→</button>
+                </div>
+              </div>` : "<p>Follow the moving plate while held.<br>Steer with WASD or arrows.</p>"}
             <div class="switch-console-stats"><span class="switch-route-progress">RELAYS <b>0 / ${state.board.checkpoints.length}</b></span><span class="switch-reset-count">RESETS <b>00</b></span></div>
           </aside>
         </section>
@@ -373,31 +395,37 @@
     `;
 
     const pad = document.querySelector(".pressure-pad");
+    const beginPressureHold = (pointer, inputSource, pointerId = null) => {
+      if (!model || model.completed || model.holding || !pressureContains(pointer)) return;
+      clearTerminalVerdict();
+      model.holding = true;
+      model.pointerId = pointerId;
+      model.holdInputSource = inputSource;
+      model.lastPointer = pointer;
+      const started = pushEvent({type: "hold_start", input_source: inputSource, position: clonePoint(model.position), pointer: {x: Math.round(pointer.x * 1000), y: Math.round(pointer.y * 1000)}});
+      model.currentHoldStartSeq = started.seq;
+      model.lastPressureSample = started.t_ms;
+      model.outsideSince = null;
+      helpers.setReadout(interaction === "simplified" ? "TRACKER ENGAGED · STEER NOW" : "CIRCUIT CLOSED · STEER NOW", "idle");
+      updateScene();
+    };
     const keydown = (event) => {
       const direction = KEY_TO_DIRECTION[String(event.key || "").toLowerCase()];
-      if (!direction || event.repeat || !model || model.completed) return;
+      if (!direction || event.repeat || !model || model.completed || model.interaction !== "full") return;
       event.preventDefault();
       if (!model.holding) {
         helpers.setReadout("PRESSURE REQUIRED", "error");
         return;
       }
-      move(direction);
+      move(direction, "keyboard");
     };
     const pointerdown = (event) => {
-      if (!model || model.completed || model.holding || event.button !== 0) return;
+      if (!model || model.completed || model.holding || event.button !== 0 || model.interaction !== "full") return;
       event.preventDefault();
-      clearTerminalVerdict();
-      model.holding = true;
-      model.pointerId = event.pointerId;
-      model.lastPointer = normalizedPointer(event);
-      if (!pressureContains(model.lastPointer)) { model.holding = false; model.pointerId = null; return; }
+      const pointer = normalizedPointer(event);
+      if (!pressureContains(pointer)) return;
       try { pad.setPointerCapture(event.pointerId); } catch (_error) { /* capture is best effort */ }
-      const started = pushEvent({type: "hold_start", position: clonePoint(model.position), pointer: {x: Math.round(model.lastPointer.x * 1000), y: Math.round(model.lastPointer.y * 1000)}});
-      model.currentHoldStartSeq = started.seq;
-      model.lastPressureSample = started.t_ms;
-      model.outsideSince = null;
-      helpers.setReadout("CIRCUIT CLOSED · STEER NOW", "idle");
-      updateScene();
+      beginPressureHold(pointer, "pointer_tracking", event.pointerId);
     };
     const pointermove = (event) => {
       if (!model?.holding || event.pointerId !== model.pointerId || model.completed) return;
@@ -423,6 +451,12 @@
     window.addEventListener("keydown", keydown);
     window.addEventListener("blur", blur);
     document.querySelector(".switch-abandon")?.addEventListener("click", abandonCourse);
+    document.querySelector(".switch-proxy-arm")?.addEventListener("click", () => {
+      beginPressureHold(pressureCenter(), "tracker_proxy");
+    });
+    document.querySelectorAll(".switch-direction-controls button").forEach((button) => {
+      button.addEventListener("click", () => move(button.dataset.direction, "direction_buttons"));
+    });
     installDeveloperReveal(state);
     activeCleanup = () => {
       if (model?.motionRaf) cancelAnimationFrame(model.motionRaf);

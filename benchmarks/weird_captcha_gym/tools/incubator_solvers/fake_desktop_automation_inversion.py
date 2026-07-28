@@ -75,7 +75,16 @@ def _drag_remote(
 def fail_once(page, state_dir: Path, out_dir: Path, mechanic: str) -> None:
     if mechanic != MECHANIC_ID:
         raise AssertionError(f"unexpected mechanic {mechanic!r}")
-    before = str(_read_json(state_dir / "ground_truth.json")["challenge_id"])
+    truth = _read_json(state_dir / "ground_truth.json")
+    before = str(truth["challenge_id"])
+    interaction = str((truth.get("control_condition") or {}).get("interaction") or "full")
+    if interaction == "simplified":
+        target_ids = {str(item) for item in truth["target_file_ids"]}
+        decoy = next(item for item in truth["files"] if str(item["id"]) not in target_ids)
+        page.locator("[data-fd-proxy='close_interceptor']").click()
+        page.locator(f"[data-fd-proxy-file-id='{decoy['id']}']").click()
+        _screenshot(page, out_dir, mechanic, "wrong-file-selected")
+        page.locator("[data-fd-proxy='transfer_selected']").click()
     page.locator(".fd-submit").click()
     _wait_for_new_challenge(state_dir, before)
     expect(page.locator(".fake-desktop-captcha[data-fresh-failure='true']")).to_be_visible(timeout=8_000)
@@ -92,65 +101,92 @@ def solve(page, state_dir: Path, out_dir: Path, mechanic: str) -> None:
         raise AssertionError("transformed desktop is not visible")
     width = float(truth["desktop"]["width"])
     height = float(truth["desktop"]["height"])
-    first_mapping, second_mapping, third_mapping = [str(item) for item in truth["mapping_sequence"]]
+    mappings = [str(item) for item in truth["mapping_sequence"]]
+    interaction = str((truth.get("control_condition") or {}).get("interaction") or "full")
     windows = {item["id"]: dict(item) for item in truth["initial_windows"]}
     geometry = truth["geometry"]
+    required_moved = set(str(item) for item in truth["required_moved_window_ids"])
 
-    blocker = windows[truth["required_blocker_id"]]
-    close_remote = (
-        blocker["x"] + blocker["width"] - geometry["close_width"] / 2,
-        blocker["y"] + geometry["title_height"] / 2,
-    )
-    _click_remote(page, desktop_box, close_remote, first_mapping, width, height)
-    page.wait_for_timeout(90)
-
-    vault = windows["vault"]
-    title_start = (vault["x"] + 42, vault["y"] + geometry["title_height"] / 2)
-    title_end = (title_start[0] + 70, title_start[1] - 20)
-    _drag_remote(page, desktop_box, title_start, title_end, first_mapping, width, height, steps=8)
-    vault["x"] += 70
-    vault["y"] -= 20
-    page.wait_for_timeout(90)
-    _screenshot(page, out_dir, mechanic, "active-window-reorder")
-
-    target_files = [next(item for item in truth["files"] if item["id"] == target_id) for target_id in truth["target_file_ids"]]
-    file_width, file_height = geometry["file_size"]
-    verifier = windows["verifier"]
-    drop = geometry["drop_zone"]
-    gap_x, gap_y = geometry["file_gap"]
-    columns = int(geometry["file_columns"])
-
-    def file_remote(file_item: dict) -> tuple[float, float]:
-        column, row = int(file_item["slot"]) % columns, int(file_item["slot"]) // columns
-        return (
-            vault["x"] + geometry["file_origin"][0] + column * (file_width + gap_x) + file_width / 2,
-            vault["y"] + geometry["file_origin"][1] + row * (file_height + gap_y) + file_height / 2,
+    if interaction == "simplified":
+        page.locator("[data-fd-proxy='close_interceptor']").click()
+        if "vault" in required_moved:
+            page.locator("[data-fd-proxy='move_vault']").click()
+        _screenshot(page, out_dir, mechanic, "active-window-reorder")
+        for index, target in enumerate(truth["target_file_ids"]):
+            page.locator(f"[data-fd-proxy-file-id='{target}']").click()
+            if index == 0:
+                _screenshot(page, out_dir, mechanic, "active-file-selection")
+            page.locator("[data-fd-proxy='transfer_selected']").click()
+            page.wait_for_timeout(80)
+            if index == 0:
+                _screenshot(page, out_dir, mechanic, "active-workflow-remap")
+                if "verifier" in required_moved:
+                    page.locator("[data-fd-proxy='move_verifier']").click()
+            if index == 1:
+                _screenshot(page, out_dir, mechanic, "active-second-transfer-remap")
+            if len(truth["target_file_ids"]) >= 4 and index == len(truth["target_file_ids"]) - 2:
+                _screenshot(page, out_dir, mechanic, "active-fourth-channel")
+            if len(truth["target_file_ids"]) >= 4 and index == len(truth["target_file_ids"]) - 1:
+                _screenshot(page, out_dir, mechanic, "active-final-remap")
+        page.locator("[data-fd-proxy='arm_manual_control']").click()
+    else:
+        blocker = windows[truth["required_blocker_id"]]
+        close_remote = (
+            blocker["x"] + blocker["width"] - geometry["close_width"] / 2,
+            blocker["y"] + geometry["title_height"] / 2,
         )
+        _click_remote(page, desktop_box, close_remote, mappings[0], width, height)
+        page.wait_for_timeout(90)
 
-    drop_remote = (verifier["x"] + drop[0] + drop[2] / 2, verifier["y"] + drop[1] + drop[3] / 2)
-    _drag_remote(page, desktop_box, file_remote(target_files[0]), drop_remote, first_mapping, width, height, steps=12)
-    page.wait_for_timeout(140)
-    expect(page.locator(".fd-mapping-badge")).to_contain_text("CHANNEL 2/3")
-    _screenshot(page, out_dir, mechanic, "active-workflow-remap")
+        vault = windows["vault"]
+        if "vault" in required_moved:
+            title_start = (vault["x"] + 42, vault["y"] + geometry["title_height"] / 2)
+            title_end = (title_start[0] + 70, title_start[1] - 20)
+            _drag_remote(page, desktop_box, title_start, title_end, mappings[0], width, height, steps=8)
+            vault["x"] += 70
+            vault["y"] -= 20
+        page.wait_for_timeout(90)
+        _screenshot(page, out_dir, mechanic, "active-window-reorder")
 
-    # Channel two uses a new transform. Reposition the verifier itself before
-    # recovering the second seal, making the destination geometry persistent
-    # across the remap instead of repeating one memorized drag.
-    verifier_title_start = (verifier["x"] + verifier["width"] - 86, verifier["y"] + geometry["title_height"] / 2)
-    verifier_title_end = (verifier_title_start[0] - 55, verifier_title_start[1] + 28)
-    _drag_remote(page, desktop_box, verifier_title_start, verifier_title_end, second_mapping, width, height, steps=9)
-    verifier["x"] -= 55
-    verifier["y"] += 28
-    drop_remote = (verifier["x"] + drop[0] + drop[2] / 2, verifier["y"] + drop[1] + drop[3] / 2)
-    _drag_remote(page, desktop_box, file_remote(target_files[1]), drop_remote, second_mapping, width, height, steps=14)
-    page.wait_for_timeout(140)
-    expect(page.locator(".fd-mapping-badge")).to_contain_text("CHANNEL 3/3")
-    _screenshot(page, out_dir, mechanic, "active-second-transfer-remap")
+        target_files = [next(item for item in truth["files"] if item["id"] == target_id) for target_id in truth["target_file_ids"]]
+        file_width, file_height = geometry["file_size"]
+        verifier = windows["verifier"]
+        drop = geometry["drop_zone"]
+        gap_x, gap_y = geometry["file_gap"]
+        columns = int(geometry["file_columns"])
 
-    arm = geometry["arm_control"]
-    arm_remote = (verifier["x"] + arm[0] + arm[2] / 2, verifier["y"] + arm[1] + arm[3] / 2)
-    _click_remote(page, desktop_box, arm_remote, third_mapping, width, height)
-    page.wait_for_timeout(100)
+        def file_remote(file_item: dict) -> tuple[float, float]:
+            column, row = int(file_item["slot"]) % columns, int(file_item["slot"]) // columns
+            return (
+                vault["x"] + geometry["file_origin"][0] + column * (file_width + gap_x) + file_width / 2,
+                vault["y"] + geometry["file_origin"][1] + row * (file_height + gap_y) + file_height / 2,
+            )
+
+        for index, target_file in enumerate(target_files):
+            drop_remote = (verifier["x"] + drop[0] + drop[2] / 2, verifier["y"] + drop[1] + drop[3] / 2)
+            _drag_remote(page, desktop_box, file_remote(target_file), drop_remote, mappings[index], width, height, steps=12 + index)
+            page.wait_for_timeout(140)
+            expect(page.locator(".fd-mapping-badge")).to_contain_text(f"CHANNEL {index + 2}/{len(mappings)}")
+            if index == 0:
+                _screenshot(page, out_dir, mechanic, "active-workflow-remap")
+                if "verifier" in required_moved:
+                    verifier_title_start = (verifier["x"] + verifier["width"] - 86, verifier["y"] + geometry["title_height"] / 2)
+                    verifier_title_end = (verifier_title_start[0] - 55, verifier_title_start[1] + 28)
+                    _drag_remote(page, desktop_box, verifier_title_start, verifier_title_end, mappings[index + 1], width, height, steps=9)
+                    verifier["x"] -= 55
+                    verifier["y"] += 28
+            if index == 1:
+                _screenshot(page, out_dir, mechanic, "active-second-transfer-remap")
+            if len(target_files) >= 4 and index == len(target_files) - 2:
+                _screenshot(page, out_dir, mechanic, "active-fourth-channel")
+            if len(target_files) >= 4 and index == len(target_files) - 1:
+                _screenshot(page, out_dir, mechanic, "active-final-remap")
+
+        arm = geometry["arm_control"]
+        arm_remote = (verifier["x"] + arm[0] + arm[2] / 2, verifier["y"] + arm[1] + arm[3] / 2)
+        _click_remote(page, desktop_box, arm_remote, mappings[-1], width, height)
+        page.wait_for_timeout(100)
+
     expect(page.locator(".fd-arm-control.is-armed")).to_be_visible()
     state = page.evaluate("""() => ({
         boundary: window.fakeDesktopInversionModel.boundary,
@@ -162,13 +198,13 @@ def solve(page, state_dir: Path, out_dir: Path, mechanic: str) -> None:
         moved_ids: [...window.fakeDesktopInversionModel.movedWindowIds].sort(),
     })""")
     if not (
-        state["boundary"] == 2
+        state["boundary"] == len(truth["target_file_ids"])
         and state["loaded"] == truth["target_file_ids"]
         and state["armed"] is True
-        and state["move_count"] >= 2
+        and state["move_count"] >= len(required_moved)
         and state["closed"] >= 1
-        and state["z"] >= 2
-        and set(state["moved_ids"]) >= set(truth["required_moved_window_ids"])
+        and state["z"] >= len(required_moved)
+        and set(state["moved_ids"]) >= required_moved
     ):
         raise AssertionError(f"automation-inversion physical workflow ended in unexpected state: {state}")
     _screenshot(page, out_dir, mechanic, "solved")

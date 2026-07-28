@@ -46,31 +46,66 @@ def _drag_plate(page, box: dict, stage: dict, plate_id: str, target: dict) -> No
     page.wait_for_timeout(80)
 
 
-def _orient_plate(page, plate: dict, target: dict) -> None:
+def _interaction(truth: dict) -> str:
+    return str((truth.get("control_condition") or {}).get("interaction") or "simplified")
+
+
+def _right_click_plate(page, box: dict, stage: dict, plate_id: str, *, shift: bool = False) -> None:
+    pose = page.evaluate("plateId => window.bombManualAcetateModel.poses[plateId]", plate_id)
+    point = _screen(box, stage, float(pose["x"]), float(pose["y"]))
+    if shift:
+        page.keyboard.down("Shift")
+    try:
+        page.mouse.click(*point, button="right")
+    finally:
+        if shift:
+            page.keyboard.up("Shift")
+    page.wait_for_timeout(45)
+
+
+def _orient_plate(
+    page,
+    box: dict,
+    stage: dict,
+    plate: dict,
+    target: dict,
+    interaction: str,
+    rotation_step: int,
+) -> None:
     current = page.evaluate("plateId => window.bombManualAcetateModel.poses[plateId]", plate["id"])
     if bool(current["flipped"]) != bool(target["flipped"]):
-        page.locator('[data-transform="flip"]').click()
-    step = 45
-    turns = int(((int(target["angle_deg"]) - int(current["angle_deg"])) % 360) / step)
+        if interaction == "full":
+            _right_click_plate(page, box, stage, plate["id"], shift=True)
+        else:
+            page.locator('[data-transform="flip"]').click()
+    turns = int(((int(target["angle_deg"]) - int(current["angle_deg"])) % 360) / rotation_step)
     for _ in range(turns):
-        page.locator('[data-transform="rotate-right"]').click()
+        if interaction == "full":
+            _right_click_plate(page, box, stage, plate["id"])
+        else:
+            page.locator('[data-transform="rotate-right"]').click()
 
 
 def fail_once(page, state_dir: Path, out_dir: Path, mechanic: str) -> None:
     if mechanic != MECHANIC_ID:
         raise AssertionError(mechanic)
     truth = _read(state_dir / "ground_truth.json")
+    interaction = _interaction(truth)
     before = str(truth["challenge_id"])
     plate = truth["plates"][0]
     target = truth["target_poses"][plate["id"]]
     box = page.locator("#bomb-acetate-canvas").bounding_box()
     if not box:
         raise AssertionError("acetate workbench canvas is not visible")
-    _drag_plate(page, box, truth["stage"], plate["id"], target)
     current = page.evaluate("plateId => window.bombManualAcetateModel.poses[plateId]", plate["id"])
-    if int(current["angle_deg"]) == int(target["angle_deg"]) and bool(current["flipped"]) == bool(target["flipped"]):
+    already_oriented = int(current["angle_deg"]) == int(target["angle_deg"]) and bool(current["flipped"]) == bool(target["flipped"])
+    if interaction == "full" and already_oriented:
+        _right_click_plate(page, box, truth["stage"], plate["id"])
+    _drag_plate(page, box, truth["stage"], plate["id"], target)
+    if interaction == "simplified" and already_oriented:
         page.locator('[data-transform="rotate-right"]').click()
-    page.locator("#bomb-seat-plate").click()
+    if interaction == "simplified":
+        page.locator("#bomb-seat-plate").click()
     expect(page.locator(".bomb-foot .readout")).to_contain_text("KEYHOLES MISS")
     _shot(page, out_dir, mechanic, "local-keyhole-miss")
     page.locator('[data-transform="reset"]').click()
@@ -85,17 +120,27 @@ def solve(page, state_dir: Path, out_dir: Path, mechanic: str) -> None:
     if mechanic != MECHANIC_ID:
         raise AssertionError(mechanic)
     truth = _read(state_dir / "ground_truth.json")
+    interaction = _interaction(truth)
     box = page.locator("#bomb-acetate-canvas").bounding_box()
     if not box:
         raise AssertionError("acetate workbench canvas is not visible")
     for index, plate in enumerate(truth["plates"]):
         page.locator(f'.bomb-plate-card[data-plate-id="{plate["id"]}"]').click()
         target = truth["target_poses"][plate["id"]]
-        _orient_plate(page, plate, target)
+        _orient_plate(
+            page,
+            box,
+            truth["stage"],
+            plate,
+            target,
+            interaction,
+            int(truth["requirements"]["rotation_step_deg"]),
+        )
         _drag_plate(page, box, truth["stage"], plate["id"], target)
         if index == 0:
             _shot(page, out_dir, mechanic, "active-first-acetate-alignment")
-        page.locator("#bomb-seat-plate").click()
+        if interaction == "simplified":
+            page.locator("#bomb-seat-plate").click()
         expect(page.locator(f'.bomb-plate-card[data-plate-id="{plate["id"]}"]')).to_have_attribute("data-locked", "true")
     plate_count = len(truth["plates"])
     expect(page.locator(".bomb-status-count b")).to_have_text(f"{plate_count} / {plate_count}")
@@ -113,3 +158,6 @@ def solve(page, state_dir: Path, out_dir: Path, mechanic: str) -> None:
     cuts = [event for event in result.get("events") or [] if event.get("type") == "cut"]
     if len(locks) != plate_count or not all(event.get("accepted") is True for event in locks) or len(cuts) != 1 or result.get("misseat_count") != 0:
         raise AssertionError("clean acetate defusal transcript is not exact")
+    expected_lock_source = "plate_drop" if interaction == "full" else "seat_button"
+    if {event.get("input_source") for event in locks} != {expected_lock_source}:
+        raise AssertionError("acetate lock transcript used the wrong interaction surface")

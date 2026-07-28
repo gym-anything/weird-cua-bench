@@ -22,6 +22,21 @@ def _identity_error(payload: dict[str, Any], ground_truth: dict[str, Any], publi
     return None
 
 
+def _interaction_source(ground_truth: dict[str, Any], public_state: dict[str, Any]) -> tuple[str | None, str | None]:
+    """Return the required event source and reject cross-condition replays."""
+
+    condition = ground_truth.get("control_condition")
+    if condition is None:
+        return None, None
+    if not isinstance(condition, dict) or public_state.get("control_condition") != condition:
+        return None, "public interaction condition differs from controller contract"
+    interaction = str(condition.get("interaction") or "")
+    expected = {"simplified": "port_click_pair", "full": "port_drag"}.get(interaction)
+    if expected is None:
+        return None, "controller interaction condition is invalid"
+    return expected, None
+
+
 def _condition_result(condition: dict[str, Any], value: int) -> bool:
     kind = str(condition.get("kind") or "")
     target = int(condition.get("value"))
@@ -38,8 +53,8 @@ def _condition_result(condition: dict[str, Any], value: int) -> bool:
 
 def _simulate(nodes: list[dict[str, Any]], entry_id: str, probe: int) -> dict[str, Any]:
     by_id = {str(node.get("id") or ""): node for node in nodes}
-    if not entry_id or entry_id not in by_id or len(by_id) != 9:
-        raise ValueError("invalid nine-node controller")
+    if not entry_id or entry_id not in by_id or not 5 <= len(by_id) <= 11:
+        raise ValueError("invalid controlled controller")
     current = entry_id
     accumulator = probe
     steps: list[dict[str, Any]] = []
@@ -115,6 +130,9 @@ def grade(payload: dict[str, Any], ground_truth: dict[str, Any], public_state: d
     identity_error = _identity_error(payload, ground_truth, public_state)
     if identity_error:
         return {"graded": True, "passed": False, "feedback": identity_error}
+    expected_input_source, interaction_error = _interaction_source(ground_truth, public_state)
+    if interaction_error:
+        return {"graded": True, "passed": False, "feedback": interaction_error}
     nodes = ground_truth.get("nodes")
     if not isinstance(nodes, list):
         return {"graded": True, "passed": False, "feedback": "missing private program"}
@@ -164,6 +182,8 @@ def grade(payload: dict[str, Any], ground_truth: dict[str, Any], public_state: d
     for sequence, event in enumerate(raw_events, start=1):
         if not isinstance(event, dict) or event.get("sequence") != sequence:
             return {"graded": True, "passed": False, "feedback": f"wire event {sequence} has invalid sequence"}
+        if expected_input_source and event.get("input_source") != expected_input_source:
+            return {"graded": True, "passed": False, "feedback": f"wire event {sequence} uses the wrong interaction input"}
         action = str(event.get("action") or "")
         wire = _normalize_wire(event)
         if wire is None:

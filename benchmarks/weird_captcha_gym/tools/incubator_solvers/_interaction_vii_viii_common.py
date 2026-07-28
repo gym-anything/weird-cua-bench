@@ -33,6 +33,9 @@ def _shot(page, out_dir: Path, mechanic: str, label: str) -> None:
 
 def fail_once(page, state_dir: Path, out_dir: Path, mechanic: str) -> None:
     before = str(_read(state_dir / "ground_truth.json")["challenge_id"])
+    if mechanic == "clockwork_clutch_safe":
+        page.locator("#clutch-drive").click()
+        page.wait_for_function("() => window.clockworkClutchSafeModel.tick >= 2")
     page.locator(ABANDON[mechanic]).click()
     expect(page.locator(".ivv-verdict.is-fresh")).to_be_visible(timeout=8_000)
     deadline = time.time() + 8
@@ -42,6 +45,9 @@ def fail_once(page, state_dir: Path, out_dir: Path, mechanic: str) -> None:
         time.sleep(.05)
     else:
         raise AssertionError(f"{mechanic} failure did not issue a fresh challenge")
+    if mechanic == "clockwork_clutch_safe":
+        page.wait_for_timeout(300)
+        expect(page.locator("#clutch-tick")).to_contain_text("0/")
     _shot(page, out_dir, mechanic, "fail-fresh")
     expect(page.locator(".ivv-verdict.is-fresh")).to_be_hidden(timeout=3_000)
 
@@ -153,17 +159,65 @@ def _wind(page, state_dir: Path, out_dir: Path, mechanic: str) -> None:
 
 def _hologram(page, state_dir: Path, out_dir: Path, mechanic: str) -> None:
     truth = _read(state_dir / "ground_truth.json")
+    interaction = str((truth.get("control_condition") or {}).get("interaction") or "simplified")
     _shot(page, out_dir, mechanic, "initial-three-view-foundry")
+    gizmo = page.locator("#holo-gizmo")
+
+    def gizmo_drag(axis: str, delta: int) -> None:
+        box = gizmo.bounding_box()
+        if not box:
+            raise AssertionError("foundry direct-manipulation gizmo is not visible")
+        center = (132, 88)
+        handles = {
+            ("x", 1): (205, 88), ("x", -1): (59, 88),
+            ("y", 1): (132, 28), ("y", -1): (132, 148),
+            ("z", 1): (188, 42), ("z", -1): (76, 134),
+        }
+        point = handles[(axis, delta)]
+        scale_x, scale_y = box["width"] / 264, box["height"] / 176
+        start = (box["x"] + point[0] * scale_x, box["y"] + point[1] * scale_y)
+        end = (
+            start[0] + (point[0] - center[0]) * .58 * scale_x,
+            start[1] + (point[1] - center[1]) * .58 * scale_y,
+        )
+        page.mouse.move(*start)
+        page.mouse.down()
+        page.mouse.move(*end, steps=5)
+        page.mouse.up()
+
+    def rotate_gizmo() -> None:
+        box = gizmo.bounding_box()
+        if not box:
+            raise AssertionError("foundry orientation ring is not visible")
+        scale_x, scale_y = box["width"] / 264, box["height"] / 176
+        # Start on a clear arc of the ring, away from the direct X/Z handles.
+        # The browser distinguishes an orientation drag from an axis-handle
+        # drag by this same visible geometry.
+        start = (box["x"] + 155 * scale_x, box["y"] + 39 * scale_y)
+        end = (box["x"] + 105 * scale_x, box["y"] + 52 * scale_y)
+        page.mouse.move(*start)
+        page.mouse.down()
+        page.mouse.move(*end, steps=6)
+        page.mouse.up()
+
     for target in truth["solution_objects"]:
         page.locator(f'[data-rod="{target["id"]}"]').click()
         current = page.evaluate("id => window.hologramSilhouetteFoundryModel.objects.find(item => item.id === id)", target["id"])
         for axis_index, axis in enumerate("xyz"):
             delta = int(target["center"][axis_index]) - int(current["center"][axis_index])
-            button = page.locator(f'[data-move="{axis}{"+" if delta > 0 else "-"}"]')
-            _click_many(button, abs(delta))
+            if interaction == "full":
+                for _ in range(abs(delta)):
+                    gizmo_drag(axis, 1 if delta > 0 else -1)
+            else:
+                button = page.locator(f'[data-move="{axis}{"+" if delta > 0 else "-"}"]')
+                _click_many(button, abs(delta))
         current_axis = str(page.evaluate("id => window.hologramSilhouetteFoundryModel.objects.find(item => item.id === id).axis", target["id"]))
         turns = ("xyz".index(target["axis"]) - "xyz".index(current_axis)) % 3
-        _click_many(page.locator("#holo-rotate"), turns)
+        if interaction == "full":
+            for _ in range(turns):
+                rotate_gizmo()
+        else:
+            _click_many(page.locator("#holo-rotate"), turns)
     _shot(page, out_dir, mechanic, "three-shadow-dies-coincident")
     page.locator("#holo-cast").click()
 
@@ -198,9 +252,23 @@ def _orbital(page, state_dir: Path, out_dir: Path, mechanic: str) -> None:
 
 def _gravity(page, state_dir: Path, out_dir: Path, mechanic: str) -> None:
     truth = _read(state_dir / "ground_truth.json")
+    interaction = str((truth.get("control_condition") or {}).get("interaction") or "simplified")
     _shot(page, out_dir, mechanic, "initial-gravity-room")
     for index, action in enumerate(truth["solution"]):
-        page.locator(f'[data-gravity="{action}"]').click()
+        if interaction == "simplified":
+            page.locator(f'[data-gravity="{action}"]').click()
+        else:
+            canvas = page.locator("#gravity-canvas")
+            box = canvas.bounding_box()
+            if box is None:
+                raise AssertionError("gravity room canvas has no visible bounds")
+            start_x = box["x"] + box["width"] * (0.34 if action == "cw" else 0.66)
+            end_x = box["x"] + box["width"] * (0.66 if action == "cw" else 0.34)
+            center_y = box["y"] + box["height"] * .5
+            page.mouse.move(start_x, center_y)
+            page.mouse.down()
+            page.mouse.move(end_x, center_y, steps=8)
+            page.mouse.up()
         page.wait_for_timeout(680)
         if index == len(truth["solution"]) // 2:
             _shot(page, out_dir, mechanic, "mid-rotation-airlocks")
@@ -209,14 +277,65 @@ def _gravity(page, state_dir: Path, out_dir: Path, mechanic: str) -> None:
 
 def _flood(page, state_dir: Path, out_dir: Path, mechanic: str) -> None:
     truth = _read(state_dir / "ground_truth.json")
+    interaction = str((truth.get("control_condition") or {}).get("interaction") or "simplified")
+    def vault_center(index: int) -> tuple[float, float]:
+        tank = page.locator(f'.flood-tank[data-vault="{index}"]')
+        box = tank.bounding_box()
+        if not box:
+            raise AssertionError(f"flood vault {index + 1} has no direct-manipulation geometry")
+        return box["x"] + box["width"] / 2, box["y"] + box["height"] / 2
+    def water_point(index: int) -> tuple[float, float]:
+        tank = page.locator(f'.flood-tank[data-vault="{index}"]')
+        box = tank.bounding_box()
+        if not box:
+            raise AssertionError(f"flood vault {index + 1} has no direct water geometry")
+        # Capsules render on the horizontal midpoint.  Use an uncovered part
+        # of the same visible tank so the full solver drives water, not a
+        # capsule that happens to float at the current level.
+        return box["x"] + box["width"] * .22, box["y"] + box["height"] / 2
+    def drag(start: tuple[float, float], end: tuple[float, float]) -> None:
+        page.mouse.move(*start)
+        page.mouse.down()
+        page.mouse.move(*end, steps=8)
+        page.mouse.up()
     _shot(page, out_dir, mechanic, "initial-unequal-vaults")
     for index, action in enumerate(truth["reference_plan"]):
         if action["action"] == "pump":
-            page.locator(f'[data-circuit="{action["circuit"]}"][data-direction="{action["direction"]}"]').click()
+            if interaction == "simplified":
+                page.locator(f'[data-circuit="{action["circuit"]}"][data-direction="{action["direction"]}"]').click()
+            else:
+                circuit = truth.get("circuits", [])
+                if not circuit:
+                    circuit = page.evaluate("() => window.floodgateArchiveRescueModel.state.circuits")
+                endpoints = circuit[int(action["circuit"])]["between"] if isinstance(circuit[int(action["circuit"])], dict) else circuit[int(action["circuit"])]
+                source, destination = (int(endpoints[0]), int(endpoints[1])) if int(action["direction"]) == 1 else (int(endpoints[1]), int(endpoints[0]))
+                drag(water_point(source), water_point(destination))
         elif action["action"] == "gate":
-            page.locator(f'[data-lock="{action["gate"]}"]').click()
+            if interaction == "simplified":
+                page.locator(f'[data-lock="{action["gate"]}"]').click()
+            else:
+                page.locator(f'#flood-lock-{action["gate"]}').click()
         else:
-            page.locator("#flood-flow").click()
+            if interaction == "simplified":
+                page.locator("#flood-flow").click()
+            else:
+                gate = int(action["gate"])
+                capsule = page.evaluate(
+                    """gate => window.floodgateArchiveRescueModel.capsules.find((item) =>
+                      (item.direction === 1 && item.chamber === gate) ||
+                      (item.direction === -1 && item.chamber === gate + 1)
+                    )""",
+                    gate,
+                )
+                if not capsule:
+                    raise AssertionError(f"no capsule can directly cross flood lock {gate + 1}")
+                source = int(capsule["chamber"])
+                destination = source + int(capsule["direction"])
+                marker = page.locator(f'#flood-capsule-{capsule["id"]}-{source}')
+                marker_box = marker.bounding_box()
+                if not marker_box:
+                    raise AssertionError(f"flood capsule {capsule['id']} has no direct drag target")
+                drag((marker_box["x"] + marker_box["width"] / 2, marker_box["y"] + marker_box["height"] / 2), vault_center(destination))
         if index == len(truth["reference_plan"]) // 2:
             _shot(page, out_dir, mechanic, "active-lock-transfer")
     page.locator("#flood-certify").click()
@@ -224,15 +343,40 @@ def _flood(page, state_dir: Path, out_dir: Path, mechanic: str) -> None:
 
 def _membrane(page, state_dir: Path, out_dir: Path, mechanic: str) -> None:
     truth = _read(state_dir / "ground_truth.json")
+    interaction = str((truth.get("control_condition") or {}).get("interaction") or "simplified")
     _shot(page, out_dir, mechanic, "initial-live-membrane")
+    canvas = page.locator("#membrane-canvas")
+
+    def adjust_post(index: int, target: int) -> None:
+        if interaction == "simplified":
+            _adjust_range(page, f'[data-post="{index}"]', target)
+            return
+        box = canvas.bounding_box()
+        if not box:
+            raise AssertionError("membrane canvas has no direct post geometry")
+        snapshot = page.evaluate(
+            "(index) => ({height: window.elasticMembraneSorterModel.heights[index], point: window.elasticMembraneSorterModel.state.post_positions[index]})",
+            index,
+        )
+        current = float(snapshot["height"])
+        point = snapshot["point"]
+        start_x = box["x"] + float(point[0]) / 900 * box["width"]
+        start_y = box["y"] + (float(point[1]) + (.5 - current) * 80) / 480 * box["height"]
+        end_y = box["y"] + (float(point[1]) + (.5 - float(target) / 100) * 80) / 480 * box["height"]
+        page.mouse.move(start_x, start_y)
+        page.mouse.down()
+        page.mouse.move(start_x, end_y, steps=3)
+        page.mouse.up()
+
     for index, round_data in enumerate(truth["rounds"]):
         first = round_data["checkpoints"][0]
         fx = max(-.048, min(.048, .004 * (float(first[0]) - 450)))
         fy = max(-.048, min(.048, .004 * (float(first[1]) - 230)))
-        hx, hy = fx / .2, fy / .2
+        scale = 2 * float(truth["physics"]["slope_accel"])
+        hx, hy = fx / scale, fy / scale
         initial = [max(0, min(100, round(100 * value))) for value in (.5 + hx + hy, .5 - hx + hy, .5 + hx - hy, .5 - hx - hy)]
         for post, value in enumerate(initial):
-            _adjust_range(page, f'[data-post="{post}"]', value)
+            adjust_post(post, value)
         page.locator("#membrane-release").click()
         last_control = -10
         photographed = False
@@ -251,10 +395,10 @@ def _membrane(page, state_dir: Path, out_dir: Path, mechanic: str) -> None:
                 ball = snapshot["ball"]
                 fx = max(-.048, min(.048, .004 * (float(target[0]) - float(ball["x"])) - .09 * float(ball["vx"])))
                 fy = max(-.048, min(.048, .004 * (float(target[1]) - float(ball["y"])) - .09 * float(ball["vy"])))
-                hx, hy = fx / .2, fy / .2
+                hx, hy = fx / scale, fy / scale
                 targets = [max(0, min(100, round(100 * value))) for value in (.5 + hx + hy, .5 - hx + hy, .5 + hx - hy, .5 - hx - hy)]
                 for post, value in enumerate(targets):
-                    _adjust_range(page, f'[data-post="{post}"]', value)
+                    adjust_post(post, value)
                 last_control = int(snapshot["ticks"])
             if index == 0 and int(snapshot["checkpoint"]) == 1 and not photographed:
                 _shot(page, out_dir, mechanic, "live-steering-between-rings")
@@ -308,21 +452,84 @@ def _pheromone(page, state_dir: Path, out_dir: Path, mechanic: str) -> None:
 
 def _clutch(page, state_dir: Path, out_dir: Path, mechanic: str) -> None:
     truth = _read(state_dir / "ground_truth.json")
+    interaction = str((truth.get("control_condition") or {}).get("interaction") or "simplified")
+    def prepare_lever(shaft: int):
+        lever = page.locator(f'[data-clutch-lever="{shaft}"]')
+        handle = lever.locator(".clutch-lever-handle")
+        rail = lever.locator(".clutch-lever-rail")
+        handle_box = handle.bounding_box()
+        rail_box = rail.bounding_box()
+        if not handle_box or not rail_box:
+            raise AssertionError(f"clutch {shaft} has no draggable lever geometry")
+        page.mouse.move(handle_box["x"] + handle_box["width"] / 2, handle_box["y"] + handle_box["height"] / 2)
+        page.mouse.down()
+        page.mouse.move(rail_box["x"] + rail_box["width"] - handle_box["width"] / 2 - 4, rail_box["y"] + rail_box["height"] / 2)
+        return lever
+    def release_lever(lever) -> None:
+        page.mouse.up()
+        expect(lever).to_have_attribute("data-state", "free")
+
     _shot(page, out_dir, mechanic, "initial-coupled-train")
     page.locator("#clutch-drive").click()
     for schedule_index, item in enumerate(truth["release_schedule"]):
-        page.wait_for_function("tick => window.clockworkClutchSafeModel.tick >= tick", arg=int(item["tick"]), timeout=12_000)
-        page.locator(f'[data-clutch="{int(item["shaft"])}"]').click()
+        target_tick = int(item["tick"])
+        shaft = int(item["shaft"])
+        page.evaluate(
+            """target => new Promise((resolve, reject) => {
+              const deadline = performance.now() + 60000;
+              const watcher = window.setInterval(() => {
+                const model = window.clockworkClutchSafeModel;
+                if (model && model.tick >= target) {
+                  window.clearInterval(watcher);
+                  document.getElementById("clutch-brake").click();
+                  resolve();
+                } else if (performance.now() >= deadline) {
+                  window.clearInterval(watcher);
+                  reject(new Error(`clockwork did not reach tick ${target}`));
+                }
+              }, 4);
+            })""",
+            target_tick,
+        )
+        page.wait_for_function("() => window.clockworkClutchSafeModel.running === false", polling=50)
+        stopped_tick = int(page.evaluate("() => window.clockworkClutchSafeModel.tick"))
+        if stopped_tick != target_tick:
+            raise AssertionError(f"clockwork brake missed release tick {target_tick}; stopped at {stopped_tick}")
+        if interaction == "full":
+            lever = prepare_lever(shaft)
+            release_lever(lever)
+        else:
+            page.locator(f'[data-clutch="{shaft}"]').click()
         if schedule_index == 0:
             _shot(page, out_dir, mechanic, "first-release-load-redistributed")
-    page.locator("#clutch-brake").click()
-    _shot(page, out_dir, mechanic, "four-phases-braked")
+        if schedule_index + 1 < len(truth["release_schedule"]):
+            page.locator("#clutch-drive").click()
+    _shot(page, out_dir, mechanic, f"{len(truth['release_schedule'])}-phases-braked")
     page.locator("#clutch-unlock").click()
 
 
 def _marionette(page, state_dir: Path, out_dir: Path, mechanic: str) -> None:
     truth = _read(state_dir / "ground_truth.json")
+    interaction = str((truth.get("control_condition") or {}).get("interaction") or "simplified")
+    active_indices = list(truth.get("active_string_indices") or (0, 1, 2, 3))
     _shot(page, out_dir, mechanic, "initial-coupled-puppet")
+
+    def set_length(string: int, length: int) -> None:
+        if interaction == "simplified":
+            _adjust_range(page, f'[data-string="{string}"]', int(length))
+            return
+        canvas = page.locator("#marionette-canvas")
+        box = canvas.bounding_box()
+        if not box:
+            raise AssertionError("marionette theatre canvas is not visible")
+        current = float(page.evaluate("index => window.marionetteCheckpointModel.lengths[index]", string))
+        start = (box["x"] + (290 + string * 105) * box["width"] / 900, box["y"] + (22 + (current - 20) * 1.8) * box["height"] / 480)
+        target = (start[0], box["y"] + (22 + (int(length) - 20) * 1.8) * box["height"] / 480)
+        page.mouse.move(*start)
+        page.mouse.down()
+        page.mouse.move(*target)
+        page.mouse.up()
+
     for pose_index, pose in enumerate(truth["poses"]):
         photographed = False
         deadline = time.time() + 18
@@ -332,10 +539,10 @@ def _marionette(page, state_dir: Path, out_dir: Path, mechanic: str) -> None:
             snapshot = page.evaluate("() => {const m=window.marionetteCheckpointModel;return {poseIndex:m.poseIndex,tick:m.tick,progress:m.progress}}")
             if int(snapshot["poseIndex"]) > pose_index:
                 break
-            future_tick = int(snapshot["tick"]) + 2
+            future_tick = int(snapshot["tick"]) + (5 if interaction == "full" else 2)
             targets = [round(float(base) + float(pose["amplitudes"][index]) * math.sin(future_tick * float(pose["angular_rate"]) + float(pose["phases"][index]))) for index, base in enumerate(pose["base_lengths"])]
-            for string, length in enumerate(targets):
-                _adjust_range(page, f'[data-string="{string}"]', int(length))
+            for string in active_indices:
+                set_length(string, int(targets[string]))
             if pose_index == 0 and int(snapshot["progress"]) > 22 and not photographed:
                 _shot(page, out_dir, mechanic, "live-four-limb-tracking")
                 photographed = True

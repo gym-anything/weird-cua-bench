@@ -95,10 +95,11 @@ def solve(page, state_dir: Path, out_dir: Path, mechanic: str) -> None:
     page.wait_for_timeout(720)
     _shot(page, out_dir, mechanic, "active-calibration-film")
     page.wait_for_function("() => window.impossibleEcologyModel.calibrating === null", timeout=5_000)
-    canvas = page.locator(".eco-arena")
-    box = canvas.bounding_box()
+    interaction = str((truth.get("control_condition") or {}).get("interaction") or "full")
+    surface = page.locator(".eco-arena" if interaction == "full" else ".eco-coordinate-pad")
+    box = surface.bounding_box()
     if not box:
-        raise AssertionError("coupled ecology arena is not visible")
+        raise AssertionError("coupled ecology field-lure surface is not visible")
 
     # Start with the organisms whose primary responses are strongest so their
     # coupled motion is removed from the live field first.
@@ -114,7 +115,7 @@ def solve(page, state_dir: Path, out_dir: Path, mechanic: str) -> None:
 
     expect(page.locator(".eco-complete[data-visible='true']")).to_be_visible(timeout=8_000)
     final = page.evaluate("""() => ({captured:Object.values(window.impossibleEcologyModel.organisms).filter(x=>x.captured).length,completed:window.impossibleEcologyModel.completed,tick:window.impossibleEcologyModel.tick,resets:window.impossibleEcologyModel.resets,drags:window.impossibleEcologyModel.pointerDrags})""")
-    if final["captured"] != 5 or not final["completed"] or final["resets"] != 0 or final["drags"] < 1:
+    if final["captured"] != len(truth["organisms"]) or not final["completed"] or final["resets"] != 0 or final["drags"] < 1:
         raise AssertionError(f"coupled ecology clean solve incomplete: {final}")
     _shot(page, out_dir, mechanic, "stable-all-sanctuaries")
     page.locator(".eco-submit").click()

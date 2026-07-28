@@ -75,7 +75,10 @@ def wait_until_ready(*, port: int = 8787, timeout: float = 30.0) -> dict:
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="Control the Weird CUA Bench browser clock.")
-    parser.add_argument("command", choices=("status", "wait-ready", "pause", "resume", "run-for"))
+    parser.add_argument(
+        "command",
+        choices=("status", "wait-ready", "pause", "settle-pause", "resume", "run-for"),
+    )
     parser.add_argument("--port", type=int, default=8787)
     parser.add_argument("--milliseconds", type=float)
     parser.add_argument("--start-delay-ms", type=float, default=0)
@@ -106,7 +109,7 @@ def main() -> None:
                 timeout=args.timeout + float(args.milliseconds or 0) / 1000,
             )
         else:
-            expected_state = "paused" if command == "pause" else "running"
+            expected_state = "paused" if command in {"pause", "settle_pause"} else "running"
             result = wait_for_status(
                 lambda item: int(item.get("sequence") or -1) == sequence
                 and item.get("state") == expected_state,

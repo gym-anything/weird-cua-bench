@@ -1,0 +1,47 @@
+{
+  "schema_version": 1,
+  "base_manifest": "../gemini_3_5_flash_random15_ui_only_fhd_retry_20260715/manifest.json",
+  "experiment_id": "gemini-3.5-flash-random15-ui-only-fhd-request-retry-20260715T201206Z",
+  "purpose": "Restart the identical frozen random 15-task sample from task 1 at 1920x1080 with a finite request deadline and one complete request-level transient retry policy, after the preceding run exposed an unbounded, non-retried server disconnect.",
+  "protocol": {
+    "agent": "GeminiComputerUseAgent",
+    "model": "gemini-3.5-flash",
+    "computer_use_environment": "desktop",
+    "display_resolution": [1920, 1080],
+    "thinking_level": "high",
+    "temperature": 1.0,
+    "runner": "avf",
+    "seed": 42,
+    "max_steps": 100,
+    "runs_per_task": 1,
+    "parallelism": 1,
+    "fast_io": false,
+    "post_reset_observation_delay_seconds": 3.0,
+    "max_no_candidate_retries_per_turn": 2,
+    "no_candidate_retry_delays_seconds": [2.0, 5.0],
+    "http_retry_options": {
+      "attempts": 5,
+      "timeout_ms": 180000,
+      "initial_delay": 1.0,
+      "max_delay": 16.0,
+      "exp_base": 2.0,
+      "jitter": 1.0,
+      "http_status_codes": [408, 429, 500, 502, 503, 504]
+    },
+    "task_mutations_allowed": false,
+    "task_instruction": "MANDATORY VISIBLE-UI-ONLY POLICY: Complete this task exclusively through the visible controls in the task's browser webpage or webpages. Do not open or use Developer Tools, Console, Debugger, Inspector, Network, Sources, View Source, DOM inspection, page-state inspection, or implementation/source inspection. Do not use a terminal, shell, code, scripts, Python, automation, the address bar, URL or query-parameter edits, browser extensions, other applications, or external tools. Do not reload, navigate, or close task pages. Do not switch to or interact with any pre-existing, unrelated, blank, browser-settings, or non-task tab. If the visible task UI itself provides controls that open additional task tabs, you may use only those task-created tabs and their visible controls; never inspect their implementation. Ordinary browser zoom may be used solely to resize the visible task UI. Solve only by observing screenshots and interacting with visible task UI controls. If blocked, keep reasoning from the visible UI; do not bypass these rules.",
+    "stop_policy": "The model may finish early; otherwise stop after 100 logical model turns. Every provider request has a 180-second deadline and exactly five total attempts. Retry HTTP 408/429/500/502/503/504 and any HTTPX transport error (including timeout, connection, read/write, and server-disconnect/protocol failures) with exponential backoff and jitter without consuming an environment step. Do not retry safety blocks, authentication failures, invalid requests, or other non-transient provider errors. Separately retry a candidate-less provider response after 2 and 5 seconds unless Google reports an explicit prompt block. A verifier failure is an experimental outcome; an exhausted or non-retryable model request error is a model API error and is excluded from benchmark pass/fail counts."
+  },
+  "provenance": {
+    "benchmark_git_revision_at_draw": "2de3287b3df3bffcd7612f1f346277a77b6aa476",
+    "benchmark_working_branch": "codex/gemini35-random15-eval",
+    "gym_anything_git_revision": "c5bdbddce28584db6244fabc4f15987292a95eed",
+    "gym_anything_working_branch": "codex/gemini-agent-sync",
+    "gemini_agent_sha256": "01516147ee4d85ad79a97fcc18f0b9009215dce2af57a022db5227e8a28143e8a",
+    "python": "3.12.2",
+    "google_genai": "2.11.0",
+    "dependency_mode": "isolated benchmark-local virtual environment with editable links to this checkout and ../gym-anything",
+    "supersedes_experiment_id": "gemini-3.5-flash-random15-ui-only-fhd-retry-20260715T170806Z",
+    "supersession_reason": "The preceding run exposed that the SDK-level retry predicate omitted HTTPX server-disconnect errors and had no finite request timeout. Its partial artifacts remain preserved, but it is not the requested clean 15-task rerun."
+  }
+}

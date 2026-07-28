@@ -1,41 +1,520 @@
 (() => {
   "use strict";
-  let model=null,activeCleanup=null;
-  const clamp=(v,l,h)=>Math.max(l,Math.min(h,v));const round2=(v)=>Math.round(Number(v)*100)/100;const point=(v)=>({x:round2(v.x),y:round2(v.y)});const dist=(a,b)=>Math.hypot(a.x-b.x,a.y-b.y);const nowMs=()=>Math.round(performance.now()-model.startedAt);
-  function pushEvent(event){const item={seq:model.events.length+1,t_ms:nowMs(),...event};model.events.push(item);return item;}
-  function interpolate(recording,local){const samples=recording.samples;if(local<=samples[0].local_t_ms)return samples[0].position;if(local>=samples.at(-1).local_t_ms)return samples.at(-1).position;for(let i=0;i<samples.length-1;i++){const a=samples[i],b=samples[i+1];if(local>=a.local_t_ms&&local<=b.local_t_ms){const amount=(local-a.local_t_ms)/(b.local_t_ms-a.local_t_ms);return{x:a.position.x+(b.position.x-a.position.x)*amount,y:a.position.y+(b.position.y-a.position.y)*amount};}}return samples.at(-1).position;}
-  function simulate(until){const actions=[];model.recordings.forEach((recording,slot)=>recording.actions.forEach((action)=>{const global=model.phases[slot]+action.local_t_ms;if(global<=until+.001)actions.push({global,slot,action});}));const priority={release:0,grab:1,stamp:2};actions.sort((a,b)=>a.global-b.global||(priority[a.action.action]??3)-(priority[b.action.action]??3)||a.slot-b.slot);const conveyor=model.state.conveyor,q=model.state.qualification,stations=model.state.stations;const state={mode:"conveyor",position:{x:Number(conveyor.start_x),y:Number(conveyor.track_y)},holder:null,stamped:false,delivered:false,lastRelease:null,errors:0};
-    function positionAt(time){if(state.holder!==null)return interpolate(model.recordings[state.holder],time-model.phases[state.holder]);if(state.mode==="conveyor")return{x:Number(conveyor.start_x)+Number(conveyor.speed_px_per_ms)*time,y:Number(conveyor.track_y)};return state.position;}
-    actions.forEach(({global,slot,action})=>{state.position=positionAt(global);const actor=interpolate(model.recordings[slot],action.local_t_ms);if(action.action==="grab"){if(state.holder!==null)state.errors+=1;else if(state.mode==="conveyor"){if(dist(actor,state.position)<=Number(q.grab_radius_px)){state.holder=slot;state.mode="held";}else state.errors+=1;}else if(state.mode==="free"&&state.lastRelease!==null&&global-state.lastRelease<=Number(q.handoff_window_ms)&&dist(actor,state.position)<=Number(q.grab_radius_px)){state.holder=slot;state.mode="held";}else state.errors+=1;}else if(action.action==="stamp"){if(state.holder===slot&&dist(actor,stations.stamp)<=Number(q.station_radius_px))state.stamped=true;else state.errors+=1;}else if(action.action==="release"){if(state.holder!==slot)state.errors+=1;else{state.holder=null;state.position=actor;state.lastRelease=global;if(state.stamped&&dist(actor,stations.exit)<=Number(q.station_radius_px)){state.mode="delivered";state.delivered=true;}else state.mode="free";}}});state.position=positionAt(until);return{x:round2(state.position.x),y:round2(state.position.y),mode:state.mode,holder:state.holder,stamped:state.stamped,delivered:state.delivered,errors:state.errors};}
 
-  function roleColor(slot){return["#ef725d","#56b9c4","#e2b640"][slot];}
-  function drawStation(ctx,position,label,color){ctx.save();ctx.translate(position.x,position.y);ctx.strokeStyle=color;ctx.fillStyle="rgba(15,23,28,.76)";ctx.lineWidth=3;ctx.beginPath();ctx.arc(0,0,27,0,Math.PI*2);ctx.fill();ctx.stroke();ctx.fillStyle="#ece1c6";ctx.font="800 8px Courier New";ctx.textAlign="center";ctx.fillText(label,0,4);ctx.restore();}
-  function drawScene(){const canvas=document.getElementById("clockwork-canvas"),ctx=canvas?.getContext("2d");if(!canvas||!ctx||!model)return;const w=canvas.width,h=canvas.height,stations=model.state.stations,track=Number(model.state.conveyor.track_y);ctx.fillStyle="#142127";ctx.fillRect(0,0,w,h);ctx.fillStyle="rgba(255,255,255,.035)";for(let x=0;x<w;x+=28)for(let y=0;y<h;y+=28)ctx.fillRect(x,y,1,1);ctx.fillStyle="#6f6555";ctx.fillRect(24,track-24,w-48,48);ctx.strokeStyle="#c8ae71";ctx.lineWidth=2;ctx.setLineDash([12,9]);ctx.beginPath();ctx.moveTo(30,track);ctx.lineTo(w-30,track);ctx.stroke();ctx.setLineDash([]);drawStation(ctx,stations.pickup,"PICK",roleColor(0));drawStation(ctx,stations.handoff_a,"A",roleColor(0));drawStation(ctx,stations.stamp,"STAMP",roleColor(1));drawStation(ctx,stations.handoff_b,"B",roleColor(2));drawStation(ctx,stations.exit,"EXIT","#8ce3c5");
-    model.state.roles.forEach((role,slot)=>{ctx.strokeStyle=roleColor(slot)+"88";ctx.lineWidth=2;ctx.setLineDash([5,7]);ctx.beginPath();role.guide.forEach((p,i)=>i?ctx.lineTo(p.x,p.y):ctx.moveTo(p.x,p.y));ctx.stroke();ctx.setLineDash([]);const rec=model.recordings[slot];if(rec){ctx.strokeStyle=roleColor(slot);ctx.lineWidth=2.5;ctx.beginPath();rec.samples.forEach((s,i)=>i?ctx.lineTo(s.position.x,s.position.y):ctx.moveTo(s.position.x,s.position.y));ctx.stroke();}});
-    let snapshot={x:Number(model.state.conveyor.start_x),y:track,mode:"conveyor",holder:null,stamped:false,delivered:false,errors:0};if(model.cycle){const elapsed=clamp(performance.now()-model.cycle.performanceStart,0,Number(model.state.controls.loop_duration_ms));snapshot=simulate(elapsed);model.recordings.forEach((rec,slot)=>{const local=elapsed-model.phases[slot];if(local>=0&&local<=Number(model.state.controls.record_duration_ms)){const p=interpolate(rec,local);ctx.fillStyle=roleColor(slot)+"44";ctx.beginPath();ctx.arc(p.x,p.y,25,0,Math.PI*2);ctx.fill();ctx.strokeStyle=roleColor(slot);ctx.lineWidth=2;ctx.stroke();ctx.fillStyle="#fff3da";ctx.font="900 11px Courier New";ctx.textAlign="center";ctx.fillText(String(slot+1),p.x,p.y+4);}});}else if(model.recording){snapshot={...snapshot,x:model.cursor.x,y:model.cursor.y,mode:"recording"};}
-    ctx.save();ctx.translate(snapshot.x,snapshot.y);ctx.rotate(-.08);ctx.fillStyle=snapshot.stamped?"#d9f4d8":"#f1e0b7";ctx.strokeStyle="#281e25";ctx.lineWidth=2;ctx.fillRect(-17,-11,34,22);ctx.strokeRect(-17,-11,34,22);if(snapshot.stamped){ctx.strokeStyle="#b6433b";ctx.strokeRect(-7,-6,14,12);}ctx.restore();
-    if(model.recording){ctx.strokeStyle="#fff0c7";ctx.lineWidth=2;ctx.beginPath();ctx.arc(model.cursor.x,model.cursor.y,16,0,Math.PI*2);ctx.stroke();ctx.fillStyle="#fff0c7";ctx.font="800 8px Courier New";ctx.fillText("REC",model.cursor.x+20,model.cursor.y-14);}ctx.fillStyle="#d7c8aa";ctx.font="800 8px Courier New";ctx.textAlign="left";ctx.fillText(model.cycle?`MASTER ${(performance.now()-model.cycle.performanceStart).toFixed(0)} / ${model.state.controls.loop_duration_ms} ms`:model.recording?`TAKE ${model.recording.slot+1} ${Math.max(0,performance.now()-model.recording.performanceStart).toFixed(0)} ms`:"CLOCK STOPPED / RECORD OR RUN",14,19);}
+  let model = null;
+  let activeCleanup = null;
 
-  function recordingValid(take,durationMs){const q=model.state.qualification,role=model.state.roles[take.slot];const travel=take.samples.slice(1).reduce((total,item,index)=>total+dist(take.samples[index].position,item.position),0);const gaps=take.samples.slice(1).map((item,index)=>item.local_t_ms-take.samples[index].local_t_ms);const checks={duration:Math.abs(durationMs-Number(model.state.controls.record_duration_ms))<=130,density:take.samples.length>=Number(q.minimum_record_samples),span:take.samples.length>1&&take.samples.at(-1).local_t_ms-take.samples[0].local_t_ms>=Number(model.state.controls.record_duration_ms)-220,timing:gaps.every((gap)=>gap>=30&&gap<=Number(q.maximum_record_sample_gap_ms)),pointer:take.samples.slice(1).every((item,index)=>dist(take.samples[index].position,item.position)<=Number(q.maximum_pointer_step_px)),action_path:take.samples.length>1&&take.actions.every((item)=>dist(item.position,interpolate(take,item.local_t_ms))<=Number(q.action_path_tolerance_px)),action_time:take.actions.every((item,index)=>index===0||take.actions[index-1].local_t_ms<item.local_t_ms),travel:travel>=Number(q.minimum_path_travel_px),actions:take.actions.map((item)=>item.action).join(",")===role.required_actions.join(",")};const failed=Object.keys(checks).find((key)=>!checks[key]);return{accepted:!failed,reason:failed||"ok",travel:round2(travel)};}
-  function startRecording(slot){if(!model?.active||model.recording||model.cycle||model.submitting||model.completed)return;model.recordings[slot]=null;model.phases[slot]=0;model.recording={slot,startT:nowMs(),performanceStart:performance.now(),samples:[],actions:[]};pushEvent({type:"record_start",slot,pointer:point(model.cursor)});model.recordTimer=setInterval(()=>{if(!model?.recording)return;const local=Math.round(performance.now()-model.recording.performanceStart),sample={local_t_ms:local,position:point(model.cursor)};model.recording.samples.push(sample);pushEvent({type:"record_sample",slot:model.recording.slot,...sample});drawScene();},Number(model.state.controls.sample_interval_ms));model.recordEndTimer=setTimeout(endRecording,Number(model.state.controls.record_duration_ms));model.helpers.setReadout(`RECORDING LOOP ${slot+1} / MOVE POINTER + USE G R T`,"idle");updateInterface();}
-  function endRecording(){if(!model?.recording)return;clearInterval(model.recordTimer);clearTimeout(model.recordEndTimer);const take=model.recording,local=Math.round(performance.now()-take.performanceStart),verdict=recordingValid(take,local);pushEvent({type:"record_end",slot:take.slot,local_t_ms:local,accepted:verdict.accepted});if(verdict.accepted){take.duration_ms=local;take.travel=verdict.travel;model.recordings[take.slot]=take;model.revisions[take.slot]+=1;model.helpers.setReadout(`LOOP ${take.slot+1} ACCEPTED / SET ITS MASTER PHASE`,"idle");}else{model.recordFailures+=1;model.helpers.setReadout(`TAKE ${take.slot+1} REJECTED / ${verdict.reason.toUpperCase()} / RE-RECORD`,"error");}model.recording=null;updateInterface();}
-  function recordAction(action){if(!model?.recording)return;const local=Math.round(performance.now()-model.recording.performanceStart),item={local_t_ms:local,position:point(model.cursor),action};model.recording.actions.push(item);pushEvent({type:"record_action",slot:model.recording.slot,...item});model.helpers.setReadout(`${action.toUpperCase()} PUNCHED INTO LOOP ${model.recording.slot+1}`,"idle");updateInterface();}
-  function resetRecording(slot){if(!model?.active||model.recording||model.cycle||model.submitting)return;model.recordings[slot]=null;model.phases[slot]=0;model.rewindCount+=1;pushEvent({type:"record_reset",slot});model.helpers.setReadout(`LOOP ${slot+1} CLEARED / RE-RECORD FREELY`,"idle");updateInterface();}
-  function setPhase(slot,value){if(!model?.recordings[slot]||model.recording||model.cycle)return;const step=Number(model.state.controls.phase_step_ms),loop=Number(model.state.controls.loop_duration_ms),before=model.phases[slot],after=clamp(Math.round(Number(value)/step)*step,0,loop-step);if(before===after)return;model.phases[slot]=after;model.phaseEdits+=1;pushEvent({type:"phase_edit",slot,from_ms:before,to_ms:after});model.helpers.setReadout(`GHOST ${slot+1} PHASED AT ${after}ms`,"idle");updateInterface();}
-  function phaseNudge(slot,delta){setPhase(slot,model.phases[slot]+delta);}
-  function runCycle(){if(!model?.active||model.recording||model.cycle||model.recordings.some((item)=>!item)||model.submitting)return;model.cycle={startT:nowMs(),performanceStart:performance.now(),samples:[]};pushEvent({type:"cycle_start",phases_ms:[...model.phases]});model.cycleSampleTimer=setInterval(()=>{if(!model?.cycle)return;const local=Math.round(performance.now()-model.cycle.performanceStart);if(local>Number(model.state.controls.loop_duration_ms))return;const passport=simulate(local);model.cycle.samples.push(local);pushEvent({type:"cycle_sample",cycle_t_ms:local,passport});drawScene();},Number(model.state.controls.cycle_sample_interval_ms));model.cycleDrawTimer=setInterval(drawScene,50);model.cycleEndTimer=setTimeout(endCycle,Number(model.state.controls.loop_duration_ms));model.helpers.setReadout("MASTER CLOCK RUNNING / THREE GHOSTS CONCURRENT","idle");updateInterface();}
-  function endCycle(){if(!model?.cycle)return;clearInterval(model.cycleSampleTimer);clearInterval(model.cycleDrawTimer);clearTimeout(model.cycleEndTimer);const loop=Number(model.state.controls.loop_duration_ms),outcome=simulate(loop);pushEvent({type:"cycle_end",client_delivered:outcome.delivered,passport:outcome});model.cycleAttempts+=1;if(outcome.delivered&&outcome.stamped&&outcome.errors===0)model.successfulCycles+=1;model.lastOutcome=outcome;model.cycle=null;model.helpers.setReadout(outcome.delivered&&outcome.errors===0?"PASSPORT STAMPED + DELIVERED / FILE THE LOG":`SYNC MISS / ${outcome.errors} POSSESSION FAULTS / REWIND + REPHASE`,outcome.delivered&&outcome.errors===0?"idle":"error");updateInterface();}
-  function rewindCycle(){if(!model?.active||model.recording||model.cycle)return;model.rewindCount+=1;pushEvent({type:"cycle_rewind"});model.helpers.setReadout("MASTER CLOCK REWOUND / RECORDINGS PRESERVED","idle");updateInterface();}
-  function summary(recording,slot){return recording?{slot,samples:recording.samples.length,actions:recording.actions.map((item)=>item.action),duration_ms:round2(recording.duration_ms),travel:round2(recording.travel)}:null;}
-  function finalState(){return{recordings:model.recordings.map(summary),revisions:[...model.revisions],phases_ms:[...model.phases],record_failures:model.recordFailures,phase_edits:model.phaseEdits,cycle_attempts:model.cycleAttempts,successful_cycles:model.successfulCycles,rewind_count:model.rewindCount,last_outcome:model.lastOutcome};}
-  function showVerdict(kind){const root=document.querySelector(".clockwork-customs"),verdict=root?.querySelector(".clockwork-verdict");if(!root||!verdict)return;root.classList.toggle("is-passed",kind==="pass");root.classList.toggle("is-failed",kind==="fail");verdict.innerHTML=`<b>${kind==="pass"?"PASS":"FAIL"}</b><span>${kind==="pass"?"THREE SELVES CLEARED CUSTOMS":"FRESH DESK / MASTER CLOCK STOPPED"}</span>`;if(kind==="fail"){const timer=setTimeout(()=>root.classList.remove("is-failed"),1600);model.timers.add(timer);}}
-  async function submitLog(){if(!model?.active||model.recording||model.cycle||model.submitting||model.completed)return;const current=model;pushEvent({type:"verify",claimed_delivered:Boolean(model.lastOutcome?.delivered)});current.submitting=true;updateInterface();try{const response=await fetch("/result",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({mechanic_id:current.state.mechanic_id,task_id:current.state.task_id,challenge_id:current.state.challenge_id,events:current.events,final_state:finalState(),completed:true})});const outcome=await response.json();if(outcome.passed===true){current.completed=true;current.helpers.setReadout("PASS","passed");showVerdict("pass");updateInterface();}else if(outcome.passed===false){const helpers=current.helpers;if(outcome.state)await render(outcome.state,helpers,{freshFailure:true});model.helpers.setReadout("FAIL","error");showVerdict("fail");}}catch(_error){if(model===current){current.submitting=false;current.helpers.setReadout("CUSTOMS LINK LOST","error");updateInterface();}}}
-  function updateInterface(){if(!model)return;const root=document.querySelector(".clockwork-customs");if(!root)return;root.dataset.active=String(model.active);root.dataset.recordingSlot=model.recording?String(model.recording.slot):"";root.dataset.cycle=String(Boolean(model.cycle));root.dataset.success=String(Boolean(model.lastOutcome?.delivered&&model.lastOutcome?.errors===0));model.recordings.forEach((recording,slot)=>{const card=document.querySelector(`[data-loop-card="${slot}"]`),status=card?.querySelector(".loop-status"),slider=document.getElementById(`ghost-phase-${slot}`);if(card){card.dataset.ready=String(Boolean(recording));const actions=recording?.actions||[];card.dataset.grabMs=String(actions.find((item)=>item.action==="grab")?.local_t_ms??"");card.dataset.releaseMs=String(actions.find((item)=>item.action==="release")?.local_t_ms??"");card.dataset.stampMs=String(actions.find((item)=>item.action==="stamp")?.local_t_ms??"");}if(status)status.textContent=recording?`${recording.samples.length} S / ${Math.round(recording.travel)} PX / P${model.phases[slot]}`:"EMPTY TAKE";if(slider&&document.activeElement!==slider)slider.value=String(model.phases[slot]);});document.querySelectorAll(".record-start,.record-reset,.phase-button,.phase-slider,#clockwork-run,#clockwork-rewind,#clockwork-submit").forEach((node)=>node.disabled=!model.active||Boolean(model.recording)||Boolean(model.cycle)||model.submitting||model.completed);document.querySelectorAll(".record-action").forEach((node)=>node.disabled=!model.recording);const run=document.getElementById("clockwork-run");if(run)run.disabled=run.disabled||model.recordings.some((item)=>!item);drawScene();}
-  function installDeveloperReveal(){const form=document.getElementById("cheat-form"),input=document.getElementById("cheat-password"),output=document.getElementById("cheat-output");if(!form||!input||!output)return;form.addEventListener("submit",async(event)=>{event.preventDefault();output.textContent="";try{const response=await fetch("/cheat",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({password:input.value})});if(!response.ok){output.textContent=response.status===404?"Disabled.":"Denied.";return;}const data=await response.json();output.textContent=`Phases ${(data.solution?.phases_ms||[]).join(" / ")} ms`;}catch(_error){output.textContent="Unavailable.";}});}
-  function startChallenge(){if(!model||model.active)return;model.active=true;pushEvent({type:"challenge_start"});model.helpers.setReadout("CLOCK STOPPED / RECORD THREE OPERATOR LOOPS","idle");updateInterface();}
-  async function render(state,helpers,options={}){if(activeCleanup)activeCleanup();document.body.dataset.mechanic="clockwork-doppelganger-customs";document.body.dataset.cheatMode=helpers.isCheatMode()?"true":"false";model={state,helpers,startedAt:performance.now(),events:[],cursor:{...state.stations.pickup},recordings:[null,null,null],revisions:[0,0,0],phases:[0,0,0],recording:null,recordTimer:null,recordEndTimer:null,cycle:null,cycleSampleTimer:null,cycleDrawTimer:null,cycleEndTimer:null,recordFailures:0,phaseEdits:0,cycleAttempts:0,successfulCycles:0,rewindCount:0,lastOutcome:null,active:false,submitting:false,completed:false,timers:new Set()};
-    helpers.app.innerHTML=`<section class="clockwork-customs palette-${helpers.text(state.palette)}" data-fresh-failure="${options.freshFailure?"true":"false"}" data-active="false" tabindex="0"><div class="clockwork-verdict" aria-live="assertive"></div><header class="clockwork-head"><div><span>TEMPORAL CUSTOMS BUREAU / ${helpers.text(state.desk_id)}</span><h1>${helpers.text(state.prompt)}</h1></div><div class="clockwork-seal"><i>⧖</i><span>LOOP<br><b>OFFICE</b></span></div></header><main class="clockwork-workbench"><section class="clockwork-stage"><canvas id="clockwork-canvas" width="860" height="420" aria-label="customs loop recording floor"></canvas><div class="clockwork-stage-rail"><span>MOVE POINTER · G GRAB · R RELEASE · T STAMP</span><b>DENSE TAKES / MASTER LOOP ${Number(state.controls.loop_duration_ms)}ms</b></div></section><aside class="clockwork-console">${state.roles.map((role,slot)=>`<section class="loop-card" data-loop-card="${slot}" data-ready="false"><header><b>0${slot+1}</b><span>${helpers.text(role.title)}</span><em class="loop-status">EMPTY TAKE</em></header><div class="loop-buttons"><button class="record-start" data-record="${slot}">RECORD ${Number(state.controls.record_duration_ms)/1000}s</button><button class="record-reset" data-record-reset="${slot}">CLEAR</button></div><div class="phase-row"><button class="phase-button" data-phase-minus="${slot}">−</button><input class="phase-slider" id="ghost-phase-${slot}" data-phase="${slot}" type="range" min="0" max="${Number(state.controls.loop_duration_ms)-Number(state.controls.phase_step_ms)}" step="${Number(state.controls.phase_step_ms)}" value="0" aria-label="ghost ${slot+1} phase"><button class="phase-button" data-phase-plus="${slot}">+</button></div></section>`).join("")}<div class="record-actions"><button class="record-action" data-action="grab">G / GRAB</button><button class="record-action" data-action="stamp">T / STAMP</button><button class="record-action" data-action="release">R / RELEASE</button></div><div class="master-actions"><button id="clockwork-run">RUN MASTER CYCLE</button><button id="clockwork-rewind">REWIND / EDIT</button></div></aside></main><footer class="clockwork-foot"><div class="readout" data-status="idle">CLOCK STANDBY</div><button id="clockwork-submit">${helpers.text(state.submit_label||"FILE CUSTOMS LOG")}</button></footer>${helpers.cheatPanelTemplate()}</section>`;
-    const canvas=document.getElementById("clockwork-canvas");canvas.addEventListener("pointermove",(event)=>{const rect=canvas.getBoundingClientRect();model.cursor={x:round2(clamp((event.clientX-rect.left)/rect.width*canvas.width,0,canvas.width)),y:round2(clamp((event.clientY-rect.top)/rect.height*canvas.height,0,canvas.height))};drawScene();});document.querySelectorAll("[data-record]").forEach((button)=>button.addEventListener("click",()=>startRecording(Number(button.dataset.record))));document.querySelectorAll("[data-record-reset]").forEach((button)=>button.addEventListener("click",()=>resetRecording(Number(button.dataset.recordReset))));document.querySelectorAll("[data-action]").forEach((button)=>button.addEventListener("click",()=>recordAction(button.dataset.action)));document.querySelectorAll("[data-phase]").forEach((slider)=>slider.addEventListener("input",()=>setPhase(Number(slider.dataset.phase),Number(slider.value))));document.querySelectorAll("[data-phase-minus]").forEach((button)=>button.addEventListener("click",()=>phaseNudge(Number(button.dataset.phaseMinus),-Number(state.controls.phase_step_ms))));document.querySelectorAll("[data-phase-plus]").forEach((button)=>button.addEventListener("click",()=>phaseNudge(Number(button.dataset.phasePlus),Number(state.controls.phase_step_ms))));document.getElementById("clockwork-run").addEventListener("click",runCycle);document.getElementById("clockwork-rewind").addEventListener("click",rewindCycle);document.getElementById("clockwork-submit").addEventListener("click",submitLog);
-    const keyHandler=(event)=>{if(event.repeat)return;const action={g:"grab",r:"release",t:"stamp"}[event.key.toLowerCase()];if(action&&model.recording){event.preventDefault();recordAction(action);}};window.addEventListener("keydown",keyHandler);installDeveloperReveal();activeCleanup=()=>{clearInterval(model?.recordTimer);clearTimeout(model?.recordEndTimer);clearInterval(model?.cycleSampleTimer);clearInterval(model?.cycleDrawTimer);clearTimeout(model?.cycleEndTimer);model?.timers.forEach((timer)=>clearTimeout(timer));window.removeEventListener("keydown",keyHandler);};updateInterface();document.querySelector(".clockwork-customs")?.focus();if(options.freshFailure){const fresh=model,timer=setTimeout(()=>{if(model===fresh)startChallenge();},1650);model.timers.add(timer);}else startChallenge();}
-  window.WeirdCaptchaMechanics=window.WeirdCaptchaMechanics||{};window.WeirdCaptchaMechanics.clockwork_doppelganger_customs={rootSelector:".clockwork-customs",render};
+  const clamp = (value, low, high) => Math.max(low, Math.min(high, value));
+  const round2 = (value) => Math.round(Number(value) * 100) / 100;
+  const point = (value) => ({x: round2(value.x), y: round2(value.y)});
+  const dist = (first, second) => Math.hypot(first.x - second.x, first.y - second.y);
+  const nowMs = () => Math.round(performance.now() - model.startedAt);
+
+  function pushEvent(event) {
+    const item = {seq: model.events.length + 1, t_ms: nowMs(), ...event};
+    model.events.push(item);
+    return item;
+  }
+
+  function interpolate(recording, local) {
+    const samples = recording.samples;
+    if (local <= samples[0].local_t_ms) return samples[0].position;
+    if (local >= samples.at(-1).local_t_ms) return samples.at(-1).position;
+    for (let index = 0; index < samples.length - 1; index += 1) {
+      const before = samples[index];
+      const after = samples[index + 1];
+      if (local >= before.local_t_ms && local <= after.local_t_ms) {
+        const amount = (local - before.local_t_ms) / (after.local_t_ms - before.local_t_ms);
+        return {
+          x: before.position.x + (after.position.x - before.position.x) * amount,
+          y: before.position.y + (after.position.y - before.position.y) * amount,
+        };
+      }
+    }
+    return samples.at(-1).position;
+  }
+
+  function simulate(until) {
+    const actions = [];
+    model.recordings.forEach((recording, slot) => recording.actions.forEach((action) => {
+      const global = model.phases[slot] + action.local_t_ms;
+      if (global <= until + 0.001) actions.push({global, slot, action});
+    }));
+    const priority = {release: 0, grab: 1, stamp: 2};
+    actions.sort((left, right) => left.global - right.global || (priority[left.action.action] ?? 3) - (priority[right.action.action] ?? 3) || left.slot - right.slot);
+    const conveyor = model.state.conveyor;
+    const qualification = model.state.qualification;
+    const stations = model.state.stations;
+    const state = {mode: "conveyor", position: {x: Number(conveyor.start_x), y: Number(conveyor.track_y)}, holder: null, stamped: false, delivered: false, lastRelease: null, errors: 0};
+    const positionAt = (time) => {
+      if (state.holder !== null) return interpolate(model.recordings[state.holder], time - model.phases[state.holder]);
+      if (state.mode === "conveyor") return {x: Number(conveyor.start_x) + Number(conveyor.speed_px_per_ms) * time, y: Number(conveyor.track_y)};
+      return state.position;
+    };
+    actions.forEach(({global, slot, action}) => {
+      state.position = positionAt(global);
+      const actor = interpolate(model.recordings[slot], action.local_t_ms);
+      if (action.action === "grab") {
+        if (state.holder !== null) state.errors += 1;
+        else if (state.mode === "conveyor") {
+          if (dist(actor, state.position) <= Number(qualification.grab_radius_px)) {
+            state.holder = slot;
+            state.mode = "held";
+          } else state.errors += 1;
+        } else if (state.mode === "free" && state.lastRelease !== null && global - state.lastRelease <= Number(qualification.handoff_window_ms) && dist(actor, state.position) <= Number(qualification.grab_radius_px)) {
+          state.holder = slot;
+          state.mode = "held";
+        } else state.errors += 1;
+      } else if (action.action === "stamp") {
+        if (state.holder === slot && dist(actor, stations.stamp) <= Number(qualification.station_radius_px)) state.stamped = true;
+        else state.errors += 1;
+      } else if (action.action === "release") {
+        if (state.holder !== slot) state.errors += 1;
+        else {
+          state.holder = null;
+          state.position = actor;
+          state.lastRelease = global;
+          if (state.stamped && dist(actor, stations.exit) <= Number(qualification.station_radius_px)) {
+            state.mode = "delivered";
+            state.delivered = true;
+          } else state.mode = "free";
+        }
+      }
+    });
+    state.position = positionAt(until);
+    return {x: round2(state.position.x), y: round2(state.position.y), mode: state.mode, holder: state.holder, stamped: state.stamped, delivered: state.delivered, errors: state.errors};
+  }
+
+  const roleColor = (slot) => ["#ef725d", "#56b9c4", "#e2b640"][slot];
+
+  function drawStation(context, position, label, color) {
+    context.save();
+    context.translate(position.x, position.y);
+    context.strokeStyle = color;
+    context.fillStyle = "rgba(15,23,28,.76)";
+    context.lineWidth = 3;
+    context.beginPath();
+    context.arc(0, 0, 27, 0, Math.PI * 2);
+    context.fill();
+    context.stroke();
+    context.fillStyle = "#ece1c6";
+    context.font = "800 8px Courier New";
+    context.textAlign = "center";
+    context.fillText(label, 0, 4);
+    context.restore();
+  }
+
+  function drawScene() {
+    const canvas = document.getElementById("clockwork-canvas");
+    const context = canvas?.getContext("2d");
+    if (!canvas || !context || !model) return;
+    const width = canvas.width;
+    const height = canvas.height;
+    const stations = model.state.stations;
+    const track = Number(model.state.conveyor.track_y);
+    context.fillStyle = "#142127";
+    context.fillRect(0, 0, width, height);
+    context.fillStyle = "rgba(255,255,255,.035)";
+    for (let x = 0; x < width; x += 28) for (let y = 0; y < height; y += 28) context.fillRect(x, y, 1, 1);
+    context.fillStyle = "#6f6555";
+    context.fillRect(24, track - 24, width - 48, 48);
+    context.strokeStyle = "#c8ae71";
+    context.lineWidth = 2;
+    context.setLineDash([12, 9]);
+    context.beginPath();
+    context.moveTo(30, track);
+    context.lineTo(width - 30, track);
+    context.stroke();
+    context.setLineDash([]);
+    drawStation(context, stations.pickup, "PICK", roleColor(0));
+    drawStation(context, stations.handoff_a, "A", roleColor(0));
+    drawStation(context, stations.stamp, "STAMP", roleColor(1));
+    drawStation(context, stations.handoff_b, "B", roleColor(2));
+    drawStation(context, stations.exit, "EXIT", "#8ce3c5");
+    model.state.roles.forEach((role, slot) => {
+      context.strokeStyle = `${roleColor(slot)}88`;
+      context.lineWidth = 2;
+      context.setLineDash([5, 7]);
+      context.beginPath();
+      role.guide.forEach((guidePoint, index) => index ? context.lineTo(guidePoint.x, guidePoint.y) : context.moveTo(guidePoint.x, guidePoint.y));
+      context.stroke();
+      context.setLineDash([]);
+      const recording = model.recordings[slot];
+      if (recording) {
+        context.strokeStyle = roleColor(slot);
+        context.lineWidth = 2.5;
+        context.beginPath();
+        recording.samples.forEach((sample, index) => index ? context.lineTo(sample.position.x, sample.position.y) : context.moveTo(sample.position.x, sample.position.y));
+        context.stroke();
+      }
+    });
+    let snapshot = {x: Number(model.state.conveyor.start_x), y: track, mode: "conveyor", holder: null, stamped: false, delivered: false, errors: 0};
+    if (model.cycle) {
+      const elapsed = clamp(performance.now() - model.cycle.performanceStart, 0, Number(model.state.controls.loop_duration_ms));
+      snapshot = simulate(elapsed);
+      model.recordings.forEach((recording, slot) => {
+        const local = elapsed - model.phases[slot];
+        if (local >= 0 && local <= Number(model.state.controls.record_duration_ms)) {
+          const ghost = interpolate(recording, local);
+          context.fillStyle = `${roleColor(slot)}44`;
+          context.beginPath();
+          context.arc(ghost.x, ghost.y, 25, 0, Math.PI * 2);
+          context.fill();
+          context.strokeStyle = roleColor(slot);
+          context.lineWidth = 2;
+          context.stroke();
+          context.fillStyle = "#fff3da";
+          context.font = "900 11px Courier New";
+          context.textAlign = "center";
+          context.fillText(String(slot + 1), ghost.x, ghost.y + 4);
+        }
+      });
+    } else if (model.recording) snapshot = {...snapshot, x: model.cursor.x, y: model.cursor.y, mode: "recording"};
+    context.save();
+    context.translate(snapshot.x, snapshot.y);
+    context.rotate(-0.08);
+    context.fillStyle = snapshot.stamped ? "#d9f4d8" : "#f1e0b7";
+    context.strokeStyle = "#281e25";
+    context.lineWidth = 2;
+    context.fillRect(-17, -11, 34, 22);
+    context.strokeRect(-17, -11, 34, 22);
+    if (snapshot.stamped) {
+      context.strokeStyle = "#b6433b";
+      context.strokeRect(-7, -6, 14, 12);
+    }
+    context.restore();
+    if (model.recording) {
+      context.strokeStyle = "#fff0c7";
+      context.lineWidth = 2;
+      context.beginPath();
+      context.arc(model.cursor.x, model.cursor.y, 16, 0, Math.PI * 2);
+      context.stroke();
+      context.fillStyle = "#fff0c7";
+      context.font = "800 8px Courier New";
+      context.fillText("REC", model.cursor.x + 20, model.cursor.y - 14);
+    }
+    context.fillStyle = "#d7c8aa";
+    context.font = "800 8px Courier New";
+    context.textAlign = "left";
+    context.fillText(model.cycle ? `MASTER ${(performance.now() - model.cycle.performanceStart).toFixed(0)} / ${model.state.controls.loop_duration_ms} ms` : model.recording ? `TAKE ${model.recording.slot + 1} ${Math.max(0, performance.now() - model.recording.performanceStart).toFixed(0)} ms` : "CLOCK STOPPED / RECORD OR RUN", 14, 19);
+  }
+
+  function recordingValid(take, durationMs) {
+    const qualification = model.state.qualification;
+    const role = model.state.roles[take.slot];
+    const travel = take.samples.slice(1).reduce((total, item, index) => total + dist(take.samples[index].position, item.position), 0);
+    const gaps = take.samples.slice(1).map((item, index) => item.local_t_ms - take.samples[index].local_t_ms);
+    const checks = {
+      duration: Math.abs(durationMs - Number(model.state.controls.record_duration_ms)) <= 130,
+      density: take.samples.length >= Number(qualification.minimum_record_samples),
+      span: take.samples.length > 1 && take.samples.at(-1).local_t_ms - take.samples[0].local_t_ms >= Number(model.state.controls.record_duration_ms) - 220,
+      timing: gaps.every((gap) => gap >= 30 && gap <= Number(qualification.maximum_record_sample_gap_ms)),
+      pointer: take.samples.slice(1).every((item, index) => dist(take.samples[index].position, item.position) <= Number(qualification.maximum_pointer_step_px)),
+      action_path: take.samples.length > 1 && take.actions.every((item) => dist(item.position, interpolate(take, item.local_t_ms)) <= Number(qualification.action_path_tolerance_px)),
+      action_time: take.actions.every((item, index) => index === 0 || take.actions[index - 1].local_t_ms < item.local_t_ms),
+      travel: travel >= Number(qualification.minimum_path_travel_px),
+      actions: take.actions.map((item) => item.action).join(",") === role.required_actions.join(","),
+    };
+    const failed = Object.keys(checks).find((key) => !checks[key]);
+    return {accepted: !failed, reason: failed || "ok", travel: round2(travel)};
+  }
+
+  function startRecording(slot) {
+    if (!model?.active || model.recording || model.cycle || model.submitting || model.completed) return;
+    model.recordings[slot] = null;
+    model.phases[slot] = 0;
+    model.recording = {slot, startT: nowMs(), performanceStart: performance.now(), samples: [], actions: []};
+    pushEvent({type: "record_start", slot, pointer: point(model.cursor)});
+    model.recordTimer = setInterval(() => {
+      if (!model?.recording) return;
+      const local = Math.round(performance.now() - model.recording.performanceStart);
+      const sample = {local_t_ms: local, position: point(model.cursor)};
+      model.recording.samples.push(sample);
+      pushEvent({type: "record_sample", slot: model.recording.slot, ...sample});
+      drawScene();
+    }, Number(model.state.controls.sample_interval_ms));
+    model.recordEndTimer = setTimeout(endRecording, Number(model.state.controls.record_duration_ms));
+    model.helpers.setReadout(`RECORDING LOOP ${slot + 1} / ${model.interaction === "full" ? "CLICK ITS STATIONS" : "MOVE POINTER + USE G R T"}`, "idle");
+    updateInterface();
+  }
+
+  function endRecording() {
+    if (!model?.recording) return;
+    clearInterval(model.recordTimer);
+    clearTimeout(model.recordEndTimer);
+    const take = model.recording;
+    const local = Math.round(performance.now() - take.performanceStart);
+    const verdict = recordingValid(take, local);
+    pushEvent({type: "record_end", slot: take.slot, local_t_ms: local, accepted: verdict.accepted});
+    if (verdict.accepted) {
+      take.duration_ms = local;
+      take.travel = verdict.travel;
+      model.recordings[take.slot] = take;
+      model.revisions[take.slot] += 1;
+      model.helpers.setReadout(`LOOP ${take.slot + 1} ACCEPTED / SET ITS MASTER PHASE`, "idle");
+    } else {
+      model.recordFailures += 1;
+      model.helpers.setReadout(`TAKE ${take.slot + 1} REJECTED / ${verdict.reason.toUpperCase()} / RE-RECORD`, "error");
+    }
+    model.recording = null;
+    updateInterface();
+  }
+
+  function recordAction(action, inputSource = null) {
+    if (!model?.recording) return;
+    const local = Math.round(performance.now() - model.recording.performanceStart);
+    const item = {local_t_ms: local, position: point(model.cursor), action};
+    model.recording.actions.push(item);
+    const event = {type: "record_action", slot: model.recording.slot, ...item};
+    if (inputSource) event.input_source = inputSource;
+    pushEvent(event);
+    model.helpers.setReadout(`${action.toUpperCase()} PUNCHED INTO LOOP ${model.recording.slot + 1}`, "idle");
+    updateInterface();
+  }
+
+  function directStationAction() {
+    if (!model?.recording || model.interaction !== "full") return;
+    const role = model.state.roles[model.recording.slot];
+    const actionIndex = model.recording.actions.length;
+    const action = role.required_actions[actionIndex];
+    const station = role.guide[actionIndex];
+    if (!action || !station) return;
+    if (dist(model.cursor, station) > Number(model.state.qualification.station_radius_px)) {
+      model.helpers.setReadout(`MOVE TO THE NEXT ${action.toUpperCase()} STATION`, "error");
+      return;
+    }
+    recordAction(action, "direct_station");
+  }
+
+  function resetRecording(slot) {
+    if (!model?.active || model.recording || model.cycle || model.submitting) return;
+    model.recordings[slot] = null;
+    model.phases[slot] = 0;
+    model.rewindCount += 1;
+    pushEvent({type: "record_reset", slot});
+    model.helpers.setReadout(`LOOP ${slot + 1} CLEARED / RE-RECORD FREELY`, "idle");
+    updateInterface();
+  }
+
+  function setPhase(slot, value) {
+    if (!model?.recordings[slot] || model.recording || model.cycle) return;
+    const step = Number(model.state.controls.phase_step_ms);
+    const loop = Number(model.state.controls.loop_duration_ms);
+    const before = model.phases[slot];
+    const after = clamp(Math.round(Number(value) / step) * step, 0, loop - step);
+    if (before === after) return;
+    model.phases[slot] = after;
+    model.phaseEdits += 1;
+    pushEvent({type: "phase_edit", slot, from_ms: before, to_ms: after});
+    model.helpers.setReadout(`GHOST ${slot + 1} PHASED AT ${after}ms`, "idle");
+    updateInterface();
+  }
+
+  function runCycle() {
+    if (!model?.active || model.recording || model.cycle || model.recordings.some((item) => !item) || model.submitting) return;
+    model.cycle = {startT: nowMs(), performanceStart: performance.now(), samples: []};
+    pushEvent({type: "cycle_start", phases_ms: [...model.phases]});
+    model.cycleSampleTimer = setInterval(() => {
+      if (!model?.cycle) return;
+      const local = Math.round(performance.now() - model.cycle.performanceStart);
+      if (local > Number(model.state.controls.loop_duration_ms)) return;
+      const passport = simulate(local);
+      model.cycle.samples.push(local);
+      pushEvent({type: "cycle_sample", cycle_t_ms: local, passport});
+      drawScene();
+    }, Number(model.state.controls.cycle_sample_interval_ms));
+    model.cycleDrawTimer = setInterval(drawScene, 50);
+    model.cycleEndTimer = setTimeout(endCycle, Number(model.state.controls.loop_duration_ms));
+    model.helpers.setReadout("MASTER CLOCK RUNNING / RECORDED GHOSTS CONCURRENT", "idle");
+    updateInterface();
+  }
+
+  function endCycle() {
+    if (!model?.cycle) return;
+    clearInterval(model.cycleSampleTimer);
+    clearInterval(model.cycleDrawTimer);
+    clearTimeout(model.cycleEndTimer);
+    const loop = Number(model.state.controls.loop_duration_ms);
+    const outcome = simulate(loop);
+    pushEvent({type: "cycle_end", client_delivered: outcome.delivered, passport: outcome});
+    model.cycleAttempts += 1;
+    if (outcome.delivered && outcome.stamped && outcome.errors === 0) model.successfulCycles += 1;
+    model.lastOutcome = outcome;
+    model.cycle = null;
+    model.helpers.setReadout(outcome.delivered && outcome.errors === 0 ? "PASSPORT STAMPED + DELIVERED / FILE THE LOG" : `SYNC MISS / ${outcome.errors} POSSESSION FAULTS / REWIND + REPHASE`, outcome.delivered && outcome.errors === 0 ? "idle" : "error");
+    updateInterface();
+  }
+
+  function rewindCycle() {
+    if (!model?.active || model.recording || model.cycle) return;
+    model.rewindCount += 1;
+    pushEvent({type: "cycle_rewind"});
+    model.helpers.setReadout("MASTER CLOCK REWOUND / RECORDINGS PRESERVED", "idle");
+    updateInterface();
+  }
+
+  function summary(recording, slot) {
+    return recording ? {slot, samples: recording.samples.length, actions: recording.actions.map((item) => item.action), duration_ms: round2(recording.duration_ms), travel: round2(recording.travel)} : null;
+  }
+
+  function finalState() {
+    return {recordings: model.recordings.map(summary), revisions: [...model.revisions], phases_ms: [...model.phases], record_failures: model.recordFailures, phase_edits: model.phaseEdits, cycle_attempts: model.cycleAttempts, successful_cycles: model.successfulCycles, rewind_count: model.rewindCount, last_outcome: model.lastOutcome};
+  }
+
+  function showVerdict(kind) {
+    const root = document.querySelector(".clockwork-customs");
+    const verdict = root?.querySelector(".clockwork-verdict");
+    if (!root || !verdict) return;
+    root.classList.toggle("is-passed", kind === "pass");
+    root.classList.toggle("is-failed", kind === "fail");
+    verdict.innerHTML = `<b>${kind === "pass" ? "PASS" : "FAIL"}</b><span>${kind === "pass" ? "RECORDED SELVES CLEARED CUSTOMS" : "FRESH DESK / MASTER CLOCK STOPPED"}</span>`;
+    if (kind === "fail") {
+      const timer = setTimeout(() => root.classList.remove("is-failed"), 1600);
+      model.timers.add(timer);
+    }
+  }
+
+  async function submitLog() {
+    if (!model?.active || model.recording || model.cycle || model.submitting || model.completed) return;
+    const current = model;
+    pushEvent({type: "verify", claimed_delivered: Boolean(model.lastOutcome?.delivered)});
+    current.submitting = true;
+    updateInterface();
+    try {
+      const response = await fetch("/result", {method: "POST", headers: {"content-type": "application/json"}, body: JSON.stringify({mechanic_id: current.state.mechanic_id, task_id: current.state.task_id, challenge_id: current.state.challenge_id, events: current.events, final_state: finalState(), completed: true})});
+      const outcome = await response.json();
+      if (outcome.passed === true) {
+        current.completed = true;
+        current.helpers.setReadout("PASS", "passed");
+        showVerdict("pass");
+        updateInterface();
+      } else if (outcome.passed === false) {
+        const helpers = current.helpers;
+        if (outcome.state) await render(outcome.state, helpers, {freshFailure: true});
+        model.helpers.setReadout("FAIL", "error");
+        showVerdict("fail");
+      }
+    } catch (_error) {
+      if (model === current) {
+        current.submitting = false;
+        current.helpers.setReadout("CUSTOMS LINK LOST", "error");
+        updateInterface();
+      }
+    }
+  }
+
+  function updateInterface() {
+    if (!model) return;
+    const root = document.querySelector(".clockwork-customs");
+    if (!root) return;
+    root.dataset.active = String(model.active);
+    root.dataset.recordingSlot = model.recording ? String(model.recording.slot) : "";
+    root.dataset.cycle = String(Boolean(model.cycle));
+    root.dataset.success = String(Boolean(model.lastOutcome?.delivered && model.lastOutcome?.errors === 0));
+    model.recordings.forEach((recording, slot) => {
+      const card = document.querySelector(`[data-loop-card="${slot}"]`);
+      const status = card?.querySelector(".loop-status");
+      const slider = document.getElementById(`ghost-phase-${slot}`);
+      if (card) {
+        card.dataset.ready = String(Boolean(recording));
+        const actions = recording?.actions || [];
+        card.dataset.grabMs = String(actions.find((item) => item.action === "grab")?.local_t_ms ?? "");
+        card.dataset.releaseMs = String(actions.find((item) => item.action === "release")?.local_t_ms ?? "");
+        card.dataset.stampMs = String(actions.find((item) => item.action === "stamp")?.local_t_ms ?? "");
+      }
+      if (status) status.textContent = recording ? `${recording.samples.length} S / ${Math.round(recording.travel)} PX / P${model.phases[slot]}` : "EMPTY TAKE";
+      if (slider && document.activeElement !== slider) slider.value = String(model.phases[slot]);
+    });
+    document.querySelectorAll(".record-start,.record-reset,.phase-button,.phase-slider,#clockwork-run,#clockwork-rewind,#clockwork-submit").forEach((node) => { node.disabled = !model.active || Boolean(model.recording) || Boolean(model.cycle) || model.submitting || model.completed; });
+    document.querySelectorAll(".record-action").forEach((node) => { node.disabled = !model.recording; });
+    const run = document.getElementById("clockwork-run");
+    if (run) run.disabled = run.disabled || model.recordings.some((item) => !item);
+    drawScene();
+  }
+
+  function installDeveloperReveal() {
+    const form = document.getElementById("cheat-form");
+    const input = document.getElementById("cheat-password");
+    const output = document.getElementById("cheat-output");
+    if (!form || !input || !output) return;
+    form.addEventListener("submit", async (event) => {
+      event.preventDefault();
+      output.textContent = "";
+      try {
+        const response = await fetch("/cheat", {method: "POST", headers: {"content-type": "application/json"}, body: JSON.stringify({password: input.value})});
+        if (!response.ok) {
+          output.textContent = response.status === 404 ? "Disabled." : "Denied.";
+          return;
+        }
+        const data = await response.json();
+        output.textContent = `Phases ${(data.solution?.phases_ms || []).join(" / ")} ms`;
+      } catch (_error) {
+        output.textContent = "Unavailable.";
+      }
+    });
+  }
+
+  function startChallenge() {
+    if (!model || model.active) return;
+    model.active = true;
+    pushEvent({type: "challenge_start"});
+    model.helpers.setReadout(`CLOCK STOPPED / RECORD ${model.state.roles.length} OPERATOR LOOP${model.state.roles.length === 1 ? "" : "S"}`, "idle");
+    updateInterface();
+  }
+
+  async function render(state, helpers, options = {}) {
+    if (activeCleanup) activeCleanup();
+    document.body.dataset.mechanic = "clockwork-doppelganger-customs";
+    document.body.dataset.cheatMode = helpers.isCheatMode() ? "true" : "false";
+    const interaction = state.control_condition?.interaction || "legacy";
+    model = {state, helpers, interaction, startedAt: performance.now(), events: [], cursor: {...state.stations.pickup}, recordings: state.roles.map(() => null), revisions: state.roles.map(() => 0), phases: state.roles.map(() => 0), recording: null, recordTimer: null, recordEndTimer: null, cycle: null, cycleSampleTimer: null, cycleDrawTimer: null, cycleEndTimer: null, recordFailures: 0, phaseEdits: 0, cycleAttempts: 0, successfulCycles: 0, rewindCount: 0, lastOutcome: null, active: false, submitting: false, completed: false, timers: new Set()};
+    const proxyActions = interaction === "full" ? `<div class="direct-station-note">CLICK EACH COLORED STATION ON THE RECORDING FLOOR</div>` : `<div class="record-actions"><button class="record-action" data-action="grab">G / GRAB</button><button class="record-action" data-action="stamp">T / STAMP</button><button class="record-action" data-action="release">R / RELEASE</button></div>`;
+    const stageInstruction = interaction === "full" ? "MOVE POINTER · CLICK THE NEXT COLORED STATION" : "MOVE POINTER · G GRAB · R RELEASE · T STAMP";
+    helpers.app.innerHTML = `<section class="clockwork-customs palette-${helpers.text(state.palette)}" data-interaction="${helpers.text(interaction)}" data-role-count="${state.roles.length}" style="--role-count:${state.roles.length}" data-fresh-failure="${options.freshFailure ? "true" : "false"}" data-active="false" tabindex="0"><div class="clockwork-verdict" aria-live="assertive"></div><header class="clockwork-head"><div><span>TEMPORAL CUSTOMS BUREAU / ${helpers.text(state.desk_id)}</span><h1>${helpers.text(state.prompt)}</h1></div><div class="clockwork-seal"><i>⧖</i><span>LOOP<br><b>OFFICE</b></span></div></header><main class="clockwork-workbench"><section class="clockwork-stage"><canvas id="clockwork-canvas" width="860" height="420" aria-label="customs loop recording floor"></canvas><div class="clockwork-stage-rail"><span>${stageInstruction}</span><b>DENSE TAKES / MASTER LOOP ${Number(state.controls.loop_duration_ms)}ms</b></div></section><aside class="clockwork-console">${state.roles.map((role, slot) => `<section class="loop-card" data-loop-card="${slot}" data-ready="false"><header><b>0${slot + 1}</b><span>${helpers.text(role.title)}</span><em class="loop-status">EMPTY TAKE</em></header><div class="loop-buttons"><button class="record-start" data-record="${slot}">RECORD ${Number(state.controls.record_duration_ms) / 1000}s</button><button class="record-reset" data-record-reset="${slot}">CLEAR</button></div><div class="phase-row"><button class="phase-button" data-phase-minus="${slot}">−</button><input class="phase-slider" id="ghost-phase-${slot}" data-phase="${slot}" type="range" min="0" max="${Number(state.controls.loop_duration_ms) - Number(state.controls.phase_step_ms)}" step="${Number(state.controls.phase_step_ms)}" value="0" aria-label="ghost ${slot + 1} phase"><button class="phase-button" data-phase-plus="${slot}">+</button></div></section>`).join("")}${proxyActions}<div class="master-actions"><button id="clockwork-run">RUN MASTER CYCLE</button><button id="clockwork-rewind">REWIND / EDIT</button></div></aside></main><footer class="clockwork-foot"><div class="readout" data-status="idle">CLOCK STANDBY</div><button id="clockwork-submit">${helpers.text(state.submit_label || "FILE CUSTOMS LOG")}</button></footer>${helpers.cheatPanelTemplate()}</section>`;
+    const canvas = document.getElementById("clockwork-canvas");
+    canvas.addEventListener("pointermove", (event) => {
+      const rect = canvas.getBoundingClientRect();
+      model.cursor = {x: round2(clamp((event.clientX - rect.left) / rect.width * canvas.width, 0, canvas.width)), y: round2(clamp((event.clientY - rect.top) / rect.height * canvas.height, 0, canvas.height))};
+      drawScene();
+    });
+    canvas.addEventListener("click", directStationAction);
+    document.querySelectorAll("[data-record]").forEach((button) => button.addEventListener("click", () => startRecording(Number(button.dataset.record))));
+    document.querySelectorAll("[data-record-reset]").forEach((button) => button.addEventListener("click", () => resetRecording(Number(button.dataset.recordReset))));
+    document.querySelectorAll("[data-action]").forEach((button) => button.addEventListener("click", () => recordAction(button.dataset.action, interaction === "legacy" ? null : "proxy_control")));
+    document.querySelectorAll("[data-phase]").forEach((slider) => slider.addEventListener("input", () => setPhase(Number(slider.dataset.phase), Number(slider.value))));
+    document.querySelectorAll("[data-phase-minus]").forEach((button) => button.addEventListener("click", () => setPhase(Number(button.dataset.phaseMinus), model.phases[Number(button.dataset.phaseMinus)] - Number(state.controls.phase_step_ms))));
+    document.querySelectorAll("[data-phase-plus]").forEach((button) => button.addEventListener("click", () => setPhase(Number(button.dataset.phasePlus), model.phases[Number(button.dataset.phasePlus)] + Number(state.controls.phase_step_ms))));
+    document.getElementById("clockwork-run").addEventListener("click", runCycle);
+    document.getElementById("clockwork-rewind").addEventListener("click", rewindCycle);
+    document.getElementById("clockwork-submit").addEventListener("click", submitLog);
+    const keyHandler = (event) => {
+      if (event.repeat || interaction === "full") return;
+      const action = {g: "grab", r: "release", t: "stamp"}[event.key.toLowerCase()];
+      if (action && model.recording) {
+        event.preventDefault();
+        recordAction(action, interaction === "legacy" ? null : "proxy_control");
+      }
+    };
+    window.addEventListener("keydown", keyHandler);
+    installDeveloperReveal();
+    activeCleanup = () => {
+      clearInterval(model?.recordTimer);
+      clearTimeout(model?.recordEndTimer);
+      clearInterval(model?.cycleSampleTimer);
+      clearInterval(model?.cycleDrawTimer);
+      clearTimeout(model?.cycleEndTimer);
+      model?.timers.forEach((timer) => clearTimeout(timer));
+      window.removeEventListener("keydown", keyHandler);
+    };
+    updateInterface();
+    document.querySelector(".clockwork-customs")?.focus();
+    if (options.freshFailure) {
+      const fresh = model;
+      const timer = setTimeout(() => { if (model === fresh) startChallenge(); }, 1650);
+      model.timers.add(timer);
+    } else startChallenge();
+  }
+
+  window.WeirdCaptchaMechanics = window.WeirdCaptchaMechanics || {};
+  window.WeirdCaptchaMechanics.clockwork_doppelganger_customs = {rootSelector: ".clockwork-customs", render};
 })();

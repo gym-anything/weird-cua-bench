@@ -4,7 +4,7 @@ import math
 from pathlib import Path
 
 from benchmarks.weird_captcha_gym.tools.incubator_solvers.reviewed_overhaul_common import (
-    drag_delta,
+    center,
     expect_fail_and_fresh,
     read_json,
     shot,
@@ -14,10 +14,25 @@ MECHANIC_ID = "bureaucratic_signature_trap"
 
 
 def _align(page, form: dict) -> None:
+    interaction = page.locator(".carbon-captcha").get_attribute("data-interaction") or "full"
     for layer in reversed(form["layers"]):
         dx = float(layer["target"]["x"]) - float(layer["initial"]["x"])
         dy = float(layer["target"]["y"]) - float(layer["initial"]["y"])
-        drag_delta(page, page.locator(f'.sheet-tab[data-control-id="{layer["id"]}"]'), dx, dy, maximum_step=24)
+        if interaction == "full":
+            start = center(page.locator(f'.sheet-tab[data-control-id="{layer["id"]}"]'))
+            page.mouse.move(*start)
+            page.mouse.down()
+            page.mouse.move(start[0] + dx, start[1] + dy, steps=1)
+            page.wait_for_timeout(60)
+            page.mouse.up()
+            continue
+        axis_tolerance = float(form["alignment_tolerance"]) / math.sqrt(2)
+        for direction, amount in (("left" if dx < 0 else "right", abs(dx)), ("up" if dy < 0 else "down", abs(dy))):
+            button = page.locator(f'.sheet-nudges [data-control-id="{layer["id"]}"][data-direction="{direction}"]')
+            for _ in range(math.ceil(max(0, amount - axis_tolerance) / 8)):
+                if page.locator(".carbon-stage").get_attribute("data-open") == "true":
+                    return
+                button.click()
 
 
 def _draw_points(page, form: dict, points: list[list[float]]) -> None:
@@ -57,7 +72,9 @@ def fail_once(page, state_dir: Path, out_dir: Path, mechanic: str) -> None:
     _align(page, form)
     # This was accepted by v2.  It is now the mechanic-specific forgery test.
     _draw_points(page, form, _generic_circle(form, float(form["aperture"]["radius"]) * .62))
-    page.locator(".carbon-submit").click()
+    # Send the physical click without locator post-action waiting so the short,
+    # visible rejection verdict can be observed before the fresh task renders.
+    page.mouse.click(*center(page.locator(".carbon-submit")))
     expect_fail_and_fresh(page, state_dir, before)
     shot(page, out_dir, mechanic, "generic-circle-rejected")
 

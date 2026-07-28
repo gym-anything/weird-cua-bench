@@ -22,6 +22,13 @@ def _angle_distance(first: float, second: float) -> float:
     return abs((first - second + 180.0) % 360.0 - 180.0)
 
 
+def _close_angle(first: Any, second: Any, tolerance: float = 0.04) -> bool:
+    try:
+        return _angle_distance(float(first), float(second)) <= tolerance
+    except (TypeError, ValueError):
+        return False
+
+
 def _events(record: dict[str, Any]) -> list[dict[str, Any]] | None:
     raw = record.get("events")
     if not isinstance(raw, list) or not raw:
@@ -47,7 +54,7 @@ def _grade_chord(round_data: dict[str, Any], events: list[dict[str, Any]]) -> st
         {str(key).upper() for key in chord}
         for chord in round_data.get("chords") or []
     ]
-    if len(chords) != 3 or any(len(chord) != 2 for chord in chords):
+    if not chords or any(len(chord) != 2 for chord in chords):
         return "magnetic chord contract is malformed"
     stage = 0
     held: set[str] = set()
@@ -110,18 +117,18 @@ def _grade_dial(round_data: dict[str, Any], events: list[dict[str, Any]]) -> str
             move_count += 1
         elif action == "drag_end" and not drag_ended:
             drag_ended = True
-            if not _close(event.get("angle"), angle) or not _close(event.get("velocity"), velocity):
+            if not _close_angle(event.get("angle"), angle) or not _close(event.get("velocity"), velocity):
                 return "dial release state disagrees with drag replay"
             if abs(velocity) < 2.5:
                 return "dial was released without meaningful inertia"
         elif action == "dial_tick" and drag_ended:
             angle = (angle + velocity) % 360.0
             velocity *= friction
-            if not _close(event.get("angle"), angle) or not _close(event.get("velocity"), velocity):
+            if not _close_angle(event.get("angle"), angle) or not _close(event.get("velocity"), velocity):
                 return "dial coast tick disagrees with inertia replay"
             tick_count += 1
         elif action == "brake" and drag_ended:
-            if event is not events[-1] or not _close(event.get("angle"), angle):
+            if event is not events[-1] or not _close_angle(event.get("angle"), angle):
                 return "dial brake angle disagrees with replay"
         else:
             return "dial transcript contains an invalid state transition"
@@ -134,15 +141,15 @@ def _grade_dial(round_data: dict[str, Any], events: list[dict[str, Any]]) -> str
 
 def _grade_intercept(round_data: dict[str, Any], events: list[dict[str, Any]]) -> str | None:
     packets = [dict(packet) for packet in round_data.get("packets") or []]
-    if len(packets) != 3 or events[0].get("action") != "arm":
-        return "triple intercept transcript must begin with one arm action"
+    if not packets or events[0].get("action") != "arm":
+        return "moving intercept transcript must begin with one arm action"
     position = 8.0
     direction = 1
     tick_count = 0
     packet_index = 0
     for event in events[1:]:
         if packet_index >= len(packets):
-            return "intercept transcript continues after the third packet"
+            return "intercept transcript continues after the final packet"
         packet = packets[packet_index]
         if event.get("packet_index") != packet_index or event.get("packet_id") != packet.get("id"):
             return "intercept event targets the wrong moving packet"
@@ -167,7 +174,7 @@ def _grade_intercept(round_data: dict[str, Any], events: list[dict[str, Any]]) -
         else:
             return "intercept transcript contains an unknown action"
     if packet_index != len(packets):
-        return "all three packets were not intercepted"
+        return "all moving packets were not intercepted"
     return None
 
 
@@ -189,6 +196,11 @@ def _grade_route(round_data: dict[str, Any], events: list[dict[str, Any]]) -> st
     corridor = float(round_data.get("corridor_radius") or 13)
     checkpoint = 0
     move_count = 0
+    previous: tuple[float, float] | None = None
+    # Browser route handlers resample each physical pointer segment or each
+    # simplified hoop command at this interval. Requiring the same bound in
+    # the server replay prevents a transcript from jumping over the corridor.
+    max_sample_gap = max(1.0, min(radius, corridor) / 2.0) + 0.12
     for event in events:
         if event.get("action") not in {"route_start", "route_move", "route_end"}:
             return "route transcript contains an unknown action"
@@ -198,12 +210,15 @@ def _grade_route(round_data: dict[str, Any], events: list[dict[str, Any]]) -> st
             return "route coordinates are malformed"
         if not (0 <= x <= 100 and 0 <= y <= 100):
             return "route coordinates leave the board"
+        if previous is not None and math.hypot(x - previous[0], y - previous[1]) > max_sample_gap:
+            return "route transcript skips unsampled corridor geometry"
         if min(_distance_to_segment(x, y, *points[index], *points[index + 1]) for index in range(len(points) - 1)) > corridor:
             return "capsule left the visible route corridor"
         if checkpoint < len(points) and math.hypot(x - points[checkpoint][0], y - points[checkpoint][1]) <= radius:
             checkpoint += 1
         if event.get("action") == "route_move":
             move_count += 1
+        previous = (x, y)
     if checkpoint != len(points) or move_count < len(points):
         return "route checkpoints were not physically traversed"
     return None
@@ -229,6 +244,15 @@ def grade(payload: dict[str, Any], ground_truth: dict[str, Any], public_state: d
     task_id = str(ground_truth.get("task_id") or "")
     if not task_id or str(payload.get("task_id") or "") != task_id or str(public_state.get("task_id") or "") != task_id:
         return {"graded": True, "passed": False, "feedback": "task identity mismatch"}
+    condition = ground_truth.get("control_condition")
+    if condition is not None:
+        expected_mode = str(condition.get("interaction") or "")
+        if (
+            expected_mode not in {"simplified", "full"}
+            or public_state.get("control_condition") != condition
+            or payload.get("interaction_mode") != expected_mode
+        ):
+            return {"graded": True, "passed": False, "feedback": "interaction condition mismatch"}
     rounds = ground_truth.get("rounds")
     records = payload.get("round_records")
     if not isinstance(rounds, list) or not isinstance(records, list) or len(records) != len(rounds) or len(rounds) != 5:
@@ -264,9 +288,13 @@ def grade(payload: dict[str, Any], ground_truth: dict[str, Any], public_state: d
     for index, (record, round_data) in enumerate(zip(records, rounds), start=1):
         if not isinstance(record, dict) or record.get("round_id") != round_data.get("id") or record.get("type") != round_data.get("type"):
             return {"graded": True, "passed": False, "feedback": f"round {index} identity mismatch"}
+        if condition is not None and record.get("interaction_mode") != expected_mode:
+            return {"graded": True, "passed": False, "feedback": f"round {index} used the wrong interaction surface"}
         round_events = _events(record)
         if round_events is None:
             return {"graded": True, "passed": False, "feedback": f"round {index} event transcript is malformed"}
+        if condition is not None and any(event.get("input_surface") != expected_mode for event in round_events):
+            return {"graded": True, "passed": False, "feedback": f"round {index} does not record the selected interaction surface"}
         error = VALIDATORS[str(round_data["type"])](round_data, round_events)
         if error:
             return {"graded": True, "passed": False, "feedback": f"round {index}: {error}"}

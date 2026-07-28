@@ -32,9 +32,12 @@
   let runWindowToken = 0;
   let nextTimerId = 1;
   let nextAnimationFrameId = 1;
+  let nextActionId = 1;
 
   const timers = new Map();
   const animationFrames = new Map();
+  const pendingActions = new Map();
+  const actionIdleResolvers = new Set();
   const controllerPausedAnimations = new Set();
   const audioContexts = new Set();
   const controllerPausedAudioContexts = new Set();
@@ -95,15 +98,64 @@
     controllerPausedAudioContexts.clear();
   }
 
+  // A task can register the finite visual/physical transition that an input
+  // has already started.  This is deliberately independent of time mode: the
+  // same action still takes the same task time in a normal browser session.
+  // The paused evaluator uses it only to place the pause boundary after that
+  // existing transition, rather than freezing an accepted input halfway
+  // through its own lockout animation.
+  function beginAction(label = "interaction") {
+    const id = nextActionId++;
+    let settled = false;
+    pendingActions.set(id, {
+      label: String(label),
+      started_task_time_ms: Math.round(elapsedMs() * 1000) / 1000,
+    });
+    return {
+      id,
+      settle() {
+        if (settled) return;
+        settled = true;
+        pendingActions.delete(id);
+        if (pendingActions.size) return;
+        for (const resolve of actionIdleResolvers) resolve();
+        actionIdleResolvers.clear();
+      },
+    };
+  }
+
+  function waitForActionsToSettle() {
+    if (!pendingActions.size) return Promise.resolve();
+    return new Promise((resolve) => actionIdleResolvers.add(resolve));
+  }
+
   function pause() {
     if (!running) return status();
     accumulatedMs = elapsedMs();
     runStartedAt = null;
     running = false;
     commandPhase = "paused";
+    // A canvas-based task normally paints from requestAnimationFrame.  Render
+    // the state at the exact pause boundary once, then leave any newly queued
+    // frame pending until task time resumes.  Without this flush, a task that
+    // starts paused can expose an empty canvas to its first observation.
+    flushAnimationFrames();
     pauseDocumentAnimations();
     pauseAudio();
     return status();
+  }
+
+  async function pauseAfterActions(sequence) {
+    if (!running) return status();
+    if (pendingActions.size) {
+      commandPhase = "settling_actions";
+      await postStatus();
+      await waitForActionsToSettle();
+      // A newer command wins while this command is waiting for an action to
+      // settle.  It must not unexpectedly pause a newly resumed task.
+      if (sequence != null && sequence !== lastCommandSequence) return status();
+    }
+    return pause();
   }
 
   function resume() {
@@ -141,10 +193,16 @@
       native_date_ms: native.dateNow(),
       window_started_wall_ms: windowStartedWallMs,
       window_completed_wall_ms: windowCompletedWallMs,
+      pending_action_count: pendingActions.size,
+      pending_actions: [...pendingActions.values()].map((action) => ({...action})),
     };
   }
 
   function markReady() {
+    // `main()` marks readiness after the mechanic has installed its first
+    // requestAnimationFrame callback.  Flush it even when the controller was
+    // initialized paused so obs.screen always contains the rendered world.
+    flushAnimationFrames();
     ready = true;
     postStatus();
   }
@@ -223,19 +281,22 @@
     }
   }
 
-  function animationLoop() {
-    if (running && animationFrames.size) {
-      const callbacks = [...animationFrames.values()];
-      animationFrames.clear();
-      const timestamp = virtualPerformanceNow();
-      for (const callback of callbacks) {
-        try {
-          callback(timestamp);
-        } catch (error) {
-          native.setTimeout(() => { throw error; }, 0);
-        }
+  function flushAnimationFrames() {
+    if (!animationFrames.size) return;
+    const callbacks = [...animationFrames.values()];
+    animationFrames.clear();
+    const timestamp = virtualPerformanceNow();
+    for (const callback of callbacks) {
+      try {
+        callback(timestamp);
+      } catch (error) {
+        native.setTimeout(() => { throw error; }, 0);
       }
     }
+  }
+
+  function animationLoop() {
+    if (running) flushAnimationFrames();
     native.requestAnimationFrame(animationLoop);
   }
 
@@ -294,6 +355,9 @@
     if (kind === "pause") {
       runWindowToken += 1;
       pause();
+    } else if (kind === "settle_pause") {
+      runWindowToken += 1;
+      await pauseAfterActions(sequence);
     } else if (kind === "resume") {
       runWindowToken += 1;
       resume();
@@ -326,7 +390,9 @@
 
   window.WeirdCaptchaTime = {
     pause,
+    pauseAfterActions,
     resume,
+    beginAction,
     setMode,
     status,
     markReady,

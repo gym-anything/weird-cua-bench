@@ -5,7 +5,7 @@ Validate the complete environment rather than checking only `controls.json`.
 ## Difficulty
 
 - Materialize all five profiles deterministically across several seeds.
-- Confirm that the assigned baseline reproduces the existing configuration for a fixed seed.
+- Confirm that the assigned baseline reproduces the existing configuration for a fixed seed. A documented repair may change objectively inconsistent task text only when fixed-seed evidence shows that the generated world, success condition, timing, observation surface, and assigned level remain unchanged.
 - Confirm that every configured parameter affects the running task and its grader or verifier where applicable.
 - Compare adjacent levels in the browser. Record the change in the decision or control problem.
 - Do not claim calibrated ordering from parameter inspection alone. Preserve human and agent results as separate evidence when they become available.

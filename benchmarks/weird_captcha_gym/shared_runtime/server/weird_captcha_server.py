@@ -15,6 +15,13 @@ from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 from urllib.parse import unquote, urlparse
 
+try:
+    from . import grillmaster_witness
+    from . import slot_reel_witness
+except ImportError:
+    import grillmaster_witness
+    import slot_reel_witness
+
 
 class PuzzleServer(BaseHTTPRequestHandler):
     app_dir: Path
@@ -22,6 +29,8 @@ class PuzzleServer(BaseHTTPRequestHandler):
 
     server_version = "WeirdCaptchaServer/0.1"
     time_control_lock = threading.Lock()
+    grillmaster_witness_lock = threading.Lock()
+    slot_reel_witness_lock = threading.Lock()
 
     def do_GET(self) -> None:
         parsed = urlparse(self.path)
@@ -31,9 +40,14 @@ class PuzzleServer(BaseHTTPRequestHandler):
         if parsed.path == "/state":
             state = self._try_regenerate_current_task(reason="refresh")
             if state:
+                self._initialize_slot_reel_witness(state)
                 self._send_json(state)
                 return
-            self._send_json_file(self.state_dir / "public_state.json")
+            state = self._read_json_file(
+                self.state_dir / "public_state.json"
+            )
+            self._initialize_slot_reel_witness(state)
+            self._send_json(state)
             return
         if parsed.path == "/result":
             self._send_json_file(self.state_dir / "result.json")
@@ -58,6 +72,27 @@ class PuzzleServer(BaseHTTPRequestHandler):
         if parsed.path == "/cheat":
             self._handle_cheat()
             return
+        grill_gesture_routes = {
+            "/parallel-grillmaster/full/drag-begin": "full_drag_begin",
+            "/parallel-grillmaster/simplified/select": "simplified_selection",
+        }
+        if parsed.path in grill_gesture_routes:
+            self._handle_grillmaster_gesture(
+                grill_gesture_routes[parsed.path]
+            )
+            return
+        grill_action_routes = {
+            "/parallel-grillmaster/full/drop": "full_drop",
+            "/parallel-grillmaster/simplified/proxy": "simplified_proxy",
+        }
+        if parsed.path in grill_action_routes:
+            self._handle_grillmaster_action(
+                grill_action_routes[parsed.path]
+            )
+            return
+        if parsed.path == "/slot-reel/action":
+            self._handle_slot_reel_action()
+            return
         if parsed.path != "/result":
             self._send_json({"error": "unknown endpoint"}, status=HTTPStatus.NOT_FOUND)
             return
@@ -66,8 +101,55 @@ class PuzzleServer(BaseHTTPRequestHandler):
         except ValueError as exc:
             self._send_json({"error": str(exc)}, status=HTTPStatus.BAD_REQUEST)
             return
-        payload.setdefault("submitted_at", time.time())
         self.state_dir.mkdir(parents=True, exist_ok=True)
+        payload.setdefault("submitted_at", time.time())
+        if str(payload.get("mechanic_id") or "") == "parallel_grillmaster":
+            payload.pop("actions", None)
+            payload.pop("durations_ms", None)
+            payload.pop("trusted_witness", None)
+            ground_truth = self._read_json_file(
+                self.state_dir / "ground_truth.json"
+            )
+            with self.grillmaster_witness_lock:
+                witness, witness_error = grillmaster_witness.finalize(
+                    self.state_dir,
+                    ground_truth,
+                )
+            if witness is not None:
+                payload["trusted_witness"] = witness
+            else:
+                payload["witness_error"] = witness_error
+        elif str(payload.get("mechanic_id") or "") == "slot_reel_capture":
+            payload.pop("actions", None)
+            payload.pop("trusted_witness", None)
+            ground_truth = self._read_json_file(
+                self.state_dir / "ground_truth.json"
+            )
+            with self.slot_reel_witness_lock:
+                witness, witness_error = slot_reel_witness.finalize(
+                    self.state_dir,
+                    ground_truth,
+                )
+            if witness is not None:
+                actions = list(witness.get("actions") or [])
+                accepted = [
+                    action
+                    for action in actions
+                    if action.get("accepted") is True
+                ]
+                payload["trusted_witness"] = witness
+                payload["actions"] = actions
+                payload["captured_sequence"] = "".join(
+                    str(action.get("observed_token") or "")
+                    for action in accepted
+                )
+                payload["frozen_reel_ids"] = [
+                    str(action.get("reel_id") or "")
+                    for action in accepted
+                ]
+                payload["wrong_keys"] = len(actions) - len(accepted)
+            else:
+                payload["witness_error"] = witness_error
         grade = self._grade_submission(payload)
         payload["server_grade"] = grade
         if grade.get("graded") and not grade.get("passed"):
@@ -90,6 +172,78 @@ class PuzzleServer(BaseHTTPRequestHandler):
             })
         self._send_json(response)
 
+    def _handle_grillmaster_gesture(
+        self,
+        witnessed_route: str,
+    ) -> None:
+        try:
+            payload = self._read_json()
+        except ValueError as exc:
+            self._send_json(
+                {"error": str(exc)},
+                status=HTTPStatus.BAD_REQUEST,
+            )
+            return
+        ground_truth = self._read_json_file(
+            self.state_dir / "ground_truth.json"
+        )
+        with self.grillmaster_witness_lock:
+            response, status = grillmaster_witness.begin_gesture(
+                self.state_dir,
+                payload,
+                ground_truth,
+                witnessed_route,
+            )
+        self._send_json(response, status=HTTPStatus(status))
+
+    def _handle_grillmaster_action(
+        self,
+        witnessed_route: str,
+    ) -> None:
+        try:
+            payload = self._read_json()
+        except ValueError as exc:
+            self._send_json(
+                {"error": str(exc)},
+                status=HTTPStatus.BAD_REQUEST,
+            )
+            return
+        ground_truth = self._read_json_file(
+            self.state_dir / "ground_truth.json"
+        )
+        with self.grillmaster_witness_lock:
+            response, status = grillmaster_witness.record_action(
+                self.state_dir,
+                payload,
+                ground_truth,
+                witnessed_route,
+            )
+        self._send_json(response, status=HTTPStatus(status))
+
+    def _handle_slot_reel_action(self) -> None:
+        try:
+            payload = self._read_json()
+        except ValueError as exc:
+            self._send_json(
+                {"error": str(exc)},
+                status=HTTPStatus.BAD_REQUEST,
+            )
+            return
+        ground_truth = self._read_json_file(
+            self.state_dir / "ground_truth.json"
+        )
+        public_state = self._read_json_file(
+            self.state_dir / "public_state.json"
+        )
+        with self.slot_reel_witness_lock:
+            response, status = slot_reel_witness.record_action(
+                self.state_dir,
+                payload,
+                ground_truth,
+                public_state,
+            )
+        self._send_json(response, status=HTTPStatus(status))
+
     def _handle_time_control(self) -> None:
         try:
             payload = self._read_json()
@@ -97,8 +251,8 @@ class PuzzleServer(BaseHTTPRequestHandler):
             self._send_json({"error": str(exc)}, status=HTTPStatus.BAD_REQUEST)
             return
         command = str(payload.get("command") or "")
-        if command not in {"pause", "resume", "run_for"}:
-            self._send_json({"error": "command must be pause, resume, or run_for"}, status=HTTPStatus.BAD_REQUEST)
+        if command not in {"pause", "settle_pause", "resume", "run_for"}:
+            self._send_json({"error": "command must be pause, settle_pause, resume, or run_for"}, status=HTTPStatus.BAD_REQUEST)
             return
         normalized: dict[str, object] = {"command": command}
         if command == "run_for":
@@ -120,6 +274,21 @@ class PuzzleServer(BaseHTTPRequestHandler):
             normalized["sequence"] = int(prior.get("sequence") or 0) + 1
             normalized["issued_at"] = time.time()
             self._write_json(self.state_dir / "time_command.json", normalized)
+            ground_truth = self._read_json_file(
+                self.state_dir / "ground_truth.json"
+            )
+            with self.grillmaster_witness_lock:
+                grillmaster_witness.apply_time_command(
+                    self.state_dir,
+                    ground_truth,
+                    normalized,
+                )
+            with self.slot_reel_witness_lock:
+                slot_reel_witness.apply_time_command(
+                    self.state_dir,
+                    ground_truth,
+                    normalized,
+                )
         self._send_json(normalized)
 
     def _handle_time_status(self) -> None:
@@ -131,6 +300,21 @@ class PuzzleServer(BaseHTTPRequestHandler):
         payload["received_at"] = time.time()
         with self.time_control_lock:
             self._write_json(self.state_dir / "time_status.json", payload)
+            ground_truth = self._read_json_file(
+                self.state_dir / "ground_truth.json"
+            )
+            with self.grillmaster_witness_lock:
+                grillmaster_witness.apply_time_status(
+                    self.state_dir,
+                    ground_truth,
+                    payload,
+                )
+            with self.slot_reel_witness_lock:
+                slot_reel_witness.apply_time_status(
+                    self.state_dir,
+                    ground_truth,
+                    payload,
+                )
             if payload.get("phase") == "completed":
                 command = self._read_json_file(self.state_dir / "time_command.json")
                 if int(command.get("sequence") or 0) == int(payload.get("sequence") or -1):
@@ -562,7 +746,14 @@ class PuzzleServer(BaseHTTPRequestHandler):
         return {"graded": True, "passed": passed, "feedback": f"click distance {distance:.2f}px"}
 
     def _grade_grillmaster_submission(self, payload: dict) -> dict:
-        ground_truth = self._read_json_file(self.state_dir / "ground_truth.json")
+        ground_truth = self._read_json_file(
+            self.state_dir / "ground_truth.json"
+        )
+        if (
+            ground_truth.get("control_condition") is not None
+            or isinstance(payload.get("trusted_witness"), dict)
+        ):
+            return self._grade_incubator_submission(payload)
         targets = ground_truth.get("targets") or {}
         durations = payload.get("durations_ms") or {}
         correct = 0
@@ -575,8 +766,16 @@ class PuzzleServer(BaseHTTPRequestHandler):
                 continue
             if abs(elapsed - target_ms) <= tolerance_ms:
                 correct += 1
-        passed = bool(targets) and correct == len(targets) and set(durations) == set(targets)
-        return {"graded": True, "passed": passed, "feedback": f"foods {correct}/{len(targets)}"}
+        passed = (
+            bool(targets)
+            and correct == len(targets)
+            and set(durations) == set(targets)
+        )
+        return {
+            "graded": True,
+            "passed": passed,
+            "feedback": f"foods {correct}/{len(targets)}",
+        }
 
     def _grade_rotating_keyboard_submission(self, payload: dict) -> dict:
         ground_truth = self._read_json_file(self.state_dir / "ground_truth.json")
@@ -587,55 +786,53 @@ class PuzzleServer(BaseHTTPRequestHandler):
 
     def _grade_slot_reel_submission(self, payload: dict) -> dict:
         ground_truth = self._read_json_file(self.state_dir / "ground_truth.json")
-        expected = str(ground_truth.get("sequence") or "")
-        submitted = str(payload.get("captured_sequence") or "").upper()
-        expected_reels = [str(item) for item in ground_truth.get("reel_ids") or []]
-        frozen_reels = [str(item) for item in payload.get("frozen_reel_ids") or []]
-        wrong_keys = int(payload.get("wrong_keys") or 0)
-        max_strikes = int(ground_truth.get("max_strikes") or 3)
-        passed = bool(expected) and submitted == expected and frozen_reels == expected_reels and wrong_keys < max_strikes
-        return {"graded": True, "passed": passed, "feedback": f"captured {len(submitted)}/{len(expected)}; strikes {wrong_keys}/{max_strikes}"}
+        public_state = self._read_json_file(self.state_dir / "public_state.json")
+        grader_path = Path(__file__).resolve().with_name("legacy_browser_grader.py")
+        spec = importlib.util.spec_from_file_location(
+            "weird_captcha_slot_reel_server_grader",
+            grader_path,
+        )
+        if spec is None or spec.loader is None:
+            return {
+                "graded": True,
+                "passed": False,
+                "feedback": "cannot load Slot Reel task-time replay grader",
+            }
+        module = importlib.util.module_from_spec(spec)
+        try:
+            spec.loader.exec_module(module)
+            return module.grade(payload, ground_truth, public_state)
+        except Exception as exc:
+            return {
+                "graded": True,
+                "passed": False,
+                "feedback": f"slot-reel replay grader error: {exc}",
+            }
 
     def _grade_domino_submission(self, payload: dict) -> dict:
         ground_truth = self._read_json_file(self.state_dir / "ground_truth.json")
-        loose_ids = set(str(item) for item in ground_truth.get("loose_ids") or [])
-        raw = payload.get("placements") or {}
-        if set(str(key) for key in raw) != loose_ids:
-            return {"graded": True, "passed": False, "feedback": "not all loose dominoes were placed"}
+        public_state = self._read_json_file(self.state_dir / "public_state.json")
+        grader_path = Path(__file__).resolve().with_name("legacy_browser_grader.py")
+        spec = importlib.util.spec_from_file_location(
+            "weird_captcha_domino_server_grader",
+            grader_path,
+        )
+        if spec is None or spec.loader is None:
+            return {
+                "graded": True,
+                "passed": False,
+                "feedback": "cannot load Domino Autopsy replay grader",
+            }
+        module = importlib.util.module_from_spec(spec)
         try:
-            for item in raw.values():
-                float(item.get("x")); float(item.get("y")); float(item.get("angle"))
-        except (TypeError, ValueError):
-            return {"graded": True, "passed": False, "feedback": "domino placement is invalid"}
-        expected = set(str(item) for item in ground_truth.get("expected_body_ids") or [])
-        first = str(ground_truth.get("first_body_id") or "")
-        bell = str(ground_truth.get("bell_body_id") or "bell-body")
-        minimum_swing = float(ground_truth.get("minimum_bell_swing_radians") or 0.03)
-        try:
-            bell_swing = abs(float(payload.get("bell_peak_angle") or 0.0))
-        except (TypeError, ValueError):
-            bell_swing = 0.0
-        allowed = expected | {bell}
-        graph = {label: set() for label in allowed}
-        valid_pairs = 0
-        for pair in payload.get("collision_pairs") or []:
-            if not isinstance(pair, list) or len(pair) != 2:
-                continue
-            left, right = str(pair[0]), str(pair[1])
-            if left not in allowed or right not in allowed or left == right:
-                continue
-            graph[left].add(right); graph[right].add(left); valid_pairs += 1
-        seen = set()
-        queue = [first] if first in graph else []
-        while queue:
-            current = queue.pop()
-            if current in seen:
-                continue
-            seen.add(current); queue.extend(graph[current] - seen)
-        connected = len((expected | {bell}) & seen)
-        physics_engine = str(payload.get("physics_engine") or "")
-        passed = payload.get("run_completed") is True and payload.get("bell_hit") is True and bell_swing >= minimum_swing and physics_engine == "matter-js@0.20.0" and expected | {bell} <= seen
-        return {"graded": True, "passed": passed, "feedback": f"rigid-body collision graph {connected}/{len(expected) + 1}; contacts {valid_pairs}; physical bell swing={bell_swing:.3f} rad"}
+            spec.loader.exec_module(module)
+            return module.grade(payload, ground_truth, public_state)
+        except Exception as exc:
+            return {
+                "graded": True,
+                "passed": False,
+                "feedback": f"domino replay grader error: {exc}",
+            }
 
     def _grade_consequences_submission(self, payload: dict) -> dict:
         ground_truth = self._read_json_file(self.state_dir / "ground_truth.json")
@@ -665,9 +862,14 @@ class PuzzleServer(BaseHTTPRequestHandler):
 
     def _grade_funeral_submission(self, payload: dict) -> dict:
         ground_truth = self._read_json_file(self.state_dir / "ground_truth.json")
+        public_state = self._read_json_file(self.state_dir / "public_state.json")
+        condition = ground_truth.get("control_condition")
+        if condition is not None and str(payload.get("challenge_id") or "") != str(ground_truth.get("challenge_id") or ""):
+            return {"graded": True, "passed": False, "feedback": "stale funeral challenge"}
         required_events = [str(item) for item in ground_truth.get("required_events") or []]
         events = [str(item) for item in payload.get("events") or []]
-        max_cells = int(ground_truth.get("moss_cells") or 24)
+        max_cells_value = ground_truth.get("moss_cells")
+        max_cells = int(max_cells_value) if max_cells_value is not None else 24
         cells = set()
         for item in payload.get("brushed_cells") or []:
             try:
@@ -676,11 +878,28 @@ class PuzzleServer(BaseHTTPRequestHandler):
                 continue
             if 0 <= value < max_cells:
                 cells.add(value)
-        flowers = set(str(item) for item in payload.get("gathered_flower_ids") or [])
-        expected_flowers = set(str(item) for item in ground_truth.get("flower_ids") or [])
-        threshold = int(ground_truth.get("brush_threshold") or 17)
+        flowers = [str(item) for item in payload.get("gathered_flower_ids") or []]
+        expected_flowers = [str(item) for item in ground_truth.get("flower_ids") or []]
+        expected_order = [str(item) for item in ground_truth.get("flower_order") or []]
+        flowers_match = flowers == expected_order if expected_order else len(flowers) == len(expected_flowers) and set(flowers) == set(expected_flowers)
+        threshold_value = ground_truth.get("brush_threshold")
+        threshold = int(threshold_value) if threshold_value is not None else 17
         completed = payload.get("completed") is True
-        passed = completed and events == required_events and len(cells) >= threshold and flowers == expected_flowers
+        interaction_ok = True
+        if condition is not None:
+            expected_surface = str(condition.get("interaction") or "")
+            surfaces = payload.get("action_surfaces") or []
+            expected_actions = [{"event": event, "surface": expected_surface} for event in required_events]
+            flower_sources = payload.get("flower_sources") or {}
+            interaction_ok = (
+                public_state.get("control_condition") == condition
+                and expected_surface in {"simplified", "full"}
+                and payload.get("interaction_mode") == expected_surface
+                and surfaces == expected_actions
+                and isinstance(flower_sources, dict)
+                and all(flower_sources.get(flower_id) == expected_surface for flower_id in expected_flowers)
+            )
+        passed = completed and events == required_events and len(cells) >= threshold and flowers_match and interaction_ok
         return {"graded": True, "passed": passed, "feedback": f"ritual {len(events)}/{len(required_events)}; moss {len(cells)}/{threshold}; flowers {len(flowers)}/{len(expected_flowers)}"}
 
     def _grade_slime_submission(self, payload: dict) -> dict:
@@ -740,7 +959,11 @@ class PuzzleServer(BaseHTTPRequestHandler):
         if module is None:
             return None
         challenge_index = int(current.get("challenge_index") or current.get("attempt") or 0) + 1
-        seed = f"{reason}:{time.time_ns()}:{secrets.token_hex(12)}"
+        evaluator_seed = os.environ.get("WEIRD_CAPTCHA_CHALLENGE_SEED")
+        if evaluator_seed:
+            seed = f"{evaluator_seed}:{reason}:{challenge_index}"
+        else:
+            seed = f"{reason}:{time.time_ns()}:{secrets.token_hex(12)}"
         public_state, ground_truth = module.generate_task_state(task, seed)
         if public_state.get("status") == "not_benchmark_ready":
             return None
@@ -753,11 +976,34 @@ class PuzzleServer(BaseHTTPRequestHandler):
         })
         self._write_json(self.state_dir / "public_state.json", public_state)
         self._write_json(self.state_dir / "ground_truth.json", ground_truth)
+        with self.grillmaster_witness_lock:
+            grillmaster_witness.reset(self.state_dir)
+        with self.slot_reel_witness_lock:
+            slot_reel_witness.reset(self.state_dir)
+            slot_reel_witness.initialize(
+                self.state_dir,
+                ground_truth,
+            )
         try:
             (self.state_dir / "result.json").unlink()
         except FileNotFoundError:
             pass
         return public_state
+
+    def _initialize_slot_reel_witness(
+        self,
+        public_state: dict,
+    ) -> None:
+        if public_state.get("mechanic_id") != "slot_reel_capture":
+            return
+        ground_truth = self._read_json_file(
+            self.state_dir / "ground_truth.json"
+        )
+        with self.slot_reel_witness_lock:
+            slot_reel_witness.initialize(
+                self.state_dir,
+                ground_truth,
+            )
 
     def _send_json(self, data: dict, status: HTTPStatus = HTTPStatus.OK) -> None:
         body = json.dumps(data, sort_keys=True).encode("utf-8")

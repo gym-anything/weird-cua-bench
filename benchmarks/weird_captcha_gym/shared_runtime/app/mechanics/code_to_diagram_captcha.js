@@ -60,13 +60,15 @@
   }
 
   function recordWire(action, wire) {
-    model.wireEvents.push({
+    const event = {
       sequence: model.wireEvents.length + 1,
       action,
       from_port: wire.from_port,
       label: wire.label,
       to_node: wire.to_node,
-    });
+    };
+    if (model.inputSource) event.input_source = model.inputSource;
+    model.wireEvents.push(event);
   }
 
   function clearFreshFailure() {
@@ -119,7 +121,7 @@
   }
 
   function beginWire(event) {
-    if (!model || model.submitting || model.terminal) return;
+    if (!model || model.interaction !== "full" || model.submitting || model.terminal) return;
     event.preventDefault();
     const button = event.currentTarget;
     const canvas = document.querySelector(".flow-canvas");
@@ -134,6 +136,34 @@
     };
     button.setPointerCapture?.(event.pointerId);
     drawWires();
+  }
+
+  function selectWirePort(event) {
+    if (!model || model.interaction !== "simplified" || model.submitting || model.terminal) return;
+    event.preventDefault();
+    clearFreshFailure();
+    const button = event.currentTarget;
+    const fromPort = String(button.dataset.portId || "");
+    const label = String(button.dataset.label || "");
+    if (!fromPort || !label) return;
+    model.selectedPort = model.selectedPort?.from_port === fromPort ? null : {from_port: fromPort, label};
+    document.querySelectorAll(".flow-port-out").forEach((port) => {
+      port.classList.toggle("is-selected", port.dataset.portId === model.selectedPort?.from_port);
+    });
+    helpersCache.setReadout(
+      model.selectedPort ? `${label} OUTPUT SELECTED · CLICK A NODE INPUT` : "OUTPUT SELECTION CLEARED",
+      "idle",
+    );
+  }
+
+  function completeClickWire(event) {
+    if (!model || model.interaction !== "simplified" || !model.selectedPort || model.submitting || model.terminal) return;
+    event.preventDefault();
+    const toNode = String(event.currentTarget?.dataset.nodeId || "");
+    const selected = model.selectedPort;
+    model.selectedPort = null;
+    document.querySelectorAll(".flow-port-out").forEach((port) => port.classList.remove("is-selected"));
+    connectWire(selected.from_port, selected.label, toNode);
   }
 
   function renderProbeButtons() {
@@ -215,7 +245,7 @@
       if (oldNode) oldNode.textContent = "••";
       if (detail) detail.textContent = "STATE ERASED";
       if (display && model?.currentRun === run) display.innerHTML = "<span>TRANSIENT REGISTER</span><b>•• ERASED ••</b>";
-    }, 720);
+    }, model.transientEraseMs);
 
     if (step.branch === "HALT") {
       const finished = {input: run.input, steps: run.steps, halted: true, output: step.value_after};
@@ -309,10 +339,14 @@
       probeCount: Number(state.required_probe_count || (state.probe_inputs || []).length),
       edgeCount: Number(state.expected_edge_count || 0),
       drag: null,
+      selectedPort: null,
+      interaction: String(state.control_condition?.interaction || "full"),
+      inputSource: state.control_condition ? ({simplified: "port_click_pair", full: "port_drag"}[String(state.control_condition?.interaction || "")] || null) : null,
+      transientEraseMs: Math.max(250, Number(state.transient_erase_ms || 720)),
       submitting: false,
       terminal: false,
     };
-    helpersCache.app.innerHTML = `<section class="flow-lab" data-challenge-id="${esc(state.challenge_id)}" data-fresh-failure="false">
+    helpersCache.app.innerHTML = `<section class="flow-lab" data-challenge-id="${esc(state.challenge_id)}" data-edge-count="${Number(state.expected_edge_count || 0)}" data-interaction="${esc(model.interaction)}" data-fresh-failure="false">
       <header class="flow-head">
         <div><span>LIVE CONTROL-FLOW WIRING LAB / ${esc(state.program_id)}</span><h1>${esc(state.prompt)}</h1></div>
         <aside><i></i><b>TRANSIENT DEBUG BUS</b><span>STATE ERASES AFTER EACH STEP</span></aside>
@@ -327,7 +361,7 @@
           <ol class="flow-probe-tape" id="flow-probe-tape"><li class="is-empty">NO TRANSIENT TRACE CAPTURED</li></ol>
         </aside>
         <section class="flow-rig">
-          <div class="flow-rig-head"><div><span>02 / PATCH THE DIRECTED GRAPH</span><b>DRAG OUTPUT PORT → NODE INPUT</b></div><div><span>PROBES <b id="flow-probe-count">0 / ${Number(state.required_probe_count || 0)}</b></span><span>NODES <b id="flow-coverage-count">0 / ${(state.nodes || []).length}</b></span><span>WIRES <b id="flow-wire-count">00 / ${String(Number(state.expected_edge_count || 0)).padStart(2, "0")}</b></span></div></div>
+          <div class="flow-rig-head"><div><span>02 / PATCH THE DIRECTED GRAPH</span><b>${model.interaction === "simplified" ? "CLICK OUTPUT PORT → NODE INPUT" : "DRAG OUTPUT PORT → NODE INPUT"}</b></div><div><span>PROBES <b id="flow-probe-count">0 / ${Number(state.required_probe_count || 0)}</b></span><span>NODES <b id="flow-coverage-count">0 / ${(state.nodes || []).length}</b></span><span>WIRES <b id="flow-wire-count">00 / ${String(Number(state.expected_edge_count || 0)).padStart(2, "0")}</b></span></div></div>
           <div class="flow-canvas" aria-label="control-flow wiring board">
             <svg id="flow-wire-svg" aria-hidden="true"></svg>
             ${(state.nodes || []).map(nodeMarkup).join("")}
@@ -343,7 +377,11 @@
     document.querySelectorAll("[data-probe-index]").forEach((button) => button.addEventListener("click", () => startProbe(Number(button.dataset.probeIndex))));
     document.getElementById("flow-step")?.addEventListener("click", stepProbe);
     document.getElementById("flow-certify")?.addEventListener("click", certify);
-    document.querySelectorAll(".flow-port-out").forEach((button) => button.addEventListener("pointerdown", beginWire));
+    document.querySelectorAll(".flow-port-out").forEach((button) => {
+      button.addEventListener("pointerdown", beginWire);
+      button.addEventListener("click", selectWirePort);
+    });
+    document.querySelectorAll(".flow-port-in").forEach((button) => button.addEventListener("click", completeClickWire));
     pointerMoveHandler = (event) => {
       if (!model?.drag) return;
       const rect = document.querySelector(".flow-canvas")?.getBoundingClientRect();

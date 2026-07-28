@@ -22,3 +22,12 @@ benchmarks/weird_captcha_gym/tools/run_controllability_agent.sh \
 ```
 
 The launcher runs GPT-5.6 Sol through `codex exec --yolo` and instructs it to preserve the other two axes.
+
+For complete environment work with independent evidence-based audits, use:
+
+```bash
+python -m extras.research.controllability.creation_audit.method \
+  --env-dir <environment_dir>
+```
+
+This keeps one creation session across fixes and uses a fresh agent session for every audit round. The complete workflow is documented in `extras/research/controllability/creation_audit/README.md`.

@@ -295,10 +295,10 @@ ANNOTATIONS: dict[str, dict[str, Any]] = {
     "modifier_stack_image_grid": {
         "public_name": "Kinetic Restoration Press",
         "real_time": "observation_only",
-        "interaction": "Watch each transformation film, arrange and invert three modules, then drag the artifact continuously through the restoration rail.",
-        "difficulty": "Artifact count, modifier types, stack order, playback duration, replay budget, drag requirements, and rail constraints.",
+        "interaction": "Use the visible press-card inverse template to arrange and invert three modules, then drag the artifact continuously through the restoration rail.",
+        "difficulty": "The preserved L3 configuration has three artifacts, three modules, one replay, four drag samples per module, and a timed three-gate rail. Controlled L4 and L5 hide the template and ready-state signal after the film.",
         "visual": "2D",
-        "temporal": True,
+        "temporal": False,
         "reasoning_planning": True,
         "exploration_interface": False,
     },

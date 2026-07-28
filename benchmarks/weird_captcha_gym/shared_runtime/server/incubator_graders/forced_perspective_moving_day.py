@@ -104,6 +104,26 @@ def grade(payload: dict[str, Any], ground_truth: dict[str, Any], public_state: d
         return {"graded": True, "passed": False, "feedback": "stale challenge"}
     if not task_id or str(payload.get("task_id") or "") != task_id:
         return {"graded": True, "passed": False, "feedback": "task identity mismatch"}
+    condition = ground_truth.get("control_condition")
+    if public_state.get("control_condition") != condition:
+        return {"graded": True, "passed": False, "feedback": "public interaction condition differs from perspective contract"}
+    expected_sources: dict[str, set[str]] | None = None
+    if condition is not None:
+        interaction = str((condition or {}).get("interaction") or "")
+        expected_sources = {
+            "simplified": {
+                "pick": {"ray_click"},
+                "depth": {"depth_button", "pointer_wheel"},
+                "release": {"release_button"},
+            },
+            "full": {
+                "pick": {"direct_canvas_drag"},
+                "depth": {"pointer_wheel"},
+                "release": {"direct_canvas_drop"},
+            },
+        }.get(interaction)
+        if expected_sources is None:
+            return {"graded": True, "passed": False, "feedback": "perspective interaction condition is invalid"}
     for field in ("task_id", "stage", "camera", "world", "objects", "slot", "bridge_zone", "depth_controls", "requirements"):
         if public_state.get(field) != ground_truth.get(field):
             return {"graded": True, "passed": False, "feedback": f"public/private forced-perspective {field} contract skew"}
@@ -134,6 +154,8 @@ def grade(payload: dict[str, Any], ground_truth: dict[str, Any], public_state: d
             aim = [float(screen[0]), float(screen[1])]
             continue
         if kind == "pick":
+            if expected_sources is not None and event.get("input_source") not in expected_sources["pick"]:
+                return {"graded": True, "passed": False, "feedback": "pickup uses the wrong interaction input"}
             object_id, screen = str(event.get("object_id") or ""), event.get("screen")
             if held is not None or object_id not in objects or not isinstance(screen, list) or len(screen) != 2:
                 return {"graded": True, "passed": False, "feedback": "invalid rigid-object pickup"}
@@ -148,6 +170,8 @@ def grade(payload: dict[str, Any], ground_truth: dict[str, Any], public_state: d
             bridge_ready, door_open = _readiness(objects, ground_truth, excluded=object_id)
             continue
         if kind == "depth":
+            if expected_sources is not None and event.get("input_source") not in expected_sources["depth"]:
+                return {"graded": True, "passed": False, "feedback": "depth adjustment uses the wrong interaction input"}
             if held is None:
                 return {"graded": True, "passed": False, "feedback": "depth changed without a held object"}
             delta, new_depth = float(event.get("delta") or 0), float(event.get("depth") or 0)
@@ -156,6 +180,8 @@ def grade(payload: dict[str, Any], ground_truth: dict[str, Any], public_state: d
             held["depth"] = new_depth
             continue
         if kind == "release":
+            if expected_sources is not None and event.get("input_source") not in expected_sources["release"]:
+                return {"graded": True, "passed": False, "feedback": "release uses the wrong interaction input"}
             if held is None or event.get("object_id") != held["id"] or event.get("surface") != "floor":
                 return {"graded": True, "passed": False, "feedback": "release lacks held object or floor surface"}
             obj = objects[held["id"]]; position, scale = _release_pose(aim, held["depth"], held["apparent"], obj, camera)

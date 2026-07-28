@@ -94,6 +94,434 @@ def test_lidar_real_time_settings_cover_motion_before_the_replay_ceiling() -> No
         assert environment_time_branch not in mechanic_source
 
 
+def test_consequences_real_time_settings_use_single_frames_for_untimed_memory_actions() -> None:
+    settings = load_real_time_settings("consequences_boss")
+    assert settings == RealTimeSettings(
+        play_time_seconds=180,
+        observation_window_ms=0,
+        frames_per_observation=1,
+    )
+    assert CAPTURE.frame_targets(
+        0,
+        settings.observation_window_ms,
+        settings.frames_per_observation,
+    ) == [0]
+
+    controls = json.loads(
+        (
+            BENCHMARK
+            / "environments"
+            / "consequences_boss_env"
+            / "controls.json"
+        ).read_text(encoding="utf-8")
+    )
+    assert controls["real_time"] == settings.__dict__
+
+    mechanic_source = (
+        BENCHMARK
+        / "shared_runtime"
+        / "app"
+        / "mechanics"
+        / "consequences_boss.js"
+    ).read_text(encoding="utf-8")
+    assert mechanic_source.count("window.setTimeout") == 1
+    assert "window.setTimeout(() => {" in mechanic_source
+    assert "OPEN FRESH LEDGER" in mechanic_source
+    assert "outcome.state && model.helpers.render(outcome.state), 850" not in mechanic_source
+    for environment_time_branch in (
+        "time_mode",
+        "WEIRD_CAPTCHA_TIME_MODE",
+        "WeirdCaptchaTime",
+    ):
+        assert environment_time_branch not in mechanic_source
+
+
+def test_fake_desktop_real_time_settings_use_one_static_observation_frame() -> None:
+    settings = load_real_time_settings("fake_desktop_automation_inversion")
+    assert settings == RealTimeSettings(
+        play_time_seconds=150,
+        observation_window_ms=0,
+        frames_per_observation=1,
+    )
+    assert CAPTURE.frame_targets(0, settings.observation_window_ms, settings.frames_per_observation) == [0]
+
+    controls = json.loads(
+        (
+            BENCHMARK
+            / "environments"
+            / "fake_desktop_automation_inversion_env"
+            / "controls.json"
+        ).read_text(encoding="utf-8")
+    )
+    assert controls["real_time"] == settings.__dict__
+
+    mechanic_source = (
+        BENCHMARK
+        / "shared_runtime"
+        / "app"
+        / "mechanics"
+        / "fake_desktop_automation_inversion.js"
+    ).read_text(encoding="utf-8")
+    for environment_time_branch in (
+        "time_mode",
+        "WEIRD_CAPTCHA_TIME_MODE",
+        "WeirdCaptchaTime",
+    ):
+        assert environment_time_branch not in mechanic_source
+
+
+def test_forced_perspective_uses_one_static_observation_frame() -> None:
+    settings = load_real_time_settings("forced_perspective_moving_day")
+    assert settings == RealTimeSettings(
+        play_time_seconds=180,
+        observation_window_ms=0,
+        frames_per_observation=1,
+    )
+    assert CAPTURE.frame_targets(0, settings.observation_window_ms, settings.frames_per_observation) == [0]
+
+    controls = json.loads(
+        (
+            BENCHMARK
+            / "environments"
+            / "forced_perspective_moving_day_env"
+            / "controls.json"
+        ).read_text(encoding="utf-8")
+    )
+    assert controls["real_time"] == settings.__dict__
+
+    mechanic_source = (
+        BENCHMARK
+        / "shared_runtime"
+        / "app"
+        / "mechanics"
+        / "forced_perspective_moving_day.js"
+    ).read_text(encoding="utf-8")
+    assert "movementTick() { if (!model || model.held || model.completed || model.submitting || model.keys.size === 0) return;" in mechanic_source
+
+
+def test_clockwork_real_time_settings_expose_coupled_phase_motion_through_the_shared_clock() -> None:
+    settings = load_real_time_settings("clockwork_clutch_safe")
+    assert settings == RealTimeSettings(
+        play_time_seconds=180,
+        observation_window_ms=600,
+        frames_per_observation=5,
+    )
+    assert CAPTURE.frame_targets(
+        0,
+        settings.observation_window_ms,
+        settings.frames_per_observation,
+    ) == [0, 150, 300, 450, 600]
+
+    controls = json.loads(
+        (
+            BENCHMARK
+            / "environments"
+            / "clockwork_clutch_safe_env"
+            / "controls.json"
+        ).read_text(encoding="utf-8")
+    )
+    assert controls["real_time"] == settings.__dict__
+
+    task_path = (
+        BENCHMARK
+        / "environments"
+        / "clockwork_clutch_safe_env"
+        / "tasks"
+        / "clockwork_clutch_safe_seed_0001"
+        / "task.json"
+    )
+    public_state, _ = generate_task_state(
+        json.loads(task_path.read_text(encoding="utf-8")),
+        "clockwork-real-time-contract",
+    )
+    tick_ms = int(public_state["physics"]["tick_ms"])
+    maximum_drive_ms = int(public_state["physics"]["max_ticks"]) * tick_ms
+    assert 7 * tick_ms <= settings.observation_window_ms < 8 * tick_ms
+    assert settings.play_time_seconds * 1000 > maximum_drive_ms
+
+    mechanic_sources = [
+        (
+            BENCHMARK
+            / "shared_runtime"
+            / "app"
+            / "mechanics"
+            / name
+        ).read_text(encoding="utf-8")
+        for name in ("clockwork_clutch_safe.js", "_interaction_vii_viii.js")
+    ]
+    assert "setInterval(tick, state.physics.tick_ms)" in mechanic_sources[1]
+    for mechanic_source in mechanic_sources:
+        for environment_time_branch in (
+            "time_mode",
+            "WEIRD_CAPTCHA_TIME_MODE",
+            "WeirdCaptchaTime",
+        ):
+            assert environment_time_branch not in mechanic_source
+
+
+def test_clockwork_doppelganger_real_time_settings_expose_recorded_motion_without_task_time_branches() -> None:
+    settings = load_real_time_settings("clockwork_doppelganger_customs")
+    assert settings == RealTimeSettings(
+        play_time_seconds=180,
+        observation_window_ms=800,
+        frames_per_observation=6,
+    )
+    assert CAPTURE.frame_targets(
+        0, settings.observation_window_ms, settings.frames_per_observation
+    ) == [0, 160, 320, 480, 640, 800]
+    controls = json.loads(
+        (
+            BENCHMARK
+            / "environments"
+            / "clockwork_doppelganger_customs_env"
+            / "controls.json"
+        ).read_text(encoding="utf-8")
+    )
+    assert controls["real_time"] == settings.__dict__
+    source = (
+        BENCHMARK
+        / "shared_runtime"
+        / "app"
+        / "mechanics"
+        / "clockwork_doppelganger_customs.js"
+    ).read_text(encoding="utf-8")
+    for environment_time_branch in (
+        "time_mode",
+        "WEIRD_CAPTCHA_TIME_MODE",
+        "WeirdCaptchaTime",
+    ):
+        assert environment_time_branch not in source
+
+
+def test_blind_dice_real_time_settings_settle_each_roll_without_redundant_frames() -> None:
+    settings = load_real_time_settings("blind_dice_courier")
+    assert settings == RealTimeSettings(
+        play_time_seconds=120,
+        observation_window_ms=400,
+        frames_per_observation=1,
+    )
+    assert CAPTURE.frame_targets(
+        0,
+        settings.observation_window_ms,
+        settings.frames_per_observation,
+    ) == [400]
+
+    controls = json.loads(
+        (
+            BENCHMARK
+            / "environments"
+            / "blind_dice_courier_env"
+            / "controls.json"
+        ).read_text(encoding="utf-8")
+    )
+    assert controls["real_time"] == settings.__dict__
+
+    mechanic_source = (
+        BENCHMARK
+        / "shared_runtime"
+        / "app"
+        / "mechanics"
+        / "blind_dice_courier.js"
+    ).read_text(encoding="utf-8")
+    mechanic_styles = (
+        BENCHMARK
+        / "shared_runtime"
+        / "app"
+        / "mechanics"
+        / "blind_dice_courier.css"
+    ).read_text(encoding="utf-8")
+    assert "window.setTimeout(submitDelivery, 240)" in mechanic_source
+    assert "transition: left .16s" in mechanic_styles
+    assert settings.observation_window_ms > 240
+    for environment_time_branch in (
+        "time_mode",
+        "WEIRD_CAPTCHA_TIME_MODE",
+        "WeirdCaptchaTime",
+    ):
+        assert environment_time_branch not in mechanic_source
+
+
+def test_bomb_manual_real_time_settings_use_one_static_frame_and_shared_clock() -> None:
+    settings = load_real_time_settings("bomb_manual_from_hell")
+    assert settings == RealTimeSettings(
+        play_time_seconds=180,
+        observation_window_ms=0,
+        frames_per_observation=1,
+    )
+    assert CAPTURE.frame_targets(
+        0,
+        settings.observation_window_ms,
+        settings.frames_per_observation,
+    ) == [0]
+
+    controls = json.loads(
+        (
+            BENCHMARK
+            / "environments"
+            / "bomb_manual_from_hell_env"
+            / "controls.json"
+        ).read_text(encoding="utf-8")
+    )
+    assert controls["real_time"] == settings.__dict__
+
+    mechanic_source = (
+        BENCHMARK
+        / "shared_runtime"
+        / "app"
+        / "mechanics"
+        / "bomb_manual_from_hell.js"
+    ).read_text(encoding="utf-8")
+    for ambient_time_primitive in (
+        "requestAnimationFrame(",
+        "setInterval(",
+        "setTimeout(",
+        "Date.now(",
+    ):
+        assert ambient_time_primitive not in mechanic_source
+    assert "performance.now()" in mechanic_source
+    for environment_time_branch in (
+        "time_mode",
+        "WEIRD_CAPTCHA_TIME_MODE",
+        "WeirdCaptchaTime",
+    ):
+        assert environment_time_branch not in mechanic_source
+
+
+def test_signature_real_time_settings_settle_the_exposed_signature_before_capture() -> None:
+    settings = load_real_time_settings("bureaucratic_signature_trap")
+    assert settings == RealTimeSettings(
+        play_time_seconds=120,
+        observation_window_ms=240,
+        frames_per_observation=1,
+    )
+    assert CAPTURE.frame_targets(
+        0,
+        settings.observation_window_ms,
+        settings.frames_per_observation,
+    ) == [240]
+
+    controls = json.loads(
+        (
+            BENCHMARK
+            / "environments"
+            / "bureaucratic_signature_trap_env"
+            / "controls.json"
+        ).read_text(encoding="utf-8")
+    )
+    assert controls["real_time"] == settings.__dict__
+
+    mechanic_source = (
+        BENCHMARK
+        / "shared_runtime"
+        / "app"
+        / "mechanics"
+        / "bureaucratic_signature_trap.js"
+    ).read_text(encoding="utf-8")
+    mechanic_styles = (
+        BENCHMARK
+        / "shared_runtime"
+        / "app"
+        / "mechanics"
+        / "bureaucratic_signature_trap.css"
+    ).read_text(encoding="utf-8")
+    for ambient_time_primitive in (
+        "requestAnimationFrame(",
+        "setInterval(",
+        "Date.now(",
+        "performance.now(",
+    ):
+        assert ambient_time_primitive not in mechanic_source
+    assert mechanic_source.count("window.setTimeout(") == 1
+    assert "window.setTimeout(() => outcome.state && model.helpers.render(outcome.state), 850)" in mechanic_source
+    assert "@keyframes" not in mechanic_styles
+    assert "animation:" not in mechanic_styles
+    assert "transition:opacity .18s" in mechanic_styles
+    assert settings.observation_window_ms > 180
+    for environment_time_branch in (
+        "time_mode",
+        "WEIRD_CAPTCHA_TIME_MODE",
+        "WeirdCaptchaTime",
+    ):
+        assert environment_time_branch not in mechanic_source
+
+
+def test_slot_reel_real_time_settings_expose_multiple_symbol_frames_through_the_shared_clock() -> None:
+    settings = load_real_time_settings("slot_reel_capture")
+    assert settings == RealTimeSettings(
+        play_time_seconds=90,
+        observation_window_ms=800,
+        frames_per_observation=6,
+    )
+    assert CAPTURE.frame_targets(
+        0,
+        settings.observation_window_ms,
+        settings.frames_per_observation,
+    ) == [0, 160, 320, 480, 640, 800]
+
+    controls = json.loads(
+        (
+            BENCHMARK
+            / "environments"
+            / "slot_reel_capture_env"
+            / "controls.json"
+        ).read_text(encoding="utf-8")
+    )
+    assert controls["real_time"] == settings.__dict__
+
+    app_source = (
+        BENCHMARK / "shared_runtime" / "app" / "app.js"
+    ).read_text(encoding="utf-8")
+    slot_source = app_source[
+        app_source.index("function animateSlotReels"):
+        app_source.index("function dominoAxisAngle")
+    ]
+    assert "requestAnimationFrame(animateSlotReels)" in slot_source
+    assert "performance.now()" in slot_source
+    for environment_time_branch in (
+        "time_mode",
+        "WEIRD_CAPTCHA_TIME_MODE",
+        "WeirdCaptchaTime",
+    ):
+        assert environment_time_branch not in slot_source
+
+
+def test_craftcha_real_time_settings_capture_the_transient_recipe_without_task_clock_branches() -> None:
+    settings = load_real_time_settings("craftcha_alchemy_bench")
+    assert settings == RealTimeSettings(
+        play_time_seconds=180,
+        observation_window_ms=1200,
+        frames_per_observation=8,
+    )
+    assert CAPTURE.frame_targets(
+        0,
+        settings.observation_window_ms,
+        settings.frames_per_observation,
+    ) == [0, 1200 / 7, 2400 / 7, 3600 / 7, 4800 / 7, 6000 / 7, 7200 / 7, 1200]
+    controls = json.loads(
+        (
+            BENCHMARK
+            / "environments"
+            / "craftcha_alchemy_bench_env"
+            / "controls.json"
+        ).read_text(encoding="utf-8")
+    )
+    assert controls["real_time"] == settings.__dict__
+    source = (
+        BENCHMARK
+        / "shared_runtime"
+        / "app"
+        / "mechanics"
+        / "craftcha_alchemy_bench.js"
+    ).read_text(encoding="utf-8")
+    assert "window.setTimeout" in source
+    for environment_time_branch in (
+        "time_mode",
+        "WEIRD_CAPTCHA_TIME_MODE",
+        "WeirdCaptchaTime",
+    ):
+        assert environment_time_branch not in source
+
+
 def test_mechanic_id_comes_from_environment_directory() -> None:
     assert mechanic_id_from_env_dir("/tmp/rotating_keyboard_env") == "rotating_keyboard"
 
@@ -132,22 +560,26 @@ def test_time_control_server_sequences_commands_and_records_status(tmp_path: Pat
         assert initial == {"command": "status", "sequence": 0}
 
         _, pause = request_json(f"{base}/time-control", {"command": "pause"})
+        _, settled_pause = request_json(
+            f"{base}/time-control", {"command": "settle_pause"}
+        )
         _, window = request_json(
             f"{base}/time-control",
             {"command": "run_for", "milliseconds": 500, "start_delay_ms": 50},
         )
         assert pause["sequence"] == 1
-        assert window["sequence"] == 2
+        assert settled_pause["sequence"] == 2
+        assert window["sequence"] == 3
 
         request_json(f"{base}/time-control/status", {
-            "sequence": 2,
+            "sequence": 3,
             "state": "paused",
             "phase": "completed",
             "task_time_ms": 500,
         })
         _, current = request_json(f"{base}/time-control")
         _, status = request_json(f"{base}/time-control/status")
-        assert current["sequence"] == 2
+        assert current["sequence"] == 3
         assert current["command"] == "pause"
         assert status["phase"] == "completed"
         assert status["task_time_ms"] == 500

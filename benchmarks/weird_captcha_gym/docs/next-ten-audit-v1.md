@@ -48,10 +48,12 @@ The five weak concepts were rebuilt rather than cosmetically repaired:
 - `cursor_lens_reveal` is now **Polarized Palimpsest**. The replay requires a
   broad local scan, multiple polarizer changes, five ordered moving holds,
   sustained tracking samples, and a recoverable dropped hold.
-- `modifier_stack_image_grid` is now **Kinetic Restoration Press**. Three
-  transient films must be remembered, the physical modules must be placed in
-  reverse order and switched to their inverse, and each artifact must cross a
-  continuous three-gate rail.
+- `modifier_stack_image_grid` is now **Kinetic Restoration Press**. Its
+  preserved L3 configuration presents the inverse template and ready-state
+  signal while requiring physical module placement and a continuous
+  three-gate rail. Controlled L4 and L5 remove those disclosures after the
+  transient film, so their module order must be remembered before the same
+  rail action is completed.
 - `board_game_captcha` is now **Gyroscopic Tilt Board**. The browser and grader
   share a deterministic 50 ms acceleration, friction, speed-cap, circle-wall
   collision, hazard, ordered-lamp, and goal-cup simulation.

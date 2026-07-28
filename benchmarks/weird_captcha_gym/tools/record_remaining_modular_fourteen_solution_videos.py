@@ -64,7 +64,7 @@ recorder.WALKTHROUGHS = {
     ),
     "modifier_stack_image_grid": (
         "Kinetic Restoration Press",
-        "Remember each transient corruption film, assemble its inverse stack in reverse order, then maintain contact while pulling every artifact through the restoration rail.",
+        "Follow the visible inverse template, assemble each inverse stack, then maintain contact while pulling every artifact through the restoration rail.",
     ),
     "board_game_captcha": (
         "Gyroscopic Tilt Board",

@@ -6,6 +6,10 @@ from typing import Any
 
 
 MECHANIC_ID = "magnetic_stripe_purgatory"
+INTERACTION_SOURCES = {
+    "simplified": {"insert": "card_reader_proxy", "swipe": "timed_swipe_proxy"},
+    "full": {"insert": "direct_card_drag", "swipe": "direct_timed_swipe"},
+}
 
 
 def _fail(feedback: str) -> dict[str, Any]:
@@ -58,6 +62,14 @@ def _bind(payload: dict[str, Any], ground_truth: dict[str, Any], public_state: d
         return "payload task mismatch"
     if str(public_state.get("task_id") or "") != task_id:
         return "public-state task mismatch"
+    condition = ground_truth.get("control_condition")
+    if condition is not None:
+        if not isinstance(condition, dict) or public_state.get("control_condition") != condition:
+            return "public control condition differs from calibration contract"
+        if str(condition.get("interaction") or "") not in INTERACTION_SOURCES:
+            return "calibration interaction condition is invalid"
+        if not isinstance(condition.get("difficulty_parameters"), dict):
+            return "calibration difficulty condition is invalid"
     return None
 
 
@@ -67,15 +79,20 @@ def _contract(ground_truth: dict[str, Any], public_state: dict[str, Any]) -> dic
             raise ValueError(f"public {key} differs from hidden contract")
     cards = ground_truth.get("cards")
     readers = ground_truth.get("readers")
-    if not isinstance(cards, list) or len(cards) != 3 or not isinstance(readers, list) or len(readers) != 3:
-        raise ValueError("exactly three cards and readers are required")
+    condition = ground_truth.get("control_condition")
+    parameters = dict((condition or {}).get("difficulty_parameters") or {})
+    reader_count = int(parameters.get("reader_count", 3))
+    if not 1 <= reader_count <= 4:
+        raise ValueError("reader count is malformed")
+    if not isinstance(cards, list) or len(cards) != reader_count or not isinstance(readers, list) or len(readers) != reader_count:
+        raise ValueError("card and reader counts disagree with the generated condition")
     if public_state.get("cards") != [_public_card(card) for card in cards]:
         raise ValueError("public card rack differs from hidden contract")
     if public_state.get("readers") != [_public_reader(reader) for reader in readers]:
         raise ValueError("public reader geometry differs from hidden contract")
     card_ids = [str(card.get("id") or "") for card in cards if isinstance(card, dict)]
     reader_ids = [str(reader.get("id") or "") for reader in readers if isinstance(reader, dict)]
-    if len(set(card_ids)) != 3 or len(set(reader_ids)) != 3 or any(not item for item in card_ids + reader_ids):
+    if len(set(card_ids)) != reader_count or len(set(reader_ids)) != reader_count or any(not item for item in card_ids + reader_ids):
         raise ValueError("card or reader identities are malformed")
     reader_by_id = {str(reader["id"]): reader for reader in readers}
     card_by_id = {str(card["id"]): card for card in cards}
@@ -97,7 +114,7 @@ def _contract(ground_truth: dict[str, Any], public_state: dict[str, Any]) -> dic
         if not 400 <= minimum < solver < maximum <= 1500:
             raise ValueError("reader timing window is not humane")
         windows.append((minimum, maximum))
-    if len(set(windows)) != 3:
+    if len(set(windows)) != reader_count:
         raise ValueError("reader timing windows are not distinct")
     stage = ground_truth.get("stage")
     if not isinstance(stage, dict):
@@ -107,6 +124,27 @@ def _contract(ground_truth: dict[str, Any], public_state: dict[str, Any]) -> dic
     requirements = ground_truth.get("requirements")
     if not isinstance(requirements, dict):
         raise ValueError("requirements are malformed")
+    if int(requirements.get("card_count", 0)) != reader_count:
+        raise ValueError("card count requirement differs from generated readers")
+    if condition is not None:
+        checks = {
+            "minimum_insert_moves": requirements.get("minimum_insert_moves"),
+            "minimum_insert_ms": requirements.get("minimum_insert_ms"),
+            "minimum_swipe_samples": requirements.get("minimum_swipe_samples"),
+        }
+        for key, actual in checks.items():
+            if int(parameters.get(key, -1)) != int(actual):
+                raise ValueError(f"{key} differs from difficulty condition")
+        if any(len(reader.get("interference_zones") or []) != int(parameters.get("interference_zone_count", -1)) for reader in readers):
+            raise ValueError("interference-zone count differs from difficulty condition")
+        for reader in readers:
+            calibration = reader["calibration"]
+            for key in ("minimum_coverage_milli", "maximum_sample_gap_px", "maximum_backtrack_px"):
+                if int(calibration.get(key, -1)) != int(parameters.get(key, -1)):
+                    raise ValueError(f"{key} differs from difficulty condition")
+            straightness = parameters.get("straightness_px")
+            if straightness is not None and int(calibration.get("straightness_px", -1)) != int(straightness):
+                raise ValueError("straightness differs from difficulty condition")
     return {
         "cards": copy.deepcopy(cards),
         "readers": copy.deepcopy(readers),
@@ -125,8 +163,42 @@ def _reader_at_slot(point: tuple[int, int], readers: list[dict[str, Any]]) -> st
     return None
 
 
-def _zone_hit(point: tuple[int, int], zones: list[dict[str, Any]]) -> bool:
-    return any(_inside(point, zone) for zone in zones)
+def _segment_hits_zone(first: tuple[int, int], second: tuple[int, int], zone: dict[str, Any]) -> bool:
+    """Return whether an inclusive pointer segment clips a static rectangle."""
+
+    x0, y0 = first
+    x1, y1 = second
+    dx, dy = x1 - x0, y1 - y0
+    minimum_x, minimum_y = int(zone["x"]), int(zone["y"])
+    maximum_x = minimum_x + int(zone["width"])
+    maximum_y = minimum_y + int(zone["height"])
+    enter, leave = 0.0, 1.0
+    for numerator, denominator in (
+        (-dx, x0 - minimum_x),
+        (dx, maximum_x - x0),
+        (-dy, y0 - minimum_y),
+        (dy, maximum_y - y0),
+    ):
+        if numerator == 0:
+            if denominator < 0:
+                return False
+            continue
+        ratio = denominator / numerator
+        if numerator < 0:
+            enter = max(enter, ratio)
+        else:
+            leave = min(leave, ratio)
+        if enter > leave:
+            return False
+    return True
+
+
+def _zone_hits(points: list[tuple[int, int]], zones: list[dict[str, Any]]) -> int:
+    return sum(
+        any(_inside(point, zone) for point in points)
+        or any(_segment_hits_zone(first, second, zone) for first, second in zip(points, points[1:]))
+        for zone in zones
+    )
 
 
 def _evaluate_swipe(reader: dict[str, Any], points: list[tuple[int, int]], duration_ms: int) -> dict[str, Any]:
@@ -150,7 +222,7 @@ def _evaluate_swipe(reader: dict[str, Any], points: list[tuple[int, int]], durat
         signed = (second[0] - first[0]) * (1 if direction == "ltr" else -1)
         if signed < 0:
             backtrack += -signed
-    zone_hits = sum(_zone_hit(point, reader["interference_zones"]) for point in points)
+    zone_hits = _zone_hits(points, reader["interference_zones"])
     geometry_bad = (
         len(points) - 1 < int(calibration["minimum_samples"])
         or start_error > span * (1 - int(calibration["minimum_coverage_milli"]) / 1000)
@@ -203,6 +275,8 @@ def grade(payload: dict[str, Any], ground_truth: dict[str, Any], public_state: d
     reader_locked: dict[str, bool] = {str(reader["id"]): False for reader in readers}
     reader_attempts: dict[str, int] = {str(reader["id"]): 0 for reader in readers}
     reader_feedback: dict[str, str] = {str(reader["id"]): "INSERT CARD" for reader in readers}
+    condition = ground_truth.get("control_condition")
+    expected_sources = INTERACTION_SOURCES.get(str((condition or {}).get("interaction") or ""))
     insert_drag: dict[str, Any] | None = None
     swipe: dict[str, Any] | None = None
     invalid_insertions = 0
@@ -239,6 +313,8 @@ def grade(payload: dict[str, Any], ground_truth: dict[str, Any], public_state: d
             reset_count += 1
             continue
         if kind == "insert_down":
+            if expected_sources is not None and event.get("input_source") != expected_sources["insert"]:
+                return _fail(f"event {sequence} uses the wrong insertion interaction input")
             card_id = str(event.get("card_id") or "")
             if insert_drag is not None or swipe is not None or card_id not in card_by_id or card_locations[card_id] is not None:
                 return _fail(f"event {sequence} begins an invalid card insertion")
@@ -251,6 +327,8 @@ def grade(payload: dict[str, Any], ground_truth: dict[str, Any], public_state: d
             insert_drag = {"card_id": card_id, "last_elapsed": 0, "moves": 0, "points": [point]}
             continue
         if kind == "insert_move":
+            if expected_sources is not None and event.get("input_source") != expected_sources["insert"]:
+                return _fail(f"event {sequence} uses the wrong insertion interaction input")
             if insert_drag is None or str(event.get("card_id") or "") != insert_drag["card_id"]:
                 return _fail(f"event {sequence} insertion move has no matching card hold")
             try:
@@ -265,6 +343,8 @@ def grade(payload: dict[str, Any], ground_truth: dict[str, Any], public_state: d
             insert_drag["points"].append(point)
             continue
         if kind == "insert_up":
+            if expected_sources is not None and event.get("input_source") != expected_sources["insert"]:
+                return _fail(f"event {sequence} uses the wrong insertion interaction input")
             if insert_drag is None or str(event.get("card_id") or "") != insert_drag["card_id"]:
                 return _fail(f"event {sequence} insertion release has no matching card hold")
             try:
@@ -297,6 +377,8 @@ def grade(payload: dict[str, Any], ground_truth: dict[str, Any], public_state: d
             insert_drag = None
             continue
         if kind == "swipe_down":
+            if expected_sources is not None and event.get("input_source") != expected_sources["swipe"]:
+                return _fail(f"event {sequence} uses the wrong swipe interaction input")
             reader_id = str(event.get("reader_id") or "")
             card_id = str(event.get("card_id") or "")
             if swipe is not None or insert_drag is not None or reader_id not in reader_by_id:
@@ -314,6 +396,8 @@ def grade(payload: dict[str, Any], ground_truth: dict[str, Any], public_state: d
             swipe = {"reader_id": reader_id, "card_id": card_id, "last_elapsed": 0, "points": [point]}
             continue
         if kind == "swipe_move":
+            if expected_sources is not None and event.get("input_source") != expected_sources["swipe"]:
+                return _fail(f"event {sequence} uses the wrong swipe interaction input")
             if swipe is None or str(event.get("reader_id") or "") != swipe["reader_id"] or str(event.get("card_id") or "") != swipe["card_id"]:
                 return _fail(f"event {sequence} swipe sample has no matching hold")
             try:
@@ -327,6 +411,8 @@ def grade(payload: dict[str, Any], ground_truth: dict[str, Any], public_state: d
             swipe["points"].append(point)
             continue
         if kind == "swipe_up":
+            if expected_sources is not None and event.get("input_source") != expected_sources["swipe"]:
+                return _fail(f"event {sequence} uses the wrong swipe interaction input")
             if swipe is None or str(event.get("reader_id") or "") != swipe["reader_id"] or str(event.get("card_id") or "") != swipe["card_id"]:
                 return _fail(f"event {sequence} swipe release has no matching hold")
             try:
@@ -385,8 +471,8 @@ def grade(payload: dict[str, Any], ground_truth: dict[str, Any], public_state: d
         "passed": passed,
         "score": 100 if passed else 0,
         "feedback": (
-            f"calibration replay: inserted {sum(value is not None for value in card_locations.values())}/3; "
-            f"locked {sum(reader_locked.values())}/3; swipe attempts {swipe_attempts}; invalid insertions {invalid_insertions}; "
+            f"calibration replay: inserted {sum(value is not None for value in card_locations.values())}/{len(cards)}; "
+            f"locked {sum(reader_locked.values())}/{len(readers)}; swipe attempts {swipe_attempts}; invalid insertions {invalid_insertions}; "
             f"reset count {reset_count}; audit={'complete' if audit_complete else 'incomplete'}"
         ),
     }

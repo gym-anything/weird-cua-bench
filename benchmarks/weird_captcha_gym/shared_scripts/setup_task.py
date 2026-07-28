@@ -140,6 +140,7 @@ CONSTELLATION_SHAPES = ("heart", "star", "spiral", "fish", "umbrella", "key")
 CONSTELLATION_VARIANT_COUNT = len(CONSTELLATION_SHAPES) * 6400
 
 GRILL_FOODS = ("steak", "egg", "chicken", "potato", "sausage", "naan")
+GRILL_EXTENDED_FOODS = GRILL_FOODS + ("corn", "fish")
 GRILL_VARIANT_COUNT = math.factorial(len(GRILL_FOODS)) * 120
 
 ROTATING_KEYBOARD_ALPHABET = "23456789ABCDEFGHJKLMNPQRSTUVWXYZ"
@@ -147,9 +148,11 @@ ROTATING_KEYBOARD_VARIANT_COUNT = len(ROTATING_KEYBOARD_ALPHABET) ** 5
 
 SLOT_ALPHABET = "23456789ABCDEFGHJKLMNPQRSTUVWXYZ"
 SLOT_SYMBOLS = ("◆", "●", "✦", "♢", "▰", "✶")
+SLOT_CONTROL_SYMBOLS = SLOT_SYMBOLS + ("✹", "⬟")
 SLOT_REEL_VARIANT_COUNT = len(SLOT_ALPHABET) ** 5 * 24
 
 DOMINO_COLORS = ("vermilion", "saffron", "cobalt")
+DOMINO_CONTROL_COLORS = (*DOMINO_COLORS, "jade", "violet")
 DOMINO_VARIANT_COUNT = 720 * 9
 
 CONSEQUENCE_SCENES = (
@@ -164,6 +167,10 @@ POPUP_THEMES = ("miracle", "warning", "coupon", "romance", "system", "horoscope"
 POPUP_VARIANT_COUNT = 40320 * 8
 
 FUNERAL_FLOWER_KINDS = ("poppy", "daisy", "iris", "lavender")
+# The original four flowers remain the uncontrolled task's complete world.
+# Controlled profiles can add two distinct, visually rendered kinds without
+# changing that historical reference configuration.
+FUNERAL_CONTROL_FLOWER_KINDS = FUNERAL_FLOWER_KINDS + ("lily", "marigold")
 FUNERAL_VARIANT_COUNT = 4096
 
 SLIME_LANE_TYPES = ("road", "water", "rail")
@@ -1366,18 +1373,52 @@ def generate_cursor_constellation_hunt(task: dict[str, Any], seed: str) -> tuple
 
 def generate_parallel_grillmaster(task: dict[str, Any], seed: str) -> tuple[dict[str, Any], dict[str, Any]]:
     rng = random.Random(seed_int(seed, "parallel-grillmaster"))
-    target_times = [3600, 4400, 5200, 6100, 7100, 8200]
+    condition = control_condition(task)
+    parameters = dict((condition or {}).get("difficulty_parameters") or {})
+    food_count = int(parameters.get("food_count", len(GRILL_FOODS)))
+    target_times = [
+        int(value)
+        for value in parameters.get("target_times_ms", [3600, 4400, 5200, 6100, 7100, 8200])
+    ]
+    tolerance_values = [
+        int(value)
+        for value in parameters.get("tolerance_ms_values", [1150, 1250, 1350])
+    ]
+    parallel_start_count = int(parameters.get("parallel_start_count", 1))
+    parallel_start_window = parameters.get("parallel_start_window_ms")
+    if parallel_start_window is not None:
+        parallel_start_window = int(parallel_start_window)
+    if not 1 <= food_count <= len(GRILL_EXTENDED_FOODS):
+        raise ValueError("grillmaster food_count is outside supported limits")
+    if len(target_times) != food_count or any(value < 1000 for value in target_times):
+        raise ValueError("grillmaster target_times_ms must contain one valid time per food")
+    if not tolerance_values or any(value < 250 for value in tolerance_values):
+        raise ValueError("grillmaster tolerance_ms_values are invalid")
+    if not 1 <= parallel_start_count <= food_count:
+        raise ValueError("grillmaster parallel_start_count is outside supported limits")
+    if parallel_start_count > 1 and (parallel_start_window is None or parallel_start_window < 500):
+        raise ValueError("grillmaster concurrent starts require a valid start window")
     rng.shuffle(target_times)
     foods = []
     targets = {}
-    for index, (kind, target_ms) in enumerate(zip(GRILL_FOODS, target_times)):
+    for index, (kind, target_ms) in enumerate(zip(GRILL_EXTENDED_FOODS[:food_count], target_times)):
         food_id = f"food-{hashlib.sha256(f'{seed}|food|{kind}'.encode('utf-8')).hexdigest()[:8]}"
-        tolerance_ms = rng.choice((1150, 1250, 1350))
+        tolerance_ms = rng.choice(tolerance_values)
         food = {"id": food_id, "kind": kind, "target_ms": target_ms, "tolerance_ms": tolerance_ms, "order": index}
         foods.append(food)
         targets[food_id] = {"target_ms": target_ms, "tolerance_ms": tolerance_ms, "kind": kind}
     rng.shuffle(foods)
-    challenge_id = hashlib.sha256(f"{seed}|grillmaster".encode("utf-8")).hexdigest()[:12]
+    condition_token = (
+        ""
+        if not condition or int(condition["difficulty"]) == 2
+        else f"|d{condition['difficulty']}"
+    )
+    challenge_id = hashlib.sha256(f"{seed}|grillmaster{condition_token}".encode("utf-8")).hexdigest()[:12]
+    variant_count = (
+        GRILL_VARIANT_COUNT
+        if not condition or int(condition["difficulty"]) == 2
+        else math.factorial(food_count) * max(1, len(tolerance_values)) ** food_count
+    )
     public_state = {
         "benchmark": "weird_captcha_gym",
         "mechanic_id": "parallel_grillmaster",
@@ -1386,7 +1427,7 @@ def generate_parallel_grillmaster(task: dict[str, Any], seed: str) -> tuple[dict
         "prompt": task.get("natural_language") or "Cook every item until golden, then move it to the serving tray.",
         "submit_label": "SERVE",
         "asset_manifest": "shared_runtime/assets/provenance/interaction_first_five_v0.json",
-        "generator": {"name": "parallel_grillmaster_v1", "variant_count": GRILL_VARIANT_COUNT},
+        "generator": {"name": "parallel_grillmaster_v1", "variant_count": variant_count},
         "foods": foods,
     }
     ground_truth = {
@@ -1395,8 +1436,11 @@ def generate_parallel_grillmaster(task: dict[str, Any], seed: str) -> tuple[dict
         "seed": seed,
         "challenge_id": challenge_id,
         "targets": targets,
-        "variant_count": GRILL_VARIANT_COUNT,
+        "variant_count": variant_count,
     }
+    if condition:
+        public_state["control_condition"] = copy.deepcopy(condition)
+        ground_truth["control_condition"] = copy.deepcopy(condition)
     return public_state, ground_truth
 
 
@@ -1467,11 +1511,35 @@ def generate_rotating_keyboard(task: dict[str, Any], seed: str) -> tuple[dict[st
 
 def generate_slot_reel_capture(task: dict[str, Any], seed: str) -> tuple[dict[str, Any], dict[str, Any]]:
     rng = random.Random(seed_int(seed, "slot-reel-capture"))
-    max_strikes = 3
-    sequence = "".join(rng.choice(SLOT_ALPHABET) for _ in range(5))
+    condition = control_condition(task)
+    parameters = dict((condition or {}).get("difficulty_parameters") or {})
+    reel_count = int(parameters.get("reel_count", 5))
+    token_count = int(parameters.get("token_count", len(SLOT_SYMBOLS) + 1))
+    max_strikes = int(parameters.get("max_strikes", 3))
+    capture_window_ratio = float(parameters.get("capture_window_ratio", 1.0))
+    interval_values = parameters.get("interval_ms_values")
+    if not 2 <= reel_count <= 7:
+        raise ValueError("slot reel count must be between 2 and 7")
+    if not 3 <= token_count <= len(SLOT_CONTROL_SYMBOLS) + 1:
+        raise ValueError("slot token count is outside the supported range")
+    if not 1 <= max_strikes <= 6:
+        raise ValueError("slot strike budget must be between 1 and 6")
+    if not 0.4 <= capture_window_ratio <= 1.0:
+        raise ValueError("slot capture window ratio must be between 0.4 and 1.0")
+    if interval_values is not None:
+        if (
+            not isinstance(interval_values, list)
+            or not interval_values
+            or any(not 180 <= int(value) <= 1500 for value in interval_values)
+        ):
+            raise ValueError("slot interval values are outside the supported range")
+        normalized_intervals = [int(value) for value in interval_values]
+    else:
+        normalized_intervals = list(range(360, 570, 30))
+    sequence = "".join(rng.choice(SLOT_ALPHABET) for _ in range(reel_count))
     reels = []
     for index, target in enumerate(sequence):
-        symbols = list(SLOT_SYMBOLS)
+        symbols = list(SLOT_CONTROL_SYMBOLS[:token_count - 1])
         rng.shuffle(symbols)
         insert_at = rng.randrange(1, len(symbols))
         symbols.insert(insert_at, target)
@@ -1479,10 +1547,13 @@ def generate_slot_reel_capture(task: dict[str, Any], seed: str) -> tuple[dict[st
             "id": f"reel-{hashlib.sha256(f'{seed}|reel|{index}'.encode('utf-8')).hexdigest()[:8]}",
             "target": target,
             "tokens": symbols,
-            "interval_ms": rng.randrange(360, 570, 30),
+            "interval_ms": rng.choice(normalized_intervals),
             "phase": rng.randrange(len(symbols)),
         })
-    challenge_id = hashlib.sha256(f"{seed}|slot-reel".encode("utf-8")).hexdigest()[:12]
+    difficulty = int((condition or {}).get("difficulty") or 4)
+    condition_token = "" if not condition or difficulty == 4 else f"|d{difficulty}"
+    challenge_id = hashlib.sha256(f"{seed}|slot-reel{condition_token}".encode("utf-8")).hexdigest()[:12]
+    variant_count = SLOT_REEL_VARIANT_COUNT if not condition or difficulty == 4 else len(SLOT_ALPHABET) ** reel_count * token_count * len(normalized_intervals)
     public_state = {
         "benchmark": "weird_captcha_gym",
         "mechanic_id": "slot_reel_capture",
@@ -1491,10 +1562,12 @@ def generate_slot_reel_capture(task: dict[str, Any], seed: str) -> tuple[dict[st
         "prompt": task.get("natural_language") or "Type each letter or number while it is centered. Capture all five reels.",
         "submit_label": "VERIFY",
         "asset_manifest": "shared_runtime/assets/provenance/interaction_first_five_v0.json",
-        "generator": {"name": "slot_reel_capture_v1", "variant_count": SLOT_REEL_VARIANT_COUNT},
+        "generator": {"name": "slot_reel_capture_v1" if not condition or difficulty == 4 else "slot_reel_capture_v2", "variant_count": variant_count},
         "max_strikes": max_strikes,
         "reels": reels,
     }
+    if capture_window_ratio < 1.0:
+        public_state["capture_window_ratio"] = capture_window_ratio
     ground_truth = {
         "mechanic_id": "slot_reel_capture",
         "task_id": task["id"],
@@ -1503,29 +1576,62 @@ def generate_slot_reel_capture(task: dict[str, Any], seed: str) -> tuple[dict[st
         "sequence": sequence,
         "reel_ids": [reel["id"] for reel in reels],
         "max_strikes": max_strikes,
-        "variant_count": SLOT_REEL_VARIANT_COUNT,
+        "variant_count": variant_count,
     }
+    if capture_window_ratio < 1.0:
+        ground_truth["capture_window_ratio"] = capture_window_ratio
+    if condition:
+        public_state["control_condition"] = copy.deepcopy(condition)
+        ground_truth["control_condition"] = copy.deepcopy(condition)
     return public_state, ground_truth
 
 
 def generate_domino_autopsy(task: dict[str, Any], seed: str) -> tuple[dict[str, Any], dict[str, Any]]:
     rng = random.Random(seed_int(seed, "domino-autopsy"))
-    target_angles = [rng.choice((-6, -3, 0, 3, 6)) for _ in range(3)]
+    condition = control_condition(task)
+    parameters = dict((condition or {}).get("difficulty_parameters") or {})
+    loose_count = int(parameters.get("loose_count", 3))
+    right_fixed_count = int(parameters.get("right_fixed_count", 4))
+    spacing_px = int(parameters.get("spacing_px", 40))
+    show_target_guides = bool(parameters.get("show_target_guides", False))
+    snap_radius_px = float(parameters.get("snap_radius_px", 0))
+    minimum_bell_swing_radians = float(parameters.get("minimum_bell_swing_radians", 0.03))
+    if not 1 <= loose_count <= len(DOMINO_CONTROL_COLORS):
+        raise ValueError("domino autopsy loose_count is outside supported limits")
+    if not 36 <= spacing_px <= 54:
+        raise ValueError("domino autopsy spacing_px is outside supported limits")
+    if not 2 <= right_fixed_count <= 4:
+        raise ValueError("domino autopsy right_fixed_count is outside supported limits")
+    if not 0 <= snap_radius_px <= 90:
+        raise ValueError("domino autopsy snap_radius_px is outside supported limits")
+    if not 0.01 <= minimum_bell_swing_radians <= 0.6:
+        raise ValueError("domino autopsy bell swing is outside supported limits")
+
+    target_angles = [rng.choice((-6, -3, 0, 3, 6)) for _ in range(loose_count)]
+    target_start_x = 220 + spacing_px
     target_slots = [
-        {"x": 260 + index * 40, "y": 304, "angle": target_angles[index]}
-        for index in range(3)
+        {"x": target_start_x + index * spacing_px, "y": 304, "angle": target_angles[index]}
+        for index in range(loose_count)
     ]
     loose = []
-    for index, color in enumerate(DOMINO_COLORS):
+    rack_positions = (
+        [270 + index * 120 for index in range(loose_count)]
+        if loose_count == 3
+        else [360 - 60 * (loose_count - 1) + index * 120 for index in range(loose_count)]
+    )
+    for index, color in enumerate(DOMINO_CONTROL_COLORS[:loose_count]):
         loose.append({
             "id": f"domino-{hashlib.sha256(f'{seed}|domino|{index}'.encode('utf-8')).hexdigest()[:8]}",
             "color": color,
-            "x": 270 + index * 120,
+            "x": rack_positions[index],
             "y": 386,
             "angle": rng.choice((-72, -48, 42, 67)),
         })
     rng.shuffle(loose)
-    fixed_positions = [100, 140, 180, 220, 380, 420, 460, 500]
+    fixed_positions = [100, 140, 180, 220] + [
+        target_start_x + (loose_count + index) * spacing_px
+        for index in range(right_fixed_count)
+    ]
     fixed = [
         {
             "id": f"fixed-{hashlib.sha256(f'{seed}|fixed|{index}'.encode('utf-8')).hexdigest()[:8]}",
@@ -1535,12 +1641,28 @@ def generate_domino_autopsy(task: dict[str, Any], seed: str) -> tuple[dict[str, 
         }
         for index, x in enumerate(fixed_positions)
     ]
-    bell = {"x": 575, "y": 294}
+    bell = {"x": fixed_positions[-1] + 75, "y": 294}
     bell_body_id = "bell-body"
-    minimum_bell_swing_radians = 0.03
     first_body_id = fixed[0]["id"]
     expected_body_ids = [item["id"] for item in fixed] + [item["id"] for item in loose]
-    challenge_id = hashlib.sha256(f"{seed}|domino-autopsy".encode("utf-8")).hexdigest()[:12]
+    condition_token = f"|d{condition['difficulty']}" if condition else ""
+    challenge_id = hashlib.sha256(f"{seed}|domino-autopsy{condition_token}".encode("utf-8")).hexdigest()[:12]
+    board = {
+        "width": 720,
+        "height": 410,
+        "fixed": fixed,
+        "loose": loose,
+        "bell": bell,
+        "bell_body_id": bell_body_id,
+        "first_body_id": first_body_id,
+        "physics_engine": "matter-js@0.20.0",
+    }
+    if show_target_guides:
+        board["target_guides"] = copy.deepcopy(target_slots)
+    if snap_radius_px > 0:
+        board["snap_radius_px"] = snap_radius_px
+    if minimum_bell_swing_radians != 0.03:
+        board["minimum_bell_swing_radians"] = minimum_bell_swing_radians
     public_state = {
         "benchmark": "weird_captcha_gym",
         "mechanic_id": "domino_autopsy",
@@ -1550,7 +1672,7 @@ def generate_domino_autopsy(task: dict[str, Any], seed: str) -> tuple[dict[str, 
         "submit_label": "CERTIFY",
         "asset_manifest": "shared_runtime/assets/provenance/interaction_second_five_v0.json",
         "generator": {"name": "domino_autopsy_v2_matter", "variant_count": DOMINO_VARIANT_COUNT},
-        "board": {"width": 720, "height": 410, "fixed": fixed, "loose": loose, "bell": bell, "bell_body_id": bell_body_id, "first_body_id": first_body_id, "physics_engine": "matter-js@0.20.0"},
+        "board": board,
     }
     ground_truth = {
         "mechanic_id": "domino_autopsy",
@@ -1568,6 +1690,9 @@ def generate_domino_autopsy(task: dict[str, Any], seed: str) -> tuple[dict[str, 
         "physics_engine": "matter-js@0.20.0",
         "variant_count": DOMINO_VARIANT_COUNT,
     }
+    if condition:
+        public_state["control_condition"] = copy.deepcopy(condition)
+        ground_truth["control_condition"] = copy.deepcopy(condition)
     return public_state, ground_truth
 
 
@@ -1662,9 +1787,25 @@ def generate_popup_exorcist(task: dict[str, Any], seed: str) -> tuple[dict[str, 
 
 def generate_funeral_ritual(task: dict[str, Any], seed: str) -> tuple[dict[str, Any], dict[str, Any]]:
     rng = random.Random(seed_int(seed, "funeral-ritual"))
+    condition = control_condition(task)
+    parameters = dict((condition or {}).get("difficulty_parameters") or {})
+    flower_count = int(parameters.get("flower_count", len(FUNERAL_FLOWER_KINDS)))
+    moss_cells = int(parameters.get("moss_cells", 24))
+    brush_threshold = int(parameters.get("brush_threshold", 17))
+    required_events = [str(item) for item in parameters.get(
+        "required_events",
+        ["inspect", "brush", "light", "gather", "offer"],
+    )]
+    if not 0 <= flower_count <= len(FUNERAL_CONTROL_FLOWER_KINDS):
+        raise ValueError("funeral ritual flower_count is out of range")
+    if not 0 <= brush_threshold <= moss_cells:
+        raise ValueError("funeral ritual brush_threshold is out of range")
+    if not required_events or required_events[0] != "inspect" or required_events[-1] != "offer":
+        raise ValueError("funeral ritual requires an inspect-to-offer event sequence")
+    flower_kinds = FUNERAL_CONTROL_FLOWER_KINDS[:flower_count]
     flowers = []
-    flower_patches = ((12, 78), (26, 68), (75, 69), (88, 80))
-    for index, kind in enumerate(FUNERAL_FLOWER_KINDS):
+    flower_patches = ((12, 78), (26, 68), (75, 69), (88, 80), (8, 62), (92, 60))
+    for index, kind in enumerate(flower_kinds):
         patch_x, patch_y = flower_patches[index]
         flowers.append({
             "id": f"flower-{hashlib.sha256(f'{seed}|flower|{index}'.encode('utf-8')).hexdigest()[:8]}",
@@ -1672,7 +1813,10 @@ def generate_funeral_ritual(task: dict[str, Any], seed: str) -> tuple[dict[str, 
             "x": patch_x + rng.randint(-2, 2),
             "y": patch_y + rng.randint(-2, 2),
         })
-    challenge_id = hashlib.sha256(f"{seed}|funeral-ritual".encode("utf-8")).hexdigest()[:12]
+    difficulty_suffix = ""
+    if condition is not None and int(condition["difficulty"]) != 3:
+        difficulty_suffix = f"|difficulty-{int(condition['difficulty'])}"
+    challenge_id = hashlib.sha256(f"{seed}|funeral-ritual{difficulty_suffix}".encode("utf-8")).hexdigest()[:12]
     public_state = {
         "benchmark": "weird_captcha_gym",
         "mechanic_id": "funeral_ritual",
@@ -1682,21 +1826,34 @@ def generate_funeral_ritual(task: dict[str, Any], seed: str) -> tuple[dict[str, 
         "asset_manifest": "shared_runtime/assets/provenance/interaction_second_five_v0.json",
         "generator": {"name": "funeral_ritual_v1", "variant_count": FUNERAL_VARIANT_COUNT},
         "epitaph": rng.choice(("MARA / SHE KEPT THE LIGHT", "ELI / HERE, AT LAST", "ORIN / BELOVED BY SMALL THINGS")),
-        "moss_cells": 24,
-        "brush_threshold": 17,
+        "moss_cells": moss_cells,
+        "brush_threshold": brush_threshold,
         "flowers": flowers,
     }
+    order_mode = str(parameters.get("flower_order_mode") or "none")
+    if order_mode not in {"none", "visible", "memory"}:
+        raise ValueError("funeral ritual flower_order_mode is invalid")
+    flower_order = []
+    if order_mode != "none":
+        flower_order = rng.sample(flowers, len(flowers))
+        public_state["tribute_order"] = [item["kind"] for item in flower_order]
+        public_state["tribute_order_mode"] = order_mode
     ground_truth = {
         "mechanic_id": "funeral_ritual",
         "task_id": task["id"],
         "seed": seed,
         "challenge_id": challenge_id,
-        "required_events": ["inspect", "brush", "light", "gather", "offer"],
-        "brush_threshold": 17,
-        "moss_cells": 24,
+        "required_events": required_events,
+        "brush_threshold": brush_threshold,
+        "moss_cells": moss_cells,
         "flower_ids": [item["id"] for item in flowers],
         "variant_count": FUNERAL_VARIANT_COUNT,
     }
+    if flower_order:
+        ground_truth["flower_order"] = [item["id"] for item in flower_order]
+    if condition:
+        public_state["control_condition"] = copy.deepcopy(condition)
+        ground_truth["control_condition"] = copy.deepcopy(condition)
     return public_state, ground_truth
 
 
@@ -1816,7 +1973,7 @@ def main() -> None:
     args = parse_args()
     task_path = Path(args.task_json)
     task = load_task(task_path)
-    seed = challenge_seed(task, args.seed)
+    seed = challenge_seed(task, args.seed or os.environ.get("SEED"))
     mechanic_id = (task.get("metadata") or {}).get("mechanic_id")
     public_state, ground_truth = generate_task_state(task, seed)
 
@@ -1824,7 +1981,16 @@ def main() -> None:
     write_json(state_dir / "current_task.json", {"task": task, "seed": seed, "base_seed": seed, "attempt": 0})
     write_json(state_dir / "public_state.json", public_state)
     write_json(state_dir / "ground_truth.json", ground_truth)
-    for stale in (state_dir / "result.json", Path("/tmp/task_result.json")):
+    for stale in (
+        state_dir / "result.json",
+        state_dir / "parallel_grillmaster_witness_key.json",
+        state_dir / "parallel_grillmaster_witness_ledger.json",
+        state_dir / "parallel_grillmaster_witness_clock.json",
+        state_dir / "slot_reel_witness_key.json",
+        state_dir / "slot_reel_witness_ledger.json",
+        state_dir / "slot_reel_witness_clock.json",
+        Path("/tmp/task_result.json"),
+    ):
         try:
             stale.unlink()
         except FileNotFoundError:

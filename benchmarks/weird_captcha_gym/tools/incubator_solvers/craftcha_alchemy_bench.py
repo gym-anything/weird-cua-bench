@@ -57,13 +57,21 @@ def _drag(page, geometry: dict, start: tuple[float, float], end: tuple[float, fl
     page.wait_for_timeout(80)
 
 
-def _drag_slot_to(page, geometry: dict, slot: int, destination: str) -> None:
+def _transfer_slot_to(page, geometry: dict, slot: int, destination: str, interaction: str) -> None:
+    if interaction == "simplified":
+        page.locator(f'.alchemy-item[data-slot="{slot}"]').click()
+        if destination == "delivery":
+            page.locator(".alchemy-delivery-object").click()
+        else:
+            page.locator(f'[data-alchemy-station="{destination}"] .machine-chamber').click()
+        page.wait_for_timeout(80)
+        return
     start = _center(geometry["inventory_slots"][slot])
     target_rect = geometry["delivery"] if destination == "delivery" else geometry["stations"][destination]
     _drag(page, geometry, start, _center(target_rect))
 
 
-def _wait_sealed(page, timeout: int = 8_000) -> None:
+def _wait_sealed(page, timeout: int = 12_000) -> None:
     expect(page.locator(".alchemy-bench")).to_have_attribute("data-recipe", "sealed", timeout=timeout)
 
 
@@ -85,6 +93,11 @@ def solve(page, state_dir: Path, out_dir: Path, mechanic: str) -> None:
     truth = _read(state_dir / "ground_truth.json")
     geometry = truth["geometry"]
     recipe = truth["recipe"]
+    interaction = str((truth.get("control_condition") or {}).get("interaction") or "full")
+    memory_after_replay = (
+        f"{int(truth['memory_charge_initial']) - int(truth['memory_replay_cost'])}"
+        f"/{int(truth['memory_charge_initial'])}"
+    )
     _wait_sealed(page)
     page.wait_for_function("() => !document.querySelector('.alchemy-verdict-fail')", timeout=4_000)
 
@@ -93,15 +106,15 @@ def solve(page, state_dir: Path, out_dir: Path, mechanic: str) -> None:
     page.locator("#alchemy-replay").click()
     expect(page.locator(".alchemy-bench")).to_have_attribute("data-recipe", "open")
     _shot(page, out_dir, mechanic, "costly-recipe-replay")
-    _wait_sealed(page, timeout=6_000)
-    expect(page.locator("#alchemy-memory-count")).to_have_text("1/3")
+    _wait_sealed(page)
+    expect(page.locator("#alchemy-memory-count")).to_have_text(memory_after_replay)
 
     # A physically valid but semantically wrong machine destroys lineage. The
     # bench must make that consequence visible, then Reset must recover all raw
     # materials without refunding the replay charge.
     first_step = recipe["branches"][0]["steps"][0]
     wrong_station = next(station for station in PROCESS_STATIONS if station != first_step["station_id"])
-    _drag_slot_to(page, geometry, 0, wrong_station)
+    _transfer_slot_to(page, geometry, 0, wrong_station, interaction)
     page.locator(f'[data-cycle-station="{wrong_station}"]').click()
     expect(page.locator("#alchemy-transform-count")).to_have_text(f"1/{recipe['step_count']}", timeout=3_000)
     expect(page.locator('.alchemy-item[data-slot="0"]')).to_have_class(re.compile(r"\bis-waste\b"))
@@ -109,7 +122,7 @@ def solve(page, state_dir: Path, out_dir: Path, mechanic: str) -> None:
     _shot(page, out_dir, mechanic, "destructive-decoy-transform")
     page.locator("#alchemy-reset").click()
     expect(page.locator("#alchemy-transform-count")).to_have_text(f"0/{recipe['step_count']}")
-    expect(page.locator("#alchemy-memory-count")).to_have_text("1/3")
+    expect(page.locator("#alchemy-memory-count")).to_have_text(memory_after_replay)
     for index, branch in enumerate(recipe["branches"]):
         expect(page.locator(f'.alchemy-item[data-slot="{index}"]')).to_have_attribute("data-state-id", branch["raw_state_id"])
     _shot(page, out_dir, mechanic, "recovered-raw-lot")
@@ -117,7 +130,7 @@ def solve(page, state_dir: Path, out_dir: Path, mechanic: str) -> None:
     transform_index = 0
     for branch_index, branch in enumerate(recipe["branches"]):
         for local_index, step in enumerate(branch["steps"]):
-            _drag_slot_to(page, geometry, branch_index, str(step["station_id"]))
+            _transfer_slot_to(page, geometry, branch_index, str(step["station_id"]), interaction)
             expect(page.locator(f'[data-alchemy-station="{step["station_id"]}"]')).to_have_attribute("data-loaded", "true")
             page.locator(f'[data-cycle-station="{step["station_id"]}"]').click()
             transform_index += 1
@@ -129,7 +142,7 @@ def solve(page, state_dir: Path, out_dir: Path, mechanic: str) -> None:
         expect(page.locator(f'.alchemy-item[data-slot="{branch_index}"]')).to_have_attribute("data-state-id", branch["terminal_state_id"])
 
     for branch_index in range(3):
-        _drag_slot_to(page, geometry, branch_index, "assemble")
+        _transfer_slot_to(page, geometry, branch_index, "assemble", interaction)
         expect(page.locator(f'.assembly-sockets > span:nth-child({branch_index + 1})')).to_have_attribute("data-filled", "true")
     _shot(page, out_dir, mechanic, "three-terminal-assembly")
     page.locator('[data-cycle-station="assemble"]').click()
@@ -138,7 +151,7 @@ def solve(page, state_dir: Path, out_dir: Path, mechanic: str) -> None:
     expect(page.locator('.alchemy-item[data-slot="0"]')).to_have_attribute("data-state-id", recipe["device_state_id"])
     page.wait_for_timeout(140)
 
-    _drag_slot_to(page, geometry, 0, "delivery")
+    _transfer_slot_to(page, geometry, 0, "delivery", interaction)
     expect(page.locator(".alchemy-delivery-object .alchemy-item")).to_have_attribute("data-state-id", recipe["device_state_id"])
     _shot(page, out_dir, mechanic, "device-in-lineage-scanner")
     page.locator("#alchemy-verify").click()

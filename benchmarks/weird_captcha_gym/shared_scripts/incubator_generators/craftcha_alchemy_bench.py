@@ -45,6 +45,75 @@ STAGE_WORDS = {
 }
 
 
+def _controlled_profile(task: dict[str, Any]) -> tuple[dict[str, Any] | None, dict[str, Any] | None]:
+    """Return the shared materialized condition and validated alchemy parameters.
+
+    The uncontrolled task deliberately takes the legacy path below.  In
+    particular, L4 uses the old parameter values and consumes the same random
+    draws in the same order, so its generated recipe is the original recipe
+    for a fixed seed.
+    """
+    condition = task.get("_control_condition")
+    if condition is None:
+        return None, None
+    if not isinstance(condition, dict):
+        raise ValueError("alchemy control condition must be an object")
+    parameters = condition.get("difficulty_parameters")
+    if not isinstance(parameters, dict):
+        raise ValueError("alchemy difficulty parameters are missing")
+
+    raw_patterns = parameters.get("branch_patterns")
+    if not isinstance(raw_patterns, list) or not raw_patterns:
+        raise ValueError("alchemy branch_patterns must be a non-empty list")
+    branch_patterns: list[tuple[int, int, int]] = []
+    for raw_pattern in raw_patterns:
+        if not isinstance(raw_pattern, list) or len(raw_pattern) != 3:
+            raise ValueError("each alchemy branch pattern must contain three lengths")
+        try:
+            pattern = tuple(int(value) for value in raw_pattern)
+        except (TypeError, ValueError) as exc:
+            raise ValueError("alchemy branch lengths must be integers") from exc
+        if any(value < 1 or value > 5 for value in pattern):
+            raise ValueError("alchemy branch lengths must be between 1 and 5")
+        branch_patterns.append(pattern)
+
+    integer_fields = (
+        "process_station_count",
+        "inventory_capacity",
+        "recipe_window_base_ms",
+        "recipe_window_step_ms",
+        "recipe_window_variants",
+        "replay_window_base_ms",
+        "replay_window_step_ms",
+        "replay_window_variants",
+        "memory_charge_initial",
+        "memory_replay_cost",
+        "replay_limit",
+    )
+    profile: dict[str, Any] = {"branch_patterns": tuple(branch_patterns)}
+    try:
+        profile.update({field: int(parameters[field]) for field in integer_fields})
+    except (KeyError, TypeError, ValueError) as exc:
+        raise ValueError("alchemy difficulty parameters are incomplete") from exc
+    if not 1 <= profile["process_station_count"] <= len(PROCESS_STATIONS):
+        raise ValueError("alchemy process_station_count is invalid")
+    if profile["inventory_capacity"] != 4:
+        raise ValueError("alchemy bench currently requires a four-slot rack")
+    if (
+        profile["recipe_window_base_ms"] < 1_000
+        or profile["replay_window_base_ms"] < 800
+        or profile["recipe_window_step_ms"] < 0
+        or profile["replay_window_step_ms"] < 0
+        or profile["recipe_window_variants"] < 1
+        or profile["replay_window_variants"] < 1
+        or profile["memory_charge_initial"] < profile["memory_replay_cost"] > 0
+        or profile["memory_replay_cost"] < 1
+        or profile["replay_limit"] != 1
+    ):
+        raise ValueError("alchemy difficulty timing or memory settings are invalid")
+    return dict(condition), profile
+
+
 def _seed_int(seed: str, salt: str) -> int:
     digest = hashlib.sha256(f"{seed}|{salt}".encode("utf-8")).hexdigest()
     return int(digest[:16], 16)
@@ -103,12 +172,33 @@ def _station_sequence(rng: random.Random, stations: list[str], count: int) -> li
 
 def generate(task: dict[str, Any], seed: str) -> tuple[dict[str, Any], dict[str, Any]]:
     rng = random.Random(_seed_int(seed, MECHANIC_ID))
+    condition, profile = _controlled_profile(task)
+    if profile is None:
+        branch_patterns = BRANCH_PATTERNS
+        process_station_count = 3
+        inventory_capacity = 4
+        recipe_window_base_ms, recipe_window_step_ms, recipe_window_variants = 5500, 300, 5
+        replay_window_base_ms, replay_window_step_ms, replay_window_variants = 3500, 300, 4
+        memory_charge_initial, memory_replay_cost, replay_limit = 3, 2, 1
+    else:
+        branch_patterns = profile["branch_patterns"]
+        process_station_count = profile["process_station_count"]
+        inventory_capacity = profile["inventory_capacity"]
+        recipe_window_base_ms = profile["recipe_window_base_ms"]
+        recipe_window_step_ms = profile["recipe_window_step_ms"]
+        recipe_window_variants = profile["recipe_window_variants"]
+        replay_window_base_ms = profile["replay_window_base_ms"]
+        replay_window_step_ms = profile["replay_window_step_ms"]
+        replay_window_variants = profile["replay_window_variants"]
+        memory_charge_initial = profile["memory_charge_initial"]
+        memory_replay_cost = profile["memory_replay_cost"]
+        replay_limit = profile["replay_limit"]
     challenge_id = hashlib.sha256(f"{seed}|{MECHANIC_ID}".encode("utf-8")).hexdigest()[:12]
     task_id = str(task.get("id") or "craftcha_alchemy_bench_seed_0001@0.1")
     chosen_materials = rng.sample(list(RAW_MATERIALS), 3)
     device_id, device_name, device_symbol = rng.choice(DEVICES)
-    branch_lengths = rng.choice(BRANCH_PATTERNS)
-    chosen_process_stations = rng.sample(list(PROCESS_STATIONS), 3)
+    branch_lengths = rng.choice(branch_patterns)
+    chosen_process_stations = rng.sample(list(PROCESS_STATIONS), process_station_count)
     total_processes = sum(branch_lengths)
     station_sequence = _station_sequence(rng, chosen_process_stations, total_processes)
     palette_name, accent, reagent_accent = rng.choice(PALETTES)
@@ -184,8 +274,8 @@ def generate(task: dict[str, Any], seed: str) -> tuple[dict[str, Any], dict[str,
         station: f"{station[:2].upper()}-{rng.randint(120, 989)}"
         for station in ALL_STATIONS
     }
-    initial_window_ms = 5500 + 300 * rng.randrange(5)
-    replay_window_ms = 3500 + 300 * rng.randrange(4)
+    initial_window_ms = recipe_window_base_ms + recipe_window_step_ms * rng.randrange(recipe_window_variants)
+    replay_window_ms = replay_window_base_ms + replay_window_step_ms * rng.randrange(replay_window_variants)
     initial_inventory = [branch["raw_state_id"] for branch in branches] + [None]
     active_station_ids = sorted({step["station_id"] for step in solution_steps})
 
@@ -204,10 +294,10 @@ def generate(task: dict[str, Any], seed: str) -> tuple[dict[str, Any], dict[str,
         "recipe_hash": recipe_hash,
         "recipe_window_ms": initial_window_ms,
         "replay_window_ms": replay_window_ms,
-        "memory_charge_initial": 3,
-        "memory_replay_cost": 2,
-        "replay_limit": 1,
-        "inventory_capacity": 4,
+        "memory_charge_initial": memory_charge_initial,
+        "memory_replay_cost": memory_replay_cost,
+        "replay_limit": replay_limit,
+        "inventory_capacity": inventory_capacity,
         "initial_inventory": initial_inventory,
         "active_station_ids": active_station_ids,
         "station_serials": station_serials,
@@ -223,10 +313,10 @@ def generate(task: dict[str, Any], seed: str) -> tuple[dict[str, Any], dict[str,
         "recipe_hash": recipe_hash,
         "recipe_window_ms": initial_window_ms,
         "replay_window_ms": replay_window_ms,
-        "memory_charge_initial": 3,
-        "memory_replay_cost": 2,
-        "replay_limit": 1,
-        "inventory_capacity": 4,
+        "memory_charge_initial": memory_charge_initial,
+        "memory_replay_cost": memory_replay_cost,
+        "replay_limit": replay_limit,
+        "inventory_capacity": inventory_capacity,
         "initial_inventory": initial_inventory,
         "active_station_ids": active_station_ids,
         "station_serials": station_serials,
@@ -234,9 +324,13 @@ def generate(task: dict[str, Any], seed: str) -> tuple[dict[str, Any], dict[str,
         "variant_count": VARIANT_COUNT,
     }
 
-    assert 6 <= recipe["step_count"] <= 9
+    if condition is not None:
+        public_state["control_condition"] = condition
+        ground_truth["control_condition"] = condition
+
+    assert recipe["step_count"] == sum(branch_lengths) + 1
     assert len(initial_inventory) == 4 and initial_inventory.count(None) == 1
-    assert len(active_station_ids) == 4 and "assemble" in active_station_ids
+    assert len(active_station_ids) == process_station_count + 1 and "assemble" in active_station_ids
     assert set(assemble_step["input_state_ids"]) == {branch["terminal_state_id"] for branch in branches}
     assert [step["step"] for step in solution_steps] == list(range(1, recipe["step_count"] + 1))
     return public_state, ground_truth

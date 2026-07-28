@@ -13,8 +13,9 @@ def _road(progress: float, physics: dict[str, Any]) -> float:
 
 def _target_point(target: dict[str, Any], tick: int) -> tuple[float, float]:
     phase = float(target["phase"])
-    return (float(target["base_x"]) + float(target["orbit_x"]) * math.sin(tick * 0.17 + phase),
-            float(target["base_y"]) + float(target["orbit_y"]) * math.cos(tick * 0.13 + phase * 0.7))
+    motion = float(target.get("motion_scale", 1.0))
+    return (float(target["base_x"]) + float(target["orbit_x"]) * math.sin(tick * 0.17 * motion + phase),
+            float(target["base_y"]) + float(target["orbit_y"]) * math.cos(tick * 0.13 * motion + phase * 0.7))
 
 
 def _fresh(physics: dict[str, Any]) -> dict[str, Any]:
@@ -56,6 +57,18 @@ def grade(payload: dict[str, Any], ground_truth: dict[str, Any], public_state: d
     task_id = str(ground_truth.get("task_id") or "")
     if not task_id or str(payload.get("task_id") or "") != task_id:
         return {"graded": True, "passed": False, "feedback": "task identity mismatch"}
+    condition = ground_truth.get("control_condition")
+    if public_state.get("control_condition") != condition:
+        return {"graded": True, "passed": False, "feedback": "public interaction condition differs from hovercar contract"}
+    expected_sources = None
+    if condition is not None:
+        interaction = str((condition or {}).get("interaction") or "")
+        expected_sources = {
+            "simplified": {"key": "proxy_controls", "pointer": "proxy_tracker"},
+            "full": {"key": "keyboard", "pointer": "canvas_pointer"},
+        }.get(interaction)
+        if expected_sources is None:
+            return {"graded": True, "passed": False, "feedback": "hovercar interaction condition is invalid"}
     for field in ("task_id", "stage", "physics", "targets", "obstacles", "requirements"):
         if public_state.get(field) != ground_truth.get(field):
             return {"graded": True, "passed": False, "feedback": f"public/private hovercar {field} contract skew"}
@@ -64,8 +77,8 @@ def grade(payload: dict[str, Any], ground_truth: dict[str, Any], public_state: d
         targets = {item["id"]: item for item in ground_truth["targets"]}
         obstacles = list(ground_truth["obstacles"])
         requirements = dict(ground_truth["requirements"])
-        if len(targets) < 5 or int(requirements.get("check_count", 0)) != len(targets):
-            raise ValueError("expanded inspection manifest required")
+        if not 2 <= len(targets) <= 6 or int(requirements.get("check_count", 0)) != len(targets):
+            raise ValueError("inspection manifest has an unsupported check count")
     except (KeyError, TypeError, ValueError) as exc:
         return {"graded": True, "passed": False, "feedback": f"invalid hovercar contract: {exc}"}
     events = payload.get("events")
@@ -94,6 +107,8 @@ def grade(payload: dict[str, Any], ground_truth: dict[str, Any], public_state: d
             key, down = str(event.get("key") or ""), event.get("down") is True
             if run["crashed"] or run["finished"] or key not in {"up", "down", "left", "right"} or event.get("tick") != run["tick"]:
                 return {"graded": True, "passed": False, "feedback": "invalid or post-crash key transition"}
+            if expected_sources is not None and event.get("input_source") != expected_sources["key"]:
+                return {"graded": True, "passed": False, "feedback": "drive control came from the wrong interaction surface"}
             if down:
                 run["keys"].add(key)
             else:
@@ -103,6 +118,8 @@ def grade(payload: dict[str, Any], ground_truth: dict[str, Any], public_state: d
             point = event.get("point")
             if run["crashed"] or run["finished"] or event.get("tick") != run["tick"] or not isinstance(point, list) or len(point) != 2:
                 return {"graded": True, "passed": False, "feedback": "invalid pointer sample"}
+            if expected_sources is not None and event.get("input_source") != expected_sources["pointer"]:
+                return {"graded": True, "passed": False, "feedback": "inspection control came from the wrong interaction surface"}
             candidate = [float(point[0]), float(point[1])]
             if not (0 <= candidate[0] <= 980 and 0 <= candidate[1] <= 480):
                 return {"graded": True, "passed": False, "feedback": "pointer outside flight console"}

@@ -49,10 +49,21 @@ def grade(payload: dict[str, Any], truth: dict[str, Any], public: dict[str, Any]
         return _fail("mechanic mismatch")
     if payload.get("task_id") != truth.get("task_id") or payload.get("challenge_id") != truth.get("challenge_id") or public.get("challenge_id") != truth.get("challenge_id"):
         return _fail("stale task or challenge")
+    condition = truth.get("control_condition")
+    if public.get("control_condition") != condition:
+        return _fail("public interaction condition differs from foundry contract")
+    interaction = str((condition or {}).get("interaction") or "")
+    expected_source = {"simplified": "transform_button", "full": "gizmo_drag"}.get(interaction)
+    if condition is not None and expected_source is None:
+        return _fail("foundry interaction condition is invalid")
+    if condition is not None:
+        parameters = condition.get("difficulty_parameters")
+        if not isinstance(parameters, dict) or parameters.get("rod_count") != len(public.get("objects") or []) or parameters.get("grid_size") != public.get("grid_size"):
+            return _fail("foundry difficulty parameters differ from generated casting")
     objects = {item["id"]: dict(item, center=list(item["center"])) for item in public.get("objects") or []}
     events = payload.get("events")
-    if len(objects) != 6 or not isinstance(events, list) or len(events) > 1400:
-        return _fail("six-rod foundry transcript malformed")
+    if not 3 <= len(objects) <= 7 or not isinstance(events, list) or len(events) > 1800:
+        return _fail("foundry transcript malformed")
     cast = None
     limit = int(public["grid_size"]) - 2
     for sequence, item in enumerate(events, 1):
@@ -66,6 +77,8 @@ def grade(payload: dict[str, Any], truth: dict[str, Any], public: dict[str, Any]
             before, after = item.get("before"), item.get("after")
             if current is None or before != current or not isinstance(after, dict):
                 return _fail("rod transform starts from stale geometry")
+            if expected_source is not None and item.get("input_source") != expected_source:
+                return _fail("rod transform uses the wrong interaction input")
             expected = dict(current, center=list(current["center"]))
             if action == "translate":
                 axis, delta = str(item.get("axis")), item.get("delta")
@@ -89,4 +102,4 @@ def grade(payload: dict[str, Any], truth: dict[str, Any], public: dict[str, Any]
     if not isinstance(cast, dict) or cast.get("objects") != arranged or cast.get("masks") != current_masks or bool(cast.get("valid")) != valid or bool(cast.get("exact")) != exact:
         return _fail("cast report disagrees with solid colored projection replay")
     passed = exact and payload.get("completed") is True
-    return {"graded": True, "passed": passed, "feedback": "six non-overlapping rods match all three frontmost-color dies" if passed else "occupancy, color, or depth order still disagrees"}
+    return {"graded": True, "passed": passed, "feedback": f"{len(objects)} non-overlapping rods match all three frontmost-color dies" if passed else "occupancy, color, or depth order still disagrees"}

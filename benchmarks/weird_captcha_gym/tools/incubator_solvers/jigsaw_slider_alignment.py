@@ -24,6 +24,10 @@ def _depth_value(page) -> int:
     return int(page.evaluate("() => window.jigsawSliderAlignmentModel.depth"))
 
 
+def _interaction(page) -> str:
+    return str(page.locator(".alignment-captcha").get_attribute("data-interaction") or "full")
+
+
 def _drag_rail(page, delta_pixels: float, *, precision_tail: bool) -> None:
     carriage = page.locator("#alignment-carriage")
     box = carriage.bounding_box()
@@ -45,6 +49,15 @@ def _drag_rail(page, delta_pixels: float, *, precision_tail: bool) -> None:
 
 
 def _set_depth(page, target_depth: int) -> None:
+    if _interaction(page) == "simplified":
+        for _attempt in range(80):
+            current = _depth_value(page)
+            delta = target_depth - current
+            if abs(delta) <= 9:
+                return
+            amount = 100 if abs(delta) >= 100 else 10
+            page.locator(f'[data-depth-nudge="{amount if delta > 0 else -amount}"]').click()
+        raise AssertionError(f"depth proxy did not reach target {target_depth}; current={_depth_value(page)}")
     for _attempt in range(6):
         current = _depth_value(page)
         delta = target_depth - current
@@ -68,6 +81,20 @@ def _set_depth(page, target_depth: int) -> None:
 
 
 def _set_rail(page, target_rail: int) -> None:
+    if _interaction(page) == "simplified":
+        for _attempt in range(90):
+            page.wait_for_function("() => window.jigsawSliderAlignmentModel.inertia === null", timeout=5_000)
+            current = _rail_value(page)
+            delta = target_rail - current
+            if abs(delta) <= 3000:
+                return
+            # Fine proxy buttons model a slow virtual drag and release; their
+            # velocity stays below every profile's inertia threshold. Coarse
+            # buttons remain available for the same visible coast/recovery
+            # behavior as a fast full drag and are exercised separately.
+            amount = 5000
+            page.locator(f'[data-rail-nudge="{amount if delta > 0 else -amount}"]').click()
+        raise AssertionError(f"rail proxy did not reach target {target_rail}; current={_rail_value(page)}")
     for _attempt in range(7):
         page.wait_for_function("() => window.jigsawSliderAlignmentModel.inertia === null", timeout=5000)
         current = _rail_value(page)
@@ -134,9 +161,13 @@ def solve(page, state_dir: Path, out_dir: Path, mechanic: str) -> None:
           depth: window.jigsawSliderAlignmentModel.depth,
         })"""
     )
-    if proof["rail"] != int(truth["target_rail_milli"]) or proof["depth"] != int(truth["target_depth_milli"]) or proof["rotation"] != target_rotation:
+    if (
+        abs(proof["rail"] - int(truth["target_rail_milli"])) > int(truth["tolerances"]["x_milli"])
+        or abs(proof["depth"] - int(truth["target_depth_milli"])) > int(truth["tolerances"]["depth_milli"])
+        or proof["rotation"] != target_rotation
+    ):
         raise AssertionError(f"three-axis optical splice did not reach the generated target: {proof}")
     page.wait_for_timeout(260)
     _screenshot(page, out_dir, mechanic, "aligned")
-    _hold_scan(page, 790)
+    _hold_scan(page, int(truth["tolerances"]["hold_ms"]) + 90)
     page.wait_for_function("() => document.querySelector('.readout')?.textContent === 'PASS'", timeout=8000)

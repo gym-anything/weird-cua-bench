@@ -81,7 +81,8 @@
     const meta = stateMeta(stateId);
     const attrs = slot == null ? "" : ` data-slot="${slot}"`;
     const stationAttr = station ? ` data-machine-item="${clean(station)}"` : "";
-    return `<div class="alchemy-item${meta.waste ? " is-waste" : ""}${stateId === model.state.recipe.device_state_id ? " is-device" : ""}"${attrs}${stationAttr} data-state-id="${clean(stateId)}" style="--item-color:${clean(meta.color)}"><i>${clean(meta.symbol)}</i><span>${clean(meta.name)}</span><b>${clean(meta.branch)}</b></div>`;
+    const selected = slot != null && model?.interaction === "simplified" && model.proxySelection?.slot === slot;
+    return `<div class="alchemy-item${meta.waste ? " is-waste" : ""}${stateId === model.state.recipe.device_state_id ? " is-device" : ""}${selected ? " is-proxy-selected" : ""}"${attrs}${stationAttr} data-state-id="${clean(stateId)}" style="--item-color:${clean(meta.color)}"><i>${clean(meta.symbol)}</i><span>${clean(meta.name)}</span><b>${clean(meta.branch)}</b></div>`;
   }
 
   function buildMeta(state) {
@@ -219,7 +220,7 @@
   }
 
   function beginDrag(event, item) {
-    if (!model || model.busy || model.completed || !model.recipeSealed || event.button !== 0) return;
+    if (!model || model.interaction !== "full" || model.busy || model.completed || !model.recipeSealed || event.button !== 0) return;
     const slot = Number(item.dataset.slot);
     const stateId = model.inventory[slot];
     if (!stateId) return;
@@ -285,9 +286,56 @@
     model.dragCount += 1;
     record("drag", {
       start: drag.start, end, samples: drag.samples, duration_ms: duration,
-      source_slot: drag.slot, destination, state_id: drag.stateId,
+      source_slot: drag.slot, destination, state_id: drag.stateId, input_surface: "physical_drag",
     });
     model.drag = null;
+    setReadout(destination === "delivery" ? "DEVICE ENTERED CERTIFICATION BAY" : `${STATION_LABELS[destination][0]} LOADED`, "idle");
+    updateState();
+  }
+
+  function selectProxyItem(event, item) {
+    if (!model || model.interaction !== "simplified" || model.busy || model.completed || !model.recipeSealed) return;
+    const slot = Number(item.dataset.slot);
+    const stateId = model.inventory[slot];
+    if (!stateId) return;
+    model.proxySelection = {slot, stateId, point: rootPoint(event)};
+    setReadout(`${stateMeta(stateId).name.toUpperCase()} SELECTED · CLICK A MACHINE OR DELIVERY BAY`, "pending");
+    updateState();
+  }
+
+  function proxyTransfer(event, destination) {
+    if (!model || model.interaction !== "simplified" || model.busy || model.completed || !model.recipeSealed) return;
+    const selection = model.proxySelection;
+    if (!selection || model.inventory[selection.slot] !== selection.stateId) {
+      model.proxySelection = null;
+      setReadout("SELECT A MATERIAL FROM THE RACK FIRST", "error");
+      updateState();
+      return;
+    }
+    let accepted = true;
+    if (destination === "delivery") accepted = model.delivery == null;
+    else if (destination === "assemble") accepted = model.assembly.length < 3;
+    else accepted = model.stations[destination] == null;
+    if (!accepted) {
+      setReadout("TRANSFER REJECTED · SOCKET OCCUPIED", "error");
+      updateState();
+      return;
+    }
+    const stateId = selection.stateId;
+    model.inventory[selection.slot] = null;
+    if (destination === "delivery") model.delivery = stateId;
+    else if (destination === "assemble") model.assembly.push(stateId);
+    else model.stations[destination] = stateId;
+    model.dragCount += 1;
+    record("proxy_transfer", {
+      source_point: selection.point,
+      destination_point: rootPoint(event),
+      source_slot: selection.slot,
+      destination,
+      state_id: stateId,
+      input_surface: "click_to_place_proxy",
+    });
+    model.proxySelection = null;
     setReadout(destination === "delivery" ? "DEVICE ENTERED CERTIFICATION BAY" : `${STATION_LABELS[destination][0]} LOADED`, "idle");
     updateState();
   }
@@ -346,6 +394,7 @@
       record("cycle", {
         point, duration_ms: duration, cycle_pulses: [1, 2, 3, 4], station_id: station,
         input_state_ids: inputs, output_state_id: outputState, output_slot: outputSlot,
+        input_surface: "machine_cycle_button",
       });
       model.busy = false;
       machine?.classList.remove("is-cycling");
@@ -377,6 +426,7 @@
     return {
       mechanic_id: model.state.mechanic_id,
       challenge_id: model.state.challenge_id,
+      interaction: model.interaction,
       completed: model.delivery === model.state.recipe.device_state_id,
       events: model.events,
       final_state: finalState(),
@@ -424,6 +474,8 @@
     root.dataset.recipe = model.recipeSealed ? "sealed" : "open";
     root.dataset.busy = String(model.busy);
     root.dataset.completed = String(model.completed);
+    root.dataset.interaction = model.interaction;
+    root.dataset.proxySelected = String(Boolean(model.proxySelection));
     root.style.setProperty("--memory-level", String(model.memoryCharge / Number(model.state.memory_charge_initial)));
     const memory = document.getElementById("alchemy-memory-count");
     if (memory) memory.textContent = `${model.memoryCharge}/${model.state.memory_charge_initial}`;
@@ -442,6 +494,7 @@
       const machine = document.querySelector(`[data-alchemy-station="${station}"]`);
       if (!machine) continue;
       machine.dataset.loaded = String(station === "assemble" ? model.assembly.length > 0 : Boolean(model.stations[station]));
+      machine.classList.toggle("is-proxy-target", model.interaction === "simplified" && Boolean(model.proxySelection));
       const chamber = machine.querySelector(".machine-chamber");
       if (chamber) {
         if (station === "assemble") {
@@ -454,7 +507,10 @@
       if (cycle) cycle.disabled = model.busy || model.completed;
     }
     const bay = document.querySelector(".alchemy-delivery-object");
-    if (bay) bay.innerHTML = model.delivery ? itemMarkup(model.delivery, null, "delivery") : `<span><i>⌁</i><b>DELIVERY BAY</b><small>DRAG FINISHED DEVICE HERE</small></span>`;
+    if (bay) {
+      bay.classList.toggle("is-proxy-target", model.interaction === "simplified" && Boolean(model.proxySelection));
+      bay.innerHTML = model.delivery ? itemMarkup(model.delivery, null, "delivery") : `<span><i>⌁</i><b>DELIVERY BAY</b><small>${model.interaction === "simplified" ? "CLICK HERE AFTER SELECTING DEVICE" : "DRAG FINISHED DEVICE HERE"}</small></span>`;
+    }
     const replay = document.getElementById("alchemy-replay");
     if (replay) replay.disabled = model.busy || model.completed || !model.recipeSealed || model.replayCount >= Number(model.state.replay_limit);
     const reset = document.getElementById("alchemy-reset");
@@ -503,23 +559,24 @@
     if (activeCleanup) activeCleanup();
     document.body.dataset.mechanic = "craftcha-alchemy-bench";
     const stations = Object.fromEntries(ALL_STATIONS.map((station) => [station, null]));
+    const interaction = state.control_condition?.interaction === "simplified" ? "simplified" : "full";
     model = {
       state, helpers, startedAt: performance.now(), events: [], timers: new Set(), recipeTimer: null,
       recipeSealed: false, recipeReason: null, inventory: [...state.initial_inventory], stations,
       assembly: [], delivery: null, memoryCharge: Number(state.memory_charge_initial), replayCount: 0,
       resetCount: 0, transformCount: 0, discardCount: 0, dragCount: 0, wasteSerial: 0,
-      submitted: false, completed: false, busy: false, drag: null,
+      submitted: false, completed: false, busy: false, drag: null, proxySelection: null, interaction,
       meta: buildMeta(state), transitions: transitionMap(state),
     };
     const geometry = state.geometry;
-    helpers.app.innerHTML = `<section class="alchemy-bench palette-${clean(state.palette.name)}" data-challenge-id="${clean(state.challenge_id)}" data-recipe="open" data-fresh-failure="${Boolean(options.freshFailure)}" tabindex="0" style="--alchemy-accent:${clean(state.palette.accent)};--reagent-accent:${clean(state.palette.reagent)}">
+    helpers.app.innerHTML = `<section class="alchemy-bench palette-${clean(state.palette.name)}" data-challenge-id="${clean(state.challenge_id)}" data-recipe="open" data-interaction="${interaction}" data-fresh-failure="${Boolean(options.freshFailure)}" tabindex="0" style="--alchemy-accent:${clean(state.palette.accent)};--reagent-accent:${clean(state.palette.reagent)}">
       <header class="alchemy-head"><div><span>CRAFTCHA / TRANSFORMATION BUREAU</span><h1>${clean(state.prompt)}</h1></div><aside><small>BENCH SERIAL</small><b>${clean(state.bench_serial)}</b><i>RECIPE ${clean(state.recipe.recipe_code)}</i></aside></header>
       <main class="alchemy-field">
         <section class="alchemy-inventory"><header><span>MATERIAL RACK</span><b>4 SLOT LIMIT</b></header><div class="inventory-rule">INTERMEDIATES RETURN TO THE FIRST FREE SLOT</div></section>
         ${(geometry.inventory_slots || []).map((rect, index) => `<div class="alchemy-slot" data-alchemy-slot="${index}" data-filled="false" style="${pointStyle(rect)}"></div>`).join("")}
         <div class="memory-meter"><span>MEMORY CHARGE</span><b id="alchemy-memory-count">${state.memory_charge_initial}/${state.memory_charge_initial}</b><i><em></em></i></div>
         <button id="alchemy-replay" type="button" style="${pointStyle(geometry.replay_button)}"><span>REPLAY SEALED RECIPE</span><b>−${state.memory_replay_cost} CHARGE · ONCE</b></button>
-        <div class="rack-warning">WRONG MACHINE → MATERIAL IS CONSUMED<br>RESET RESTORES THE ORIGINAL LOT</div>
+        <div class="rack-warning">${interaction === "simplified" ? "CLICK MATERIAL → CLICK MACHINE OR DELIVERY BAY<br>WRONG MACHINE → MATERIAL IS CONSUMED" : "WRONG MACHINE → MATERIAL IS CONSUMED<br>RESET RESTORES THE ORIGINAL LOT"}</div>
         ${ALL_STATIONS.map((station) => stationMarkup(station, state)).join("")}
         <section class="alchemy-delivery" style="${pointStyle(geometry.delivery)}"><header><span>FINAL INSPECTION</span><b>LINEAGE SCANNER</b></header><div class="alchemy-delivery-object"></div><div class="delivery-coils"><i></i><i></i><i></i></div><footer><small>REQUESTED DEVICE</small><strong>${clean(state.recipe.device_symbol)} ${clean(state.recipe.device_name)}</strong><span>ALL THREE TERMINAL MATERIALS REQUIRED</span></footer></section>
       </main>
@@ -533,14 +590,34 @@
       const item = event.target.closest(".alchemy-item[data-slot]");
       if (item) beginDrag(event, item);
     };
+    const proxySelection = (event) => {
+      const item = event.target.closest(".alchemy-item[data-slot]");
+      if (item) selectProxyItem(event, item);
+    };
+    const proxyTargetHandlers = [];
     root?.addEventListener("pointerdown", pointerDown);
+    root?.addEventListener("click", proxySelection);
     document.querySelectorAll("[data-cycle-station]").forEach((button) => button.addEventListener("click", (event) => cycleStation(event, button.dataset.cycleStation)));
+    document.querySelectorAll("[data-alchemy-station]").forEach((machine) => {
+      const handler = (event) => {
+        if (event.target.closest("[data-cycle-station]")) return;
+        proxyTransfer(event, machine.dataset.alchemyStation);
+      };
+      machine.addEventListener("click", handler);
+      proxyTargetHandlers.push([machine, handler]);
+    });
+    const delivery = document.querySelector(".alchemy-delivery");
+    const deliveryHandler = (event) => proxyTransfer(event, "delivery");
+    delivery?.addEventListener("click", deliveryHandler);
     document.getElementById("alchemy-replay")?.addEventListener("click", replayRecipe);
     document.getElementById("alchemy-reset")?.addEventListener("click", resetBench);
     document.getElementById("alchemy-verify")?.addEventListener("click", submitDevice);
     installDeveloperReveal();
     activeCleanup = () => {
       root?.removeEventListener("pointerdown", pointerDown);
+      root?.removeEventListener("click", proxySelection);
+      for (const [target, handler] of proxyTargetHandlers) target.removeEventListener("click", handler);
+      delivery?.removeEventListener("click", deliveryHandler);
       window.removeEventListener("pointermove", moveDrag);
       window.removeEventListener("pointerup", endDrag);
       document.querySelector(".alchemy-drag-ghost")?.remove();

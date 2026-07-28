@@ -7,6 +7,10 @@ from typing import Any
 MECHANIC_ID = "craftcha_alchemy_bench"
 PROCESS_STATIONS = ("grind", "heat", "infuse", "press")
 ALL_STATIONS = (*PROCESS_STATIONS, "assemble")
+INTERACTION_SURFACES = {
+    "simplified": "click_to_place_proxy",
+    "full": "physical_drag",
+}
 
 
 def _failure(message: str) -> dict[str, Any]:
@@ -86,6 +90,90 @@ def _snapshot(
     }
 
 
+def _control_contract(
+    ground_truth: dict[str, Any],
+    public_state: dict[str, Any],
+    recipe: dict[str, Any],
+) -> tuple[str, dict[str, Any] | None, str | None]:
+    """Validate the condition that changes the generated alchemy problem.
+
+    Uncontrolled historical tasks retain the direct-drag surface.  Controlled
+    tasks must carry the same condition in public and hidden state so a
+    simplified transcript cannot be replayed as a full one (or vice versa).
+    """
+    truth_condition = ground_truth.get("control_condition")
+    public_condition = public_state.get("control_condition")
+    if truth_condition is None and public_condition is None:
+        return "full", None, None
+    if not isinstance(truth_condition, dict) or public_condition != truth_condition:
+        return "", None, "public alchemy control condition differs from the hidden contract"
+    interaction = str(truth_condition.get("interaction") or "")
+    parameters = truth_condition.get("difficulty_parameters")
+    if interaction not in INTERACTION_SURFACES or not isinstance(parameters, dict):
+        return "", None, "alchemy interaction condition is invalid"
+    try:
+        branch_patterns = [tuple(int(value) for value in pattern) for pattern in parameters["branch_patterns"]]
+        process_station_count = int(parameters["process_station_count"])
+        inventory_capacity = int(parameters["inventory_capacity"])
+        recipe_window_base_ms = int(parameters["recipe_window_base_ms"])
+        recipe_window_step_ms = int(parameters["recipe_window_step_ms"])
+        recipe_window_variants = int(parameters["recipe_window_variants"])
+        replay_window_base_ms = int(parameters["replay_window_base_ms"])
+        replay_window_step_ms = int(parameters["replay_window_step_ms"])
+        replay_window_variants = int(parameters["replay_window_variants"])
+        memory_charge_initial = int(parameters["memory_charge_initial"])
+        memory_replay_cost = int(parameters["memory_replay_cost"])
+        replay_limit = int(parameters["replay_limit"])
+    except (KeyError, TypeError, ValueError):
+        return "", None, "alchemy difficulty profile is malformed"
+    branches = recipe.get("branches")
+    if (
+        not branch_patterns
+        or any(len(pattern) != 3 or any(value < 1 for value in pattern) for pattern in branch_patterns)
+        or not isinstance(branches, list)
+        or len(branches) != 3
+        or tuple(len(branch.get("steps") or []) for branch in branches) not in branch_patterns
+        or process_station_count < 1
+        or process_station_count > len(PROCESS_STATIONS)
+        or inventory_capacity != 4
+        or memory_charge_initial < memory_replay_cost > 0
+        or memory_replay_cost < 1
+        or replay_limit != 1
+        or recipe_window_base_ms < 1_000
+        or replay_window_base_ms < 800
+        or recipe_window_step_ms < 0
+        or replay_window_step_ms < 0
+        or recipe_window_variants < 1
+        or replay_window_variants < 1
+    ):
+        return "", None, "alchemy difficulty profile is invalid"
+    active_stations = {
+        str(step.get("station_id") or "")
+        for branch in branches
+        for step in (branch.get("steps") or [])
+    }
+    if len(active_stations) != process_station_count:
+        return "", None, "alchemy profile does not match its active machines"
+    expected_initial_window = {
+        recipe_window_base_ms + recipe_window_step_ms * index
+        for index in range(recipe_window_variants)
+    }
+    expected_replay_window = {
+        replay_window_base_ms + replay_window_step_ms * index
+        for index in range(replay_window_variants)
+    }
+    if (
+        ground_truth.get("recipe_window_ms") not in expected_initial_window
+        or ground_truth.get("replay_window_ms") not in expected_replay_window
+        or ground_truth.get("inventory_capacity") != inventory_capacity
+        or ground_truth.get("memory_charge_initial") != memory_charge_initial
+        or ground_truth.get("memory_replay_cost") != memory_replay_cost
+        or ground_truth.get("replay_limit") != replay_limit
+    ):
+        return "", None, "alchemy generated settings differ from the selected profile"
+    return interaction, parameters, None
+
+
 def grade(payload: dict[str, Any], ground_truth: dict[str, Any], public_state: dict[str, Any]) -> dict[str, Any]:
     challenge_id = str(ground_truth.get("challenge_id") or "")
     if str(payload.get("mechanic_id") or "") != MECHANIC_ID or str(ground_truth.get("mechanic_id") or "") != MECHANIC_ID:
@@ -106,6 +194,11 @@ def grade(payload: dict[str, Any], ground_truth: dict[str, Any], public_state: d
     geometry = ground_truth.get("geometry")
     if not isinstance(recipe, dict) or not isinstance(geometry, dict):
         return _failure("hidden recipe or bench geometry is missing")
+    interaction, _parameters, contract_error = _control_contract(ground_truth, public_state, recipe)
+    if contract_error:
+        return _failure(contract_error)
+    if ground_truth.get("control_condition") is not None and payload.get("interaction") != interaction:
+        return _failure("alchemy transcript interaction differs from the selected task")
     width, height = _number(geometry.get("width")), _number(geometry.get("height"))
     if width is None or height is None or width < 500 or height < 400:
         return _failure("hidden bench dimensions are invalid")
@@ -157,7 +250,13 @@ def grade(payload: dict[str, Any], ground_truth: dict[str, Any], public_state: d
         return _failure("hidden material lineages are not distinct")
     device_state = str(recipe.get("device_state_id") or "")
     step_count = recipe.get("step_count")
-    if not device_state or not isinstance(step_count, int) or not 6 <= step_count <= 9 or step_count != len(transition_by_input) + 1:
+    expected_step_range = (4, 11) if ground_truth.get("control_condition") is not None else (6, 9)
+    if (
+        not device_state
+        or not isinstance(step_count, int)
+        or not expected_step_range[0] <= step_count <= expected_step_range[1]
+        or step_count != len(transition_by_input) + 1
+    ):
         return _failure("hidden final assembly is inconsistent")
 
     initial_inventory = ground_truth.get("initial_inventory")
@@ -261,6 +360,8 @@ def grade(payload: dict[str, Any], ground_truth: dict[str, Any], public_state: d
             return _failure(f"alchemy action {index} occurred while the recipe shutter was open")
 
         if kind == "drag":
+            if interaction != "full" or event.get("input_surface") != INTERACTION_SURFACES["full"]:
+                return _failure(f"drag {index} uses the wrong interaction surface")
             start = _point(event.get("start"), width, height)
             end = _point(event.get("end"), width, height)
             raw_samples = event.get("samples")
@@ -310,7 +411,50 @@ def grade(payload: dict[str, Any], ground_truth: dict[str, Any], public_state: d
                 return _failure(f"drag {index} labels disagree with coordinate replay")
             continue
 
+        if kind == "proxy_transfer":
+            if interaction != "simplified" or event.get("input_surface") != INTERACTION_SURFACES["simplified"]:
+                return _failure(f"proxy transfer {index} uses the wrong interaction surface")
+            start = _point(event.get("source_point"), width, height)
+            end = _point(event.get("destination_point"), width, height)
+            if start is None or end is None:
+                return _failure(f"proxy transfer {index} lacks visible source and destination points")
+            source_matches = [slot for slot, rect in enumerate(slot_rects) if _inside(start, rect)]
+            if len(source_matches) != 1:
+                return _failure(f"proxy transfer {index} does not select one inventory slot")
+            source_slot = source_matches[0]
+            state_id = inventory[source_slot]
+            if state_id is None:
+                return _failure(f"proxy transfer {index} selects an empty inventory slot")
+            station_matches = [station for station, rect in station_rects.items() if _inside(end, rect)]
+            to_delivery = _inside(end, delivery_rect)
+            if len(station_matches) + int(to_delivery) != 1:
+                return _failure(f"proxy transfer {index} does not target one machine or delivery bay")
+            if to_delivery:
+                if delivery is not None:
+                    return _failure("delivery bay received more than one item")
+                destination = "delivery"
+                inventory[source_slot] = None
+                delivery = state_id
+            else:
+                destination = station_matches[0]
+                if destination == "assemble":
+                    if len(assembly) >= 3:
+                        return _failure("assembler intake exceeds its three physical sockets")
+                    inventory[source_slot] = None
+                    assembly.append(state_id)
+                else:
+                    if stations[destination] is not None:
+                        return _failure(f"proxy transfer {index} overloads the {destination} machine")
+                    inventory[source_slot] = None
+                    stations[destination] = state_id
+            drag_count += 1
+            if event.get("source_slot") != source_slot or event.get("destination") != destination or event.get("state_id") != state_id:
+                return _failure(f"proxy transfer {index} labels disagree with coordinate replay")
+            continue
+
         if kind == "cycle":
+            if event.get("input_surface") not in {None, "machine_cycle_button"}:
+                return _failure(f"machine cycle {index} uses an invalid control surface")
             point = _point(event.get("point"), width, height)
             duration = _number(event.get("duration_ms"))
             if point is None or duration is None or not 280 <= duration <= 1_600 or event.get("cycle_pulses") != [1, 2, 3, 4]:

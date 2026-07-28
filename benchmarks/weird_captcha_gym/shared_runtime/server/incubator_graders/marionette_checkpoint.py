@@ -27,11 +27,12 @@ def _target_lengths(pose: dict[str, Any], tick: int) -> list[float]:
     ]
 
 
-def _inside(lengths: list[float], pose: dict[str, Any], tick: int, radius: float) -> bool:
+def _inside(lengths: list[float], pose: dict[str, Any], tick: int, radius: float, active_indices: list[int]) -> bool:
     points = _points(lengths)
     targets = _points(_target_lengths(pose, tick))
     allowance = radius - 7
-    return all(math.dist(points[name], targets[name]) <= allowance for name in targets)
+    names = ("left_hand", "right_hand", "left_foot", "right_foot")
+    return all(math.dist(points[names[index]], targets[names[index]]) <= allowance for index in active_indices)
 
 
 def grade(payload: dict[str, Any], truth: dict[str, Any], public: dict[str, Any]) -> dict[str, Any]:
@@ -41,6 +42,9 @@ def grade(payload: dict[str, Any], truth: dict[str, Any], public: dict[str, Any]
         return _fail("stale task or challenge")
     events = payload.get("events")
     poses = public["poses"]
+    active_indices = [int(value) for value in public.get("active_string_indices", (0, 1, 2, 3))]
+    condition = public.get("control_condition") or truth.get("control_condition") or {}
+    expected_source = {"simplified": "string_slider", "full": "string_drag"}.get(condition.get("interaction"))
     if not isinstance(events, list) or len(events) > 3600:
         return _fail("moving marionette transcript malformed")
     pose_index = 0
@@ -60,8 +64,10 @@ def grade(payload: dict[str, Any], truth: dict[str, Any], public: dict[str, Any]
         action = item.get("type")
         if action == "string":
             index = item.get("string")
-            if index not in range(4) or item.get("tick") != tick or float(item.get("before")) != lengths[index]:
+            if index not in active_indices or item.get("tick") != tick or float(item.get("before")) != lengths[index]:
                 return _fail("string control starts from stale rack or time")
+            if expected_source and item.get("input_source") != expected_source:
+                return _fail(f"string control {sequence} uses the wrong interaction input")
             after = float(item.get("after"))
             if not float(public["length_range"][0]) <= after <= float(public["length_range"][1]):
                 return _fail("string exceeds pulley travel")
@@ -77,7 +83,7 @@ def grade(payload: dict[str, Any], truth: dict[str, Any], public: dict[str, Any]
             if item.get("tick") != tick + 1 or item.get("lengths") != lengths:
                 return _fail("tracking sample skipped time or reports false strings")
             tick += 1
-            inside = _inside(lengths, pose, tick, float(public["ring_radius"]))
+            inside = _inside(lengths, pose, tick, float(public["ring_radius"]), active_indices)
             progress = progress + 1 if inside else max(0, progress - int(pose["miss_decay_ticks"]))
             if bool(item.get("inside")) != inside or item.get("progress_after") != progress:
                 return _fail("tracking progress disagrees with moving coupled geometry")
@@ -90,4 +96,9 @@ def grade(payload: dict[str, Any], truth: dict[str, Any], public: dict[str, Any]
         else:
             return _fail(f"unknown marionette event {action!r}")
     passed = cleared == [pose["id"] for pose in poses] and payload.get("completed") is True
-    return {"graded": True, "passed": passed, "feedback": "three moving acts sustained coupled four-limb tracking with visible miss decay" if passed else f"cleared {len(cleared)}/3 acts"}
+    act_noun = "act" if len(poses) == 1 else "acts"
+    if passed:
+        feedback = f"{len(poses)} moving {act_noun} sustained coupled {len(active_indices)}-limb tracking with visible miss decay"
+    else:
+        feedback = f"cleared {len(cleared)}/{len(poses)} {act_noun}"
+    return {"graded": True, "passed": passed, "feedback": feedback}

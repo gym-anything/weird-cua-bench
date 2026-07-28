@@ -56,8 +56,13 @@ def _canvas_screen(box: dict, stage: dict, point: tuple[float, float]) -> tuple[
     return box["x"] + point[0] / stage["width"] * box["width"], box["y"] + point[1] / stage["height"] * box["height"]
 
 
-def _pick(page, truth: dict, box: dict, object_id: str) -> None:
-    obj = next(item for item in truth["objects"] if item["id"] == object_id); projected = _project(obj["center"], truth["camera"]); page.mouse.move(*_canvas_screen(box, truth["stage"], truth["camera"]["center"]), steps=8); page.mouse.move(*_canvas_screen(box, truth["stage"], projected[:2]), steps=8); page.mouse.click(*_canvas_screen(box, truth["stage"], projected[:2])); expect(page.locator(".persp-held-value")).to_have_text(object_id.upper())
+def _pick(page, truth: dict, box: dict, object_id: str, interaction: str) -> None:
+    obj = next(item for item in truth["objects"] if item["id"] == object_id); projected = _project(obj["center"], truth["camera"]); page.mouse.move(*_canvas_screen(box, truth["stage"], truth["camera"]["center"]), steps=8); page.mouse.move(*_canvas_screen(box, truth["stage"], projected[:2]), steps=8)
+    if interaction == "full":
+        page.mouse.down()
+    else:
+        page.mouse.click(*_canvas_screen(box, truth["stage"], projected[:2]))
+    expect(page.locator(".persp-held-value")).to_have_text(object_id.upper())
 
 
 def _target_aim(truth: dict, object_id: str, target_xz: list[float], actual_depth: float, apparent: float) -> tuple[float, float]:
@@ -68,8 +73,9 @@ def _target_aim(truth: dict, object_id: str, target_xz: list[float], actual_dept
 
 
 def _place(page, truth: dict, box: dict, object_id: str, target: list[float], use_wheel: bool, out_dir: Path | None = None) -> None:
-    _pick(page, truth, box, object_id); held = page.evaluate("() => ({depth:window.forcedPerspectiveMovingDayModel.held.depth,apparent:window.forcedPerspectiveMovingDayModel.held.apparent})"); camera_target = _camera_coords([target[0], 0, target[1]], truth["camera"]); steps = round((camera_target[2] - held["depth"]) / truth["depth_controls"]["step"]); direction = 1 if steps > 0 else -1
-    if use_wheel:
+    interaction = str((truth.get("control_condition") or {}).get("interaction") or "simplified")
+    _pick(page, truth, box, object_id, interaction); held = page.evaluate("() => ({depth:window.forcedPerspectiveMovingDayModel.held.depth,apparent:window.forcedPerspectiveMovingDayModel.held.apparent})"); camera_target = _camera_coords([target[0], 0, target[1]], truth["camera"]); steps = round((camera_target[2] - held["depth"]) / truth["depth_controls"]["step"]); direction = 1 if steps > 0 else -1
+    if use_wheel or interaction == "full":
         canvas = page.locator(".persp-canvas"); canvas.hover()
         for _ in range(abs(steps)): page.mouse.wheel(0, 120 * direction); page.wait_for_timeout(18)
     else:
@@ -80,7 +86,11 @@ def _place(page, truth: dict, box: dict, object_id: str, target: list[float], us
     live_aim = page.evaluate("""() => { const m=window.forcedPerspectiveMovingDayModel,h=m.held,o=m.objects[h.id],c=m.camera,cx=(m.aim[0]-c.center[0])/c.focal*h.depth,co=Math.cos(c.yaw),si=Math.sin(c.yaw),x=c.x+co*cx+si*h.depth,z=c.z-si*cx+co*h.depth,scale=h.apparent*h.depth/(c.focal*o.reference_size),vertical=o.role==='bridge'?o.base_size[2]:o.base_size[1],y=vertical*scale/2,dx=x-c.x,dy=y-c.y,dz=z-c.z,camx=co*dx-si*dz,depth=si*dx+co*dz; return [m.aim[0],c.center[1]-c.focal*dy/depth]; }""")
     page.mouse.move(*_canvas_screen(box, truth["stage"], live_aim), steps=4); page.wait_for_timeout(60)
     if object_id == "sign" and out_dir is not None: _shot(page, out_dir, MECHANIC_ID, "active-perspective-depth")
-    page.locator(".persp-release").click(); expect(page.locator(".persp-held-value")).to_have_text("NONE")
+    if interaction == "full":
+        page.mouse.up()
+    else:
+        page.locator(".persp-release").click()
+    expect(page.locator(".persp-held-value")).to_have_text("NONE")
 
 
 def solve(page, state_dir: Path, out_dir: Path, mechanic: str) -> None:

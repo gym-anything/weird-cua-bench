@@ -104,11 +104,10 @@ def _export_browser_play(output: Path, catalog: dict[str, Any]) -> dict[str, Any
         task_id = str(tasks[0]["id"])
         task_path = REPO_ROOT / str(environment["environment_path"]) / "tasks" / task_id / "task.json"
         task = load_task(task_path)
-        challenge_ids: set[str] = set()
-
         def generate_challenges(selected_task: dict[str, Any], seed_label: str | None) -> list[dict[str, Any]]:
             nonlocal challenge_count
             challenges: list[dict[str, Any]] = []
+            challenge_ids: set[str] = set()
             for attempt in range(BROWSER_CHALLENGES_PER_ENVIRONMENT):
                 seed = (
                     f"browser-play:{environment_id}:{seed_label}:{attempt}"
@@ -155,7 +154,11 @@ def _export_browser_play(output: Path, catalog: dict[str, Any]) -> dict[str, Any
                         "interaction": str(interaction),
                         "task_id": profile["task_ids"][interaction],
                         "instruction": profile["instruction"],
-                        "challenges": generate_challenges(profile_task, f"d{level}-{interaction}"),
+                        # Interaction changes only the visible input surface.
+                        # A shared difficulty/attempt seed keeps its generated
+                        # world, information, and success condition identical
+                        # when a player changes between the paired surfaces.
+                        "challenges": generate_challenges(profile_task, f"d{level}"),
                     }
                     interaction_profile_count += 1
                 default_profile = interaction_profiles[default_interaction]
