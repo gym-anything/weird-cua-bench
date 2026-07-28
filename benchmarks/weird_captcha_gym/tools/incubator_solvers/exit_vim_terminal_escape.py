@@ -47,6 +47,10 @@ def solve(page, state_dir: Path, out_dir: Path, mechanic: str) -> None:
         raise AssertionError("terminal public/private challenge mismatch")
     page.locator(".terminal-escape").click(position={"x": 420, "y": 250})
 
+    if (public.get("control_condition") or {}).get("interaction") == "simplified":
+        _solve_simplified(page, truth, out_dir, mechanic)
+        return
+
     # Read all three distributed reference buffers through actual modal
     # commands, then return to the writable manifest. The private truth only
     # tells this smoke which visible text to type; it does not skip the UI.
@@ -98,5 +102,34 @@ def solve(page, state_dir: Path, out_dir: Path, mechanic: str) -> None:
             page.keyboard.press("d")
         else:
             raise AssertionError(f"unknown generated terminal layer {layer!r}")
+        page.wait_for_timeout(90)
+    page.wait_for_function("() => document.querySelector('.readout')?.textContent === 'PASS'", timeout=8_000)
+
+
+def _solve_simplified(page, truth: dict, out_dir: Path, mechanic: str) -> None:
+    """Exercise only the visible proxy controls for a controlled task."""
+    for index in range(1, len(truth["reference_buffers"]) + 1):
+        page.get_by_role("button", name="NEXT BUFFER ▶").click()
+        page.wait_for_function("index => window.exitVimTerminalModel.bufferIndex === index", arg=index)
+        if index == 1:
+            _shot(page, out_dir, mechanic, "active-proxy-reference")
+    page.get_by_role("button", name="NEXT BUFFER ▶").click()
+    page.wait_for_function("() => window.exitVimTerminalModel.bufferIndex === 0")
+    for row, line in enumerate(truth["target_buffer"]):
+        page.locator(f'.terminal-buffer-line[data-proxy-row="{row}"]').click()
+        entry = page.locator("#terminal-proxy-entry")
+        entry.fill(str(line))
+        page.get_by_role("button", name="APPLY LINE").click()
+        if row == 1:
+            _shot(page, out_dir, mechanic, "active-proxy-repair")
+    page.get_by_role("button", name="WRITE & QUIT").click()
+    page.wait_for_function("() => window.exitVimTerminalModel.saved === true")
+    for index, layer in enumerate(truth["layer_order"]):
+        page.wait_for_function("layer => document.getElementById('terminal-viewport')?.dataset.layer === layer", arg=layer)
+        if index == 0:
+            _shot(page, out_dir, mechanic, f"active-proxy-{layer}-layer")
+        if index == len(truth["layer_order"]) - 1:
+            _shot(page, out_dir, mechanic, "solved-proxy-pre-final-exit")
+        page.get_by_role("button", name=f"EXIT {layer.upper()}").click()
         page.wait_for_timeout(90)
     page.wait_for_function("() => document.querySelector('.readout')?.textContent === 'PASS'", timeout=8_000)

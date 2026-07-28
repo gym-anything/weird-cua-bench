@@ -51,6 +51,11 @@ const constellationModel = {
 const grillModel = {
   state: null,
   records: {},
+  actions: [],
+  selectedFoodId: null,
+  selectedGesture: null,
+  dragGestures: {},
+  interaction: "full",
   animationFrame: 0,
 };
 const rotatingKeyboardModel = {
@@ -64,7 +69,10 @@ const slotModel = {
   frozen: [],
   captured: "",
   wrongKeys: 0,
+  actions: [],
   submitting: false,
+  actionQueue: Promise.resolve(),
+  queuedActionCount: 0,
   animationFrame: 0,
   keyHandler: null,
 };
@@ -84,6 +92,7 @@ const dominoModel = {
   dominoIds: [],
   looseIds: [],
   selectedId: null,
+  placementSources: {},
   initial: {},
   preRun: {},
   collisionPairs: new Set(),
@@ -94,7 +103,7 @@ const dominoModel = {
 };
 const consequenceModel = {state: null, phase: "choices", sceneIndex: 0, bossIndex: 0, choices: {}, actions: {}};
 const popupModel = {state: null, cleared: [], topZ: 20, submitting: false};
-const funeralModel = {state: null, events: [], brushed: new Set(), gathered: new Set(), brushing: false, completed: false, pointerUpHandler: null};
+const funeralModel = {state: null, events: [], actionSurfaces: [], brushed: new Set(), gathered: new Set(), flowerSources: {}, brushing: false, completed: false, pointerUpHandler: null};
 const slimeModel = {state: null, startedAt: 0, player: {x: 0, y: 10}, deaths: 0, visited: new Set(), keyHandler: null, animationFrame: 0, completed: false, lastTick: -1};
 
 function runtimeAssetUrl(relative) {
@@ -202,6 +211,7 @@ async function renderExternalMechanic(state) {
     cheatPanelTemplate,
     installCheatPanel,
     render: renderExternalMechanic,
+    beginAction: (label) => window.WeirdCaptchaTime?.beginAction?.(label),
   });
   return true;
 }
@@ -2650,48 +2660,254 @@ function animateGrillmaster(now = performance.now()) {
   grillModel.animationFrame = requestAnimationFrame(animateGrillmaster);
 }
 
+function updateGrillControls() {
+  document.querySelectorAll(".grill-food").forEach((node) => {
+    node.dataset.selected = String(node.dataset.foodId === grillModel.selectedFoodId);
+  });
+  const selected = grillModel.records[grillModel.selectedFoodId];
+  const start = document.getElementById("grill-start-selected");
+  const serve = document.getElementById("grill-serve-selected");
+  const witnessedSelection = Boolean(grillModel.selectedGesture);
+  if (start) start.disabled = !selected || selected.place !== "prep" || !witnessedSelection;
+  if (serve) serve.disabled = !selected || selected.place !== "grill" || !witnessedSelection;
+}
+
+async function beginGrillGesture(foodId, endpoint, eventEvidence) {
+  const state = grillModel.state;
+  const response = await fetch(endpoint, {
+    method: "POST",
+    headers: {"content-type": "application/json"},
+    body: JSON.stringify({
+      mechanic_id: state.mechanic_id,
+      task_id: state.task_id,
+      challenge_id: state.challenge_id,
+      food_id: foodId,
+      event_evidence: eventEvidence,
+    }),
+  });
+  const outcome = await response.json();
+  if (!response.ok || outcome.ok !== true || !outcome.gesture_token) {
+    throw new Error(outcome.error || "gesture witness rejected");
+  }
+  return outcome.gesture_token;
+}
+
+function pointFromEvent(event) {
+  return [
+    Number(Number(event.clientX || 0).toFixed(2)),
+    Number(Number(event.clientY || 0).toFixed(2)),
+  ];
+}
+
+function applyWitnessedGrillMove(foodId, destination, witnessAction) {
+  const node = document.querySelector(`.grill-food[data-food-id="${CSS.escape(foodId)}"]`);
+  const record = grillModel.records[foodId];
+  const zone = document.querySelector(`.grill-zone[data-drop-zone="${CSS.escape(destination)}"]`);
+  if (!node || !record || !zone) return false;
+  const now = performance.now();
+  if (destination === "grill" && record.place === "prep") {
+    record.place = "grill";
+    record.startedAt = now;
+    record.startSource = witnessAction.input_source;
+    zone.appendChild(node);
+  } else if (destination === "tray" && record.place === "grill") {
+    record.duration = now - record.startedAt;
+    record.place = "tray";
+    record.serveSource = witnessAction.input_source;
+    zone.appendChild(node);
+  } else {
+    return false;
+  }
+  grillModel.actions.push(witnessAction);
+  setReadout("", "idle");
+  updateGrillControls();
+  return true;
+}
+
+async function commitGrillMove(foodId, destination, gestureToken, endpoint, eventEvidence) {
+  const state = grillModel.state;
+  const record = grillModel.records[foodId];
+  const kind = destination === "grill" ? "start" : "serve";
+  if (!record || (kind === "start" ? record.place !== "prep" : record.place !== "grill")) return false;
+  const response = await fetch(endpoint, {
+    method: "POST",
+    headers: {"content-type": "application/json"},
+    body: JSON.stringify({
+      mechanic_id: state.mechanic_id,
+      task_id: state.task_id,
+      challenge_id: state.challenge_id,
+      food_id: foodId,
+      kind,
+      destination,
+      gesture_token: gestureToken,
+      event_evidence: eventEvidence,
+    }),
+  });
+  const outcome = await response.json();
+  if (!response.ok || outcome.ok !== true || !outcome.witness_action) {
+    throw new Error(outcome.error || "action witness rejected");
+  }
+  return applyWitnessedGrillMove(foodId, destination, outcome.witness_action);
+}
+
 function renderParallelGrillmaster(state) {
   if (grillModel.animationFrame) cancelAnimationFrame(grillModel.animationFrame);
   document.body.dataset.mechanic = "grillmaster";
   document.body.dataset.cheatMode = isCheatMode() ? "true" : "false";
-  grillModel.state = state; grillModel.records = {};
-  (state.foods || []).forEach((food) => { grillModel.records[food.id] = {place: "prep", startedAt: null, duration: null}; });
+  grillModel.state = state;
+  grillModel.records = {};
+  grillModel.actions = [];
+  grillModel.selectedFoodId = null;
+  grillModel.selectedGesture = null;
+  grillModel.dragGestures = {};
+  grillModel.interaction = state.control_condition?.interaction || "full";
+  (state.foods || []).forEach((food) => {
+    grillModel.records[food.id] = {
+      place: "prep",
+      startedAt: null,
+      duration: null,
+      startSource: null,
+      serveSource: null,
+    };
+  });
+  const parameters = state.control_condition?.difficulty_parameters || {};
+  const parallelCount = Number(parameters.parallel_start_count || 1);
+  const parallelWindow = Number(parameters.parallel_start_window_ms || 0);
+  const batchRule = parallelCount > 1
+    ? `<div class="grill-batch-rule"><b>RUSH RULE</b><span>Start any ${parallelCount} foods within ${(parallelWindow / 1000).toFixed(1)} seconds of the first start.</span></div>`
+    : "";
+  const proxyControls = grillModel.interaction === "simplified"
+    ? `<div class="grill-proxy-controls"><span>SELECT A FOOD</span><button id="grill-start-selected" type="button" disabled>START COOKING</button><button id="grill-serve-selected" type="button" disabled>MOVE TO TRAY</button></div>`
+    : "";
   app.innerHTML = `
-    <section class="interaction-captcha grill-captcha" data-mechanic="${text(state.mechanic_id)}" data-challenge-id="${text(state.challenge_id)}">
+    <section class="interaction-captcha grill-captcha" data-food-count="${Number((state.foods || []).length)}" data-interaction="${text(grillModel.interaction)}" data-mechanic="${text(state.mechanic_id)}" data-challenge-id="${text(state.challenge_id)}">
       <header class="interaction-head grill-head"><p>DINNER RUSH / 03</p><h1>${text(state.prompt)}</h1></header>
+      ${batchRule}
       <section class="grill-stage">
-        <div class="grill-zone grill-prep" data-drop-zone="prep"><span class="zone-label">RAW ORDER</span>${(state.foods || []).map((food) => `<div class="grill-food" draggable="true" data-food-id="${text(food.id)}" data-kind="${text(food.kind)}" data-cook-state="raw">${foodArt(food.kind)}</div>`).join("")}</div>
+        <div class="grill-zone grill-prep" data-drop-zone="prep"><span class="zone-label">RAW ORDER</span>${(state.foods || []).map((food) => `<div class="grill-food" draggable="${grillModel.interaction === "full" ? "true" : "false"}" data-selected="false" data-food-id="${text(food.id)}" data-kind="${text(food.kind)}" data-cook-state="raw">${foodArt(food.kind)}</div>`).join("")}</div>
         <div class="grill-zone grill-fire" data-drop-zone="grill"><span class="zone-label">LIVE FIRE</span><div class="grill-bars"></div><div class="heat-wave heat-wave-a"></div><div class="heat-wave heat-wave-b"></div></div>
         <div class="grill-zone grill-tray" data-drop-zone="tray"><span class="zone-label">SERVING TRAY</span></div>
       </section>
-      <footer class="interaction-foot"><div class="readout" data-status="idle"></div><button class="interaction-submit grill-submit" id="submit-grill" type="button">${text(state.submit_label || "SERVE")}</button></footer>
+      <footer class="interaction-foot grill-foot">${proxyControls}<div class="readout" data-status="idle"></div><button class="interaction-submit grill-submit" id="submit-grill" type="button">${text(state.submit_label || "SERVE")}</button></footer>
       ${cheatPanelTemplate()}
     </section>`;
-  document.querySelectorAll(".grill-food").forEach((foodNode) => {
-    foodNode.addEventListener("dragstart", (event) => event.dataTransfer.setData("text/plain", foodNode.dataset.foodId));
-  });
-  document.querySelectorAll(".grill-zone").forEach((zone) => {
-    zone.addEventListener("dragover", (event) => event.preventDefault());
-    zone.addEventListener("drop", (event) => {
-      event.preventDefault();
-      const id = event.dataTransfer.getData("text/plain");
-      const node = document.querySelector(`.grill-food[data-food-id="${CSS.escape(id)}"]`);
-      const record = grillModel.records[id];
-      const destination = zone.dataset.dropZone;
-      if (!node || !record) return;
-      if (destination === "grill" && record.place === "prep") {
-        record.place = "grill"; record.startedAt = performance.now(); zone.appendChild(node);
-      } else if (destination === "tray" && record.place === "grill") {
-        record.duration = performance.now() - record.startedAt; record.place = "tray"; zone.appendChild(node);
-      }
-      setReadout("", "idle");
+  if (grillModel.interaction === "full") {
+    document.querySelectorAll(".grill-food").forEach((foodNode) => {
+      foodNode.addEventListener("dragstart", (event) => {
+        if (!event.isTrusted) return;
+        event.dataTransfer.setData("text/plain", foodNode.dataset.foodId);
+        const foodId = foodNode.dataset.foodId;
+        const startPoint = pointFromEvent(event);
+        grillModel.dragGestures[foodId] = {
+          startPoint,
+          token: beginGrillGesture(
+            foodId,
+            "/parallel-grillmaster/full/drag-begin",
+            {
+              start_point: startPoint,
+              data_transfer_types: Array.from(event.dataTransfer.types || []),
+            },
+          ),
+        };
+      });
     });
-  });
+    document.querySelectorAll(".grill-zone").forEach((zone) => {
+      zone.addEventListener("dragover", (event) => event.preventDefault());
+      zone.addEventListener("drop", async (event) => {
+        event.preventDefault();
+        if (!event.isTrusted) {
+          setReadout("GESTURE REJECTED", "error");
+          return;
+        }
+        const foodId = event.dataTransfer.getData("text/plain");
+        const gesture = grillModel.dragGestures[foodId];
+        delete grillModel.dragGestures[foodId];
+        if (!gesture) {
+          setReadout("GESTURE REJECTED", "error");
+          return;
+        }
+        try {
+          await commitGrillMove(
+            foodId,
+            zone.dataset.dropZone,
+            await gesture.token,
+            "/parallel-grillmaster/full/drop",
+            {
+              drop_zone: zone.dataset.dropZone,
+              start_point: gesture.startPoint,
+              end_point: pointFromEvent(event),
+            },
+          );
+        } catch (_error) {
+          setReadout("GESTURE REJECTED", "error");
+        }
+      });
+    });
+  } else {
+    document.querySelectorAll(".grill-food").forEach((foodNode) => {
+      foodNode.addEventListener("click", async (event) => {
+        if (!event.isTrusted) return;
+        grillModel.selectedFoodId = foodNode.dataset.foodId;
+        grillModel.selectedGesture = null;
+        setReadout("", "idle");
+        updateGrillControls();
+        try {
+          grillModel.selectedGesture = await beginGrillGesture(
+            foodNode.dataset.foodId,
+            "/parallel-grillmaster/simplified/select",
+            {
+              point: pointFromEvent(event),
+            },
+          );
+          updateGrillControls();
+        } catch (_error) {
+          grillModel.selectedFoodId = null;
+          setReadout("SELECTION REJECTED", "error");
+          updateGrillControls();
+        }
+      });
+    });
+    document.getElementById("grill-start-selected").addEventListener("click", async (event) => {
+      if (!event.isTrusted) return;
+      if (grillModel.selectedFoodId && grillModel.selectedGesture) {
+        const foodId = grillModel.selectedFoodId;
+        const token = grillModel.selectedGesture;
+        grillModel.selectedGesture = null;
+        try {
+          await commitGrillMove(foodId, "grill", token, "/parallel-grillmaster/simplified/proxy", {
+            control_id: "grill-start-selected",
+            point: pointFromEvent(event),
+          });
+          grillModel.selectedFoodId = null;
+        } catch (_error) {
+          setReadout("CONTROL REJECTED", "error");
+        }
+        updateGrillControls();
+      }
+    });
+    document.getElementById("grill-serve-selected").addEventListener("click", async (event) => {
+      if (!event.isTrusted) return;
+      if (grillModel.selectedFoodId && grillModel.selectedGesture) {
+        const foodId = grillModel.selectedFoodId;
+        const token = grillModel.selectedGesture;
+        grillModel.selectedGesture = null;
+        try {
+          await commitGrillMove(foodId, "tray", token, "/parallel-grillmaster/simplified/proxy", {
+            control_id: "grill-serve-selected",
+            point: pointFromEvent(event),
+          });
+          grillModel.selectedFoodId = null;
+        } catch (_error) {
+          setReadout("CONTROL REJECTED", "error");
+        }
+        updateGrillControls();
+      }
+    });
+  }
+  updateGrillControls();
   document.getElementById("submit-grill").addEventListener("click", async () => {
-    const durations = {};
-    Object.entries(grillModel.records).forEach(([id, record]) => { if (record.place === "tray" && record.duration != null) durations[id] = Math.round(record.duration); });
     try {
-      const response = await fetch("/result", {method: "POST", headers: {"content-type": "application/json"}, body: JSON.stringify({mechanic_id: state.mechanic_id, challenge_id: state.challenge_id, durations_ms: durations})});
+      const response = await fetch("/result", {method: "POST", headers: {"content-type": "application/json"}, body: JSON.stringify({mechanic_id: state.mechanic_id, task_id: state.task_id, challenge_id: state.challenge_id})});
       const outcome = await response.json();
       if (outcome.passed === true) setReadout("PASS", "passed");
       else if (outcome.passed === false) { if (outcome.state) renderParallelGrillmaster(outcome.state); setReadout("FAIL", "error"); }
@@ -2772,19 +2988,80 @@ function renderRotatingKeyboard(state) {
   installCheatPanel();
 }
 
-function animateSlotReels(now = performance.now()) {
-  if (!slotModel.state || document.body.dataset.mechanic !== "slot-reel") return;
-  const elapsed = now - slotModel.startedAt;
-  (slotModel.state.reels || []).forEach((reel, index) => {
-    const node = document.querySelector(`.slot-reel[data-reel-id="${CSS.escape(reel.id)}"]`);
-    if (!node) return;
-    const frozen = slotModel.frozen.includes(reel.id);
-    const tokenIndex = frozen ? reel.tokens.indexOf(reel.target) : (Math.floor(elapsed / reel.interval_ms) + Number(reel.phase || 0)) % reel.tokens.length;
+function slotReelFrameAt(reel, elapsedMs, frozen, captureWindowRatio) {
+  const elapsed = Math.max(0, Number(elapsedMs) || 0);
+  const tokenIndex = frozen
+    ? reel.tokens.indexOf(reel.target)
+    : (Math.floor(elapsed / reel.interval_ms) + Number(reel.phase || 0)) % reel.tokens.length;
+  const cyclePosition = frozen ? 0.5 : (elapsed % reel.interval_ms) / reel.interval_ms;
+  return {
+    tokenIndex,
+    cyclePosition,
+    captureReady: frozen || captureWindowRatio >= 1 || Math.abs(cyclePosition - 0.5) <= captureWindowRatio / 2,
+  };
+}
+
+function paintSlotReelFrame(reel, index, elapsed, captureWindowRatio) {
+  const node = document.querySelector(`.slot-reel[data-reel-id="${CSS.escape(reel.id)}"]`);
+  if (!node) return null;
+  const frozen = slotModel.frozen.includes(reel.id);
+  const frame = slotReelFrameAt(reel, elapsed, frozen, captureWindowRatio);
+  const {tokenIndex, cyclePosition, captureReady} = frame;
     node.dataset.tokenIndex = String(tokenIndex);
+    node.dataset.captureReady = String(captureReady);
     node.dataset.active = String(index === slotModel.frozen.length && !frozen);
     node.dataset.frozen = String(frozen);
+    node.style.setProperty("--slot-symbol-offset", `${captureWindowRatio < 1 && !frozen ? (cyclePosition - 0.5) * 92 : 0}px`);
+    const windowNode = node.querySelector(".slot-window");
+    if (windowNode) {
+      windowNode.dataset.windowed = String(captureWindowRatio < 1);
+      windowNode.style.setProperty(
+        "--slot-capture-half-span",
+        `${Math.max(0, Math.min(1, captureWindowRatio)) * 46}px`,
+      );
+    }
     const symbol = node.querySelector(".slot-symbol");
     if (symbol) symbol.textContent = reel.tokens[tokenIndex];
+  return frame;
+}
+
+function installSlotServerClockBridge() {
+  const clock = window.WeirdCaptchaTime;
+  if (!clock || window.WEIRD_CAPTCHA_BROWSER_PLAY) return;
+  const syncClock = (command) => {
+    slotModel.clockSync = (slotModel.clockSync || Promise.resolve())
+      .catch(() => {})
+      .then(async () => {
+        const response = await fetch("/time-control", {
+          method: "POST",
+          headers: {"content-type": "application/json"},
+          body: JSON.stringify({command}),
+        });
+        if (!response.ok) throw new Error(`slot-reel ${command} clock sync failed`);
+        await response.json();
+      });
+    return slotModel.clockSync;
+  };
+  if (!clock.slotReelServerBridgeInstalled) {
+    for (const method of ["pause", "resume", "setMode"]) {
+      const original = clock[method].bind(clock);
+      clock[method] = (...args) => {
+        const result = original(...args);
+        void syncClock(clock.status().state === "running" ? "resume" : "pause");
+        return result;
+      };
+    }
+    clock.slotReelServerBridgeInstalled = true;
+  }
+  void syncClock(clock.status().state === "running" ? "resume" : "pause");
+}
+
+function animateSlotReels(now = performance.now()) {
+  if (!slotModel.state || document.body.dataset.mechanic !== "slot-reel") return;
+  const elapsed = Math.max(0, now - slotModel.startedAt);
+  const captureWindowRatio = Number(slotModel.state.capture_window_ratio || 1);
+  (slotModel.state.reels || []).forEach((reel, index) => {
+    paintSlotReelFrame(reel, index, elapsed, captureWindowRatio);
   });
   slotModel.animationFrame = requestAnimationFrame(animateSlotReels);
 }
@@ -2798,10 +3075,10 @@ function updateSlotStrikes(maxStrikes) {
 }
 
 async function submitSlotAttempt(state) {
-  if (slotModel.submitting) return;
+  if (slotModel.submitting || slotModel.actionPending) return;
   slotModel.submitting = true;
   try {
-    const response = await fetch("/result", {method: "POST", headers: {"content-type": "application/json"}, body: JSON.stringify({mechanic_id: state.mechanic_id, challenge_id: state.challenge_id, captured_sequence: slotModel.captured, frozen_reel_ids: slotModel.frozen, wrong_keys: slotModel.wrongKeys})});
+    const response = await fetch("/result", {method: "POST", headers: {"content-type": "application/json"}, body: JSON.stringify({mechanic_id: state.mechanic_id, challenge_id: state.challenge_id, captured_sequence: slotModel.captured, frozen_reel_ids: slotModel.frozen, wrong_keys: slotModel.wrongKeys, actions: slotModel.actions})});
     const outcome = await response.json();
     if (outcome.passed === true) {
       setReadout("PASS", "passed");
@@ -2815,48 +3092,131 @@ async function submitSlotAttempt(state) {
   }
 }
 
+async function attemptSlotCapture(state, inputSource, enteredKey, elapsedMs) {
+  if (slotModel.submitting) return;
+  const index = slotModel.frozen.length;
+  const reel = (state.reels || [])[index];
+  if (!reel) return;
+  try {
+    await (slotModel.clockSync || Promise.resolve());
+    paintSlotReelFrame(
+      reel,
+      index,
+      elapsedMs,
+      Number(state.capture_window_ratio || 1),
+    );
+    const response = await fetch("/slot-reel/action", {
+      method: "POST",
+      headers: {"content-type": "application/json"},
+      body: JSON.stringify({
+        mechanic_id: state.mechanic_id,
+        task_id: state.task_id,
+        challenge_id: state.challenge_id,
+        input_source: inputSource,
+        event_surface: inputSource === "capture_button" ? "capture_button_click" : "keyboard_keydown",
+        entered_key: enteredKey == null ? null : String(enteredKey).toUpperCase(),
+        client_elapsed_ms: elapsedMs,
+        is_trusted: true,
+      }),
+    });
+    const outcome = await response.json();
+    if (!response.ok || outcome.ok !== true || !outcome.witness_action) {
+      throw new Error(outcome.error || "slot-reel action witness rejected");
+    }
+    const action = outcome.witness_action;
+    slotModel.actions.push(action);
+    if (action.accepted === true) {
+      slotModel.frozen.push(reel.id);
+      slotModel.captured += reel.target;
+      (state.reels || []).forEach((item, itemIndex) => {
+        paintSlotReelFrame(
+          item,
+          itemIndex,
+          Number(action.elapsed_ms),
+          Number(state.capture_window_ratio || 1),
+        );
+      });
+      const cells = document.querySelectorAll(".slot-captured span");
+      if (cells[index]) cells[index].textContent = reel.target;
+      document.querySelector(".slot-captcha")?.classList.remove("slot-shock");
+      setReadout("", "idle");
+      return;
+    }
+    slotModel.wrongKeys += 1;
+    const maxStrikes = Number(state.max_strikes || 3);
+    updateSlotStrikes(maxStrikes);
+    setReadout("", "idle");
+    const panel = document.querySelector(".slot-captcha");
+    panel?.classList.remove("slot-shock");
+    void panel?.offsetWidth;
+    panel?.classList.add("slot-shock");
+    if (slotModel.wrongKeys >= maxStrikes) {
+      if (slotModel.keyHandler) window.removeEventListener("keydown", slotModel.keyHandler);
+      setTimeout(() => submitSlotAttempt(state), 260);
+    }
+  } catch (error) {
+    console.error("Slot-Reel action witness failed", error);
+    setReadout("ACTION NOT RECORDED", "error");
+  }
+}
+
+function queueSlotCapture(state, inputSource, enteredKey = null) {
+  if (slotModel.submitting) return Promise.resolve();
+  const elapsedMs = Math.max(0, performance.now() - slotModel.startedAt);
+  slotModel.queuedActionCount += 1;
+  slotModel.actionPending = true;
+  const action = slotModel.actionQueue
+    .catch(() => {})
+    .then(() => attemptSlotCapture(
+      state,
+      inputSource,
+      enteredKey,
+      elapsedMs,
+    ));
+  slotModel.actionQueue = action.finally(() => {
+    slotModel.queuedActionCount = Math.max(
+      0,
+      slotModel.queuedActionCount - 1,
+    );
+    slotModel.actionPending = slotModel.queuedActionCount > 0;
+  });
+  return slotModel.actionQueue;
+}
+
 function renderSlotReelCapture(state) {
   if (slotModel.animationFrame) cancelAnimationFrame(slotModel.animationFrame);
   if (slotModel.keyHandler) window.removeEventListener("keydown", slotModel.keyHandler);
   document.body.dataset.mechanic = "slot-reel";
   document.body.dataset.cheatMode = isCheatMode() ? "true" : "false";
   const maxStrikes = Number(state.max_strikes || 3);
-  slotModel.state = state; slotModel.startedAt = performance.now(); slotModel.frozen = []; slotModel.captured = ""; slotModel.wrongKeys = 0; slotModel.submitting = false;
+  const interaction = state.control_condition?.interaction || "full";
+  const reelCount = (state.reels || []).length;
+  const visiblePrompt = interaction === "simplified"
+    ? String(state.prompt || "").replace(/^Type each letter or number/, "Capture each letter or number")
+    : state.prompt;
+  slotModel.state = state; slotModel.startedAt = performance.now(); slotModel.frozen = []; slotModel.captured = ""; slotModel.wrongKeys = 0; slotModel.actions = []; slotModel.submitting = false; slotModel.actionPending = false; slotModel.actionQueue = Promise.resolve(); slotModel.queuedActionCount = 0; slotModel.clockSync = Promise.resolve(); slotModel.keyHandler = null;
+  installSlotServerClockBridge();
   app.innerHTML = `
-    <section class="interaction-captcha slot-captcha" data-mechanic="${text(state.mechanic_id)}" data-challenge-id="${text(state.challenge_id)}" tabindex="0">
-      <header class="interaction-head slot-head"><p>LIVE CAPTURE / 05</p><h1>${text(state.prompt)}</h1></header>
+    <section class="interaction-captcha slot-captcha" data-interaction="${text(interaction)}" data-mechanic="${text(state.mechanic_id)}" data-challenge-id="${text(state.challenge_id)}" tabindex="0">
+      <header class="interaction-head slot-head"><p>LIVE CAPTURE / ${String(reelCount).padStart(2, "0")}</p><h1>${text(visiblePrompt)}</h1></header>
       <section class="slot-stage"><div class="slot-machine-top"><span>CAPTURE</span><div class="slot-status-rail"><div class="slot-lights"></div><div class="slot-strikes" aria-live="polite"><span>STRIKES</span><strong class="slot-strikes-count">0/${maxStrikes}</strong>${Array.from({length: maxStrikes}, () => '<i class="slot-strike-pip" data-active="false"></i>').join("")}</div></div></div><div class="slot-reels">
         ${(state.reels || []).map((reel, index) => `<div class="slot-reel" data-reel-id="${text(reel.id)}" data-active="${index === 0}" data-frozen="false"><span class="slot-arrow">▼</span><div class="slot-window"><span class="slot-symbol">◆</span></div><span class="slot-index">0${index + 1}</span></div>`).join("")}
       </div><div class="slot-captured">${(state.reels || []).map(() => "<span>·</span>").join("")}</div></section>
-      <footer class="interaction-foot slot-foot"><div class="readout" data-status="idle"></div><button class="interaction-submit slot-submit" id="submit-slot" type="button">${text(state.submit_label || "VERIFY")}</button></footer>
+      <footer class="interaction-foot slot-foot"><div class="readout" data-status="idle"></div>${interaction === "simplified" ? '<button class="interaction-submit slot-capture-button" id="capture-slot" type="button">CAPTURE SYMBOL</button>' : ""}<button class="interaction-submit slot-submit" id="submit-slot" type="button">${text(state.submit_label || "VERIFY")}</button></footer>
       ${cheatPanelTemplate()}
     </section>`;
-  slotModel.keyHandler = (event) => {
-    if (event.repeat || slotModel.submitting || !/^[a-z0-9]$/i.test(event.key)) return;
-    const index = slotModel.frozen.length;
-    const reel = (state.reels || [])[index];
-    if (!reel) return;
-    const node = document.querySelector(`.slot-reel[data-reel-id="${CSS.escape(reel.id)}"]`);
-    const token = reel.tokens[Number(node?.dataset.tokenIndex || -1)];
-    if (token === reel.target && event.key.toUpperCase() === reel.target) {
-      slotModel.frozen.push(reel.id); slotModel.captured += reel.target;
-      const cells = document.querySelectorAll(".slot-captured span");
-      if (cells[index]) cells[index].textContent = reel.target;
-      document.querySelector(".slot-captcha")?.classList.remove("slot-shock");
-      setReadout("", "idle");
-    } else {
-      slotModel.wrongKeys += 1;
-      updateSlotStrikes(maxStrikes);
-      setReadout("", "idle");
-      const panel = document.querySelector(".slot-captcha");
-      panel?.classList.remove("slot-shock"); void panel?.offsetWidth; panel?.classList.add("slot-shock");
-      if (slotModel.wrongKeys >= maxStrikes) {
-        window.removeEventListener("keydown", slotModel.keyHandler);
-        setTimeout(() => submitSlotAttempt(state), 260);
-      }
-    }
-  };
-  window.addEventListener("keydown", slotModel.keyHandler);
+  if (interaction === "full") {
+    slotModel.keyHandler = (event) => {
+      if (event.repeat || slotModel.submitting || !/^[a-z0-9]$/i.test(event.key)) return;
+      event.preventDefault();
+      void queueSlotCapture(state, "physical_keyboard", event.key);
+    };
+    window.addEventListener("keydown", slotModel.keyHandler);
+  } else {
+    document.getElementById("capture-slot")?.addEventListener("click", () => {
+      void queueSlotCapture(state, "capture_button");
+    });
+  }
   document.querySelector(".slot-captcha").focus();
   animateSlotReels();
   document.getElementById("submit-slot").addEventListener("click", () => submitSlotAttempt(state));
@@ -2911,7 +3271,8 @@ function dominoBellId() {
 }
 
 function dominoRunPassed() {
-  return dominoModel.physicsPassed && dominoModel.bellPeakAngle >= 0.03;
+  const minimumSwing = Number(dominoModel.state?.board?.minimum_bell_swing_radians || 0.03);
+  return dominoModel.physicsPassed && dominoModel.bellPeakAngle >= minimumSwing;
 }
 
 function setDominoVerdict(outcome = "", title = "", detail = "") {
@@ -2986,6 +3347,23 @@ function recordDominoCollisions(event) {
 function drawDominoDetails() {
   const render = dominoModel.render; if (!render) return;
   const context = render.context;
+  const guides = dominoModel.state?.board?.target_guides || [];
+  if (dominoModel.mode === "edit" && guides.length) {
+    context.save();
+    context.strokeStyle = "rgba(91, 58, 31, .62)";
+    context.fillStyle = "rgba(247, 235, 194, .24)";
+    context.lineWidth = 1.5;
+    context.setLineDash([5, 4]);
+    guides.forEach((guide) => {
+      context.save();
+      context.translate(Number(guide.x), Number(guide.y));
+      context.rotate(Number(guide.angle || 0) * Math.PI / 180);
+      context.fillRect(-7, -36, 14, 72);
+      context.strokeRect(-7, -36, 14, 72);
+      context.restore();
+    });
+    context.restore();
+  }
   dominoModel.dominoIds.forEach((id) => {
     const body = dominoModel.bodiesById[id]; const meta = body.plugin.domino;
     context.save(); context.translate(body.position.x, body.position.y); context.rotate(body.angle);
@@ -3057,7 +3435,11 @@ function rewindDominoPhysics() {
   };
   resetBody(dominoModel.bellBody, dominoModel.bellInitial?.body); resetBody(dominoModel.clapperBody, dominoModel.bellInitial?.clapper);
   dominoModel.mode = "edit"; dominoModel.physicsPassed = false; dominoModel.bellHit = false; dominoModel.bellPeakAngle = 0; dominoModel.bellSoundPlayed = false; dominoModel.collisionPairs = new Set(); dominoModel.selectedId = null;
-  const trace = document.querySelector(".domino-trace"); if (trace) trace.textContent = "PHYSICS READY / DRAG, ROTATE, RUN";
+  const trace = document.querySelector(".domino-trace");
+  if (trace) {
+    const interaction = dominoModel.state?.control_condition?.interaction || "full";
+    trace.textContent = `PHYSICS READY / ${interaction === "simplified" ? "CLICK PIECE, CLICK BOARD" : "DRAG"}, ROTATE, RUN`;
+  }
   setDominoVerdict(); setReadout("", "idle"); setDominoControls();
 }
 
@@ -3097,7 +3479,7 @@ function setupDominoPhysics(state, board) {
   dominoModel.bellBody = bellBody; dominoModel.clapperBody = clapperBody; dominoModel.bellAnchor = bellAnchor;
   dominoModel.bellInitial = {body: {x: bellBody.position.x, y: bellBody.position.y, angle: bellBody.angle}, clapper: {x: clapperBody.position.x, y: clapperBody.position.y, angle: clapperBody.angle}};
   const createDomino = (item, meta) => {
-    const color = meta.loose ? ({vermilion: "#b83b30", saffron: "#d7a82f", cobalt: "#315f82"}[item.color] || "#b83b30") : "#eee5cc";
+    const color = meta.loose ? ({vermilion: "#b83b30", saffron: "#d7a82f", cobalt: "#315f82", jade: "#3c8068", violet: "#6d4a86"}[item.color] || "#b83b30") : "#eee5cc";
     const body = Bodies.rectangle(Number(item.x), Number(item.y), 14, 72, {label: String(item.id), density: 0.0048, friction: 0.48, frictionStatic: 0.76, frictionAir: 0, restitution: 0.04, chamfer: {radius: 1.5}, render: {fillStyle: color, strokeStyle: "#1e1b16", lineWidth: 2}});
     Body.setAngle(body, Number(item.angle || 0) * Math.PI / 180); Body.setStatic(body, true); body.plugin.domino = {...meta, color: item.color || "ivory"};
     dominoModel.bodiesById[item.id] = body; dominoModel.dominoIds.push(item.id); if (meta.loose) dominoModel.looseIds.push(item.id); return body;
@@ -3107,19 +3489,53 @@ function setupDominoPhysics(state, board) {
   (state.board?.loose || []).forEach((item, index) => bodies.push(createDomino(item, {loose: true, index})));
   Composite.add(engine.world, bodies); dominoModel.initial = snapshotDominoBodies(); dominoModel.preRun = {};
   const render = Render.create({element: board, engine, options: {width: 720, height: 410, wireframes: false, background: "transparent", pixelRatio: 1}});
-  dominoModel.render = render; Render.run(render); Events.on(render, "afterRender", drawDominoDetails); Events.on(engine, "collisionStart", recordDominoCollisions);
+  dominoModel.render = render; Render.run(render); Events.on(render, "afterRender", drawDominoDetails);
+  Events.on(engine, "collisionStart", recordDominoCollisions);
+  Events.on(engine, "collisionActive", recordDominoCollisions);
   const canvas = render.canvas; canvas.className = "domino-physics-canvas";
   const point = (event) => { const rect = canvas.getBoundingClientRect(); return {x: (event.clientX - rect.left) * 720 / rect.width, y: (event.clientY - rect.top) * 410 / rect.height}; };
+  const interaction = state.control_condition?.interaction || "full";
+  const placeBody = (body, rawPoint, inputSource) => {
+    const next = {x: Math.max(18, Math.min(702, rawPoint.x)), y: Math.max(45, Math.min(392, rawPoint.y))};
+    const snapRadius = Number(state.board?.snap_radius_px || 0);
+    const guides = state.board?.target_guides || [];
+    if (snapRadius > 0 && guides.length) {
+      const nearest = guides.reduce((best, guide) => {
+        const distance = Math.hypot(Number(guide.x) - next.x, Number(guide.y) - next.y);
+        return !best || distance < best.distance ? {guide, distance} : best;
+      }, null);
+      if (nearest && nearest.distance <= snapRadius) {
+        next.x = Number(nearest.guide.x);
+        next.y = Number(nearest.guide.y);
+        Matter.Body.setAngle(body, Number(nearest.guide.angle || 0) * Math.PI / 180);
+      }
+    }
+    Matter.Body.setPosition(body, next);
+    dominoModel.placementSources[body.label] = inputSource;
+  };
   let dragging = null;
   canvas.addEventListener("pointerdown", (event) => {
     if (dominoModel.mode !== "edit") return; event.preventDefault(); const p = point(event);
-    const hits = Matter.Query.point(dominoModel.looseIds.map((id) => dominoModel.bodiesById[id]), p); dragging = hits[hits.length - 1] || null; dominoModel.selectedId = dragging?.label || null;
+    const hits = Matter.Query.point(dominoModel.looseIds.map((id) => dominoModel.bodiesById[id]), p);
+    if (interaction === "simplified") {
+      const hit = hits[hits.length - 1] || null;
+      if (hit) dominoModel.selectedId = hit.label;
+      else if (dominoModel.selectedId) placeBody(dominoModel.bodiesById[dominoModel.selectedId], p, "domino_click_place");
+      setReadout("", "idle"); setDominoControls(); return;
+    }
+    dragging = hits[hits.length - 1] || null; dominoModel.selectedId = dragging?.label || null;
     if (dragging) canvas.setPointerCapture(event.pointerId); setReadout("", "idle"); setDominoControls();
   });
   canvas.addEventListener("pointermove", (event) => {
     if (!dragging || dominoModel.mode !== "edit") return; const p = point(event); Matter.Body.setPosition(dragging, {x: Math.max(18, Math.min(702, p.x)), y: Math.max(45, Math.min(392, p.y))});
   });
-  const release = (event) => { if (dragging && canvas.hasPointerCapture(event.pointerId)) canvas.releasePointerCapture(event.pointerId); dragging = null; };
+  const release = (event) => {
+    if (dragging) {
+      placeBody(dragging, {x: dragging.position.x, y: dragging.position.y}, "domino_drag");
+      if (canvas.hasPointerCapture(event.pointerId)) canvas.releasePointerCapture(event.pointerId);
+    }
+    dragging = null;
+  };
   canvas.addEventListener("pointerup", release); canvas.addEventListener("pointercancel", release);
   canvas.addEventListener("dblclick", () => { if (!dominoModel.selectedId || dominoModel.mode !== "edit") return; const selected = dominoModel.bodiesById[dominoModel.selectedId]; Matter.Body.rotate(selected, 15 * Math.PI / 180); setDominoControls(); });
 }
@@ -3131,12 +3547,13 @@ function rotateSelectedDomino(degrees) {
 
 function renderDominoAutopsy(state) {
   destroyDominoPhysics(); document.body.dataset.mechanic = "domino-autopsy"; document.body.dataset.cheatMode = isCheatMode() ? "true" : "false";
-  dominoModel.state = state; dominoModel.selectedId = null; dominoModel.collisionPairs = new Set(); dominoModel.physicsPassed = false; dominoModel.bellHit = false; dominoModel.bellPeakAngle = 0; dominoModel.bellSoundPlayed = false; dominoModel.mode = "edit";
+  const interaction = state.control_condition?.interaction || "full";
+  dominoModel.state = state; dominoModel.selectedId = null; dominoModel.placementSources = {}; dominoModel.collisionPairs = new Set(); dominoModel.physicsPassed = false; dominoModel.bellHit = false; dominoModel.bellPeakAngle = 0; dominoModel.bellSoundPlayed = false; dominoModel.mode = "edit";
   app.innerHTML = `
-    <section class="domino-captcha" data-challenge-id="${text(state.challenge_id)}">
+    <section class="domino-captcha" data-interaction="${text(interaction)}" data-challenge-id="${text(state.challenge_id)}">
       <header class="domino-head"><div><span>RIGID-BODY LAB № 06</span><h1>${text(state.prompt)}</h1></div><div class="domino-scope"><i></i><i></i><i></i></div></header>
       <section class="domino-board">
-        <div class="domino-ruler"></div><div class="domino-gap-label">BUILD THE BRIDGE</div><div class="domino-trace">PHYSICS READY / DRAG, ROTATE, RUN</div><div class="domino-selected">SELECT A COLORED DOMINO</div>
+        <div class="domino-ruler"></div><div class="domino-gap-label">BUILD THE BRIDGE</div><div class="domino-trace">PHYSICS READY / ${interaction === "simplified" ? "CLICK PIECE, CLICK BOARD" : "DRAG"}, ROTATE, RUN</div><div class="domino-selected">SELECT A COLORED DOMINO</div>
         <div class="domino-verdict" aria-live="polite" aria-atomic="true"></div>
       </section>
       <footer class="domino-controls"><div class="readout" data-status="idle"></div><button id="domino-rotate-left" type="button">↺ 15°</button><button id="domino-flip" type="button">FLIP 180°</button><button id="domino-rotate-right" type="button">15° ↻</button><button id="domino-reset" type="button">REWIND RUN</button><button id="domino-run" class="domino-run" type="button">▶ RUN PHYSICS</button><button id="domino-submit" class="domino-certify" type="button">${text(state.submit_label || "CERTIFY")}</button></footer>
@@ -3151,7 +3568,7 @@ function renderDominoAutopsy(state) {
   document.getElementById("domino-submit").addEventListener("click", async () => {
     const placements = {}; dominoModel.looseIds.forEach((id) => { const pose = dominoModel.preRun[id]; placements[id] = {x: Number(pose.x.toFixed(2)), y: Number(pose.y.toFixed(2)), angle: Number((pose.angle * 180 / Math.PI).toFixed(2))}; });
     const collisionPairs = Array.from(dominoModel.collisionPairs).map((key) => key.split("|"));
-    try { const response = await fetch("/result", {method: "POST", headers: {"content-type": "application/json"}, body: JSON.stringify({mechanic_id: state.mechanic_id, challenge_id: state.challenge_id, placements, physics_engine: "matter-js@0.20.0", bell_hit: dominoModel.bellHit, bell_peak_angle: Number(dominoModel.bellPeakAngle.toFixed(5)), run_completed: dominoModel.mode === "result", collision_pairs: collisionPairs})}); const outcome = await response.json(); if (outcome.passed === true) { setReadout("PASS", "passed"); } else if (outcome.passed === false) { if (outcome.state) renderDominoAutopsy(outcome.state); setReadout("FAIL", "error"); } } catch (_error) { setReadout("FAIL", "error"); }
+    try { const response = await fetch("/result", {method: "POST", headers: {"content-type": "application/json"}, body: JSON.stringify({mechanic_id: state.mechanic_id, challenge_id: state.challenge_id, placements, placement_sources: dominoModel.placementSources, physics_engine: "matter-js@0.20.0", bell_hit: dominoModel.bellHit, bell_peak_angle: Number(dominoModel.bellPeakAngle.toFixed(5)), run_completed: dominoModel.mode === "result", collision_pairs: collisionPairs})}); const outcome = await response.json(); if (outcome.passed === true) { setReadout("PASS", "passed"); } else if (outcome.passed === false) { if (outcome.state) renderDominoAutopsy(outcome.state); setReadout("FAIL", "error"); } } catch (_error) { setReadout("FAIL", "error"); }
   });
   setDominoControls(); installCheatPanel();
 }
@@ -3235,42 +3652,142 @@ function renderPopupExorcist(state) {
   }); installCheatPanel();
 }
 
-function ritualPush(eventName) {
+function funeralParameters() {
+  return funeralModel.state?.control_condition?.difficulty_parameters || {};
+}
+
+function funeralInteraction() {
+  return funeralModel.state?.control_condition?.interaction || "full";
+}
+
+function funeralRequiredEvents() {
+  const configured = funeralParameters().required_events;
+  return Array.isArray(configured) && configured.length ? configured.map((item) => String(item)) : ["inspect", "brush", "light", "gather", "offer"];
+}
+
+function funeralRequires(eventName) {
+  return funeralRequiredEvents().includes(eventName);
+}
+
+function funeralHas(eventName) {
+  return !funeralRequires(eventName) || funeralModel.events.includes(eventName);
+}
+
+function funeralGatherComplete() {
+  return funeralRequires("gather") ? funeralModel.events.includes("gather") : funeralHas("light");
+}
+
+function ritualPush(eventName, source) {
   setReadout("", "idle");
-  if (!funeralModel.events.includes(eventName)) funeralModel.events.push(eventName);
+  if (!funeralModel.events.includes(eventName)) {
+    funeralModel.events.push(eventName);
+    funeralModel.actionSurfaces.push({event: eventName, surface: source});
+  }
+}
+
+function funeralGuidanceText() {
+  if (funeralInteraction() !== "simplified" && String(funeralParameters().affordance_cues || "original") !== "guided") return "";
+  if (!funeralHas("inspect")) return "Inspect the memorial.";
+  if (!funeralHas("brush")) return "Brush the moss from the stone.";
+  if (!funeralHas("light")) return "Light the candle.";
+  if (funeralRequires("gather") && !funeralHas("gather")) return "Gather the tribute flowers.";
+  if (!funeralHas("offer")) return "Place the tribute in its resting place.";
+  return "";
 }
 
 function updateFuneralState() {
   const stage = document.querySelector(".funeral-stage"); if (!stage) return;
-  stage.dataset.inspected = String(funeralModel.events.includes("inspect")); stage.dataset.brushed = String(funeralModel.events.includes("brush")); stage.dataset.lit = String(funeralModel.events.includes("light")); stage.dataset.gathered = String(funeralModel.events.includes("gather")); stage.dataset.offered = String(funeralModel.events.includes("offer"));
-  const progress = document.querySelector(".moss-progress"); if (progress) progress.style.setProperty("--ritual-progress", `${Math.min(100, funeralModel.brushed.size / Number(funeralModel.state.brush_threshold || 17) * 100)}%`);
+  const brushed = funeralHas("brush");
+  const gathered = funeralGatherComplete();
+  const memoryOrder = String(funeralModel.state?.tribute_order_mode || "") === "memory";
+  stage.dataset.inspected = String(funeralHas("inspect")); stage.dataset.brushed = String(brushed); stage.dataset.lit = String(funeralHas("light")); stage.dataset.gathered = String(gathered); stage.dataset.offered = String(funeralHas("offer"));
+  stage.dataset.tributeVisible = String(brushed && (!memoryOrder || !funeralHas("light")));
+  const threshold = Number(funeralModel.state?.brush_threshold || 0);
+  const progress = document.querySelector(".moss-progress"); if (progress) progress.style.setProperty("--ritual-progress", `${threshold ? Math.min(100, funeralModel.brushed.size / threshold * 100) : 100}%`);
+  const guidance = document.querySelector(".ritual-guidance"); if (guidance) guidance.textContent = funeralGuidanceText();
+  document.querySelectorAll("[data-proxy-action]").forEach((button) => {
+    const action = String(button.dataset.proxyAction || "");
+    button.disabled = action === "inspect" ? funeralHas("inspect") : action === "brush" ? !funeralHas("inspect") || funeralHas("brush") : action === "light" ? !brushed || funeralHas("light") : action === "offer" ? !gathered || funeralHas("offer") : false;
+  });
+  document.querySelectorAll("[data-proxy-flower-id]").forEach((button) => { button.disabled = !funeralHas("light") || funeralHas("gather"); });
 }
 
 async function submitFuneral(state) {
   if (funeralModel.completed) return; funeralModel.completed = true;
-  try { const response = await fetch("/result", {method: "POST", headers: {"content-type": "application/json"}, body: JSON.stringify({mechanic_id: state.mechanic_id, challenge_id: state.challenge_id, events: funeralModel.events, brushed_cells: Array.from(funeralModel.brushed), gathered_flower_ids: Array.from(funeralModel.gathered), completed: funeralModel.events.includes("offer")})}); const outcome = await response.json(); if (outcome.passed === true) setReadout("PASS", "passed"); else if (outcome.passed === false) { if (outcome.state) renderFuneralRitual(outcome.state); setReadout("FAIL", "error"); } } catch (_error) { funeralModel.completed = false; setReadout("FAIL", "error"); }
+  try { const response = await fetch("/result", {method: "POST", headers: {"content-type": "application/json"}, body: JSON.stringify({mechanic_id: state.mechanic_id, challenge_id: state.challenge_id, interaction_mode: funeralInteraction(), events: funeralModel.events, action_surfaces: funeralModel.actionSurfaces, brushed_cells: Array.from(funeralModel.brushed), gathered_flower_ids: Array.from(funeralModel.gathered), flower_sources: funeralModel.flowerSources, completed: funeralModel.events.includes("offer")})}); const outcome = await response.json(); if (outcome.passed === true) setReadout("PASS", "passed"); else if (outcome.passed === false) { if (outcome.state) renderFuneralRitual(outcome.state); setReadout("FAIL", "error"); } } catch (_error) { funeralModel.completed = false; setReadout("FAIL", "error"); }
 }
 
-function brushMossCell(cell) {
-  if (!funeralModel.events.includes("inspect")) return;
+function brushMossCell(cell, source) {
+  if (!funeralHas("inspect") || !funeralRequires("brush")) return;
   const index = Number(cell.dataset.mossIndex); funeralModel.brushed.add(index); cell.dataset.cleared = "true";
-  if (funeralModel.brushed.size >= Number(funeralModel.state.brush_threshold || 17) && !funeralModel.events.includes("brush")) ritualPush("brush");
+  if (funeralModel.brushed.size >= Number(funeralModel.state.brush_threshold || 0) && !funeralModel.events.includes("brush")) ritualPush("brush", source);
   updateFuneralState();
+}
+
+function proxyBrushMoss() {
+  if (!funeralHas("inspect") || !funeralRequires("brush")) return;
+  const threshold = Number(funeralModel.state.brush_threshold || 0);
+  document.querySelectorAll(".moss-cell").forEach((cell, index) => { if (index < threshold) { funeralModel.brushed.add(index); cell.dataset.cleared = "true"; } });
+  ritualPush("brush", "simplified"); updateFuneralState();
+}
+
+function funeralFlowerIsNext(flower) {
+  const order = funeralModel.state?.tribute_order || [];
+  if (!order.length) return true;
+  return String(order[funeralModel.gathered.size] || "") === String(flower.dataset.flowerKind || "");
+}
+
+function gatherFuneralFlower(flower, source) {
+  if (!funeralHas("light") || !funeralRequires("gather") || funeralModel.gathered.has(flower.dataset.flowerId)) return;
+  if (!funeralFlowerIsNext(flower)) {
+    setReadout("THE STONE REJECTS THIS TRIBUTE", "error");
+    // Controlled order profiles deliberately turn a visible wrong flower into
+    // a normal rejected submission. The shared server archives the attempt,
+    // issues a fresh challenge, and the existing response path renders FAIL.
+    // Uncontrolled rituals have no tribute order, so their original behavior
+    // is unchanged.
+    if (funeralModel.state?.control_condition && (funeralModel.state?.tribute_order || []).length) submitFuneral(funeralModel.state);
+    return;
+  }
+  funeralModel.gathered.add(flower.dataset.flowerId); funeralModel.flowerSources[flower.dataset.flowerId] = source; flower.dataset.picked = "true";
+  if (funeralModel.gathered.size === (funeralModel.state?.flowers || []).length) ritualPush("gather", source);
+  updateFuneralState();
+}
+
+function offerFuneralBouquet(state, source) {
+  if (!funeralGatherComplete() || funeralHas("offer")) return;
+  ritualPush("offer", source); updateFuneralState(); setTimeout(() => submitFuneral(state), 700);
 }
 
 function renderFuneralRitual(state) {
   if (funeralModel.pointerUpHandler) window.removeEventListener("pointerup", funeralModel.pointerUpHandler);
   document.body.dataset.mechanic = "funeral-ritual"; document.body.dataset.cheatMode = isCheatMode() ? "true" : "false";
-  funeralModel.state = state; funeralModel.events = []; funeralModel.brushed = new Set(); funeralModel.gathered = new Set(); funeralModel.brushing = false; funeralModel.completed = false;
-  app.innerHTML = `<section class="funeral-captcha"><header class="funeral-head"><span>MEMORIAL № 10</span><h1>${text(state.prompt)}</h1></header><section class="funeral-stage" data-inspected="false" data-brushed="false" data-lit="false" data-gathered="false" data-offered="false"><div class="rain rain-a"></div><div class="rain rain-b"></div><div class="grave-moon"></div><div class="grave-hill"></div><button type="button" class="tombstone"><span class="epitaph">${text(state.epitaph)}</span><div class="moss-grid">${Array.from({length: state.moss_cells || 24}, (_, index) => `<i class="moss-cell" data-moss-index="${index}" data-cleared="false"></i>`).join("")}</div><div class="moss-progress"></div></button><button type="button" class="grave-candle" aria-label="Candle"><i></i><b></b></button><div class="flower-field">${(state.flowers || []).map((flower) => `<button type="button" class="ritual-flower flower-${text(flower.kind)}" data-flower-id="${text(flower.id)}" style="left:${flower.x}%;top:${flower.y}%" aria-label="${text(flower.kind)}"><i></i><b></b></button>`).join("")}</div><div class="ritual-brush"><i></i><b></b></div><div class="grave-bed"></div><div class="ritual-bouquet" draggable="true"><i></i><i></i><i></i><b></b></div><div class="ritual-whisper">look closer</div></section><footer class="funeral-foot"><div class="readout" data-status="idle"></div><div class="ritual-stars">✦　·　✦</div></footer>${cheatPanelTemplate()}</section>`;
-  const tombstone = document.querySelector(".tombstone"); tombstone.addEventListener("click", () => { ritualPush("inspect"); updateFuneralState(); });
-  document.querySelectorAll(".moss-cell").forEach((cell) => { cell.addEventListener("pointerdown", (event) => { event.preventDefault(); funeralModel.brushing = true; brushMossCell(cell); }); cell.addEventListener("pointerenter", () => { if (funeralModel.brushing) brushMossCell(cell); }); });
+  funeralModel.state = state; funeralModel.events = []; funeralModel.actionSurfaces = []; funeralModel.brushed = new Set(); funeralModel.gathered = new Set(); funeralModel.flowerSources = {}; funeralModel.brushing = false; funeralModel.completed = false;
+  const interaction = funeralInteraction(); const parameters = funeralParameters();
+  const offeringWidth = Number(parameters.offering_width || 270); const offeringHeight = Number(parameters.offering_height || 83);
+  const offeringStyle = offeringWidth === 270 && offeringHeight === 83 ? "" : ` style="--grave-bed-width:${offeringWidth}px;--grave-bed-height:${offeringHeight}px;--grave-bed-left:${385 - offeringWidth / 2}px"`;
+  const tributeOrder = (state.tribute_order || []).map((kind) => `<i class="tribute-token flower-${text(kind)}" aria-label="${text(kind)}"></i>`).join("");
+  const guidance = String(parameters.affordance_cues || "original") === "guided" ? `<div class="ritual-guidance" aria-live="polite"></div>` : "";
+  const fullFlowers = (state.flowers || []).map((flower) => `<button type="button" class="ritual-flower flower-${text(flower.kind)}" data-flower-id="${text(flower.id)}" data-flower-kind="${text(flower.kind)}" style="left:${flower.x}%;top:${flower.y}%" aria-label="${text(flower.kind)}"><i></i><b></b></button>`).join("");
+  const proxyControls = interaction === "simplified" ? `<section class="funeral-proxy-controls" aria-label="Memorial action controls"><button type="button" data-proxy-action="inspect">INSPECT MEMORIAL</button><button type="button" data-proxy-action="brush">BRUSH MOSS</button><button type="button" data-proxy-action="light">LIGHT CANDLE</button><div class="proxy-flower-row" aria-label="Gather flower controls">${(state.flowers || []).map((flower) => `<button type="button" class="proxy-flower flower-${text(flower.kind)}" data-proxy-flower-id="${text(flower.id)}" aria-label="Gather ${text(flower.kind)} flower"><i></i></button>`).join("")}</div><button type="button" data-proxy-action="offer">OFFER TRIBUTE</button></section>` : "";
+  app.innerHTML = `<section class="funeral-captcha" data-interaction="${text(interaction)}"><header class="funeral-head"><span>MEMORIAL № 10</span><h1>${text(state.prompt)}</h1></header><section class="funeral-stage" data-inspected="false" data-brushed="false" data-lit="false" data-gathered="false" data-offered="false" data-tribute-visible="false"><div class="rain rain-a"></div><div class="rain rain-b"></div><div class="grave-moon"></div><div class="grave-hill"></div><button type="button" class="tombstone"><span class="epitaph">${text(state.epitaph)}</span><div class="moss-grid">${Array.from({length: state.moss_cells || 0}, (_, index) => `<i class="moss-cell" data-moss-index="${index}" data-cleared="false"></i>`).join("")}</div><div class="moss-progress"></div>${tributeOrder ? `<div class="tribute-order" aria-label="Tribute order">${tributeOrder}</div>` : ""}</button><button type="button" class="grave-candle" aria-label="Candle"><i></i><b></b></button><div class="flower-field">${fullFlowers}</div><div class="ritual-brush"><i></i><b></b></div><div class="grave-bed"${offeringStyle}></div><div class="ritual-bouquet" draggable="${interaction === "full"}"><i></i><i></i><i></i><b></b></div><div class="ritual-whisper">look closer</div>${guidance}</section>${proxyControls}<footer class="funeral-foot"><div class="readout" data-status="idle"></div><div class="ritual-stars">✦　·　✦</div></footer>${cheatPanelTemplate()}</section>`;
+  const tombstone = document.querySelector(".tombstone");
+  if (interaction === "full") tombstone.addEventListener("click", () => { ritualPush("inspect", "full"); updateFuneralState(); });
+  document.querySelectorAll(".moss-cell").forEach((cell) => { if (interaction !== "full") return; cell.addEventListener("pointerdown", (event) => { event.preventDefault(); funeralModel.brushing = true; brushMossCell(cell, "full"); }); cell.addEventListener("pointerenter", () => { if (funeralModel.brushing) brushMossCell(cell, "full"); }); });
   funeralModel.pointerUpHandler = () => { funeralModel.brushing = false; };
   window.addEventListener("pointerup", funeralModel.pointerUpHandler);
-  document.querySelector(".grave-candle").addEventListener("click", () => { if (!funeralModel.events.includes("brush")) return; ritualPush("light"); updateFuneralState(); });
-  document.querySelectorAll(".ritual-flower").forEach((flower) => flower.addEventListener("click", () => { if (!funeralModel.events.includes("light")) return; funeralModel.gathered.add(flower.dataset.flowerId); flower.dataset.picked = "true"; if (funeralModel.gathered.size === state.flowers.length) ritualPush("gather"); updateFuneralState(); }));
-  const bouquet = document.querySelector(".ritual-bouquet"); bouquet.addEventListener("dragstart", (event) => event.dataTransfer.setData("text/plain", "bouquet"));
-  const bed = document.querySelector(".grave-bed"); bed.addEventListener("dragover", (event) => event.preventDefault()); bed.addEventListener("drop", (event) => { event.preventDefault(); if (!funeralModel.events.includes("gather")) return; ritualPush("offer"); updateFuneralState(); setTimeout(() => submitFuneral(state), 700); });
+  if (interaction === "full") {
+    document.querySelector(".grave-candle").addEventListener("click", () => { if (!funeralHas("brush")) return; ritualPush("light", "full"); updateFuneralState(); });
+    document.querySelectorAll(".ritual-flower").forEach((flower) => flower.addEventListener("click", () => gatherFuneralFlower(flower, "full")));
+    const bouquet = document.querySelector(".ritual-bouquet"); bouquet.addEventListener("dragstart", (event) => event.dataTransfer.setData("text/plain", "bouquet"));
+    const bed = document.querySelector(".grave-bed"); bed.addEventListener("dragover", (event) => event.preventDefault()); bed.addEventListener("drop", (event) => { event.preventDefault(); offerFuneralBouquet(state, "full"); });
+  } else {
+    document.querySelector('[data-proxy-action="inspect"]').addEventListener("click", () => { ritualPush("inspect", "simplified"); updateFuneralState(); });
+    document.querySelector('[data-proxy-action="brush"]').addEventListener("click", proxyBrushMoss);
+    document.querySelector('[data-proxy-action="light"]').addEventListener("click", () => { if (!funeralHas("brush")) return; ritualPush("light", "simplified"); updateFuneralState(); });
+    document.querySelectorAll("[data-proxy-flower-id]").forEach((proxy) => proxy.addEventListener("click", () => { const flower = document.querySelector(`.ritual-flower[data-flower-id="${CSS.escape(proxy.dataset.proxyFlowerId)}"]`); if (flower) gatherFuneralFlower(flower, "simplified"); }));
+    document.querySelector('[data-proxy-action="offer"]').addEventListener("click", () => offerFuneralBouquet(state, "simplified"));
+  }
   updateFuneralState(); installCheatPanel();
 }
 

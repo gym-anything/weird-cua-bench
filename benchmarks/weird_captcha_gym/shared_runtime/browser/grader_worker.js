@@ -28,11 +28,20 @@ import types
 _browser_grader_module = types.ModuleType("weird_cua_browser_grader")
 exec(browser_grader_source, _browser_grader_module.__dict__)
 
-def _weird_cua_grade_json(payload_json, truth_json, state_json):
+def _weird_cua_grade_json(payload_json, truth_json, state_json, context_json):
     payload = json.loads(payload_json)
     truth = json.loads(truth_json)
     state = json.loads(state_json)
-    grade = _browser_grader_module.grade(payload, truth, state)
+    context = json.loads(context_json) if context_json else None
+    if getattr(_browser_grader_module, "ACCEPTS_BROWSER_RUNTIME_CONTEXT", False):
+        grade = _browser_grader_module.grade(
+            payload,
+            truth,
+            state,
+            runtime_context=context,
+        )
+    else:
+        grade = _browser_grader_module.grade(payload, truth, state)
     if not isinstance(grade, dict):
         grade = {"graded": True, "passed": False, "feedback": "invalid grader result"}
     grade.setdefault("graded", True)
@@ -46,10 +55,15 @@ def _weird_cua_grade_json(payload_json, truth_json, state_json):
 }
 
 self.addEventListener("message", async (event) => {
-  const {id, graderUrl, payload, groundTruth, publicState} = event.data || {};
+  const {id, graderUrl, payload, groundTruth, publicState, runtimeContext} = event.data || {};
   try {
     const grader = await loadGrader(graderUrl);
-    const raw = grader(JSON.stringify(payload), JSON.stringify(groundTruth), JSON.stringify(publicState));
+    const raw = grader(
+      JSON.stringify(payload),
+      JSON.stringify(groundTruth),
+      JSON.stringify(publicState),
+      runtimeContext ? JSON.stringify(runtimeContext) : "",
+    );
     self.postMessage({id, ok: true, grade: JSON.parse(raw)});
   } catch (error) {
     self.postMessage({id, ok: false, error: error?.stack || error?.message || String(error)});

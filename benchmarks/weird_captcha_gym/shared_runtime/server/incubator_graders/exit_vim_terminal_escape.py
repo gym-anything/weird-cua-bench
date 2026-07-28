@@ -5,6 +5,7 @@ from typing import Any
 
 
 MECHANIC_ID = "exit_vim_terminal_escape"
+LAYER_NAMES = {"pager", "job", "ssh", "mux"}
 
 
 def _layer_name(state: dict[str, Any]) -> str:
@@ -223,6 +224,69 @@ def _apply_event(state: dict[str, Any], event: dict[str, Any]) -> None:
             state["mux_pending"] = False
 
 
+def _apply_proxy_event(state: dict[str, Any], event: dict[str, Any]) -> None:
+    """Replay the visible simplified controls without trusting a final claim."""
+    action = str(event["action"])
+    current = _layer_name(state)
+    if action == "next_buffer":
+        if current != "editor":
+            raise ValueError("buffer control is unavailable outside the editor")
+        _switch_buffer(state, 1)
+        return
+    if action == "previous_buffer":
+        if current != "editor":
+            raise ValueError("buffer control is unavailable outside the editor")
+        _switch_buffer(state, -1)
+        return
+    if action == "select_line":
+        row = event.get("row")
+        if current != "editor" or not _editor_writable(state) or isinstance(row, bool) or not isinstance(row, int):
+            raise ValueError("line selection is invalid")
+        if row not in range(len(state["buffer"])):
+            raise ValueError("selected line is outside the manifest")
+        state["row"] = row
+        state["col"] = 0
+        state["mode"] = "normal"
+        state["pending"] = ""
+        return
+    if action == "replace_line":
+        row = event.get("row")
+        value = event.get("value")
+        if current != "editor" or not _editor_writable(state) or isinstance(row, bool) or not isinstance(row, int):
+            raise ValueError("line replacement is invalid")
+        if row != state["row"] or row not in range(len(state["buffer"])):
+            raise ValueError("line replacement does not match the selected manifest row")
+        if not isinstance(value, str) or "\n" in value or "\r" in value or not value:
+            raise ValueError("replacement text is invalid")
+        _push_undo(state)
+        state["buffer"][row] = value
+        state["col"] = len(value)
+        state["clear_count"] += 1
+        state["inserted_chars"] += len(value)
+        state["mode"] = "normal"
+        state["pending"] = ""
+        return
+    if action == "write_and_quit":
+        state["command_history"].append("wq")
+        if (
+            current == "editor"
+            and _editor_writable(state)
+            and state["visited_buffers"] == set(range(len(state["reference_buffers"]) + 1))
+            and state["buffer"] == state["target_buffer"]
+        ):
+            state["saved"] = True
+            state["layer_index"] = 0
+        else:
+            state["command_errors"] += 1
+        return
+    if action == "exit_active_layer":
+        if current not in LAYER_NAMES:
+            raise ValueError("exit control is unavailable in this mode")
+        _advance_layer(state)
+        return
+    raise ValueError(f"unknown proxy action {action!r}")
+
+
 def _initial_state(ground_truth: dict[str, Any]) -> dict[str, Any]:
     initial = ground_truth.get("initial_buffer")
     target = ground_truth.get("target_buffer")
@@ -230,12 +294,14 @@ def _initial_state(ground_truth: dict[str, Any]) -> dict[str, Any]:
     layers = ground_truth.get("layer_order")
     if not isinstance(initial, list) or not isinstance(target, list) or not isinstance(references, list) or not isinstance(layers, list):
         raise ValueError("terminal contract is malformed")
-    if len(initial) != len(target) or len(initial) != 6 or len(references) != 3:
+    if len(initial) != len(target) or len(initial) not in {2, 4, 6, 8} or len(references) * 2 != len(initial):
         raise ValueError("multi-buffer terminal shape is invalid")
     if not all(isinstance(item, str) for item in [*initial, *target, *layers]):
         raise ValueError("terminal contract contains non-text values")
     if any(not isinstance(item, dict) or not isinstance(item.get("name"), str) or not isinstance(item.get("lines"), list) or not all(isinstance(line, str) for line in item["lines"]) for item in references):
         raise ValueError("reference-buffer contract is malformed")
+    if not 1 <= len(layers) <= len(LAYER_NAMES) or len(set(layers)) != len(layers) or not set(layers) <= LAYER_NAMES:
+        raise ValueError("terminal layer contract is malformed")
     return {
         "buffer": list(initial),
         "target_buffer": list(target),
@@ -274,6 +340,27 @@ def grade(payload: dict[str, Any], ground_truth: dict[str, Any], public_state: d
     for field in ("initial_buffer", "target_buffer", "reference_buffers", "layer_order", "host"):
         if public_state.get(field) != ground_truth.get(field):
             return {"graded": True, "passed": False, "feedback": f"public/private terminal {field} contract skew"}
+    condition = ground_truth.get("control_condition")
+    if condition is not None:
+        if public_state.get("control_condition") != condition:
+            return {"graded": True, "passed": False, "feedback": "public terminal control condition differs from replay contract"}
+        if not isinstance(condition, dict) or not isinstance(condition.get("difficulty_parameters"), dict):
+            return {"graded": True, "passed": False, "feedback": "terminal control condition is malformed"}
+        interaction = str(condition.get("interaction") or "")
+        expected_source = {"simplified": "proxy_controls", "full": "keyboard"}.get(interaction)
+        if expected_source is None:
+            return {"graded": True, "passed": False, "feedback": "terminal interaction condition is invalid"}
+        parameters = condition["difficulty_parameters"]
+        actual_parameters = {
+            "field_count": len(ground_truth.get("target_buffer") or []),
+            "reference_count": len(ground_truth.get("reference_buffers") or []),
+            "layer_count": len(ground_truth.get("layer_order") or []),
+        }
+        if any(parameters.get(key) != value for key, value in actual_parameters.items()):
+            return {"graded": True, "passed": False, "feedback": "terminal difficulty parameters differ from generated contract"}
+    else:
+        interaction = ""
+        expected_source = None
     try:
         state = _initial_state(ground_truth)
     except ValueError as exc:
@@ -282,21 +369,46 @@ def grade(payload: dict[str, Any], ground_truth: dict[str, Any], public_state: d
     events = payload.get("events")
     if not isinstance(events, list) or not (1 <= len(events) <= 2000):
         return {"graded": True, "passed": False, "feedback": "keystroke transcript is missing or too long"}
-    allowed_fields = {"sequence", "key", "ctrl", "shift", "alt", "meta", "layer_before", "mode_before", "layer_after", "mode_after"}
+    keyboard_fields = {"sequence", "key", "ctrl", "shift", "alt", "meta", "layer_before", "mode_before", "layer_after", "mode_after"}
+    proxy_common = {"sequence", "action", "input_source", "layer_before", "mode_before", "layer_after", "mode_after"}
+    proxy_fields = {
+        "next_buffer": proxy_common,
+        "previous_buffer": proxy_common,
+        "select_line": proxy_common | {"row"},
+        "replace_line": proxy_common | {"row", "value"},
+        "write_and_quit": proxy_common,
+        "exit_active_layer": proxy_common,
+    }
     for sequence, event in enumerate(events, start=1):
-        if not isinstance(event, dict) or event.get("sequence") != sequence or set(event) != allowed_fields:
-            return {"graded": True, "passed": False, "feedback": f"key event {sequence} has invalid sequence or schema"}
-        key = event.get("key")
-        if not isinstance(key, str) or not key or len(key) > 24 or any(not isinstance(event.get(flag), bool) for flag in ("ctrl", "shift", "alt", "meta")):
-            return {"graded": True, "passed": False, "feedback": f"key event {sequence} has invalid key data"}
+        if not isinstance(event, dict) or event.get("sequence") != sequence:
+            return {"graded": True, "passed": False, "feedback": f"terminal event {sequence} has invalid sequence"}
+        is_proxy = "action" in event
+        if is_proxy:
+            action = str(event.get("action") or "")
+            if set(event) != proxy_fields.get(action, set()):
+                return {"graded": True, "passed": False, "feedback": f"proxy event {sequence} has invalid schema"}
+            if expected_source != "proxy_controls" or event.get("input_source") != expected_source:
+                return {"graded": True, "passed": False, "feedback": f"proxy event {sequence} uses the wrong interaction input"}
+        else:
+            required_fields = keyboard_fields | ({"input_source"} if expected_source is not None else set())
+            if set(event) != required_fields:
+                return {"graded": True, "passed": False, "feedback": f"key event {sequence} has invalid sequence or schema"}
+            if expected_source is not None and (expected_source != "keyboard" or event.get("input_source") != expected_source):
+                return {"graded": True, "passed": False, "feedback": f"key event {sequence} uses the wrong interaction input"}
+            key = event.get("key")
+            if not isinstance(key, str) or not key or len(key) > 24 or any(not isinstance(event.get(flag), bool) for flag in ("ctrl", "shift", "alt", "meta")):
+                return {"graded": True, "passed": False, "feedback": f"key event {sequence} has invalid key data"}
         if event.get("layer_before") != _layer_name(state) or event.get("mode_before") != _mode_name(state):
-            return {"graded": True, "passed": False, "feedback": f"key event {sequence} disagrees before replay"}
+            return {"graded": True, "passed": False, "feedback": f"terminal event {sequence} disagrees before replay"}
         try:
-            _apply_event(state, event)
+            if is_proxy:
+                _apply_proxy_event(state, event)
+            else:
+                _apply_event(state, event)
         except ValueError as exc:
-            return {"graded": True, "passed": False, "feedback": f"key event {sequence}: {exc}"}
+            return {"graded": True, "passed": False, "feedback": f"terminal event {sequence}: {exc}"}
         if event.get("layer_after") != _layer_name(state) or event.get("mode_after") != _mode_name(state):
-            return {"graded": True, "passed": False, "feedback": f"key event {sequence} disagrees after replay"}
+            return {"graded": True, "passed": False, "feedback": f"terminal event {sequence} disagrees after replay"}
 
     final_state = {
         "buffer": list(state["buffer"]),

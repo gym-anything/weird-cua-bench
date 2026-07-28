@@ -32,6 +32,18 @@ def fail_once(page, state_dir: Path, out_dir: Path, mechanic: str) -> None:
 def solve(page, state_dir: Path, out_dir: Path, mechanic: str) -> None:
     truth = _read(state_dir / "ground_truth.json")
     route = [str(item) for item in truth["solution_path"]]
+    interaction = str((truth.get("control_condition") or {}).get("interaction") or "full")
+    direction_buttons = {"N": "N", "E": "E", "S": "S", "W": "W"}
+    if interaction == "simplified":
+        page.locator(".switch-proxy-arm").click()
+        for route_index, direction in enumerate(route):
+            page.locator(f".switch-direction-controls button[data-direction='{direction_buttons[direction]}']").click()
+            if route_index == len(route) // 2:
+                _screenshot(page, out_dir, mechanic, "active-moving-pressure-track")
+            page.wait_for_timeout(65)
+        expect(page.locator(".dead-switch-foot .readout")).to_contain_text("PASS", timeout=8000)
+        _screenshot(page, out_dir, mechanic, "pass")
+        return
     pad = page.locator(".pressure-pad")
     bounds = pad.bounding_box()
     if not bounds:

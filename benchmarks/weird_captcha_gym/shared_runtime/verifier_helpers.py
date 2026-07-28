@@ -457,6 +457,12 @@ def verify_cursor_constellation_hunt(exported: dict[str, Any]) -> dict[str, Any]
 
 def verify_parallel_grillmaster(exported: dict[str, Any]) -> dict[str, Any]:
     result = exported.get("result") or {}
+    if (
+        (exported.get("ground_truth") or {}).get("control_condition")
+        is not None
+        or isinstance(result.get("trusted_witness"), dict)
+    ):
+        return verify_external_mechanic(exported, "parallel_grillmaster")
     ground_truth = exported.get("ground_truth") or {}
     if not result:
         return {"passed": False, "score": 0, "feedback": "No submitted UI result found."}
@@ -496,63 +502,68 @@ def verify_rotating_keyboard(exported: dict[str, Any]) -> dict[str, Any]:
 
 def verify_slot_reel_capture(exported: dict[str, Any]) -> dict[str, Any]:
     result = exported.get("result") or {}
-    ground_truth = exported.get("ground_truth") or {}
     if not result:
         return {"passed": False, "score": 0, "feedback": "No submitted UI result found."}
-    expected = str(ground_truth.get("sequence") or "")
-    submitted = str(result.get("captured_sequence") or "").upper()
-    expected_reels = [str(item) for item in ground_truth.get("reel_ids") or []]
-    frozen_reels = [str(item) for item in result.get("frozen_reel_ids") or []]
-    correct = sum(1 for left, right in zip(expected, submitted) if left == right)
-    wrong_keys = int(result.get("wrong_keys") or 0)
-    max_strikes = int(ground_truth.get("max_strikes") or 3)
-    passed = bool(expected) and submitted == expected and frozen_reels == expected_reels and wrong_keys < max_strikes
-    return {"passed": passed, "score": 100 if passed else int(round(100 * correct / max(1, len(expected)))), "feedback": f"captured {correct}/{len(expected)}; strikes {wrong_keys}/{max_strikes}"}
+    grader_path = Path(__file__).resolve().parent / "server" / "legacy_browser_grader.py"
+    spec = importlib.util.spec_from_file_location(
+        "weird_captcha_slot_reel_export_grader",
+        grader_path,
+    )
+    if spec is None or spec.loader is None:
+        return {
+            "passed": False,
+            "score": 0,
+            "feedback": "cannot load Slot Reel task-time replay grader",
+        }
+    module = importlib.util.module_from_spec(spec)
+    try:
+        spec.loader.exec_module(module)
+        grade = module.grade(
+            result,
+            exported.get("ground_truth") or {},
+            exported.get("public_state") or {},
+        )
+    except Exception as exc:
+        return {
+            "passed": False,
+            "score": 0,
+            "feedback": f"slot-reel replay grader error: {exc}",
+        }
+    passed = grade.get("passed") is True
+    return {
+        "passed": passed,
+        "score": 100 if passed else 0,
+        "feedback": str(grade.get("feedback") or "slot-reel grade unavailable"),
+    }
 
 
 def verify_domino_autopsy(exported: dict[str, Any]) -> dict[str, Any]:
     result = exported.get("result") or {}
-    ground_truth = exported.get("ground_truth") or {}
     if not result:
         return {"passed": False, "score": 0, "feedback": "No submitted UI result found."}
-    loose_ids = set(str(item) for item in ground_truth.get("loose_ids") or [])
-    raw = result.get("placements") or {}
-    if set(str(key) for key in raw) != loose_ids:
-        return {"passed": False, "score": 0, "feedback": "not all loose dominoes were placed"}
+    grader_path = Path(__file__).resolve().parent / "server" / "legacy_browser_grader.py"
+    spec = importlib.util.spec_from_file_location(
+        "weird_captcha_domino_export_grader",
+        grader_path,
+    )
+    if spec is None or spec.loader is None:
+        return {"passed": False, "score": 0, "feedback": "cannot load Domino Autopsy replay grader"}
+    module = importlib.util.module_from_spec(spec)
     try:
-        for item in raw.values():
-            float(item.get("x")); float(item.get("y")); float(item.get("angle"))
-    except (TypeError, ValueError):
-        return {"passed": False, "score": 0, "feedback": "domino placement is invalid"}
-    expected = set(str(item) for item in ground_truth.get("expected_body_ids") or [])
-    first = str(ground_truth.get("first_body_id") or "")
-    bell = str(ground_truth.get("bell_body_id") or "bell-body")
-    minimum_swing = float(ground_truth.get("minimum_bell_swing_radians") or 0.03)
-    try:
-        bell_swing = abs(float(result.get("bell_peak_angle") or 0.0))
-    except (TypeError, ValueError):
-        bell_swing = 0.0
-    allowed = expected | {bell}
-    graph = {label: set() for label in allowed}
-    valid_pairs = 0
-    for pair in result.get("collision_pairs") or []:
-        if not isinstance(pair, list) or len(pair) != 2:
-            continue
-        left, right = str(pair[0]), str(pair[1])
-        if left not in allowed or right not in allowed or left == right:
-            continue
-        graph[left].add(right); graph[right].add(left); valid_pairs += 1
-    seen = set()
-    queue = [first] if first in graph else []
-    while queue:
-        current = queue.pop()
-        if current in seen:
-            continue
-        seen.add(current); queue.extend(graph[current] - seen)
-    connected = len((expected | {bell}) & seen)
-    passed = result.get("run_completed") is True and result.get("bell_hit") is True and bell_swing >= minimum_swing and str(result.get("physics_engine") or "") == "matter-js@0.20.0" and expected | {bell} <= seen
-    score = 100 if passed else int(round(100 * connected / max(1, len(expected) + 1)))
-    return {"passed": passed, "score": score, "feedback": f"rigid-body collision graph {connected}/{len(expected) + 1}; contacts {valid_pairs}; physical bell swing={bell_swing:.3f} rad"}
+        spec.loader.exec_module(module)
+        grade = module.grade(
+            result,
+            exported.get("ground_truth") or {},
+            exported.get("public_state") or {},
+        )
+    except Exception as exc:
+        return {"passed": False, "score": 0, "feedback": f"domino replay grader error: {exc}"}
+    passed = grade.get("passed") is True
+    return {
+        "passed": passed,
+        "score": 100 if passed else 0,
+        "feedback": str(grade.get("feedback") or "domino replay unavailable"),
+    }
 
 
 def verify_consequences_boss(exported: dict[str, Any]) -> dict[str, Any]:
@@ -596,11 +607,16 @@ def _verify_popup_exorcist_v1(exported: dict[str, Any]) -> dict[str, Any]:
 def verify_funeral_ritual(exported: dict[str, Any]) -> dict[str, Any]:
     result = exported.get("result") or {}
     ground_truth = exported.get("ground_truth") or {}
+    public_state = exported.get("public_state") or {}
     if not result:
         return {"passed": False, "score": 0, "feedback": "No submitted UI result found."}
+    condition = ground_truth.get("control_condition")
+    if condition is not None and str(result.get("challenge_id") or "") != str(ground_truth.get("challenge_id") or ""):
+        return {"passed": False, "score": 0, "feedback": "stale funeral challenge"}
     required_events = [str(item) for item in ground_truth.get("required_events") or []]
     events = [str(item) for item in result.get("events") or []]
-    max_cells = int(ground_truth.get("moss_cells") or 24)
+    max_cells_value = ground_truth.get("moss_cells")
+    max_cells = int(max_cells_value) if max_cells_value is not None else 24
     cells = set()
     for item in result.get("brushed_cells") or []:
         try:
@@ -609,12 +625,29 @@ def verify_funeral_ritual(exported: dict[str, Any]) -> dict[str, Any]:
             continue
         if 0 <= value < max_cells:
             cells.add(value)
-    flowers = set(str(item) for item in result.get("gathered_flower_ids") or [])
-    expected_flowers = set(str(item) for item in ground_truth.get("flower_ids") or [])
-    threshold = int(ground_truth.get("brush_threshold") or 17)
-    checks = [events == required_events, len(cells) >= threshold, flowers == expected_flowers, result.get("completed") is True]
+    flowers = [str(item) for item in result.get("gathered_flower_ids") or []]
+    expected_flowers = [str(item) for item in ground_truth.get("flower_ids") or []]
+    expected_order = [str(item) for item in ground_truth.get("flower_order") or []]
+    flowers_match = flowers == expected_order if expected_order else len(flowers) == len(expected_flowers) and set(flowers) == set(expected_flowers)
+    threshold_value = ground_truth.get("brush_threshold")
+    threshold = int(threshold_value) if threshold_value is not None else 17
+    interaction_ok = True
+    if condition is not None:
+        expected_surface = str(condition.get("interaction") or "")
+        surfaces = result.get("action_surfaces") or []
+        expected_actions = [{"event": event, "surface": expected_surface} for event in required_events]
+        flower_sources = result.get("flower_sources") or {}
+        interaction_ok = (
+            public_state.get("control_condition") == condition
+            and expected_surface in {"simplified", "full"}
+            and result.get("interaction_mode") == expected_surface
+            and surfaces == expected_actions
+            and isinstance(flower_sources, dict)
+            and all(flower_sources.get(flower_id) == expected_surface for flower_id in expected_flowers)
+        )
+    checks = [events == required_events, len(cells) >= threshold, flowers_match, result.get("completed") is True, interaction_ok]
     passed = all(checks)
-    return {"passed": passed, "score": 100 if passed else 25 * sum(checks), "feedback": f"ritual {len(events)}/{len(required_events)}; moss {len(cells)}/{threshold}; flowers {len(flowers)}/{len(expected_flowers)}"}
+    return {"passed": passed, "score": 100 if passed else int(round(100 * sum(checks) / len(checks))), "feedback": f"ritual {len(events)}/{len(required_events)}; moss {len(cells)}/{threshold}; flowers {len(flowers)}/{len(expected_flowers)}"}
 
 
 def verify_slime_commute(exported: dict[str, Any]) -> dict[str, Any]:

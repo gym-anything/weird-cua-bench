@@ -147,13 +147,21 @@
       model.pointerDown = false;
       record("complete", {tick: model.tick});
       document.querySelector(".eco-complete")?.setAttribute("data-visible", "true");
-      model.helpers.setReadout("ALL FIVE SANCTUARIES STABLE · READY TO CERTIFY", "idle");
+      model.helpers.setReadout(`ALL ${Object.keys(model.organisms).length} SANCTUARIES STABLE · READY TO CERTIFY`, "idle");
     }
     updateHUD();
   }
 
   function arenaPoint(event) {
     const box = model.canvas.getBoundingClientRect();
+    return [
+      Math.max(0, Math.min(model.state.arena.width, (event.clientX - box.left) / box.width * model.state.arena.width)),
+      Math.max(0, Math.min(model.state.arena.height, (event.clientY - box.top) / box.height * model.state.arena.height)),
+    ];
+  }
+
+  function coordinatePadPoint(event) {
+    const box = model.coordinatePad.getBoundingClientRect();
     return [
       Math.max(0, Math.min(model.state.arena.width, (event.clientX - box.left) / box.width * model.state.arena.width)),
       Math.max(0, Math.min(model.state.arena.height, (event.clientY - box.top) / box.height * model.state.arena.height)),
@@ -167,37 +175,72 @@
     model.fieldSelections += 1;
     record("field_select", {field, tick: model.tick});
     updateHUD();
-    model.helpers.setReadout(`${field} FIELD ARMED · HOLD THE POINTER IN THE ARENA`, "idle");
+    model.helpers.setReadout(model.interaction === "simplified" ? `${field} FIELD ARMED · HOLD AND MOVE ON THE COORDINATE PAD` : `${field} FIELD ARMED · HOLD THE POINTER IN THE ARENA`, "idle");
   }
 
   function pointerDown(event) {
-    if (!model?.selectedField || model.completed || model.submitting || model.terminal || model.calibrating) return;
+    if (model?.interaction !== "full" || !model.selectedField || model.completed || model.submitting || model.terminal || model.calibrating) return;
     event.preventDefault();
     clearFresh();
     model.lure = arenaPoint(event);
     model.active = true;
     model.pointerDown = true;
     model.pointerDrags += 1;
-    record("pointer_down", {tick: model.tick, field: model.selectedField, point: model.lure.map((value) => round(value, 3))});
+    record("pointer_down", {tick: model.tick, field: model.selectedField, input_source: "arena_pointer", point: model.lure.map((value) => round(value, 3))});
     model.canvas.setPointerCapture?.(event.pointerId);
     model.helpers.setReadout(`${model.selectedField} FIELD LIVE · ALL MOBILE ORGANISMS RESPOND`, "pending");
   }
 
   function pointerMove(event) {
-    if (!model) return;
+    if (!model || model.interaction !== "full") return;
     const point = arenaPoint(event);
     if (!model.pointerDown) { model.lure = point; return; }
     if (distance(point, model.lure) < Number(model.state.controls.pointer_sample_distance)) return;
     model.lure = point;
-    record("pointer_move", {tick: model.tick, field: model.selectedField, point: model.lure.map((value) => round(value, 3))});
+    record("pointer_move", {tick: model.tick, field: model.selectedField, input_source: "arena_pointer", point: model.lure.map((value) => round(value, 3))});
   }
 
   function pointerUp(event) {
-    if (!model?.pointerDown) return;
+    if (model?.interaction !== "full" || !model.pointerDown) return;
     model.lure = arenaPoint(event);
-    record("pointer_up", {tick: model.tick, field: model.selectedField, point: model.lure.map((value) => round(value, 3))});
+    record("pointer_up", {tick: model.tick, field: model.selectedField, input_source: "arena_pointer", point: model.lure.map((value) => round(value, 3))});
     model.pointerDown = false;
     model.active = false;
+    model.helpers.setReadout("FIELD RELEASED · INERTIA DECAYING", "idle");
+  }
+
+  function coordinatePadDown(event) {
+    if (!model || model.interaction !== "simplified" || !model.selectedField || model.completed || model.submitting || model.terminal || model.calibrating) return;
+    event.preventDefault();
+    clearFresh();
+    model.lure = coordinatePadPoint(event);
+    model.active = true;
+    model.pointerDown = true;
+    model.pointerDrags += 1;
+    record("pointer_down", {tick: model.tick, field: model.selectedField, input_source: "coordinate_pad", point: model.lure.map((value) => round(value, 3))});
+    event.currentTarget?.setPointerCapture?.(event.pointerId);
+    updateCoordinatePad();
+    model.helpers.setReadout(`${model.selectedField} FIELD LIVE · ALL MOBILE ORGANISMS RESPOND`, "pending");
+  }
+
+  function coordinatePadMove(event) {
+    if (!model || model.interaction !== "simplified") return;
+    const point = coordinatePadPoint(event);
+    if (!model.pointerDown) { model.lure = point; updateCoordinatePad(); return; }
+    if (distance(point, model.lure) < Number(model.state.controls.pointer_sample_distance)) return;
+    model.lure = point;
+    record("pointer_move", {tick: model.tick, field: model.selectedField, input_source: "coordinate_pad", point: model.lure.map((value) => round(value, 3))});
+    updateCoordinatePad();
+  }
+
+  function coordinatePadUp(event) {
+    if (!model || model.interaction !== "simplified" || !model.pointerDown) return;
+    event.preventDefault();
+    model.lure = coordinatePadPoint(event);
+    record("pointer_up", {tick: model.tick, field: model.selectedField, input_source: "coordinate_pad", point: model.lure.map((value) => round(value, 3))});
+    model.pointerDown = false;
+    model.active = false;
+    updateCoordinatePad();
     model.helpers.setReadout("FIELD RELEASED · INERTIA DECAYING", "idle");
   }
 
@@ -236,6 +279,15 @@
     document.querySelectorAll("[data-field]").forEach((button) => button.dataset.selected = button.dataset.field === model.selectedField ? "true" : "false");
     const ledger = document.getElementById("eco-organism-ledger");
     if (ledger) ledger.innerHTML = Object.values(model.organisms).map((item) => `<li data-captured="${item.captured}"><i style="--organism:${esc(item.color)}">${esc(item.label)}</i><span>${item.captured ? "SANCTUARY LOCKED" : "RESPONDING TO GLOBAL FIELD"}</span><b>${item.captured ? "STABLE" : "MOBILE"}</b></li>`).join("");
+    updateCoordinatePad();
+  }
+
+  function updateCoordinatePad() {
+    if (!model?.coordinatePad) return;
+    model.coordinatePad.dataset.armed = String(Boolean(model.selectedField));
+    model.coordinatePad.dataset.active = String(model.active);
+    model.coordinatePad.style.setProperty("--eco-lure-x", `${model.lure[0] / model.state.arena.width * 100}%`);
+    model.coordinatePad.style.setProperty("--eco-lure-y", `${model.lure[1] / model.state.arena.height * 100}%`);
   }
 
   function draw(now) {
@@ -278,6 +330,8 @@
       mechanic_id: model.state.mechanic_id,
       task_id: model.state.task_id,
       challenge_id: model.state.challenge_id,
+      interaction: model.interaction,
+      control_condition: model.state.control_condition || null,
       events: model.events,
       final_organisms: snapshot(),
       tick: model.tick,
@@ -309,18 +363,37 @@
     if (model?.timer) clearInterval(model.timer);
     document.body.dataset.mechanic = "impossible-ecology";
     document.body.dataset.cheatMode = helpers.isCheatMode() ? "true" : "false";
-    helpers.app.innerHTML = `<section class="impossible-ecology-captcha" data-challenge-id="${esc(state.challenge_id)}" data-fresh-failure="false" data-captured="0" style="--eco-grid:${esc(state.palette.grid)};--eco-ink:${esc(state.palette.ink)};--eco-danger:${esc(state.palette.danger)}"><header class="eco-head"><div><span>IMPOSSIBLE ECOLOGY / COUPLED FIELD ${esc(state.challenge_id)}</span><h1>${esc(state.prompt)}</h1></div><aside><span>STABLE SANCTUARIES</span><b id="eco-capture-count">0 / 5</b><i>TICK <strong id="eco-tick-count">0000</strong></i></aside></header><main class="eco-main"><section class="eco-arena-shell"><canvas class="eco-arena" width="${state.arena.width}" height="${state.arena.height}"></canvas><div class="eco-arena-note">SELECT FIELD · HOLD / MOVE POINTER · RELEASE TO DAMP</div><div class="eco-complete" data-visible="false"><b>ALL SANCTUARIES STABLE</b><span>CERTIFY THE LIVING FIELD</span></div></section><aside class="eco-console"><p class="eco-console-label">GLOBAL FIELD CONSOLE</p><h2>One pointer. Five incompatible responses.</h2><div class="eco-fields">${state.fields.map((field, index) => `<button type="button" data-field="${esc(field)}"><i>${String(index + 1).padStart(2, "0")}</i><b>${esc(field)}</b><span>ARM FIELD</span></button>`).join("")}</div><button type="button" class="eco-calibrate">RUN THREE-FIELD CALIBRATION FILM</button><ol id="eco-organism-ledger" class="eco-ledger"></ol><div class="eco-rules">${state.rules.map((rule) => `<p>${esc(rule)}</p>`).join("")}</div></aside></main><footer class="eco-foot"><button type="button" class="eco-reset">RESET ECOSYSTEM</button><div><span>FIELD STATUS</span><div class="readout" data-status="idle">FIELD LAB ACTIVE · CALIBRATE OR INTERVENE</div></div><button type="button" class="eco-submit">${esc(state.submit_label)}</button></footer>${helpers.cheatPanelTemplate()}</section>`;
-    model = {state, helpers, canvas: document.querySelector(".eco-arena"), targets: new Map(state.targets.map((target) => [target.organism_id, target])), organisms: {}, selectedField: null, lure: [state.arena.width / 2, state.arena.height / 2], active: false, pointerDown: false, tick: 0, completed: false, events: [], fieldSelections: 0, pointerDrags: 0, calibrationRuns: 0, resets: 0, calibrating: null, submitting: false, terminal: false, raf: null, timer: null};
+    const interaction = state.control_condition?.interaction || "full";
+    const organismCount = state.organisms.length;
+    const coordinateControls = interaction === "simplified" ? `<section class="eco-coordinate-control"><p>FIELD-LURE COORDINATE PAD</p><span>Hold and move anywhere in this scaled arena map. Every position maps directly to the same field-lure coordinate as the full arena.</span><div class="eco-coordinate-pad" data-armed="false" data-active="false" aria-label="field-lure coordinate pad"><i aria-hidden="true"></i><b>ARENA X 0–1000 · Y 0–430</b></div></section>` : "";
+    const rules = interaction === "simplified"
+      ? ["Select one global field, then hold and move anywhere in the coordinate pad.", "The pad maps directly to arena lure coordinates; every uncaptured organism still responds at once.", "A matching sanctuary locks an organism permanently. Stabilize all organisms."]
+      : state.rules;
+    const arenaNote = interaction === "simplified"
+      ? "SELECT FIELD · HOLD / MOVE COORDINATE PAD · RELEASE TO DAMP"
+      : "SELECT FIELD · HOLD / MOVE POINTER · RELEASE TO DAMP";
+    const consoleHeading = interaction === "simplified"
+      ? "One field. A direct coordinate pad."
+      : `One pointer. ${organismCount} incompatible responses.`;
+    helpers.app.innerHTML = `<section class="impossible-ecology-captcha" data-interaction="${esc(interaction)}" data-challenge-id="${esc(state.challenge_id)}" data-fresh-failure="false" data-captured="0" style="--eco-grid:${esc(state.palette.grid)};--eco-ink:${esc(state.palette.ink)};--eco-danger:${esc(state.palette.danger)}"><header class="eco-head"><div><span>IMPOSSIBLE ECOLOGY / COUPLED FIELD ${esc(state.challenge_id)}</span><h1>${esc(state.prompt)}</h1></div><aside><span>STABLE SANCTUARIES</span><b id="eco-capture-count">0 / ${organismCount}</b><i>TICK <strong id="eco-tick-count">0000</strong></i></aside></header><main class="eco-main"><section class="eco-arena-shell"><canvas class="eco-arena" width="${state.arena.width}" height="${state.arena.height}"></canvas><div class="eco-arena-note">${arenaNote}</div><div class="eco-complete" data-visible="false"><b>ALL ${organismCount} SANCTUARIES STABLE</b><span>CERTIFY THE LIVING FIELD</span></div></section><aside class="eco-console"><p class="eco-console-label">GLOBAL FIELD CONSOLE</p><h2>${consoleHeading}</h2><div class="eco-fields">${state.fields.map((field, index) => `<button type="button" data-field="${esc(field)}"><i>${String(index + 1).padStart(2, "0")}</i><b>${esc(field)}</b><span>ARM FIELD</span></button>`).join("")}</div><button type="button" class="eco-calibrate">RUN ${state.fields.length}-FIELD CALIBRATION FILM</button>${coordinateControls}<ol id="eco-organism-ledger" class="eco-ledger"></ol><div class="eco-rules">${rules.map((rule) => `<p>${esc(rule)}</p>`).join("")}</div></aside></main><footer class="eco-foot"><button type="button" class="eco-reset">RESET ECOSYSTEM</button><div><span>FIELD STATUS</span><div class="readout" data-status="idle">FIELD LAB ACTIVE · CALIBRATE OR INTERVENE</div></div><button type="button" class="eco-submit">${esc(state.submit_label)}</button></footer>${helpers.cheatPanelTemplate()}</section>`;
+    model = {state, helpers, interaction, canvas: document.querySelector(".eco-arena"), coordinatePad: document.querySelector(".eco-coordinate-pad"), targets: new Map(state.targets.map((target) => [target.organism_id, target])), organisms: {}, selectedField: null, lure: [state.arena.width / 2, state.arena.height / 2], active: false, pointerDown: false, tick: 0, completed: false, events: [], fieldSelections: 0, pointerDrags: 0, calibrationRuns: 0, resets: 0, calibrating: null, submitting: false, terminal: false, raf: null, timer: null};
     model.organisms = initialOrganisms();
     window.impossibleEcologyModel = model;
     document.querySelectorAll("[data-field]").forEach((button) => button.addEventListener("click", () => selectField(button.dataset.field)));
     document.querySelector(".eco-calibrate")?.addEventListener("click", runCalibration);
     document.querySelector(".eco-reset")?.addEventListener("click", () => resetWorld(true));
     document.querySelector(".eco-submit")?.addEventListener("click", submit);
-    model.canvas.addEventListener("pointerdown", pointerDown);
-    model.canvas.addEventListener("pointermove", pointerMove);
-    model.canvas.addEventListener("pointerup", pointerUp);
-    model.canvas.addEventListener("pointercancel", pointerUp);
+    if (interaction === "full") {
+      model.canvas.addEventListener("pointerdown", pointerDown);
+      model.canvas.addEventListener("pointermove", pointerMove);
+      model.canvas.addEventListener("pointerup", pointerUp);
+      model.canvas.addEventListener("pointercancel", pointerUp);
+    } else {
+      model.coordinatePad.addEventListener("pointerdown", coordinatePadDown);
+      model.coordinatePad.addEventListener("pointermove", coordinatePadMove);
+      model.coordinatePad.addEventListener("pointerup", coordinatePadUp);
+      model.coordinatePad.addEventListener("pointercancel", coordinatePadUp);
+    }
     model.timer = setInterval(physicsTick, Number(state.controls.tick_ms));
     updateHUD();
     model.raf = requestAnimationFrame(draw);

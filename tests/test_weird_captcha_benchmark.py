@@ -75,6 +75,58 @@ class WeirdCaptchaBenchmarkTests(unittest.TestCase):
         self.assertIn("clockwork_clutch_safe_env", envs)
         self.assertIn("marionette_checkpoint_env", envs)
 
+    def test_all_environments_use_the_standard_full_hd_desktop(self) -> None:
+        benchmark_root = resolve_benchmark_root("weird_captcha_gym")
+        for env_name in list_environments("weird_captcha_gym", split="all"):
+            spec = json.loads(
+                (benchmark_root / "environments" / env_name / "env.json").read_text(
+                    encoding="utf-8"
+                )
+            )
+            screens = [
+                item for item in spec["observation"] if item.get("type") == "rgb_screen"
+            ]
+            self.assertEqual(len(screens), 1, env_name)
+            expected_resolution = (
+                [1280, 720]
+                if env_name in {
+                    "consequences_boss_env",
+                    # Kinetic Restoration Press keeps the original screenshot
+                    # surface; the controlled L3/full baseline must preserve
+                    # the pre-control 1280 × 720 task exactly.
+                    "modifier_stack_image_grid_env",
+                    # Microgame Gauntlet retains its historical observation
+                    # surface; controlled L4/full must reproduce the
+                    # pre-control screenshot task at 1280 × 720.
+                    "microgame_gauntlet_env",
+                    # Preserve this task's original screenshot surface; its
+                    # controlled L4 baseline is the committed 1280 × 720 UI.
+                    "forced_perspective_moving_day_env",
+                    # Gravity-Room Freight retains its historical observation
+                    # surface so controlled L4 reproduces the pre-control UI.
+                    "gravity_room_freight_env",
+                    # Jigsaw Slider Alignment retains its historical
+                    # observation surface so controlled L4/full reproduces
+                    # the pre-control screenshot task.
+                    "jigsaw_slider_alignment_env",
+                    # Magnetic Stripe Purgatory retains its original
+                    # 1280 × 720 screenshot surface so controlled L4/full
+                    # remains the historical three-reader task.
+                    "magnetic_stripe_purgatory_env",
+                    # Marionette Checkpoint's original three-act slider task
+                    # was authored and calibrated at 1280 × 720. Its L4
+                    # simplified baseline must preserve that observation
+                    # surface exactly.
+                    "marionette_checkpoint_env",
+                }
+                else [1920, 1080]
+            )
+            self.assertEqual(
+                screens[0].get("resolution"),
+                expected_resolution,
+                env_name,
+            )
+
     def test_benchmark_manifest_matches_discovered_environment_folders(self) -> None:
         benchmark_root = resolve_benchmark_root("weird_captcha_gym")
         manifest = json.loads((benchmark_root / "benchmark_manifest.json").read_text(encoding="utf-8"))
@@ -193,12 +245,32 @@ class WeirdCaptchaBenchmarkTests(unittest.TestCase):
             return generator(task, f"verify-{mechanic}")
 
         _, domino = generated("domino_autopsy", setup.generate_domino_autopsy)
-        domino_chain = domino["expected_body_ids"] + [domino["bell_body_id"]]
+        domino_placements = {
+            domino_id: dict(slot)
+            for domino_id, slot in zip(domino["loose_ids"], domino["target_slots"])
+        }
+        domino_chain = [
+            item[0]
+            for item in sorted(
+                [
+                    *[
+                        (str(item["id"]), float(item["x"]))
+                        for item in domino["fixed_dominoes"]
+                    ],
+                    *[
+                        (str(domino_id), float(domino_placements[domino_id]["x"]))
+                        for domino_id in domino["loose_ids"]
+                    ],
+                ],
+                key=lambda item: item[1],
+            )
+        ] + [domino["bell_body_id"]]
         domino_result = {
-            "placements": {domino_id: dict(slot) for domino_id, slot in zip(domino["loose_ids"], domino["target_slots"])},
+            "challenge_id": domino["challenge_id"],
+            "placements": domino_placements,
             "physics_engine": "matter-js@0.20.0",
             "bell_hit": True,
-            "bell_peak_angle": domino["minimum_bell_swing_radians"] + 0.01,
+            "bell_peak_angle": 0.6,
             "run_completed": True,
             "collision_pairs": [[left, right] for left, right in zip(domino_chain, domino_chain[1:])],
         }
@@ -211,18 +283,37 @@ class WeirdCaptchaBenchmarkTests(unittest.TestCase):
         consequence_public, consequences = generated("consequences_boss", setup.generate_consequences_boss)
         choices = {scene_id: ("left" if index % 2 == 0 else "right", index % 4) for index, scene_id in enumerate(consequences["scene_ids"])}
         consequence_events = []
+        consequence_elapsed_ms = 0
         def consequence_event(kind, **details):
-            consequence_events.append({"sequence": len(consequence_events) + 1, "kind": kind, **details})
+            nonlocal consequence_elapsed_ms
+            consequence_events.append({
+                "sequence": len(consequence_events) + 1,
+                "kind": kind,
+                "elapsed_ms": consequence_elapsed_ms,
+                **details,
+            })
+            consequence_elapsed_ms += 10
         for scene_id in consequences["scene_ids"]:
             socket, seal = choices[scene_id]
-            consequence_event("place", scene_id=scene_id, socket=socket)
-            consequence_event("seal", scene_id=scene_id, seal=seal)
-            consequence_event("commit", scene_id=scene_id, socket=socket, seal=seal)
-        consequence_event("storm", duration_ms=consequences["storm_ms"])
+            order_index = consequences["scene_ids"].index(scene_id)
+            consequence_event("place", phase="commit", scene_id=scene_id, socket=socket)
+            consequence_event("seal", phase="commit", scene_id=scene_id, seal=seal)
+            consequence_event("commit", scene_id=scene_id, socket=socket, seal=seal, order_index=order_index)
+        consequence_event("storm")
+        consequence_elapsed_ms += int(consequences["storm_ms"])
+        consequence_event("judgment")
         for scene_id in consequences["boss_order"]:
             socket, seal = choices[scene_id]
-            consequence_event("reconstruct", scene_id=scene_id, socket=socket, seal=seal)
-        consequence_result = {"mechanic_id": "consequences_boss", "challenge_id": consequences["challenge_id"], "events": consequence_events}
+            order_index = consequences["boss_order"].index(scene_id)
+            consequence_event("place", phase="reconstruct", scene_id=scene_id, socket=socket)
+            consequence_event("seal", phase="reconstruct", scene_id=scene_id, seal=seal)
+            consequence_event("reconstruct", scene_id=scene_id, socket=socket, seal=seal, order_index=order_index)
+        consequence_result = {
+            "mechanic_id": "consequences_boss",
+            "task_id": consequences["task_id"],
+            "challenge_id": consequences["challenge_id"],
+            "events": consequence_events,
+        }
         self.assertEqual(helpers.verify_consequences_boss({"result": consequence_result, "ground_truth": consequences, "public_state": consequence_public})["score"], 100)
 
         popup_public, popups = generated("popup_exorcist", setup.generate_popup_exorcist)
@@ -412,6 +503,7 @@ class WeirdCaptchaBenchmarkTests(unittest.TestCase):
         signature_grader = load_grader("bureaucratic_signature_trap")
         circle_payload = {
             "mechanic_id": "bureaucratic_signature_trap",
+            "task_id": signature_truth["task_id"],
             "challenge_id": signature_truth["challenge_id"],
             "events": sequenced([*alignment, {"kind": "signature", "points": circle}, {"kind": "certify"}]),
         }

@@ -131,12 +131,98 @@ def _event_state(event: dict[str, Any], rail_milli: int, depth_milli: int, rotat
     return None
 
 
+def _control_contract(
+    ground_truth: dict[str, Any], public_state: dict[str, Any], scene: dict[str, Any],
+    tolerances: dict[str, int], inertia: dict[str, int], target_rail: int, target_depth: int,
+) -> tuple[dict[str, Any] | None, dict[str, str]]:
+    condition = ground_truth.get("control_condition")
+    if condition != public_state.get("control_condition"):
+        raise ValueError("public control condition differs from alignment contract")
+    if condition is None:
+        return None, {}
+    if not isinstance(condition, dict):
+        raise ValueError("control condition is malformed")
+    interaction = str(condition.get("interaction") or "")
+    if interaction not in {"simplified", "full"}:
+        raise ValueError("control interaction is invalid")
+    try:
+        difficulty = _integer(condition.get("difficulty"), "control difficulty")
+    except ValueError as exc:
+        raise ValueError("control difficulty is invalid") from exc
+    if difficulty not in {1, 2, 3, 4, 5}:
+        raise ValueError("control difficulty is invalid")
+    parameters = condition.get("difficulty_parameters")
+    if not isinstance(parameters, dict):
+        raise ValueError("difficulty parameters are malformed")
+    fields = {
+        "rail_tolerance_milli": tolerances["x_milli"],
+        "depth_tolerance_milli": tolerances["depth_milli"],
+        "rotation_tolerance_deg": tolerances["rotation_deg"],
+        "hold_ms": tolerances["hold_ms"],
+        "sample_ms": tolerances["sample_ms"],
+        "minimum_scan_samples": tolerances["minimum_scan_samples"],
+        "velocity_threshold_milli_s": inertia["velocity_threshold_milli_s"],
+        "velocity_cap_milli_s": inertia["velocity_cap_milli_s"],
+        "inertia_tick_ms": inertia["tick_ms"],
+        "friction_milli": inertia["friction_milli"],
+        "stop_velocity_milli_s": inertia["stop_velocity_milli_s"],
+    }
+    if any(parameters.get(key) != value for key, value in fields.items()):
+        raise ValueError("generated tolerance or inertia differs from difficulty parameters")
+    depths = parameters.get("target_depth_values")
+    rotations = parameters.get("initial_rotations_deg")
+    if (
+        not isinstance(depths, list)
+        or target_depth not in depths
+        or not isinstance(rotations, list)
+        or int(scene["piece"]["initial_rotation_deg"]) not in rotations
+    ):
+        raise ValueError("generated target depth or rotation differs from difficulty parameters")
+    initial_rail = int(scene["rail"]["initial_milli"])
+    initial_depth = int(scene["depth"]["initial_milli"])
+    rail_distance = abs(initial_rail - target_rail)
+    depth_distance = abs(initial_depth - target_depth)
+    try:
+        rail_low = _integer(parameters.get("rail_distance_min_milli"), "rail distance minimum")
+        rail_high = _integer(parameters.get("rail_distance_max_milli"), "rail distance maximum")
+        depth_low = _integer(parameters.get("depth_distance_min_milli"), "depth distance minimum")
+        depth_high = _integer(parameters.get("depth_distance_max_milli"), "depth distance maximum")
+        minimum_rail = _integer(parameters.get("minimum_rail_displacement_milli"), "minimum rail displacement")
+        minimum_depth = _integer(parameters.get("minimum_depth_displacement_milli"), "minimum depth displacement")
+    except ValueError as exc:
+        raise ValueError("difficulty displacement parameters are malformed") from exc
+    if not (
+        minimum_rail <= rail_low <= rail_distance <= rail_high
+        and minimum_depth <= depth_low <= depth_distance <= depth_high
+    ):
+        raise ValueError("generated initial displacement differs from difficulty parameters")
+    sources = (
+        {
+            "rail": "rail_nudge_button",
+            "depth": "depth_nudge_button",
+            "rotation": "rotation_console_button",
+            "scan": "optical_lock_button",
+        }
+        if interaction == "simplified"
+        else {
+            "rail": "direct_rail_drag",
+            "depth": "direct_depth_drag",
+            "rotation": "rotation_console_button",
+            "scan": "optical_lock_button",
+        }
+    )
+    return condition, sources
+
+
 def grade(payload: dict[str, Any], ground_truth: dict[str, Any], public_state: dict[str, Any]) -> dict[str, Any]:
     binding_error = _bind(payload, ground_truth, public_state)
     if binding_error:
         return _fail(binding_error)
     try:
         scene, tolerances, inertia_contract, target_rail, target_depth = _contract(ground_truth, public_state)
+        control_condition, expected_sources = _control_contract(
+            ground_truth, public_state, scene, tolerances, inertia_contract, target_rail, target_depth
+        )
     except (KeyError, TypeError, ValueError) as exc:
         return _fail(f"invalid alignment contract: {exc}")
 
@@ -158,8 +244,8 @@ def grade(payload: dict[str, Any], ground_truth: dict[str, Any], public_state: d
     inertia_state: dict[str, Any] | None = None
     rail_travel = 0
     depth_travel = 0
-    rail_sample_count = 0
-    depth_sample_count = 0
+    rail_adjustment_count = 0
+    depth_adjustment_count = 0
     inertia_samples = 0
     scan_samples: list[tuple[int, int, int]] = []
     scan_duration = 0
@@ -175,11 +261,15 @@ def grade(payload: dict[str, Any], ground_truth: dict[str, Any], public_state: d
         if event_type == "rail_start":
             if mode != "idle":
                 return _fail(f"event {index} starts a rail drag while {mode}")
+            if control_condition is not None and event.get("input_source") != expected_sources["rail"]:
+                return _fail(f"event {index} uses the wrong rail interaction")
             mode = "rail"
             last_rail_delta, last_rail_dt = 0, 1
         elif event_type == "rail_sample":
             if mode != "rail":
                 return _fail(f"event {index} has a rail sample outside a drag")
+            if control_condition is not None and event.get("input_source") != expected_sources["rail"]:
+                return _fail(f"event {index} uses the wrong rail interaction")
             try:
                 delta = _integer(event.get("delta_milli"), "rail delta")
                 dt_ms = _integer(event.get("dt_ms"), "rail sample time")
@@ -192,11 +282,13 @@ def grade(payload: dict[str, Any], ground_truth: dict[str, Any], public_state: d
                 return _fail(f"event {index} rail delta crosses a hard stop")
             rail_milli = expected
             rail_travel += abs(delta)
-            rail_sample_count += 1
+            rail_adjustment_count += 1
             last_rail_delta, last_rail_dt = delta, dt_ms
         elif event_type == "rail_end":
             if mode != "rail":
                 return _fail(f"event {index} ends a rail drag that is not active")
+            if control_condition is not None and event.get("input_source") != expected_sources["rail"]:
+                return _fail(f"event {index} uses the wrong rail interaction")
             velocity_cap = inertia_contract["velocity_cap_milli_s"]
             expected_velocity = _clamp(_js_round(last_rail_delta * 1000 / last_rail_dt), -velocity_cap, velocity_cap)
             if event.get("velocity_milli_s") != expected_velocity:
@@ -206,6 +298,45 @@ def grade(payload: dict[str, Any], ground_truth: dict[str, Any], public_state: d
                 inertia_state = {"velocity": expected_velocity, "must_end": False, "reason": None}
             else:
                 mode = "idle"
+        elif event_type == "rail_nudge":
+            if mode != "idle":
+                return _fail(f"event {index} nudges rail while {mode}")
+            if control_condition is None or expected_sources.get("rail") != "rail_nudge_button":
+                return _fail(f"event {index} uses a rail proxy outside simplified interaction")
+            if event.get("input_source") != expected_sources["rail"]:
+                return _fail(f"event {index} uses the wrong rail interaction")
+            try:
+                requested_delta = _integer(event.get("requested_delta_milli"), "requested rail nudge")
+                delta = _integer(event.get("delta_milli"), "rail nudge")
+                virtual_drag_ms = _integer(event.get("virtual_drag_ms"), "rail proxy drag duration")
+                velocity = _integer(event.get("velocity_milli_s"), "rail proxy release velocity")
+            except ValueError as exc:
+                return _fail(f"event {index} is malformed: {exc}")
+            # Each labelled button is a fixed-duration virtual direct drag.
+            # Its released velocity must enter the same friction replay used
+            # by full pointer drags; a boundary press is the sole zero-motion
+            # exception.
+            if requested_delta not in {-50000, -5000, 5000, 50000}:
+                return _fail(f"event {index} has an unsupported rail nudge")
+            if virtual_drag_ms != 200:
+                return _fail(f"event {index} has an unsupported rail proxy duration")
+            expected = _clamp(rail_milli + requested_delta, rail_min, rail_max)
+            expected_delta = expected - rail_milli
+            if delta != expected_delta:
+                return _fail(f"event {index} rail nudge disagrees with the proxy release")
+            expected_velocity = _clamp(
+                _js_round(expected_delta * 1000 / virtual_drag_ms),
+                -inertia_contract["velocity_cap_milli_s"],
+                inertia_contract["velocity_cap_milli_s"],
+            ) if expected_delta else 0
+            if velocity != expected_velocity:
+                return _fail(f"event {index} proxy release velocity disagrees with its virtual drag")
+            rail_milli = expected
+            rail_travel += abs(delta)
+            rail_adjustment_count += 1
+            if abs(expected_velocity) >= inertia_contract["velocity_threshold_milli_s"]:
+                mode = "inertia"
+                inertia_state = {"velocity": expected_velocity, "must_end": False, "reason": None}
         elif event_type == "inertia_sample":
             if mode != "inertia" or inertia_state is None or inertia_state["must_end"]:
                 return _fail(f"event {index} has an impossible inertia sample")
@@ -239,10 +370,14 @@ def grade(payload: dict[str, Any], ground_truth: dict[str, Any], public_state: d
         elif event_type == "depth_start":
             if mode != "idle":
                 return _fail(f"event {index} starts a depth drag while {mode}")
+            if control_condition is not None and event.get("input_source") != expected_sources["depth"]:
+                return _fail(f"event {index} uses the wrong depth interaction")
             mode = "depth"
         elif event_type == "depth_sample":
             if mode != "depth":
                 return _fail(f"event {index} has a depth sample outside a drag")
+            if control_condition is not None and event.get("input_source") != expected_sources["depth"]:
+                return _fail(f"event {index} uses the wrong depth interaction")
             try:
                 delta = _integer(event.get("delta_milli"), "depth delta")
                 dt_ms = _integer(event.get("dt_ms"), "depth sample time")
@@ -255,11 +390,34 @@ def grade(payload: dict[str, Any], ground_truth: dict[str, Any], public_state: d
                 return _fail(f"event {index} depth delta crosses a hard stop")
             depth_milli = expected
             depth_travel += abs(delta)
-            depth_sample_count += 1
+            depth_adjustment_count += 1
         elif event_type == "depth_end":
             if mode != "depth":
                 return _fail(f"event {index} ends a depth drag that is not active")
+            if control_condition is not None and event.get("input_source") != expected_sources["depth"]:
+                return _fail(f"event {index} uses the wrong depth interaction")
             mode = "idle"
+        elif event_type == "depth_nudge":
+            if mode != "idle":
+                return _fail(f"event {index} nudges depth while {mode}")
+            if control_condition is None or expected_sources.get("depth") != "depth_nudge_button":
+                return _fail(f"event {index} uses a depth proxy outside simplified interaction")
+            if event.get("input_source") != expected_sources["depth"]:
+                return _fail(f"event {index} uses the wrong depth interaction")
+            try:
+                delta = _integer(event.get("delta_milli"), "depth nudge")
+            except ValueError as exc:
+                return _fail(f"event {index} is malformed: {exc}")
+            # See the matching rail rule above: clamped proxy presses are
+            # valid no-ops at the physical boundary.
+            if delta not in {-100, -10, 0, 10, 100}:
+                return _fail(f"event {index} has an unsupported depth nudge")
+            expected = _clamp(depth_milli + delta, depth_min, depth_max)
+            if expected - depth_milli != delta:
+                return _fail(f"event {index} depth nudge crosses a hard stop")
+            depth_milli = expected
+            depth_travel += abs(delta)
+            depth_adjustment_count += 1
         elif event_type == "rotate":
             if mode != "idle":
                 return _fail(f"event {index} rotates the fragment while {mode}")
@@ -269,6 +427,8 @@ def grade(payload: dict[str, Any], ground_truth: dict[str, Any], public_state: d
                 after = _integer(event.get("rotation_after"), "rotation after")
             except ValueError as exc:
                 return _fail(f"event {index} is malformed: {exc}")
+            if control_condition is not None and event.get("input_source") != expected_sources["rotation"]:
+                return _fail(f"event {index} uses the wrong rotation interaction")
             if delta not in {-rotation_step, rotation_step} or before != rotation_deg:
                 return _fail(f"event {index} has an invalid rotation step")
             rotation_deg = (rotation_deg + delta) % 360
@@ -277,6 +437,8 @@ def grade(payload: dict[str, Any], ground_truth: dict[str, Any], public_state: d
         elif event_type == "scan_start":
             if mode != "idle":
                 return _fail(f"event {index} starts optical lock while {mode}")
+            if control_condition is not None and event.get("input_source") != expected_sources["scan"]:
+                return _fail(f"event {index} uses the wrong optical-lock interaction")
             mode = "scan"
             scan_samples = []
         elif event_type == "scan_sample":
@@ -298,6 +460,8 @@ def grade(payload: dict[str, Any], ground_truth: dict[str, Any], public_state: d
                 sample_count = _integer(event.get("sample_count"), "scan sample count")
             except ValueError as exc:
                 return _fail(f"event {index} is malformed: {exc}")
+            if control_condition is not None and event.get("input_source") != expected_sources["scan"]:
+                return _fail(f"event {index} uses the wrong optical-lock interaction")
             if sample_count != len(scan_samples) or not 1 <= scan_duration <= 5000:
                 return _fail(f"event {index} optical hold summary is inconsistent")
             mode = "idle"
@@ -321,8 +485,8 @@ def grade(payload: dict[str, Any], ground_truth: dict[str, Any], public_state: d
     )
     passed = (
         payload.get("completed") is True
-        and rail_sample_count > 0
-        and depth_sample_count > 0
+        and rail_adjustment_count > 0
+        and depth_adjustment_count > 0
         and scan_duration >= tolerances["hold_ms"] - 40
         and len(scan_samples) >= tolerances["minimum_scan_samples"]
         and stable_samples

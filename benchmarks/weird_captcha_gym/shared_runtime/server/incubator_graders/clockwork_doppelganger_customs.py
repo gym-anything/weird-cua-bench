@@ -107,14 +107,47 @@ def grade(payload: dict[str, Any], ground_truth: dict[str, Any], public_state: d
     if str(public_state.get("mechanic_id") or "") != MECHANIC_ID or str(public_state.get("challenge_id") or "") != challenge_id or str(public_state.get("task_id") or "") != task_id: return _failure("public customs identity mismatch")
     canvas, stations, conveyor, roles = ground_truth.get("canvas"), ground_truth.get("stations"), ground_truth.get("conveyor"), ground_truth.get("roles")
     controls, qualification = ground_truth.get("controls"), ground_truth.get("qualification")
-    if not isinstance(canvas, dict) or not isinstance(stations, dict) or not isinstance(conveyor, dict) or not isinstance(roles, list) or len(roles) != 3 or not isinstance(controls, dict) or not isinstance(qualification, dict): return _failure("hidden customs manifest is malformed")
+    if not isinstance(canvas, dict) or not isinstance(stations, dict) or not isinstance(conveyor, dict) or not isinstance(roles, list) or not 1 <= len(roles) <= 3 or not isinstance(controls, dict) or not isinstance(qualification, dict): return _failure("hidden customs manifest is malformed")
     for key, value in (("canvas",canvas),("stations",stations),("conveyor",conveyor),("roles",roles),("controls",controls),("qualification",qualification)):
         if public_state.get(key) != value: return _failure(f"public {key} disagrees with hidden customs state")
+    truth_condition = ground_truth.get("control_condition")
+    if truth_condition != public_state.get("control_condition"):
+        return _failure("public interaction condition differs from customs contract")
+    interaction = str((truth_condition or {}).get("interaction") or "")
+    expected_input_source = {"simplified": "proxy_control", "full": "direct_station"}.get(interaction)
+    if truth_condition is not None and expected_input_source is None:
+        return _failure("customs interaction condition is invalid")
+    if truth_condition is not None:
+        parameters = dict(truth_condition.get("difficulty_parameters") or {})
+        solution = ground_truth.get("solution")
+        try:
+            loop_values = {int(value) for value in parameters.get("loop_duration_ms_values", [])}
+            track_values = {int(value) for value in parameters.get("track_y_values", [])}
+            catch_values = {int(value) for value in parameters.get("catch_time_ms_values", [])}
+            speed_values = {float(value) for value in parameters.get("speed_px_per_ms_values", [])}
+            handoff_gap = int(parameters.get("handoff_gap_ms", -1))
+        except (TypeError, ValueError):
+            return _failure("customs difficulty condition is malformed")
+        if (
+            int(parameters.get("role_count", -1)) != len(roles)
+            or int(parameters.get("record_duration_ms", -1)) != int(controls.get("record_duration_ms", -2))
+            or int(controls.get("loop_duration_ms", -2)) not in loop_values
+            or int(parameters.get("phase_step_ms", -1)) != int(controls.get("phase_step_ms", -2))
+            or int(parameters.get("sample_interval_ms", -1)) != int(controls.get("sample_interval_ms", -2))
+            or int(parameters.get("cycle_sample_interval_ms", -1)) != int(controls.get("cycle_sample_interval_ms", -2))
+            or int(conveyor.get("track_y", -2)) not in track_values
+            or int(conveyor.get("catch_time_ms", -2)) not in catch_values
+            or not any(_close(conveyor.get("speed_px_per_ms"), value, 1e-9) for value in speed_values)
+            or not isinstance(solution, dict)
+            or int(solution.get("handoff_gap_ms", -1)) != handoff_gap
+            or any(qualification.get(key) != parameters.get(key) for key in qualification)
+        ):
+            return _failure("customs difficulty condition differs from generated contract")
     events = payload.get("events")
     if not isinstance(events, list) or not events or len(events) > 2400: return _failure("customs transcript is missing or too long")
 
-    recordings: list[dict[str, Any] | None] = [None, None, None]
-    revisions = [0,0,0]; phases=[0,0,0]; active=False; recording=None; cycle=None; terminal=False
+    recordings: list[dict[str, Any] | None] = [None for _ in roles]
+    revisions = [0 for _ in roles]; phases=[0 for _ in roles]; active=False; recording=None; cycle=None; terminal=False
     record_failures=0; phase_edits=0; cycle_attempts=0; successful_cycles=0; rewind_count=0; last_outcome=None
     previous_time=-1.0
     for sequence,event in enumerate(events,start=1):
@@ -127,9 +160,10 @@ def grade(payload: dict[str, Any], ground_truth: dict[str, Any], public_state: d
             if active or sequence!=1:return _failure("customs challenge start is malformed")
             active=True;continue
         if not active:return _failure("customs interaction occurred before the fail stamp cleared")
+        valid_slot = lambda value: isinstance(value, int) and not isinstance(value, bool) and 0 <= value < len(roles)
         if action=="record_start":
             slot=event.get("slot");pointer=_point(event.get("pointer"))
-            if recording is not None or cycle is not None or slot not in {0,1,2} or pointer is None or not 0<=pointer[0]<=float(canvas["width"]) or not 0<=pointer[1]<=float(canvas["height"]):return _failure(f"recording {sequence} starts from impossible state")
+            if recording is not None or cycle is not None or not valid_slot(slot) or pointer is None or not 0<=pointer[0]<=float(canvas["width"]) or not 0<=pointer[1]<=float(canvas["height"]):return _failure(f"recording {sequence} starts from impossible state")
             recording={"slot":slot,"start":event_time,"samples":[],"actions":[],"last_pointer":pointer,"last_local":None,"invalid":False};continue
         if action=="record_sample":
             if recording is None or event.get("slot")!=recording["slot"]:return _failure(f"record sample {sequence} is not bound to an active take")
@@ -143,6 +177,7 @@ def grade(payload: dict[str, Any], ground_truth: dict[str, Any], public_state: d
             if recording is None or event.get("slot")!=recording["slot"]:return _failure(f"record action {sequence} is not bound to an active take")
             local=_number(event.get("local_t_ms"));pointer=_point(event.get("position"));kind=str(event.get("action") or "")
             if local is None or pointer is None or kind not in {"grab","release","stamp"}:return _failure(f"record action {sequence} is malformed")
+            if expected_input_source is not None and event.get("input_source") != expected_input_source:return _failure("customs action uses the wrong interaction input")
             if not _close(local,event_time-recording["start"],12):recording["invalid"]=True
             recording["actions"].append({"local_t_ms":local,"position":pointer,"action":kind});continue
         if action=="record_end":
@@ -161,11 +196,11 @@ def grade(payload: dict[str, Any], ground_truth: dict[str, Any], public_state: d
             recording=None;continue
         if action=="record_reset":
             slot=event.get("slot")
-            if recording is not None or cycle is not None or slot not in {0,1,2}:return _failure("record reset occurred during an active clock")
+            if recording is not None or cycle is not None or not valid_slot(slot):return _failure("record reset occurred during an active clock")
             recordings[slot]=None;phases[slot]=0;rewind_count+=1;continue
         if action=="phase_edit":
             slot=event.get("slot");before=event.get("from_ms");after=event.get("to_ms");step=int(controls["phase_step_ms"]);loop=int(controls["loop_duration_ms"])
-            if recording is not None or cycle is not None or slot not in {0,1,2} or recordings[slot] is None or before!=phases[slot] or not isinstance(after,int) or not 0<=after<loop or after%step!=0:return _failure(f"phase edit {sequence} is malformed")
+            if recording is not None or cycle is not None or not valid_slot(slot) or recordings[slot] is None or before!=phases[slot] or not isinstance(after,int) or not 0<=after<loop or after%step!=0:return _failure(f"phase edit {sequence} is malformed")
             phases[slot]=after;phase_edits+=1;continue
         if action=="cycle_start":
             if recording is not None or cycle is not None or any(item is None for item in recordings):return _failure("master cycle started without three complete recordings")
@@ -203,7 +238,7 @@ def grade(payload: dict[str, Any], ground_truth: dict[str, Any], public_state: d
     claimed=payload.get("final_state")
     state_matches=isinstance(claimed,dict) and all(claimed.get(key)==expected_state[key] for key in ("revisions","phases_ms","record_failures","phase_edits","cycle_attempts","successful_cycles","rewind_count"))
     claimed_recordings=claimed.get("recordings") if isinstance(claimed,dict) else None
-    state_matches=state_matches and isinstance(claimed_recordings,list) and len(claimed_recordings)==3
+    state_matches=state_matches and isinstance(claimed_recordings,list) and len(claimed_recordings)==len(roles)
     if state_matches:
         for claimed_record,expected_record in zip(claimed_recordings,summaries):
             if expected_record is None:
@@ -213,7 +248,7 @@ def grade(payload: dict[str, Any], ground_truth: dict[str, Any], public_state: d
     if last_outcome is None:state_matches=state_matches and claimed_outcome is None
     else:state_matches=state_matches and _snapshot_claim(claimed_outcome,last_outcome)
     if not state_matches:return _failure("claimed customs state does not match dense recording replay")
-    passed=terminal and all(item is not None for item in recordings) and phase_edits>=3 and last_outcome is not None and last_outcome["delivered"] and last_outcome["stamped"] and last_outcome["errors"]==0
+    passed=terminal and all(item is not None for item in recordings) and phase_edits>=len(roles) and last_outcome is not None and last_outcome["delivered"] and last_outcome["stamped"] and last_outcome["errors"]==0
     return {"graded":True,"passed":passed,"score":100 if passed else 0,"feedback":f"replayed recordings {[len(item['samples']) if item else 0 for item in recordings]}; phases {phases}; cycles {successful_cycles}/{cycle_attempts}; rewinds {rewind_count}; possession errors {last_outcome['errors'] if last_outcome else 'n/a'}"}
 
 

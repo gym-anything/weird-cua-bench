@@ -35,14 +35,14 @@ def _initial_organisms(contract: dict[str, Any]) -> dict[str, dict[str, Any]]:
             "x": float(raw["initial_position"][0]), "y": float(raw["initial_position"][1]),
             "vx": 0.0, "vy": 0.0, "captured": False,
         }
-    if len(result) != 5:
-        raise ValueError("coupled ecology must contain five organisms")
+    if not 2 <= len(result) <= 6:
+        raise ValueError("coupled ecology must contain two through six organisms")
     return result
 
 
 def _targets(contract: dict[str, Any]) -> dict[str, dict[str, Any]]:
     result = {str(item["organism_id"]): item for item in contract["targets"]}
-    if len(result) != 5:
+    if len(result) != len(contract["organisms"]):
         raise ValueError("sanctuary contract is malformed")
     return result
 
@@ -125,6 +125,18 @@ def grade(payload: dict[str, Any], ground_truth: dict[str, Any], public_state: d
     for field in ("arena", "fields", "organisms", "targets", "obstacle", "controls"):
         if public_state.get(field) != ground_truth.get(field):
             return {"graded": True, "passed": False, "feedback": f"public/private ecology {field} contract skew"}
+    condition = ground_truth.get("control_condition")
+    if condition != public_state.get("control_condition"):
+        return {"graded": True, "passed": False, "feedback": "public/private ecology control condition skew"}
+    interaction = str((condition or {}).get("interaction") or "full")
+    expected_input_source = {"simplified": "coordinate_pad", "full": "arena_pointer"}.get(interaction)
+    if expected_input_source is None:
+        return {"graded": True, "passed": False, "feedback": "ecology interaction condition is invalid"}
+    if condition is not None:
+        if payload.get("control_condition") != condition:
+            return {"graded": True, "passed": False, "feedback": "submitted ecology control condition differs from the task"}
+        if str(payload.get("interaction") or "") != interaction:
+            return {"graded": True, "passed": False, "feedback": "submitted ecology interaction differs from the task"}
     try:
         organisms = _initial_organisms(ground_truth)
         targets = _targets(ground_truth)
@@ -165,6 +177,10 @@ def grade(payload: dict[str, Any], ground_truth: dict[str, Any], public_state: d
                 return {"graded": True, "passed": False, "feedback": f"event {sequence}: {exc}"}
             if event.get("tick") != tick or str(event.get("field") or "") != selected or selected not in fields:
                 return {"graded": True, "passed": False, "feedback": f"event {sequence} uses stale field/tick state"}
+            if condition is not None and event.get("input_source") != expected_input_source:
+                return {"graded": True, "passed": False, "feedback": f"event {sequence} uses the wrong interaction input"}
+            if event.get("proxy") is not None:
+                return {"graded": True, "passed": False, "feedback": "field-lure coordinates cannot use a guidance proxy"}
             if kind == "pointer_down":
                 if active:
                     return {"graded": True, "passed": False, "feedback": "pointer field was pressed twice"}
@@ -206,7 +222,7 @@ def grade(payload: dict[str, Any], ground_truth: dict[str, Any], public_state: d
             continue
         if kind == "complete":
             if completed or event.get("tick") != tick or not all(item["captured"] for item in organisms.values()):
-                return {"graded": True, "passed": False, "feedback": "completion lacks five physically captured organisms"}
+                return {"graded": True, "passed": False, "feedback": "completion lacks physically captured organisms"}
             completed = terminal = True
             continue
         return {"graded": True, "passed": False, "feedback": f"event {sequence} has unknown kind"}

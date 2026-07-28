@@ -44,35 +44,27 @@ def _move_path(page, points: list[dict], duration_ms: int) -> None:
 
 
 def _record_role(page, truth: dict, slot: int, out_dir: Path, mechanic: str) -> None:
-    stations = truth["stations"]
-    if slot == 0:
-        start, end = stations["pickup"], stations["handoff_a"]
-        path = [start, {"x": (start["x"] + end["x"]) / 2, "y": start["y"] - 68}, end]
-    elif slot == 1:
-        start, stamp, end = stations["handoff_a"], stations["stamp"], stations["handoff_b"]
-        path = [start, stamp, end]
-    else:
-        start, end = stations["handoff_b"], stations["exit"]
-        path = [start, {"x": (start["x"] + end["x"]) / 2, "y": start["y"] + 62}, end]
-
+    del out_dir, mechanic
+    role = truth["roles"][slot]
+    guide = role["guide"]
+    required = role["required_actions"]
+    interaction = (truth.get("control_condition") or {}).get("interaction", "legacy")
+    start = guide[0]
     page.mouse.move(*_canvas_point(page, start))
     page.locator(f'[data-record="{slot}"]').click()
     page.mouse.move(*_canvas_point(page, start))
     page.wait_for_timeout(300)
-    page.keyboard.press("g")
-    if slot == 1:
-        _move_path(page, [start, path[1]], 480)
-        page.wait_for_timeout(50)
-        page.keyboard.press("t")
-        _move_path(page, [path[1], end], 480)
-        page.wait_for_timeout(180)
-    else:
-        _move_path(page, path, 650 if slot == 0 else 700)
-        page.wait_for_timeout(150 if slot == 0 else 160)
-    page.keyboard.press("r")
+    for index, (action, target) in enumerate(zip(required, guide)):
+        if index:
+            _move_path(page, [guide[index - 1], target], 430)
+            page.wait_for_timeout(50)
+        if interaction == "full":
+            page.mouse.click(*_canvas_point(page, target))
+        else:
+            page.keyboard.press({"grab": "g", "stamp": "t", "release": "r"}[action])
+        page.wait_for_timeout(60)
     expect(page.locator(f'[data-loop-card="{slot}"]')).to_have_attribute("data-ready", "true", timeout=4_500)
     card = page.locator(f'[data-loop-card="{slot}"]')
-    required = ["grab", "release"] if slot != 1 else ["grab", "stamp", "release"]
     for action in required:
         if not card.get_attribute(f"data-{action}-ms"):
             raise AssertionError(f"accepted loop {slot} is missing its recorded {action} action")
@@ -107,7 +99,10 @@ def fail_once(page, state_dir: Path, out_dir: Path, mechanic: str) -> None:
     page.locator('[data-record="0"]').click()
     page.mouse.move(*_canvas_point(page, start))
     page.wait_for_timeout(260)
-    page.keyboard.press("g")
+    if (truth.get("control_condition") or {}).get("interaction") == "full":
+        page.mouse.click(*_canvas_point(page, start))
+    else:
+        page.keyboard.press("g")
     _shot(page, out_dir, mechanic, "active-rejected-take-negative-run")
     expect(page.locator(".clockwork-foot .readout")).to_contain_text("TAKE 1 REJECTED", timeout=4_500)
     page.locator("#clockwork-submit").click()
@@ -131,22 +126,19 @@ def solve(page, state_dir: Path, out_dir: Path, mechanic: str) -> None:
     controls = truth["controls"]
     _shot(page, out_dir, mechanic, "initial-fresh-desk")
 
-    for slot in range(3):
+    for slot in range(len(truth["roles"])):
         _record_role(page, truth, slot, out_dir, mechanic)
-    _shot(page, out_dir, mechanic, "three-recorded-ghosts")
+    _shot(page, out_dir, mechanic, "recorded-ghosts")
 
     step = int(controls["phase_step_ms"])
     catch_time = int(truth["conveyor"]["catch_time_ms"])
     gap = int(truth["solution"]["handoff_gap_ms"])
-    grab0, release0 = _action_time(page, 0, "grab"), _action_time(page, 0, "release")
-    grab1, release1 = _action_time(page, 1, "grab"), _action_time(page, 1, "release")
-    grab2 = _action_time(page, 2, "grab")
-    phase0 = round((catch_time - grab0) / step) * step
-    release_global0 = phase0 + release0
-    phase1 = round((release_global0 + gap - grab1) / step) * step
-    release_global1 = phase1 + release1
-    phase2 = round((release_global1 + gap - grab2) / step) * step
-    for slot, phase in enumerate((phase0, phase1, phase2)):
+    phases: list[int] = []
+    for slot in range(len(truth["roles"])):
+        grab = _action_time(page, slot, "grab")
+        target = catch_time if slot == 0 else phases[slot - 1] + _action_time(page, slot - 1, "release") + gap
+        phases.append(round((target - grab) / step) * step)
+    for slot, phase in enumerate(phases):
         if phase < 0 or phase >= int(controls["loop_duration_ms"]):
             raise AssertionError(f"computed ghost phase is outside master loop: {phase}")
         _set_phase(page, slot, phase, step)

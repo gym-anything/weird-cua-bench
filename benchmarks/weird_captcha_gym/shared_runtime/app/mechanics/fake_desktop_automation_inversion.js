@@ -28,6 +28,14 @@
     return model.state.mapping_sequence[model.boundary];
   }
 
+  function interactionMode() {
+    return model.interaction;
+  }
+
+  function actionSource() {
+    return interactionMode() === "simplified" ? "automation_panel" : "remote_pointer";
+  }
+
   function mapPoint(physical) {
     const {width, height} = model.state.desktop;
     const [x, y] = physical;
@@ -142,6 +150,94 @@
       .filter((window) => !window.closed)
       .sort((a, b) => a.z - b.z)
       .map((window) => `<section class="fd-window fd-window-${clean(window.id)}" data-window-id="${clean(window.id)}" style="left:${window.x / width * 100}%;top:${window.y / height * 100}%;width:${window.width / width * 100}%;height:${window.height / height * 100}%;z-index:${window.z}"><header class="fd-window-title" style="height:${model.state.geometry.title_height / window.height * 100}%"><span><i></i>${clean(window.title)}</span><b style="width:${model.state.geometry.close_width / window.width * 100}%">×</b></header><div class="fd-window-body">${windowBody(window)}</div></section>`).join("");
+    updateProxyControls();
+  }
+
+  function updateProxyControls() {
+    if (!model || interactionMode() !== "simplified") return;
+    const blockerClosed = Boolean(model.windows.interceptor?.closed);
+    document.querySelectorAll("[data-fd-proxy='close_interceptor']").forEach((button) => { button.disabled = blockerClosed; });
+    document.querySelectorAll("[data-fd-proxy^='move_']").forEach((button) => {
+      const windowId = String(button.dataset.fdProxy || "").replace("move_", "");
+      button.disabled = model.movedWindowIds.has(windowId) || Boolean(model.windows[windowId]?.closed);
+    });
+    document.querySelectorAll("[data-fd-proxy-file-id]").forEach((button) => {
+      const fileId = String(button.dataset.fdProxyFileId || "");
+      button.disabled = !blockerClosed || model.boundary >= model.targetFileIds.length;
+      button.classList.toggle("is-selected", fileId === model.selectedProxyFileId);
+    });
+    document.querySelectorAll("[data-fd-proxy='transfer_selected']").forEach((button) => {
+      button.disabled = !blockerClosed || !model.selectedProxyFileId || model.boundary >= model.targetFileIds.length;
+    });
+    document.querySelectorAll("[data-fd-proxy='arm_manual_control']").forEach((button) => {
+      button.disabled = model.boundary !== model.targetFileIds.length || model.loadedFileIds.join("|") !== model.targetFileIds.join("|");
+    });
+  }
+
+  function repositionWindow(windowId) {
+    const windowModel = model.windows[windowId];
+    if (!windowModel || windowModel.closed) return false;
+    const offsets = {
+      directive: [38, 22],
+      vault: [70, -20],
+      verifier: [-55, 28],
+    };
+    const [offsetX, offsetY] = offsets[windowId] || [0, 0];
+    const start = [windowModel.x, windowModel.y];
+    bringToFront(windowModel);
+    windowModel.x = clamp(start[0] + offsetX, 0, model.state.desktop.width - windowModel.width);
+    windowModel.y = clamp(start[1] + offsetY, 0, model.state.desktop.height - windowModel.height);
+    const distance = Math.hypot(windowModel.x - start[0], windowModel.y - start[1]);
+    if (distance >= 44) {
+      model.moveCount += 1;
+      model.movedWindowIds.add(windowId);
+      return true;
+    }
+    return false;
+  }
+
+  function proxyAction(action, fileId = "") {
+    if (!model || model.submitting || model.terminal || interactionMode() !== "simplified") return;
+    document.querySelector(".fd-failure-stamp")?.remove();
+    record("proxy", {action, ...(fileId ? {file_id: fileId} : {}), input_source: actionSource()});
+    if (action === "close_interceptor") {
+      const blocker = model.windows.interceptor;
+      if (blocker && !blocker.closed) {
+        blocker.closed = true;
+        model.closedCount += 1;
+        model.helpers.setReadout(`${blocker.title} CLOSED · PANEL COMMAND ACCEPTED`, "idle");
+      }
+    } else if (action.startsWith("move_")) {
+      const windowId = action.slice("move_".length);
+      if (repositionWindow(windowId)) model.helpers.setReadout("WINDOW REPOSITIONED · PANEL COMMAND ACCEPTED", "idle");
+    } else if (action === "select_file") {
+      const knownFile = model.state.files.some((file) => file.id === fileId);
+      if (knownFile && model.windows.interceptor?.closed && model.boundary < model.targetFileIds.length) {
+        model.selectedProxyFileId = fileId;
+        const selected = model.state.files.find((file) => file.id === fileId);
+        model.helpers.setReadout(`${selected ? selected.name : "KEYFILE"} SELECTED · TRANSFER WHEN READY`, "idle");
+      }
+    } else if (action === "transfer_selected") {
+      const expected = model.targetFileIds[model.boundary];
+      if (expected && model.selectedProxyFileId === expected && model.windows.interceptor?.closed && !model.loadedFileIds.includes(expected)) {
+        const from = model.boundary, to = from + 1;
+        model.loadedFileIds.push(expected);
+        model.selectedProxyFileId = null;
+        model.fileDragMoves += 1;
+        record("boundary", {from, to, reason: `keyfile_${to}_loaded`, mapping: model.state.mapping_sequence[to], input_source: actionSource()});
+        model.boundary = to;
+        model.helpers.setReadout(`SEAL ${to} ACCEPTED · CONTROL CHANNEL REMAPPED`, "idle");
+        showBoundary();
+      } else if (model.selectedProxyFileId) {
+        model.helpers.setReadout("SELECTED KEYFILE IS NOT REQUESTED NOW", "error");
+      }
+    } else if (action === "arm_manual_control") {
+      if (model.boundary === model.targetFileIds.length && model.loadedFileIds.join("|") === model.targetFileIds.join("|")) {
+        model.armed = true;
+        model.helpers.setReadout("MANUAL CONTROL ARMED · READY TO SUBMIT", "idle");
+      }
+    }
+    renderWindows();
   }
 
   function updateCursor(physical, remote) {
@@ -179,7 +275,7 @@
     const points = eventPoint(event);
     updateCursor(points.physical, points.remote);
     const result = downHit(points.remote);
-    record("pointer_down", {physical: points.physical, remote: points.remote, boundary: model.boundary, mapping: mappingName(), hit: result.hit});
+    record("pointer_down", {physical: points.physical, remote: points.remote, boundary: model.boundary, mapping: mappingName(), hit: result.hit, input_source: actionSource()});
     model.pointerDown = true;
     const desktop = document.querySelector(".fd-desktop");
     if (desktop && event.pointerId != null) desktop.setPointerCapture(event.pointerId);
@@ -218,7 +314,7 @@
     const points = eventPoint(event);
     updateCursor(points.physical, points.remote);
     if (!model.pointerDown) return;
-    record("pointer_move", {physical: points.physical, remote: points.remote, boundary: model.boundary, mapping: mappingName()});
+    record("pointer_move", {physical: points.physical, remote: points.remote, boundary: model.boundary, mapping: mappingName(), input_source: actionSource()});
     if (model.drag?.type === "window") {
       const windowModel = model.windows[model.drag.id];
       windowModel.x = clamp(points.remote[0] - model.drag.offset[0], 0, model.state.desktop.width - windowModel.width);
@@ -239,7 +335,7 @@
     if (!model || !model.pointerDown) return;
     const points = eventPoint(event);
     updateCursor(points.physical, points.remote);
-    record("pointer_up", {physical: points.physical, remote: points.remote, boundary: model.boundary, mapping: mappingName()});
+    record("pointer_up", {physical: points.physical, remote: points.remote, boundary: model.boundary, mapping: mappingName(), input_source: actionSource()});
     const drag = model.drag;
     model.pointerDown = false;
     model.drag = null;
@@ -257,7 +353,7 @@
         if (expected && drag.id === expected && !model.loadedFileIds.includes(drag.id)) {
           const from = model.boundary, to = from + 1;
           model.loadedFileIds.push(drag.id);
-          record("boundary", {from, to, reason: `keyfile_${to}_loaded`, mapping: model.state.mapping_sequence[to]});
+          record("boundary", {from, to, reason: `keyfile_${to}_loaded`, mapping: model.state.mapping_sequence[to], input_source: actionSource()});
           model.boundary = to;
           model.helpers.setReadout(`SEAL ${to} ACCEPTED · CONTROL CHANNEL REMAPPED`, "idle");
           showBoundary();
@@ -282,7 +378,7 @@
   function resetDesktop() {
     if (!model || model.submitting || model.terminal) return;
     document.querySelector(".fd-failure-stamp")?.remove();
-    record("reset");
+    record("reset", {input_source: "reset_button"});
     model.windows = cloneWindows(model.state.windows);
     model.zCounter = Math.max(...Object.values(model.windows).map((item) => item.z));
     model.boundary = 0;
@@ -295,6 +391,7 @@
     model.zOrderChanges = 0;
     model.fileDragMoves = 0;
     model.movedWindowIds = new Set();
+    model.selectedProxyFileId = null;
     model.resetCount += 1;
     renderWindows();
     showBoundary();
@@ -313,6 +410,7 @@
           mechanic_id: model.state.mechanic_id,
           challenge_id: model.state.challenge_id,
           task_id: model.state.task_id,
+          interaction: interactionMode(),
           events: model.events,
           window_state: snapshotWindows(),
           boundary_index: model.boundary,
@@ -355,9 +453,11 @@
     document.body.dataset.mechanic = "fake-desktop-automation-inversion";
     document.body.dataset.cheatMode = helpers.isCheatMode() ? "true" : "false";
     const targetFileIds = state.target_filenames.map((name) => (state.files.find((item) => item.name === name) || {}).id || "");
+    const interaction = state.control_condition?.interaction || "full";
     model = {
       state,
       helpers,
+      interaction,
       windows: cloneWindows(state.windows),
       targetFileIds,
       zCounter: Math.max(...state.windows.map((item) => item.z)),
@@ -372,18 +472,29 @@
       zOrderChanges: 0,
       fileDragMoves: 0,
       movedWindowIds: new Set(),
+      selectedProxyFileId: null,
       resetCount: 0,
       submitting: false,
       terminal: false,
     };
     window.fakeDesktopInversionModel = model;
-    helpers.app.innerHTML = `<section class="fake-desktop-captcha" data-challenge-id="${clean(state.challenge_id)}"><header class="fd-head"><div><span>MANUALITY LAB / REMOTE DESKTOP 04</span><h1>${clean(state.prompt)}</h1></div><div class="fd-mapping-badge"><span>CHANNEL 1/${state.mapping_sequence.length}</span><b>${clean(state.mapping_labels[state.mapping_sequence[0]])}</b></div></header><main class="fd-workbench"><section class="fd-desktop" aria-label="Transformed remote desktop"><div class="fd-grid-labels"><span>000</span><span>450</span><span>900</span></div><div class="fd-window-layer"></div><div class="fd-file-ghost"></div><div class="fd-physical-cursor"><i></i><span>PHYSICAL</span></div><div class="fd-remote-cursor"><i></i><span>REMOTE</span></div><div class="fd-remap-banner"></div><div class="fd-coordinate-readout">MOVE INSIDE GRID TO CALIBRATE</div></section><aside class="fd-brief"><p class="fd-brief-label">WORK ORDER / ${clean(state.challenge_id)}</p><h2>Prove you are not automating the automation.</h2><ol>${state.workflow.map((item, index) => `<li><b>${String(index + 1).padStart(2, "0")}</b><span>${clean(item)}</span></li>`).join("")}</ol><div class="fd-legend"><span><i class="is-physical"></i>Physical ring</span><span><i class="is-remote"></i>Remote action cursor</span></div><p class="fd-brief-note">Every mapped pointer action, window move, z-order change, ordered seal drop, and channel transition is replayed by the verifier.</p></aside></main><footer class="fd-foot"><button type="button" class="fd-reset">RESTORE WINDOWS</button><div><span>TRACE STATUS</span><div class="readout" data-status="idle">CALIBRATE REMOTE CURSOR · CLOSE THE INTERCEPTOR</div></div><button type="button" class="fd-submit">${clean(state.submit_label)}</button></footer>${helpers.cheatPanelTemplate()}</section>`;
+    const proxyFileControls = state.files
+      .slice()
+      .sort((left, right) => Number(left.slot) - Number(right.slot))
+      .map((file) => `<button type="button" class="fd-proxy-file" data-fd-proxy-file-id="${clean(file.id)}">${clean(file.name)}</button>`)
+      .join("");
+    const proxyControls = interaction === "simplified" ? `<section class="fd-proxy-panel" aria-label="Simplified automation controls"><p>SIMPLIFIED CONTROL PANEL</p><button type="button" data-fd-proxy="close_interceptor">CLOSE INTERCEPTOR</button>${state.required_moved_window_ids.map((windowId) => `<button type="button" data-fd-proxy="move_${clean(windowId)}">REPOSITION ${clean(windowId).toUpperCase()}</button>`).join("")}<div class="fd-proxy-file-picker"><span>SELECT VISIBLE KEYFILE</span>${proxyFileControls}</div><button type="button" data-fd-proxy="transfer_selected">TRANSFER SELECTED SEAL</button><button type="button" data-fd-proxy="arm_manual_control">ARM MANUAL CONTROL</button><small>Select each requested visible keyfile in order. These controls remove remote-pointer placement only.</small></section>` : "";
+    helpers.app.innerHTML = `<section class="fake-desktop-captcha" data-challenge-id="${clean(state.challenge_id)}" data-interaction="${clean(interaction)}"><header class="fd-head"><div><span>MANUALITY LAB / REMOTE DESKTOP 04</span><h1>${clean(state.prompt)}</h1></div><div class="fd-mapping-badge"><span>CHANNEL 1/${state.mapping_sequence.length}</span><b>${clean(state.mapping_labels[state.mapping_sequence[0]])}</b></div></header><main class="fd-workbench"><section class="fd-desktop" data-control-surface="${clean(interaction)}" aria-label="Transformed remote desktop"><div class="fd-grid-labels"><span>000</span><span>450</span><span>900</span></div><div class="fd-window-layer"></div><div class="fd-file-ghost"></div><div class="fd-physical-cursor"><i></i><span>PHYSICAL</span></div><div class="fd-remote-cursor"><i></i><span>REMOTE</span></div><div class="fd-remap-banner"></div><div class="fd-coordinate-readout">MOVE INSIDE GRID TO CALIBRATE</div></section><aside class="fd-brief"><p class="fd-brief-label">WORK ORDER / ${clean(state.challenge_id)}</p><h2>Prove you are not automating the automation.</h2><ol>${state.workflow.map((item, index) => `<li><b>${String(index + 1).padStart(2, "0")}</b><span>${clean(item)}</span></li>`).join("")}</ol>${proxyControls}<div class="fd-legend"><span><i class="is-physical"></i>Physical ring</span><span><i class="is-remote"></i>Remote action cursor</span></div><p class="fd-brief-note">Every mapped pointer action, window move, z-order change, ordered seal drop, and channel transition is replayed by the verifier.</p></aside></main><footer class="fd-foot"><button type="button" class="fd-reset">RESTORE WINDOWS</button><div><span>TRACE STATUS</span><div class="readout" data-status="idle">${interaction === "simplified" ? "USE THE PANEL · CLOSE THE INTERCEPTOR" : "CALIBRATE REMOTE CURSOR · CLOSE THE INTERCEPTOR"}</div></div><button type="button" class="fd-submit">${clean(state.submit_label)}</button></footer>${helpers.cheatPanelTemplate()}</section>`;
     renderWindows();
     const desktop = document.querySelector(".fd-desktop");
-    desktop.addEventListener("pointerdown", pointerDown);
-    desktop.addEventListener("pointermove", pointerMove);
-    desktop.addEventListener("pointerup", pointerUp);
-    desktop.addEventListener("pointercancel", pointerUp);
+    if (interaction === "full") {
+      desktop.addEventListener("pointerdown", pointerDown);
+      desktop.addEventListener("pointermove", pointerMove);
+      desktop.addEventListener("pointerup", pointerUp);
+      desktop.addEventListener("pointercancel", pointerUp);
+    }
+    document.querySelectorAll("[data-fd-proxy]").forEach((button) => button.addEventListener("click", () => proxyAction(String(button.dataset.fdProxy || ""))));
+    document.querySelectorAll("[data-fd-proxy-file-id]").forEach((button) => button.addEventListener("click", () => proxyAction("select_file", String(button.dataset.fdProxyFileId || ""))));
     document.querySelector(".fd-reset").addEventListener("click", resetDesktop);
     document.querySelector(".fd-submit").addEventListener("click", submit);
     helpers.installCheatPanel();

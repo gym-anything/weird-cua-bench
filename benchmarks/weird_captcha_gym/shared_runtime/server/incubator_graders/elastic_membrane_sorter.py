@@ -34,11 +34,67 @@ def grade(payload: dict[str, Any], truth: dict[str, Any], public: dict[str, Any]
         return _fail("mechanic mismatch")
     if payload.get("task_id") != truth.get("task_id") or payload.get("challenge_id") != truth.get("challenge_id") or public.get("challenge_id") != truth.get("challenge_id"):
         return _fail("stale task or challenge")
+    truth_condition = truth.get("control_condition")
+    if truth_condition != public.get("control_condition"):
+        return _fail("public control condition differs from membrane contract")
+    interaction = str((truth_condition or {}).get("interaction") or "")
+    expected_input_source = {
+        "simplified": "tension_slider",
+        "full": "membrane_post_drag",
+    }.get(interaction)
+    if truth_condition is not None and expected_input_source is None:
+        return _fail("membrane interaction condition is invalid")
     events = payload.get("events")
     rounds = public["rounds"]
     physics = public["physics"]
     if not isinstance(events, list) or len(events) > 2200:
         return _fail("live membrane transcript malformed")
+    try:
+        if truth.get("rounds") != rounds or truth.get("physics") != physics:
+            raise ValueError("public membrane state differs from replay contract")
+        if not 1 <= len(rounds) <= 3 or any(
+            not 1 <= len(item.get("checkpoints") or []) <= 3
+            for item in rounds
+        ):
+            raise ValueError("membrane course count is outside supported limits")
+        if not (
+            0.05 <= float(physics["slope_accel"]) <= 0.14
+            and 0.93 <= float(physics["drag"]) <= 0.98
+            and 24 <= float(physics["well_radius"]) <= 45
+            and 1.8 <= float(physics["capture_speed"]) <= 4.5
+            and 24 <= float(physics["checkpoint_radius"]) <= 55
+            and 500 <= int(physics["max_ticks"]) <= 800
+            and float(physics["boundary_restitution"]) == 0.55
+        ):
+            raise ValueError("membrane physics is outside supported limits")
+        if truth_condition is not None:
+            parameters = truth_condition.get("difficulty_parameters")
+            if not isinstance(parameters, dict):
+                raise ValueError("difficulty parameters are malformed")
+            expected_parameters = {
+                "round_count": len(rounds),
+                "checkpoints_per_round": len(rounds[0]["checkpoints"]),
+                "slope_accel": float(physics["slope_accel"]),
+                "drag": float(physics["drag"]),
+                "well_radius": int(physics["well_radius"]),
+                "capture_speed": float(physics["capture_speed"]),
+                "checkpoint_radius": int(physics["checkpoint_radius"]),
+                "max_ticks": int(physics["max_ticks"]),
+            }
+            for key, value in expected_parameters.items():
+                if parameters.get(key) != value:
+                    raise ValueError(f"difficulty parameter {key} differs from generated state")
+            if any(len(item["checkpoints"]) != expected_parameters["checkpoints_per_round"] for item in rounds):
+                raise ValueError("rounds use inconsistent checkpoint counts")
+            low = float(parameters.get("initial_height_low"))
+            high = float(parameters.get("initial_height_high"))
+            if not 0 <= low <= high <= 1 or any(
+                any(not low <= float(value) <= high for value in item["post_heights"])
+                for item in rounds
+            ):
+                raise ValueError("initial post heights differ from the difficulty profile")
+    except (KeyError, TypeError, ValueError) as exc:
+        return _fail(f"invalid membrane contract: {exc}")
 
     round_index = 0
     captured: list[str] = []
@@ -109,6 +165,8 @@ def grade(payload: dict[str, Any], truth: dict[str, Any], public: dict[str, Any]
             post = item.get("post")
             if post not in range(4) or not _close(item.get("before"), motion["heights"][post]):
                 return _fail("tension change starts from stale post height")
+            if expected_input_source is not None and item.get("input_source") != expected_input_source:
+                return _fail(f"tension change {sequence} uses the wrong interaction input")
             after = float(item.get("after"))
             if not 0 <= after <= 1:
                 return _fail("tension exceeds post travel")
@@ -141,4 +199,13 @@ def grade(payload: dict[str, Any], truth: dict[str, Any], public: dict[str, Any]
         else:
             return _fail(f"unknown membrane event {action!r}")
     passed = captured == [item["id"] for item in rounds] and payload.get("completed") is True
-    return {"graded": True, "passed": passed, "feedback": "three live-steered trajectories cleared six ordered rings and slow-capture wells" if passed else f"captured {len(captured)}/3 marbles"}
+    required_rings = sum(len(item["checkpoints"]) for item in rounds)
+    return {
+        "graded": True,
+        "passed": passed,
+        "feedback": (
+            f"{len(rounds)} live-steered trajectories cleared {required_rings} ordered rings and slow-capture wells"
+            if passed
+            else f"captured {len(captured)}/{len(rounds)} marbles"
+        ),
+    }

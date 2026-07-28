@@ -68,15 +68,32 @@ def _transform(anchor: dict[str, Any], pose: dict[str, Any]) -> tuple[float, flo
 
 
 def _max_anchor_error(plate: dict[str, Any], pose: dict[str, Any]) -> float:
-    pins = {str(pin.get("shape") or ""): pin for pin in plate.get("pins") or [] if isinstance(pin, dict)}
+    anchors = plate.get("anchors")
+    pin_list = plate.get("pins")
+    if (
+        not isinstance(anchors, list)
+        or not isinstance(pin_list, list)
+        or not 2 <= len(anchors) <= 4
+        or len(pin_list) != len(anchors)
+    ):
+        return math.inf
+    pins = {str(pin.get("shape") or ""): pin for pin in pin_list if isinstance(pin, dict)}
+    if len(pins) != len(pin_list) or "" in pins:
+        return math.inf
     errors = []
-    for anchor in plate.get("anchors") or []:
+    for anchor in anchors:
         if not isinstance(anchor, dict) or str(anchor.get("shape") or "") not in pins:
             return math.inf
         pin = pins[str(anchor["shape"])]
-        x, y = _transform(anchor, pose)
-        errors.append(math.hypot(x - float(pin["x"]), y - float(pin["y"])))
-    return max(errors) if len(errors) == 3 else math.inf
+        try:
+            x, y = _transform(anchor, pose)
+            pin_x, pin_y = float(pin["x"]), float(pin["y"])
+        except (KeyError, TypeError, ValueError):
+            return math.inf
+        if not all(math.isfinite(value) for value in (x, y, pin_x, pin_y)):
+            return math.inf
+        errors.append(math.hypot(x - pin_x, y - pin_y))
+    return max(errors) if len(errors) == len(anchors) else math.inf
 
 
 def _snap_translation(plate: dict[str, Any], pose: dict[str, Any]) -> dict[str, Any]:
@@ -124,12 +141,40 @@ def grade(payload: dict[str, Any], ground_truth: dict[str, Any], public_state: d
     identity_error = _identity_error(payload, ground_truth, public_state)
     if identity_error:
         return _failure(identity_error)
+    condition = ground_truth.get("control_condition")
+    if public_state.get("control_condition") != condition:
+        return _failure("public interaction condition differs from acetate contract")
+    if condition is not None and not isinstance(condition, dict):
+        return _failure("acetate interaction condition is malformed")
+    interaction = str((condition or {}).get("interaction") or "")
+    rotation_source = {"simplified": "binder_rotation_buttons", "full": "plate_right_click"}.get(interaction)
+    flip_source = {"simplified": "binder_flip_button", "full": "plate_shift_right_click"}.get(interaction)
+    lock_source = {"simplified": "seat_button", "full": "plate_drop"}.get(interaction)
+    if condition is not None and None in {rotation_source, flip_source, lock_source}:
+        return _failure("acetate interaction condition is invalid")
     plates = ground_truth.get("plates")
     wires = ground_truth.get("wires")
     requirements = ground_truth.get("requirements")
     stage = ground_truth.get("stage")
-    expected_plate_count = int(requirements.get("plate_count", 0)) if isinstance(requirements, dict) else 0
-    if not isinstance(plates, list) or expected_plate_count < 5 or len(plates) != expected_plate_count or not isinstance(wires, list) or len(wires) < 9 or not isinstance(requirements, dict) or not isinstance(stage, dict):
+    expected_plate_count = _integer(requirements.get("plate_count")) if isinstance(requirements, dict) else None
+    rotation_step = _integer(requirements.get("rotation_step_deg")) if isinstance(requirements, dict) else None
+    snap_tolerance = _number(requirements.get("snap_tolerance_px")) if isinstance(requirements, dict) else None
+    aperture_radius = _number(requirements.get("aperture_radius_px")) if isinstance(requirements, dict) else None
+    if (
+        not isinstance(plates, list)
+        or expected_plate_count is None
+        or not 2 <= expected_plate_count <= 6
+        or len(plates) != expected_plate_count
+        or not isinstance(wires, list)
+        or not 5 <= len(wires) <= 11
+        or not isinstance(requirements, dict)
+        or not isinstance(stage, dict)
+        or rotation_step not in {30, 45, 90}
+        or snap_tolerance is None
+        or not 12 <= snap_tolerance <= 40
+        or aperture_radius is None
+        or not 12 <= aperture_radius <= 30
+    ):
         return _failure("hidden acetate contract is malformed")
     if public_state.get("plates") != plates or public_state.get("wires") != wires or public_state.get("requirements") != requirements or public_state.get("stage") != stage:
         return _failure("public acetate commitment disagrees with hidden state")
@@ -137,6 +182,13 @@ def grade(payload: dict[str, Any], ground_truth: dict[str, Any], public_state: d
     wire_map = {str(wire.get("id") or ""): wire for wire in wires if isinstance(wire, dict)}
     if len(plate_map) != expected_plate_count or len(wire_map) != len(wires) or "" in plate_map or "" in wire_map:
         return _failure("hidden plate or wire bank is malformed")
+    if any(
+        _integer(wire.get("slot")) != index
+        or _number(wire.get("y")) is None
+        or not 57 <= float(wire["y"]) <= 429
+        for index, wire in enumerate(wires)
+    ):
+        return _failure("hidden wire geometry is malformed")
     target_poses_raw = ground_truth.get("target_poses")
     if not isinstance(target_poses_raw, dict):
         return _failure("hidden plate registration is missing")
@@ -146,9 +198,29 @@ def grade(payload: dict[str, Any], ground_truth: dict[str, Any], public_state: d
     correct_wire_id = str(ground_truth.get("correct_wire_id") or "")
     if correct_wire_id not in wire_map:
         return _failure("hidden defusal wire is missing")
-    first_apertures = plate_map[next(iter(plate_map))].get("apertures") or []
-    if len(first_apertures) < 5:
-        return _failure("acetate aperture manifest is too small")
+    anchor_counts: set[int] = set()
+    aperture_counts: set[int] = set()
+    for plate in plate_map.values():
+        anchors, pins, apertures = plate.get("anchors"), plate.get("pins"), plate.get("apertures")
+        if (
+            not isinstance(anchors, list)
+            or not isinstance(pins, list)
+            or not isinstance(apertures, list)
+            or not 2 <= len(anchors) <= 4
+            or len(pins) != len(anchors)
+            or not 2 <= len(apertures) < len(wires)
+            or len({str(item.get("shape") or "") for item in anchors if isinstance(item, dict)}) != len(anchors)
+            or len({str(item.get("shape") or "") for item in pins if isinstance(item, dict)}) != len(pins)
+        ):
+            return _failure("acetate plate geometry is malformed")
+        aperture_ids = [str(item.get("wire_id") or "") for item in apertures if isinstance(item, dict)]
+        if len(aperture_ids) != len(apertures) or len(set(aperture_ids)) != len(apertures) or any(item not in wire_map for item in aperture_ids):
+            return _failure("acetate aperture manifest is malformed")
+        anchor_counts.add(len(anchors))
+        aperture_counts.add(len(apertures))
+    if len(anchor_counts) != 1 or len(aperture_counts) != 1:
+        return _failure("acetate plate profiles are inconsistent")
+    first_apertures = plate_map[next(iter(plate_map))]["apertures"]
     aperture_intersection = {str(item.get("wire_id") or "") for item in first_apertures if isinstance(item, dict)}
     for plate in list(plate_map.values())[1:]:
         aperture_intersection &= {str(item.get("wire_id") or "") for item in plate.get("apertures") or [] if isinstance(item, dict)}
@@ -158,12 +230,47 @@ def grade(payload: dict[str, Any], ground_truth: dict[str, Any], public_state: d
         assert target_pose is not None
         if _max_anchor_error(plate_map[plate_id], target_pose) > .01:
             return _failure("hidden plate pins disagree with its registration pose")
+    initial_poses = {plate_id: _pose(plate.get("initial_pose")) for plate_id, plate in plate_map.items()}
+    if any(item is None for item in initial_poses.values()):
+        return _failure("plate has no valid initial pose")
+    if condition is not None:
+        parameters = condition.get("difficulty_parameters")
+        if not isinstance(parameters, dict):
+            return _failure("acetate difficulty parameters are malformed")
+        structural_expectations = {
+            "plate_count": len(plates),
+            "wire_count": len(wires),
+            "apertures_per_plate": next(iter(aperture_counts)),
+            "anchor_count": next(iter(anchor_counts)),
+            "rotation_step_deg": rotation_step,
+            "snap_tolerance_px": snap_tolerance,
+            "aperture_radius_px": aperture_radius,
+        }
+        for field, actual in structural_expectations.items():
+            if parameters.get(field) != actual:
+                return _failure(f"acetate difficulty parameter {field} disagrees with generated geometry")
+        reflection_setting = parameters.get("reflection_mismatch_count")
+        reflection_mismatches = sum(
+            bool(initial_poses[plate_id]["flipped"]) is not bool(target_poses[plate_id]["flipped"])
+            for plate_id in plate_map
+        )
+        if reflection_setting != "legacy_random" and _integer(reflection_setting) != reflection_mismatches:
+            return _failure("acetate reflection profile disagrees with generated transforms")
+        minimum_offset = _integer(parameters.get("rotation_offset_steps_min"))
+        maximum_offset = _integer(parameters.get("rotation_offset_steps_max"))
+        if minimum_offset is None or maximum_offset is None:
+            return _failure("acetate rotation-offset profile is malformed")
+        for plate_id in plate_map:
+            initial_pose = initial_poses[plate_id]
+            target_pose = target_poses[plate_id]
+            assert initial_pose is not None and target_pose is not None
+            clockwise_steps = int(round((target_pose["angle_deg"] - initial_pose["angle_deg"]) % 360 / rotation_step))
+            if not minimum_offset <= clockwise_steps <= maximum_offset:
+                return _failure("acetate rotation-offset profile disagrees with generated transforms")
 
     poses: dict[str, dict[str, Any]] = {}
-    for plate_id, plate in plate_map.items():
-        initial = _pose(plate.get("initial_pose"))
-        if initial is None:
-            return _failure("plate has no valid initial pose")
+    for plate_id, initial in initial_poses.items():
+        assert initial is not None
         poses[plate_id] = initial
     locked: set[str] = set()
     selected_plate = str(plates[0]["id"])
@@ -195,6 +302,8 @@ def grade(payload: dict[str, Any], ground_truth: dict[str, Any], public_state: d
             continue
 
         if event_type == "drag_start":
+            if condition is not None and event.get("input_source") != "plate_drag":
+                return _failure("plate drag uses the wrong interaction input")
             if active_drag is not None or selected_plate in locked:
                 return _failure("plate drag began from an invalid state")
             plate_id = str(event.get("plate_id") or "")
@@ -211,6 +320,8 @@ def grade(payload: dict[str, Any], ground_truth: dict[str, Any], public_state: d
             continue
 
         if event_type == "drag_sample":
+            if condition is not None and event.get("input_source") != "plate_drag":
+                return _failure("plate drag uses the wrong interaction input")
             if active_drag is None or str(event.get("plate_id") or "") != active_drag["plate_id"]:
                 return _failure("plate drag sample has no matching drag")
             point = _point(event.get("point"))
@@ -226,22 +337,32 @@ def grade(payload: dict[str, Any], ground_truth: dict[str, Any], public_state: d
             continue
 
         if event_type == "drag_end":
+            if condition is not None and event.get("input_source") != "plate_drag":
+                return _failure("plate drag uses the wrong interaction input")
             if active_drag is None or str(event.get("plate_id") or "") != active_drag["plate_id"]:
                 return _failure("plate drag ended without starting")
+            point = _point(event.get("point"))
             claimed_pose = _pose(event.get("pose"))
-            if _point(event.get("point")) is None or claimed_pose is None or not _same_pose(claimed_pose, poses[active_drag["plate_id"]]):
+            if point is None or claimed_pose is None:
+                return _failure("plate drag end pose is malformed")
+            pose = poses[active_drag["plate_id"]]
+            pose["x"] = max(110, min(840, active_drag["origin"][0] + point[0] - active_drag["start"][0]))
+            pose["y"] = max(70, min(430, active_drag["origin"][1] + point[1] - active_drag["start"][1]))
+            if not _same_pose(claimed_pose, pose):
                 return _failure("plate drag end pose disagrees with replay")
             active_drag = None
             continue
 
         if event_type == "plate_rotate":
+            if rotation_source is not None and event.get("input_source") != rotation_source:
+                return _failure("plate rotation uses the wrong interaction input")
             plate_id = str(event.get("plate_id") or "")
             if active_drag is not None or plate_id != selected_plate or plate_id in locked:
                 return _failure("plate rotation occurred from an invalid state")
             delta = _number(event.get("delta_deg"))
             before = _number(event.get("from_deg"))
             after = _number(event.get("to_deg"))
-            step = float(requirements["rotation_step_deg"])
+            step = float(rotation_step)
             if delta not in {-step, step} or before is None or after is None or abs((before - poses[plate_id]["angle_deg"] + 180) % 360 - 180) > .001:
                 return _failure("plate rotation origin or step is invalid")
             poses[plate_id]["angle_deg"] = (poses[plate_id]["angle_deg"] + delta) % 360
@@ -250,6 +371,8 @@ def grade(payload: dict[str, Any], ground_truth: dict[str, Any], public_state: d
             continue
 
         if event_type == "plate_flip":
+            if flip_source is not None and event.get("input_source") != flip_source:
+                return _failure("plate flip uses the wrong interaction input")
             plate_id = str(event.get("plate_id") or "")
             if active_drag is not None or plate_id != selected_plate or plate_id in locked:
                 return _failure("plate flip occurred from an invalid state")
@@ -261,6 +384,8 @@ def grade(payload: dict[str, Any], ground_truth: dict[str, Any], public_state: d
             continue
 
         if event_type == "plate_reset":
+            if condition is not None and event.get("input_source") != "binder_return":
+                return _failure("plate reset uses the wrong interaction input")
             plate_id = str(event.get("plate_id") or "")
             if active_drag is not None or plate_id != selected_plate or plate_id in locked:
                 return _failure("plate reset occurred from an invalid state")
@@ -272,6 +397,8 @@ def grade(payload: dict[str, Any], ground_truth: dict[str, Any], public_state: d
             continue
 
         if event_type == "plate_lock":
+            if lock_source is not None and event.get("input_source") != lock_source:
+                return _failure("plate lock uses the wrong interaction input")
             plate_id = str(event.get("plate_id") or "")
             if active_drag is not None or plate_id != selected_plate or plate_id in locked:
                 return _failure("plate lock occurred from an invalid state")
@@ -279,7 +406,7 @@ def grade(payload: dict[str, Any], ground_truth: dict[str, Any], public_state: d
             if before is None or after is None or not _same_pose(before, poses[plate_id]):
                 return _failure("plate lock origin disagrees with replay")
             error = _max_anchor_error(plate_map[plate_id], poses[plate_id])
-            accepted = error <= float(requirements["snap_tolerance_px"])
+            accepted = error <= float(snap_tolerance)
             claimed_error = _number(event.get("max_error"))
             if bool(event.get("accepted")) != accepted or claimed_error is None or abs(claimed_error - round(error, 3)) > .012:
                 return _failure("plate lock verdict disagrees with keyhole geometry")
@@ -297,6 +424,8 @@ def grade(payload: dict[str, Any], ground_truth: dict[str, Any], public_state: d
             continue
 
         if event_type == "wire_select":
+            if condition is not None and event.get("input_source") != "wire_canvas":
+                return _failure("wire selection uses the wrong interaction input")
             if active_drag is not None or len(locked) != len(plate_map):
                 return _failure("wire selected before all acetate plates were seated")
             point = _point(event.get("point"))
@@ -305,18 +434,20 @@ def grade(payload: dict[str, Any], ground_truth: dict[str, Any], public_state: d
                 return _failure("wire selection is malformed")
             candidates = sorted(
                 (
-                    (abs(point[1] - float(wire["y"])), str(wire["id"]))
-                    for wire in wires
+                    (abs(point[1] - float(wire["y"])), wire_index, str(wire["id"]))
+                    for wire_index, wire in enumerate(wires)
                     if abs(point[1] - float(wire["y"])) <= 18
                 ),
-                key=lambda item: item[0],
+                key=lambda item: (item[0], item[1]),
             )
-            if not candidates or candidates[0][1] != wire_id:
+            if not candidates or candidates[0][2] != wire_id:
                 return _failure("selected wire does not match the physical pointer location")
             selected_wire = wire_id
             continue
 
         if event_type == "cut":
+            if condition is not None and event.get("input_source") != "cut_button":
+                return _failure("wire cut uses the wrong interaction input")
             if len(locked) != len(plate_map) or selected_wire is None:
                 return _failure("cut occurred before the acetate procedure was complete")
             cut_count += 1

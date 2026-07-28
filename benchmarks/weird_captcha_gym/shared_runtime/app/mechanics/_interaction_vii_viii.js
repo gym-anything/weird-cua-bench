@@ -223,18 +223,28 @@
   function validRods(objects, gridSize) { const cells=objects.flatMap(rodCells); return cells.every((cell)=>cell.every((value)=>value>=0&&value<gridSize))&&new Set(cells.map((cell)=>cell.join(":"))).size===cells.length; }
   registry.hologram_silhouette_foundry = async (state, helpers) => {
     document.body.dataset.mechanic = "hologram-silhouette-foundry";
-    const model = {state, helpers, events: [], objects: copy(state.objects), selected: state.objects[0].id, terminal: false, submitting: false}; window.hologramSilhouetteFoundryModel = model;
-    helpers.app.innerHTML = shell(state, "MINISTRY OF IMPOSSIBLE CASTINGS", "HOLOGRAM SILHOUETTE FOUNDRY", "Place six colored rods in a 7³ volume. Match the frontmost color in every ray of all three occluding dies.", `<div class="holo-views">${state.views.map((view) => `<article><header>${esc(view.toUpperCase())} / NEAREST-COLOR DIE</header><canvas id="holo-${view}" width="260" height="360"></canvas></article>`).join("")}</div>`, `
-      <h2>ROD MANIPULATOR</h2><div id="holo-rods" class="holo-rods"></div><div class="holo-moves">${["x-","x+","y-","y+","z-","z+"].map((move) => `<button data-move="${move}">${move.toUpperCase()}</button>`).join("")}</div><button id="holo-rotate">CYCLE AXIS X/Y/Z</button><button id="holo-cast" class="ivv-primary">CAST THREE SHADOWS</button><button id="holo-abandon" class="ivv-danger">SCRAP / FRESH FOUNDRY</button>`);
+    const interaction = state.control_condition?.interaction || "simplified";
+    const model = {state, helpers, interaction, events: [], objects: copy(state.objects), selected: state.objects[0].id, terminal: false, submitting: false, gizmoGesture: null}; window.hologramSilhouetteFoundryModel = model;
+    const proxyControls = `<div class="holo-moves">${["x-","x+","y-","y+","z-","z+"].map((move) => `<button data-move="${move}">${move.toUpperCase()}</button>`).join("")}</div><button id="holo-rotate">CYCLE AXIS X/Y/Z</button>`;
+    const directControls = `<p class="holo-gizmo-note">DRAG ONE AXIS HANDLE OUTWARD THROUGH A DETENT TO TRANSLATE. DRAG THE RING TO CYCLE THE ROD AXIS.</p><canvas id="holo-gizmo" width="264" height="176" aria-label="Direct rod transformation gizmo"></canvas>`;
+    helpers.app.innerHTML = shell(state, "MINISTRY OF IMPOSSIBLE CASTINGS", "HOLOGRAM SILHOUETTE FOUNDRY", `Place ${state.objects.length} colored rods in a ${state.grid_size}³ volume. Match the frontmost color in every ray of all three occluding dies.`, `<div class="holo-views">${state.views.map((view) => `<article><header>${esc(view.toUpperCase())} / NEAREST-COLOR DIE</header><canvas id="holo-${view}" width="260" height="360"></canvas></article>`).join("")}</div>`, `
+      <h2>ROD MANIPULATOR</h2><div id="holo-rods" class="holo-rods"></div>${interaction === "simplified" ? proxyControls : directControls}<button id="holo-cast" class="ivv-primary">CAST THREE SHADOWS</button><button id="holo-abandon" class="ivv-danger">SCRAP / FRESH FOUNDRY</button>`);
     const drawView = (view) => {
       const canvas = document.getElementById(`holo-${view}`), ctx = canvas.getContext("2d"), size = 36, offsetX = 4, offsetY = 54; ctx.clearRect(0, 0, canvas.width, canvas.height); ctx.fillStyle = "#07090d"; ctx.fillRect(0, 0, canvas.width, canvas.height);
       const parse=(items)=>new Map(items.map((item)=>{const [a,b,...color]=item.split(":");return[`${a}:${b}`,color.join(":")];})),target=parse(state.target_masks[view]),actual=parse(masks(model.objects)[view]); for (let a = 0; a < state.grid_size; a++) for (let b = 0; b < state.grid_size; b++) { const key = `${a}:${b}`,x=offsetX+a*size,y=offsetY+(state.grid_size-1-b)*size; ctx.strokeStyle = target.get(key) || "#283044"; ctx.lineWidth = target.has(key) ? 4 : 1; ctx.strokeRect(x + 2, y + 2, size - 4, size - 4); if(actual.has(key)){ctx.fillStyle=actual.get(key)+"bb";ctx.fillRect(x+8,y+8,size-16,size-16);} }
     };
-    const update = () => { state.views.forEach(drawView); document.getElementById("holo-rods").innerHTML = model.objects.map((item) => `<button data-rod="${item.id}" class="${item.id === model.selected ? "is-selected" : ""}" style="--rod:${item.color}">${esc(item.id.toUpperCase())}<span>${item.axis.toUpperCase()} · ${item.center.join(",")}</span></button>`).join(""); document.querySelectorAll("[data-rod]").forEach((button) => button.addEventListener("click", () => { model.selected = button.dataset.rod; update(); })); const exact = validRods(model.objects,state.grid_size)&&maskEqual(masks(model.objects), state.target_masks); document.getElementById("holo-cast").dataset.ready = String(exact); setMessage(model, exact ? "ALL THREE DEPTH DIES COINCIDE · CAST READY" : validRods(model.objects,state.grid_size)?"MATCH OCCUPANCY, COLOR, AND NEAREST DEPTH IN ALL THREE DIES":"RODS OVERLAP · SOLID CASTING IMPOSSIBLE", exact ? "passed" : "idle"); };
+    const gizmoHandles = [{axis:"x",delta:1,x:205,y:88,label:"X+",color:"#ff6d4a"},{axis:"x",delta:-1,x:59,y:88,label:"X−",color:"#ff6d4a"},{axis:"y",delta:1,x:132,y:28,label:"Y+",color:"#5bd8c8"},{axis:"y",delta:-1,x:132,y:148,label:"Y−",color:"#5bd8c8"},{axis:"z",delta:1,x:188,y:42,label:"Z+",color:"#a983ff"},{axis:"z",delta:-1,x:76,y:134,label:"Z−",color:"#a983ff"}];
+    const drawGizmo = () => { if (interaction !== "full") return; const canvas=document.getElementById("holo-gizmo"),ctx=canvas.getContext("2d"),center={x:132,y:88},item=model.objects.find((candidate)=>candidate.id===model.selected); ctx.clearRect(0,0,canvas.width,canvas.height); ctx.fillStyle="#070a11";ctx.fillRect(0,0,canvas.width,canvas.height);ctx.strokeStyle="#817998";ctx.lineWidth=2;ctx.beginPath();ctx.arc(center.x,center.y,54,0,Math.PI*2);ctx.stroke();ctx.fillStyle="#b8b1ce";ctx.font="700 8px Courier New";ctx.fillText("DRAG RING · CYCLE AXIS",75,171);gizmoHandles.forEach((handle)=>{ctx.strokeStyle=handle.color;ctx.lineWidth=3;ctx.beginPath();ctx.moveTo(center.x,center.y);ctx.lineTo(handle.x,handle.y);ctx.stroke();ctx.fillStyle=handle.color;ctx.beginPath();ctx.arc(handle.x,handle.y,11,0,Math.PI*2);ctx.fill();ctx.fillStyle="#081017";ctx.font="900 8px Courier New";ctx.textAlign="center";ctx.fillText(handle.label,handle.x,handle.y+3);});ctx.fillStyle=item.color;ctx.beginPath();ctx.arc(center.x,center.y,20,0,Math.PI*2);ctx.fill();ctx.strokeStyle="#f3efff";ctx.lineWidth=4;ctx.beginPath();if(item.axis==="x"){ctx.moveTo(center.x-14,center.y);ctx.lineTo(center.x+14,center.y);}else if(item.axis==="y"){ctx.moveTo(center.x,center.y-14);ctx.lineTo(center.x,center.y+14);}else{ctx.moveTo(center.x-10,center.y+10);ctx.lineTo(center.x+10,center.y-10);}ctx.stroke();ctx.textAlign="left";ctx.fillStyle="#f3efff";ctx.font="700 9px Courier New";ctx.fillText(`${item.id.toUpperCase()} · ${item.axis.toUpperCase()} · ${item.center.join(",")}`,8,14); };
+    const update = () => { state.views.forEach(drawView); document.getElementById("holo-rods").innerHTML = model.objects.map((item) => `<button data-rod="${item.id}" class="${item.id === model.selected ? "is-selected" : ""}" style="--rod:${item.color}">${esc(item.id.toUpperCase())}<span>${item.axis.toUpperCase()} · ${item.center.join(",")}</span></button>`).join(""); document.querySelectorAll("[data-rod]").forEach((button) => button.addEventListener("click", () => { model.selected = button.dataset.rod; update(); })); drawGizmo(); const exact = validRods(model.objects,state.grid_size)&&maskEqual(masks(model.objects), state.target_masks); document.getElementById("holo-cast").dataset.ready = String(exact); setMessage(model, exact ? "ALL THREE DEPTH DIES COINCIDE · CAST READY" : validRods(model.objects,state.grid_size)?"MATCH OCCUPANCY, COLOR, AND NEAREST DEPTH IN ALL THREE DIES":"RODS OVERLAP · SOLID CASTING IMPOSSIBLE", exact ? "passed" : "idle"); };
     const act = (kind, details, mutation) => { const item = model.objects.find((candidate) => candidate.id === model.selected), before = copy(item); mutation(item); event(model, kind, {object_id: item.id, before, after: copy(item), ...details}); update(); };
-    document.querySelectorAll("[data-move]").forEach((button) => button.addEventListener("click", () => { const axis = "xyz".indexOf(button.dataset.move[0]), delta = button.dataset.move[1] === "+" ? 1 : -1; act("translate", {axis: button.dataset.move[0], delta}, (item) => { item.center[axis] = clamp(item.center[axis] + delta, 1, state.grid_size-2); }); }));
-    document.getElementById("holo-rotate").addEventListener("click", () => act("rotate", {}, (item) => { item.axis = "xyz"[("xyz".indexOf(item.axis) + 1) % 3]; }));
-    document.getElementById("holo-cast").addEventListener("click", async () => { const valid=validRods(model.objects,state.grid_size), exact = valid&&maskEqual(masks(model.objects), state.target_masks); event(model, "cast", {objects: copy(model.objects), masks: masks(model.objects), valid, exact}); if (!exact) { document.querySelector(".ivv")?.insertAdjacentHTML("beforeend", verdict("local", "CAST REJECTED", valid?"ONE OR MORE COLORED DEPTH DIES STILL DISAGREE":"TWO SOLID RODS OCCUPY THE SAME CELL")); setTimeout(() => document.querySelector(".ivv-verdict.is-local")?.remove(), 1100); return; } await submit(model, {mechanic_id: state.mechanic_id, task_id: state.task_id, challenge_id: state.challenge_id, events: model.events, completed: true}, "CASTING AUTHENTICATED", "SIX SOLID RODS · THREE FRONTMOST-COLOR PROJECTIONS"); });
+    document.querySelectorAll("[data-move]").forEach((button) => button.addEventListener("click", () => { const axis = "xyz".indexOf(button.dataset.move[0]), delta = button.dataset.move[1] === "+" ? 1 : -1; act("translate", {axis: button.dataset.move[0], delta, input_source:"transform_button"}, (item) => { item.center[axis] = clamp(item.center[axis] + delta, 1, state.grid_size-2); }); }));
+    document.getElementById("holo-rotate")?.addEventListener("click", () => act("rotate", {input_source:"transform_button"}, (item) => { item.axis = "xyz"[("xyz".indexOf(item.axis) + 1) % 3]; }));
+    const gizmo = document.getElementById("holo-gizmo");
+    const gizmoPoint = (pointerEvent) => { const box=gizmo.getBoundingClientRect(); return {x:(pointerEvent.clientX-box.left)/box.width*gizmo.width,y:(pointerEvent.clientY-box.top)/box.height*gizmo.height}; };
+    gizmo?.addEventListener("pointerdown", (pointerEvent) => { if (model.terminal || model.submitting) return; const point=gizmoPoint(pointerEvent),center={x:132,y:88},handle=gizmoHandles.find((candidate)=>Math.hypot(point.x-candidate.x,point.y-candidate.y)<=17),radius=Math.hypot(point.x-center.x,point.y-center.y); if (!handle && Math.abs(radius-54)>12) return; gizmo.setPointerCapture(pointerEvent.pointerId); model.gizmoGesture={pointerId:pointerEvent.pointerId,kind:handle?"translate":"rotate",handle,start:point,applied:false};pointerEvent.preventDefault(); });
+    gizmo?.addEventListener("pointermove", (pointerEvent) => { const gesture=model.gizmoGesture;if(!gesture||gesture.pointerId!==pointerEvent.pointerId||gesture.applied)return;const point=gizmoPoint(pointerEvent);if(gesture.kind==="translate"){const dx=gesture.handle.x-132,dy=gesture.handle.y-88,progress=(point.x-gesture.start.x)*dx+(point.y-gesture.start.y)*dy;if(progress<1100)return;gesture.applied=true;const index="xyz".indexOf(gesture.handle.axis);act("translate",{axis:gesture.handle.axis,delta:gesture.handle.delta,input_source:"gizmo_drag"},(item)=>{item.center[index]=clamp(item.center[index]+gesture.handle.delta,1,state.grid_size-2);});}else{const center={x:132,y:88},start=Math.atan2(gesture.start.y-center.y,gesture.start.x-center.x),now=Math.atan2(point.y-center.y,point.x-center.x);if(Math.abs(angleError(now*180/Math.PI,start*180/Math.PI))<30)return;gesture.applied=true;act("rotate",{input_source:"gizmo_drag"},(item)=>{item.axis="xyz"[("xyz".indexOf(item.axis)+1)%3];});} });
+    const finishGizmo = (pointerEvent) => { if (!model.gizmoGesture || model.gizmoGesture.pointerId !== pointerEvent.pointerId) return; if (gizmo.hasPointerCapture(pointerEvent.pointerId)) gizmo.releasePointerCapture(pointerEvent.pointerId); model.gizmoGesture=null; }; gizmo?.addEventListener("pointerup",finishGizmo);gizmo?.addEventListener("pointercancel",finishGizmo);
+    document.getElementById("holo-cast").addEventListener("click", async () => { const valid=validRods(model.objects,state.grid_size), exact = valid&&maskEqual(masks(model.objects), state.target_masks); event(model, "cast", {objects: copy(model.objects), masks: masks(model.objects), valid, exact}); if (!exact) { document.querySelector(".ivv")?.insertAdjacentHTML("beforeend", verdict("local", "CAST REJECTED", valid?"ONE OR MORE COLORED DEPTH DIES STILL DISAGREE":"TWO SOLID RODS OCCUPY THE SAME CELL")); setTimeout(() => document.querySelector(".ivv-verdict.is-local")?.remove(), 1100); return; } await submit(model, {mechanic_id: state.mechanic_id, task_id: state.task_id, challenge_id: state.challenge_id, events: model.events, completed: true}, "CASTING AUTHENTICATED", `${state.objects.length} SOLID RODS · THREE FRONTMOST-COLOR PROJECTIONS`); });
     document.getElementById("holo-abandon").addEventListener("click", () => submit(model, {mechanic_id: state.mechanic_id, task_id: state.task_id, challenge_id: state.challenge_id, events: [...model.events, {seq: model.events.length + 1, type: "abandon"}], completed: false}, "", "")); update();
   };
 
@@ -254,34 +264,426 @@
 
   function gravitySlide(board, position, direction, collected) { const vectors = [[1,0],[0,1],[-1,0],[0,-1]], [dx, dy] = vectors[(direction % 4 + 4) % 4], walls = new Set(board.walls.map((point) => point.join(":"))), gates = board.gates; let [x, y] = position; while (!walls.has(`${x + dx}:${y + dy}`)) { x += dx; y += dy; if (collected < gates.length && x === gates[collected][0] && y === gates[collected][1]) collected += 1; } return {position: [x, y], collected}; }
   registry.gravity_room_freight = async (state, helpers) => {
-    document.body.dataset.mechanic = "gravity-room-freight"; const model = {state, helpers, events: [], cargo: [...state.board.cargo_start], counter: [...state.board.counter_start], orientation: state.initial_orientation, collected: 0, terminal: false, submitting: false, rotating: false}; window.gravityRoomFreightModel = model;
-    helpers.app.innerHTML = shell(state, "ROTATING FREIGHT AUTHORITY", "GRAVITY-ROOM FREIGHT", "Every quarter-turn moves the archive capsule and its isolated under-deck counterweight. Clear four seals and dock both bodies together.", `<div class="gravity-frame"><canvas id="gravity-canvas" width="520" height="520"></canvas></div>`, `<h2>ROOM GIMBAL</h2><p>The cyan diamond runs on an isolated rail layer: it shares walls and gravity but cannot collide with the amber capsule.</p><button data-gravity="ccw">↶ ROTATE ROOM</button><button data-gravity="cw">ROTATE ROOM ↷</button><div id="gravity-ledger" class="ivv-telemetry"></div><button id="gravity-certify" class="ivv-primary">CERTIFY DUAL DELIVERY</button><button id="gravity-abandon" class="ivv-danger">EJECT / FRESH ROOM</button>`);
-    const draw = () => { const canvas = document.getElementById("gravity-canvas"), ctx = canvas.getContext("2d"), board = state.board, cell = 62, offset = 12; ctx.fillStyle = "#12100e"; ctx.fillRect(0, 0, 520, 520); ctx.save(); ctx.translate(260, 260); ctx.rotate(model.orientation * Math.PI / 2); ctx.translate(-260, -260); board.walls.forEach(([x,y]) => { ctx.fillStyle = "#564735"; ctx.fillRect(offset + x * cell, offset + y * cell, cell - 2, cell - 2); }); board.gates.forEach(([x,y], index) => { ctx.strokeStyle = index < model.collected ? "#baff63" : "#f2b957"; ctx.lineWidth = 5; ctx.strokeRect(offset + x * cell + 9, offset + y * cell + 9, cell - 20, cell - 20); ctx.fillStyle = ctx.strokeStyle; ctx.font = "900 15px Courier New"; ctx.fillText(String(index + 1), offset + x * cell + 26, offset + y * cell + 39); }); ctx.fillStyle = "#6fdba0"; ctx.fillRect(offset + board.cargo_target[0] * cell + 13, offset + board.cargo_target[1] * cell + 13, cell - 28, cell - 28); ctx.strokeStyle="#5bd8e8";ctx.lineWidth=5;ctx.strokeRect(offset+board.counter_target[0]*cell+14,offset+board.counter_target[1]*cell+14,cell-30,cell-30);ctx.fillStyle = "#ff6b4a"; ctx.beginPath(); ctx.arc(offset + model.cargo[0] * cell + cell / 2, offset + model.cargo[1] * cell + cell / 2, 18, 0, Math.PI * 2); ctx.fill();ctx.save();ctx.translate(offset+model.counter[0]*cell+cell/2,offset+model.counter[1]*cell+cell/2);ctx.rotate(Math.PI/4);ctx.fillStyle="#5bd8e8";ctx.fillRect(-13,-13,26,26);ctx.restore(); ctx.restore(); document.getElementById("gravity-ledger").innerHTML = `<span>SEALS <b>${model.collected}/4</b></span><span>ROOM FRAME <b>${model.orientation * 90}°</b></span><span>COUNTERWEIGHT <b>${model.counter.join(",")}</b></span>`; };
-    const rotateRoom = (label) => { if (model.rotating || model.terminal) return; model.rotating = true; const before = {cargo: [...model.cargo], counter:[...model.counter], orientation: model.orientation, collected: model.collected}; model.orientation = (model.orientation + (label === "cw" ? 1 : -1) + 4) % 4; const settledCargo = gravitySlide(state.board, model.cargo, model.orientation, model.collected), settledCounter=gravitySlide(state.board,model.counter,model.orientation,0); model.cargo = settledCargo.position; model.counter=settledCounter.position; model.collected = settledCargo.collected; event(model, "rotate", {direction: label, before, after: {cargo: [...model.cargo], counter:[...model.counter], orientation: model.orientation, collected: model.collected}}); document.querySelector(".gravity-frame").classList.add("is-rotating"); setTimeout(() => { model.rotating = false; document.querySelector(".gravity-frame")?.classList.remove("is-rotating"); draw(); }, state.rotation_ms); draw(); };
-    document.querySelectorAll("[data-gravity]").forEach((button) => button.addEventListener("click", () => rotateRoom(button.dataset.gravity)));
-    document.getElementById("gravity-certify").addEventListener("click", async () => { const accepted = model.collected === 4 && model.cargo[0] === state.board.cargo_target[0] && model.cargo[1] === state.board.cargo_target[1]&&model.counter[0]===state.board.counter_target[0]&&model.counter[1]===state.board.counter_target[1]; event(model, "certify", {cargo: [...model.cargo],counter:[...model.counter], orientation: model.orientation, collected: model.collected, accepted}); if (!accepted) { setMessage(model, "DELIVERY DENIED · FOUR-SEAL CAPSULE AND UNDER-DECK COUNTERWEIGHT MUST BOTH DOCK", "error"); return; } await submit(model, {mechanic_id: state.mechanic_id, task_id: state.task_id, challenge_id: state.challenge_id, events: model.events, completed: true}, "DUAL GRAVITY FREIGHT ACCEPTED", "SHARED ROTATIONS · TWO SLIDING BODIES · FOUR ORDERED SEALS"); });
-    document.getElementById("gravity-abandon").addEventListener("click", () => submit(model, {mechanic_id: state.mechanic_id, task_id: state.task_id, challenge_id: state.challenge_id, events: [...model.events, {seq: model.events.length + 1, type: "abandon"}], completed: false}, "", "")); draw();
+    document.body.dataset.mechanic = "gravity-room-freight";
+    const interaction = state.control_condition?.interaction || "simplified";
+    const sealCount = state.board.gates.length;
+    const model = {
+      state, helpers, interaction, events: [], cargo: [...state.board.cargo_start],
+      counter: [...state.board.counter_start], orientation: state.initial_orientation,
+      collected: 0, terminal: false, submitting: false, rotating: false, directGesture: null,
+    };
+    window.gravityRoomFreightModel = model;
+    const goalCopy = sealCount === 4
+      ? "Every quarter-turn moves the archive capsule and its isolated under-deck counterweight. Clear four seals and dock both bodies together."
+      : `Every quarter-turn moves the archive capsule and its isolated under-deck counterweight. Clear ${sealCount} seals and dock both bodies together.`;
+    const proxyControls = `<button data-gravity="ccw">↶ ROTATE ROOM</button><button data-gravity="cw">ROTATE ROOM ↷</button>`;
+    const directControls = `<p class="gravity-direct-note">DRAG HORIZONTALLY ACROSS THE VISIBLE GIMBAL. RIGHT IS CLOCKWISE; LEFT IS COUNTER-CLOCKWISE.</p>`;
+    helpers.app.innerHTML = shell(
+      state,
+      "ROTATING FREIGHT AUTHORITY",
+      "GRAVITY-ROOM FREIGHT",
+      goalCopy,
+      `<div class="gravity-frame"><canvas id="gravity-canvas" width="520" height="520" aria-label="direct gravity room gimbal"></canvas></div>`,
+      `<h2>ROOM GIMBAL</h2><p>The cyan diamond runs on an isolated rail layer: it shares walls and gravity but cannot collide with the amber capsule.</p>${interaction === "simplified" ? proxyControls : directControls}<div id="gravity-ledger" class="ivv-telemetry"></div><button id="gravity-certify" class="ivv-primary">CERTIFY DUAL DELIVERY</button><button id="gravity-abandon" class="ivv-danger">EJECT / FRESH ROOM</button>`,
+    );
+    const canvas = document.getElementById("gravity-canvas");
+    const draw = () => {
+      const ctx = canvas.getContext("2d"), board = state.board;
+      const cell = Math.floor(496 / board.size), offset = (520 - cell * board.size) / 2;
+      const cargoRadius = Math.max(12, Math.round(cell * .29));
+      const inset = Math.max(7, Math.round(cell * .15));
+      ctx.fillStyle = "#12100e";
+      ctx.fillRect(0, 0, 520, 520);
+      ctx.save();
+      ctx.translate(260, 260);
+      ctx.rotate(model.orientation * Math.PI / 2);
+      ctx.translate(-260, -260);
+      board.walls.forEach(([x, y]) => {
+        ctx.fillStyle = "#564735";
+        ctx.fillRect(offset + x * cell, offset + y * cell, cell - 2, cell - 2);
+      });
+      board.gates.forEach(([x, y], index) => {
+        ctx.strokeStyle = index < model.collected ? "#baff63" : "#f2b957";
+        ctx.lineWidth = Math.max(3, Math.round(cell * .08));
+        ctx.strokeRect(offset + x * cell + inset, offset + y * cell + inset, cell - inset * 2, cell - inset * 2);
+        ctx.fillStyle = ctx.strokeStyle;
+        ctx.font = `900 ${Math.max(11, Math.round(cell * .24))}px Courier New`;
+        ctx.fillText(String(index + 1), offset + x * cell + cell * .42, offset + y * cell + cell * .63);
+      });
+      ctx.fillStyle = "#6fdba0";
+      ctx.fillRect(offset + board.cargo_target[0] * cell + inset + 4, offset + board.cargo_target[1] * cell + inset + 4, cell - inset * 2 - 8, cell - inset * 2 - 8);
+      ctx.strokeStyle = "#5bd8e8";
+      ctx.lineWidth = Math.max(3, Math.round(cell * .08));
+      ctx.strokeRect(offset + board.counter_target[0] * cell + inset + 5, offset + board.counter_target[1] * cell + inset + 5, cell - inset * 2 - 10, cell - inset * 2 - 10);
+      ctx.fillStyle = "#ff6b4a";
+      ctx.beginPath();
+      ctx.arc(offset + model.cargo[0] * cell + cell / 2, offset + model.cargo[1] * cell + cell / 2, cargoRadius, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.save();
+      ctx.translate(offset + model.counter[0] * cell + cell / 2, offset + model.counter[1] * cell + cell / 2);
+      ctx.rotate(Math.PI / 4);
+      ctx.fillStyle = "#5bd8e8";
+      const diamondSize = Math.max(10, Math.round(cell * .21));
+      ctx.fillRect(-diamondSize, -diamondSize, diamondSize * 2, diamondSize * 2);
+      ctx.restore();
+      ctx.restore();
+      document.getElementById("gravity-ledger").innerHTML = `<span>SEALS <b>${model.collected}/${sealCount}</b></span><span>ROOM FRAME <b>${model.orientation * 90}°</b></span><span>COUNTERWEIGHT <b>${model.counter.join(",")}</b></span>`;
+    };
+    const rotateRoom = (label, inputSource) => {
+      if (model.rotating || model.terminal || model.submitting) return;
+      model.rotating = true;
+      const transition = helpers.beginAction?.("gravity_room_rotation");
+      const before = {cargo: [...model.cargo], counter: [...model.counter], orientation: model.orientation, collected: model.collected};
+      model.orientation = (model.orientation + (label === "cw" ? 1 : -1) + 4) % 4;
+      const settledCargo = gravitySlide(state.board, model.cargo, model.orientation, model.collected);
+      const settledCounter = gravitySlide(state.board, model.counter, model.orientation, 0);
+      model.cargo = settledCargo.position;
+      model.counter = settledCounter.position;
+      model.collected = settledCargo.collected;
+      event(model, "rotate", {
+        direction: label,
+        before,
+        after: {cargo: [...model.cargo], counter: [...model.counter], orientation: model.orientation, collected: model.collected},
+        input_source: inputSource,
+      });
+      document.querySelector(".gravity-frame").classList.add("is-rotating");
+      setTimeout(() => {
+        model.rotating = false;
+        document.querySelector(".gravity-frame")?.classList.remove("is-rotating");
+        draw();
+        transition?.settle();
+      }, state.rotation_ms);
+      draw();
+    };
+    if (interaction === "simplified") {
+      document.querySelectorAll("[data-gravity]").forEach((button) => button.addEventListener("click", () => rotateRoom(button.dataset.gravity, "rotation_button")));
+    } else {
+      canvas.classList.add("is-direct-gimbal");
+      canvas.addEventListener("pointerdown", (pointerEvent) => {
+        if (model.rotating || model.terminal || model.submitting) return;
+        model.directGesture = {pointerId: pointerEvent.pointerId, x: pointerEvent.clientX, y: pointerEvent.clientY};
+        canvas.setPointerCapture(pointerEvent.pointerId);
+        pointerEvent.preventDefault();
+      });
+      const finishDirectGesture = (pointerEvent) => {
+        const gesture = model.directGesture;
+        if (!gesture || gesture.pointerId !== pointerEvent.pointerId) return;
+        model.directGesture = null;
+        if (canvas.hasPointerCapture(pointerEvent.pointerId)) canvas.releasePointerCapture(pointerEvent.pointerId);
+        const dx = pointerEvent.clientX - gesture.x;
+        const dy = pointerEvent.clientY - gesture.y;
+        if (Math.abs(dx) < 48 || Math.abs(dx) < Math.abs(dy) * 1.2) {
+          setMessage(model, "SWEEP HORIZONTALLY THROUGH THE GIMBAL TO APPLY ONE QUARTER-TURN", "error");
+          return;
+        }
+        rotateRoom(dx > 0 ? "cw" : "ccw", "gimbal_drag");
+      };
+      canvas.addEventListener("pointerup", finishDirectGesture);
+      canvas.addEventListener("pointercancel", () => { model.directGesture = null; });
+    }
+    document.getElementById("gravity-certify").addEventListener("click", async () => {
+      const accepted = model.collected === sealCount
+        && model.cargo[0] === state.board.cargo_target[0] && model.cargo[1] === state.board.cargo_target[1]
+        && model.counter[0] === state.board.counter_target[0] && model.counter[1] === state.board.counter_target[1];
+      event(model, "certify", {cargo: [...model.cargo], counter: [...model.counter], orientation: model.orientation, collected: model.collected, accepted, input_source: "certify_button"});
+      if (!accepted) {
+        setMessage(model, `DELIVERY DENIED · ${sealCount}-SEAL CAPSULE AND UNDER-DECK COUNTERWEIGHT MUST BOTH DOCK`, "error");
+        return;
+      }
+      await submit(model, {mechanic_id: state.mechanic_id, task_id: state.task_id, challenge_id: state.challenge_id, events: model.events, completed: true}, "DUAL GRAVITY FREIGHT ACCEPTED", `SHARED ROTATIONS · TWO SLIDING BODIES · ${sealCount} ORDERED SEALS`);
+    });
+    document.getElementById("gravity-abandon").addEventListener("click", () => submit(model, {mechanic_id: state.mechanic_id, task_id: state.task_id, challenge_id: state.challenge_id, events: [...model.events, {seq: model.events.length + 1, type: "abandon"}], completed: false}, "", ""));
+    draw();
   };
 
   registry.floodgate_archive_rescue = async (state, helpers) => {
-    document.body.dataset.mechanic = "floodgate-archive-rescue"; const model = {state, helpers, events: [], levels: state.chambers.map((item) => Number(item.level)), gates: state.gates.map(()=>false), capsules: copy(state.capsules), terminal: false, submitting: false}; window.floodgateArchiveRescueModel = model;
-    helpers.app.innerHTML = shell(state, "SUBMERGED RECORDS OFFICE", "FLOODGATE ARCHIVE RESCUE", "Use conserved transfer circuits to equalize locks while amber and cyan archive capsules travel in opposite directions.", `<div class="flood-vaults">${state.chambers.map((chamber, index) => `<article data-vault="${index}"><b>${esc(chamber.id.toUpperCase())}</b><div class="flood-tank"><i id="flood-water-${index}"></i><em class="flood-limit" style="bottom:${chamber.safe_max * 100}%"></em>${state.capsules.map((capsule)=>`<span class="flood-capsule" id="flood-capsule-${capsule.id}-${index}" style="color:${capsule.color}">●</span>`).join("")}</div></article>${index < 4 ? `<div class="flood-lock" id="flood-lock-${index}">LOCK ${index + 1}</div>` : ""}`).join("")}</div>`, `<h2>CONSERVATION MANIFOLD</h2><p>Every pump moves 0.05 from one visible vault to another; total water never changes.</p><div class="flood-controls">${state.circuits.map((circuit,index)=>`<div><b>C${index+1} · V${circuit.between[0]+1}⇄V${circuit.between[1]+1}</b><button data-circuit="${index}" data-direction="1">V${circuit.between[0]+1} → V${circuit.between[1]+1}</button><button data-circuit="${index}" data-direction="-1">V${circuit.between[1]+1} → V${circuit.between[0]+1}</button></div>`).join("")}</div><div class="flood-gates">${state.gates.map((_item,index) => `<button data-lock="${index}">TOGGLE LOCK ${index + 1}</button>`).join("")}</div><button id="flood-flow">TRANSFER THROUGH OPEN EQUALIZED LOCK</button><button id="flood-certify" class="ivv-primary">SEAL BOTH EVIDENCE DOCKS</button><button id="flood-abandon" class="ivv-danger">DRAIN / FRESH ARCHIVE</button>`);
-    const draw = () => { model.levels.forEach((level,index) => { document.getElementById(`flood-water-${index}`).style.height = `${level * 100}%`; model.capsules.forEach((capsule,capsuleIndex)=>{const marker=document.getElementById(`flood-capsule-${capsule.id}-${index}`);marker.style.display=capsule.chamber===index?"block":"none";marker.style.bottom=`${Math.max(5,level*100-9-capsuleIndex*8)}%`;}); }); model.gates.forEach((open,index) => document.getElementById(`flood-lock-${index}`).classList.toggle("is-open", open)); const total=model.levels.reduce((sum,value)=>sum+value,0);setMessage(model, `AMBER V${model.capsules[0].chamber+1} → V5 · CYAN V${model.capsules[1].chamber+1} → V1 · TOTAL ${total.toFixed(2)}`, "idle"); };
-    const pump = (circuitIndex,direction) => {const circuit=state.circuits[circuitIndex],source=direction===1?circuit.between[0]:circuit.between[1],destination=direction===1?circuit.between[1]:circuit.between[0],step=Number(state.pump_step),before=[...model.levels];if(model.levels[source]-step<state.chambers[source].safe_min-1e-6||model.levels[destination]+step>state.chambers[destination].safe_max+1e-6){setMessage(model,"TRANSFER BLOCKED · A VAULT WOULD LEAVE ITS VISIBLE SAFE BAND","error");return;}model.levels[source]=round(model.levels[source]-step,2);model.levels[destination]=round(model.levels[destination]+step,2);event(model,"pump",{circuit:circuitIndex,direction,source,destination,before,after:[...model.levels],total_after:round(model.levels.reduce((s,v)=>s+v,0),2)});draw();};
-    document.querySelectorAll("[data-circuit]").forEach((button)=>button.addEventListener("click",()=>pump(Number(button.dataset.circuit),Number(button.dataset.direction)))); document.querySelectorAll("[data-lock]").forEach((button) => button.addEventListener("click", () => { const index = Number(button.dataset.lock),opening=!model.gates[index];model.gates=model.gates.map((_value,gate)=>gate===index?opening:false); event(model, "gate", {gate: index, open: opening, levels: [...model.levels],gates:[...model.gates]}); draw(); }));
-    document.getElementById("flood-flow").addEventListener("click", () => {const gate=model.gates.findIndex(Boolean),before=copy(model.capsules),moved=[];if(gate<0){setMessage(model,"OPEN ONE LOCK BEFORE TRANSFER","error");return;}if(Math.abs(model.levels[gate]-model.levels[gate+1])<=state.equal_tolerance){model.capsules.forEach((capsule)=>{if(capsule.direction===1&&capsule.chamber===gate){capsule.chamber+=1;moved.push(capsule.id);}else if(capsule.direction===-1&&capsule.chamber===gate+1){capsule.chamber-=1;moved.push(capsule.id);}});}event(model,"transfer",{gate,levels:[...model.levels],before_capsules:before,after_capsules:copy(model.capsules),moved});setMessage(model,moved.length?`${moved.map((id)=>id.toUpperCase()).join(" + ")} CROSSED LOCK ${gate+1}`:"NO CAPSULE CROSSED · LOCK LEVELS OR APPROACH SIDE DO NOT MATCH",moved.length?"passed":"error");draw();});
-    document.getElementById("flood-certify").addEventListener("click", async () => { const accepted = model.capsules.every((capsule)=>capsule.chamber===capsule.dock_chamber); event(model, "certify", {levels: [...model.levels], capsules:copy(model.capsules), accepted}); if (!accepted) { setMessage(model, "BOTH OPPOSING CAPSULES MUST REACH THEIR MARKED DOCKS", "error"); return; } await submit(model, {mechanic_id: state.mechanic_id, task_id: state.task_id, challenge_id: state.challenge_id, events: model.events, completed: true}, "ARCHIVE RESCUE AUTHENTICATED", "CONSERVED WATER · COUPLED LOCK LEVELS · OPPOSING CAPSULES"); });
-    document.getElementById("flood-abandon").addEventListener("click", () => submit(model, {mechanic_id: state.mechanic_id, task_id: state.task_id, challenge_id: state.challenge_id, events: [...model.events, {seq: model.events.length + 1, type: "abandon"}], completed: false}, "", "")); draw();
+    document.body.dataset.mechanic = "floodgate-archive-rescue";
+    const interaction = state.control_condition?.interaction || "simplified";
+    const levelPrecision = Number(state.level_precision || 2);
+    const model = {state, helpers, interaction, events: [], levels: state.chambers.map((item) => Number(item.level)), gates: state.gates.map(() => false), capsules: copy(state.capsules), terminal: false, submitting: false, directGesture: null};
+    window.floodgateArchiveRescueModel = model;
+    const manifold = state.circuits.map((circuit, index) => `C${index + 1}: V${circuit.between[0] + 1} ⇄ V${circuit.between[1] + 1}`).join(" · ");
+    const directControls = `<p class="flood-direct-note">Drag water from one connected vault to the other. Click a physical lock to open it, then drag the capsule through that adjacent lock.</p><div class="flood-circuit-map">${esc(manifold)}</div>`;
+    const proxyControls = `<div class="flood-controls">${state.circuits.map((circuit, index) => `<div><b>C${index + 1} · V${circuit.between[0] + 1}⇄V${circuit.between[1] + 1}</b><button data-circuit="${index}" data-direction="1">V${circuit.between[0] + 1} → V${circuit.between[1] + 1}</button><button data-circuit="${index}" data-direction="-1">V${circuit.between[1] + 1} → V${circuit.between[0] + 1}</button></div>`).join("")}</div><div class="flood-gates">${state.gates.map((_item, index) => `<button data-lock="${index}">TOGGLE LOCK ${index + 1}</button>`).join("")}</div><button id="flood-flow">TRANSFER THROUGH OPEN EQUALIZED LOCK</button>`;
+    helpers.app.innerHTML = shell(
+      state,
+      "SUBMERGED RECORDS OFFICE",
+      "FLOODGATE ARCHIVE RESCUE",
+      "Use conserved transfer circuits to equalize locks while amber and cyan archive capsules travel in opposite directions.",
+      `<div class="flood-vaults" style="grid-template-columns:repeat(${state.gates.length},minmax(0,1fr) 36px) minmax(0,1fr)">${state.chambers.map((chamber, index) => `<article data-vault="${index}"><b>${esc(chamber.id.toUpperCase())}</b><div class="flood-tank" data-vault="${index}"><i id="flood-water-${index}"></i><em class="flood-limit" style="bottom:${chamber.safe_max * 100}%"></em>${state.capsules.map((capsule) => `<span class="flood-capsule" data-capsule-id="${capsule.id}" id="flood-capsule-${capsule.id}-${index}" style="color:${capsule.color}">●</span>`).join("")}</div></article>${index < state.gates.length ? `<div class="flood-lock" data-physical-lock="${index}" id="flood-lock-${index}">LOCK ${index + 1}</div>` : ""}`).join("")}</div>`,
+      `<h2>CONSERVATION MANIFOLD</h2><p>Every pump moves ${Number(state.pump_step).toFixed(levelPrecision)} from one visible vault to another; total water never changes.</p>${interaction === "simplified" ? proxyControls : directControls}<button id="flood-certify" class="ivv-primary">SEAL BOTH EVIDENCE DOCKS</button><button id="flood-abandon" class="ivv-danger">DRAIN / FRESH ARCHIVE</button>`,
+    );
+    const roundLevel = (value) => round(value, levelPrecision);
+    const draw = () => {
+      model.levels.forEach((level, index) => {
+        document.getElementById(`flood-water-${index}`).style.height = `${level * 100}%`;
+        model.capsules.forEach((capsule, capsuleIndex) => {
+          const marker = document.getElementById(`flood-capsule-${capsule.id}-${index}`);
+          marker.style.display = capsule.chamber === index ? "block" : "none";
+          marker.style.bottom = `${Math.max(5, level * 100 - 9 - capsuleIndex * 8)}%`;
+        });
+      });
+      model.gates.forEach((open, index) => document.getElementById(`flood-lock-${index}`).classList.toggle("is-open", open));
+      const total = model.levels.reduce((sum, value) => sum + value, 0);
+      const lastVault = state.chambers.length;
+      setMessage(model, `AMBER V${model.capsules[0].chamber + 1} → V${lastVault} · CYAN V${model.capsules[1].chamber + 1} → V1 · TOTAL ${total.toFixed(levelPrecision)}`, "idle");
+    };
+    const pump = (circuitIndex, direction, inputSource) => {
+      const circuit = state.circuits[circuitIndex];
+      const source = direction === 1 ? circuit.between[0] : circuit.between[1];
+      const destination = direction === 1 ? circuit.between[1] : circuit.between[0];
+      const step = Number(state.pump_step);
+      const before = [...model.levels];
+      if (model.levels[source] - step < state.chambers[source].safe_min - 1e-6 || model.levels[destination] + step > state.chambers[destination].safe_max + 1e-6) {
+        setMessage(model, "TRANSFER BLOCKED · A VAULT WOULD LEAVE ITS VISIBLE SAFE BAND", "error");
+        return;
+      }
+      model.levels[source] = roundLevel(model.levels[source] - step);
+      model.levels[destination] = roundLevel(model.levels[destination] + step);
+      event(model, "pump", {circuit: circuitIndex, direction, source, destination, before, after: [...model.levels], total_after: roundLevel(model.levels.reduce((sum, value) => sum + value, 0)), input_source: inputSource});
+      draw();
+    };
+    const toggleGate = (index, inputSource) => {
+      const opening = !model.gates[index];
+      model.gates = model.gates.map((_value, gate) => gate === index ? opening : false);
+      event(model, "gate", {gate: index, open: opening, levels: [...model.levels], gates: [...model.gates], input_source: inputSource});
+      draw();
+    };
+    const transfer = (gate, inputSource) => {
+      const before = copy(model.capsules);
+      const moved = [];
+      if (gate < 0 || !model.gates[gate]) {
+        setMessage(model, "OPEN ONE LOCK BEFORE TRANSFER", "error");
+        return;
+      }
+      if (Math.abs(model.levels[gate] - model.levels[gate + 1]) <= state.equal_tolerance) {
+        model.capsules.forEach((capsule) => {
+          if (capsule.direction === 1 && capsule.chamber === gate) {
+            capsule.chamber += 1;
+            moved.push(capsule.id);
+          } else if (capsule.direction === -1 && capsule.chamber === gate + 1) {
+            capsule.chamber -= 1;
+            moved.push(capsule.id);
+          }
+        });
+      }
+      event(model, "transfer", {gate, levels: [...model.levels], before_capsules: before, after_capsules: copy(model.capsules), moved, input_source: inputSource});
+      setMessage(model, moved.length ? `${moved.map((id) => id.toUpperCase()).join(" + ")} CROSSED LOCK ${gate + 1}` : "NO CAPSULE CROSSED · LOCK LEVELS OR APPROACH SIDE DO NOT MATCH", moved.length ? "passed" : "error");
+      draw();
+    };
+    if (interaction === "simplified") {
+      document.querySelectorAll("[data-circuit]").forEach((button) => button.addEventListener("click", () => pump(Number(button.dataset.circuit), Number(button.dataset.direction), "circuit_button")));
+      document.querySelectorAll("[data-lock]").forEach((button) => button.addEventListener("click", () => toggleGate(Number(button.dataset.lock), "lock_button")));
+      document.getElementById("flood-flow").addEventListener("click", () => transfer(model.gates.findIndex(Boolean), "transfer_button"));
+    } else {
+      document.querySelectorAll("[data-physical-lock]").forEach((lock) => lock.addEventListener("click", () => toggleGate(Number(lock.dataset.physicalLock), "lock_direct")));
+      const vaults = document.querySelector(".flood-vaults");
+      const vaultAt = (clientX, clientY) => {
+        const target = document.elementFromPoint(clientX, clientY);
+        const vault = target?.closest("[data-vault]");
+        return vault ? Number(vault.dataset.vault) : null;
+      };
+      vaults.addEventListener("pointerdown", (pointerEvent) => {
+        if (model.terminal || model.submitting) return;
+        const vault = pointerEvent.target.closest("[data-vault]");
+        if (!vault) return;
+        const capsule = pointerEvent.target.closest(".flood-capsule");
+        model.directGesture = {kind: capsule ? "capsule" : "water", source: Number(vault.dataset.vault), capsule_id: capsule?.dataset.capsuleId || null, pointer_id: pointerEvent.pointerId};
+        vaults.setPointerCapture(pointerEvent.pointerId);
+        pointerEvent.preventDefault();
+      });
+      const finishDirectGesture = (pointerEvent) => {
+        const gesture = model.directGesture;
+        if (!gesture || gesture.pointer_id !== pointerEvent.pointerId) return;
+        model.directGesture = null;
+        if (vaults.hasPointerCapture(pointerEvent.pointerId)) vaults.releasePointerCapture(pointerEvent.pointerId);
+        const destination = vaultAt(pointerEvent.clientX, pointerEvent.clientY);
+        if (destination === null || destination === gesture.source) {
+          setMessage(model, gesture.kind === "water" ? "DRAG WATER TO A CONNECTED VAULT" : "DRAG THE CAPSULE THROUGH ITS ADJACENT OPEN LOCK", "error");
+          return;
+        }
+        if (gesture.kind === "water") {
+          const circuitIndex = state.circuits.findIndex((circuit) => circuit.between.includes(gesture.source) && circuit.between.includes(destination));
+          if (circuitIndex < 0) {
+            setMessage(model, "NO VISIBLE MANIFOLD CIRCUIT CONNECTS THOSE VAULTS", "error");
+            return;
+          }
+          const direction = state.circuits[circuitIndex].between[0] === gesture.source ? 1 : -1;
+          pump(circuitIndex, direction, "water_drag");
+          return;
+        }
+        const capsule = model.capsules.find((item) => item.id === gesture.capsule_id);
+        const gate = Math.min(gesture.source, destination);
+        if (!capsule || capsule.chamber !== gesture.source || destination !== gesture.source + capsule.direction || gate < 0 || gate >= state.gates.length) {
+          setMessage(model, "CAPSULES CAN ONLY CROSS THEIR ADJACENT LOCK IN THE MARKED DIRECTION", "error");
+          return;
+        }
+        transfer(gate, "capsule_drag");
+      };
+      vaults.addEventListener("pointerup", finishDirectGesture);
+      vaults.addEventListener("pointercancel", () => { model.directGesture = null; });
+    }
+    document.getElementById("flood-certify").addEventListener("click", async () => {
+      const accepted = model.capsules.every((capsule) => capsule.chamber === capsule.dock_chamber);
+      event(model, "certify", {levels: [...model.levels], capsules: copy(model.capsules), accepted, input_source: "certify_button"});
+      if (!accepted) {
+        setMessage(model, "BOTH OPPOSING CAPSULES MUST REACH THEIR MARKED DOCKS", "error");
+        return;
+      }
+      await submit(model, {mechanic_id: state.mechanic_id, task_id: state.task_id, challenge_id: state.challenge_id, events: model.events, completed: true}, "ARCHIVE RESCUE AUTHENTICATED", "CONSERVED WATER · COUPLED LOCK LEVELS · OPPOSING CAPSULES");
+    });
+    document.getElementById("flood-abandon").addEventListener("click", () => submit(model, {mechanic_id: state.mechanic_id, task_id: state.task_id, challenge_id: state.challenge_id, events: [...model.events, {seq: model.events.length + 1, type: "abandon"}], completed: false}, "", ""));
+    draw();
   };
 
   function membraneForce(heights, accel) { const left = (heights[0] + heights[2]) / 2, right = (heights[1] + heights[3]) / 2, top = (heights[0] + heights[1]) / 2, bottom = (heights[2] + heights[3]) / 2; return {x: (left - right) * Number(accel), y: (top - bottom) * Number(accel)}; }
   registry.elastic_membrane_sorter = async (state, helpers) => {
-    document.body.dataset.mechanic = "elastic-membrane-sorter"; const model = {state, helpers, events: [], roundIndex: 0, heights: [...state.rounds[0].post_heights], ball: {x:450,y:230,vx:0,vy:0}, running:false, checkpoint:0, captured:[], terminal:false, submitting:false, interval:null, ticks:0}; window.elasticMembraneSorterModel = model;
-    helpers.app.innerHTML = shell(state, "SOFT-MATTER SORTING OFFICE", "ELASTIC MEMBRANE SORTER", "Release each marble, then steer the live membrane through two numbered rings before entering its assigned well slowly enough to capture.", `<canvas id="membrane-canvas" width="900" height="480"></canvas>`, `<h2>LIVE TENSION POSTS</h2><p>All four sliders remain active in flight. Momentum persists after every correction.</p><div class="membrane-sliders">${[0,1,2,3].map((index) => `<label>P${index + 1}<input data-post="${index}" type="range" min="0" max="100" value="50"><span id="post-value-${index}">.50</span></label>`).join("")}</div><button id="membrane-release" class="ivv-primary">RELEASE MARBLE</button><button id="membrane-reset">RESET THIS MARBLE</button><button id="membrane-abandon" class="ivv-danger">CUT MEMBRANE / FRESH SORT</button>`);
-    const current = () => state.rounds[model.roundIndex]; const resetRound = () => { clearInterval(model.interval); model.running=false; model.heights=[...current().post_heights]; model.ball={x:450,y:230,vx:0,vy:0}; model.ticks=0;model.checkpoint=0; document.querySelectorAll("[data-post]").forEach((input,index)=>{ input.value=String(Math.round(model.heights[index]*100)); document.getElementById(`post-value-${index}`).textContent=model.heights[index].toFixed(2); }); draw(); };
-    const draw = () => { const ctx=document.getElementById("membrane-canvas").getContext("2d"), target=current().target_well; ctx.fillStyle="#100e1d";ctx.fillRect(0,0,900,480); for(let y=0;y<=12;y++){ctx.beginPath();for(let x=0;x<=20;x++){const px=x/20*760+70,py=y/12*370+55;const u=x/20,v=y/12,h=(1-u)*(1-v)*model.heights[0]+u*(1-v)*model.heights[1]+(1-u)*v*model.heights[2]+u*v*model.heights[3];const wave=(h-.5)*42; if(x===0)ctx.moveTo(px,py-wave);else ctx.lineTo(px,py-wave);}ctx.strokeStyle="rgba(145,117,255,.26)";ctx.stroke();} current().wells.forEach((well,index)=>{ctx.beginPath();ctx.arc(well[0],well[1],state.physics.well_radius,0,Math.PI*2);ctx.strokeStyle=index===target?"#d8ff5b":"#49435f";ctx.lineWidth=index===target?5:2;ctx.stroke();});current().checkpoints.forEach((point,index)=>{ctx.strokeStyle=index<model.checkpoint?"#70d79f":index===model.checkpoint?"#ffcf63":"#6e6685";ctx.lineWidth=4;ctx.beginPath();ctx.arc(point[0],point[1],state.physics.checkpoint_radius,0,Math.PI*2);ctx.stroke();ctx.fillStyle=ctx.strokeStyle;ctx.font="900 14px Courier New";ctx.fillText(String(index+1),point[0]-4,point[1]+5);}); state.post_positions.forEach((point,index)=>{ctx.fillStyle=`hsl(${220+model.heights[index]*90} 70% 62%)`;ctx.beginPath();ctx.arc(point[0],point[1],12,0,Math.PI*2);ctx.fill();});ctx.fillStyle="#ffcf63";ctx.beginPath();ctx.arc(model.ball.x,model.ball.y,14,0,Math.PI*2);ctx.fill();ctx.fillStyle="#e8e1ff";ctx.font="800 11px Courier New";ctx.fillText(`MARBLE ${model.roundIndex+1}/3 · RINGS ${model.checkpoint}/2 · SPEED ${Math.hypot(model.ball.vx,model.ball.vy).toFixed(2)} · TICK ${model.ticks}/${state.physics.max_ticks}`,18,24); };
-    const release=()=>{if(model.running||model.terminal)return;model.running=true;event(model,"release",{round_id:current().id,tick:model.ticks,heights:model.heights.map(v=>round(v,2))});model.interval=setInterval(async()=>{const force=membraneForce(model.heights,state.physics.slope_accel);model.ball.vx=(model.ball.vx+force.x)*state.physics.drag;model.ball.vy=(model.ball.vy+force.y)*state.physics.drag;model.ball.x+=model.ball.vx;model.ball.y+=model.ball.vy;if(model.ball.x<28||model.ball.x>872){model.ball.x=clamp(model.ball.x,28,872);model.ball.vx*=-state.physics.boundary_restitution;}if(model.ball.y<28||model.ball.y>452){model.ball.y=clamp(model.ball.y,28,452);model.ball.vy*=-state.physics.boundary_restitution;}model.ticks+=1;const checkpoint=current().checkpoints[model.checkpoint];if(checkpoint&&Math.hypot(model.ball.x-checkpoint[0],model.ball.y-checkpoint[1])<=state.physics.checkpoint_radius){model.checkpoint+=1;event(model,"checkpoint",{round_id:current().id,tick:model.ticks,index:model.checkpoint-1,ball:{x:round(model.ball.x),y:round(model.ball.y),vx:round(model.ball.vx),vy:round(model.ball.vy)}});setMessage(model,`INSPECTION RING ${model.checkpoint}/2 CLEARED · KEEP STEERING`,"passed");}const well=current().wells[current().target_well],distance=Math.hypot(model.ball.x-well[0],model.ball.y-well[1]),speed=Math.hypot(model.ball.vx,model.ball.vy);if(model.checkpoint===current().checkpoints.length&&distance<state.physics.well_radius&&speed<=state.physics.capture_speed){clearInterval(model.interval);model.running=false;model.captured.push(current().id);event(model,"capture",{round_id:current().id,tick:model.ticks,well:current().target_well,checkpoints:model.checkpoint,speed:round(speed),ball:{x:round(model.ball.x),y:round(model.ball.y),vx:round(model.ball.vx),vy:round(model.ball.vy)},heights:model.heights.map(v=>round(v,2))});if(model.roundIndex<state.rounds.length-1){model.roundIndex+=1;resetRound();setMessage(model,"MARBLE CAPTURED · NEXT LIVE COURSE READY","passed");}else await submit(model,{mechanic_id:state.mechanic_id,task_id:state.task_id,challenge_id:state.challenge_id,events:model.events,completed:true},"MEMBRANE SORT AUTHENTICATED","LIVE POST CHANGES · ORDERED RINGS · DAMPED CAPTURE");return;}if(model.ticks>=state.physics.max_ticks){clearInterval(model.interval);model.running=false;event(model,"stall",{round_id:current().id,tick:model.ticks,ball:copy(model.ball),checkpoints:model.checkpoint});setMessage(model,"MOTION PAUSED AT THE VISIBLE SIMULATION LIMIT · RESET THIS MARBLE","error");}draw();},state.physics.tick_ms);};
-    document.querySelectorAll("[data-post]").forEach((input)=>input.addEventListener("input",()=>{const index=Number(input.dataset.post),before=model.heights[index];model.heights[index]=Number(input.value)/100;event(model,"post",{round_id:current().id,tick:model.ticks,post:index,before:round(before,2),after:round(model.heights[index],2)});document.getElementById(`post-value-${index}`).textContent=model.heights[index].toFixed(2);draw();}));document.getElementById("membrane-release").addEventListener("click",release);document.getElementById("membrane-reset").addEventListener("click",()=>{event(model,"reset",{round_id:current().id,tick:model.ticks});resetRound();});document.getElementById("membrane-abandon").addEventListener("click",()=>submit(model,{mechanic_id:state.mechanic_id,task_id:state.task_id,challenge_id:state.challenge_id,events:[...model.events,{seq:model.events.length+1,type:"abandon"}],completed:false},"",""));resetRound();
+    document.body.dataset.mechanic = "elastic-membrane-sorter";
+    const interaction = state.control_condition?.interaction || "simplified";
+    const model = {state, helpers, interaction, events: [], roundIndex: 0, heights: [...state.rounds[0].post_heights], ball: {x: 450, y: 230, vx: 0, vy: 0}, running: false, checkpoint: 0, captured: [], terminal: false, submitting: false, interval: null, ticks: 0, postDrag: null};
+    window.elasticMembraneSorterModel = model;
+    const sliderControls = `<div class="membrane-sliders">${[0, 1, 2, 3].map((index) => `<label>P${index + 1}<input data-post="${index}" type="range" min="0" max="100" value="50"><span id="post-value-${index}">.50</span></label>`).join("")}</div>`;
+    const directControls = `<p class="membrane-direct-note">DRAG A GLOWING POST MARKER UP OR DOWN ON THE MEMBRANE. ITS TRACK AND POSITION SHOW THE CURRENT TENSION.</p>`;
+    helpers.app.innerHTML = shell(
+      state,
+      "SOFT-MATTER SORTING OFFICE",
+      "ELASTIC MEMBRANE SORTER",
+      "Release each marble, then steer the live membrane through the numbered rings before entering its highlighted well below the visible capture-speed limit.",
+      `<canvas id="membrane-canvas" width="900" height="480"></canvas>`,
+      `<h2>LIVE TENSION POSTS</h2><p>${interaction === "simplified" ? "Use the labelled tension sliders; all four posts remain live in flight." : "Use direct membrane-post dragging; all four markers remain live in flight."} Momentum persists after every correction.</p>${interaction === "simplified" ? sliderControls : directControls}<button id="membrane-release" class="ivv-primary">RELEASE MARBLE</button><button id="membrane-reset">RESET THIS MARBLE</button><button id="membrane-abandon" class="ivv-danger">CUT MEMBRANE / FRESH SORT</button>`,
+    );
+    const canvas = document.getElementById("membrane-canvas");
+    const current = () => state.rounds[model.roundIndex];
+    const postMarker = (index) => {
+      const point = state.post_positions[index];
+      return {x: point[0], y: clamp(point[1] + (.5 - model.heights[index]) * 80, 14, 466)};
+    };
+    const syncPostControl = (index) => {
+      const input = document.querySelector(`[data-post="${index}"]`);
+      if (input) input.value = String(Math.round(model.heights[index] * 100));
+      const label = document.getElementById(`post-value-${index}`);
+      if (label) label.textContent = model.heights[index].toFixed(2);
+    };
+    const setPost = (index, value, inputSource, gesture = {}) => {
+      if (model.terminal || ![0, 1, 2, 3].includes(index)) return;
+      const before = model.heights[index];
+      const after = round(clamp(Number(value), 0, 1), 2);
+      if (after === before) return;
+      model.heights[index] = after;
+      event(model, "post", {round_id: current().id, tick: model.ticks, post: index, before: round(before, 2), after, input_source: inputSource, ...gesture});
+      syncPostControl(index);
+      draw();
+    };
+    const resetRound = () => {
+      clearInterval(model.interval);
+      model.running = false;
+      model.postDrag = null;
+      model.heights = [...current().post_heights];
+      model.ball = {x: 450, y: 230, vx: 0, vy: 0};
+      model.ticks = 0;
+      model.checkpoint = 0;
+      model.heights.forEach((_value, index) => syncPostControl(index));
+      draw();
+    };
+    const draw = () => {
+      const ctx = canvas.getContext("2d"), target = current().target_well;
+      ctx.fillStyle = "#100e1d";
+      ctx.fillRect(0, 0, 900, 480);
+      for (let y = 0; y <= 12; y++) {
+        ctx.beginPath();
+        for (let x = 0; x <= 20; x++) {
+          const px = x / 20 * 760 + 70, py = y / 12 * 370 + 55, u = x / 20, v = y / 12;
+          const h = (1 - u) * (1 - v) * model.heights[0] + u * (1 - v) * model.heights[1] + (1 - u) * v * model.heights[2] + u * v * model.heights[3];
+          const wave = (h - .5) * 42;
+          if (x === 0) ctx.moveTo(px, py - wave); else ctx.lineTo(px, py - wave);
+        }
+        ctx.strokeStyle = "rgba(145,117,255,.26)";
+        ctx.stroke();
+      }
+      current().wells.forEach((well, index) => {
+        ctx.beginPath(); ctx.arc(well[0], well[1], state.physics.well_radius, 0, Math.PI * 2);
+        ctx.strokeStyle = index === target ? "#d8ff5b" : "#49435f"; ctx.lineWidth = index === target ? 5 : 2; ctx.stroke();
+      });
+      current().checkpoints.forEach((point, index) => {
+        ctx.strokeStyle = index < model.checkpoint ? "#70d79f" : index === model.checkpoint ? "#ffcf63" : "#6e6685";
+        ctx.lineWidth = 4; ctx.beginPath(); ctx.arc(point[0], point[1], state.physics.checkpoint_radius, 0, Math.PI * 2); ctx.stroke();
+        ctx.fillStyle = ctx.strokeStyle; ctx.font = "900 14px Courier New"; ctx.fillText(String(index + 1), point[0] - 4, point[1] + 5);
+      });
+      state.post_positions.forEach((point, index) => {
+        const marker = postMarker(index);
+        ctx.strokeStyle = "rgba(230,220,255,.36)"; ctx.lineWidth = 4; ctx.beginPath(); ctx.moveTo(point[0], point[1] - 40); ctx.lineTo(point[0], point[1] + 40); ctx.stroke();
+        ctx.fillStyle = "rgba(11,7,22,.84)"; ctx.fillRect(point[0] - 16, point[1] - 5, 32, 10);
+        ctx.fillStyle = `hsl(${220 + model.heights[index] * 90} 70% 62%)`; ctx.beginPath(); ctx.arc(marker.x, marker.y, 13, 0, Math.PI * 2); ctx.fill();
+        ctx.strokeStyle = "#f5edff"; ctx.lineWidth = 2; ctx.stroke(); ctx.fillStyle = "#f5edff"; ctx.font = "800 9px Courier New"; ctx.fillText(`P${index + 1}`, point[0] - 7, point[1] + 4);
+      });
+      ctx.fillStyle = "#ffcf63"; ctx.beginPath(); ctx.arc(model.ball.x, model.ball.y, 14, 0, Math.PI * 2); ctx.fill();
+      ctx.fillStyle = "#e8e1ff"; ctx.font = "800 11px Courier New";
+      ctx.fillText(`MARBLE ${model.roundIndex + 1}/${state.rounds.length} · RINGS ${model.checkpoint}/${current().checkpoints.length} · SPEED ${Math.hypot(model.ball.vx, model.ball.vy).toFixed(2)} · TICK ${model.ticks}/${state.physics.max_ticks}`, 18, 24);
+    };
+    const release = () => {
+      if (model.running || model.terminal) return;
+      model.running = true;
+      event(model, "release", {round_id: current().id, tick: model.ticks, heights: model.heights.map((value) => round(value, 2))});
+      model.interval = setInterval(async () => {
+        const force = membraneForce(model.heights, state.physics.slope_accel);
+        model.ball.vx = (model.ball.vx + force.x) * state.physics.drag;
+        model.ball.vy = (model.ball.vy + force.y) * state.physics.drag;
+        model.ball.x += model.ball.vx; model.ball.y += model.ball.vy;
+        if (model.ball.x < 28 || model.ball.x > 872) { model.ball.x = clamp(model.ball.x, 28, 872); model.ball.vx *= -state.physics.boundary_restitution; }
+        if (model.ball.y < 28 || model.ball.y > 452) { model.ball.y = clamp(model.ball.y, 28, 452); model.ball.vy *= -state.physics.boundary_restitution; }
+        model.ticks += 1;
+        const checkpoint = current().checkpoints[model.checkpoint];
+        if (checkpoint && Math.hypot(model.ball.x - checkpoint[0], model.ball.y - checkpoint[1]) <= state.physics.checkpoint_radius) {
+          model.checkpoint += 1;
+          event(model, "checkpoint", {round_id: current().id, tick: model.ticks, index: model.checkpoint - 1, ball: {x: round(model.ball.x), y: round(model.ball.y), vx: round(model.ball.vx), vy: round(model.ball.vy)}});
+          setMessage(model, `INSPECTION RING ${model.checkpoint}/${current().checkpoints.length} CLEARED · KEEP STEERING`, "passed");
+        }
+        const well = current().wells[current().target_well], distance = Math.hypot(model.ball.x - well[0], model.ball.y - well[1]), speed = Math.hypot(model.ball.vx, model.ball.vy);
+        if (model.checkpoint === current().checkpoints.length && distance < state.physics.well_radius && speed <= state.physics.capture_speed) {
+          clearInterval(model.interval); model.running = false; model.captured.push(current().id);
+          event(model, "capture", {round_id: current().id, tick: model.ticks, well: current().target_well, checkpoints: model.checkpoint, speed: round(speed), ball: {x: round(model.ball.x), y: round(model.ball.y), vx: round(model.ball.vx), vy: round(model.ball.vy)}, heights: model.heights.map((value) => round(value, 2))});
+          if (model.roundIndex < state.rounds.length - 1) { model.roundIndex += 1; resetRound(); setMessage(model, "MARBLE CAPTURED · NEXT LIVE COURSE READY", "passed"); }
+          else await submit(model, {mechanic_id: state.mechanic_id, task_id: state.task_id, challenge_id: state.challenge_id, events: model.events, completed: true}, "MEMBRANE SORT AUTHENTICATED", "LIVE POST CHANGES · ORDERED RINGS · DAMPED CAPTURE");
+          return;
+        }
+        if (model.ticks >= state.physics.max_ticks) {
+          clearInterval(model.interval); model.running = false;
+          event(model, "stall", {round_id: current().id, tick: model.ticks, ball: copy(model.ball), checkpoints: model.checkpoint});
+          setMessage(model, "MOTION PAUSED AT THE VISIBLE SIMULATION LIMIT · RESET THIS MARBLE", "error");
+        }
+        draw();
+      }, state.physics.tick_ms);
+    };
+    document.querySelectorAll("[data-post]").forEach((input) => input.addEventListener("input", () => setPost(Number(input.dataset.post), Number(input.value) / 100, "tension_slider")));
+    const canvasPoint = (pointerEvent) => { const box = canvas.getBoundingClientRect(); return {x: (pointerEvent.clientX - box.left) / box.width * 900, y: (pointerEvent.clientY - box.top) / box.height * 480}; };
+    canvas.addEventListener("pointerdown", (pointerEvent) => {
+      if (interaction !== "full" || model.terminal || model.postDrag) return;
+      const point = canvasPoint(pointerEvent);
+      const index = [0, 1, 2, 3].find((candidate) => { const marker = postMarker(candidate); return Math.hypot(point.x - marker.x, point.y - marker.y) <= 20; });
+      if (index === undefined) return;
+      model.postDrag = {index, pointerId: pointerEvent.pointerId, startHeight: model.heights[index], start: point};
+      canvas.setPointerCapture(pointerEvent.pointerId); pointerEvent.preventDefault();
+    });
+    canvas.addEventListener("pointermove", (pointerEvent) => {
+      const drag = model.postDrag;
+      if (!drag || drag.pointerId !== pointerEvent.pointerId) return;
+      const point = canvasPoint(pointerEvent), anchor = state.post_positions[drag.index];
+      setPost(drag.index, .5 + (anchor[1] - point.y) / 80, "membrane_post_drag");
+      pointerEvent.preventDefault();
+    });
+    const finishPostDrag = (pointerEvent) => {
+      const drag = model.postDrag;
+      if (!drag || drag.pointerId !== pointerEvent.pointerId) return;
+      model.postDrag = null;
+      try { canvas.releasePointerCapture(pointerEvent.pointerId); } catch (_error) {}
+      pointerEvent.preventDefault();
+    };
+    canvas.addEventListener("pointerup", finishPostDrag);
+    canvas.addEventListener("pointercancel", finishPostDrag);
+    document.getElementById("membrane-release").addEventListener("click", release);
+    document.getElementById("membrane-reset").addEventListener("click", () => { event(model, "reset", {round_id: current().id, tick: model.ticks}); resetRound(); });
+    document.getElementById("membrane-abandon").addEventListener("click", () => submit(model, {mechanic_id: state.mechanic_id, task_id: state.task_id, challenge_id: state.challenge_id, events: [...model.events, {seq: model.events.length + 1, type: "abandon"}], completed: false}, "", ""));
+    resetRound();
   };
 
   function segmentHitsRect(a,b,rect){const steps=Math.max(1,Math.ceil(Math.hypot(b.x-a.x,b.y-a.y)/5));for(let i=0;i<=steps;i++){const t=i/steps,x=a.x+(b.x-a.x)*t,y=a.y+(b.y-a.y)*t;if(x>rect.x-rect.w/2&&x<rect.x+rect.w/2&&y>rect.y-rect.h/2&&y<rect.y+rect.h/2)return true;}return false;}
@@ -395,27 +797,103 @@
 
   registry.clockwork_clutch_safe = async (state, helpers) => {
     document.body.dataset.mechanic = "clockwork-clutch-safe";
-    const model = {state, helpers, events: [], shafts: copy(state.shafts), tick: 0, running: false, terminal: false, submitting: false, interval: null};
+    const interaction = state.control_condition?.interaction || "simplified";
+    const model = {state, helpers, interaction, events: [], shafts: copy(state.shafts), tick: 0, running: false, terminal: false, submitting: false, interval: null, clutchDrag: null};
+    const showAngleReadout = state.physics.show_angle_readout !== false;
+    const showSpeedReadout = state.physics.show_speed_readout !== false;
+    const reengagementAllowed = state.physics.reengagement_allowed !== false;
+    const shaftCountWord = ({1: "one", 2: "two", 3: "three", 4: "four"})[state.shafts.length] || String(state.shafts.length);
     window.clockworkClutchSafeModel = model;
+    const clutchControl = (shaft, index) => interaction === "simplified"
+      ? `<button data-clutch="${index}">RELEASE ${esc(shaft.id.toUpperCase())}</button>`
+      : `<div class="clutch-lever" data-clutch-lever="${index}" data-state="coupled" aria-label="${esc(shaft.id)} clutch lever: coupled">
+          <span>COUPLED</span><div class="clutch-lever-rail"><i class="clutch-lever-handle"></i></div><span>FREE</span>
+        </div>`;
     helpers.app.innerHTML = shell(
       state, "HOROLOGICAL CRIME UNIT", "CLOCKWORK CLUTCH SAFE",
-      "Release four seals at the witness mark. Every clutch change redistributes load and changes every shaft still coupled to the drive.",
-      `<div class="clutch-bank">${state.shafts.map((shaft, index) => `<article><canvas id="clutch-${index}" width="230" height="230"></canvas><button data-clutch="${index}">RELEASE ${esc(shaft.id.toUpperCase())}</button></article>`).join("")}</div>`,
-      `<h2>LOAD-COUPLED MASTER DRIVE</h2><p>Fewer engaged shafts run faster. Re-engagement is legal for recovery.</p><button id="clutch-drive" class="ivv-primary">START DRIVE</button><button id="clutch-brake">BRAKE / STOP DRIVE</button><button id="clutch-unlock">TRY SAFE</button><div id="clutch-tick" class="ivv-telemetry"></div><button id="clutch-abandon" class="ivv-danger">BREAK TRAIN / FRESH SAFE</button>`,
+      `Release ${shaftCountWord} ${state.shafts.length === 1 ? "seal" : "seals"} at the witness mark. Every clutch change redistributes load and changes every shaft still coupled to the drive.`,
+      `<div class="clutch-bank">${state.shafts.map((shaft, index) => `<article><canvas id="clutch-${index}" width="230" height="230"></canvas>${clutchControl(shaft, index)}</article>`).join("")}</div>`,
+      `<h2>LOAD-COUPLED MASTER DRIVE</h2><p>Fewer engaged shafts run faster. ${reengagementAllowed ? "Re-engagement is legal for recovery." : "Released clutches are irreversible in this trial."}</p><button id="clutch-drive" class="ivv-primary">START DRIVE</button><button id="clutch-brake">BRAKE / STOP DRIVE</button><button id="clutch-unlock">TRY SAFE</button><div id="clutch-tick" class="ivv-telemetry"></div><button id="clutch-abandon" class="ivv-danger">BREAK TRAIN / FRESH SAFE</button>`,
     );
     const speeds = () => { const active = model.shafts.filter((shaft) => shaft.engaged).length, factor = active ? Number(state.physics.load_numerator) / active : 0; return model.shafts.map((shaft) => shaft.engaged ? Number(shaft.ratio) * Number(state.physics.drive_deg_per_tick) * factor : 0); };
     const draw = () => {
       const currentSpeeds = speeds();
-      model.shafts.forEach((shaft, index) => { const ctx = document.getElementById(`clutch-${index}`).getContext("2d"); ctx.clearRect(0, 0, 230, 230); ctx.fillStyle = "#13110d"; ctx.fillRect(0, 0, 230, 230); ctx.save(); ctx.translate(115, 115); ctx.rotate(shaft.angle_deg * Math.PI / 180); ctx.strokeStyle = shaft.engaged ? "#e5ad4b" : "#70d39b"; ctx.lineWidth = 12; ctx.beginPath(); ctx.arc(0, 0, 78, 0, Math.PI * 2); ctx.stroke(); for (let tooth = 0; tooth < 18; tooth++) { ctx.rotate(Math.PI * 2 / 18); ctx.fillStyle = ctx.strokeStyle; ctx.fillRect(72, -5, 18, 10); } ctx.fillStyle = "#f7ead0"; ctx.fillRect(-5, -82, 10, 28); ctx.restore(); ctx.fillStyle = "#ff5d4e"; ctx.fillRect(111, 8, 8, 28); ctx.fillStyle = "#c4b9a5"; ctx.font = "800 10px Courier New"; ctx.fillText(`${shaft.angle_deg.toFixed(1)}° · ${shaft.engaged ? `${currentSpeeds[index].toFixed(1)}°/T` : "FREE"}`, 52, 214); });
+      model.shafts.forEach((shaft, index) => {
+        const ctx = document.getElementById(`clutch-${index}`).getContext("2d");
+        ctx.clearRect(0, 0, 230, 230); ctx.fillStyle = "#13110d"; ctx.fillRect(0, 0, 230, 230); ctx.save(); ctx.translate(115, 115); ctx.rotate(shaft.angle_deg * Math.PI / 180); ctx.strokeStyle = shaft.engaged ? "#e5ad4b" : "#70d39b"; ctx.lineWidth = 12; ctx.beginPath(); ctx.arc(0, 0, 78, 0, Math.PI * 2); ctx.stroke(); for (let tooth = 0; tooth < 18; tooth++) { ctx.rotate(Math.PI * 2 / 18); ctx.fillStyle = ctx.strokeStyle; ctx.fillRect(72, -5, 18, 10); } ctx.fillStyle = "#f7ead0"; ctx.fillRect(-5, -82, 10, 28); ctx.restore(); ctx.fillStyle = "#ff5d4e"; ctx.fillRect(111, 8, 8, 28); ctx.fillStyle = "#c4b9a5"; ctx.font = "800 10px Courier New";
+        const currentTelemetry = showAngleReadout && showSpeedReadout
+          ? `${shaft.angle_deg.toFixed(1)}° · ${shaft.engaged ? `${currentSpeeds[index].toFixed(1)}°/T` : "FREE"}`
+          : [
+              shaft.id.toUpperCase(),
+              showAngleReadout ? `${shaft.angle_deg.toFixed(1)}°` : null,
+              shaft.engaged ? (showSpeedReadout ? `${currentSpeeds[index].toFixed(1)}°/T` : "COUPLED") : "FREE",
+            ].filter(Boolean).join(" · ");
+        ctx.fillText(currentTelemetry, showAngleReadout && showSpeedReadout ? 52 : 48, 214);
+      });
       document.getElementById("clutch-tick").innerHTML = `<span>DRIVE TICK <b>${model.tick}/${state.physics.max_ticks}</b></span><span>COUPLED <b>${model.shafts.filter((shaft) => shaft.engaged).length}</b></span><span>LOAD FACTOR <b>${model.shafts.some((shaft) => shaft.engaged) ? (state.physics.load_numerator / model.shafts.filter((shaft) => shaft.engaged).length).toFixed(2) : "0"}×</b></span>`;
     };
     const tick = () => { model.tick += 1; const currentSpeeds = speeds(); model.shafts.forEach((shaft, index) => { if (shaft.engaged) shaft.angle_deg = (shaft.angle_deg + currentSpeeds[index] + 3600) % 360; }); draw(); if (model.tick >= state.physics.max_ticks) { clearInterval(model.interval); model.running = false; document.getElementById("clutch-drive").textContent = "DRIVE LIMIT REACHED"; setMessage(model, "VISIBLE WIND LIMIT REACHED · BRAKE AND TRY THE SAFE OR START A FRESH TRIAL", "error"); } };
     const start = () => { if (model.running || model.tick >= state.physics.max_ticks) return; model.running = true; event(model, "drive", {tick: model.tick, running: true}); document.getElementById("clutch-drive").textContent = "DRIVE RUNNING"; model.interval = setInterval(tick, state.physics.tick_ms); };
     const stop = () => { if (!model.running) return; clearInterval(model.interval); model.running = false; event(model, "drive", {tick: model.tick, running: false, angles: model.shafts.map((shaft) => round(shaft.angle_deg))}); document.getElementById("clutch-drive").textContent = "START DRIVE"; draw(); };
+    const updateClutchControl = (index) => {
+      const shaft = model.shafts[index], button = document.querySelector(`[data-clutch="${index}"]`), lever = document.querySelector(`[data-clutch-lever="${index}"]`);
+      if (button) {
+        button.textContent = `${shaft.engaged ? "RELEASE" : reengagementAllowed ? "ENGAGE" : "RELEASED"} ${state.shafts[index].id.toUpperCase()}`;
+        button.disabled = !shaft.engaged && !reengagementAllowed;
+      }
+      if (lever) {
+        lever.dataset.state = shaft.engaged ? "coupled" : "free";
+        lever.dataset.locked = String(!shaft.engaged && !reengagementAllowed);
+        lever.setAttribute("aria-label", `${state.shafts[index].id} clutch lever: ${shaft.engaged ? "coupled" : "free"}${!shaft.engaged && !reengagementAllowed ? ", irreversible" : ""}`);
+        const handle = lever.querySelector(".clutch-lever-handle");
+        if (handle) handle.style.left = "";
+      }
+    };
+    const changeClutch = (index, inputSource, gesture = {}) => {
+      if (model.terminal || model.submitting) return;
+      const shaft = model.shafts[index], before = shaft.engaged;
+      if (!before && !reengagementAllowed) {
+        setMessage(model, `${state.shafts[index].id.toUpperCase()} IS RELEASED · THIS TRIAL DOES NOT PERMIT RE-ENGAGEMENT`, "error");
+        updateClutchControl(index);
+        return;
+      }
+      shaft.engaged = !shaft.engaged;
+      event(model, "clutch", {tick: model.tick, shaft: index, before, after: shaft.engaged, angle_deg: round(shaft.angle_deg), active_after: model.shafts.filter((item) => item.engaged).length, input_source: inputSource, ...gesture});
+      updateClutchControl(index); draw();
+    };
     document.getElementById("clutch-drive").addEventListener("click", start); document.getElementById("clutch-brake").addEventListener("click", stop);
-    document.querySelectorAll("[data-clutch]").forEach((button) => button.addEventListener("click", () => { const index = Number(button.dataset.clutch), shaft = model.shafts[index], before = shaft.engaged; shaft.engaged = !shaft.engaged; event(model, "clutch", {tick: model.tick, shaft: index, before, after: shaft.engaged, angle_deg: round(shaft.angle_deg), active_after: model.shafts.filter((item) => item.engaged).length}); button.textContent = `${shaft.engaged ? "RELEASE" : "ENGAGE"} ${state.shafts[index].id.toUpperCase()}`; draw(); }));
-    document.getElementById("clutch-unlock").addEventListener("click", async () => { stop(); const errors = model.shafts.map((shaft) => angleError(shaft.angle_deg, 0)), accepted = model.shafts.every((shaft, index) => !shaft.engaged && errors[index] <= state.physics.phase_tolerance_deg); event(model, "unlock", {tick: model.tick, angles: model.shafts.map((shaft) => round(shaft.angle_deg)), engaged: model.shafts.map((shaft) => shaft.engaged), accepted}); if (!accepted) { setMessage(model, `SAFE REFUSES · PHASE ERRORS ${errors.map((value) => value.toFixed(1)).join(" / ")}`, "error"); return; } await submit(model, {mechanic_id: state.mechanic_id, task_id: state.task_id, challenge_id: state.challenge_id, events: model.events, completed: true}, "CLOCKWORK SAFE OPEN", "FOUR SHAFTS · ACTIVE-SET LOAD REDISTRIBUTION · FINAL PHASE"); });
-    document.getElementById("clutch-abandon").addEventListener("click", () => submit(model, {mechanic_id: state.mechanic_id, task_id: state.task_id, challenge_id: state.challenge_id, events: [...model.events, {seq: model.events.length + 1, type: "abandon"}], completed: false}, "", "")); draw();
+    document.querySelectorAll("[data-clutch]").forEach((button) => button.addEventListener("click", () => changeClutch(Number(button.dataset.clutch), "clutch_button")));
+    document.querySelectorAll("[data-clutch-lever]").forEach((lever) => {
+      const rail = lever.querySelector(".clutch-lever-rail"), handle = lever.querySelector(".clutch-lever-handle");
+      lever.addEventListener("pointerdown", (pointerEvent) => {
+        if (model.terminal || model.submitting || model.clutchDrag || pointerEvent.target !== handle || (!reengagementAllowed && lever.dataset.state === "free")) return;
+        const index = Number(lever.dataset.clutchLever), box = rail.getBoundingClientRect(), startProgress = model.shafts[index].engaged ? 0 : 1;
+        model.clutchDrag = {index, pointerId: pointerEvent.pointerId, lever, rail, handle, box, startProgress, progress: startProgress, startX: pointerEvent.clientX};
+        lever.setPointerCapture(pointerEvent.pointerId); lever.classList.add("is-dragging"); pointerEvent.preventDefault();
+      });
+      lever.addEventListener("pointermove", (pointerEvent) => {
+        const drag = model.clutchDrag;
+        if (!drag || drag.pointerId !== pointerEvent.pointerId || drag.lever !== lever) return;
+        const handleWidth = drag.handle.getBoundingClientRect().width, travel = Math.max(1, drag.box.width - handleWidth - 8);
+        drag.progress = clamp((pointerEvent.clientX - drag.box.left - handleWidth / 2 - 4) / travel, 0, 1);
+        drag.handle.style.left = `${4 + drag.progress * travel}px`; pointerEvent.preventDefault();
+      });
+      const finishLever = (pointerEvent, commit) => {
+        const drag = model.clutchDrag;
+        if (!drag || drag.pointerId !== pointerEvent.pointerId || drag.lever !== lever) return;
+        model.clutchDrag = null; lever.classList.remove("is-dragging");
+        try { lever.releasePointerCapture(pointerEvent.pointerId); } catch (_error) {}
+        const desiredEngaged = drag.startProgress === 0 && drag.progress >= .72 ? false : drag.startProgress === 1 && drag.progress <= .28 ? true : null;
+        if (commit && desiredEngaged !== null && desiredEngaged !== model.shafts[drag.index].engaged) {
+          changeClutch(drag.index, "clutch_lever_drag", {lever_from: drag.startProgress, lever_to: desiredEngaged ? 0 : 1, drag_distance_px: round(Math.abs(pointerEvent.clientX - drag.startX), 2)});
+        } else updateClutchControl(drag.index);
+        pointerEvent.preventDefault();
+      };
+      lever.addEventListener("pointerup", (pointerEvent) => finishLever(pointerEvent, true));
+      lever.addEventListener("pointercancel", (pointerEvent) => finishLever(pointerEvent, false));
+    });
+    document.getElementById("clutch-unlock").addEventListener("click", async () => { stop(); const errors = model.shafts.map((shaft) => angleError(shaft.angle_deg, 0)), accepted = model.shafts.every((shaft, index) => !shaft.engaged && errors[index] <= state.physics.phase_tolerance_deg); event(model, "unlock", {tick: model.tick, angles: model.shafts.map((shaft) => round(shaft.angle_deg)), engaged: model.shafts.map((shaft) => shaft.engaged), accepted}); if (!accepted) { setMessage(model, `SAFE REFUSES · PHASE ERRORS ${errors.map((value) => value.toFixed(1)).join(" / ")}`, "error"); return; } await submit(model, {mechanic_id: state.mechanic_id, task_id: state.task_id, challenge_id: state.challenge_id, events: model.events, completed: true}, "CLOCKWORK SAFE OPEN", `${state.shafts.length} ${state.shafts.length === 1 ? "SHAFT" : "SHAFTS"} · ACTIVE-SET LOAD REDISTRIBUTION · FINAL PHASE`); });
+    document.getElementById("clutch-abandon").addEventListener("click", () => { stop(); submit(model, {mechanic_id: state.mechanic_id, task_id: state.task_id, challenge_id: state.challenge_id, events: [...model.events, {seq: model.events.length + 1, type: "abandon"}], completed: false}, "", ""); }); draw();
   };
 
   function puppetPoints(lengths){const [lh,rh,lf,rf]=lengths;return{left_hand:[330-(lh-50)*2+(lf-50)*.35,220+(lh-50)*2.05],right_hand:[570+(rh-50)*2-(rf-50)*.35,220+(rh-50)*2.05],left_foot:[410-(lf-50)*1.25+(lh-50)*.28,365+(lf-50)*1.55],right_foot:[490+(rf-50)*1.25-(rh-50)*.28,365+(rf-50)*1.55]};}
@@ -430,31 +908,49 @@
   const puppetTargetLengths = (pose, tick) => pose.base_lengths.map((base, index) => Number(base) + Number(pose.amplitudes[index]) * Math.sin(Number(tick) * Number(pose.angular_rate) + Number(pose.phases[index])));
   registry.marionette_checkpoint = async (state, helpers) => {
     document.body.dataset.mechanic = "marionette-checkpoint";
-    const model = {state, helpers, events: [], poseIndex: 0, lengths: [...state.initial_lengths], progress: 0, tick: 0, terminal: false, submitting: false, interval: null};
+    const interaction = state.control_condition?.interaction || "simplified";
+    const activeIndices = state.active_string_indices || [0, 1, 2, 3];
+    const labels = ["LEFT HAND", "RIGHT HAND", "LEFT FOOT", "RIGHT FOOT"];
+    const count = (amount, singular, plural = `${singular}s`) => `${amount} ${amount === 1 ? singular : plural}`;
+    // Keep the uncontrolled three-act/four-limb wording byte-for-byte. Other
+    // profiles expose fewer active strings or acts, so their visible contract
+    // must describe the generated state rather than the historical baseline.
+    const historicalContract = activeIndices.length === 4 && state.poses.length === 3;
+    const instruction = historicalContract
+      ? "Continuously track four moving inspection rings with coupled strings. Progress grows only while every limb is inside and leaks on misses."
+      : `Continuously track ${count(activeIndices.length, "moving inspection ring")} with ${count(activeIndices.length, "active string")} through ${count(state.poses.length, "moving act")}. Progress grows only while ${activeIndices.length === 1 ? "the active limb is" : "every active limb is"} inside and leaks on misses.`;
+    const completionNote = historicalContract
+      ? "THREE MOVING ACTS · COUPLED STRINGS · LEAKING TRACK PROGRESS"
+      : `${count(state.poses.length, "MOVING ACT").toUpperCase()} · ${count(activeIndices.length, "ACTIVE STRING").toUpperCase()} · LEAKING TRACK PROGRESS`;
+    const model = {state, helpers, events: [], poseIndex: 0, lengths: [...state.initial_lengths], progress: 0, tick: 0, terminal: false, submitting: false, interval: null, stringDrag: null, interaction, activeIndices};
     window.marionetteCheckpointModel = model;
     helpers.app.innerHTML = shell(
       state, "THEATRE BORDER INSPECTION", "MARIONETTE CHECKPOINT",
-      "Continuously track four moving inspection rings with coupled strings. Progress grows only while every limb is inside and leaks on misses.",
+      instruction,
       `<canvas id="marionette-canvas" width="900" height="480"></canvas>`,
-      `<h2>LIVE STRING RACK</h2><div class="marionette-rack">${["LEFT HAND", "RIGHT HAND", "LEFT FOOT", "RIGHT FOOT"].map((label, index) => `<label>${label}<input data-string="${index}" type="range" min="20" max="80" step="1" value="50"><span id="string-${index}">50</span></label>`).join("")}</div><div class="ivv-meter"><i id="marionette-meter"></i></div><button id="marionette-reset">CENTER ALL STRINGS</button><button id="marionette-abandon" class="ivv-danger">CUT STRINGS / FRESH STAGE</button>`,
+      interaction === "simplified"
+        ? `<h2>LIVE STRING RACK</h2><div class="marionette-rack">${activeIndices.map((index) => `<label>${labels[index]}<input data-string="${index}" type="range" min="20" max="80" step="1" value="50"><span id="string-${index}">50</span></label>`).join("")}</div><div class="ivv-meter"><i id="marionette-meter"></i></div><button id="marionette-reset">CENTER ALL STRINGS</button><button id="marionette-abandon" class="ivv-danger">CUT STRINGS / FRESH STAGE</button>`
+        : `<h2>DIRECT STRING PULLS</h2><p>Drag the glowing handles at the top of each active string up or down. The handle position is the string length.</p><div class="ivv-meter"><i id="marionette-meter"></i></div><button id="marionette-reset">CENTER ALL STRINGS</button><button id="marionette-abandon" class="ivv-danger">CUT STRINGS / FRESH STAGE</button>`,
     );
     const current = () => state.poses[model.poseIndex];
     const targetPoints = () => puppetPoints(puppetTargetLengths(current(), model.tick));
-    const inside = () => { const points = puppetPoints(model.lengths), targets = targetPoints(), allowance = Number(state.ring_radius) - 7; return Object.keys(targets).every((name) => Math.hypot(points[name][0] - targets[name][0], points[name][1] - targets[name][1]) <= allowance); };
+    const inside = () => { const points = puppetPoints(model.lengths), targets = targetPoints(), allowance = Number(state.ring_radius) - 7, names = ["left_hand", "right_hand", "left_foot", "right_foot"]; return activeIndices.every((index) => Math.hypot(points[names[index]][0] - targets[names[index]][0], points[names[index]][1] - targets[names[index]][1]) <= allowance); };
     const draw = () => {
       const ctx = document.getElementById("marionette-canvas").getContext("2d"), points = puppetPoints(model.lengths), targets = targetPoints(); ctx.fillStyle = "#170c12"; ctx.fillRect(0, 0, 900, 480); ctx.fillStyle = "#3a1521"; for (let x = 0; x < 900; x += 80) ctx.fillRect(x, 0, 40, 480);
-      Object.entries(targets).forEach(([name, target]) => { ctx.strokeStyle = "#d8ff64"; ctx.lineWidth = 4; ctx.beginPath(); ctx.arc(target[0], target[1], state.ring_radius, 0, Math.PI * 2); ctx.stroke(); ctx.fillStyle = "#d8ff64"; ctx.font = "700 8px Courier New"; ctx.fillText(name.replace("_", " ").toUpperCase(), target[0] - 25, target[1] - state.ring_radius - 7); });
+      const names = ["left_hand", "right_hand", "left_foot", "right_foot"]; activeIndices.forEach((index) => { const name = names[index], target = targets[name]; ctx.strokeStyle = "#d8ff64"; ctx.lineWidth = 4; ctx.beginPath(); ctx.arc(target[0], target[1], state.ring_radius, 0, Math.PI * 2); ctx.stroke(); ctx.fillStyle = "#d8ff64"; ctx.font = "700 8px Courier New"; ctx.fillText(name.replace("_", " ").toUpperCase(), target[0] - 25, target[1] - state.ring_radius - 7); });
       const shoulderL = [390, 150], shoulderR = [510, 150], hip = [450, 280]; ctx.strokeStyle = "#f2d7b5"; ctx.lineWidth = 8; ctx.lineCap = "round"; [[shoulderL, points.left_hand], [shoulderR, points.right_hand], [hip, points.left_foot], [hip, points.right_foot], [[390,150],[510,150]], [[450,150],hip]].forEach(([first, second]) => { ctx.beginPath(); ctx.moveTo(first[0], first[1]); ctx.lineTo(second[0], second[1]); ctx.stroke(); }); Object.values(points).forEach((point) => { ctx.fillStyle = "#f2b35d"; ctx.beginPath(); ctx.arc(point[0], point[1], 9, 0, Math.PI * 2); ctx.fill(); });
-      ctx.strokeStyle = "#8db7c4"; ctx.lineWidth = 1; [points.left_hand, points.right_hand, points.left_foot, points.right_foot].forEach((point, index) => { const anchorX = 290 + index * 105; ctx.beginPath(); ctx.moveTo(anchorX, 0); ctx.lineTo(point[0], point[1]); ctx.stroke(); }); ctx.fillStyle = "#f5dfc5"; ctx.font = "800 11px Courier New"; ctx.fillText(`ACT ${model.poseIndex + 1}/3 · TRACK ${model.progress}/${current().tracking_ticks} · FRAME ${model.tick}`, 18, 24);
+      ctx.strokeStyle = "#8db7c4"; ctx.lineWidth = 1; [points.left_hand, points.right_hand, points.left_foot, points.right_foot].forEach((point, index) => { const anchorX = 290 + index * 105; ctx.beginPath(); ctx.moveTo(anchorX, 0); ctx.lineTo(point[0], point[1]); ctx.stroke(); if (interaction === "full" && activeIndices.includes(index)) { const handleY = 22 + (model.lengths[index] - 20) * 1.8; ctx.fillStyle = "#d8ff64"; ctx.fillRect(anchorX - 22, handleY - 8, 44, 16); ctx.fillStyle = "#15201c"; ctx.font = "900 8px Courier New"; ctx.fillText("PULL", anchorX - 12, handleY + 3); } }); ctx.fillStyle = "#f5dfc5"; ctx.font = "800 11px Courier New"; ctx.fillText(`ACT ${model.poseIndex + 1}/${state.poses.length} · TRACK ${model.progress}/${current().tracking_ticks} · FRAME ${model.tick}`, 18, 24);
     };
     model.interval = setInterval(async () => {
       model.tick += 1; const accepted = inside(); model.progress = accepted ? model.progress + 1 : Math.max(0, model.progress - Number(current().miss_decay_ticks)); event(model, "track_sample", {pose_id: current().id, tick: model.tick, inside: accepted, progress_after: model.progress, lengths: [...model.lengths]}); document.getElementById("marionette-meter").style.width = `${Math.min(100, model.progress / current().tracking_ticks * 100)}%`; draw();
       if (model.progress < current().tracking_ticks) return;
       event(model, "act_clear", {pose_id: current().id, tick: model.tick, lengths: [...model.lengths], progress: model.progress}); model.progress = 0; model.tick = 0;
       if (model.poseIndex < state.poses.length - 1) { model.poseIndex += 1; document.getElementById("marionette-meter").style.width = "0%"; setMessage(model, "MOVING ACT ACCEPTED · NEXT INSPECTION CHOREOGRAPHY", "passed"); draw(); }
-      else { clearInterval(model.interval); await submit(model, {mechanic_id: state.mechanic_id, task_id: state.task_id, challenge_id: state.challenge_id, events: model.events, completed: true}, "MARIONETTE AUTHENTICATED", "THREE MOVING ACTS · COUPLED STRINGS · LEAKING TRACK PROGRESS"); }
+      else { clearInterval(model.interval); await submit(model, {mechanic_id: state.mechanic_id, task_id: state.task_id, challenge_id: state.challenge_id, events: model.events, completed: true}, "MARIONETTE AUTHENTICATED", completionNote); }
     }, state.tick_ms);
-    document.querySelectorAll("[data-string]").forEach((input) => input.addEventListener("input", () => { const index = Number(input.dataset.string), before = model.lengths[index]; model.lengths[index] = Number(input.value); event(model, "string", {pose_id: current().id, tick: model.tick, string: index, before, after: model.lengths[index], lengths: [...model.lengths]}); document.getElementById(`string-${index}`).textContent = String(model.lengths[index]); draw(); }));
+    const setString = (index, value, inputSource) => { const before = model.lengths[index], after = Math.round(clamp(value, 20, 80)); if (after === before) return; model.lengths[index] = after; event(model, "string", {pose_id: current().id, tick: model.tick, string: index, before, after, lengths: [...model.lengths], input_source: inputSource}); const readout = document.getElementById(`string-${index}`); if (readout) readout.textContent = String(after); draw(); };
+    document.querySelectorAll("[data-string]").forEach((input) => input.addEventListener("input", () => setString(Number(input.dataset.string), Number(input.value), "string_slider")));
+    if (interaction === "full") { const canvas = document.getElementById("marionette-canvas"); const point = (pointerEvent) => { const box = canvas.getBoundingClientRect(); return {x: (pointerEvent.clientX - box.left) * 900 / box.width, y: (pointerEvent.clientY - box.top) * 480 / box.height}; }; const indexAt = (where) => activeIndices.find((index) => Math.abs(where.x - (290 + index * 105)) <= 28 && Math.abs(where.y - (22 + (model.lengths[index] - 20) * 1.8)) <= 20); canvas.addEventListener("pointerdown", (pointerEvent) => { const index = indexAt(point(pointerEvent)); if (index === undefined) return; model.stringDrag = {pointerId: pointerEvent.pointerId, index}; canvas.setPointerCapture(pointerEvent.pointerId); pointerEvent.preventDefault(); }); canvas.addEventListener("pointermove", (pointerEvent) => { if (!model.stringDrag || model.stringDrag.pointerId !== pointerEvent.pointerId) return; setString(model.stringDrag.index, 20 + (point(pointerEvent).y - 22) / 1.8, "string_drag"); pointerEvent.preventDefault(); }); const release = (pointerEvent) => { if (!model.stringDrag || model.stringDrag.pointerId !== pointerEvent.pointerId) return; model.stringDrag = null; try { canvas.releasePointerCapture(pointerEvent.pointerId); } catch (_error) {} }; canvas.addEventListener("pointerup", release); canvas.addEventListener("pointercancel", release); }
     document.getElementById("marionette-reset").addEventListener("click", () => { const before = [...model.lengths]; model.lengths = [...state.initial_lengths]; model.progress = 0; document.getElementById("marionette-meter").style.width = "0%"; document.querySelectorAll("[data-string]").forEach((input, index) => { input.value = String(model.lengths[index]); document.getElementById(`string-${index}`).textContent = String(model.lengths[index]); }); event(model, "reset", {pose_id: current().id, tick: model.tick, before, after: [...model.lengths], progress_after: 0}); draw(); });
     document.getElementById("marionette-abandon").addEventListener("click", () => submit(model, {mechanic_id: state.mechanic_id, task_id: state.task_id, challenge_id: state.challenge_id, events: [...model.events, {seq: model.events.length + 1, type: "abandon"}], completed: false}, "", "")); draw();
   };

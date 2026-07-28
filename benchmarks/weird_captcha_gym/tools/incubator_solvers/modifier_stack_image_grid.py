@@ -58,23 +58,66 @@ def _invert(page, slot: dict) -> None:
     page.mouse.click(*_screen(box, [slot["x"] + slot["width"] - 15, slot["y"] + 15]))
 
 
-def _run_rail(page, rail: dict) -> None:
+def _run_rail(page, rail: dict, minimum_samples: int) -> None:
     box = _box(page)
     page.mouse.move(*_screen(box, rail["start"]))
     page.mouse.down()
-    for index in range(1, 31):
-        amount = index / 30
+    sample_count = max(30, int(minimum_samples) + 4)
+    for index in range(1, sample_count + 1):
+        amount = index / sample_count
         point = [rail["start"][0] + (rail["end"][0] - rail["start"][0]) * amount, rail["start"][1]]
         page.mouse.move(*_screen(box, point), steps=1)
         page.wait_for_timeout(25)
     page.mouse.up()
 
 
-def _arrange(page, art: dict, slots: list[dict]) -> None:
+def _proxy_place(page, token_id: str, slot_index: int) -> None:
+    page.locator(f'[data-proxy-action="select"][data-token-id="{token_id}"]').click()
+    page.locator(f'[data-proxy-action="place"][data-slot-index="{slot_index}"]').click()
+
+
+def _proxy_invert(page, token_id: str) -> None:
+    page.locator(f'[data-proxy-action="invert"][data-token-id="{token_id}"]').click()
+
+
+def _proxy_rail(page, requirements: dict, out_dir: Path | None = None, mechanic: str | None = None) -> None:
+    """Use the simplified input surface for the same held rail contract.
+
+    The three controls retain a single restoration hold.  Each advance writes
+    one rail sample; the wait before release satisfies the same minimum
+    contact duration that the direct pointer path must satisfy.
+    """
+
+    page.locator('[data-proxy-action="rail-start"]').click()
+    samples = int(requirements["minimum_rail_samples"])
+    for index in range(samples):
+        page.locator('[data-proxy-action="rail-advance"]').click()
+        page.wait_for_timeout(18)
+        if out_dir is not None and mechanic is not None and index + 1 == max(1, samples // 2):
+            _shot(page, out_dir, mechanic, "simplified-active-rail-hold")
+    page.wait_for_timeout(int(requirements["minimum_rail_ms"]) + 40)
+    page.locator('[data-proxy-action="rail-end"]').click()
+
+
+def _wait_for_work(page, truth: dict) -> None:
+    """Wait through the visible film without making slow render hosts flaky."""
+
+    longest_film = max(int(artifact["playback_ms"]) for artifact in truth["artifacts"])
+    page.wait_for_function(
+        "() => modifierRestorationModel.phase === 'work'",
+        timeout=max(10_000, longest_film * 3),
+    )
+
+
+def _arrange(page, art: dict, slots: list[dict], interaction: str) -> None:
     racks = {item["token_id"]: item for item in art["rack_rects"]}
     for slot, token in zip(slots, reversed(art["stack"])):
-        _place(page, racks[token["id"]], slot)
-        _invert(page, slot)
+        if interaction == "simplified":
+            _proxy_place(page, str(token["id"]), int(slot["index"]))
+            _proxy_invert(page, str(token["id"]))
+        else:
+            _place(page, racks[token["id"]], slot)
+            _invert(page, slot)
 
 
 def fail_once(page, state_dir: Path, out_dir: Path, mechanic: str) -> None:
@@ -92,36 +135,46 @@ def solve(page, state_dir: Path, out_dir: Path, mechanic: str) -> None:
     if mechanic != MECHANIC_ID:
         raise AssertionError(f"unexpected mechanic {mechanic!r}")
     truth = _read(state_dir / "ground_truth.json")
+    interaction = str((truth.get("control_condition") or {}).get("interaction") or "full")
     page.wait_for_timeout(1450)
     expect(page.locator('.restoration-press[data-phase="playback"]')).to_be_visible()
     _shot(page, out_dir, mechanic, "active-transformation-film")
-    page.wait_for_function("() => modifierRestorationModel.phase === 'work'", timeout=5_000)
+    _wait_for_work(page, truth)
 
     # Spend the one permitted replay and preserve a second transient film state.
     page.locator("#restoration-replay").click()
     page.wait_for_timeout(1750)
     _shot(page, out_dir, mechanic, "costly-film-replay")
-    page.wait_for_function("() => modifierRestorationModel.phase === 'work'", timeout=5_000)
+    _wait_for_work(page, truth)
 
     first = truth["artifacts"][0]
     racks = {item["token_id"]: item for item in first["rack_rects"]}
-    _place(page, racks[first["rack_order"][0]], truth["slots"][0])
+    if interaction == "simplified":
+        _proxy_place(page, str(first["rack_order"][0]), int(truth["slots"][0]["index"]))
+    else:
+        _place(page, racks[first["rack_order"][0]], truth["slots"][0])
     page.locator("#restoration-reset").click()
     page.wait_for_function("() => Object.keys(modifierRestorationModel.placements).length === 0 && modifierRestorationModel.resetCount === 1")
     _shot(page, out_dir, mechanic, "partial-stack-reset")
 
     for index, art in enumerate(truth["artifacts"]):
         if index:
-            page.wait_for_function("() => modifierRestorationModel.phase === 'work'", timeout=5_000)
-        _arrange(page, art, truth["slots"])
-        page.wait_for_function("() => document.querySelector('.restoration-press')?.dataset.arranged === 'true'")
+            _wait_for_work(page, truth)
+        _arrange(page, art, truth["slots"], interaction)
+        page.wait_for_function(
+            "count => Object.keys(modifierRestorationModel.placements).length === count && modifierRestorationModel.inverted.size === count",
+            arg=len(truth["slots"]),
+        )
         if index == 0:
             _shot(page, out_dir, mechanic, "inverse-stack-armed")
-        _run_rail(page, truth["rail"])
+        if interaction == "simplified":
+            _proxy_rail(page, truth["requirements"], out_dir if index == 0 else None, mechanic)
+        else:
+            _run_rail(page, truth["rail"], int(truth["requirements"]["minimum_rail_samples"]))
         page.wait_for_function("count => modifierRestorationModel.completed.length === count", arg=index + 1, timeout=4_000)
     expect(page.locator('.restoration-press[data-completed="true"]')).to_be_visible()
     state = page.evaluate("() => ({complete:modifierRestorationModel.completed.length,replays:modifierRestorationModel.replayCount,resets:modifierRestorationModel.resetCount,samples:modifierRestorationModel.railSamples})")
-    if state["complete"] != 3 or state["replays"] != 1 or state["resets"] != 1 or state["samples"] < truth["requirements"]["minimum_rail_samples"] * 3:
+    if state["complete"] != len(truth["artifacts"]) or state["replays"] != 1 or state["resets"] != 1 or state["samples"] < truth["requirements"]["minimum_rail_samples"] * len(truth["artifacts"]):
         raise AssertionError(f"restoration physical state is incomplete: {state}")
     _shot(page, out_dir, mechanic, "three-specimens-restored")
     page.locator("#restoration-submit").click()

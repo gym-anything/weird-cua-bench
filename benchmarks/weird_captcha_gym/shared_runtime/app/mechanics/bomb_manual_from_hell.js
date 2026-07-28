@@ -6,6 +6,7 @@
   const COLOR_MAP = {
     crimson: "#e64a53", amber: "#e6aa38", cobalt: "#4475c7", ivory: "#eee2bd",
     violet: "#985fc4", jade: "#51a87c", coral: "#ee7d68", slate: "#71808b", copper: "#bd7448",
+    teal: "#41aaa5", pewter: "#a5adb2",
   };
   const clean = (value) => String(value == null ? "" : value)
     .replaceAll("&", "&amp;").replaceAll("<", "&lt;")
@@ -23,7 +24,18 @@
   function plateById(id) { return model.state.plates.find((plate) => plate.id === id) || null; }
   function activePlate() { return plateById(model.selectedPlateId); }
   function activePose() { return model.poses[model.selectedPlateId] || null; }
+  function keyholeWord(plate = activePlate()) {
+    return ({2: "TWO", 3: "THREE", 4: "FOUR"})[Number(plate?.anchors?.length)] || String(Number(plate?.anchors?.length) || 0);
+  }
   function poseClaim(pose) { return {x: round(pose.x), y: round(pose.y), angle_deg: wrapAngle(pose.angle_deg), flipped: Boolean(pose.flipped)}; }
+  function transformSource(kind) {
+    const sources = {
+      rotate: {simplified: "binder_rotation_buttons", full: "plate_right_click"},
+      flip: {simplified: "binder_flip_button", full: "plate_shift_right_click"},
+      lock: {simplified: "seat_button", full: "plate_drop"},
+    };
+    return sources[kind]?.[model.interaction] || null;
+  }
 
   function transformPoint(point, pose) {
     let x = Number(point.x), y = Number(point.y);
@@ -69,6 +81,8 @@
       context.moveTo(0, -9); context.lineTo(8, 7); context.lineTo(-8, 7); context.closePath();
     } else if (pin.shape === "square") {
       context.rect(-7, -7, 14, 14);
+    } else if (pin.shape === "diamond") {
+      context.moveTo(0, -9); context.lineTo(9, 0); context.lineTo(0, 9); context.lineTo(-9, 0); context.closePath();
     } else {
       context.arc(0, 0, 8, 0, Math.PI * 2);
     }
@@ -206,7 +220,7 @@
     const plate = activePlate(), pose = activePose();
     const plateName = document.querySelector(".bomb-active-plate");
     if (plateName && plate && pose) plateName.innerHTML = `<b>${clean(plate.label)}</b><span>${pose.flipped ? "REVERSE" : "FACE"} · ${String(pose.angle_deg).padStart(3, "0")}°</span>`;
-    document.querySelectorAll(".bomb-transform-controls button").forEach((button) => { button.disabled = !plate || model.locked.has(plate.id) || model.submitting || model.terminal; });
+    document.querySelectorAll(".bomb-transform-panel button").forEach((button) => { button.disabled = !plate || model.locked.has(plate.id) || model.submitting || model.terminal; });
     const count = document.querySelector(".bomb-status-count b");
     if (count) count.textContent = `${model.locked.size} / ${model.state.plates.length}`;
     const selection = document.querySelector(".bomb-selected-wire");
@@ -225,25 +239,25 @@
     updateInterface();
   }
 
-  function rotatePlate(direction) {
+  function rotatePlate(direction, inputSource = transformSource("rotate")) {
     const plate = activePlate(), pose = activePose();
     if (!plate || !pose || model.locked.has(plate.id) || model.submitting || model.terminal) return;
     clearFreshFailure();
     const before = pose.angle_deg;
     const delta = direction * Number(model.state.requirements.rotation_step_deg);
     pose.angle_deg = wrapAngle(before + delta);
-    record("plate_rotate", {plate_id: plate.id, from_deg: before, to_deg: pose.angle_deg, delta_deg: delta});
-    model.helpers.setReadout("ROTATION APPLIED · CHECK ALL THREE KEYHOLES", "idle");
+    record("plate_rotate", {plate_id: plate.id, from_deg: before, to_deg: pose.angle_deg, delta_deg: delta, input_source: inputSource});
+    model.helpers.setReadout(`ROTATION APPLIED · CHECK ALL ${keyholeWord(plate)} KEYHOLES`, "idle");
     updateInterface();
   }
 
-  function flipPlate() {
+  function flipPlate(inputSource = transformSource("flip")) {
     const plate = activePlate(), pose = activePose();
     if (!plate || !pose || model.locked.has(plate.id) || model.submitting || model.terminal) return;
     clearFreshFailure();
     const before = pose.flipped;
     pose.flipped = !pose.flipped;
-    record("plate_flip", {plate_id: plate.id, from_flipped: before, to_flipped: pose.flipped});
+    record("plate_flip", {plate_id: plate.id, from_flipped: before, to_flipped: pose.flipped, input_source: inputSource});
     model.helpers.setReadout(pose.flipped ? "ACETATE REVERSED" : "ACETATE FACE UP", "idle");
     updateInterface();
   }
@@ -254,12 +268,12 @@
     clearFreshFailure();
     const before = poseClaim(model.poses[plate.id]);
     model.poses[plate.id] = clonePose(plate.initial_pose);
-    record("plate_reset", {plate_id: plate.id, before_pose: before, after_pose: poseClaim(model.poses[plate.id])});
+    record("plate_reset", {plate_id: plate.id, before_pose: before, after_pose: poseClaim(model.poses[plate.id]), input_source: "binder_return"});
     model.helpers.setReadout("PLATE RETURNED TO THE BINDER", "idle");
     updateInterface();
   }
 
-  function seatPlate() {
+  function seatPlate(inputSource = transformSource("lock")) {
     const plate = activePlate(), pose = activePose();
     if (!plate || !pose || model.locked.has(plate.id) || model.submitting || model.terminal) return;
     clearFreshFailure();
@@ -274,7 +288,7 @@
       const stage = document.querySelector(".bomb-canvas-shell");
       stage?.classList.remove("is-miss"); void stage?.offsetWidth; stage?.classList.add("is-miss");
     }
-    record("plate_lock", {plate_id: plate.id, before_pose: before, accepted, max_error: round(error), after_pose: poseClaim(model.poses[plate.id])});
+    record("plate_lock", {plate_id: plate.id, before_pose: before, accepted, max_error: round(error), after_pose: poseClaim(model.poses[plate.id]), input_source: inputSource});
     if (accepted) {
       model.helpers.setReadout(model.locked.size === model.state.plates.length ? "ALL PLATES SEATED · FIND THE ONLY FULL APERTURE" : `${plate.label} PLATE SEATED`, "passed");
       const next = model.state.plates.find((item) => !model.locked.has(item.id));
@@ -297,7 +311,7 @@
     if (!candidates.length) return;
     clearFreshFailure();
     model.selectedWireId = candidates[0].wire.id;
-    record("wire_select", {wire_id: model.selectedWireId, point: [round(point.x), round(point.y)]});
+    record("wire_select", {wire_id: model.selectedWireId, point: [round(point.x), round(point.y)], input_source: "wire_canvas"});
     model.helpers.setReadout("WIRE SELECTED · CUTTING IS IRREVERSIBLE", "pending");
     updateInterface();
   }
@@ -308,7 +322,7 @@
     const helpers = model.helpers;
     if (completed) {
       model.cutCount += 1;
-      record("cut", {wire_id: model.selectedWireId, cut_count: model.cutCount});
+      record("cut", {wire_id: model.selectedWireId, cut_count: model.cutCount, input_source: "cut_button"});
       helpers.setReadout("CUT COMMITTED · VERIFYING PLATE REGISTRATION…", "pending");
     }
     const payload = {
@@ -355,7 +369,7 @@
       clearFreshFailure();
       event.preventDefault();
       model.drag = {plateId: plate.id, pointerId: event.pointerId, start: point, origin: {x: pose.x, y: pose.y}, last: point};
-      record("drag_start", {plate_id: plate.id, point: [round(point.x), round(point.y)], pose: poseClaim(pose)});
+      record("drag_start", {plate_id: plate.id, point: [round(point.x), round(point.y)], pose: poseClaim(pose), input_source: "plate_drag"});
       try { canvas.setPointerCapture(event.pointerId); } catch (_error) { /* best effort */ }
     };
     const pointermove = (event) => {
@@ -365,29 +379,46 @@
       pose.y = Math.max(70, Math.min(430, model.drag.origin.y + point.y - model.drag.start.y));
       if (Math.hypot(point.x - model.drag.last.x, point.y - model.drag.last.y) >= 5) {
         model.drag.last = point;
-        record("drag_sample", {plate_id: model.drag.plateId, point: [round(point.x), round(point.y)], pose: poseClaim(pose)});
+        record("drag_sample", {plate_id: model.drag.plateId, point: [round(point.x), round(point.y)], pose: poseClaim(pose), input_source: "plate_drag"});
       }
       drawScene();
     };
-    const pointerup = (event) => {
+    const finishDrag = (event, cancelled = false) => {
       if (!model.drag || event.pointerId !== model.drag.pointerId) return;
-      const point = canvasPoint(event), drag = model.drag, pose = model.poses[drag.plateId];
-      record("drag_end", {plate_id: drag.plateId, point: [round(point.x), round(point.y)], pose: poseClaim(pose)});
+      const drag = model.drag, point = cancelled ? drag.last : canvasPoint(event), pose = model.poses[drag.plateId], plate = plateById(drag.plateId);
+      pose.x = Math.max(110, Math.min(840, drag.origin.x + point.x - drag.start.x));
+      pose.y = Math.max(70, Math.min(430, drag.origin.y + point.y - drag.start.y));
+      record("drag_end", {plate_id: drag.plateId, point: [round(point.x), round(point.y)], pose: poseClaim(pose), input_source: "plate_drag", cancelled});
       model.drag = null;
       model.suppressClickUntil = performance.now() + 180;
       try { canvas.releasePointerCapture(event.pointerId); } catch (_error) { /* best effort */ }
-      model.helpers.setReadout("PLATE MOVED · ALIGN ALL THREE KEYHOLES", "idle");
-      updateInterface();
+      if (model.interaction === "full" && !cancelled) seatPlate(transformSource("lock"));
+      else {
+        model.helpers.setReadout(cancelled ? "PLATE HOLD RELEASED · POSITION RETAINED" : `PLATE MOVED · ALIGN ALL ${keyholeWord(plate)} KEYHOLES`, "idle");
+        updateInterface();
+      }
+    };
+    const pointerup = (event) => finishDrag(event, false);
+    const pointercancel = (event) => finishDrag(event, true);
+    const directTransform = (event) => {
+      event.preventDefault();
+      if (model.interaction !== "full" || model.submitting || model.terminal) return;
+      const plate = activePlate(), pose = activePose();
+      if (!plate || !pose || model.locked.has(plate.id) || !pointInPlate(canvasPoint(event), plate, pose)) return;
+      if (event.shiftKey) flipPlate(transformSource("flip"));
+      else rotatePlate(1, transformSource("rotate"));
     };
     const click = (event) => { if (performance.now() >= model.suppressClickUntil) selectWire(canvasPoint(event)); };
     canvas.addEventListener("pointerdown", pointerdown);
     canvas.addEventListener("pointermove", pointermove);
     canvas.addEventListener("pointerup", pointerup);
-    canvas.addEventListener("pointercancel", pointerup);
+    canvas.addEventListener("pointercancel", pointercancel);
+    canvas.addEventListener("contextmenu", directTransform);
     canvas.addEventListener("click", click);
     return () => {
       canvas.removeEventListener("pointerdown", pointerdown); canvas.removeEventListener("pointermove", pointermove);
-      canvas.removeEventListener("pointerup", pointerup); canvas.removeEventListener("pointercancel", pointerup); canvas.removeEventListener("click", click);
+      canvas.removeEventListener("pointerup", pointerup); canvas.removeEventListener("pointercancel", pointercancel);
+      canvas.removeEventListener("contextmenu", directTransform); canvas.removeEventListener("click", click);
     };
   }
 
@@ -395,29 +426,36 @@
     if (activeCleanup) activeCleanup();
     document.body.dataset.mechanic = "bomb-manual-from-hell";
     document.body.dataset.cheatMode = helpers.isCheatMode() ? "true" : "false";
+    const interaction = state.control_condition?.interaction || "simplified";
     model = {
-      state, helpers, startedAt: performance.now(), events: [],
+      state, helpers, interaction, startedAt: performance.now(), events: [],
       poses: Object.fromEntries(state.plates.map((plate) => [plate.id, clonePose(plate.initial_pose)])),
       locked: new Set(), selectedPlateId: state.plates[0]?.id || null, selectedWireId: null,
       drag: null, suppressClickUntil: 0, misseatCount: 0, cutCount: 0,
       submitting: false, terminal: false, canvas: null, context: null,
     };
     window.bombManualAcetateModel = model;
+    const canvasCaption = interaction === "full"
+      ? "LEFT-DRAG · RIGHT-CLICK ROTATE · SHIFT + RIGHT-CLICK FLIP · RELEASE TO SEAT"
+      : "DRAG THE ACTIVE PLATE · ROTATE / FLIP / SEAT IN THE BINDER";
+    const transformPanel = interaction === "simplified" ? `
+      <section class="bomb-transform-panel"><div class="bomb-active-plate"><b>${clean(state.plates[0].label)}</b><span>FACE · 000°</span></div><div class="bomb-transform-controls"><button type="button" data-transform="rotate-left">↶ ${Number(state.requirements.rotation_step_deg)}°</button><button type="button" data-transform="flip">⇋ FLIP</button><button type="button" data-transform="rotate-right">${Number(state.requirements.rotation_step_deg)}° ↷</button><button type="button" data-transform="reset">RETURN</button></div><button type="button" id="bomb-seat-plate">SEAT KEYHOLES ON PINS</button></section>` : `
+      <section class="bomb-transform-panel bomb-direct-panel"><div class="bomb-active-plate"><b>${clean(state.plates[0].label)}</b><span>FACE · 000°</span></div><div class="bomb-direct-controls"><div><b>RIGHT-CLICK</b><span>ROTATE ${Number(state.requirements.rotation_step_deg)}°</span></div><div><b>SHIFT + RIGHT-CLICK</b><span>FLIP ACETATE</span></div><div><b>LEFT-DRAG + RELEASE</b><span>SEAT ON PINS</span></div></div><button type="button" data-transform="reset">RETURN ACTIVE PLATE</button></section>`;
     helpers.app.innerHTML = `
-      <section class="bomb-manual-captcha" data-challenge-id="${clean(state.challenge_id)}" ${options.freshFailure ? 'data-fresh-failure="true"' : ""}>
+      <section class="bomb-manual-captcha" data-interaction="${clean(interaction)}" data-plate-count="${state.plates.length}" data-challenge-id="${clean(state.challenge_id)}" ${options.freshFailure ? 'data-fresh-failure="true"' : ""}>
         ${options.freshFailure ? '<div class="bomb-fresh-stamp"><b>FAIL</b><span>FRESH DEVICE / NEW PLATES</span></div>' : ""}
         <header class="bomb-head"><div><span>DEFUSAL ARCHIVE / ACETATE EDITION</span><h1>${clean(state.prompt)}</h1></div><div class="bomb-clock"><i></i><b>DEVICE ARMED</b><span>NO TEXT FORMULAS · TRUST THE KEYHOLES</span></div></header>
         <main class="bomb-workspace">
-          <section class="bomb-canvas-shell"><canvas id="bomb-acetate-canvas" width="${Number(state.stage.width)}" height="${Number(state.stage.height)}" aria-label="bomb and transparent manual plate workbench"></canvas><div class="bomb-canvas-caption"><span>DRAG THE ACTIVE PLATE · ROTATE / FLIP IN THE BINDER</span><b>THE ${state.plates.length} APERTURE SETS SHARE EXACTLY ONE WIRE</b></div></section>
+          <section class="bomb-canvas-shell"><canvas id="bomb-acetate-canvas" width="${Number(state.stage.width)}" height="${Number(state.stage.height)}" aria-label="bomb and transparent manual plate workbench"></canvas><div class="bomb-canvas-caption"><span>${canvasCaption}</span><b>THE ${state.plates.length} APERTURE SETS SHARE EXACTLY ONE WIRE</b></div></section>
           <aside class="bomb-binder">
-            <header><span>TRANSPARENT MANUAL</span><b>3 LEAVES</b></header>
+            <header><span>TRANSPARENT MANUAL</span><b>${state.plates.length} LEAVES</b></header>
             <div class="bomb-plate-list">${state.plates.map((plate, index) => `<button type="button" class="bomb-plate-card" data-plate-id="${clean(plate.id)}" data-selected="${index === 0 ? "true" : "false"}" data-locked="false" style="--plate:${clean(plate.color)}"><i>${String(index + 1).padStart(2, "0")}</i><span><b>${clean(plate.label)}</b><small>${plate.anchors.length} KEYHOLES / ${plate.apertures.length} WINDOWS</small></span><em>OPEN</em></button>`).join("")}</div>
-            <section class="bomb-transform-panel"><div class="bomb-active-plate"><b>${clean(state.plates[0].label)}</b><span>FACE · 000°</span></div><div class="bomb-transform-controls"><button type="button" data-transform="rotate-left">↶ ${Number(state.requirements.rotation_step_deg)}°</button><button type="button" data-transform="flip">⇋ FLIP</button><button type="button" data-transform="rotate-right">${Number(state.requirements.rotation_step_deg)}° ↷</button><button type="button" data-transform="reset">RETURN</button></div><button type="button" id="bomb-seat-plate">SEAT KEYHOLES ON PINS</button></section>
+            ${transformPanel}
             <section class="bomb-pictogram"><div><b>1</b><span>ALIGN<br>KEYHOLES</span></div><i>→</i><div><b>2</b><span>STACK<br>${state.plates.length} PLATES</span></div><i>→</i><div><b>3</b><span>CUT<br>OPEN WIRE</span></div></section>
             <div class="bomb-status-count"><span>PLATES SEATED</span><b>0 / ${state.plates.length}</b></div>
           </aside>
         </main>
-        <footer class="bomb-foot"><button type="button" id="bomb-reissue">REISSUE DEVICE</button><div><span class="bomb-selected-wire">SEAT ALL ${state.plates.length} PLATES</span><div class="readout" data-status="idle">SELECT A PLATE AND ALIGN ITS THREE KEYHOLES</div></div><button type="button" class="bomb-cut-button" disabled>${clean(state.submit_label)}</button></footer>
+        <footer class="bomb-foot"><button type="button" id="bomb-reissue">REISSUE DEVICE</button><div><span class="bomb-selected-wire">SEAT ALL ${state.plates.length} PLATES</span><div class="readout" data-status="idle">SELECT A PLATE AND ALIGN ITS ${keyholeWord(state.plates[0])} KEYHOLES</div></div><button type="button" class="bomb-cut-button" disabled>${clean(state.submit_label)}</button></footer>
         ${helpers.cheatPanelTemplate()}
       </section>`;
     model.canvas = document.getElementById("bomb-acetate-canvas");
@@ -426,9 +464,9 @@
     document.querySelectorAll(".bomb-plate-card").forEach((button) => button.addEventListener("click", () => selectPlate(button.dataset.plateId)));
     document.querySelector('[data-transform="rotate-left"]')?.addEventListener("click", () => rotatePlate(-1));
     document.querySelector('[data-transform="rotate-right"]')?.addEventListener("click", () => rotatePlate(1));
-    document.querySelector('[data-transform="flip"]')?.addEventListener("click", flipPlate);
+    document.querySelector('[data-transform="flip"]')?.addEventListener("click", () => flipPlate());
     document.querySelector('[data-transform="reset"]')?.addEventListener("click", resetPlate);
-    document.getElementById("bomb-seat-plate")?.addEventListener("click", seatPlate);
+    document.getElementById("bomb-seat-plate")?.addEventListener("click", () => seatPlate());
     document.querySelector(".bomb-cut-button")?.addEventListener("click", () => submit(true));
     document.getElementById("bomb-reissue")?.addEventListener("click", () => submit(false));
     helpers.installCheatPanel();

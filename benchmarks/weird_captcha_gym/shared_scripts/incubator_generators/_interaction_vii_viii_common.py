@@ -240,43 +240,74 @@ def _masks(objects: list[dict[str, Any]]) -> dict[str, list[str]]:
 def _hologram(task: dict[str, Any], seed: str):
     mechanic = "hologram_silhouette_foundry"
     rng, public, truth = _identity(mechanic, task, seed)
-    palette = ("#ff6d4a", "#5bd8c8", "#f6c85f", "#a983ff", "#62a7ff", "#ef7fc4")
+    condition = task.get("_control_condition")
+    parameters = dict((condition or {}).get("difficulty_parameters") or {})
+    if condition:
+        challenge_id = hashlib.sha256(
+            f"{seed}|{mechanic}|d{condition['difficulty']}|{task.get('id')}".encode()
+        ).hexdigest()[:12]
+        public["challenge_id"] = challenge_id
+        truth["challenge_id"] = challenge_id
+    rod_count = int(parameters.get("rod_count", 6))
+    grid_size = int(parameters.get("grid_size", 7))
+    min_occluded = int(parameters.get("min_occluded_rays_per_view", 2))
+    max_occluded_raw = parameters.get("max_occluded_rays_per_view")
+    max_occluded = None if max_occluded_raw is None else int(max_occluded_raw)
+    if not 3 <= rod_count <= 7 or not 5 <= grid_size <= 8 or min_occluded < 0:
+        raise ValueError("hologram foundry profile is outside supported limits")
+    if max_occluded is not None and max_occluded < min_occluded:
+        raise ValueError("hologram foundry occlusion range is invalid")
+    palette = (
+        "#ff6d4a", "#5bd8c8", "#f6c85f", "#a983ff", "#62a7ff", "#ef7fc4", "#72e2ad",
+    )[:rod_count]
     solutions: list[dict[str, Any]] = []
-    for _attempt in range(500):
+    attempt_limit = 500 if (rod_count, grid_size, min_occluded, max_occluded) == (6, 7, 2, None) else 2400
+    for _attempt in range(attempt_limit):
         candidate: list[dict[str, Any]] = []
         occupied: set[tuple[int, int, int]] = set()
         for index, color in enumerate(palette):
             for _ in range(160):
                 axis = rng.choice("xyz")
-                center = [rng.randint(1, 5), rng.randint(1, 5), rng.randint(1, 5)]
+                center = [rng.randint(1, grid_size - 2), rng.randint(1, grid_size - 2), rng.randint(1, grid_size - 2)]
                 item = {"id": f"rod-{index + 1}", "center": center, "axis": axis, "color": color}
                 cells = _rod_cells(item)
-                if not cells & occupied and all(0 <= value <= 6 for cell in cells for value in cell):
+                if not cells & occupied and all(0 <= value < grid_size for cell in cells for value in cell):
                     occupied |= cells
                     candidate.append(item)
                     break
             else:
                 break
-        if len(candidate) != 6:
+        if len(candidate) != rod_count:
             continue
         masks = _masks(candidate)
-        # Each die must contain genuine depth ambiguity; otherwise this falls
-        # back to the sparse binary-v1 problem.
-        if all(18 - len(masks[view]) >= 2 for view in ("front", "side", "top")):
+        occluded = {view: rod_count * 3 - len(masks[view]) for view in ("front", "side", "top")}
+        if all(value >= min_occluded for value in occluded.values()) and (
+            max_occluded is None or all(value <= max_occluded for value in occluded.values())
+        ):
             solutions = candidate
             break
     if not solutions:
-        raise RuntimeError("could not generate an occluding six-rod casting")
-    rack = ([1, 1, 1], [3, 1, 1], [5, 1, 1], [1, 5, 5], [3, 5, 5], [5, 5, 5])
+        raise RuntimeError("could not generate a foundry casting for the selected profile")
+    if rod_count == 6 and grid_size == 7:
+        # The original six-rod task used this exact rack. Keep it byte-for-byte
+        # equivalent for the controlled baseline.
+        rack = ([1, 1, 1], [3, 1, 1], [5, 1, 1], [1, 5, 5], [3, 5, 5], [5, 5, 5])
+    else:
+        limit = grid_size - 2
+        positions = [(x, y) for y in range(1, limit + 1) for x in range(1, limit + 1)]
+        rack = [[x, y, 1 if index % 2 == 0 else limit] for index, (x, y) in enumerate(positions[:rod_count])]
     initial = [{**item, "center": list(rack[index]), "axis": "z"} for index, item in enumerate(solutions)]
     public.update({
         "generator": {"name": "occluding_color_inverse_foundry_v2", "variant_count": 10**14},
-        "grid_size": 7,
+        "grid_size": grid_size,
         "objects": initial,
         "target_masks": _masks(solutions),
         "views": ("front", "side", "top"),
     })
     truth.update({"solution_objects": solutions, "target_masks": public["target_masks"]})
+    if condition:
+        public["control_condition"] = copy.deepcopy(condition)
+        truth["control_condition"] = copy.deepcopy(condition)
     return public, truth
 
 
@@ -353,20 +384,35 @@ def _slide(board: dict[str, Any], position: tuple[int, int], direction: int, col
     return (x, y), collected
 
 
-def _gravity_board(rng: random.Random) -> tuple[dict[str, Any], list[str]]:
-    size = 8
+def _gravity_board(
+    rng: random.Random,
+    *,
+    size: int = 8,
+    wall_probability: float = 0.21,
+    gate_count: int = 4,
+    min_solution_length: int = 14,
+    max_solution_length: int = 30,
+) -> tuple[dict[str, Any], list[str]]:
+    if (
+        not 6 <= size <= 9
+        or not 0.08 <= wall_probability <= 0.30
+        or not 2 <= gate_count <= 5
+        or not 0 <= min_solution_length <= max_solution_length <= 48
+    ):
+        raise ValueError("gravity room difficulty profile is outside supported limits")
     perimeter = {(x, 0) for x in range(size)} | {(x, size - 1) for x in range(size)} | {(0, y) for y in range(size)} | {(size - 1, y) for y in range(size)}
     for _ in range(2400):
         walls = set(perimeter)
         for y in range(1, size - 1):
             for x in range(1, size - 1):
-                if rng.random() < 0.21:
+                if rng.random() < wall_probability:
                     walls.add((x, y))
         free = [(x, y) for y in range(1, size - 1) for x in range(1, size - 1) if (x, y) not in walls]
-        if len(free) < 18:
+        minimum_free = max(12 if size == 6 else 18, gate_count + 4)
+        if len(free) < minimum_free:
             continue
-        cargo_start, counter_start, *rest = rng.sample(free, 8)
-        gates, cargo_target, counter_target = rest[:4], rest[4], rest[5]
+        cargo_start, counter_start, *rest = rng.sample(free, gate_count + 4)
+        gates, cargo_target, counter_target = rest[:gate_count], rest[gate_count], rest[gate_count + 1]
         board = {
             "size": size, "walls": [list(p) for p in sorted(walls)],
             "cargo_start": list(cargo_start), "counter_start": list(counter_start),
@@ -378,9 +424,9 @@ def _gravity_board(rng: random.Random) -> tuple[dict[str, Any], list[str]]:
         seen = {(cargo_start, counter_start, 0, 0)}
         while queue:
             cargo, counter, orientation, collected, path = queue.popleft()
-            if cargo == cargo_target and counter == counter_target and collected == 4 and 14 <= len(path) <= 30:
+            if cargo == cargo_target and counter == counter_target and collected == gate_count and min_solution_length <= len(path) <= max_solution_length:
                 return board, path
-            if len(path) >= 30:
+            if len(path) >= max_solution_length:
                 continue
             for label, delta in (("cw", 1), ("ccw", -1)):
                 new_orientation = (orientation + delta) % 4
@@ -396,7 +442,22 @@ def _gravity_board(rng: random.Random) -> tuple[dict[str, Any], list[str]]:
 def _gravity(task: dict[str, Any], seed: str):
     mechanic = "gravity_room_freight"
     rng, public, truth = _identity(mechanic, task, seed)
-    board, solution = _gravity_board(rng)
+    condition = task.get("_control_condition")
+    parameters = dict((condition or {}).get("difficulty_parameters") or {})
+    if condition:
+        challenge_id = hashlib.sha256(
+            f"{seed}|{mechanic}|d{condition['difficulty']}|{task.get('id')}".encode()
+        ).hexdigest()[:12]
+        public["challenge_id"] = challenge_id
+        truth["challenge_id"] = challenge_id
+    board, solution = _gravity_board(
+        rng,
+        size=int(parameters.get("grid_size", 8)),
+        wall_probability=float(parameters.get("wall_probability", 0.21)),
+        gate_count=int(parameters.get("gate_count", 4)),
+        min_solution_length=int(parameters.get("min_solution_length", 14)),
+        max_solution_length=int(parameters.get("max_solution_length", 30)),
+    )
     public.update({
         "generator": {"name": "dual_body_rotating_gravity_room_v2", "variant_count": 10**12},
         "board": board,
@@ -404,6 +465,9 @@ def _gravity(task: dict[str, Any], seed: str):
         "rotation_ms": 620,
     })
     truth.update({"board": board, "solution": solution})
+    if condition:
+        public["control_condition"] = copy.deepcopy(condition)
+        truth["control_condition"] = copy.deepcopy(condition)
     return public, truth
 
 
@@ -411,18 +475,23 @@ def _equalize_levels(
     start: tuple[int, ...],
     gate: int,
     circuits: list[tuple[int, int]],
+    *,
+    safe_min: int = 3,
+    safe_max: int = 17,
+    tolerance: int = 1,
+    max_pumps: int = 14,
 ) -> tuple[tuple[int, ...], list[dict[str, int]]]:
     queue = deque([(start, [])])
     seen = {start}
     while queue:
         levels, path = queue.popleft()
-        if abs(levels[gate] - levels[gate + 1]) <= 1:
+        if abs(levels[gate] - levels[gate + 1]) <= tolerance:
             return levels, path
-        if len(path) >= 14:
+        if len(path) >= max_pumps:
             continue
         for circuit, (first, second) in enumerate(circuits):
             for source, destination, direction in ((first, second, 1), (second, first, -1)):
-                if levels[source] <= 3 or levels[destination] >= 17:
+                if levels[source] <= safe_min or levels[destination] >= safe_max:
                     continue
                 changed = list(levels)
                 changed[source] -= 1
@@ -434,71 +503,219 @@ def _equalize_levels(
     raise RuntimeError("could not equalize authored flood lock")
 
 
+def _equalize_levels_greedy(
+    start: tuple[int, ...],
+    gate: int,
+    circuits: list[tuple[int, int]],
+    *,
+    safe_min: int,
+    safe_max: int,
+    tolerance: int,
+    max_pumps: int,
+) -> tuple[tuple[int, ...], list[dict[str, int]]]:
+    """Route conserved units along the visible manifold without exhaustive state search.
+
+    The controlled profiles use this only outside the preserved L4 reference.
+    A whole source-to-destination route leaves intermediate vault levels
+    unchanged after each unit, so the same visible safety bounds used by the
+    browser and replay are maintained at every primitive pump event.
+    """
+    adjacency: dict[int, list[tuple[int, int, int]]] = {}
+    for index, (first, second) in enumerate(circuits):
+        adjacency.setdefault(first, []).append((second, index, 1))
+        adjacency.setdefault(second, []).append((first, index, -1))
+
+    def route(source: int, destination: int) -> list[tuple[int, int, int]]:
+        queue = deque([(source, [])])
+        seen = {source}
+        while queue:
+            current, path = queue.popleft()
+            if current == destination:
+                return path
+            for following, circuit, direction in adjacency.get(current, []):
+                if following not in seen:
+                    seen.add(following)
+                    queue.append((following, [*path, (following, circuit, direction)]))
+        raise RuntimeError("floodgate manifold does not connect a selected lock")
+
+    levels = list(start)
+    plan: list[dict[str, int]] = []
+    while abs(levels[gate] - levels[gate + 1]) > tolerance:
+        source, destination = (gate, gate + 1) if levels[gate] > levels[gate + 1] else (gate + 1, gate)
+        path = route(source, destination)
+        cursor = source
+        for following, circuit, direction in path:
+            if levels[cursor] <= safe_min or levels[following] >= safe_max:
+                raise RuntimeError("visible floodgate safety bands prevent equalization")
+            levels[cursor] -= 1
+            levels[following] += 1
+            plan.append({"action": "pump", "circuit": circuit, "direction": direction})
+            cursor = following
+            if len(plan) > max_pumps:
+                raise RuntimeError("controlled floodgate lock exceeds its pump budget")
+    return tuple(levels), plan
+
+
 def _flood(task: dict[str, Any], seed: str):
     mechanic = "floodgate_archive_rescue"
     rng, public, truth = _identity(mechanic, task, seed)
-    circuits = [(0, 2), (2, 4), (4, 1), (1, 3), (3, 0)]
-    crossing_order = (0, 3, 1, 2, 1, 3, 0)
-    for _ in range(120):
-        integer_levels = tuple(rng.randint(5, 15) for _ in range(5))
+    condition = task.get("_control_condition")
+    parameters = dict((condition or {}).get("difficulty_parameters") or {})
+    if condition:
+        challenge_id = hashlib.sha256(
+            f"{seed}|{mechanic}|d{condition['difficulty']}|{task.get('id')}".encode()
+        ).hexdigest()[:12]
+        public["challenge_id"] = challenge_id
+        truth["challenge_id"] = challenge_id
+
+    chamber_count = int(parameters.get("chamber_count", 5))
+    raw_circuits = parameters.get("circuits", ((0, 2), (2, 4), (4, 1), (1, 3), (3, 0)))
+    raw_crossing_order = parameters.get("crossing_order", (0, 3, 1, 2, 1, 3, 0))
+    try:
+        circuits = [tuple(int(value) for value in edge) for edge in raw_circuits]
+        crossing_order = tuple(int(value) for value in raw_crossing_order)
+    except (TypeError, ValueError) as exc:
+        raise ValueError("floodgate circuit or lock profile is malformed") from exc
+    level_min = int(parameters.get("level_min_units", 5))
+    level_max = int(parameters.get("level_max_units", 15))
+    safe_min = int(parameters.get("safe_min_units", 3))
+    safe_max = int(parameters.get("safe_max_units", 17))
+    unit_divisor = int(parameters.get("unit_divisor", 20))
+    pump_step_units = int(parameters.get("pump_step_units", 1))
+    equal_tolerance_units = int(parameters.get("equal_tolerance_units", 1))
+    per_lock_pump_limit = int(parameters.get("per_lock_pump_limit", 14))
+    pump_count_min = int(parameters.get("pump_count_min", 10))
+    pump_count_max = int(parameters.get("pump_count_max", 30))
+    equal_tolerance = float(
+        parameters.get(
+            "equal_tolerance",
+            0.055 if condition is None else round((equal_tolerance_units + 0.1) / unit_divisor, 4),
+        )
+    )
+    if (
+        not 3 <= chamber_count <= 6
+        or not circuits
+        or any(len(edge) != 2 or min(edge) < 0 or max(edge) >= chamber_count or edge[0] == edge[1] for edge in circuits)
+        or not crossing_order
+        or any(gate < 0 or gate >= chamber_count - 1 for gate in crossing_order)
+        or not 0 < safe_min < level_min <= level_max < safe_max
+        or unit_divisor not in {20, 40}
+        or pump_step_units != 1
+        or not 0 <= equal_tolerance_units <= 2
+        or not 1 <= per_lock_pump_limit <= 28
+        or not 0 <= pump_count_min <= pump_count_max <= 48
+        or equal_tolerance <= 0
+    ):
+        raise ValueError("floodgate difficulty profile is outside supported limits")
+
+    for _ in range(240):
+        integer_levels = tuple(rng.randint(level_min, level_max) for _ in range(chamber_count))
         cursor = integer_levels
         plan: list[dict[str, Any]] = []
-        for gate in crossing_order:
-            cursor, pumps = _equalize_levels(cursor, gate, circuits)
-            plan.extend(pumps)
-            plan.extend((
-                {"action": "gate", "gate": gate, "open": True},
-                {"action": "transfer", "gate": gate},
-                {"action": "gate", "gate": gate, "open": False},
-            ))
+        try:
+            for gate in crossing_order:
+                equalizer = _equalize_levels if condition is None or int(condition["difficulty"]) == 4 else _equalize_levels_greedy
+                cursor, pumps = equalizer(
+                    cursor,
+                    gate,
+                    circuits,
+                    safe_min=safe_min,
+                    safe_max=safe_max,
+                    tolerance=equal_tolerance_units,
+                    max_pumps=per_lock_pump_limit,
+                )
+                plan.extend(pumps)
+                plan.extend((
+                    {"action": "gate", "gate": gate, "open": True},
+                    {"action": "transfer", "gate": gate},
+                    {"action": "gate", "gate": gate, "open": False},
+                ))
+        except RuntimeError:
+            continue
         pump_count = sum(item["action"] == "pump" for item in plan)
-        if 10 <= pump_count <= 30:
+        if pump_count_min <= pump_count <= pump_count_max:
             break
     else:
         raise RuntimeError("could not author coupled opposing flood route")
-    levels = [value / 20 for value in integer_levels]
+    levels = [value / unit_divisor for value in integer_levels]
+    level_precision = 3 if unit_divisor == 40 else 2
     public.update({
         "generator": {"name": "conserved_dual_capsule_lock_archive_v2", "variant_count": 10**10},
-        "chambers": [{"id": f"vault-{i + 1}", "level": round(level, 2), "safe_min": 0.15, "safe_max": 0.85} for i, level in enumerate(levels)],
-        "gates": [{"id": f"lock-{i + 1}", "between": [i, i + 1]} for i in range(4)],
+        "chambers": [{"id": f"vault-{i + 1}", "level": round(level, level_precision), "safe_min": safe_min / unit_divisor, "safe_max": safe_max / unit_divisor} for i, level in enumerate(levels)],
+        "gates": [{"id": f"lock-{i + 1}", "between": [i, i + 1]} for i in range(chamber_count - 1)],
         "circuits": [{"id": f"circuit-{i + 1}", "between": list(edge)} for i, edge in enumerate(circuits)],
         "capsules": [
-            {"id": "amber", "chamber": 0, "dock_chamber": 4, "direction": 1, "color": "#ffb13b"},
-            {"id": "cyan", "chamber": 4, "dock_chamber": 0, "direction": -1, "color": "#55dbe8"},
+            {"id": "amber", "chamber": 0, "dock_chamber": chamber_count - 1, "direction": 1, "color": "#ffb13b"},
+            {"id": "cyan", "chamber": chamber_count - 1, "dock_chamber": 0, "direction": -1, "color": "#55dbe8"},
         ],
-        "pump_step": 0.05,
-        "equal_tolerance": 0.055,
+        "pump_step": pump_step_units / unit_divisor,
+        "equal_tolerance": equal_tolerance,
     })
+    if unit_divisor == 40:
+        public["level_precision"] = level_precision
     truth.update({"reference_plan": plan, "initial_levels": levels, "pump_step": public["pump_step"], "equal_tolerance": public["equal_tolerance"]})
+    if condition:
+        public["control_condition"] = copy.deepcopy(condition)
+        truth["control_condition"] = copy.deepcopy(condition)
     return public, truth
 
 
 def _membrane(task: dict[str, Any], seed: str):
     mechanic = "elastic_membrane_sorter"
     rng, public, truth = _identity(mechanic, task, seed)
+    condition = task.get("_control_condition")
+    parameters = dict((condition or {}).get("difficulty_parameters") or {})
+    if condition:
+        challenge_id = hashlib.sha256(
+            f"{seed}|{mechanic}|d{condition['difficulty']}|{condition['interaction']}|{task.get('id')}".encode()
+        ).hexdigest()[:12]
+        public["challenge_id"] = challenge_id
+        truth["challenge_id"] = challenge_id
+    round_count = int(parameters.get("round_count", 3))
+    checkpoints_per_round = int(parameters.get("checkpoints_per_round", 2))
+    if not 1 <= round_count <= 3 or not 1 <= checkpoints_per_round <= 3:
+        raise ValueError("elastic membrane profile is outside supported course limits")
+    initial_height_low = float(parameters.get("initial_height_low", 0.42))
+    initial_height_high = float(parameters.get("initial_height_high", 0.58))
+    if not 0 <= initial_height_low <= initial_height_high <= 1:
+        raise ValueError("elastic membrane post-height range is invalid")
     wells = ((125, 115), (775, 120), (450, 385))
     rounds = []
     courses = (
-        [[355, 175], [235, 108]],
-        [[545, 175], [665, 110]],
-        [[365, 305], [515, 355]],
+        [[355, 175], [235, 108], [155, 150]],
+        [[545, 175], [665, 110], [745, 155]],
+        [[365, 305], [515, 355], [455, 410]],
     )
-    order = list(range(3)); rng.shuffle(order)
-    for index, target in enumerate(order):
-        initial = [round(rng.uniform(0.42, 0.58), 2) for _ in range(4)]
+    order = list(range(3))
+    rng.shuffle(order)
+    for index, target in enumerate(order[:round_count]):
+        initial = [round(rng.uniform(initial_height_low, initial_height_high), 2) for _ in range(4)]
         rounds.append({
             "id": f"marble-{index + 1}", "target_well": target,
             "start": [450, 230], "post_heights": initial,
-            "wells": [list(item) for item in wells], "checkpoints": courses[target],
+            "wells": [list(item) for item in wells],
+            "checkpoints": courses[target][:checkpoints_per_round],
         })
     public.update({
         "generator": {"name": "live_steered_membrane_course_v2", "variant_count": 10**9},
         "canvas": {"width": 900, "height": 480},
         "rounds": rounds,
         "post_positions": [[70, 55], [830, 55], [70, 425], [830, 425]],
-        "physics": {"tick_ms": 35, "slope_accel": 0.10, "drag": 0.955, "well_radius": 30, "capture_speed": 2.8, "checkpoint_radius": 34, "max_ticks": 720, "boundary_restitution": 0.55},
+        "physics": {
+            "tick_ms": 35,
+            "slope_accel": float(parameters.get("slope_accel", 0.10)),
+            "drag": float(parameters.get("drag", 0.955)),
+            "well_radius": int(parameters.get("well_radius", 30)),
+            "capture_speed": float(parameters.get("capture_speed", 2.8)),
+            "checkpoint_radius": int(parameters.get("checkpoint_radius", 34)),
+            "max_ticks": int(parameters.get("max_ticks", 720)),
+            "boundary_restitution": 0.55,
+        },
     })
     truth.update({"rounds": rounds, "physics": public["physics"]})
+    if condition:
+        public["control_condition"] = copy.deepcopy(condition)
+        truth["control_condition"] = copy.deepcopy(condition)
     return public, truth
 
 
@@ -536,52 +753,179 @@ def _pheromone(task: dict[str, Any], seed: str):
     return public, truth
 
 
-def _clutch(task: dict[str, Any], seed: str):
-    mechanic = "clockwork_clutch_safe"
-    rng, public, truth = _identity(mechanic, task, seed)
-    ratios = rng.choice((
+CLUTCH_RATIO_PROFILES = {
+    "single": (
+        (1.0,),
+    ),
+    "paired": (
+        (1.0, -1.25),
+        (1.25, -1.0),
+        (1.5, -1.25),
+    ),
+    "legacy_four": (
         (1.0, -1.25, 1.5, -1.75),
         (1.25, -1.0, 1.75, -1.5),
         (1.5, -1.75, 1.0, -1.25),
-    ))
-    order = list(range(4)); rng.shuffle(order)
-    moments = [rng.randint(31, 38), rng.randint(56, 65), rng.randint(84, 94), rng.randint(116, 128)]
+    ),
+    "wide_four": (
+        (1.25, -1.5, 1.75, -2.0),
+        (1.5, -1.25, 2.0, -1.75),
+        (1.75, -2.0, 1.25, -1.5),
+    ),
+}
+
+
+def _clutch(task: dict[str, Any], seed: str):
+    mechanic = "clockwork_clutch_safe"
+    rng, public, truth = _identity(mechanic, task, seed)
+    condition = task.get("_control_condition")
+    parameters = dict((condition or {}).get("difficulty_parameters") or {})
+    if condition:
+        challenge_id = hashlib.sha256(
+            f"{seed}|{mechanic}|d{condition['difficulty']}|{task.get('id')}".encode()
+        ).hexdigest()[:12]
+        public["challenge_id"] = challenge_id
+        truth["challenge_id"] = challenge_id
+
+    shaft_count = int(parameters.get("shaft_count", 4))
+    ratio_profile = str(parameters.get("ratio_profile", "legacy_four"))
+    ratio_bank = CLUTCH_RATIO_PROFILES.get(ratio_profile)
+    if not 1 <= shaft_count <= 4 or ratio_bank is None or any(len(profile) != shaft_count for profile in ratio_bank):
+        raise ValueError("clockwork shaft count and ratio profile do not agree")
+    ratios = rng.choice(ratio_bank)
+
+    raw_ranges = parameters.get(
+        "release_tick_ranges",
+        ((31, 38), (56, 65), (84, 94), (116, 128)),
+    )
+    if not isinstance(raw_ranges, (list, tuple)) or len(raw_ranges) != shaft_count:
+        raise ValueError("clockwork release window count does not match the shaft count")
+    release_tick_ranges: list[tuple[int, int]] = []
+    for value in raw_ranges:
+        if not isinstance(value, (list, tuple)) or len(value) != 2 or any(isinstance(item, bool) for item in value):
+            raise ValueError("clockwork release window is malformed")
+        start, end = int(value[0]), int(value[1])
+        if start < 1 or end < start:
+            raise ValueError("clockwork release window is inverted")
+        release_tick_ranges.append((start, end))
+    if any(previous[1] >= following[0] for previous, following in zip(release_tick_ranges, release_tick_ranges[1:])):
+        raise ValueError("clockwork release windows must be strictly ordered and disjoint")
+
+    tick_ms = int(parameters.get("tick_ms", 85))
+    drive_deg = float(parameters.get("drive_deg_per_tick", 1.8))
+    load_numerator = int(parameters.get("load_numerator", 4))
+    tolerance = float(parameters.get("phase_tolerance_deg", 13.0))
+    max_ticks = int(parameters.get("max_ticks", 170))
+    show_angle_readout = parameters.get("show_angle_readout", True)
+    show_speed_readout = parameters.get("show_speed_readout", True)
+    reengagement_allowed = parameters.get("reengagement_allowed", True)
+    if not 50 <= tick_ms <= 200 or not .5 <= drive_deg <= 3.0:
+        raise ValueError("clockwork drive timing is outside supported limits")
+    if load_numerator != shaft_count or not 3.0 <= tolerance <= 40.0:
+        raise ValueError("clockwork load or phase tolerance is outside supported limits")
+    if not release_tick_ranges[-1][1] < max_ticks <= 400:
+        raise ValueError("clockwork wind limit must follow every release window")
+    if any(not isinstance(value, bool) for value in (show_angle_readout, show_speed_readout, reengagement_allowed)):
+        raise ValueError("clockwork telemetry and recovery policies must be boolean")
+
+    order = list(range(shaft_count))
+    rng.shuffle(order)
+    moments = [rng.randint(start, end) for start, end in release_tick_ranges]
     release_schedule = sorted(({"tick": tick, "shaft": shaft} for tick, shaft in zip(moments, order)), key=lambda item: item["tick"])
-    drive_deg = 1.8
-    accumulated = [0.0] * 4
-    active = set(range(4))
+    accumulated = [0.0] * shaft_count
+    active = set(range(shaft_count))
     by_tick = {item["tick"]: item["shaft"] for item in release_schedule}
     for tick in range(1, max(moments) + 1):
-        factor = 4 / len(active)
+        factor = load_numerator / len(active)
         for shaft in active:
             accumulated[shaft] += ratios[shaft] * drive_deg * factor
         if tick in by_tick:
             active.remove(by_tick[tick])
     initial = [round((-value) % 360.0, 3) for value in accumulated]
+    physics = {
+        "tick_ms": tick_ms,
+        "drive_deg_per_tick": drive_deg,
+        "load_numerator": load_numerator,
+        "phase_tolerance_deg": tolerance,
+        "max_ticks": max_ticks,
+    }
+    # True is the legacy/current behavior. Omit default policy flags so the
+    # calibrated L3 public and hidden contracts stay byte-for-byte equivalent
+    # to the original generator once control identity is removed.
+    if not show_angle_readout:
+        physics["show_angle_readout"] = False
+    if not show_speed_readout:
+        physics["show_speed_readout"] = False
+    if not reengagement_allowed:
+        physics["reengagement_allowed"] = False
     public.update({
-        "generator": {"name": "load_redistributing_clutch_safe_v2", "variant_count": 10**10},
+        "generator": {"name": "load_redistributing_clutch_safe_v2", "variant_count": 10 ** (shaft_count + 6)},
         "shafts": [{"id": f"seal-{i + 1}", "ratio": ratio, "angle_deg": initial[i], "engaged": True} for i, ratio in enumerate(ratios)],
-        "physics": {"tick_ms": 85, "drive_deg_per_tick": drive_deg, "load_numerator": 4, "phase_tolerance_deg": 13.0, "max_ticks": 170},
+        "physics": physics,
     })
     truth.update({"release_schedule": release_schedule, "ratios": ratios, "initial_angles": initial, "physics": public["physics"]})
+    if condition:
+        public["control_condition"] = copy.deepcopy(condition)
+        truth["control_condition"] = copy.deepcopy(condition)
     return public, truth
 
 
 def _marionette(task: dict[str, Any], seed: str):
     mechanic = "marionette_checkpoint"
     rng, public, truth = _identity(mechanic, task, seed)
+    condition = task.get("_control_condition")
+    parameters = dict((condition or {}).get("difficulty_parameters") or {})
+    if condition:
+        challenge_id = hashlib.sha256(
+            f"{seed}|{mechanic}|d{condition['difficulty']}|{condition['interaction']}|{task.get('id')}".encode()
+        ).hexdigest()[:12]
+        public["challenge_id"] = challenge_id
+        truth["challenge_id"] = challenge_id
+    act_count = int(parameters.get("act_count", 3))
+    active_indices = tuple(int(value) for value in parameters.get("active_string_indices", (0, 1, 2, 3)))
+    base_low = int(parameters.get("base_length_low", 34))
+    base_high = int(parameters.get("base_length_high", 66))
+    amplitude_low = int(parameters.get("amplitude_low", 5))
+    amplitude_high = int(parameters.get("amplitude_high", 8))
+    angular_rates = tuple(float(value) for value in parameters.get("angular_rates", (0.046, 0.050, 0.054)))
+    tracking_ticks = int(parameters.get("tracking_ticks", 68))
+    miss_decay_ticks = int(parameters.get("miss_decay_ticks", 2))
+    ring_radius = int(parameters.get("ring_radius", 21))
+    tick_ms = int(parameters.get("tick_ms", 55))
+    if (
+        not 1 <= act_count <= 3
+        or not active_indices
+        or len(set(active_indices)) != len(active_indices)
+        or any(index not in range(4) for index in active_indices)
+        or not 20 <= base_low <= base_high <= 80
+        or not 0 <= amplitude_low <= amplitude_high <= 15
+        or not angular_rates
+        or any(not .015 <= rate <= .09 for rate in angular_rates)
+        or not 20 <= tracking_ticks <= 120
+        or not 1 <= miss_decay_ticks <= 5
+        or not 17 <= ring_radius <= 34
+        or not 40 <= tick_ms <= 100
+    ):
+        raise ValueError("marionette difficulty profile is outside supported limits")
     poses = []
-    for index in range(3):
-        base = [rng.randint(34, 66) for _ in range(4)]
-        amplitudes = [rng.randint(5, min(8, value - 21, 79 - value)) for value in base]
+    for index in range(act_count):
+        base = [50] * 4
+        for string in active_indices:
+            base[string] = rng.randint(base_low, base_high)
+        amplitudes = [0] * 4
+        for string in active_indices:
+            upper = min(amplitude_high, base[string] - 21, 79 - base[string])
+            if upper < amplitude_low:
+                raise ValueError("marionette base range cannot accommodate its string amplitude")
+            amplitudes[string] = rng.randint(amplitude_low, upper)
         poses.append({
             "id": f"inspection-{index + 1}",
             "base_lengths": base,
             "amplitudes": amplitudes,
             "phases": [round(rng.random() * math.tau, 5) for _ in range(4)],
-            "angular_rate": rng.choice((0.046, 0.050, 0.054)),
-            "tracking_ticks": 68,
-            "miss_decay_ticks": 2,
+            "angular_rate": rng.choice(angular_rates),
+            "tracking_ticks": tracking_ticks,
+            "miss_decay_ticks": miss_decay_ticks,
         })
     public.update({
         "generator": {"name": "moving_coupled_marionette_inspection_v2", "variant_count": 10**11},
@@ -589,10 +933,18 @@ def _marionette(task: dict[str, Any], seed: str):
         "initial_lengths": [50, 50, 50, 50],
         "poses": poses,
         "length_range": [20, 80],
-        "ring_radius": 21,
-        "tick_ms": 55,
+        "ring_radius": ring_radius,
+        "tick_ms": tick_ms,
     })
     truth.update({"poses": poses, "ring_radius": public["ring_radius"]})
+    if condition:
+        public["control_condition"] = copy.deepcopy(condition)
+        truth["control_condition"] = copy.deepcopy(condition)
+        # The L4 reference deliberately omits these defaults so, once control
+        # identity is removed, it remains byte-for-byte the original task.
+        if int(condition["difficulty"]) != 4:
+            public["active_string_indices"] = list(active_indices)
+            truth["active_string_indices"] = list(active_indices)
     return public, truth
 
 

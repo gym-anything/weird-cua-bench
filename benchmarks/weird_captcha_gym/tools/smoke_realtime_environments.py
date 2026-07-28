@@ -22,9 +22,13 @@ from benchmarks.weird_captcha_gym.dashboard.export_static import export_dashboar
 
 
 ENVIRONMENTS = (
+    "blind_dice_courier_env",
+    "clockwork_clutch_safe_env",
     "rotating_keyboard_env",
+    "parallel_grillmaster_env",
     "motion_only_ghost_jigsaw_env",
     "slime_commute_env",
+    "slot_reel_capture_env",
     "lidar_blacksite_env",
     "domino_autopsy_env",
 )
@@ -72,6 +76,10 @@ def main() -> None:
                         raise TimeoutError(f"{environment} did not finish rendering while initially paused")
                     if environment == "rotating_keyboard_env":
                         page.locator(".rotating-key:not(.rotating-delete)").first.click()
+                    elif environment == "blind_dice_courier_env":
+                        page.keyboard.press("ArrowUp")
+                    elif environment == "clockwork_clutch_safe_env":
+                        page.locator("#clutch-drive").click()
                     elif environment == "lidar_blacksite_env":
                         page.locator("#lidar-scan").click()
                     elif environment == "domino_autopsy_env":

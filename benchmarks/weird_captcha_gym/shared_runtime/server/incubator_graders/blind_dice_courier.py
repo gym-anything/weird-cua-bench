@@ -47,6 +47,15 @@ def _roll(orientation: dict[str, int], direction: str) -> dict[str, int]:
     raise ValueError(direction)
 
 
+def _gate_accepts(gate: dict[str, Any], orientation: dict[str, int]) -> bool:
+    try:
+        if int(orientation["top"]) != int(gate["required_top"]):
+            return False
+        return "required_east" not in gate or int(orientation["east"]) == int(gate["required_east"])
+    except (KeyError, TypeError, ValueError):
+        return False
+
+
 def _time(value: Any) -> float | None:
     try:
         number = float(value)
@@ -80,6 +89,13 @@ def grade(payload: dict[str, Any], ground_truth: dict[str, Any], public_state: d
         return _failure("public and hidden courier geometry disagree")
     if public_state.get("initial_orientation") != ground_truth.get("initial_orientation"):
         return _failure("public and hidden initial orientation disagree")
+    truth_condition = ground_truth.get("control_condition")
+    if truth_condition != public_state.get("control_condition"):
+        return _failure("public interaction condition differs from courier contract")
+    interaction = str((truth_condition or {}).get("interaction") or "")
+    expected_input_source = {"simplified": "direction_buttons", "full": "keyboard"}.get(interaction)
+    if truth_condition is not None and expected_input_source is None:
+        return _failure("courier interaction condition is invalid")
 
     board = ground_truth.get("board") or {}
     start = _point(board.get("start"))
@@ -87,16 +103,68 @@ def grade(payload: dict[str, Any], ground_truth: dict[str, Any], public_state: d
     initial = _orientation(ground_truth.get("initial_orientation"))
     if start is None or goal is None or initial is None:
         return _failure("invalid hidden courier state")
+    columns = _integer(board.get("columns"))
+    rows = _integer(board.get("rows"))
+    if columns is None or rows is None or not 7 <= columns <= 24 or not 7 <= rows <= 15:
+        return _failure("invalid hidden courier dimensions")
     open_cells = {_point(item) for item in board.get("open_cells") or []}
-    if None in open_cells or start not in open_cells or goal not in open_cells:
+    if (
+        None in open_cells
+        or start not in open_cells
+        or goal not in open_cells
+        or any(not 1 <= point[0] < columns - 1 or not 1 <= point[1] < rows - 1 for point in open_cells if point)
+    ):
         return _failure("invalid hidden courier floor plan")
+    gate_bank = board.get("gates") or []
+    scanner_bank = board.get("scanners") or []
+    if not isinstance(gate_bank, list) or not 1 <= len(gate_bank) <= 6 or not isinstance(scanner_bank, list):
+        return _failure("invalid hidden courier checkpoints")
     gates_by_position: dict[tuple[int, int], dict[str, Any]] = {}
-    for gate in board.get("gates") or []:
+    gate_ids: list[str] = []
+    for gate in gate_bank:
         position = _point(gate)
-        if position is None:
+        gate_id = str(gate.get("id") or "") if isinstance(gate, dict) else ""
+        required_top = _integer(gate.get("required_top")) if isinstance(gate, dict) else None
+        required_east = _integer(gate.get("required_east")) if isinstance(gate, dict) and "required_east" in gate else None
+        if (
+            position is None
+            or position not in open_cells
+            or position in gates_by_position
+            or not gate_id
+            or gate_id in gate_ids
+            or required_top not in range(1, 7)
+            or ("required_east" in gate and required_east not in range(1, 7))
+        ):
             return _failure("invalid hidden gate")
         gates_by_position[position] = gate
+        gate_ids.append(gate_id)
     expected_gate_ids = [str(item) for item in ground_truth.get("gate_ids") or []]
+    if gate_ids != expected_gate_ids:
+        return _failure("hidden gate order differs from the manifest")
+    scanner_positions = [_point(scanner) for scanner in scanner_bank]
+    if (
+        None in scanner_positions
+        or len(set(scanner_positions)) != len(scanner_positions)
+        or any(position not in open_cells for position in scanner_positions)
+    ):
+        return _failure("invalid hidden scanner placement")
+    if truth_condition is not None:
+        parameters = dict(truth_condition.get("difficulty_parameters") or {})
+        expected_barriers = parameters.get("barrier_columns")
+        expected_scanners = parameters.get("scanner_gate_indices")
+        face_requirements = _integer(parameters.get("gate_face_requirements"))
+        if (
+            columns != _integer(parameters.get("columns"))
+            or rows != _integer(parameters.get("rows"))
+            or not isinstance(expected_barriers, list)
+            or [gate["x"] for gate in gate_bank] != expected_barriers
+            or not isinstance(expected_scanners, list)
+            or len(scanner_bank) != len(expected_scanners)
+            or face_requirements not in {1, 2}
+            or any(("required_east" in gate) != (face_requirements == 2) for gate in gate_bank)
+            or parameters.get("orientation_visibility") not in {"always", "initial_and_scanners"}
+        ):
+            return _failure("courier difficulty condition differs from generated geometry")
 
     actions = payload.get("actions")
     if not isinstance(actions, list) or not actions or len(actions) > 1200:
@@ -132,6 +200,8 @@ def grade(payload: dict[str, Any], ground_truth: dict[str, Any], public_state: d
             continue
         if action_type != "move":
             return _failure(f"unknown roll action {action_type!r}")
+        if expected_input_source is not None and action.get("input_source") != expected_input_source:
+            return _failure("roll uses the wrong interaction input")
         direction = str(action.get("direction") or "").upper()
         if direction not in _MOVES:
             return _failure("invalid roll direction")
@@ -143,7 +213,7 @@ def grade(payload: dict[str, Any], ground_truth: dict[str, Any], public_state: d
         accepted = candidate in open_cells
         tentative = _roll(orientation, direction) if accepted else dict(orientation)
         gate = gates_by_position.get(candidate) if accepted else None
-        if gate is not None and int(tentative["top"]) != int(gate.get("required_top")):
+        if gate is not None and not _gate_accepts(gate, tentative):
             accepted = False
             tentative = dict(orientation)
         if accepted:

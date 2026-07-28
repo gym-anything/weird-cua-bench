@@ -15,9 +15,13 @@ Read the complete task specification, generator, browser implementation, grader,
 
 Do not count unused options, inactive metadata, verifier-only ticks, minimum-action checks, or grader quotas as difficulty. Do not infer difficulty from the environment name, task description, or an earlier label.
 
+Use the existing controlled environments as calibration examples before assigning the current level. For each example, inspect the actual current task and the code that determines its visible problem and success condition. Reading only its `controls.json` summary is not enough. Compare the new task with the approved examples at nearby levels and state why it belongs above some examples and below others.
+
 ## Construct the profiles
 
 First determine the existing configuration's level. For a fixed seed, that profile must preserve the existing generated challenge and visible behavior exactly. Build the lower and higher profiles around that reference point.
+
+Do not preserve user-facing text that objectively contradicts the existing generator and grader. Repair only the inconsistent text. Record the historical and corrected contracts. Prove that the generated world, success condition, timing, observation surface, and assigned level remain unchanged.
 
 Change parameters that alter the problem the agent must solve. Depending on the environment, these can include:
 

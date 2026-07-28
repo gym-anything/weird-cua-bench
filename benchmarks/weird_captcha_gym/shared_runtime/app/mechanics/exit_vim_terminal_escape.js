@@ -23,6 +23,14 @@
     return model.layerIndex < 0 ? model.mode : layerName();
   }
 
+  function interactionMode() {
+    return model?.state?.control_condition?.interaction || "full";
+  }
+
+  function simplifiedInteraction() {
+    return interactionMode() === "simplified";
+  }
+
   function editorLines() {
     if (model.bufferIndex === 0) return model.buffer;
     return model.referenceBuffers[model.bufferIndex - 1]?.lines || [];
@@ -244,6 +252,13 @@
   function recordKey(event) {
     if (!model || model.submitting || model.terminal || event.repeat) return;
     if (event.target?.closest?.(".cheat-panel")) return;
+    if (simplifiedInteraction()) {
+      if (event.target?.closest?.(".terminal-proxy-entry")) return;
+      event.preventDefault();
+      model.message = "USE THE VISIBLE PROXY CONTROLS";
+      renderTerminal();
+      return;
+    }
     const key = String(event.key || "");
     if (!key) return;
     event.preventDefault();
@@ -260,7 +275,82 @@
       layer_after: "",
       mode_after: "",
     };
+    if (model.state.control_condition) item.input_source = "keyboard";
     applyKey(item.key, item.ctrl, item.alt, item.meta);
+    item.layer_after = layerName();
+    item.mode_after = modeName();
+    model.events.push(item);
+    renderTerminal();
+    if (layerName() === "complete") window.setTimeout(() => submit(), 140);
+  }
+
+  function applyProxyAction(action, item) {
+    const current = layerName();
+    if (action === "next_buffer") {
+      if (current === "editor") switchBuffer(1);
+      return;
+    }
+    if (action === "previous_buffer") {
+      if (current === "editor") switchBuffer(-1);
+      return;
+    }
+    if (action === "select_line") {
+      const row = Number(item.row);
+      if (current === "editor" && editorWritable() && Number.isInteger(row) && row >= 0 && row < model.buffer.length) {
+        model.row = row;
+        model.col = 0;
+        model.mode = "normal";
+        model.pending = "";
+        model.message = `MANIFEST LINE ${row + 1} SELECTED`;
+      }
+      return;
+    }
+    if (action === "replace_line") {
+      const row = Number(item.row);
+      const value = String(item.value || "");
+      if (current === "editor" && editorWritable() && row === model.row && row >= 0 && row < model.buffer.length && value && !/[\r\n]/.test(value)) {
+        pushUndo();
+        model.buffer[row] = value;
+        model.col = value.length;
+        model.clearCount += 1;
+        model.insertedChars += value.length;
+        model.mode = "normal";
+        model.pending = "";
+        model.message = `MANIFEST LINE ${row + 1} REPLACED`;
+      }
+      return;
+    }
+    if (action === "write_and_quit") {
+      model.commandHistory.push("wq");
+      if (current === "editor" && editorWritable() && model.visitedBuffers.size === model.referenceBuffers.length + 1 && model.buffer.every((line, index) => line === model.targetBuffer[index])) {
+        model.saved = true;
+        model.layerIndex = 0;
+        model.message = `MANIFEST WRITTEN · ENTERING ${layerName().toUpperCase()}`;
+      } else {
+        model.commandErrors += 1;
+        model.message = "MANIFEST STILL CORRUPT OR REFERENCES UNREAD";
+      }
+      return;
+    }
+    if (action === "exit_active_layer" && current !== "editor" && current !== "complete") {
+      advanceLayer();
+    }
+  }
+
+  function recordProxy(action, fields = {}) {
+    if (!model || model.submitting || model.terminal || !simplifiedInteraction()) return;
+    clearFreshFailure();
+    const item = {
+      sequence: model.events.length + 1,
+      action,
+      input_source: "proxy_controls",
+      layer_before: layerName(),
+      mode_before: modeName(),
+      ...fields,
+      layer_after: "",
+      mode_after: "",
+    };
+    applyProxyAction(action, item);
     item.layer_after = layerName();
     item.mode_after = modeName();
     model.events.push(item);
@@ -298,7 +388,7 @@
 
   function editorMarkup() {
     const writable = editorWritable();
-    const lines = editorLines().map((line, index) => `<div class="terminal-buffer-line${index === model.row ? " is-current" : ""}"><i>${String(index + 1).padStart(2, "0")}</i><code>${cursorLine(line, index)}</code><span>${writable ? (line === model.targetBuffer[index] ? "CLEAN" : "CORRUPT") : "REFERENCE"}</span></div>`).join("");
+    const lines = editorLines().map((line, index) => `<div class="terminal-buffer-line${index === model.row ? " is-current" : ""}"${simplifiedInteraction() && writable ? ` data-proxy-row="${index}"` : ""}><i>${String(index + 1).padStart(2, "0")}</i><code>${cursorLine(line, index)}</code><span>${writable ? (line === model.targetBuffer[index] ? "CLEAN" : "CORRUPT") : "REFERENCE"}</span></div>`).join("");
     const command = model.mode === "command" ? `:${esc(model.command)}<span class="terminal-cursor"> </span>` : esc(model.message);
     return `<div class="terminal-editor-bar"><span>${esc(editorBufferName())} · BUFFER ${model.bufferIndex + 1}/${model.referenceBuffers.length + 1}</span><b>${writable ? (model.saved ? "WRITTEN" : "[+] UNSAVED") : "[RO] REFERENCE"}</b></div><div class="terminal-buffer">${lines}</div><div class="terminal-command"><b>${esc(model.mode.toUpperCase())}</b><code>${command}</code><span>${model.row + 1}:${model.col + 1}</span></div>`;
   }
@@ -317,6 +407,19 @@
 
   function muxMarkup() {
     return `<div class="terminal-layer-screen mux-screen"><header>tmux / attached session ${esc(model.state.challenge_id.slice(0, 6))}</header><p>The editor exited inside a persistent multiplexer.</p><p>Closing the pane would kill the audit; detach the client cleanly.</p><div class="mux-panes"><i></i><i></i><i></i><i></i></div><footer><b>${model.muxPending ? "PREFIX ARMED" : "ATTACHED"}</b><span>Ctrl+B, then d detaches</span></footer></div>`;
+  }
+
+  function proxyControlsMarkup() {
+    if (!simplifiedInteraction()) return "";
+    const current = layerName();
+    if (current === "editor") {
+      const edit = editorWritable()
+        ? `<label>REPLACE SELECTED LINE<input id="terminal-proxy-entry" class="terminal-proxy-entry" type="text" autocomplete="off" spellcheck="false" placeholder="TYPE THE REFERENCE VALUE"></label><button type="button" data-proxy-action="replace_line">APPLY LINE</button><button type="button" data-proxy-action="write_and_quit">WRITE &amp; QUIT</button>`
+        : `<p>READ ONLY REFERENCE · COPY ITS TWO FIELD VALUES INTO THE MANIFEST</p>`;
+      return `<div class="terminal-proxy-controls"><span>VISIBLE EDITOR CONTROLS</span><div><button type="button" data-proxy-action="previous_buffer">◀ PREVIOUS BUFFER</button><button type="button" data-proxy-action="next_buffer">NEXT BUFFER ▶</button></div>${edit}</div>`;
+    }
+    if (current === "complete") return "";
+    return `<div class="terminal-proxy-controls terminal-proxy-exit"><span>VISIBLE LAYER CONTROL</span><button type="button" data-proxy-action="exit_active_layer">EXIT ${esc(current.toUpperCase())}</button></div>`;
   }
 
   function renderTerminal() {
@@ -344,6 +447,8 @@
     if (eventCount) eventCount.textContent = String(model.events.length).padStart(3, "0");
     const depth = document.getElementById("terminal-depth-count");
     if (depth) depth.textContent = `${Math.min(model.exitLog.length, model.layerOrder.length)} / ${model.layerOrder.length}`;
+    const proxy = document.getElementById("terminal-proxy-controls");
+    if (proxy) proxy.innerHTML = proxyControlsMarkup();
     if (!model.submitting && !model.terminal) {
       const label = current === "editor" ? `${model.mode.toUpperCase()} MODE · BUFFER ${model.saved ? "WRITTEN" : "DIRTY"}` : current === "complete" ? "ALL LAYERS CLOSED" : `${current.toUpperCase()} LAYER ACTIVE`;
       helpersCache.setReadout(label, "idle");
@@ -442,7 +547,7 @@
       terminal: false,
     };
     window.exitVimTerminalModel = model;
-    helpersCache.app.innerHTML = `<section class="terminal-escape" data-challenge-id="${esc(state.challenge_id)}" data-fresh-failure="false" tabindex="0">
+    helpersCache.app.innerHTML = `<section class="terminal-escape" data-challenge-id="${esc(state.challenge_id)}" data-interaction="${esc(interactionMode())}" data-fresh-failure="false" tabindex="0">
       <header class="terminal-head"><div><span>MODAL TERMINAL ESCAPE / ${esc(state.session_label)}</span><h1>${esc(state.prompt)}</h1></div><aside><span>ACTIVE MODE</span><b id="terminal-mode-state">NORMAL</b><i>KEY EVENTS <strong id="terminal-event-count">000</strong></i></aside></header>
       <main class="terminal-main">
         <section class="terminal-frame"><div class="terminal-chrome"><i></i><i></i><i></i><span>root@${esc(state.host)} — 96×28</span></div><div class="terminal-viewport" id="terminal-viewport" data-layer="editor"></div><div class="terminal-focus-note">CLICK TERMINAL TO FOCUS · PASTE DISABLED</div></section>
@@ -450,6 +555,7 @@
           <div class="terminal-brief-title"><span>BUFFER RING</span><i>VISIT ALL FOUR</i></div>
           <ol class="terminal-buffer-ring"><li data-buffer-index="0"><i>01</i><code>manifest.cfg</code><b>WRITABLE</b></li>${(state.reference_buffers || []).map((item, index) => `<li data-buffer-index="${index + 1}"><i>${String(index + 2).padStart(2, "0")}</i><code>${esc(item.name)}</code><b>READ ONLY</b></li>`).join("")}</ol>
           <div class="terminal-keystroke-card"><span>MULTI-BUFFER FIELD PROCEDURE</span><p><kbd>:bn ↵</kbd> next · <kbd>:bp ↵</kbd> previous</p><p><kbd>gg</kbd> top · <kbd>j/k</kbd> line · <kbd>cc</kbd> replace</p><p><kbd>Esc</kbd> normal · <kbd>:wq ↵</kbd> write/quit manifest</p><small>Each reference holds two authoritative fields. Paste is disabled.</small></div>
+          <div id="terminal-proxy-controls"></div>
           <div class="terminal-layer-title"><span>NESTED MODAL STACK</span><b>ESCAPED <i id="terminal-depth-count">0 / ${state.layer_order.length}</i></b></div>
           <ol class="terminal-layer-stack" id="terminal-layer-stack"></ol>
           <div class="terminal-outer-help"><span>OUTER ESCAPES APPEAR WHEN ACTIVE</span><p>PAGER <kbd>q</kbd> · JOB <kbd>Ctrl+C</kbd> · SSH <kbd>exit ↵</kbd> · TMUX <kbd>Ctrl+B</kbd> <kbd>d</kbd></p></div>
@@ -461,6 +567,17 @@
     const root = document.querySelector(".terminal-escape");
     root?.addEventListener("click", (event) => {
       if (!event.target.closest("button, input")) root.focus();
+    });
+    root?.addEventListener("click", (event) => {
+      const proxyAction = event.target.closest("[data-proxy-action]")?.dataset.proxyAction;
+      if (proxyAction === "replace_line") {
+        const entry = document.getElementById("terminal-proxy-entry");
+        recordProxy("replace_line", {row: model.row, value: String(entry?.value || "")});
+      } else if (proxyAction) {
+        recordProxy(proxyAction);
+      }
+      const selected = event.target.closest("[data-proxy-row]");
+      if (selected) recordProxy("select_line", {row: Number(selected.dataset.proxyRow)});
     });
     root?.addEventListener("paste", (event) => event.preventDefault());
     root?.addEventListener("drop", (event) => event.preventDefault());

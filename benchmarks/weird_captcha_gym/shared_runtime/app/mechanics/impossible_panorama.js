@@ -18,16 +18,22 @@
     return item;
   }
 
-  function deriveContract(challengeId, objects, initial) {
-    const far = objects.map((item, index) => ({item, index})).filter(({item}) => Math.abs(Number(item.x) - Number(initial.x)) > 1080 || Math.abs(Number(item.y) - Number(initial.y)) > 670);
+  function deriveContract(state) {
+    const {challenge_id: challengeId, objects, initial_camera: initial} = state;
+    const controlled = state.event_contract?.target_selection === "outside_initial_view";
+    const halfWidth = Number(state.viewport.width) / (2 * Number(initial.zoom));
+    const halfHeight = Number(state.viewport.height) / (2 * Number(initial.zoom));
+    const far = objects.map((item, index) => ({item, index})).filter(({item}) => controlled
+      ? Math.abs(Number(item.x) - Number(initial.x)) > halfWidth || Math.abs(Number(item.y) - Number(initial.y)) > halfHeight
+      : Math.abs(Number(item.x) - Number(initial.x)) > 1080 || Math.abs(Number(item.y) - Number(initial.y)) > 670);
     const chosen = far[Number.parseInt(challengeId.slice(0, 6), 16) % far.length];
-    const periodMs = 5880 + (Number.parseInt(challengeId.slice(6, 8), 16) % 7) * 140;
+    const periodMs = controlled ? Number(state.event_contract.period_ms) : 5880 + (Number.parseInt(challengeId.slice(6, 8), 16) % 7) * 140;
     return {
       targetIndex: chosen.index,
       targetId: chosen.item.id,
       periodMs,
-      windowMs: 1980,
-      offsetMs: Number.parseInt(challengeId.slice(8, 12), 16) % periodMs,
+      windowMs: controlled ? Number(state.event_contract.window_ms) : 1980,
+      offsetMs: controlled ? Number(state.event_contract.offset_ms) : Number.parseInt(challengeId.slice(8, 12), 16) % periodMs,
     };
   }
 
@@ -328,7 +334,7 @@
     if (!model || model.submitting || model.completed || model.holding || model.panning) return;
     model.panning = true;
     model.pointer = canvasPoint(event);
-    pushEvent({type: "pan_start", pointer: point(model.pointer), camera: cameraClaim()});
+    pushEvent({type: "pan_start", pointer: point(model.pointer), camera: cameraClaim(), input_source: "canvas_drag"});
     event.currentTarget.setPointerCapture?.(event.pointerId);
     model.helpers.setReadout("PANORAMA DRIVE ENGAGED", "idle");
     updateInterface();
@@ -344,31 +350,32 @@
     model.pointer = nextPointer;
     model.panMoves += 1;
     visitSector();
-    pushEvent({type: "pan_move", pointer: point(nextPointer), from: before, to: point(next)});
+    pushEvent({type: "pan_move", pointer: point(nextPointer), from: before, to: point(next), input_source: "canvas_drag"});
     updateInterface();
   }
 
   function panEnd(event) {
     if (!model?.panning) return;
     const current = canvasPoint(event);
-    pushEvent({type: "pan_end", pointer: point(current), camera: cameraClaim()});
+    pushEvent({type: "pan_end", pointer: point(current), camera: cameraClaim(), input_source: "canvas_drag"});
     model.panning = false;
     event.currentTarget.releasePointerCapture?.(event.pointerId);
     model.helpers.setReadout("PANORAMA DRIVE PARKED", "idle");
     updateInterface();
   }
 
-  function nudge(direction) {
+  function nudge(direction, fine = false) {
     if (!model || model.panning || model.holding || model.submitting || model.completed) return;
     const before = point(model.camera);
-    const distance = Number(model.state.controls.pan_nudge_px) / model.zoom;
+    const divisor = fine ? Number(model.state.control_condition?.difficulty_parameters?.pan_fine_divisor || 4) : 1;
+    const distance = Number(model.state.controls.pan_nudge_px) / (model.zoom * divisor);
     const delta = {left: [-distance, 0], right: [distance, 0], up: [0, -distance], down: [0, distance]}[direction];
     const next = clampedCamera({x: model.camera.x + delta[0], y: model.camera.y + delta[1]});
     model.panTravel += Math.hypot(next.x - model.camera.x, next.y - model.camera.y);
     model.camera = next;
     model.panMoves += 1;
     visitSector();
-    pushEvent({type: "pan_nudge", direction, from: before, to: point(next)});
+    pushEvent({type: "pan_nudge", direction, from: before, to: point(next), input_source: "pan_pad", scale: fine ? "fine" : "coarse"});
     model.helpers.setReadout(`PAN ${direction.toUpperCase()}`, "idle");
     updateInterface();
   }
@@ -384,12 +391,12 @@
     updateInterface();
   }
 
-  function setFocus(value) {
+  function setFocus(value, source = "slider") {
     if (!model || model.panning || model.holding || model.submitting || model.completed) return;
     const before = model.focus;
     model.focus = round2(clamp(Number(value), Number(model.state.controls.focus_min), Number(model.state.controls.focus_max)));
     model.focusChanges += 1;
-    pushEvent({type: "focus", source: "slider", from: round2(before), to: round2(model.focus)});
+    pushEvent({type: "focus", source, from: round2(before), to: round2(model.focus)});
     model.helpers.setReadout("FOCAL PLANE SHIFTED", "idle");
     updateInterface();
   }
@@ -412,7 +419,7 @@
     if (!model || model.panning || model.holding || model.submitting || model.completed) return;
     event?.preventDefault?.();
     model.holding = true;
-    const start = pushEvent({type: "shutter_start", camera: cameraClaim()});
+    const start = pushEvent({type: "shutter_start", camera: cameraClaim(), input_source: "shutter_hold"});
     model.holdStart = start.t_ms;
     model.holdCamera = {...model.camera};
     model.holdZoom = model.zoom;
@@ -484,7 +491,7 @@
       const response = await fetch("/result", {
         method: "POST",
         headers: {"content-type": "application/json"},
-        body: JSON.stringify({mechanic_id: current.state.mechanic_id, task_id: current.state.task_id, challenge_id: current.state.challenge_id, completed: true, events: current.events, final_state: finalState()}),
+        body: JSON.stringify({mechanic_id: current.state.mechanic_id, task_id: current.state.task_id, challenge_id: current.state.challenge_id, interaction: current.interaction === "legacy" ? undefined : current.interaction, completed: true, events: current.events, final_state: finalState()}),
       });
       const outcome = await response.json();
       if (outcome.passed === true) {
@@ -534,9 +541,10 @@
     document.body.dataset.mechanic = "impossible-panorama";
     document.body.dataset.cheatMode = helpers.isCheatMode() ? "true" : "false";
     const initial = state.initial_camera;
+    const interaction = state.control_condition?.interaction || "legacy";
     model = {
       state, helpers,
-      contract: deriveContract(state.challenge_id, state.objects, initial),
+      interaction, contract: deriveContract(state),
       camera: {x: Number(initial.x), y: Number(initial.y)},
       zoom: Number(initial.zoom), focus: Number(initial.focus),
       pointer: {x: 0, y: 0}, panning: false, holding: false,
@@ -544,12 +552,23 @@
       zoomChanges: 0, focusChanges: 0, shutterAttempts: 0, validHolds: 0, resetCount: 0,
       holdSamples: [], holdStart: 0, holdCamera: null, holdZoom: 0, holdFocus: 0,
       sampleTimer: null, animationTimer: null, timers: new Set(), submitting: false, completed: false,
-      startedAt: performance.now(), keyHandler: null,
+      startedAt: performance.now(), keyHandler: null, finePan: false,
     };
     model.visited = [sectorAt(model.camera)];
     const sectors = Array.from({length: Number(state.world.sector_rows)}, (_, row) => Array.from({length: Number(state.world.sector_columns)}, (_unused, column) => `<i data-sector="${column}:${row}" data-visited="false"></i>`).join("")).join("");
+    const panScale = interaction === "legacy" ? "" : ' <button type="button" id="panorama-pan-scale">COARSE 1×</button>';
+    const panControls = interaction === "full" ? "" : `<section class="panorama-pan-pad" aria-label="pan controls"><span>PAN DRIVE${panScale}</span><button type="button" data-pan="up">▲</button><button type="button" data-pan="left">◀</button><i>⊕</i><button type="button" data-pan="right">▶</button><button type="button" data-pan="down">▼</button></section>`;
+    const zoomControls = interaction === "simplified"
+      ? `<div class="zoom-controls"><button type="button" id="panorama-zoom-out">−</button><b class="panorama-proxy-value">STEP</b><button type="button" id="panorama-zoom-in">+</button></div>`
+      : interaction === "full"
+        ? `<div class="zoom-controls is-direct"><input id="panorama-zoom-slider" type="range" min="${Number(state.controls.zoom_min)}" max="${Number(state.controls.zoom_max)}" step="${Number(state.controls.zoom_step)}" value="${Number(initial.zoom)}" aria-label="optical zoom"></div>`
+        : `<div class="zoom-controls"><button type="button" id="panorama-zoom-out">−</button><input id="panorama-zoom-slider" type="range" min="${Number(state.controls.zoom_min)}" max="${Number(state.controls.zoom_max)}" step="${Number(state.controls.zoom_step)}" value="${Number(initial.zoom)}" aria-label="optical zoom"><button type="button" id="panorama-zoom-in">+</button></div>`;
+    const focusControls = interaction === "simplified"
+      ? `<div class="panorama-focus-proxy"><button type="button" id="panorama-focus-near">− NEAR</button><button type="button" id="panorama-focus-far">+ FAR</button></div>`
+      : `<input id="panorama-focus-slider" type="range" min="${Number(state.controls.focus_min)}" max="${Number(state.controls.focus_max)}" step="${Number(state.controls.focus_step)}" value="${Number(initial.focus)}" aria-label="focal plane"><small>NEAR&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;FAR</small>`;
+    const panInstruction = interaction === "simplified" ? "USE PAN DRIVE" : "DRAG FIELD TO PAN";
     helpers.app.innerHTML = `
-      <section class="impossible-panorama palette-${helpers.text(state.palette)}" data-fresh-failure="${options.freshFailure ? "true" : "false"}" data-visited-count="1" tabindex="0">
+      <section class="impossible-panorama palette-${helpers.text(state.palette)}" data-interaction="${interaction}" data-fresh-failure="${options.freshFailure ? "true" : "false"}" data-visited-count="1" tabindex="0">
         <div class="panorama-verdict" aria-live="assertive"></div>
         <header class="panorama-head">
           <div><span>DEEP-FIELD CARTOGRAPHY OFFICE / ${helpers.text(state.plate_number)}</span><h1>${helpers.text(state.prompt)}</h1></div>
@@ -558,13 +577,13 @@
         <main class="panorama-workbench">
           <section class="panorama-stage">
             <canvas id="panorama-canvas" width="${Number(state.viewport.width)}" height="${Number(state.viewport.height)}" aria-label="interactive deep-field panorama"></canvas>
-            <div class="panorama-stage-rail"><span>DRAG FIELD TO PAN</span><b>RETICLE / OPTICAL PLANE / REPEATING EVENT LOOP</b></div>
+            <div class="panorama-stage-rail"><span>${panInstruction}</span><b>RETICLE / OPTICAL PLANE / REPEATING EVENT LOOP</b></div>
           </section>
           <aside class="panorama-console">
             <section class="panorama-map"><header><span>SEARCH LOG</span><b><em id="panorama-sector-count">${Number(state.world.sector_columns) * Number(state.world.sector_rows)}</em> SECTORS</b></header><div class="panorama-map-grid">${sectors}<strong id="panorama-map-camera"></strong></div></section>
-            <section class="panorama-pan-pad" aria-label="pan controls"><span>PAN DRIVE</span><button type="button" data-pan="up">▲</button><button type="button" data-pan="left">◀</button><i>⊕</i><button type="button" data-pan="right">▶</button><button type="button" data-pan="down">▼</button></section>
-            <section class="panorama-optic"><div><span>OPTICAL SCALE</span><b id="panorama-zoom-value">${Number(initial.zoom).toFixed(2)}×</b></div><div class="zoom-controls"><button type="button" id="panorama-zoom-out">−</button><input id="panorama-zoom-slider" type="range" min="${Number(state.controls.zoom_min)}" max="${Number(state.controls.zoom_max)}" step="${Number(state.controls.zoom_step)}" value="${Number(initial.zoom)}" aria-label="optical zoom"><button type="button" id="panorama-zoom-in">+</button></div></section>
-            <section class="panorama-focus"><div><span>FOCAL PLANE</span><b id="panorama-focus-value">${Math.round(Number(initial.focus)).toString().padStart(2, "0")}</b></div><input id="panorama-focus-slider" type="range" min="${Number(state.controls.focus_min)}" max="${Number(state.controls.focus_max)}" step="${Number(state.controls.focus_step)}" value="${Number(initial.focus)}" aria-label="focal plane"><small>NEAR&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;FAR</small></section>
+            ${panControls}
+            <section class="panorama-optic"><div><span>OPTICAL SCALE</span><b id="panorama-zoom-value">${Number(initial.zoom).toFixed(2)}×</b></div>${zoomControls}</section>
+            <section class="panorama-focus"><div><span>FOCAL PLANE</span><b id="panorama-focus-value">${Math.round(Number(initial.focus)).toString().padStart(2, "0")}</b></div>${focusControls}</section>
             <section class="panorama-exposure"><button type="button" id="panorama-shutter"><i></i><span>HOLD SHUTTER</span><b>STABLE INTERVAL</b></button><button type="button" id="panorama-reset">RESET OPTICS</button></section>
           </aside>
         </main>
@@ -572,15 +591,20 @@
         ${helpers.cheatPanelTemplate()}
       </section>`;
     const canvas = document.getElementById("panorama-canvas");
-    canvas.addEventListener("pointerdown", panStart);
-    canvas.addEventListener("pointermove", panMove);
-    canvas.addEventListener("pointerup", panEnd);
-    canvas.addEventListener("pointercancel", panEnd);
-    document.querySelectorAll("[data-pan]").forEach((button) => button.addEventListener("click", () => nudge(button.dataset.pan)));
+    if (interaction !== "simplified") {
+      canvas.addEventListener("pointerdown", panStart);
+      canvas.addEventListener("pointermove", panMove);
+      canvas.addEventListener("pointerup", panEnd);
+      canvas.addEventListener("pointercancel", panEnd);
+    }
+    if (interaction !== "full") document.querySelectorAll("[data-pan]").forEach((button) => button.addEventListener("click", () => nudge(button.dataset.pan, model.finePan)));
+    document.getElementById("panorama-pan-scale")?.addEventListener("click", (event) => { model.finePan = !model.finePan; event.currentTarget.textContent = model.finePan ? "FINE ¼×" : "COARSE 1×"; });
     document.getElementById("panorama-zoom-in")?.addEventListener("click", () => setZoom(model.zoom + Number(state.controls.zoom_step), "button_in"));
     document.getElementById("panorama-zoom-out")?.addEventListener("click", () => setZoom(model.zoom - Number(state.controls.zoom_step), "button_out"));
     document.getElementById("panorama-zoom-slider")?.addEventListener("input", (event) => setZoom(event.currentTarget.value, "slider"));
-    document.getElementById("panorama-focus-slider")?.addEventListener("input", (event) => setFocus(event.currentTarget.value));
+    document.getElementById("panorama-focus-slider")?.addEventListener("input", (event) => setFocus(event.currentTarget.value, "slider"));
+    document.getElementById("panorama-focus-near")?.addEventListener("click", () => setFocus(model.focus - Number(state.controls.focus_step), "button_near"));
+    document.getElementById("panorama-focus-far")?.addEventListener("click", () => setFocus(model.focus + Number(state.controls.focus_step), "button_far"));
     const shutter = document.getElementById("panorama-shutter");
     shutter?.addEventListener("pointerdown", startShutter);
     window.addEventListener("pointerup", endShutter);
@@ -589,8 +613,8 @@
     document.getElementById("panorama-submit")?.addEventListener("click", submitPlate);
     installDeveloperReveal();
     model.keyHandler = (event) => {
-      if (["ArrowLeft", "ArrowRight", "ArrowUp", "ArrowDown"].includes(event.key) && !["INPUT", "BUTTON"].includes(document.activeElement?.tagName)) {
-        event.preventDefault(); nudge(event.key.replace("Arrow", "").toLowerCase());
+      if (interaction !== "full" && ["ArrowLeft", "ArrowRight", "ArrowUp", "ArrowDown"].includes(event.key) && !["INPUT", "BUTTON"].includes(document.activeElement?.tagName)) {
+        event.preventDefault(); nudge(event.key.replace("Arrow", "").toLowerCase(), event.shiftKey || model.finePan);
       }
     };
     window.addEventListener("keydown", model.keyHandler);

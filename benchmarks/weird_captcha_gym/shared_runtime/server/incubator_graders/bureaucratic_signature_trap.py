@@ -44,20 +44,83 @@ def _deviations(first: list[tuple[float, float]], second: list[tuple[float, floa
 
 
 def grade(payload: dict[str, Any], ground_truth: dict[str, Any], public_state: dict[str, Any]) -> dict[str, Any]:
+    task_id = str(ground_truth.get("task_id") or "")
     challenge_id = str(ground_truth.get("challenge_id") or "")
-    if str(payload.get("mechanic_id") or "") != MECHANIC_ID or str(ground_truth.get("mechanic_id") or "") != MECHANIC_ID:
+    if any(
+        str(source.get("mechanic_id") or "") != MECHANIC_ID
+        for source in (payload, ground_truth, public_state)
+    ):
         return {"graded": True, "passed": False, "feedback": "mechanic mismatch"}
-    if not challenge_id or str(payload.get("challenge_id") or "") != challenge_id or str(public_state.get("challenge_id") or "") != challenge_id:
-        return {"graded": True, "passed": False, "feedback": "stale challenge"}
+    if (
+        not task_id
+        or str(payload.get("task_id") or "") != task_id
+        or str(public_state.get("task_id") or "") != task_id
+        or not challenge_id
+        or str(payload.get("challenge_id") or "") != challenge_id
+        or str(public_state.get("challenge_id") or "") != challenge_id
+    ):
+        return {"graded": True, "passed": False, "feedback": "stale task or challenge"}
     contract = dict(ground_truth.get("form") or {})
     if public_state.get("form") != contract:
         return {"graded": True, "passed": False, "feedback": "public/private carbon contract mismatch"}
+    truth_condition = ground_truth.get("control_condition")
+    if truth_condition is not None and public_state.get("control_condition") != truth_condition:
+        return {"graded": True, "passed": False, "feedback": "public/private control condition mismatch"}
+    interaction = str((truth_condition or {}).get("interaction") or "full")
+    expected_sheet_source = ({
+        "simplified": "sheet_nudge_button",
+        "full": "fixed_registration_tab",
+    }.get(interaction) if truth_condition is not None else None)
+    if truth_condition is not None and expected_sheet_source is None:
+        return {"graded": True, "passed": False, "feedback": "carbon interaction condition is invalid"}
     layers = {str(layer["id"]): dict(layer) for layer in contract.get("layers") or []}
+    if not 1 <= len(layers) <= 5 or len(layers) != len(contract.get("layers") or []):
+        return {"graded": True, "passed": False, "feedback": "carbon layer contract is malformed"}
+    if truth_condition is not None:
+        parameters = dict(truth_condition.get("difficulty_parameters") or {})
+        signature_parameters = {
+            "min_samples": "signature_min_samples",
+            "max_step": "signature_max_step",
+            "start_tolerance": "signature_start_tolerance",
+            "end_tolerance": "signature_end_tolerance",
+            "mean_deviation": "signature_mean_deviation",
+            "p90_deviation": "signature_p90_deviation",
+            "coverage_tolerance": "signature_coverage_tolerance",
+            "minimum_coverage": "signature_minimum_coverage",
+            "minimum_length_ratio": "signature_minimum_length_ratio",
+            "maximum_length_ratio": "signature_maximum_length_ratio",
+        }
+        try:
+            profile_matches = (
+                int(truth_condition.get("difficulty")) in range(1, 6)
+                and len(layers) == int(parameters["layer_count"])
+                and int(contract["aperture"]["radius"]) == int(parameters["aperture_radius"])
+                and float(contract["alignment_tolerance"]) == float(parameters["alignment_tolerance"])
+                and len(contract["original_trace"]) == int(parameters["trace_sample_count"]) + 1
+                and all(
+                    float(contract["signature"][contract_key]) == float(parameters[parameter_key])
+                    for contract_key, parameter_key in signature_parameters.items()
+                )
+                and all(
+                    int(parameters["initial_x_offset_min"])
+                    <= abs(int(layer["initial"]["x"]) - int(layer["target"]["x"]))
+                    <= int(parameters["initial_x_offset_max"])
+                    and int(parameters["initial_y_offset_min"])
+                    <= abs(int(layer["initial"]["y"]) - int(layer["target"]["y"]))
+                    <= int(parameters["initial_y_offset_max"])
+                    for layer in layers.values()
+                )
+            )
+        except (KeyError, TypeError, ValueError):
+            profile_matches = False
+        if not profile_matches:
+            return {"graded": True, "passed": False, "feedback": "carbon difficulty profile differs from form contract"}
     offsets = {layer_id: _point(layer["initial"]) for layer_id, layer in layers.items()}
     stroke: list[tuple[float, float]] | None = None
     certified = False
     events = payload.get("events")
-    if not isinstance(events, list) or not 6 <= len(events) <= 160:
+    minimum_events = len(layers) + 2
+    if not isinstance(events, list) or not minimum_events <= len(events) <= 220:
         return {"graded": True, "passed": False, "feedback": "carbon transcript is missing or outside limits"}
     for sequence, event in enumerate(events, start=1):
         if not isinstance(event, dict) or event.get("sequence") != sequence:
@@ -67,6 +130,8 @@ def grade(payload: dict[str, Any], ground_truth: dict[str, Any], public_state: d
             sheet_id = str(event.get("sheet_id") or "")
             if sheet_id not in layers or certified or stroke is not None:
                 return {"graded": True, "passed": False, "feedback": "unknown or late sheet drag"}
+            if expected_sheet_source is not None and event.get("input_source") != expected_sheet_source:
+                return {"graded": True, "passed": False, "feedback": "sheet drag uses the wrong interaction input"}
             try:
                 start = _point(event.get("start"))
                 samples = [_point(point) for point in event.get("samples") or []]
@@ -75,6 +140,15 @@ def grade(payload: dict[str, Any], ground_truth: dict[str, Any], public_state: d
                 return {"graded": True, "passed": False, "feedback": str(exc)}
             if math.hypot(start[0] - offsets[sheet_id][0], start[1] - offsets[sheet_id][1]) > 1.5 or not samples or end != samples[-1]:
                 return {"graded": True, "passed": False, "feedback": "sheet drag does not continue from visible state"}
+            if truth_condition is not None and interaction == "simplified":
+                delta = (end[0] - start[0], end[1] - start[1])
+                normal_nudge = delta in {(-8.0, 0.0), (8.0, 0.0), (0.0, -8.0), (0.0, 8.0)}
+                boundary_nudge = (
+                    (delta[1] == 0 and 0 < abs(delta[0]) < 8 and abs(end[0]) == 170)
+                    or (delta[0] == 0 and 0 < abs(delta[1]) < 8 and abs(end[1]) == 110)
+                )
+                if len(samples) != 1 or not (normal_nudge or boundary_nudge):
+                    return {"graded": True, "passed": False, "feedback": "sheet nudge does not match one visible direction button"}
             previous = start
             for point in samples:
                 if not -170 <= point[0] <= 170 or not -110 <= point[1] <= 110 or math.hypot(point[0] - previous[0], point[1] - previous[1]) > float(contract["max_drag_step"]):

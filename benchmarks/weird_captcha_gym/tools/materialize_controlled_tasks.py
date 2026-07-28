@@ -90,7 +90,27 @@ def controlled_task(
     interaction_label = interaction.replace("_", " ").title()
     task["name"] = f"{base['name']} · Difficulty {level} · {interaction_label} Interaction"
     task["difficulty"] = DIFFICULTY_NAMES[level]
-    if profile.get("natural_language"):
+    if mechanic_id == "slot_reel_capture" and interaction == "simplified":
+        reel_count = int(profile["parameters"]["reel_count"])
+        reel_count_text = {
+            1: "one",
+            2: "two",
+            3: "three",
+            4: "four",
+            5: "five",
+            6: "six",
+            7: "seven",
+        }.get(reel_count, str(reel_count))
+        timing = (
+            "while its center is between the capture lines"
+            if float(profile["parameters"].get("capture_window_ratio", 1.0)) < 1.0
+            else "while it is centered"
+        )
+        task["natural_language"] = (
+            f"Click CAPTURE SYMBOL {timing}. "
+            f"Capture all {reel_count_text} reels."
+        )
+    elif profile.get("natural_language"):
         task["natural_language"] = str(profile["natural_language"])
     hooks = dict(task.get("hooks") or {})
     hooks["pre_task"] = f"/workspace/tasks/{task_dir_name}/setup_task.sh"

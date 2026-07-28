@@ -1,0 +1,121 @@
+{
+  "schema_version": 1,
+  "mechanic_id": "magnetic_stripe_purgatory",
+  "baseline": {
+    "difficulty": 4,
+    "interaction": "full",
+    "real_time": "live"
+  },
+  "difficulty": {
+    "1": {
+      "label": "very_easy",
+      "summary": "Match one card to one reader, then find a broad single swipe tempo without static interference.",
+      "natural_language": "Match the single card to its badge reader. Use the test feedback to find its broad swipe tempo, then run the audit.",
+      "parameters": {
+        "reader_count": 1,
+        "profile_set": "single_forgiving",
+        "interference_zone_count": 0,
+        "interference_layout": "none",
+        "compact_layout": false,
+        "minimum_insert_moves": 2,
+        "minimum_insert_ms": 60,
+        "minimum_swipe_samples": 8,
+        "minimum_coverage_milli": 860,
+        "maximum_sample_gap_px": 90,
+        "maximum_backtrack_px": 34,
+        "straightness_px": 28
+      }
+    },
+    "2": {
+      "label": "easy",
+      "summary": "Assign two cards and calibrate two broad, distinct swipe tempos with denser, straighter swipes than L1.",
+      "natural_language": "Match both cards to their badge readers. Calibrate each reader from the arrow end with a dense, straight, monotonic swipe, then run the audit.",
+      "parameters": {
+        "reader_count": 2,
+        "profile_set": "paired_broad",
+        "interference_zone_count": 0,
+        "interference_layout": "none",
+        "compact_layout": false,
+        "minimum_insert_moves": 3,
+        "minimum_insert_ms": 75,
+        "minimum_swipe_samples": 10,
+        "minimum_coverage_milli": 890,
+        "maximum_sample_gap_px": 76,
+        "maximum_backtrack_px": 28,
+        "straightness_px": 25
+      }
+    },
+    "3": {
+      "label": "medium",
+      "summary": "Handle three badge assignments and three separated tempos under moderate dense-swipe path tolerances.",
+      "natural_language": "Match all three cards. Calibrate the three readers by using their feedback and keeping every arrow-to-arrow swipe dense, straight, and monotonic.",
+      "parameters": {
+        "reader_count": 3,
+        "profile_set": "triplet_tempered",
+        "interference_zone_count": 0,
+        "interference_layout": "none",
+        "compact_layout": false,
+        "minimum_insert_moves": 4,
+        "minimum_insert_ms": 90,
+        "minimum_swipe_samples": 11,
+        "minimum_coverage_milli": 900,
+        "maximum_sample_gap_px": 68,
+        "maximum_backtrack_px": 23,
+        "straightness_px": 21
+      }
+    },
+    "4": {
+      "label": "hard",
+      "summary": "Preserve the current three-reader desk: three badge assignments, three hidden tempos, the legacy off-rail static display layout, and the existing dense straight swipe requirements.",
+      "natural_language": "Insert each card into the reader with the matching badge. Then swipe from the illuminated arrow end to the other end in one straight, monotonic motion. Each reader wants a different hidden speed; use TOO FAST, TOO SLOW, and BAD READ feedback until all three lock, then run the audit.",
+      "parameters": {
+        "reader_count": 3,
+        "profile_set": "legacy",
+        "interference_zone_count": 2,
+        "interference_layout": "legacy_off_lane",
+        "compact_layout": false,
+        "minimum_insert_moves": 4,
+        "minimum_insert_ms": 90,
+        "minimum_swipe_samples": 14,
+        "minimum_coverage_milli": 920,
+        "maximum_sample_gap_px": 58,
+        "maximum_backtrack_px": 18,
+        "straightness_px": null
+      }
+    },
+    "5": {
+      "label": "very_hard",
+      "summary": "Match and calibrate four compact readers with four narrow tempos, three lane-blocking static fields each, and tighter dense-swipe geometry.",
+      "natural_language": "Match four cards to four badge readers. Learn all four narrow tempos while threading every dense swipe past three static fields, then run the audit.",
+      "parameters": {
+        "reader_count": 4,
+        "profile_set": "four_narrow",
+        "interference_zone_count": 3,
+        "interference_layout": "blocking_lane",
+        "compact_layout": true,
+        "minimum_insert_moves": 5,
+        "minimum_insert_ms": 105,
+        "minimum_swipe_samples": 18,
+        "minimum_coverage_milli": 940,
+        "maximum_sample_gap_px": 44,
+        "maximum_backtrack_px": 12,
+        "straightness_px": 12
+      }
+    }
+  },
+  "interaction": {
+    "simplified": {
+      "implemented": true,
+      "summary": "Select a card, use the matching reader's Insert selected card control, set a visible test duration, and execute the visible clearance-route swipe proxy. The generated reader, feedback, timing window, and replayed path checks remain the same."
+    },
+    "full": {
+      "implemented": true,
+      "summary": "Drag each card into its matching physical slot, then hold and move the reader handle from its illuminated arrow end to the opposite end with a timed, dense, straight pointer path."
+    }
+  },
+  "real_time": {
+    "play_time_seconds": 150,
+    "observation_window_ms": 0,
+    "frames_per_observation": 1
+  }
+}

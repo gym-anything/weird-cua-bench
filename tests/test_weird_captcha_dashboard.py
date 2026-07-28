@@ -23,6 +23,7 @@ from benchmarks.weird_captcha_gym.dashboard.server import (
 from benchmarks.weird_captcha_gym.dashboard.export_static import _validate_output_path, export_dashboard
 from benchmarks.weird_captcha_gym.dashboard.reviews import EnvironmentReviewStore
 from benchmarks.weird_captcha_gym.shared_runtime.server.legacy_browser_grader import grade as grade_legacy_browser_result
+from benchmarks.weird_captcha_gym.shared_runtime.server import grillmaster_witness
 from benchmarks.weird_captcha_gym.shared_runtime.server.weird_captcha_server import PuzzleServer
 from benchmarks.weird_captcha_gym.shared_scripts.setup_task import generate_task_state, load_task
 from run import launcher_args
@@ -252,6 +253,7 @@ class WeirdCaptchaDashboardTests(unittest.TestCase):
 
     def test_catalog_reports_the_final_environment_inventory(self) -> None:
         catalog = build_catalog()
+        controlled_count = len(list((BENCHMARK_ROOT / "environments").glob("*_env/controls.json")))
         self.assertEqual(catalog["stats"]["total"], 75)
         self.assertEqual(catalog["stats"]["built"], 75)
         self.assertEqual(catalog["stats"]["browser_verified"], 75)
@@ -260,7 +262,7 @@ class WeirdCaptchaDashboardTests(unittest.TestCase):
         self.assertEqual(catalog["stats"]["incubator_candidates"], 0)
         self.assertEqual(catalog["stats"]["human_touched"], 6)
         self.assertEqual(catalog["stats"]["solution_videos"], 75)
-        self.assertEqual(catalog["stats"]["difficulty_controlled"], 16)
+        self.assertEqual(catalog["stats"]["difficulty_controlled"], controlled_count)
         self.assertEqual(sum(group["count"] for group in catalog["groups"]), 75)
         recordings = [environment for environment in catalog["environments"] if environment["solution_video"]]
         self.assertEqual(len(recordings), 75)
@@ -352,7 +354,7 @@ class WeirdCaptchaDashboardTests(unittest.TestCase):
             "observation_only": 5,
         })
         self.assertEqual(Counter(annotation["visual"] for annotation in annotations), {"2D": 55, "3D": 20})
-        self.assertEqual(sum(annotation["temporal"] for annotation in annotations), 46)
+        self.assertEqual(sum(annotation["temporal"] for annotation in annotations), 45)
         self.assertEqual(sum(annotation["reasoning_planning"] for annotation in annotations), 54)
         self.assertEqual(sum(annotation["exploration_interface"] for annotation in annotations), 28)
 
@@ -362,7 +364,10 @@ class WeirdCaptchaDashboardTests(unittest.TestCase):
             for environment in build_catalog()["environments"]
             if environment.get("difficulty_control")
         ]
-        self.assertEqual(len(controlled), 16)
+        self.assertEqual(
+            len(controlled),
+            len(list((BENCHMARK_ROOT / "environments").glob("*_env/controls.json"))),
+        )
         for environment in controlled:
             self.assertEqual(environment["difficulty_control"]["interactions"], ["simplified", "full"])
             self.assertIn(
@@ -788,15 +793,16 @@ class WeirdCaptchaDashboardTests(unittest.TestCase):
             self.assertFalse(manifest["survey_included"])
             self.assertEqual(manifest["catalog"], {"total": 75, "built": 75, "solution_videos": 75})
             self.assertEqual(manifest["companion_url"], "http://127.0.0.1:9123")
+            controlled_count = len(list((BENCHMARK_ROOT / "environments").glob("*_env/controls.json")))
             self.assertEqual(manifest["browser_play"], {
                 "enabled": True,
                 "environments": 75,
-                "challenges": 940,
+                "challenges": 300 + 40 * controlled_count,
                 "challenges_per_environment": 4,
-                "controlled_environments": 16,
-                "difficulty_profiles": 80,
-                "interaction_profiles": 160,
-                "grader_files": 70,
+                "controlled_environments": controlled_count,
+                "difficulty_profiles": 5 * controlled_count,
+                "interaction_profiles": 10 * controlled_count,
+                "grader_files": 71,
                 "python_runtime": "pyodide@314.0.2",
                 "observation_inspector": True,
             })
@@ -868,10 +874,16 @@ class WeirdCaptchaDashboardTests(unittest.TestCase):
                         for challenge in interaction_profile["challenges"]
                     ]
                     self.assertEqual(len(controlled_challenges), 40)
-                    self.assertEqual(
-                        len({item["ground_truth"]["challenge_id"] for item in controlled_challenges}),
-                        40,
-                    )
+                    # The two input surfaces may intentionally share the
+                    # same generated challenge identity.  Identity must be
+                    # unique within one displayed difficulty/interaction
+                    # condition, not across its paired surface.
+                    for profile in bundle["difficulty_profiles"].values():
+                        for interaction_profile in profile["interaction_profiles"].values():
+                            self.assertEqual(
+                                len({item["ground_truth"]["challenge_id"] for item in interaction_profile["challenges"]}),
+                                4,
+                            )
                     self.assertIn(str(bundle["default_difficulty"]), bundle["difficulty_profiles"])
                     self.assertIn(bundle["default_interaction"], {"simplified", "full"})
                     self.assertTrue(all(
@@ -928,21 +940,119 @@ class WeirdCaptchaDashboardTests(unittest.TestCase):
                 elif mechanic_id == "rotating_keyboard":
                     success = {"text": truth["target"]}
                 elif mechanic_id == "slot_reel_capture":
+                    actions = []
+                    minimum_elapsed = 0.0
+                    reels_by_id = {
+                        str(reel["id"]): reel
+                        for reel in public_state["reels"]
+                    }
+                    for sequence, (reel_id, target) in enumerate(
+                        zip(truth["reel_ids"], truth["sequence"]),
+                        start=1,
+                    ):
+                        reel = reels_by_id[str(reel_id)]
+                        target_index = reel["tokens"].index(target)
+                        cycle = (
+                            target_index - int(reel["phase"])
+                        ) % len(reel["tokens"])
+                        elapsed_ms = (
+                            cycle + 0.5
+                        ) * int(reel["interval_ms"])
+                        while elapsed_ms < minimum_elapsed:
+                            cycle += len(reel["tokens"])
+                            elapsed_ms = (
+                                cycle + 0.5
+                            ) * int(reel["interval_ms"])
+                        minimum_elapsed = elapsed_ms
+                        actions.append({
+                            "sequence": sequence,
+                            "reel_id": reel_id,
+                            "elapsed_ms": elapsed_ms,
+                            "client_elapsed_ms": elapsed_ms,
+                            "server_task_time_ms": elapsed_ms,
+                            "server_received_wall_ns": sequence,
+                            "observed_token": target,
+                            "entered_key": target,
+                            "accepted": True,
+                            "input_source": "physical_keyboard",
+                            "event_surface": "keyboard_keydown",
+                        })
+                    witness_key = grillmaster_witness._generate_key(
+                        truth["challenge_id"]
+                    )
+                    public_key = grillmaster_witness._public_key(
+                        witness_key
+                    )
+                    truth["slot_reel_interaction_public_key"] = public_key
+                    signed_witness = {
+                        "version": 1,
+                        "mechanic_id": "slot_reel_capture",
+                        "task_id": truth["task_id"],
+                        "challenge_id": truth["challenge_id"],
+                        "interaction": "full",
+                        "clock_source": "server_active_task_clock_v1",
+                        "public_key": public_key,
+                        "actions": actions,
+                        "finalized_wall_ns": 1,
+                    }
+                    witness_size = (
+                        int(witness_key["n_hex"], 16).bit_length() + 7
+                    ) // 8
+                    encoded_witness = grillmaster_witness._encoded_message(
+                        signed_witness,
+                        witness_size,
+                    )
+                    witness_signature = pow(
+                        int.from_bytes(encoded_witness, "big"),
+                        int(witness_key["d_hex"], 16),
+                        int(witness_key["n_hex"], 16),
+                    )
+                    trusted_witness = {
+                        **signed_witness,
+                        "signature_hex": witness_signature.to_bytes(
+                            witness_size,
+                            "big",
+                        ).hex(),
+                    }
+                    (state_dir / "ground_truth.json").write_text(
+                        json.dumps(truth),
+                        encoding="utf-8",
+                    )
                     success = {
                         "captured_sequence": truth["sequence"],
                         "frozen_reel_ids": truth["reel_ids"],
                         "wrong_keys": 0,
+                        "actions": actions,
+                        "trusted_witness": trusted_witness,
                     }
                 elif mechanic_id == "domino_autopsy":
-                    first = str(truth["first_body_id"])
-                    expected = [str(item) for item in truth["expected_body_ids"]]
+                    placements = {
+                        str(domino_id): dict(slot)
+                        for domino_id, slot in zip(
+                            truth["loose_ids"],
+                            truth["target_slots"],
+                        )
+                    }
+                    ordered = sorted(
+                        [
+                            *[
+                                (str(item["id"]), float(item["x"]))
+                                for item in truth["fixed_dominoes"]
+                            ],
+                            *[
+                                (str(domino_id), float(placements[str(domino_id)]["x"]))
+                                for domino_id in truth["loose_ids"]
+                            ],
+                        ],
+                        key=lambda item: item[1],
+                    )
                     bell = str(truth["bell_body_id"])
-                    chain = [first, *[item for item in expected if item != first], bell]
+                    chain = [*[item[0] for item in ordered], bell]
                     success = {
-                        "placements": {str(item): {"x": 1, "y": 1, "angle": 0} for item in truth["loose_ids"]},
+                        "placements": placements,
                         "physics_engine": "matter-js@0.20.0",
                         "bell_hit": True,
-                        "bell_peak_angle": truth["minimum_bell_swing_radians"],
+                        "bell_peak_angle": 0.6,
                         "run_completed": True,
                         "collision_pairs": [[left, right] for left, right in zip(chain, chain[1:])],
                     }

@@ -6,8 +6,11 @@ import json
 import logging
 import os
 import shlex
+import signal
 import sys
 import time
+from contextlib import contextmanager
+from http.client import RemoteDisconnected
 from pathlib import Path
 from typing import Any
 
@@ -21,6 +24,9 @@ from benchmarks.weird_captcha_gym.realtime import (
     RealTimeSettings,
     load_real_time_settings,
     mechanic_id_from_env_dir,
+)
+from benchmarks.weird_captcha_gym.tools.authoritative_observation_probe_agent import (
+    AuthoritativeObservationProbeAgent,
 )
 
 
@@ -54,8 +60,9 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--frames-per-observation", type=int)
     parser.add_argument("--verbose", action="store_true")
     parser.add_argument("--debug", action="store_true")
-    parser.add_argument("--request-timeout-seconds", type=int, default=120)
+    parser.add_argument("--request-timeout-seconds", type=float, default=120)
     parser.add_argument("--request-attempts", type=int, default=3)
+    parser.add_argument("--episode-summary-path", type=Path)
     return parser
 
 
@@ -123,6 +130,11 @@ def _capture_observation(
             "offset_ms": frame["offset_ms"],
             "target_offset_ms": frame["target_offset_ms"],
         })
+    manifest_path = host_dir / "guest-capture-manifest.json"
+    env.runner.copy_from(
+        f"{guest_dir}/manifest.json",
+        str(manifest_path),
+    )
     time_status = manifest["time_status"]
     return {
         "screen": {
@@ -131,6 +143,7 @@ def _capture_observation(
             "resolution": [1280, 720],
         },
         "frames": frames,
+        "capture_manifest": str(manifest_path),
         "time": {
             "mode": mode,
             "task_time_ms": time_status.get("task_time_ms"),
@@ -149,6 +162,119 @@ def _write_record(path: Path, record: dict[str, Any]) -> None:
         handle.write(json.dumps(record, default=str) + "\n")
 
 
+class _ModelRequestDeadline(TimeoutError):
+    pass
+
+
+@contextmanager
+def _request_deadline(seconds: float):
+    if seconds <= 0:
+        raise ValueError("request timeout must be positive")
+    if not hasattr(signal, "setitimer"):
+        yield
+        return
+    prior_handler = signal.getsignal(signal.SIGALRM)
+
+    def expired(_signum, _frame):
+        raise _ModelRequestDeadline(
+            f"model request exceeded the evaluator deadline of {seconds:g}s"
+        )
+
+    signal.signal(signal.SIGALRM, expired)
+    signal.setitimer(signal.ITIMER_REAL, seconds)
+    try:
+        yield
+    finally:
+        signal.setitimer(signal.ITIMER_REAL, 0)
+        signal.signal(signal.SIGALRM, prior_handler)
+
+
+def _http_status(error: BaseException) -> int | None:
+    for candidate in (
+        getattr(error, "status_code", None),
+        getattr(error, "status", None),
+        getattr(getattr(error, "response", None), "status_code", None),
+    ):
+        try:
+            return int(candidate)
+        except (TypeError, ValueError):
+            continue
+    return None
+
+
+def _retryable_request_error(error: BaseException) -> bool:
+    if isinstance(
+        error,
+        (
+            TimeoutError,
+            ConnectionError,
+            RemoteDisconnected,
+            BrokenPipeError,
+            ConnectionResetError,
+        ),
+    ):
+        return True
+    status = _http_status(error)
+    return status in {408, 429} or (
+        status is not None and 500 <= status <= 599
+    )
+
+
+def _call_agent_with_retry(
+    env,
+    agent,
+    obs: dict[str, Any],
+    action_outputs: list[dict[str, Any]],
+    *,
+    timeout_seconds: float,
+    attempts: int,
+) -> tuple[list[dict[str, Any]], list[dict[str, Any]]]:
+    if attempts < 1:
+        raise ValueError("request attempts must be positive")
+    records = []
+    for attempt in range(1, attempts + 1):
+        before_task_ms = _task_time_ms(env)
+        started = time.perf_counter()
+        try:
+            with _request_deadline(timeout_seconds):
+                actions = agent.step(obs, action_outputs)
+        except Exception as error:
+            elapsed_ms = (time.perf_counter() - started) * 1000
+            after_task_ms = _task_time_ms(env)
+            retryable = _retryable_request_error(error)
+            records.append(
+                {
+                    "attempt": attempt,
+                    "outcome": "error",
+                    "error_type": type(error).__name__,
+                    "error": str(error),
+                    "retryable": retryable,
+                    "wall_ms": elapsed_ms,
+                    "task_time_before_request_ms": before_task_ms,
+                    "task_time_after_request_ms": after_task_ms,
+                    "task_time_delta_ms": after_task_ms - before_task_ms,
+                }
+            )
+            if not retryable or attempt == attempts:
+                raise
+            continue
+        elapsed_ms = (time.perf_counter() - started) * 1000
+        after_task_ms = _task_time_ms(env)
+        records.append(
+            {
+                "attempt": attempt,
+                "outcome": "success",
+                "retryable": False,
+                "wall_ms": elapsed_ms,
+                "task_time_before_request_ms": before_task_ms,
+                "task_time_after_request_ms": after_task_ms,
+                "task_time_delta_ms": after_task_ms - before_task_ms,
+            }
+        )
+        return actions, records
+    raise AssertionError("request loop ended without returning or raising")
+
+
 def _task_description(env, args: argparse.Namespace) -> str:
     description = env.task_spec.description if env.task_spec else ""
     if not description:
@@ -158,12 +284,7 @@ def _task_description(env, args: argparse.Namespace) -> str:
 
 
 def _mark_done(env, *, reason: str) -> tuple[dict, float, bool, dict]:
-    obs, reward, done, info = env.step(
-        [],
-        mark_done=True,
-        capture_observation=False,
-        settle_after_actions=False,
-    )
+    obs, reward, done, info = env.step([], mark_done=True)
     info["benchmark_reason"] = reason
     return obs, reward, done, info
 
@@ -178,6 +299,8 @@ def run(args: argparse.Namespace) -> int:
     env.env_spec.security.resolved_env.update({
         "WEIRD_CAPTCHA_TIME_MODE": args.time_mode,
         "WEIRD_CAPTCHA_START_PAUSED": "1",
+        "WEIRD_CAPTCHA_CHALLENGE_SEED": str(args.seed),
+        "SEED": str(args.seed),
     })
     info: dict[str, Any] = {}
     agent = None
@@ -196,7 +319,11 @@ def run(args: argparse.Namespace) -> int:
 
         ready = _time_command(env, "wait-ready")
 
-        agent_cls = getattr(agent_registry, args.agent)
+        agent_cls = (
+            AuthoritativeObservationProbeAgent
+            if args.agent == "AuthoritativeObservationProbeAgent"
+            else getattr(agent_registry, args.agent)
+        )
         agent = agent_cls(agent_args=agent_args, verbose=args.verbose, debug=args.debug)
         if getattr(agent, "autonomous", False):
             raise ValueError("the real-time evaluator requires turn-based agent.step observations")
@@ -216,6 +343,24 @@ def run(args: argparse.Namespace) -> int:
             "clock": ready,
             "request_timeout_seconds": args.request_timeout_seconds,
             "request_attempts": args.request_attempts,
+            "request_retry_policy": {
+                "single_layer": True,
+                "total_attempt_limit": args.request_attempts,
+                "retryable": [
+                    "timeouts",
+                    "connection/read/write errors",
+                    "server disconnects and protocol errors",
+                    "HTTP 408",
+                    "HTTP 429",
+                    "HTTP 5xx",
+                ],
+                "not_retryable": [
+                    "safety blocks",
+                    "authentication or authorization failures",
+                    "invalid requests",
+                ],
+                "failed_attempts_consume_environment_steps": False,
+            },
         })
 
         action_outputs = []
@@ -232,7 +377,14 @@ def run(args: argparse.Namespace) -> int:
                 break
 
             model_started = time.perf_counter()
-            actions = agent.step(obs, action_outputs)
+            actions, request_records = _call_agent_with_retry(
+                env,
+                agent,
+                obs,
+                action_outputs,
+                timeout_seconds=args.request_timeout_seconds,
+                attempts=args.request_attempts,
+            )
             model_turn += 1
             model_ms = (time.perf_counter() - model_started) * 1000
             after_model_ms = _task_time_ms(env)
@@ -249,6 +401,7 @@ def run(args: argparse.Namespace) -> int:
                     "task_time_after_model_ms": after_model_ms,
                     "actions_applied": 0,
                     "stopped_before_action": True,
+                    "request_attempts": request_records,
                 })
                 break
 
@@ -256,17 +409,24 @@ def run(args: argparse.Namespace) -> int:
                 actual_actions = group["actions"]
                 if args.time_mode == "paused":
                     _time_command(env, "resume")
+                task_time_before_action_ms = _task_time_ms(env)
                 action_started = time.perf_counter()
                 try:
                     _ignored_obs, _reward, done, info = env.step(
                         actual_actions,
                         wait_between_actions=0.0,
-                        capture_observation=False,
-                        settle_after_actions=False,
                     )
+                    task_time_after_execution_ms = _task_time_ms(env)
                 finally:
                     if args.time_mode == "paused":
-                        _time_command(env, "pause")
+                        # A task may have an accepted finite transition (for
+                        # example, a room rotation) still in flight.  The
+                        # shared controller pauses only after such registered
+                        # actions settle, so the next evaluator turn cannot
+                        # silently lose its input to a frozen action lock.
+                        clock_after_action = _time_command(env, "settle-pause")
+                    else:
+                        clock_after_action = _time_command(env, "status")
                 action_ms = (time.perf_counter() - action_started) * 1000
 
                 turn += 1
@@ -279,7 +439,18 @@ def run(args: argparse.Namespace) -> int:
                     "tool_id": group.get("tool_id"),
                     "action_count": len(actual_actions),
                     "action_ms": action_ms,
+                    "task_time_before_action_ms": task_time_before_action_ms,
+                    "task_time_after_execution_ms": task_time_after_execution_ms,
+                    "task_time_delta_during_action_ms": (
+                        task_time_after_execution_ms
+                        - task_time_before_action_ms
+                    ),
+                    "clock_after_action": clock_after_action,
                     "task_time_ms": obs["time"]["task_time_ms"],
+                    "following_observation_manifest": obs[
+                        "capture_manifest"
+                    ],
+                    "following_observation_screen": obs["screen"]["path"],
                 })
                 task_time_ms = float(obs["time"]["task_time_ms"] or 0)
                 if done or turn >= max_steps or task_time_ms >= settings.play_time_seconds * 1000:
@@ -293,6 +464,7 @@ def run(args: argparse.Namespace) -> int:
                 "model_ms": model_ms,
                 "task_time_before_model_ms": before_model_ms,
                 "task_time_after_model_ms": after_model_ms,
+                "request_attempts": request_records,
                 "actions": action_records,
             })
             if getattr(agent, "done", False):
@@ -304,6 +476,69 @@ def run(args: argparse.Namespace) -> int:
     finally:
         if episode_dir is None and env.episode_dir:
             episode_dir = Path(env.episode_dir)
+        if episode_dir is not None:
+            for guest_path, name in (
+                (
+                    "/tmp/weird_captcha_gym/current_task.json",
+                    "current_task.json",
+                ),
+                (
+                    "/tmp/weird_captcha_gym/public_state.json",
+                    "public_state.json",
+                ),
+                (
+                    "/tmp/weird_captcha_gym/"
+                    "parallel_grillmaster_witness_ledger.json",
+                    "parallel_grillmaster_witness_ledger.json",
+                ),
+                (
+                    "/tmp/weird_captcha_gym/"
+                    "parallel_grillmaster_witness_clock.json",
+                    "parallel_grillmaster_witness_clock.json",
+                ),
+                (
+                    "/tmp/weird_captcha_gym/"
+                    "slot_reel_witness_ledger.json",
+                    "slot_reel_witness_ledger.json",
+                ),
+                (
+                    "/tmp/weird_captcha_gym/"
+                    "slot_reel_witness_clock.json",
+                    "slot_reel_witness_clock.json",
+                ),
+            ):
+                try:
+                    present = env.runner.exec_capture(
+                        f"test -s {shlex.quote(guest_path)} && echo present"
+                    )
+                    if "present" not in present.split():
+                        continue
+                    env.runner.copy_from(
+                        guest_path,
+                        str(episode_dir / name),
+                    )
+                except Exception:
+                    pass
+            if args.episode_summary_path is not None:
+                args.episode_summary_path.parent.mkdir(
+                    parents=True,
+                    exist_ok=True,
+                )
+                args.episode_summary_path.write_text(
+                    json.dumps(
+                        {
+                            "episode_dir": str(episode_dir),
+                            "mechanic_id": mechanic_id,
+                            "task": args.task,
+                            "seed": args.seed,
+                            "time_mode": args.time_mode,
+                            "info": info,
+                        },
+                        indent=2,
+                        default=str,
+                    ),
+                    encoding="utf-8",
+                )
         env.close()
 
     if agent is not None:

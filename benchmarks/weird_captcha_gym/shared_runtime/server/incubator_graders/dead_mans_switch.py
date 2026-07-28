@@ -44,6 +44,13 @@ def _integer(value: Any) -> int | None:
         return None
 
 
+def _within(value: Any, lower: Any, upper: Any) -> bool:
+    number = _integer(value)
+    minimum = _integer(lower)
+    maximum = _integer(upper)
+    return number is not None and minimum is not None and maximum is not None and minimum <= number <= maximum
+
+
 def _normalized_pointer(value: Any) -> tuple[float, float] | None:
     if not isinstance(value, dict):
         return None
@@ -85,6 +92,18 @@ def grade(payload: dict[str, Any], ground_truth: dict[str, Any], public_state: d
     motion = ground_truth.get("pressure_motion")
     if not isinstance(motion, dict) or public_state.get("pressure_motion") != motion:
         return _failure("public and hidden pressure motion disagree")
+    truth_condition = ground_truth.get("control_condition")
+    if truth_condition != public_state.get("control_condition"):
+        return _failure("public interaction condition differs from switch contract")
+    interaction = str((truth_condition or {}).get("interaction") or "full")
+    expected_hold_input = {"simplified": "tracker_proxy", "full": "pointer_tracking"}.get(interaction)
+    expected_move_input = {"simplified": "direction_buttons", "full": "keyboard"}.get(interaction)
+    if expected_hold_input is None or expected_move_input is None:
+        return _failure("switch interaction condition is invalid")
+    if str(payload.get("interaction") or "") != interaction:
+        return _failure("submitted interaction mode differs from switch contract")
+    if truth_condition is not None and payload.get("control_condition") != truth_condition:
+        return _failure("submitted control condition differs from switch contract")
 
     board = ground_truth.get("board") or {}
     try:
@@ -106,6 +125,45 @@ def grade(payload: dict[str, Any], ground_truth: dict[str, Any], public_state: d
         return _failure("invalid hidden checkpoints")
     if checkpoint_ids != [str(item) for item in ground_truth.get("checkpoint_ids") or []]:
         return _failure("hidden checkpoint manifest disagrees with course geometry")
+    if truth_condition is not None:
+        parameters = dict(truth_condition.get("difficulty_parameters") or {})
+        barrier_columns = parameters.get("barrier_columns")
+        low_gap_rows = parameters.get("low_gap_rows")
+        high_gap_rows = parameters.get("high_gap_rows")
+        start_rows = parameters.get("start_rows")
+        goal_rows = parameters.get("goal_rows")
+        period_values = parameters.get("pressure_period_ms_values")
+        expected_motion = {
+            "hit_x_milli": _integer(parameters.get("hit_x_milli")),
+            "hit_y_milli": _integer(parameters.get("hit_y_milli")),
+            "sample_ms": _integer(parameters.get("sample_ms")),
+            "maximum_sample_gap_ms": _integer(parameters.get("maximum_sample_gap_ms")),
+            "outside_grace_ms": _integer(parameters.get("outside_grace_ms")),
+            "minimum_hold_ms": _integer(parameters.get("minimum_hold_ms")),
+        }
+        if (
+            columns != _integer(parameters.get("columns"))
+            or rows != _integer(parameters.get("rows"))
+            or not isinstance(barrier_columns, list)
+            or [point[0] for point in checkpoint_positions] != [_integer(item) for item in barrier_columns]
+            or not isinstance(low_gap_rows, list)
+            or not isinstance(high_gap_rows, list)
+            or any(
+                point[1] not in (low_gap_rows if index % 2 == 0 else high_gap_rows)
+                for index, point in enumerate(checkpoint_positions)
+            )
+            or not isinstance(start_rows, list)
+            or start[1] not in start_rows
+            or not isinstance(goal_rows, list)
+            or goal[1] not in goal_rows
+            or not isinstance(period_values, list)
+            or _integer(motion.get("period_ms")) not in [_integer(item) for item in period_values]
+            or not all(value is not None and _integer(motion.get(key)) == value for key, value in expected_motion.items())
+            or not _within(motion.get("x_amplitude_milli"), parameters.get("x_amplitude_milli_min"), parameters.get("x_amplitude_milli_max"))
+            or not _within(motion.get("y_amplitude_milli"), parameters.get("y_amplitude_milli_min"), parameters.get("y_amplitude_milli_max"))
+            or not _within(ground_truth.get("minimum_success_moves"), parameters.get("minimum_solution_moves"), parameters.get("maximum_solution_moves"))
+        ):
+            return _failure("switch difficulty condition differs from generated course")
 
     events = payload.get("events")
     if not isinstance(events, list) or not events or len(events) > 800:
@@ -147,6 +205,8 @@ def grade(payload: dict[str, Any], ground_truth: dict[str, Any], public_state: d
             accepted_since_hold = 0
             if _point(event.get("position")) != position:
                 return _failure("hold-start position does not match replay")
+            if event.get("input_source") != expected_hold_input:
+                return _failure("pressure hold uses the wrong interaction input")
             pointer = _normalized_pointer(event.get("pointer"))
             if pointer is None or not _pressure_contains(pointer, event_t, motion):
                 return _failure("pressure hold did not begin on the moving plate")
@@ -158,6 +218,8 @@ def grade(payload: dict[str, Any], ground_truth: dict[str, Any], public_state: d
                 return _failure("pressure sample occurred outside an active hold")
             if event_t - last_pressure_sample_t > float(motion["maximum_sample_gap_ms"]):
                 return _failure("moving pressure tracking has a sampling gap")
+            if event.get("input_source") != expected_hold_input:
+                return _failure("pressure tracking uses the wrong interaction input")
             pointer = _normalized_pointer(event.get("pointer"))
             if pointer is None or not _pressure_contains(pointer, event_t, motion):
                 return _failure("pressure sample missed the moving plate")
@@ -170,6 +232,8 @@ def grade(payload: dict[str, Any], ground_truth: dict[str, Any], public_state: d
                 return _failure("pressure release occurred without an active hold")
             if str(event.get("reason") or "") not in _RELEASE_REASONS:
                 return _failure("unknown pressure release reason")
+            if event.get("input_source") != expected_hold_input:
+                return _failure("pressure release uses the wrong interaction input")
             if _point(event.get("position")) != position:
                 return _failure("release position does not match replay")
             holding = False
@@ -186,6 +250,8 @@ def grade(payload: dict[str, Any], ground_truth: dict[str, Any], public_state: d
             return _failure(f"unknown interaction event {event_type!r}")
         if not holding:
             return _failure("movement occurred while the pressure plate was released")
+        if event.get("input_source") != expected_move_input:
+            return _failure("movement uses the wrong interaction input")
         if last_pressure_sample_t is None or event_t - last_pressure_sample_t > float(motion["maximum_sample_gap_ms"]):
             return _failure("vehicle moved without a recent moving-pressure sample")
         direction = str(event.get("direction") or "").upper()

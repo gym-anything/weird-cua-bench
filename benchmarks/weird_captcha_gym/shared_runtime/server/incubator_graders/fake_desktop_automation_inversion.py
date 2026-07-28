@@ -110,19 +110,31 @@ def grade(payload: dict[str, Any], ground_truth: dict[str, Any], public_state: d
         return {"graded": True, "passed": False, "feedback": "stale challenge"}
     if not task_id or str(payload.get("task_id") or "") != task_id or str(public_state.get("task_id") or "") != task_id:
         return {"graded": True, "passed": False, "feedback": "task identity mismatch"}
+    control_condition = ground_truth.get("control_condition")
+    if control_condition is not None and public_state.get("control_condition") != control_condition:
+        return {"graded": True, "passed": False, "feedback": "public/private controlled-task contract skew"}
+    expected_interaction = str((control_condition or {}).get("interaction") or "full")
+    if expected_interaction not in {"simplified", "full"}:
+        return {"graded": True, "passed": False, "feedback": "controlled-task interaction is invalid"}
+    if str(payload.get("interaction") or "") != expected_interaction:
+        return {"graded": True, "passed": False, "feedback": "transcript belongs to the other interaction mode"}
     try:
         desktop = ground_truth.get("desktop") or {}
         width, height = int(desktop["width"]), int(desktop["height"])
         mappings = [str(item) for item in ground_truth.get("mapping_sequence") or []]
-        if len(mappings) != 3 or len(set(mappings)) != 3:
+        if not (2 <= len(mappings) <= 5):
             raise ValueError("mapping sequence is invalid")
         geometry = ground_truth.get("geometry") or {}
         initial = _initial_windows(ground_truth)
         files = [dict(item) for item in ground_truth.get("files") or []]
         targets = [str(item) for item in ground_truth.get("target_file_ids") or []]
         required_moved = {str(item) for item in ground_truth.get("required_moved_window_ids") or []}
-        if len(files) != 4 or len(targets) != 2 or len(set(targets)) != 2 or not required_moved:
+        if not (1 <= len(files) <= 6) or not (1 <= len(targets) <= 4) or len(set(targets)) != len(targets):
             raise ValueError("ordered key-vault contract is malformed")
+        if len(mappings) != len(targets) + 1:
+            raise ValueError("mapping sequence does not cover every transfer boundary")
+        if not required_moved.issubset({"directive", "vault", "verifier"}):
+            raise ValueError("required moved-window identity is invalid")
     except (KeyError, TypeError, ValueError) as exc:
         return {"graded": True, "passed": False, "feedback": f"invalid desktop contract: {exc}"}
     for field in ("desktop", "mapping_sequence", "files", "target_filenames", "required_blocker_id", "required_moved_window_ids", "geometry"):
@@ -139,6 +151,7 @@ def grade(payload: dict[str, Any], ground_truth: dict[str, Any], public_state: d
     boundary_pending: dict[str, Any] | None = None
     active: dict[str, Any] | None = None
     loaded_files: list[str] = []
+    selected_proxy_file_id: str | None = None
     armed = False
     move_count = close_count = z_order_changes = file_drag_moves = resets = 0
     moved_windows: set[str] = set()
@@ -152,22 +165,94 @@ def grade(payload: dict[str, Any], ground_truth: dict[str, Any], public_state: d
             return {"graded": True, "passed": False, "feedback": "missing visible workflow-boundary remap"}
 
         if kind == "reset":
+            if event.get("input_source") != "reset_button":
+                return {"graded": True, "passed": False, "feedback": "reset did not use the visible reset control"}
             windows = {key: dict(value) for key, value in initial.items()}
             z_counter = max(window["z"] for window in windows.values())
-            boundary = 0; boundary_pending = None; active = None; loaded_files = []; armed = False
+            boundary = 0; boundary_pending = None; active = None; loaded_files = []; selected_proxy_file_id = None; armed = False
             move_count = close_count = z_order_changes = file_drag_moves = 0
             moved_windows.clear(); phases_seen.clear(); resets += 1
             continue
 
         if kind == "boundary":
+            expected_source = "remote_pointer" if expected_interaction == "full" else "automation_panel"
+            if event.get("input_source") != expected_source:
+                return {"graded": True, "passed": False, "feedback": "workflow boundary used the wrong input surface"}
             if boundary_pending is None or any(event.get(field) != value for field, value in boundary_pending.items()):
                 return {"graded": True, "passed": False, "feedback": "workflow-boundary event is inconsistent"}
             boundary = int(boundary_pending["to"])
             boundary_pending = None
             continue
 
+        if kind == "proxy":
+            if expected_interaction != "simplified":
+                return {"graded": True, "passed": False, "feedback": "direct-manipulation task received a proxy action"}
+            if event.get("input_source") != "automation_panel":
+                return {"graded": True, "passed": False, "feedback": "proxy action used the wrong input source"}
+            phases_seen.add(boundary)
+            action = str(event.get("action") or "")
+            if action == "close_interceptor":
+                blocker = windows.get(str(ground_truth.get("required_blocker_id") or ""))
+                if blocker is not None and not blocker["closed"]:
+                    blocker["closed"] = True
+                    close_count += 1
+                continue
+            if action in {"move_directive", "move_vault", "move_verifier"}:
+                window_id = action.removeprefix("move_")
+                window = windows.get(window_id)
+                if window is None or window["closed"]:
+                    continue
+                offsets = {
+                    "directive": (38, 22),
+                    "vault": (70, -20),
+                    "verifier": (-55, 28),
+                }
+                start_x, start_y = window["x"], window["y"]
+                offset_x, offset_y = offsets[window_id]
+                window["x"] = max(0, min(width - window["width"], start_x + offset_x))
+                window["y"] = max(0, min(height - window["height"], start_y + offset_y))
+                current_top = max((item["z"] for item in windows.values() if not item["closed"]), default=window["z"])
+                if window["z"] != current_top:
+                    z_order_changes += 1
+                z_counter += 1
+                window["z"] = z_counter
+                if math.hypot(window["x"] - start_x, window["y"] - start_y) >= int(ground_truth.get("minimum_window_move") or 44):
+                    move_count += 1
+                    moved_windows.add(window_id)
+                continue
+            if action == "select_file":
+                selected = str(event.get("file_id") or "")
+                if selected not in {str(file_item.get("id") or "") for file_item in files}:
+                    return {"graded": True, "passed": False, "feedback": "proxy selected an unknown keyfile"}
+                blocker = windows.get(str(ground_truth.get("required_blocker_id") or ""))
+                if blocker and blocker["closed"] and boundary < len(targets):
+                    selected_proxy_file_id = selected
+                continue
+            if action == "transfer_selected":
+                verifier = windows.get("verifier")
+                expected = targets[boundary] if boundary < len(targets) else None
+                blocker = windows.get(str(ground_truth.get("required_blocker_id") or ""))
+                if selected_proxy_file_id is not None and expected is not None and selected_proxy_file_id != expected:
+                    return {"graded": True, "passed": False, "feedback": "selected keyfile is not the requested keyfile"}
+                if verifier and not verifier["closed"] and blocker and blocker["closed"] and expected and selected_proxy_file_id == expected and expected not in loaded_files:
+                    loaded_files.append(expected)
+                    selected_proxy_file_id = None
+                    file_drag_moves += 1
+                    to = boundary + 1
+                    boundary_pending = {"from": boundary, "to": to, "reason": f"keyfile_{to}_loaded", "mapping": mappings[to]}
+                continue
+            if action == "arm_manual_control":
+                if boundary == len(targets) and loaded_files == targets:
+                    armed = True
+                continue
+            return {"graded": True, "passed": False, "feedback": f"event {sequence} has an unknown proxy action"}
+
         if kind not in {"pointer_down", "pointer_move", "pointer_up"}:
             return {"graded": True, "passed": False, "feedback": f"event {sequence} has unknown kind"}
+        if expected_interaction != "full":
+            return {"graded": True, "passed": False, "feedback": "proxy task received a direct-pointer action"}
+        if event.get("input_source") != "remote_pointer":
+            return {"graded": True, "passed": False, "feedback": "pointer action used the wrong input surface"}
         try:
             physical = _point(event.get("physical"), width, height)
             remote = _point(event.get("remote"), width, height)
@@ -256,7 +341,7 @@ def grade(payload: dict[str, Any], ground_truth: dict[str, Any], public_state: d
         and bool(windows.get(blocker_id, {}).get("closed"))
         and required_moved.issubset(moved_windows)
         and move_count >= len(required_moved)
-        and z_order_changes >= 2
+        and z_order_changes >= len(required_moved)
         and file_drag_moves >= len(targets)
         and phases_seen == set(range(len(mappings)))
     )

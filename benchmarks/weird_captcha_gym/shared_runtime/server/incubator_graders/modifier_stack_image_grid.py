@@ -5,6 +5,10 @@ from typing import Any
 
 
 MECHANIC_ID = "modifier_stack_image_grid"
+INTERACTION_SOURCES = {
+    "simplified": "proxy_controls",
+    "full": "direct_canvas",
+}
 
 
 def _fail(message: str) -> dict[str, Any]:
@@ -40,6 +44,61 @@ def _public_artifacts(artifacts: list[dict[str, Any]]) -> list[dict[str, Any]]:
     return public
 
 
+def _control_contract(
+    ground_truth: dict[str, Any],
+    public_state: dict[str, Any],
+    artifacts: list[dict[str, Any]],
+    rail: dict[str, Any],
+    slots: list[dict[str, Any]],
+    requirements: dict[str, Any],
+) -> tuple[str, str | None]:
+    """Validate the selected profile and recover its bound input surface."""
+
+    truth_condition = ground_truth.get("control_condition")
+    public_condition = public_state.get("control_condition")
+    if truth_condition is None and public_condition is None:
+        return "full", None
+    if not isinstance(truth_condition, dict) or public_condition != truth_condition:
+        return "", "public restoration control condition differs from the hidden contract"
+    interaction = str(truth_condition.get("interaction") or "")
+    parameters = truth_condition.get("difficulty_parameters")
+    if interaction not in INTERACTION_SOURCES or not isinstance(parameters, dict):
+        return "", "restoration interaction condition is invalid"
+    try:
+        artifact_count = int(parameters["artifact_count"])
+        modifier_count = int(parameters["modifier_count"])
+        playback_ms = int(parameters["playback_ms"])
+        playback_minimum_ms = int(parameters["playback_minimum_ms"])
+        replay_limit = int(parameters["replay_limit"])
+        gate_x = [int(value) for value in parameters["rail_gate_x"]]
+        required_values = {
+            key: int(parameters[key])
+            for key in (
+                "minimum_chip_moves",
+                "minimum_chip_drag_ms",
+                "minimum_rail_samples",
+                "minimum_rail_ms",
+                "maximum_rail_step",
+            )
+        }
+        required_values["playback_minimum_ms"] = playback_minimum_ms
+        if not isinstance(parameters["show_inverse_template"], bool) or not isinstance(parameters["show_arrangement_oracle"], bool):
+            return "", "restoration presentation controls are malformed"
+    except (KeyError, TypeError, ValueError):
+        return "", "restoration difficulty profile is malformed"
+    if (
+        artifact_count != len(artifacts)
+        or modifier_count != len(slots)
+        or any(len(artifact.get("stack") or []) != modifier_count for artifact in artifacts)
+        or any(int(artifact.get("playback_ms") or -1) != playback_ms for artifact in artifacts)
+        or any(int(artifact.get("replay_limit") or -1) != replay_limit for artifact in artifacts)
+        or rail.get("gate_x") != gate_x
+        or any(requirements.get(key) != value for key, value in required_values.items())
+    ):
+        return "", "restoration difficulty condition differs from the generated contract"
+    return interaction, None
+
+
 def grade(payload: dict[str, Any], ground_truth: dict[str, Any], public_state: dict[str, Any]) -> dict[str, Any]:
     challenge = str(ground_truth.get("challenge_id") or "")
     task_id = str(ground_truth.get("task_id") or "")
@@ -56,8 +115,10 @@ def grade(payload: dict[str, Any], ground_truth: dict[str, Any], public_state: d
         rail = dict(ground_truth["rail"])
         slots = [dict(item) for item in ground_truth["slots"]]
         requirements = dict(ground_truth["requirements"])
-        if len(artifacts) != 3 or len(slots) != 3:
-            raise ValueError("three artifacts and restoration slots are required")
+        if not 1 <= len(artifacts) <= 3 or not 2 <= len(slots) <= 4:
+            raise ValueError("the restoration profile has an unsupported artifact or slot count")
+        if any(len(item.get("stack") or []) != len(slots) for item in artifacts):
+            raise ValueError("artifact stacks do not match the visible inverse slots")
         for key in ("stage", "rail", "slots", "requirements"):
             if public_state.get(key) != ground_truth.get(key):
                 raise ValueError(f"public {key} differs from replay contract")
@@ -65,6 +126,20 @@ def grade(payload: dict[str, Any], ground_truth: dict[str, Any], public_state: d
             raise ValueError("public artifacts expose or alter the private inverse contract")
     except (KeyError, TypeError, ValueError) as exc:
         return _fail(f"invalid restoration contract: {exc}")
+
+    interaction, contract_error = _control_contract(
+        ground_truth,
+        public_state,
+        artifacts,
+        rail,
+        slots,
+        requirements,
+    )
+    if contract_error:
+        return _fail(contract_error)
+    if ground_truth.get("control_condition") is not None and payload.get("interaction_mode") != interaction:
+        return _fail("restoration transcript belongs to the other interaction mode")
+    expected_source = INTERACTION_SOURCES[interaction]
 
     events = payload.get("events")
     if not isinstance(events, list) or not (1 <= len(events) <= 2400):
@@ -88,6 +163,8 @@ def grade(payload: dict[str, Any], ground_truth: dict[str, Any], public_state: d
             return _fail(f"event {sequence} has invalid sequence")
         kind = str(event.get("kind") or "")
         try:
+            if kind != "playback_complete" and event.get("input_source") != expected_source:
+                return _fail(f"event {sequence} uses the wrong interaction input")
             event_time = _number(event.get("t_ms"), "event time")
             if event_time < last_time or event_time > float(requirements["maximum_event_time_ms"]):
                 return _fail(f"event {sequence} has impossible time")
@@ -109,6 +186,8 @@ def grade(payload: dict[str, Any], ground_truth: dict[str, Any], public_state: d
                 inverted.clear()
                 phase = "playback"
             elif kind == "chip_down":
+                if interaction != "full":
+                    return _fail(f"event {sequence} uses direct modifier dragging in simplified mode")
                 art = artifact()
                 token_id = str(event.get("token_id") or "")
                 token_ids = {str(item["id"]) for item in art["stack"]}
@@ -120,6 +199,8 @@ def grade(payload: dict[str, Any], ground_truth: dict[str, Any], public_state: d
                     return _fail(f"event {sequence} misses the modifier token")
                 drag = {"token_id": token_id, "moves": 0, "last_elapsed": 0}
             elif kind == "chip_move":
+                if interaction != "full":
+                    return _fail(f"event {sequence} uses direct modifier dragging in simplified mode")
                 if drag is None or str(event.get("token_id") or "") != drag["token_id"]:
                     return _fail(f"event {sequence} moves no matching modifier")
                 _point(event.get("point"), width, height, "modifier drag")
@@ -129,6 +210,8 @@ def grade(payload: dict[str, Any], ground_truth: dict[str, Any], public_state: d
                 drag["last_elapsed"] = elapsed
                 drag["moves"] += 1
             elif kind == "chip_up":
+                if interaction != "full":
+                    return _fail(f"event {sequence} uses direct modifier dragging in simplified mode")
                 if drag is None or str(event.get("token_id") or "") != drag["token_id"]:
                     return _fail(f"event {sequence} releases no matching modifier")
                 point = _point(event.get("point"), width, height, "modifier release")
@@ -142,6 +225,30 @@ def grade(payload: dict[str, Any], ground_truth: dict[str, Any], public_state: d
                 if accepted:
                     placements[int(detected)] = drag["token_id"]
                 drag = None
+            elif kind == "proxy_place":
+                if interaction != "simplified":
+                    return _fail(f"event {sequence} uses a proxy module action in full mode")
+                art = artifact()
+                token_id = str(event.get("token_id") or "")
+                token_ids = {str(item["id"]) for item in art["stack"]}
+                raw_slot = event.get("slot_index")
+                if isinstance(raw_slot, bool):
+                    return _fail(f"event {sequence} has an invalid proxy slot")
+                try:
+                    slot_index = int(raw_slot)
+                except (TypeError, ValueError):
+                    return _fail(f"event {sequence} has an invalid proxy slot")
+                if (
+                    phase != "work"
+                    or drag is not None
+                    or rail_hold is not None
+                    or token_id not in token_ids
+                    or token_id in placements.values()
+                    or slot_index not in {int(slot["index"]) for slot in slots}
+                    or slot_index in placements
+                ):
+                    return _fail(f"event {sequence} makes an invalid proxy module placement")
+                placements[slot_index] = token_id
             elif kind == "invert":
                 token_id = str(event.get("token_id") or "")
                 token_ids = {str(item["id"]) for item in artifact()["stack"]}
@@ -160,7 +267,7 @@ def grade(payload: dict[str, Any], ground_truth: dict[str, Any], public_state: d
             elif kind == "rail_start":
                 art = artifact()
                 expected_order = [str(item["id"]) for item in reversed(art["stack"])]
-                arranged = [placements.get(index) for index in range(3)]
+                arranged = [placements.get(index) for index in range(len(slots))]
                 start = _point(event.get("point"), width, height, "rail start")
                 if phase != "work" or drag is not None or rail_hold is not None or arranged != expected_order or inverted != set(expected_order) or math.hypot(start[0] - rail["start"][0], start[1] - rail["start"][1]) > 28:
                     return _fail(f"event {sequence} starts the press without a valid inverse stack")
@@ -211,7 +318,7 @@ def grade(payload: dict[str, Any], ground_truth: dict[str, Any], public_state: d
         if payload.get(key) != value:
             return _fail(f"submitted {key} does not match restoration replay")
     passed = payload.get("completed") is True and phase == "terminal" and completed == [str(item["id"]) for item in artifacts] and seal_count >= 1
-    return {"graded": True, "passed": passed, "score": 100 if passed else 0, "feedback": f"restoration replay: artifacts {len(completed)}/3; film replays {replay_count}; resets {reset_count}; rail samples {rail_samples_total}; inverse press terminal={phase == 'terminal'}"}
+    return {"graded": True, "passed": passed, "score": 100 if passed else 0, "feedback": f"restoration replay: artifacts {len(completed)}/{len(artifacts)}; film replays {replay_count}; resets {reset_count}; rail samples {rail_samples_total}; inverse press terminal={phase == 'terminal'}"}
 
 
 def cheat(public_state: dict[str, Any], ground_truth: dict[str, Any]) -> dict[str, Any]:

@@ -69,6 +69,110 @@ def _target_contract(challenge_id: str, objects: list[dict[str, Any]], camera: d
     }
 
 
+def _controlled_target_contract(
+    challenge_id: str,
+    objects: list[dict[str, Any]],
+    camera: dict[str, Any],
+    viewport: dict[str, Any],
+    parameters: dict[str, Any],
+) -> dict[str, Any]:
+    half_width = float(viewport["width"]) / (2 * float(camera["zoom"]))
+    half_height = float(viewport["height"]) / (2 * float(camera["zoom"]))
+    candidates = [
+        index
+        for index, item in enumerate(objects)
+        if abs(float(item["x"]) - float(camera["x"])) > half_width
+        or abs(float(item["y"]) - float(camera["y"])) > half_height
+    ]
+    if not candidates:
+        raise ValueError("controlled panorama has no off-screen candidate")
+    period_ms = int(parameters["event_period_ms"])
+    target_index = candidates[int(challenge_id[:6], 16) % len(candidates)]
+    return {
+        "target_index": target_index,
+        "target_id": str(objects[target_index]["id"]),
+        "period_ms": period_ms,
+        "window_ms": int(parameters["event_window_ms"]),
+        "offset_ms": int(challenge_id[8:12], 16) % period_ms,
+        "target_selection": "outside_initial_view",
+    }
+
+
+def _control_condition(
+    ground_truth: dict[str, Any], public_state: dict[str, Any]
+) -> tuple[dict[str, Any] | None, str | None]:
+    condition = ground_truth.get("control_condition")
+    if condition is None:
+        return (None, None) if public_state.get("control_condition") is None else (None, "public panorama control condition is unexpected")
+    if not isinstance(condition, dict) or condition != public_state.get("control_condition"):
+        return None, "public panorama control condition differs from hidden state"
+    try:
+        difficulty = int(condition.get("difficulty"))
+    except (TypeError, ValueError):
+        return None, "panorama control difficulty is invalid"
+    if difficulty not in {1, 2, 3, 4, 5} or str(condition.get("interaction") or "") not in {"simplified", "full"}:
+        return None, "panorama control condition is invalid"
+    if str(condition.get("real_time") or "") != "live" or not isinstance(condition.get("difficulty_parameters"), dict):
+        return None, "panorama control condition is incomplete"
+    return condition, None
+
+
+def _matches_controlled_profile(
+    condition: dict[str, Any],
+    world: dict[str, Any],
+    viewport: dict[str, Any],
+    initial: dict[str, Any],
+    controls: dict[str, Any],
+    qualification: dict[str, Any],
+    objects: list[dict[str, Any]],
+    landmarks: Any,
+    routes: Any,
+    event_contract: dict[str, Any],
+) -> bool:
+    """Bind every declared profile variable to the replayed public contract."""
+    parameters = condition["difficulty_parameters"]
+    try:
+        columns, rows = int(parameters["sector_columns"]), int(parameters["sector_rows"])
+        if int(parameters["pan_fine_divisor"]) < 2:
+            return False
+        if int(world["sector_columns"]) != columns or int(world["sector_rows"]) != rows:
+            return False
+        if len(objects) != columns * rows or len(landmarks) != int(parameters["landmark_count"]) or len(routes) != int(parameters["route_count"]):
+            return False
+        if not _close(initial["zoom"], parameters["initial_zoom"]):
+            return False
+        if any(not _close(controls[key], parameters[key]) for key in ("zoom_min", "zoom_max", "zoom_step", "pan_nudge_px")):
+            return False
+        if any(not _close(qualification[key], parameters[key]) for key in ("minimum_zoom", "maximum_zoom", "focus_tolerance", "reticle_radius", "minimum_hold_ms", "minimum_hold_samples", "maximum_sample_gap_ms")):
+            return False
+        if not all(
+            int(parameters["motion_period_min_ms"]) <= int(item["motion_period_ms"]) <= int(parameters["motion_period_max_ms"])
+            and int(parameters["motion_amp_x_min"]) <= int(item["amp_x"]) <= int(parameters["motion_amp_x_max"])
+            and int(parameters["motion_amp_y_min"]) <= int(item["amp_y"]) <= int(parameters["motion_amp_y_max"])
+            for item in objects
+        ):
+            return False
+        if int(condition["difficulty"]) == 4:
+            return (
+                int(world["width"]) == 4800
+                and int(world["height"]) == 2400
+                and int(viewport["width"]) == 820
+                and int(viewport["height"]) == 450
+                and parameters.get("event_period_mode") == "legacy_challenge"
+                and int(event_contract["window_ms"]) == int(parameters["event_window_ms"])
+                and "target_selection" not in event_contract
+            )
+        return (
+            int(world["width"]) == columns * 600
+            and int(world["height"]) == rows * 600
+            and int(event_contract["period_ms"]) == int(parameters["event_period_ms"])
+            and int(event_contract["window_ms"]) == int(parameters["event_window_ms"])
+            and event_contract.get("target_selection") == "outside_initial_view"
+        )
+    except (KeyError, TypeError, ValueError):
+        return False
+
+
 def _camera_bounds(world: dict[str, Any], viewport: dict[str, Any], zoom: float) -> tuple[float, float, float, float]:
     half_width = float(viewport["width"]) / (2 * zoom)
     half_height = float(viewport["height"]) / (2 * zoom)
@@ -138,6 +242,12 @@ def grade(payload: dict[str, Any], ground_truth: dict[str, Any], public_state: d
         return _failure("stale challenge")
     if str(public_state.get("mechanic_id") or "") != MECHANIC_ID or str(public_state.get("challenge_id") or "") != challenge_id or str(public_state.get("task_id") or "") != task_id:
         return _failure("public panorama identity mismatch")
+    condition, condition_error = _control_condition(ground_truth, public_state)
+    if condition_error:
+        return _failure(condition_error)
+    interaction = str((condition or {}).get("interaction") or "")
+    if condition is not None and str(payload.get("interaction") or "") != interaction:
+        return _failure("panorama transcript belongs to the other interaction mode")
 
     objects = ground_truth.get("objects")
     world = ground_truth.get("world")
@@ -145,21 +255,32 @@ def grade(payload: dict[str, Any], ground_truth: dict[str, Any], public_state: d
     initial = ground_truth.get("initial_camera")
     controls = ground_truth.get("controls")
     qualification = ground_truth.get("qualification")
+    landmarks = ground_truth.get("landmarks", public_state.get("landmarks"))
+    routes = ground_truth.get("routes", public_state.get("routes"))
     expected_objects = int(world.get("sector_columns", 0)) * int(world.get("sector_rows", 0)) if isinstance(world, dict) else 0
-    if not isinstance(objects, list) or len(objects) != expected_objects or expected_objects < 24 or not all(isinstance(value, dict) for value in (world, viewport, initial, controls, qualification)):
+    if not isinstance(objects, list) or len(objects) != expected_objects or expected_objects < 6 or not isinstance(landmarks, list) or not isinstance(routes, list) or not all(isinstance(value, dict) for value in (world, viewport, initial, controls, qualification)):
         return _failure("hidden panorama manifest is malformed")
-    if public_state.get("objects") != objects or public_state.get("world") != world or public_state.get("viewport") != viewport or public_state.get("initial_camera") != initial or public_state.get("controls") != controls or public_state.get("qualification") != qualification:
+    if public_state.get("objects") != objects or public_state.get("world") != world or public_state.get("viewport") != viewport or public_state.get("initial_camera") != initial or public_state.get("controls") != controls or public_state.get("qualification") != qualification or public_state.get("landmarks") != landmarks or public_state.get("routes") != routes:
         return _failure("public panorama geometry disagrees with hidden state")
     object_ids = [str(item.get("id") or "") for item in objects]
     if "" in object_ids or len(set(object_ids)) != len(object_ids):
         return _failure("panorama specimen identities are malformed")
+    hidden_contract = ground_truth.get("event_contract") or {}
     try:
-        contract = _target_contract(challenge_id, objects, initial)
+        contract = (
+            _target_contract(challenge_id, objects, initial)
+            if condition is None or int(condition["difficulty"]) == 4
+            else _controlled_target_contract(challenge_id, objects, initial, viewport, condition["difficulty_parameters"])
+        )
     except (KeyError, TypeError, ValueError):
         return _failure("challenge event derivation failed")
-    hidden_contract = ground_truth.get("event_contract") or {}
-    if str(ground_truth.get("target_id") or "") != contract["target_id"] or any(not _close(hidden_contract.get(key), contract[key], 1e-9) for key in ("period_ms", "window_ms", "offset_ms")):
+    contract_keys = ("period_ms", "window_ms", "offset_ms") if condition is None or int(condition["difficulty"]) == 4 else ("period_ms", "window_ms", "offset_ms", "target_selection")
+    if str(ground_truth.get("target_id") or "") != contract["target_id"] or any(hidden_contract.get(key) != contract[key] if key == "target_selection" else not _close(hidden_contract.get(key), contract[key], 1e-9) for key in contract_keys):
         return _failure("hidden event does not match challenge derivation")
+    if condition is not None and not _matches_controlled_profile(condition, world, viewport, initial, controls, qualification, objects, landmarks, routes, hidden_contract):
+        return _failure("panorama difficulty condition differs from generated contract")
+    if condition is not None and int(condition["difficulty"]) != 4 and public_state.get("event_contract") != hidden_contract:
+        return _failure("public event loop disagrees with hidden state")
     target = objects[int(contract["target_index"])]
 
     try:
@@ -204,6 +325,8 @@ def grade(payload: dict[str, Any], ground_truth: dict[str, Any], public_state: d
 
         if action == "pan_start":
             raw_pointer = _point(event.get("pointer"))
+            if condition is not None and (interaction != "full" or event.get("input_source") != "canvas_drag"):
+                return _failure(f"pan start {sequence} uses the wrong interaction input")
             if panning or holding or raw_pointer is None or not (-12 <= raw_pointer[0] <= view_width + 12 and -12 <= raw_pointer[1] <= view_height + 12):
                 return _failure(f"pan start {sequence} is physically impossible")
             if not _camera_claim(event.get("camera"), camera, zoom, focus):
@@ -216,6 +339,8 @@ def grade(payload: dict[str, Any], ground_truth: dict[str, Any], public_state: d
             raw_pointer = _point(event.get("pointer"))
             claimed_from = _point(event.get("from"))
             claimed_to = _point(event.get("to"))
+            if condition is not None and (interaction != "full" or event.get("input_source") != "canvas_drag"):
+                return _failure(f"pan move {sequence} uses the wrong interaction input")
             if not panning or holding or raw_pointer is None or claimed_from is None or claimed_to is None:
                 return _failure(f"pan move {sequence} occurs outside a drag")
             screen_delta = math.hypot(raw_pointer[0] - pointer[0], raw_pointer[1] - pointer[1])
@@ -237,6 +362,8 @@ def grade(payload: dict[str, Any], ground_truth: dict[str, Any], public_state: d
 
         if action == "pan_end":
             raw_pointer = _point(event.get("pointer"))
+            if condition is not None and (interaction != "full" or event.get("input_source") != "canvas_drag"):
+                return _failure(f"pan end {sequence} uses the wrong interaction input")
             if not panning or holding or raw_pointer is None or not _camera_claim(event.get("camera"), camera, zoom, focus):
                 return _failure(f"pan end {sequence} is malformed")
             panning = False
@@ -245,13 +372,21 @@ def grade(payload: dict[str, Any], ground_truth: dict[str, Any], public_state: d
 
         if action == "pan_nudge":
             direction = str(event.get("direction") or "")
+            scale = str(event.get("scale") or "coarse")
             claimed_from = _point(event.get("from"))
             claimed_to = _point(event.get("to"))
-            if panning or holding or direction not in {"left", "right", "up", "down"} or claimed_from is None or claimed_to is None:
+            if condition is not None and (interaction != "simplified" or event.get("input_source") != "pan_pad"):
+                return _failure(f"pan nudge {sequence} uses the wrong interaction input")
+            if panning or holding or direction not in {"left", "right", "up", "down"} or scale not in {"coarse", "fine"} or claimed_from is None or claimed_to is None:
                 return _failure(f"pan nudge {sequence} has impossible ordering")
+            if scale == "fine" and condition is None:
+                return _failure(f"pan nudge {sequence} uses an unavailable fine control")
             if not _close(claimed_from[0], camera[0]) or not _close(claimed_from[1], camera[1]):
                 return _failure(f"pan nudge {sequence} has a stale origin")
-            distance = float(controls["pan_nudge_px"]) / zoom
+            divisor = float((condition or {}).get("difficulty_parameters", {}).get("pan_fine_divisor", 1)) if scale == "fine" else 1.0
+            if divisor <= 1.0:
+                return _failure(f"pan nudge {sequence} has an invalid fine-control divisor")
+            distance = float(controls["pan_nudge_px"]) / (zoom * divisor)
             dx = (-distance if direction == "left" else distance if direction == "right" else 0.0)
             dy = (-distance if direction == "up" else distance if direction == "down" else 0.0)
             expected = _clamp_camera((camera[0] + dx, camera[1] + dy), world, viewport, zoom)
@@ -270,6 +405,10 @@ def grade(payload: dict[str, Any], ground_truth: dict[str, Any], public_state: d
             before, after = _number(event.get("from")), _number(event.get("to"))
             if panning or holding or before is None or after is None or not _close(before, zoom):
                 return _failure(f"zoom event {sequence} has impossible ordering or origin")
+            if condition is not None:
+                expected_sources = {"button_in", "button_out"} if interaction == "simplified" else {"slider"}
+                if source not in expected_sources:
+                    return _failure(f"zoom event {sequence} uses the wrong interaction input")
             minimum, maximum, step = float(controls["zoom_min"]), float(controls["zoom_max"]), float(controls["zoom_step"])
             if source == "button_in":
                 expected_zoom = _round(_clamp(zoom + step, minimum, maximum))
@@ -292,11 +431,21 @@ def grade(payload: dict[str, Any], ground_truth: dict[str, Any], public_state: d
 
         if action == "focus":
             before, after = _number(event.get("from")), _number(event.get("to"))
-            if panning or holding or str(event.get("source") or "") != "slider" or before is None or after is None or not _close(before, focus):
+            source = str(event.get("source") or "")
+            if panning or holding or before is None or after is None or not _close(before, focus):
                 return _failure(f"focus event {sequence} has impossible ordering or origin")
             minimum, maximum, step = float(controls["focus_min"]), float(controls["focus_max"]), float(controls["focus_step"])
-            expected_focus = _round(_clamp(after, minimum, maximum))
-            if abs((expected_focus - minimum) / step - round((expected_focus - minimum) / step)) > 1e-5:
+            if condition is not None and source != ("button_near" if interaction == "simplified" else "slider") and source != ("button_far" if interaction == "simplified" else "slider"):
+                return _failure(f"focus event {sequence} uses the wrong interaction input")
+            if source == "button_near":
+                expected_focus = _round(_clamp(focus - step, minimum, maximum))
+            elif source == "button_far":
+                expected_focus = _round(_clamp(focus + step, minimum, maximum))
+            elif source == "slider":
+                expected_focus = _round(_clamp(after, minimum, maximum))
+            else:
+                return _failure(f"focus event {sequence} has unknown control source")
+            if source == "slider" and abs((expected_focus - minimum) / step - round((expected_focus - minimum) / step)) > 1e-5:
                 return _failure(f"focus slider {sequence} is off its physical step")
             if not _close(event.get("to"), expected_focus):
                 return _failure(f"focus event {sequence} reports false optics")
@@ -322,6 +471,8 @@ def grade(payload: dict[str, Any], ground_truth: dict[str, Any], public_state: d
             continue
 
         if action == "shutter_start":
+            if condition is not None and event.get("input_source") != "shutter_hold":
+                return _failure(f"shutter start {sequence} uses the wrong interaction input")
             if panning or holding or not _camera_claim(event.get("camera"), camera, zoom, focus):
                 return _failure(f"shutter start {sequence} has impossible ordering or stale optics")
             holding = True
