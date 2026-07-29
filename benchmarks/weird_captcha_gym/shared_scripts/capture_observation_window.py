@@ -101,7 +101,22 @@ def capture(args: argparse.Namespace) -> dict:
     try:
         wait_for_recording(raw_dir, recorder, timeout=args.timeout)
         if args.mode == "paused":
-            if args.duration_ms > 0:
+            if args.hold_paused:
+                paused = send_command("pause", port=args.port)
+                sequence = int(paused["sequence"])
+                status = wait_for_status(
+                    lambda item: int(item.get("sequence") or -1) == sequence
+                    and item.get("state") == "paused",
+                    port=args.port,
+                    timeout=args.timeout,
+                )
+                start_ms = time.time_ns() / 1_000_000
+                if args.duration_ms > 0:
+                    time.sleep(args.duration_ms / 1000)
+                end_ms = time.time_ns() / 1_000_000
+                if abs(float(get_status(port=args.port).get("task_time_ms") or 0) - float(status.get("task_time_ms") or 0)) > 5:
+                    raise RuntimeError("paused hold advanced the task clock")
+            elif args.duration_ms > 0:
                 command = send_command(
                     "run_for",
                     port=args.port,
@@ -174,12 +189,19 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--width", type=int, default=0)
     parser.add_argument("--height", type=int, default=0)
     parser.add_argument("--start-delay-ms", type=int, default=150)
+    parser.add_argument(
+        "--hold-paused",
+        action="store_true",
+        help="capture scheduled literal frames while the shared paused clock remains frozen",
+    )
     parser.add_argument("--timeout", type=float, default=30)
     args = parser.parse_args()
     if args.duration_ms < 0:
         parser.error("--duration-ms must be non-negative")
     if args.frames < 1:
         parser.error("--frames must be positive")
+    if args.hold_paused and args.mode != "paused":
+        parser.error("--hold-paused requires --mode paused")
     return args
 
 

@@ -105,17 +105,36 @@ def grade(payload: dict[str, Any], ground_truth: dict[str, Any], public_state: d
         return {"graded": True, "passed": False, "feedback": "stale challenge"}
     if str(public_state.get("challenge_id") or "") != challenge_id:
         return {"graded": True, "passed": False, "feedback": "public-state challenge mismatch"}
+    control_condition = ground_truth.get("control_condition")
+    if control_condition is not None:
+        if not isinstance(control_condition, dict) or public_state.get("control_condition") != control_condition:
+            return {"graded": True, "passed": False, "feedback": "controlled interaction condition mismatch"}
+        interaction = str(control_condition.get("interaction") or "")
+        if interaction not in {"simplified", "full"}:
+            return {"graded": True, "passed": False, "feedback": "controlled interaction is invalid"}
+        if str(payload.get("interaction_mode") or "") != interaction:
+            return {"graded": True, "passed": False, "feedback": "wrong interaction mode"}
+        expected_sources = {
+            "sonar_probe": "coordinate_sonar" if interaction == "simplified" else "pointer_sonar",
+            "trace_start": "coordinate_trace" if interaction == "simplified" else "pointer_trace",
+            "trace_sample": "coordinate_trace" if interaction == "simplified" else "pointer_trace",
+            "trace_cancel": "coordinate_trace" if interaction == "simplified" else "pointer_trace",
+            "trace_end": "coordinate_trace" if interaction == "simplified" else "pointer_trace",
+            "rearm": "trace_rearm",
+        }
+    else:
+        expected_sources = None
     try:
         stage = dict(ground_truth.get("stage") or {})
         width, height = int(stage["width"]), int(stage["height"])
         main_path = [[int(value) for value in point] for point in ground_truth.get("main_path") or []]
         branches = [dict(branch) for branch in ground_truth.get("branches") or []]
-        if len(main_path) < 80 or not 3 <= len(branches) <= 4:
+        if len(main_path) < 80 or not 0 <= len(branches) <= 5:
             raise ValueError("corridor geometry is incomplete")
         start = [int(value) for value in ground_truth["start"]]
         exit_point = [int(value) for value in ground_truth["exit"]]
         checkpoint_indices = [int(value) for value in ground_truth.get("checkpoint_indices") or []]
-        if len(checkpoint_indices) < 9 or checkpoint_indices[0] != 0 or checkpoint_indices[-1] != len(main_path) - 1:
+        if len(checkpoint_indices) < 4 or checkpoint_indices[0] != 0 or checkpoint_indices[-1] != len(main_path) - 1:
             raise ValueError("ordered checkpoints are incomplete")
         corridor_radius = int(ground_truth["corridor_radius"])
         sonar_radius = int(ground_truth["sonar_radius"])
@@ -145,6 +164,8 @@ def grade(payload: dict[str, Any], ground_truth: dict[str, Any], public_state: d
         if not isinstance(event, dict) or event.get("sequence") != sequence:
             return {"graded": True, "passed": False, "feedback": f"event {sequence} sequence mismatch"}
         kind = str(event.get("kind") or "")
+        if expected_sources is not None and event.get("input_source") != expected_sources.get(kind):
+            return {"graded": True, "passed": False, "feedback": f"wrong interaction input for {kind}"}
         if completed:
             return {"graded": True, "passed": False, "feedback": "interaction continued after the exit trace completed"}
         if kind == "sonar_probe":

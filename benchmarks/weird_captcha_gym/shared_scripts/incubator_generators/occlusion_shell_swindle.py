@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import copy
 import hashlib
 import math
 import random
@@ -12,6 +13,73 @@ STAGE_HEIGHT = 420
 TICK_MS = 120
 PREVIEW_MS = 900
 SHELL_RADIUS = 27
+
+
+# The uncontrolled task is intentionally represented by these values rather
+# than a nearby controlled profile.  In particular, keeping the same random
+# calls and parameter values for L2 preserves the historical world for a
+# fixed seed.
+DEFAULT_PROFILE = {
+    "shell_count_values": (4, 5),
+    "round_count": 3,
+    "transfer_round_count_values": (1, 2),
+    "frame_count_min": 60,
+    "frame_count_max": 68,
+    "tick_ms": TICK_MS,
+    "preview_ms": PREVIEW_MS,
+    "handoff_window_ticks": 3,
+    "inspection_minimum_samples": 3,
+    "inspection_port_radius": 46,
+    "decoy_port_count": 0,
+}
+
+
+def _profile(task: dict[str, Any]) -> tuple[dict[str, Any], dict[str, Any] | None]:
+    """Return a validated controlled profile without perturbing legacy seeds."""
+
+    condition = task.get("_control_condition")
+    if condition is None:
+        return dict(DEFAULT_PROFILE), None
+    if not isinstance(condition, dict):
+        raise ValueError("occlusion-shell control condition is malformed")
+    parameters = condition.get("difficulty_parameters")
+    if not isinstance(parameters, dict):
+        raise ValueError("occlusion-shell difficulty parameters are missing")
+    required = set(DEFAULT_PROFILE)
+    if set(parameters) != required:
+        raise ValueError("occlusion-shell difficulty parameters do not match the profile schema")
+    try:
+        profile = {
+            "shell_count_values": tuple(int(value) for value in parameters["shell_count_values"]),
+            "round_count": int(parameters["round_count"]),
+            "transfer_round_count_values": tuple(int(value) for value in parameters["transfer_round_count_values"]),
+            "frame_count_min": int(parameters["frame_count_min"]),
+            "frame_count_max": int(parameters["frame_count_max"]),
+            "tick_ms": int(parameters["tick_ms"]),
+            "preview_ms": int(parameters["preview_ms"]),
+            "handoff_window_ticks": int(parameters["handoff_window_ticks"]),
+            "inspection_minimum_samples": int(parameters["inspection_minimum_samples"]),
+            "inspection_port_radius": int(parameters["inspection_port_radius"]),
+            "decoy_port_count": int(parameters["decoy_port_count"]),
+        }
+    except (TypeError, ValueError) as exc:
+        raise ValueError("occlusion-shell difficulty parameters must be numeric") from exc
+    if (
+        not profile["shell_count_values"]
+        or any(not 3 <= value <= 6 for value in profile["shell_count_values"])
+        or not 1 <= profile["round_count"] <= 5
+        or not profile["transfer_round_count_values"]
+        or any(not 0 <= value <= profile["round_count"] for value in profile["transfer_round_count_values"])
+        or not 42 <= profile["frame_count_min"] <= profile["frame_count_max"] <= 90
+        or not 80 <= profile["tick_ms"] <= 180
+        or not 500 <= profile["preview_ms"] <= 1600
+        or not 2 <= profile["handoff_window_ticks"] <= 5
+        or not 2 <= profile["inspection_minimum_samples"] <= profile["handoff_window_ticks"] * 2 + 1
+        or not 28 <= profile["inspection_port_radius"] <= 70
+        or not 0 <= profile["decoy_port_count"] <= 3
+    ):
+        raise ValueError("occlusion-shell difficulty profile is outside supported limits")
+    return profile, copy.deepcopy(condition)
 
 
 def _seed_int(seed: str, salt: str) -> int:
@@ -39,14 +107,16 @@ def _circle_inside(point: list[int], rect: dict[str, int], radius: int = SHELL_R
 
 def generate(task: dict[str, Any], seed: str) -> tuple[dict[str, Any], dict[str, Any]]:
     rng = random.Random(_seed_int(seed, MECHANIC_ID))
-    shell_count = rng.choice((4, 5))
+    profile, condition = _profile(task)
+    shell_count = rng.choice(profile["shell_count_values"])
     shell_ids = [f"shell-{chr(65 + index)}" for index in range(shell_count)]
-    transfer_rounds = set(rng.sample(range(3), rng.choice((1, 2))))
+    round_count = profile["round_count"]
+    transfer_rounds = set(rng.sample(range(round_count), rng.choice(profile["transfer_round_count_values"])))
     rounds_public: list[dict[str, Any]] = []
     rounds_truth: list[dict[str, Any]] = []
 
-    for round_index in range(3):
-        frame_count = rng.randint(60, 68)
+    for round_index in range(round_count):
+        frame_count = rng.randint(profile["frame_count_min"], profile["frame_count_max"])
         start_x = [round(105 + index * 790 / (shell_count - 1)) for index in range(shell_count)]
         endpoint_order = list(range(shell_count))
         while endpoint_order == list(range(shell_count)) or sum(a != b for a, b in zip(endpoint_order, range(shell_count))) < 3:
@@ -95,7 +165,8 @@ def generate(task: dict[str, Any], seed: str) -> tuple[dict[str, Any], dict[str,
         handoff = None
         occluders: list[dict[str, Any]] = []
         handoff_tick = frame_count // 2
-        window_start, window_end = handoff_tick - 3, handoff_tick + 3
+        window_start = handoff_tick - profile["handoff_window_ticks"]
+        window_end = handoff_tick + profile["handoff_window_ticks"]
         hidden_points = []
         for tick in range(window_start, window_end + 1):
             frame_shells = {item["id"]: item for item in frames[tick - 1]["shells"]}
@@ -129,27 +200,31 @@ def generate(task: dict[str, Any], seed: str) -> tuple[dict[str, Any], dict[str,
         }
         assert all(_circle_inside(point, rect) for point in hidden_points)
 
-        cover_tick = round(frame_count * rng.choice((0.31, 0.67)))
-        cover_shell = rng.choice(shell_ids)
-        cover_position = next(item for item in frames[cover_tick - 1]["shells"] if item["id"] == cover_shell)
-        cover_width, cover_height = rng.randint(116, 148), rng.randint(90, 116)
-        occluders.append({
-            "id": f"curtain-{round_index + 1}-decoy",
-            "x": max(22, min(STAGE_WIDTH - cover_width - 22, cover_position["x"] - cover_width // 2)),
-            "y": max(50, min(278 - cover_height, cover_position["y"] - cover_height // 2)),
-            "width": cover_width,
-            "height": cover_height,
-            "style": rng.choice(("velvet", "mirror", "ledger")),
-        })
-        if len(occluders) == 1:
-            occluders.append({
-                "id": f"curtain-{round_index + 1}-cross",
-                "x": rng.randint(390, 570),
-                "y": rng.randint(72, 152),
-                "width": rng.randint(118, 154),
-                "height": rng.randint(92, 124),
+        def add_decoy(index: int) -> dict[str, Any]:
+            cover_tick = round(frame_count * rng.choice((0.31, 0.67)))
+            cover_shell = rng.choice(shell_ids)
+            cover_position = next(item for item in frames[cover_tick - 1]["shells"] if item["id"] == cover_shell)
+            cover_width, cover_height = rng.randint(116, 148), rng.randint(90, 116)
+            cover = {
+                "id": (
+                    f"curtain-{round_index + 1}-decoy"
+                    if index == 1
+                    else f"curtain-{round_index + 1}-decoy-{index}"
+                ),
+                "x": max(22, min(STAGE_WIDTH - cover_width - 22, cover_position["x"] - cover_width // 2)),
+                "y": max(50, min(278 - cover_height, cover_position["y"] - cover_height // 2)),
+                "width": cover_width,
+                "height": cover_height,
                 "style": rng.choice(("velvet", "mirror", "ledger")),
-            })
+            }
+            occluders.append(cover)
+            return cover
+
+        # This first decoy is part of the historical generator and remains in
+        # the same place for a fixed uncontrolled/L2 seed.
+        add_decoy(1)
+        while len(occluders) - 1 < profile["decoy_port_count"]:
+            add_decoy(len(occluders))
 
         final_carrier = actual_target
         inspection = {
@@ -157,19 +232,27 @@ def generate(task: dict[str, Any], seed: str) -> tuple[dict[str, Any], dict[str,
             "window_start": window_start,
             "window_end": window_end,
             "port": [round(rect["x"] + rect["width"] / 2), round(rect["y"] + min(24, rect["height"] / 3))],
-            "radius": 46,
+            "radius": profile["inspection_port_radius"],
             "from_shell": initial_carrier,
             "partner_shell": inspection_partner,
             "to_shell": actual_target,
-            "minimum_samples": 3,
+            "minimum_samples": profile["inspection_minimum_samples"],
         }
+        decoy_ports = [
+            {
+                "occluder_id": item["id"],
+                "port": [round(item["x"] + item["width"] / 2), round(item["y"] + min(24, item["height"] / 3))],
+                "radius": profile["inspection_port_radius"],
+            }
+            for item in occluders[1:1 + profile["decoy_port_count"]]
+        ]
         public_round = {
             "index": round_index,
-            "label": f"TRACKING ROUND {round_index + 1} / 3",
-            "preview_ms": PREVIEW_MS,
-            "tick_ms": TICK_MS,
+            "label": f"TRACKING ROUND {round_index + 1} / {round_count}",
+            "preview_ms": profile["preview_ms"],
+            "tick_ms": profile["tick_ms"],
             "frame_count": frame_count,
-            "duration_ms": frame_count * TICK_MS,
+            "duration_ms": frame_count * profile["tick_ms"],
             "shell_ids": shell_ids,
             "initial_carrier": initial_carrier,
             "start_positions": [{"id": shell_ids[index], "x": start_x[index], "y": 338} for index in range(shell_count)],
@@ -177,6 +260,8 @@ def generate(task: dict[str, Any], seed: str) -> tuple[dict[str, Any], dict[str,
             "occluders": occluders,
             "inspection": inspection,
         }
+        if decoy_ports:
+            public_round["decoy_ports"] = decoy_ports
         rounds_public.append(public_round)
         rounds_truth.append({
             **public_round,
@@ -185,14 +270,22 @@ def generate(task: dict[str, Any], seed: str) -> tuple[dict[str, Any], dict[str,
         })
 
     task_id = str(task.get("id") or "occlusion_shell_swindle_seed_0001@0.1")
-    challenge_id = hashlib.sha256(f"{seed}|{MECHANIC_ID}".encode("utf-8")).hexdigest()[:12]
+    challenge_salt = (
+        MECHANIC_ID
+        if condition is None or int(condition["difficulty"]) == 2
+        else f"{MECHANIC_ID}|d{condition['difficulty']}"
+    )
+    challenge_id = hashlib.sha256(f"{seed}|{challenge_salt}".encode("utf-8")).hexdigest()[:12]
+    submit_label = "CERTIFY THREE TRACKS"
+    if condition is not None and round_count != 3:
+        submit_label = "CERTIFY ONE TRACK" if round_count == 1 else f"CERTIFY {round_count} TRACKS"
     public_state = {
         "benchmark": "weird_captcha_gym",
         "mechanic_id": MECHANIC_ID,
         "task_id": task_id,
         "challenge_id": challenge_id,
-        "prompt": "Track the marked token. When paired shells enter a cover, hold the cursor over its peephole and read the physical shuttle.",
-        "submit_label": "CERTIFY THREE TRACKS",
+        "prompt": task.get("natural_language") or "Track the marked token. When paired shells enter a cover, hold the cursor over its peephole and read the physical shuttle.",
+        "submit_label": submit_label,
         "asset_manifest": "shared_runtime/assets/provenance/incubator_full_build_v1.json",
         "generator": {"name": "observable_inspection_port_shells_v2", "variant_count": 7_900_000_000},
         "stage": {"width": STAGE_WIDTH, "height": STAGE_HEIGHT},
@@ -210,5 +303,8 @@ def generate(task: dict[str, Any], seed: str) -> tuple[dict[str, Any], dict[str,
         "transfer_rounds": sorted(transfer_rounds),
         "variant_count": public_state["generator"]["variant_count"],
     }
-    assert len(rounds_public) == 3 and 1 <= len(transfer_rounds) <= 2
+    if condition is not None:
+        public_state["control_condition"] = copy.deepcopy(condition)
+        ground_truth["control_condition"] = copy.deepcopy(condition)
+    assert len(rounds_public) == round_count
     return public_state, ground_truth

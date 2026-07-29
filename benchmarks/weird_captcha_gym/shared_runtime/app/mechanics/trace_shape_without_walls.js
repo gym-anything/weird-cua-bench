@@ -7,8 +7,14 @@
     .replaceAll("&", "&amp;").replaceAll("<", "&lt;").replaceAll(">", "&gt;").replaceAll('"', "&quot;");
   const distance = (a, b) => Math.hypot(a[0] - b[0], a[1] - b[1]);
 
+  function inputSource(kind) {
+    if (kind === "rearm") return "trace_rearm";
+    if (kind === "sonar_probe") return model?.interaction === "simplified" ? "coordinate_sonar" : "pointer_sonar";
+    return model?.interaction === "simplified" ? "coordinate_trace" : "pointer_trace";
+  }
+
   function record(kind, details = {}) {
-    const event = {sequence: model.events.length + 1, kind, ...details};
+    const event = {sequence: model.events.length + 1, kind, ...details, input_source: inputSource(kind)};
     model.events.push(event);
     return event;
   }
@@ -196,10 +202,9 @@
     model.raf = requestAnimationFrame(drawScope);
   }
 
-  function sonarMove(event) {
+  function sonarAt(point) {
     if (!model || model.trace || model.awaitingPointerUp || model.completed || model.submitting) return;
     document.querySelector(".trace-failure-stamp")?.remove();
-    const point = stagePoint(event);
     if (model.lastSonarPoint && distance(point, model.lastSonarPoint) < 8) return;
     model.lastSonarPoint = point;
     model.probeCount += 1;
@@ -211,22 +216,30 @@
     model.helpers.setReadout(explorationReady() ? "SONAR MAP SUFFICIENT · PRESS AND HOLD START" : "LOCAL ECHO ACQUIRED · KEEP MAPPING", explorationReady() ? "idle" : "pending");
   }
 
-  function traceStart(event) {
-    if (!event.target.closest(".trace-start-beacon") || !explorationReady() || model.collisionPending || model.completed || model.submitting) return;
-    event.preventDefault();
+  function sonarMove(event) {
+    sonarAt(stagePoint(event));
+  }
+
+  function startTraceAt(raw, pointerId = null) {
+    if (!model || !explorationReady() || model.collisionPending || model.completed || model.submitting) return;
     document.querySelector(".trace-failure-stamp")?.remove();
-    const raw = stagePoint(event);
     const effective = effectivePoint(raw, 0);
     record("trace_start", {raw, effective, sample_index: 0, elapsed_ms: 0});
     model.trace = {sampleIndex: 0, startedAt: performance.now(), lastRaw: raw, lastEffective: effective, lastProgress: 0, checkpointCursor: 1, samples: 0, distance: 0};
     model.traceTail = [effective];
-    document.querySelector(".trace-stage").setPointerCapture(event.pointerId);
+    if (pointerId != null) document.querySelector(".trace-stage").setPointerCapture(pointerId);
     document.querySelector(".trace-stage").classList.add("is-tracing");
     document.querySelector(".trace-start-beacon").dataset.active = "true";
     updateProbeVisual(raw, effective, true);
     updateDriftDisplay(0);
     revealNear(effective);
     model.helpers.setReadout("CONTINUOUS HOLD ACTIVE · STEER THE DRIFTED PROBE", "pending");
+  }
+
+  function traceStart(event) {
+    if (!event.target.closest(".trace-start-beacon")) return;
+    event.preventDefault();
+    startTraceAt(stagePoint(event), event.pointerId);
   }
 
   function setBreach(message) {
@@ -238,11 +251,9 @@
     const rearm = document.querySelector(".trace-rearm"); if (rearm) rearm.disabled = true;
   }
 
-  function traceMove(event) {
+  function traceMoveAt(raw) {
     if (!model?.trace || model.awaitingPointerUp) return;
-    event.preventDefault();
     const sampleIndex = model.trace.sampleIndex + 1;
-    const raw = stagePoint(event);
     const effective = effectivePoint(raw, sampleIndex);
     const elapsed = Math.max(0, Math.round(performance.now() - model.trace.startedAt));
     const nearest = nearestOnPath(effective, model.state.main_path);
@@ -253,9 +264,12 @@
       record("trace_cancel", {reason: "wall", raw, effective, sample_index: sampleIndex, elapsed_ms: elapsed});
       model.collisions += 1;
       model.collisionPending = true;
-      model.awaitingPointerUp = true;
+      model.awaitingPointerUp = model.interaction === "full";
       model.trace = null;
-      setBreach("PROBE LEFT THE HIDDEN CORRIDOR · RELEASE, THEN RE-ARM");
+      setBreach(model.interaction === "full" ? "PROBE LEFT THE HIDDEN CORRIDOR · RELEASE, THEN RE-ARM" : "PROBE LEFT THE HIDDEN CORRIDOR · RE-ARM THE TRACE");
+      if (model.interaction === "simplified") {
+        const rearm = document.querySelector(".trace-rearm"); if (rearm) rearm.disabled = false;
+      }
       model.helpers.setReadout("WALL BREACH · CURRENT HOLD CANCELLED", "error");
       updateExplorationPanel();
       return;
@@ -275,15 +289,18 @@
     meter(".trace-gate-meter i", model.trace.checkpointCursor - 1, model.state.checkpoint_indices.length - 1);
   }
 
-  function traceEnd(event) {
+  function traceMove(event) {
+    event.preventDefault();
+    traceMoveAt(stagePoint(event));
+  }
+
+  function traceEndAt(raw) {
     if (model.awaitingPointerUp) {
       model.awaitingPointerUp = false;
       const rearm = document.querySelector(".trace-rearm"); if (rearm) rearm.disabled = false;
       return;
     }
     if (!model?.trace) return;
-    event.preventDefault();
-    const raw = stagePoint(event);
     const effective = effectivePoint(raw, model.trace.sampleIndex);
     const elapsed = Math.max(0, Math.round(performance.now() - model.trace.startedAt));
     const requirement = model.state.requirements;
@@ -316,6 +333,41 @@
     updateExplorationPanel();
   }
 
+  function traceEnd(event) {
+    event.preventDefault();
+    traceEndAt(stagePoint(event));
+  }
+
+  function coordinatePoint() {
+    const x = Number(document.querySelector("#trace-coordinate-x")?.value);
+    const y = Number(document.querySelector("#trace-coordinate-y")?.value);
+    if (!Number.isInteger(x) || !Number.isInteger(y) || x < 0 || x > model.state.stage.width || y < 0 || y > model.state.stage.height) {
+      model.helpers.setReadout("ENTER WHOLE OSCILLOSCOPE COORDINATES", "error");
+      return null;
+    }
+    return [x, y];
+  }
+
+  function proxySonar() {
+    const point = coordinatePoint();
+    if (point) sonarAt(point);
+  }
+
+  function proxyTraceStart() {
+    const point = coordinatePoint();
+    if (point) startTraceAt(point);
+  }
+
+  function proxyTraceSample() {
+    const point = coordinatePoint();
+    if (point) traceMoveAt(point);
+  }
+
+  function proxyTraceEnd() {
+    const point = coordinatePoint();
+    if (point) traceEndAt(point);
+  }
+
   function rearmTrace() {
     if (!model.collisionPending || model.trace || model.completed || model.submitting) return;
     record("rearm");
@@ -340,6 +392,7 @@
       const response = await fetch("/result", {method: "POST", headers: {"content-type": "application/json"}, body: JSON.stringify({
         mechanic_id: model.state.mechanic_id,
         challenge_id: model.state.challenge_id,
+        interaction_mode: model.interaction,
         events: model.events,
         probe_count: model.probeCount,
         explored_cells: model.probeCells.size,
@@ -377,20 +430,33 @@
     if (model?.raf) cancelAnimationFrame(model.raf);
     document.body.dataset.mechanic = "blind-corridor";
     document.body.dataset.cheatMode = helpers.isCheatMode() ? "true" : "false";
+    const interaction = state.control_condition?.interaction || "full";
     model = {
-      state, helpers, events: [], revealed: new Map(), mainCoverage: new Set(), branchCoverage: new Set(), probeCells: new Set(),
+      state, helpers, interaction, events: [], revealed: new Map(), mainCoverage: new Set(), branchCoverage: new Set(), probeCells: new Set(),
       probeCount: 0, lastSonarPoint: null, trace: null, traceTail: [], collisionPending: false, awaitingPointerUp: false,
       collisions: 0, rearmCount: 0, completed: false, completedSamples: 0, completedDistance: 0, finalProbe: null,
       submitting: false, terminal: false, raf: null,
     };
     window.blindCorridorModel = model;
     const start = state.start, exit = state.exit;
-    helpers.app.innerHTML = `<section class="blind-corridor-captcha" data-challenge-id="${clean(state.challenge_id)}"><header class="trace-head"><div><span>BCO / BLIND CORRIDOR OSCILLOSCOPE / ${clean(state.challenge_id)}</span><h1>${clean(state.prompt)}</h1></div><div class="trace-head-instruments"><div><b>01</b><span>SONAR MAP</span><i>HOVER / NO PENALTY</i></div><div><b>02</b><span>COMMIT HOLD</span><i>START → EXIT</i></div><div><b>03</b><span>CORRECT DRIFT</span><i>FOLLOW PROBE, NOT CURSOR</i></div></div></header><main class="trace-main"><section class="trace-stage"><canvas class="trace-scope" width="${state.stage.width}" height="${state.stage.height}"></canvas><div class="trace-stage-label">CHANNEL Ω / WALLS SUPPRESSED / LOCAL ECHO ONLY</div><div class="trace-start-beacon" data-armed="false" data-active="false" style="left:${start[0]/state.stage.width*100}%;top:${start[1]/state.stage.height*100}%"><i></i><b>START</b><span>HOLD</span></div><div class="trace-exit-beacon" data-complete="false" style="left:${exit[0]/state.stage.width*100}%;top:${exit[1]/state.stage.height*100}%"><i></i><b>EXIT</b><span>RELEASE</span></div><div class="trace-sonar-lens" data-visible="false"></div><div class="trace-raw-cursor" data-visible="false"><i></i></div><div class="trace-effective-probe" data-visible="false"><i></i><b>PROBE</b></div><div class="trace-checkpoint-flash"></div><div class="trace-breach" data-visible="false"><b>WALL BREACH</b><span>PROBE LEFT THE HIDDEN CORRIDOR</span></div></section><aside class="trace-console"><p>OSCILLOSCOPE CONTROL</p><h2>The corridor exists only where you listen.</h2><div class="trace-wind"><header><span>LIVE CROSSWIND VECTOR</span><b class="trace-sample-index">000</b></header><div class="trace-wind-field"><i class="trace-wind-arrow"></i><b class="trace-wind-vector">Δ +0 X / +0 Y</b><span>WHITE = RAW CURSOR<br>GREEN = DRIFTED PROBE</span></div></div><div class="trace-mapping"><div><span>SONAR SAMPLES</span><b class="trace-probe-value">0/${state.requirements.min_probe_samples}</b><em class="trace-probe-meter"><i></i></em></div><div><span>MAP CELLS</span><b class="trace-cell-value">0/${state.requirements.min_probe_cells}</b><em class="trace-cell-meter"><i></i></em></div><div><span>MAIN ECHO</span><b class="trace-main-value">0/${state.requirements.min_main_coverage}</b><em class="trace-main-meter"><i></i></em></div><div><span>FALSE ECHOES</span><b class="trace-branch-value">0/${state.requirements.min_branch_coverage}</b><em class="trace-branch-meter"><i></i></em></div></div><div class="trace-gates"><span>HIDDEN GATES CROSSED</span><b class="trace-gate-value">0/${state.checkpoint_indices.length-1}</b><em class="trace-gate-meter"><i></i></em></div><button type="button" class="trace-rearm" disabled>RE-ARM CANCELLED TRACE</button><ol><li><b>1</b><span>Hover freely. Local sonar fades; probing never fails.</span></li><li><b>2</b><span>Map the green main signal and at least ${state.requirements.min_branch_coverage} amber false echoes.</span></li><li><b>3</b><span>Hold START continuously. Steer the green probe as crosswind separates it from the white cursor.</span></li></ol></aside></main><footer class="trace-foot"><div class="trace-map-status" data-ready="false">MAP THE MAIN SIGNAL + FALSE ECHOES</div><div><span>TRACE RECORD</span><div class="readout" data-status="idle">MOVE THE POINTER TO EMIT LOCAL SONAR</div></div><button type="button" class="trace-submit">${clean(state.submit_label)}</button></footer>${helpers.cheatPanelTemplate()}</section>`;
+    const coordinateControls = interaction === "simplified" ? `<section class="trace-coordinate-controls"><b>COORDINATE CONSOLE</b><label>X <input id="trace-coordinate-x" type="number" min="0" max="${state.stage.width}" step="1" value="${start[0]}"></label><label>Y <input id="trace-coordinate-y" type="number" min="0" max="${state.stage.height}" step="1" value="${start[1]}"></label><button type="button" id="trace-proxy-sonar">EMIT SONAR</button><button type="button" id="trace-proxy-start">START TRACE</button><button type="button" id="trace-proxy-sample">RECORD TRACE SAMPLE</button><button type="button" id="trace-proxy-end">RELEASE AT EXIT</button></section>` : "";
+    const instructions = interaction === "simplified"
+      ? `<li><b>1</b><span>Set whole stage coordinates and emit sonar. The local echo still fades.</span></li><li><b>2</b><span>Use the same coordinate console to start, sample, and release one continuous trace record.</span></li><li><b>3</b><span>Follow the green drifted probe, not the raw coordinate cursor.</span></li>`
+      : `<li><b>1</b><span>Hover freely. Local sonar fades; probing never fails.</span></li><li><b>2</b><span>Map the green main signal and at least ${state.requirements.min_branch_coverage} amber false echoes.</span></li><li><b>3</b><span>Hold START continuously. Steer the green probe as crosswind separates it from the white cursor.</span></li>`;
+    const initialReadout = interaction === "simplified" ? "SET COORDINATES TO EMIT LOCAL SONAR" : "MOVE THE POINTER TO EMIT LOCAL SONAR";
+    helpers.app.innerHTML = `<section class="blind-corridor-captcha" data-challenge-id="${clean(state.challenge_id)}" data-interaction="${clean(interaction)}"><header class="trace-head"><div><span>BCO / BLIND CORRIDOR OSCILLOSCOPE / ${clean(state.challenge_id)}</span><h1>${clean(state.prompt)}</h1></div><div class="trace-head-instruments"><div><b>01</b><span>SONAR MAP</span><i>${interaction === "simplified" ? "CONSOLE / NO PENALTY" : "HOVER / NO PENALTY"}</i></div><div><b>02</b><span>COMMIT HOLD</span><i>START → EXIT</i></div><div><b>03</b><span>CORRECT DRIFT</span><i>FOLLOW PROBE, NOT CURSOR</i></div></div></header><main class="trace-main"><section class="trace-stage"><canvas class="trace-scope" width="${state.stage.width}" height="${state.stage.height}"></canvas><div class="trace-stage-label">CHANNEL Ω / WALLS SUPPRESSED / LOCAL ECHO ONLY</div><div class="trace-start-beacon" data-armed="false" data-active="false" style="left:${start[0]/state.stage.width*100}%;top:${start[1]/state.stage.height*100}%"><i></i><b>START</b><span>HOLD</span></div><div class="trace-exit-beacon" data-complete="false" style="left:${exit[0]/state.stage.width*100}%;top:${exit[1]/state.stage.height*100}%"><i></i><b>EXIT</b><span>RELEASE</span></div><div class="trace-sonar-lens" data-visible="false"></div><div class="trace-raw-cursor" data-visible="false"><i></i></div><div class="trace-effective-probe" data-visible="false"><i></i><b>PROBE</b></div><div class="trace-checkpoint-flash"></div><div class="trace-breach" data-visible="false"><b>WALL BREACH</b><span>PROBE LEFT THE HIDDEN CORRIDOR</span></div></section><aside class="trace-console"><p>OSCILLOSCOPE CONTROL</p><h2>The corridor exists only where you listen.</h2><div class="trace-wind"><header><span>LIVE CROSSWIND VECTOR</span><b class="trace-sample-index">000</b></header><div class="trace-wind-field"><i class="trace-wind-arrow"></i><b class="trace-wind-vector">Δ +0 X / +0 Y</b><span>WHITE = RAW CURSOR<br>GREEN = DRIFTED PROBE</span></div></div>${coordinateControls}<div class="trace-mapping"><div><span>SONAR SAMPLES</span><b class="trace-probe-value">0/${state.requirements.min_probe_samples}</b><em class="trace-probe-meter"><i></i></em></div><div><span>MAP CELLS</span><b class="trace-cell-value">0/${state.requirements.min_probe_cells}</b><em class="trace-cell-meter"><i></i></em></div><div><span>MAIN ECHO</span><b class="trace-main-value">0/${state.requirements.min_main_coverage}</b><em class="trace-main-meter"><i></i></em></div><div><span>FALSE ECHOES</span><b class="trace-branch-value">0/${state.requirements.min_branch_coverage}</b><em class="trace-branch-meter"><i></i></em></div></div><div class="trace-gates"><span>HIDDEN GATES CROSSED</span><b class="trace-gate-value">0/${state.checkpoint_indices.length-1}</b><em class="trace-gate-meter"><i></i></em></div><button type="button" class="trace-rearm" disabled>RE-ARM CANCELLED TRACE</button><ol>${instructions}</ol></aside></main><footer class="trace-foot"><div class="trace-map-status" data-ready="false">MAP THE MAIN SIGNAL + FALSE ECHOES</div><div><span>TRACE RECORD</span><div class="readout" data-status="idle">${initialReadout}</div></div><button type="button" class="trace-submit">${clean(state.submit_label)}</button></footer>${helpers.cheatPanelTemplate()}</section>`;
     const stageNode = document.querySelector(".trace-stage");
-    stageNode.addEventListener("pointermove", (event) => { if (model.trace) traceMove(event); else sonarMove(event); });
-    stageNode.addEventListener("pointerdown", traceStart);
-    stageNode.addEventListener("pointerup", traceEnd);
-    stageNode.addEventListener("pointercancel", traceEnd);
+    if (interaction === "full") {
+      stageNode.addEventListener("pointermove", (event) => { if (model.trace) traceMove(event); else sonarMove(event); });
+      stageNode.addEventListener("pointerdown", traceStart);
+      stageNode.addEventListener("pointerup", traceEnd);
+      stageNode.addEventListener("pointercancel", traceEnd);
+    } else {
+      document.querySelector("#trace-proxy-sonar").addEventListener("click", proxySonar);
+      document.querySelector("#trace-proxy-start").addEventListener("click", proxyTraceStart);
+      document.querySelector("#trace-proxy-sample").addEventListener("click", proxyTraceSample);
+      document.querySelector("#trace-proxy-end").addEventListener("click", proxyTraceEnd);
+    }
     document.querySelector(".trace-rearm").addEventListener("click", rearmTrace);
     document.querySelector(".trace-submit").addEventListener("click", submit);
     updateExplorationPanel(); updateDriftDisplay(0); helpers.installCheatPanel();

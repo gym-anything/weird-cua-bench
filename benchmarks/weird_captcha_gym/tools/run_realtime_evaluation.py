@@ -109,16 +109,30 @@ def _capture_observation(
     mode: str,
     settings: RealTimeSettings,
     turn: int,
+    hold_paused: bool = False,
 ) -> dict[str, Any]:
+    """Capture the evaluator's literal observation frames.
+
+    ``hold_paused`` is an opt-in evidence/probe mode.  It preserves the normal
+    paused evaluator behavior (a scheduled observation window that advances
+    the task) by default, while allowing an evaluator caller to record the
+    same scheduled frame sequence during the subsequent frozen model-inference
+    hold.
+    """
+    if hold_paused and mode != "paused":
+        raise ValueError("hold_paused is valid only for paused observations")
     guest_dir = f"/tmp/weird_cua_observations/turn-{turn:04d}"
-    manifest = _guest_json(env, [
+    command = [
         "python3",
         "/workspace/shared_scripts/capture_observation_window.py",
         "--mode", mode,
         "--duration-ms", str(settings.observation_window_ms),
         "--frames", str(settings.frames_per_observation),
         "--output-dir", guest_dir,
-    ])
+    ]
+    if hold_paused:
+        command.append("--hold-paused")
+    manifest = _guest_json(env, command)
     host_dir = Path(env.episode_dir) / "observations" / f"turn-{turn:04d}"
     host_dir.mkdir(parents=True, exist_ok=True)
     frames = []

@@ -29,14 +29,21 @@ def _camera(page) -> tuple[float, float, float]:
     )
 
 
+def _interaction(page) -> str:
+    return page.locator(".photo-room").get_attribute("data-interaction") or "simplified"
+
+
 def _turn_to(page, target: float) -> None:
     for _ in range(30):
         yaw = _camera(page)[2] % 360
         delta = (target - yaw) % 360
         if min(delta, 360 - delta) < 1:
             return
-        selector = '[data-turn="15"]' if delta <= 180 else '[data-turn="-15"]'
-        page.locator(selector).click()
+        positive = delta <= 180
+        if _interaction(page) == "full":
+            page.keyboard.press("ArrowRight" if positive else "ArrowLeft")
+        else:
+            page.locator('[data-turn="15"]' if positive else '[data-turn="-15"]').click()
     raise AssertionError(f"could not turn camera to {target}; ended at {_camera(page)}")
 
 
@@ -54,9 +61,19 @@ def _move_axis(page, axis: str, destination: float, *, tolerance: float = 0.16) 
         # Short real holds preserve collision sampling and avoid teleporting or
         # overshooting sockets at low VNC frame rates.
         hold_ms = max(95, min(260, int(abs(delta) / 2.35 * 1000)))
-        page.keyboard.down("w")
-        page.wait_for_timeout(hold_ms)
-        page.keyboard.up("w")
+        if _interaction(page) == "full":
+            page.keyboard.down("w")
+            page.wait_for_timeout(hold_ms)
+            page.keyboard.up("w")
+        else:
+            button = page.locator('[data-move="forward"]')
+            box = button.bounding_box()
+            if not box:
+                raise AssertionError("simplified movement control has no geometry")
+            page.mouse.move(box["x"] + box["width"] / 2, box["y"] + box["height"] / 2)
+            page.mouse.down()
+            page.wait_for_timeout(hold_ms)
+            page.mouse.up()
     raise AssertionError(f"could not move {axis} to {destination}; ended at {_camera(page)}")
 
 
@@ -75,8 +92,8 @@ def _place_plane(page, state: dict, socket: dict) -> None:
     controls = state["controls"]
     u = (lateral - float(controls["plane_lateral_min"])) / (float(controls["plane_lateral_max"]) - float(controls["plane_lateral_min"]))
     v = 1 - (depth - float(controls["plane_depth_min"])) / (float(controls["plane_depth_max"]) - float(controls["plane_depth_min"]))
-    pad = page.locator("#photo-plane-pad")
-    box = pad.bounding_box()
+    target = page.locator("#photo-room-canvas" if _interaction(page) == "full" else "#photo-plane-pad")
+    box = target.bounding_box()
     if not box:
         raise AssertionError("photo placement pad has no geometry")
     start_x, start_y = box["x"] + box["width"] * .5, box["y"] + box["height"] * .82
@@ -94,7 +111,15 @@ def _scale_to(page, target: float) -> None:
         current = float(text)
         if abs(current - target) < .04:
             return
-        page.locator("#photo-scale-up" if target > current else "#photo-scale-down").click()
+        if _interaction(page) == "full":
+            canvas = page.locator("#photo-room-canvas")
+            box = canvas.bounding_box()
+            if not box:
+                raise AssertionError("direct photograph canvas has no geometry")
+            page.mouse.move(box["x"] + box["width"] / 2, box["y"] + box["height"] / 2)
+            page.mouse.wheel(0, -100 if target > current else 100)
+        else:
+            page.locator("#photo-scale-up" if target > current else "#photo-scale-down").click()
     raise AssertionError(f"could not scale photograph to {target}")
 
 
@@ -104,8 +129,29 @@ def _rotate_plane_to(page, target: int) -> None:
         if current == target % 360:
             return
         delta = (target - current) % 360
-        page.locator("#photo-rotate-right" if delta <= 180 else "#photo-rotate-left").click()
+        positive = delta <= 180
+        if _interaction(page) == "full":
+            canvas = page.locator("#photo-room-canvas")
+            box = canvas.bounding_box()
+            if not box:
+                raise AssertionError("direct photograph canvas has no geometry")
+            start_x, start_y = box["x"] + box["width"] / 2, box["y"] + box["height"] / 2
+            page.keyboard.down("Shift")
+            page.mouse.move(start_x, start_y)
+            page.mouse.down()
+            page.mouse.move(start_x + (18 if positive else -18), start_y)
+            page.mouse.up()
+            page.keyboard.up("Shift")
+        else:
+            page.locator("#photo-rotate-right" if positive else "#photo-rotate-left").click()
     raise AssertionError(f"could not rotate photograph to {target}")
+
+
+def _capture(page) -> None:
+    if _interaction(page) == "full":
+        page.keyboard.press("c")
+    else:
+        page.locator("#photo-capture").click()
 
 
 def fail_once(page, state_dir: Path, out_dir: Path, mechanic: str) -> None:
@@ -119,7 +165,7 @@ def fail_once(page, state_dir: Path, out_dir: Path, mechanic: str) -> None:
     first_capture = truth["solution"]["captures"][0]
     _move_to(page, first_capture["camera"])
     _turn_to(page, float(first_capture["camera"]["yaw_deg"]))
-    page.locator("#photo-capture").click()
+    _capture(page)
     expect(page.locator(".photo-room")).to_have_attribute("data-carrying", "beam")
     page.locator("#photo-develop").click()
     expect(page.locator(".photo-foot .readout")).to_contain_text("DEVELOPMENT REJECTED")
@@ -150,7 +196,7 @@ def solve(page, state_dir: Path, out_dir: Path, mechanic: str) -> None:
     first_capture = solution["captures"][0]
     _move_to(page, first_capture["camera"])
     _turn_to(page, float(first_capture["camera"]["yaw_deg"]))
-    page.locator("#photo-capture").click()
+    _capture(page)
     expect(page.locator(".photo-room")).to_have_attribute("data-carrying", "beam")
     _shot(page, out_dir, mechanic, "active-frustum-capture")
 
@@ -165,21 +211,22 @@ def solve(page, state_dir: Path, out_dir: Path, mechanic: str) -> None:
     expect(page.locator(".photo-room")).to_have_attribute("data-operation-count", "1")
     _shot(page, out_dir, mechanic, "bridge-developed")
 
-    second_capture = solution["captures"][1]
-    _move_to(page, second_capture["camera"])
-    _turn_to(page, float(second_capture["camera"]["yaw_deg"]))
-    page.locator("#photo-capture").click()
-    expect(page.locator(".photo-room")).to_have_attribute("data-carrying", "opening")
+    if len(solution["captures"]) > 1:
+        second_capture = solution["captures"][1]
+        _move_to(page, second_capture["camera"])
+        _turn_to(page, float(second_capture["camera"]["yaw_deg"]))
+        _capture(page)
+        expect(page.locator(".photo-room")).to_have_attribute("data-carrying", "opening")
 
-    second_placement = solution["placements"][1]
-    _move_to(page, second_placement["camera"])
-    _turn_to(page, float(second_placement["camera"]["yaw_deg"]))
-    _place_plane(page, truth, truth["sockets"][1])
-    _rotate_plane_to(page, int(second_placement["rotation_deg"]))
-    _scale_to(page, float(second_placement["scale"]))
-    page.locator("#photo-develop").click()
-    expect(page.locator(".photo-room")).to_have_attribute("data-operation-count", "2")
-    _shot(page, out_dir, mechanic, "room-overwritten-twice")
+        second_placement = solution["placements"][1]
+        _move_to(page, second_placement["camera"])
+        _turn_to(page, float(second_placement["camera"]["yaw_deg"]))
+        _place_plane(page, truth, truth["sockets"][1])
+        _rotate_plane_to(page, int(second_placement["rotation_deg"]))
+        _scale_to(page, float(second_placement["scale"]))
+        page.locator("#photo-develop").click()
+        expect(page.locator(".photo-room")).to_have_attribute("data-operation-count", "2")
+        _shot(page, out_dir, mechanic, "room-overwritten-twice")
 
     terminal = solution["terminal"]
     _move_to(page, terminal)

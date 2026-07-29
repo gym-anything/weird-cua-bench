@@ -79,10 +79,21 @@ def _set_offsets(page, truth: dict) -> None:
     initial = list(truth["scene"]["initial_offsets"])
     target = list(truth["solution_offsets"])
     step = int(truth["scene"]["offset_step"])
+    interaction = str((truth.get("control_condition") or {}).get("interaction") or "legacy")
     for shaft, (before, after) in enumerate(zip(initial, target)):
-        selector = f'[data-shaft-down="{shaft}"]' if after > before else f'[data-shaft-up="{shaft}"]'
+        direction = 1 if after > before else -1
         for _ in range(abs(after - before) // step):
-            page.locator(selector).click()
+            if interaction == "full":
+                surface = page.locator(f'[data-shaft="{shaft}"]')
+                bounds = surface.bounding_box()
+                if not bounds:
+                    raise AssertionError(f"shaft {shaft} has no direct scroll surface")
+                page.mouse.move(bounds["x"] + bounds["width"] / 2, bounds["y"] + bounds["height"] / 2)
+                page.mouse.wheel(0, direction * 100)
+                page.wait_for_timeout(15)
+            else:
+                selector = f'[data-shaft-down="{shaft}"]' if direction > 0 else f'[data-shaft-up="{shaft}"]'
+                page.locator(selector).click()
     observed = page.evaluate("() => [...window.scrollCageModel.offsets]")
     if observed != target:
         raise AssertionError(f"scroll offsets did not reach physical alignment: {observed} != {target}")

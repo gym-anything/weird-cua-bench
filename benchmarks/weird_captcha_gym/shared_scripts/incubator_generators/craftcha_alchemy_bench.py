@@ -193,7 +193,12 @@ def generate(task: dict[str, Any], seed: str) -> tuple[dict[str, Any], dict[str,
         memory_charge_initial = profile["memory_charge_initial"]
         memory_replay_cost = profile["memory_replay_cost"]
         replay_limit = profile["replay_limit"]
-    challenge_id = hashlib.sha256(f"{seed}|{MECHANIC_ID}".encode("utf-8")).hexdigest()[:12]
+    challenge_salt = (
+        MECHANIC_ID
+        if condition is None or int(condition["difficulty"]) == 4
+        else f"{MECHANIC_ID}|d{condition['difficulty']}"
+    )
+    challenge_id = hashlib.sha256(f"{seed}|{challenge_salt}".encode("utf-8")).hexdigest()[:12]
     task_id = str(task.get("id") or "craftcha_alchemy_bench_seed_0001@0.1")
     chosen_materials = rng.sample(list(RAW_MATERIALS), 3)
     device_id, device_name, device_symbol = rng.choice(DEVICES)

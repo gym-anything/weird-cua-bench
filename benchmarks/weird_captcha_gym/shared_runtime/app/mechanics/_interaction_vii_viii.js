@@ -250,15 +250,29 @@
 
   registry.orbital_docking_customs = async (state, helpers) => {
     document.body.dataset.mechanic = "orbital-docking-customs";
-    const model = {state, helpers, events: [], ship: copy(state.ship), fuel: state.physics.fuel, ticks: 0, scans: [], collision: null, terminal: false, submitting: false}; window.orbitalDockingCustomsModel = model;
-    helpers.app.innerHTML = shell(state, "INERTIAL BORDER CONTROL", "ORBITAL DOCKING CUSTOMS", "Fly the S-corridor through both scan beacons, avoid both debris fields, and match the moving rotating customs port.", `<canvas id="orbital-canvas" width="900" height="480"></canvas>`, `
-      <h2>RCS IMPULSE DESK</h2><div class="orbital-pad"><button data-orbit="rotate-left">↶ 15°</button><button data-orbit="thrust">MAIN +</button><button data-orbit="rotate-right">↷ 15°</button><button data-orbit="strafe-up">RCS ↑</button><button data-orbit="coast">COAST 10</button><button data-orbit="coast-long">COAST 30</button><button data-orbit="strafe-down">RCS ↓</button><button data-orbit="retro">RETRO −</button><button id="orbital-dock" class="ivv-primary">REQUEST HARD DOCK</button></div><div id="orbital-telemetry" class="ivv-telemetry"></div><button id="orbital-abandon" class="ivv-danger">ABORT / FRESH ORBIT</button>`);
+    const interaction = state.control_condition?.interaction || "simplified";
+    const movingPort = Number(state.station.y_amplitude) > 0 || Number(state.station.rotation_deg_per_tick) !== 0;
+    const historicalContract = state.debris.length === 2 && state.beacons.length === 2 && movingPort;
+    const instruction = historicalContract
+      ? "Fly the S-corridor through both scan beacons, avoid both debris fields, and match the moving rotating customs port."
+      : `Clear ${state.beacons.length} ordered customs ${state.beacons.length === 1 ? "scan" : "scans"}, avoid ${state.debris.length} debris ${state.debris.length === 1 ? "field" : "fields"}, cancel relative speed, and match the ${movingPort ? "moving " : ""}port.`;
+    const model = {state, helpers, interaction, events: [], ship: copy(state.ship), fuel: state.physics.fuel, ticks: 0, scans: [], collision: null, terminal: false, submitting: false}; window.orbitalDockingCustomsModel = model;
+    const buttonDesk = `<div class="orbital-pad"><button data-orbit="rotate-left">↶ 15°</button><button data-orbit="thrust">MAIN +</button><button data-orbit="rotate-right">↷ 15°</button><button data-orbit="strafe-up">RCS ↑</button><button data-orbit="coast">COAST 10</button><button data-orbit="coast-long">COAST 30</button><button data-orbit="strafe-down">RCS ↓</button><button data-orbit="retro">RETRO −</button><button id="orbital-dock" class="ivv-primary">REQUEST HARD DOCK</button></div>`;
+    const keyboardDesk = `<p class="orbital-keyboard-note">W MAIN + · S RETRO − · A RCS ↑ · D RCS ↓ · Q/E ATTITUDE · SPACE COAST 10 · SHIFT+SPACE COAST 30 · ENTER HARD DOCK</p>`;
+    helpers.app.innerHTML = shell(state, "INERTIAL BORDER CONTROL", "ORBITAL DOCKING CUSTOMS", instruction, `<canvas id="orbital-canvas" width="900" height="480"></canvas>`, `
+      <h2>${interaction === "simplified" ? "RCS IMPULSE DESK" : "DIRECT FLIGHT KEYS"}</h2>${interaction === "simplified" ? buttonDesk : keyboardDesk}<div id="orbital-telemetry" class="ivv-telemetry"></div><button id="orbital-abandon" class="ivv-danger">ABORT / FRESH ORBIT</button>`);
     const portAngle = () => (Number(state.station.angle_deg) + model.ticks * Number(state.station.rotation_deg_per_tick) + 36000) % 360;
     const stationY = () => Number(state.station.base_y) + Number(state.station.y_amplitude) * Math.sin(model.ticks * Number(state.station.y_rate) + Number(state.station.y_phase));
-    const draw = () => { const ctx = document.getElementById("orbital-canvas").getContext("2d"); ctx.fillStyle = "#030712"; ctx.fillRect(0, 0, 900, 480); for (let i = 0; i < 100; i++) { const x = (i * 83 + 17) % 900, y = (i * 47 + 31) % 480; ctx.fillStyle = i % 7 ? "#52627f" : "#e8f2ff"; ctx.fillRect(x, y, 1.4, 1.4); } state.debris.forEach((debris)=>{ctx.fillStyle="#303746";ctx.beginPath();ctx.arc(debris.x,debris.y,debris.radius,0,Math.PI*2);ctx.fill();ctx.strokeStyle="#ff775f";ctx.setLineDash([5,8]);ctx.beginPath();ctx.arc(debris.x,debris.y,debris.radius+state.ship.radius,0,Math.PI*2);ctx.stroke();ctx.setLineDash([]);});state.beacons.forEach((beacon,index)=>{ctx.strokeStyle=index<model.scans.length?"#d8ff5b":"#e674ff";ctx.lineWidth=4;ctx.beginPath();ctx.arc(beacon.x,beacon.y,beacon.radius,0,Math.PI*2);ctx.stroke();ctx.fillStyle=ctx.strokeStyle;ctx.font="800 9px Courier New";ctx.fillText(`SCAN ${index+1}`,beacon.x-22,beacon.y-34);}); const station = state.station, currentPortAngle = portAngle(), currentStationY=stationY(); ctx.save(); ctx.translate(station.x, currentStationY); ctx.rotate(currentPortAngle * Math.PI / 180); ctx.strokeStyle = "#8ce4ff"; ctx.lineWidth = 8; ctx.strokeRect(-36, -52, 72, 104); ctx.fillStyle = "#d7ff5f"; ctx.fillRect(-8, -58, 16, 15); ctx.restore(); ctx.save(); ctx.translate(model.ship.x, model.ship.y); ctx.rotate(model.ship.angle_deg * Math.PI / 180); ctx.fillStyle = model.collision?"#ff6655":"#f6d37a"; ctx.beginPath(); ctx.moveTo(22, 0); ctx.lineTo(-15, -12); ctx.lineTo(-10, 0); ctx.lineTo(-15, 12); ctx.closePath(); ctx.fill(); ctx.restore(); ctx.strokeStyle = "#f6d37a55"; ctx.beginPath(); ctx.moveTo(model.ship.x, model.ship.y); ctx.lineTo(model.ship.x + model.ship.vx * 40, model.ship.y + model.ship.vy * 40); ctx.stroke(); document.getElementById("orbital-telemetry").innerHTML = `<span>FUEL <b>${model.fuel}</b></span><span>REL SPEED <b>${Math.hypot(model.ship.vx, model.ship.vy).toFixed(2)}</b></span><span>SCANS <b>${model.scans.length}/2</b></span><span>PORT / COAST <b>${currentPortAngle.toFixed(0)}° · ${model.ticks}</b></span>`; };
-    const apply = (action) => { if (model.terminal || model.submitting || model.collision) return; const before = copy(model.ship), p = state.physics, radians = model.ship.angle_deg * Math.PI / 180; if (["thrust", "retro", "strafe-up", "strafe-down"].includes(action)) { if (model.fuel <= 0) { setMessage(model, "FUEL MANIFOLD EMPTY", "error"); return; } model.fuel -= 1; const sign = action === "retro" ? -1 : 1; if (action === "thrust" || action === "retro") { model.ship.vx += Math.cos(radians) * p.impulse * sign; model.ship.vy += Math.sin(radians) * p.impulse * sign; } else { const side = action === "strafe-up" ? -1 : 1; model.ship.vx += Math.cos(radians + Math.PI / 2) * p.impulse * side; model.ship.vy += Math.sin(radians + Math.PI / 2) * p.impulse * side; } } else if (action === "rotate-left") model.ship.angle_deg = (model.ship.angle_deg - p.rotation_step_deg + 360) % 360; else if (action === "rotate-right") model.ship.angle_deg = (model.ship.angle_deg + p.rotation_step_deg) % 360; else if (["coast","coast-long"].includes(action)) { const coastTicks=action==="coast-long"?p.coast_long_ticks:p.coast_step_ticks; for (let tick = 0; tick < coastTicks && model.ticks<p.max_ticks; tick++) { model.ship.x += model.ship.vx; model.ship.y += model.ship.vy; model.ticks += 1; const debris = state.debris.find((item)=>Math.hypot(model.ship.x-item.x,model.ship.y-item.y)<model.ship.radius+item.radius); if(debris){model.collision=debris.id;setMessage(model,`HULL CONTACT · ${debris.id.toUpperCase()} · ABORT THIS TRIAL`,"error");break;}const beacon=state.beacons[model.scans.length];if(beacon&&Math.hypot(model.ship.x-beacon.x,model.ship.y-beacon.y)<=beacon.radius){model.scans.push(beacon.id);setMessage(model,`${beacon.id.toUpperCase()} CLEARED · CONTINUE RENDEZVOUS`,"passed");} } } event(model, "control", {action, before, after: copy(model.ship), fuel_after: model.fuel, ticks_after: model.ticks, scans_after:[...model.scans], collision:model.collision}); draw(); };
-    document.querySelectorAll("[data-orbit]").forEach((button) => button.addEventListener("click", () => apply(button.dataset.orbit)));
-    document.getElementById("orbital-dock").addEventListener("click", async () => { const sy=stationY(),distance = Math.hypot(model.ship.x - state.station.x, model.ship.y - sy), speed = Math.hypot(model.ship.vx, model.ship.vy), target_angle = portAngle(), aligned = angleError(model.ship.angle_deg, target_angle) <= state.physics.angle_tolerance_deg, accepted = !model.collision&&model.scans.length===state.beacons.length&&distance <= state.physics.dock_distance && speed <= state.physics.dock_speed && aligned; event(model, "dock", {ship: copy(model.ship), ticks: model.ticks, station_y:round(sy), scans:[...model.scans], collision:model.collision, target_angle: round(target_angle), distance: round(distance), speed: round(speed), aligned, accepted, fuel_after: model.fuel}); if (!accepted) { setMessage(model, `DOCK DENIED · SCANS ${model.scans.length}/2 · RANGE ${distance.toFixed(1)} · SPEED ${speed.toFixed(2)} · PORT ${target_angle.toFixed(0)}°`, "error"); return; } await submit(model, {mechanic_id: state.mechanic_id, task_id: state.task_id, challenge_id: state.challenge_id, events: model.events, completed: true}, "HARD DOCK AUTHENTICATED", "TWO SCANS · SWEPT DEBRIS AVOIDANCE · MOVING ROTATING PORT"); });
+    const draw = () => { const ctx = document.getElementById("orbital-canvas").getContext("2d"); ctx.fillStyle = "#030712"; ctx.fillRect(0, 0, 900, 480); for (let i = 0; i < 100; i++) { const x = (i * 83 + 17) % 900, y = (i * 47 + 31) % 480; ctx.fillStyle = i % 7 ? "#52627f" : "#e8f2ff"; ctx.fillRect(x, y, 1.4, 1.4); } state.debris.forEach((debris)=>{ctx.fillStyle="#303746";ctx.beginPath();ctx.arc(debris.x,debris.y,debris.radius,0,Math.PI*2);ctx.fill();ctx.strokeStyle="#ff775f";ctx.setLineDash([5,8]);ctx.beginPath();ctx.arc(debris.x,debris.y,debris.radius+state.ship.radius,0,Math.PI*2);ctx.stroke();ctx.setLineDash([]);});state.beacons.forEach((beacon,index)=>{ctx.strokeStyle=index<model.scans.length?"#d8ff5b":"#e674ff";ctx.lineWidth=4;ctx.beginPath();ctx.arc(beacon.x,beacon.y,beacon.radius,0,Math.PI*2);ctx.stroke();ctx.fillStyle=ctx.strokeStyle;ctx.font="800 9px Courier New";ctx.fillText(`SCAN ${index+1}`,beacon.x-22,beacon.y-34);}); const station = state.station, currentPortAngle = portAngle(), currentStationY=stationY(); ctx.save(); ctx.translate(station.x, currentStationY); ctx.rotate(currentPortAngle * Math.PI / 180); ctx.strokeStyle = "#8ce4ff"; ctx.lineWidth = 8; ctx.strokeRect(-36, -52, 72, 104); ctx.fillStyle = "#d7ff5f"; ctx.fillRect(-8, -58, 16, 15); ctx.restore(); ctx.save(); ctx.translate(model.ship.x, model.ship.y); ctx.rotate(model.ship.angle_deg * Math.PI / 180); ctx.fillStyle = model.collision?"#ff6655":"#f6d37a"; ctx.beginPath(); ctx.moveTo(22, 0); ctx.lineTo(-15, -12); ctx.lineTo(-10, 0); ctx.lineTo(-15, 12); ctx.closePath(); ctx.fill(); ctx.restore(); ctx.strokeStyle = "#f6d37a55"; ctx.beginPath(); ctx.moveTo(model.ship.x, model.ship.y); ctx.lineTo(model.ship.x + model.ship.vx * 40, model.ship.y + model.ship.vy * 40); ctx.stroke(); document.getElementById("orbital-telemetry").innerHTML = `<span>FUEL <b>${model.fuel}</b></span><span>REL SPEED <b>${Math.hypot(model.ship.vx, model.ship.vy).toFixed(2)}</b></span><span>SCANS <b>${model.scans.length}/${state.beacons.length}</b></span><span>PORT / COAST <b>${currentPortAngle.toFixed(0)}° · ${model.ticks}</b></span>`; };
+    const apply = (action, inputSource) => { if (model.terminal || model.submitting || model.collision) return; const before = copy(model.ship), p = state.physics, radians = model.ship.angle_deg * Math.PI / 180; if (["thrust", "retro", "strafe-up", "strafe-down"].includes(action)) { if (model.fuel <= 0) { setMessage(model, "FUEL MANIFOLD EMPTY", "error"); return; } model.fuel -= 1; const sign = action === "retro" ? -1 : 1; if (action === "thrust" || action === "retro") { model.ship.vx += Math.cos(radians) * p.impulse * sign; model.ship.vy += Math.sin(radians) * p.impulse * sign; } else { const side = action === "strafe-up" ? -1 : 1; model.ship.vx += Math.cos(radians + Math.PI / 2) * p.impulse * side; model.ship.vy += Math.sin(radians + Math.PI / 2) * p.impulse * side; } } else if (action === "rotate-left") model.ship.angle_deg = (model.ship.angle_deg - p.rotation_step_deg + 360) % 360; else if (action === "rotate-right") model.ship.angle_deg = (model.ship.angle_deg + p.rotation_step_deg) % 360; else if (["coast","coast-long"].includes(action)) { const coastTicks=action==="coast-long"?p.coast_long_ticks:p.coast_step_ticks; for (let tick = 0; tick < coastTicks && model.ticks<p.max_ticks; tick++) { model.ship.x += model.ship.vx; model.ship.y += model.ship.vy; model.ticks += 1; const debris = state.debris.find((item)=>Math.hypot(model.ship.x-item.x,model.ship.y-item.y)<model.ship.radius+item.radius); if(debris){model.collision=debris.id;setMessage(model,`HULL CONTACT · ${debris.id.toUpperCase()} · ABORT THIS TRIAL`,"error");break;}const beacon=state.beacons[model.scans.length];if(beacon&&Math.hypot(model.ship.x-beacon.x,model.ship.y-beacon.y)<=beacon.radius){model.scans.push(beacon.id);setMessage(model,`${beacon.id.toUpperCase()} CLEARED · CONTINUE RENDEZVOUS`,"passed");} } } event(model, "control", {action, before, after: copy(model.ship), fuel_after: model.fuel, ticks_after: model.ticks, scans_after:[...model.scans], collision:model.collision, input_source: inputSource}); draw(); };
+    const requestDock = async (inputSource) => { const sy=stationY(),distance = Math.hypot(model.ship.x - state.station.x, model.ship.y - sy), speed = Math.hypot(model.ship.vx, model.ship.vy), target_angle = portAngle(), aligned = angleError(model.ship.angle_deg, target_angle) <= state.physics.angle_tolerance_deg, accepted = !model.collision&&model.scans.length===state.beacons.length&&distance <= state.physics.dock_distance && speed <= state.physics.dock_speed && aligned; event(model, "dock", {ship: copy(model.ship), ticks: model.ticks, station_y:round(sy), scans:[...model.scans], collision:model.collision, target_angle: round(target_angle), distance: round(distance), speed: round(speed), aligned, accepted, fuel_after: model.fuel, input_source: inputSource}); if (!accepted) { setMessage(model, `DOCK DENIED · SCANS ${model.scans.length}/${state.beacons.length} · RANGE ${distance.toFixed(1)} · SPEED ${speed.toFixed(2)} · PORT ${target_angle.toFixed(0)}°`, "error"); return; } await submit(model, {mechanic_id: state.mechanic_id, task_id: state.task_id, challenge_id: state.challenge_id, events: model.events, completed: true}, "HARD DOCK AUTHENTICATED", `${state.beacons.length} ORDERED SCANS · SWEPT DEBRIS AVOIDANCE · ${movingPort ? "MOVING PORT" : "FIXED PORT"}`); };
+    document.querySelectorAll("[data-orbit]").forEach((button) => button.addEventListener("click", () => apply(button.dataset.orbit, "rcs_button")));
+    document.getElementById("orbital-dock")?.addEventListener("click", () => requestDock("dock_button"));
+    if (interaction === "full") {
+      const keys = {KeyW:"thrust", KeyS:"retro", KeyA:"strafe-up", KeyD:"strafe-down", KeyQ:"rotate-left", KeyE:"rotate-right", Space:"coast"};
+      model.keyHandler = (keyboardEvent) => { if (keyboardEvent.repeat || model.terminal || model.submitting) return; if (keyboardEvent.code === "Enter") { keyboardEvent.preventDefault(); requestDock("dock_keyboard"); return; } const action = keyboardEvent.shiftKey && keyboardEvent.code === "Space" ? "coast-long" : keys[keyboardEvent.code]; if (!action) return; keyboardEvent.preventDefault(); apply(action, "rcs_keyboard"); };
+      document.addEventListener("keydown", model.keyHandler);
+    }
     document.getElementById("orbital-abandon").addEventListener("click", () => submit(model, {mechanic_id: state.mechanic_id, task_id: state.task_id, challenge_id: state.challenge_id, events: [...model.events, {seq: model.events.length + 1, type: "abandon"}], completed: false}, "", "")); draw();
   };
 
@@ -709,29 +723,50 @@
 
   registry.pheromone_dispatch = async (state, helpers) => {
     document.body.dataset.mechanic = "pheromone-dispatch";
+    const interaction = state.control_condition?.interaction || "full";
+    const MAX_ROUTE_SAMPLE_GAP = 160;
+    const swarmCount = state.fields.length;
+    const swarmLabel = swarmCount === 1 ? "CARRIER SWARM" : "BOTH SWARMS";
     const paths = Object.fromEntries(state.fields.map((field) => [field.id, []]));
     const model = {
-      state, helpers, events: [], paths, routes: {}, activeField: state.fields[0].id,
-      activeStroke: [], drawing: false, ants: {}, running: false, terminal: false,
+      state, helpers, interaction, events: [], paths, routes: {}, activeField: state.fields[0].id,
+      activeStroke: [], activeStrokeRejected: false, drawing: false, ants: {}, running: false, terminal: false,
       submitting: false, delivered: Object.fromEntries(state.fields.map((field) => [field.id, 0])),
       lastRefresh: Object.fromEntries(state.fields.map((field) => [field.id, 0])), tick: 0, interval: null,
     };
     window.pheromoneDispatchModel = model;
+    const record = (type, details = {}) => event(model, type, {
+      ...details,
+      input_surface: interaction,
+      input_method: interaction === "simplified" ? "waypoint_clicks" : "continuous_pointer_trace",
+    });
+    const fieldControls = `<div class="pheromone-fields">${state.fields.map((field, index) => `<button data-field="${field.id}" class="${index === 0 ? "is-selected" : ""}" style="--field:${field.color}">${interaction === "simplified" ? `PLOT ${esc(field.id).toUpperCase()} FIELD` : esc(field.label)}</button>`).join("")}</div>`;
+    const fieldInstruction = interaction === "simplified"
+      ? "Select a colored field, click its ordered route vertices on the habitat, then commit the plotted field. Begin at the nest, visit that color's cache, end at the dock, and route around every black salt block."
+      : swarmCount === 1
+        ? "Select the colored brush and trace its complete field directly. Black salt blocks pheromone; renew the route before it evaporates."
+        : "Select a colored brush and trace each complete field directly. Black salt blocks both colors; refreshing amber never refreshes violet.";
     helpers.app.innerHTML = shell(
       state, "MYRMECID LOGISTICS UNION", "PHEROMONE DISPATCH",
-      "Paint two colored nest→cache→dock fields, release both teams, then alternate full refresh strokes as each field decays independently.",
+      swarmCount === 1
+        ? "Paint one colored nest→cache→dock field, release its team, then renew the complete route before it evaporates."
+        : "Paint two colored nest→cache→dock fields, release both teams, then alternate full refresh strokes as each field decays independently.",
       `<canvas id="pheromone-canvas" width="900" height="480"></canvas>`,
-      `<h2>DUAL FIELD CONTROL</h2><p>Black salt blocks both colors. Refreshing amber never refreshes violet.</p>
-       <div class="pheromone-fields">${state.fields.map((field, index) => `<button data-field="${field.id}" class="${index === 0 ? "is-selected" : ""}" style="--field:${field.color}">${esc(field.label)}</button>`).join("")}</div>
-       <button id="pheromone-dispatch" class="ivv-primary">RELEASE BOTH SWARMS</button><button id="pheromone-clear">WASH ACTIVE FIELD</button><button id="pheromone-abandon" class="ivv-danger">FUMIGATE / FRESH COLONY</button><div id="pheromone-count" class="ivv-telemetry"></div>`,
+      `<h2>${interaction === "simplified" ? "WAYPOINT FIELD PLOTTER" : swarmCount === 1 ? "FIELD CONTROL" : "DUAL FIELD CONTROL"}</h2><p>${fieldInstruction}</p>
+       ${fieldControls}
+       ${interaction === "simplified" ? '<button id="pheromone-commit">COMMIT PLOTTED FIELD</button>' : ""}
+       <button id="pheromone-dispatch" class="ivv-primary">RELEASE ${swarmLabel}</button><button id="pheromone-clear">WASH ACTIVE FIELD</button><button id="pheromone-abandon" class="ivv-danger">FUMIGATE / FRESH COLONY</button><div id="pheromone-count" class="ivv-telemetry"></div>`,
     );
     const canvas = document.getElementById("pheromone-canvas");
     const fieldById = (id) => state.fields.find((field) => field.id === id);
     const canvasPoint = (e) => { const rect = canvas.getBoundingClientRect(); return {x: round((e.clientX - rect.left) / rect.width * 900, 2), y: round((e.clientY - rect.top) / rect.height * 480, 2)}; };
+    const hasSamplingGap = (path) => path.slice(1).some((point, index) => Math.hypot(point.x - path[index].x, point.y - path[index].y) > MAX_ROUTE_SAMPLE_GAP);
+    const rejectSamplingGap = () => setMessage(model, interaction === "simplified" ? "PLOT GAP TOO LARGE · WASH AND ADD INTERMEDIATE WAYPOINTS" : "BRUSH GAP TOO LARGE · RETRACE WITH CONTINUOUS MOTION", "error");
     const validPath = (path, field) => path.length > 5
       && Math.hypot(path[0].x - state.nest[0], path[0].y - state.nest[1]) < 38
       && path.some((point) => Math.hypot(point.x - field.cache[0], point.y - field.cache[1]) < 38)
       && Math.hypot(path.at(-1).x - state.dock[0], path.at(-1).y - state.dock[1]) < 42
+      && !hasSamplingGap(path)
       && !path.slice(1).some((point, index) => state.obstacles.some((rect) => segmentHitsRect(path[index], point, rect)));
     const metrics = (path, field) => {
       const lengths = [0];
@@ -758,20 +793,59 @@
       });
       document.getElementById("pheromone-count").innerHTML = state.fields.map((field) => { const freshness = clamp(1 - (model.running ? model.tick - model.lastRefresh[field.id] : 0) / field.trail_ttl_ticks, 0, 1); return `<span style="color:${field.color}">${field.id.toUpperCase()} FRESH <b>${Math.round(freshness * 100)}%</b> · KEYS <b>${model.delivered[field.id]}/${state.physics.delivery_required}</b></span>`; }).join("");
     };
-    canvas.addEventListener("pointerdown", (e) => { if (model.terminal) return; model.drawing = true; model.activeStroke = [canvasPoint(e)]; if (!model.running) model.paths[model.activeField] = model.activeStroke; canvas.setPointerCapture(e.pointerId); event(model, "stroke_start", {tick: model.tick, field_id: model.activeField, mode: model.running ? "refresh" : "route", point: model.activeStroke[0]}); draw(); });
-    canvas.addEventListener("pointermove", (e) => { if (!model.drawing) return; const point = canvasPoint(e), last = model.activeStroke.at(-1); if (Math.hypot(point.x - last.x, point.y - last.y) >= 6) { model.activeStroke.push(point); event(model, "stroke_point", {tick: model.tick, field_id: model.activeField, mode: model.running ? "refresh" : "route", point}); draw(); } });
+    canvas.addEventListener("pointerdown", (e) => { if (interaction !== "full" || model.terminal) return; model.drawing = true; model.activeStrokeRejected = false; model.activeStroke = [canvasPoint(e)]; canvas.setPointerCapture(e.pointerId); record("stroke_start", {tick: model.tick, field_id: model.activeField, mode: model.running ? "refresh" : "route", point: model.activeStroke[0]}); draw(); });
+    canvas.addEventListener("pointermove", (e) => { if (interaction !== "full" || !model.drawing) return; const point = canvasPoint(e), last = model.activeStroke.at(-1), distance = Math.hypot(point.x - last.x, point.y - last.y); if (distance > MAX_ROUTE_SAMPLE_GAP) { model.activeStrokeRejected = true; rejectSamplingGap(); draw(); return; } if (distance >= 6) { model.activeStroke.push(point); record("stroke_point", {tick: model.tick, field_id: model.activeField, mode: model.running ? "refresh" : "route", point}); draw(); } });
     const endStroke = (e) => {
-      if (!model.drawing) return; model.drawing = false; const field = fieldById(model.activeField);
-      event(model, "stroke_end", {tick: model.tick, field_id: field.id, mode: model.running ? "refresh" : "route", point: model.activeStroke.at(-1), samples: model.activeStroke.length});
-      if (model.running) { if (validPath(model.activeStroke, field)) { model.lastRefresh[field.id] = model.tick; event(model, "refresh", {tick: model.tick, field_id: field.id, path: model.activeStroke.map(copy)}); setMessage(model, `${field.id.toUpperCase()} FIELD REFRESHED · OTHER COLOR UNCHANGED`, "passed"); } else setMessage(model, `REFRESH REJECTED · RETRACE ${field.id.toUpperCase()} NEST → CACHE → DOCK`, "error"); model.activeStroke = []; }
+      if (interaction !== "full" || !model.drawing) return; model.drawing = false; const field = fieldById(model.activeField);
+      record("stroke_end", {tick: model.tick, field_id: field.id, mode: model.running ? "refresh" : "route", point: model.activeStroke.at(-1), samples: model.activeStroke.length});
+      const accepted = !model.activeStrokeRejected && validPath(model.activeStroke, field);
+      if (model.running) { if (accepted) { model.lastRefresh[field.id] = model.tick; record("refresh", {tick: model.tick, field_id: field.id, path: model.activeStroke.map(copy)}); setMessage(model, `${field.id.toUpperCase()} FIELD REFRESHED · OTHER COLOR UNCHANGED`, "passed"); } else if (model.activeStrokeRejected) rejectSamplingGap(); else setMessage(model, `REFRESH REJECTED · RETRACE ${field.id.toUpperCase()} NEST → CACHE → DOCK`, "error"); model.activeStroke = []; model.activeStrokeRejected = false; }
+      else { model.paths[field.id] = model.activeStroke.map(copy); if (accepted) setMessage(model, `${field.id.toUpperCase()} FIELD TRACED`, "passed"); else if (model.activeStrokeRejected) rejectSamplingGap(); else setMessage(model, `FIELD REJECTED · TRACE ${field.id.toUpperCase()} NEST → CACHE → DOCK AROUND SALT`, "error"); model.activeStroke = []; model.activeStrokeRejected = false; }
       try { canvas.releasePointerCapture(e.pointerId); } catch (_) {} draw();
     };
     canvas.addEventListener("pointerup", endStroke); canvas.addEventListener("pointercancel", endStroke);
-    document.querySelectorAll("[data-field]").forEach((button) => button.addEventListener("click", () => { if (model.drawing) return; model.activeField = button.dataset.field; document.querySelectorAll("[data-field]").forEach((item) => item.classList.toggle("is-selected", item.dataset.field === model.activeField)); setMessage(model, `${model.activeField.toUpperCase()} BRUSH SELECTED`, "idle"); draw(); }));
-    document.getElementById("pheromone-clear").addEventListener("click", () => { if (model.running) return; model.paths[model.activeField] = []; model.activeStroke = []; event(model, "clear", {tick: model.tick, field_id: model.activeField}); draw(); });
+    const selectField = (fieldId) => {
+      if (model.drawing || (interaction === "simplified" && model.activeStroke.length)) { setMessage(model, "COMMIT THE CURRENT PLOTTED FIELD BEFORE CHANGING COLOR", "error"); return; }
+      model.activeField = fieldId;
+      document.querySelectorAll("[data-field]").forEach((item) => item.classList.toggle("is-selected", item.dataset.field === model.activeField));
+      setMessage(model, `${model.activeField.toUpperCase()} ${interaction === "simplified" ? "PLOT SELECTED" : "BRUSH SELECTED"}`, "idle"); draw();
+    };
+    document.querySelectorAll("[data-field]").forEach((button) => button.addEventListener("click", () => selectField(button.dataset.field)));
+    canvas.addEventListener("click", (e) => {
+      if (interaction !== "simplified" || model.terminal || model.submitting) return;
+      const point = canvasPoint(e), field = fieldById(model.activeField), mode = model.running ? "refresh" : "route";
+      if (!model.activeStroke.length) {
+        model.activeStrokeRejected = false;
+        model.activeStroke = [point];
+        record("stroke_start", {tick: model.tick, field_id: field.id, mode, point});
+      } else if (Math.hypot(point.x - model.activeStroke.at(-1).x, point.y - model.activeStroke.at(-1).y) > MAX_ROUTE_SAMPLE_GAP) {
+        model.activeStrokeRejected = true; rejectSamplingGap();
+      } else if (Math.hypot(point.x - model.activeStroke.at(-1).x, point.y - model.activeStroke.at(-1).y) >= 6) {
+        model.activeStroke.push(point);
+        record("stroke_point", {tick: model.tick, field_id: field.id, mode, point});
+      }
+      draw();
+    });
+    document.getElementById("pheromone-commit")?.addEventListener("click", () => {
+      if (interaction !== "simplified" || model.terminal || model.submitting) return;
+      const field = fieldById(model.activeField), mode = model.running ? "refresh" : "route";
+      if (!model.activeStroke.length) { setMessage(model, "CLICK ROUTE VERTICES ON THE HABITAT BEFORE COMMITTING", "error"); return; }
+      record("stroke_end", {tick: model.tick, field_id: field.id, mode, point: model.activeStroke.at(-1), samples: model.activeStroke.length});
+      const accepted = !model.activeStrokeRejected && validPath(model.activeStroke, field);
+      if (model.running) {
+        if (accepted) { model.lastRefresh[field.id] = model.tick; record("refresh", {tick: model.tick, field_id: field.id, path: model.activeStroke.map(copy)}); setMessage(model, `${field.id.toUpperCase()} FIELD REFRESHED · OTHER COLOR UNCHANGED`, "passed"); }
+        else if (model.activeStrokeRejected) rejectSamplingGap(); else setMessage(model, `REFRESH REJECTED · PLOT ${field.id.toUpperCase()} NEST → CACHE → DOCK AROUND SALT`, "error");
+      } else { model.paths[field.id] = model.activeStroke.map(copy); if (accepted) setMessage(model, `${field.id.toUpperCase()} FIELD PLOTTED`, "passed"); else if (model.activeStrokeRejected) rejectSamplingGap(); else setMessage(model, `PLOT REJECTED · TRACE ${field.id.toUpperCase()} NEST → CACHE → DOCK AROUND SALT`, "error"); }
+      model.activeStroke = []; model.activeStrokeRejected = false; draw();
+    });
+    document.getElementById("pheromone-clear").addEventListener("click", () => {
+      if (model.running) return;
+      if (interaction === "simplified" && model.activeStroke.length) { setMessage(model, "COMMIT THE PLOTTED FIELD BEFORE WASHING IT", "error"); return; }
+      model.paths[model.activeField] = []; model.activeStroke = []; model.activeStrokeRejected = false; record("clear", {tick: model.tick, field_id: model.activeField}); draw();
+    });
     document.getElementById("pheromone-dispatch").addEventListener("click", () => {
-      if (model.running || state.fields.some((field) => !validPath(model.paths[field.id], field))) { setMessage(model, "BOTH COLORED TRAILS MUST CONNECT THEIR OWN CACHE WITHOUT CROSSING SALT", "error"); return; }
-      model.running = true; model.routes = Object.fromEntries(state.fields.map((field) => [field.id, model.paths[field.id].map(copy)])); model.activeStroke = []; model.tick = 0; model.lastRefresh = Object.fromEntries(state.fields.map((field) => [field.id, 0])); event(model, "dispatch", {tick: 0, paths: copy(model.routes)});
+      if (model.running || state.fields.some((field) => !validPath(model.paths[field.id], field))) { setMessage(model, `${swarmCount === 1 ? "THE COLORED TRAIL" : "BOTH COLORED TRAILS"} MUST CONNECT ${swarmCount === 1 ? "THE" : "THEIR OWN"} CACHE WITHOUT CROSSING SALT`, "error"); return; }
+      model.running = true; model.routes = Object.fromEntries(state.fields.map((field) => [field.id, model.paths[field.id].map(copy)])); model.activeStroke = []; model.tick = 0; model.lastRefresh = Object.fromEntries(state.fields.map((field) => [field.id, 0])); record("dispatch", {tick: 0, paths: copy(model.routes)});
       const routeMetrics = Object.fromEntries(state.fields.map((field) => [field.id, metrics(model.routes[field.id], field)]));
       state.fields.forEach((field) => { model.ants[field.id] = Array.from({length: state.ant_count}, (_, index) => ({distance: -index * state.physics.ant_spacing, x: state.nest[0], y: state.nest[1], angle: 0, carrying: false, done: false})); });
       model.interval = setInterval(async () => {
@@ -782,10 +856,10 @@
           for (const ant of model.ants[field.id]) { if (ant.done) continue; ant.distance += field.speed; if (ant.distance < 0) continue; if (ant.distance >= info.cacheDistance) ant.carrying = true; if (ant.distance >= info.total) { ant.done = true; if (ant.carrying) model.delivered[field.id] += 1; continue; } let segment = 1; while (segment < info.lengths.length && info.lengths[segment] < ant.distance) segment++; const first = route[segment - 1], second = route[segment], span = info.lengths[segment] - info.lengths[segment - 1] || 1, amount = (ant.distance - info.lengths[segment - 1]) / span; ant.x = first.x + (second.x - first.x) * amount; ant.y = first.y + (second.y - first.y) * amount; ant.angle = Math.atan2(second.y - first.y, second.x - first.x); }
         });
         draw();
-        if (state.fields.every((field) => model.delivered[field.id] >= state.physics.delivery_required)) { clearInterval(model.interval); event(model, "delivery", {tick: model.tick, delivered: copy(model.delivered), last_refresh: copy(model.lastRefresh)}); await submit(model, {mechanic_id: state.mechanic_id, task_id: state.task_id, challenge_id: state.challenge_id, events: model.events, completed: true}, "DUAL SWARM DISPATCH AUTHENTICATED", "TWO INDEPENDENT DECAY FIELDS · ALTERNATING FULL-ROUTE REFRESH"); }
+        if (state.fields.every((field) => model.delivered[field.id] >= state.physics.delivery_required)) { clearInterval(model.interval); record("delivery", {tick: model.tick, delivered: copy(model.delivered), last_refresh: copy(model.lastRefresh)}); await submit(model, {mechanic_id: state.mechanic_id, task_id: state.task_id, challenge_id: state.challenge_id, interaction_mode: interaction, events: model.events, completed: true}, `${state.fields.length === 2 ? "DUAL" : "SINGLE"} SWARM DISPATCH AUTHENTICATED`, `${state.fields.length === 2 ? "INDEPENDENT DECAY FIELDS" : "DECAYING FIELD"} · COMPLETE-ROUTE REFRESH · KEY DELIVERY`); }
       }, state.physics.tick_ms);
     });
-    document.getElementById("pheromone-abandon").addEventListener("click", () => submit(model, {mechanic_id: state.mechanic_id, task_id: state.task_id, challenge_id: state.challenge_id, events: [...model.events, {seq: model.events.length + 1, type: "abandon", tick: model.tick}], completed: false}, "", "")); draw();
+    document.getElementById("pheromone-abandon").addEventListener("click", () => { record("abandon", {tick: model.tick}); submit(model, {mechanic_id: state.mechanic_id, task_id: state.task_id, challenge_id: state.challenge_id, interaction_mode: interaction, events: model.events, completed: false}, "", ""); }); draw();
   };
 
   registry.clockwork_clutch_safe_v1 = async (state, helpers) => {
@@ -965,6 +1039,7 @@
   const cleanup = () => modelGlobals.forEach((name) => {
     const previous = window[name];
     if (!previous) return;
+    if (previous.keyHandler) document.removeEventListener("keydown", previous.keyHandler);
     ["interval", "timer", "animation"].forEach((field) => {
       if (previous[field]) clearInterval(previous[field]);
     });

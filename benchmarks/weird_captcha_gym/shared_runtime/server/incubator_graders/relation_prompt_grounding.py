@@ -47,6 +47,36 @@ def _browser_round(value: float) -> int:
     return math.floor(value + 0.5)
 
 
+def _control_condition(
+    ground_truth: dict[str, Any], public_state: dict[str, Any], object_count: int,
+    tolerance: dict[str, int], carousel: dict[str, Any],
+) -> tuple[dict[str, Any] | None, str | None]:
+    condition = ground_truth.get("control_condition")
+    if condition is None:
+        if public_state.get("control_condition") is not None:
+            return None, "public control condition is unexpected"
+        return None, None
+    if not isinstance(condition, dict) or public_state.get("control_condition") != condition:
+        return None, "public control condition differs from relation contract"
+    if int(condition.get("difficulty") or 0) not in {1, 2, 3, 4, 5}:
+        return None, "relation control difficulty is invalid"
+    if str(condition.get("interaction") or "") not in {"simplified", "full"}:
+        return None, "relation control interaction is invalid"
+    parameters = condition.get("difficulty_parameters")
+    if not isinstance(parameters, dict):
+        return None, "relation difficulty parameters are missing"
+    expected = {
+        "object_count": object_count,
+        "target_tolerance_x": tolerance["x"],
+        "target_tolerance_y": tolerance["y"],
+        "target_tolerance_depth": tolerance["depth"],
+        "carousel_tick_ms": int(carousel["tick_ms"]),
+    }
+    if any(parameters.get(key) != value for key, value in expected.items()):
+        return None, "generated relation contract differs from selected difficulty"
+    return condition, None
+
+
 def _relations(
     states: dict[str, dict[str, Any]],
     objects: dict[str, dict[str, Any]],
@@ -103,11 +133,12 @@ def grade(payload: dict[str, Any], ground_truth: dict[str, Any], public_state: d
         carousel = dict(ground_truth.get("carousel") or {})
         worktable = dict(ground_truth.get("worktable_rect") or {})
         objects = {str(item["id"]): dict(item) for item in ground_truth.get("objects") or []}
-        if len(objects) != 5:
-            raise ValueError("five assembly objects are required")
+        object_count = len(objects)
+        if not 2 <= object_count <= 5:
+            raise ValueError("two through five assembly objects are required")
         projection_targets = {str(item["id"]): dict(item) for item in ground_truth.get("projection_targets") or []}
-        if len(projection_targets) != 5 or set(projection_targets) != set(objects):
-            raise ValueError("five dual-projection targets are required")
+        if len(projection_targets) != object_count or set(projection_targets) != set(objects):
+            raise ValueError("assembly projection targets are incomplete")
         settle_vectors = {str(key): dict(value) for key, value in (ground_truth.get("settle_vectors") or {}).items()}
         settle_ticks = int(ground_truth.get("settle_ticks"))
         tolerance = {str(key): int(value) for key, value in (ground_truth.get("target_tolerance") or {}).items()}
@@ -118,6 +149,21 @@ def grade(payload: dict[str, Any], ground_truth: dict[str, Any], public_state: d
     except (KeyError, TypeError, ValueError) as exc:
         return {"graded": True, "passed": False, "feedback": f"invalid relation contract: {exc}"}
 
+    condition, condition_error = _control_condition(
+        ground_truth, public_state, object_count, tolerance, carousel,
+    )
+    if condition_error:
+        return {"graded": True, "passed": False, "feedback": condition_error}
+    interaction = str((condition or {}).get("interaction") or "")
+    if condition is not None and payload.get("interaction") != interaction:
+        return {"graded": True, "passed": False, "feedback": "payload interaction differs from relation contract"}
+    if condition is not None:
+        force_limit = (condition.get("difficulty_parameters") or {}).get("settle_force_limit")
+        if isinstance(force_limit, bool) or not isinstance(force_limit, int) or not 1 <= force_limit <= 3:
+            return {"graded": True, "passed": False, "feedback": "relation settle-force profile is invalid"}
+        if any(abs(int(vector.get(axis, 99))) > force_limit for vector in settle_vectors.values() for axis in ("dx", "dy")):
+            return {"graded": True, "passed": False, "feedback": "settle vectors exceed the selected difficulty profile"}
+
     events = payload.get("events")
     if not isinstance(events, list) or not (1 <= len(events) <= 700):
         return {"graded": True, "passed": False, "feedback": "manipulation transcript is missing or outside limits"}
@@ -126,6 +172,7 @@ def grade(payload: dict[str, Any], ground_truth: dict[str, Any], public_state: d
         for object_id, item in objects.items()
     }
     drag: dict[str, Any] | None = None
+    proxy: dict[str, Any] | None = None
     depth_drag: dict[str, Any] | None = None
     settle: dict[str, Any] | None = None
     settled = False
@@ -136,6 +183,7 @@ def grade(payload: dict[str, Any], ground_truth: dict[str, Any], public_state: d
     depth_distance = 0
     settle_samples = 0
     reset_count = 0
+    proxy_place_count = 0
 
     for sequence, event in enumerate(events, start=1):
         if not isinstance(event, dict) or event.get("sequence") != sequence:
@@ -146,17 +194,20 @@ def grade(payload: dict[str, Any], ground_truth: dict[str, Any], public_state: d
                 object_id: {"x": None, "y": None, "depth": int(item["initial_depth"]), "placed": False}
                 for object_id, item in objects.items()
             }
-            drag = depth_drag = settle = None
+            drag = depth_drag = settle = proxy = None
             settled = False
             drag_count = drag_samples = depth_samples = depth_distance = settle_samples = 0
             total_drag_distance = 0.0
             reset_count += 1
+            proxy_place_count = 0
             continue
         if settled and kind not in {"settle_complete"}:
             return {"graded": True, "passed": False, "feedback": "object manipulation continued after inspection settled"}
 
         if kind == "drag_start":
-            if drag is not None or depth_drag is not None or settle is not None:
+            if condition is not None and (interaction != "full" or event.get("input_source") != "direct_drag"):
+                return {"graded": True, "passed": False, "feedback": "drag used the wrong interaction input"}
+            if drag is not None or proxy is not None or depth_drag is not None or settle is not None:
                 return {"graded": True, "passed": False, "feedback": "overlapping manipulation gestures"}
             object_id = str(event.get("object_id") or "")
             if object_id not in objects:
@@ -177,6 +228,8 @@ def grade(payload: dict[str, Any], ground_truth: dict[str, Any], public_state: d
             drag = {"object_id": object_id, "start": point, "moves": 0}
             continue
         if kind == "drag_move":
+            if condition is not None and (interaction != "full" or event.get("input_source") != "direct_drag"):
+                return {"graded": True, "passed": False, "feedback": "drag used the wrong interaction input"}
             if drag is None or event.get("object_id") != drag["object_id"]:
                 return {"graded": True, "passed": False, "feedback": "drag move has no matching object"}
             try:
@@ -187,11 +240,15 @@ def grade(payload: dict[str, Any], ground_truth: dict[str, Any], public_state: d
             drag_samples += 1
             continue
         if kind == "drag_cancel":
+            if condition is not None and (interaction != "full" or event.get("input_source") != "direct_drag"):
+                return {"graded": True, "passed": False, "feedback": "drag used the wrong interaction input"}
             if drag is None or event.get("object_id") != drag["object_id"]:
                 return {"graded": True, "passed": False, "feedback": "drag cancellation has no matching object"}
             drag = None
             continue
         if kind == "drag_end":
+            if condition is not None and (interaction != "full" or event.get("input_source") != "direct_drag"):
+                return {"graded": True, "passed": False, "feedback": "drag used the wrong interaction input"}
             if drag is None or event.get("object_id") != drag["object_id"]:
                 return {"graded": True, "passed": False, "feedback": "drag end has no matching object"}
             try:
@@ -205,15 +262,57 @@ def grade(payload: dict[str, Any], ground_truth: dict[str, Any], public_state: d
             drag_count += 1
             drag = None
             continue
+        if kind == "proxy_select":
+            if condition is None or interaction != "simplified" or event.get("input_source") != "proxy_click":
+                return {"graded": True, "passed": False, "feedback": "placement proxy used the wrong interaction input"}
+            if drag is not None or proxy is not None or depth_drag is not None or settle is not None:
+                return {"graded": True, "passed": False, "feedback": "overlapping manipulation gestures"}
+            object_id = str(event.get("object_id") or "")
+            if object_id not in objects:
+                return {"graded": True, "passed": False, "feedback": "unknown assembly object"}
+            try:
+                point = _point(event.get("point"), width, height)
+            except ValueError as exc:
+                return {"graded": True, "passed": False, "feedback": str(exc)}
+            state = states[object_id]
+            source = str(event.get("source") or "")
+            if not state["placed"]:
+                tick = int(event.get("carousel_tick"))
+                expected = _carousel_point(objects[object_id], tick, carousel)
+                if source != "carousel" or math.hypot(point[0] - expected[0], point[1] - expected[1]) > int(objects[object_id]["radius"]) + 10:
+                    return {"graded": True, "passed": False, "feedback": "proxy selection missed the moving carousel object"}
+            elif source != "table" or math.hypot(point[0] - state["x"], point[1] - state["y"]) > int(objects[object_id]["radius"]) + 12:
+                return {"graded": True, "passed": False, "feedback": "proxy selection missed the table object"}
+            proxy = {"object_id": object_id, "start": point}
+            continue
+        if kind == "proxy_place":
+            if condition is None or interaction != "simplified" or event.get("input_source") != "proxy_click":
+                return {"graded": True, "passed": False, "feedback": "placement proxy used the wrong interaction input"}
+            if proxy is None or event.get("object_id") != proxy["object_id"]:
+                return {"graded": True, "passed": False, "feedback": "proxy placement has no selected object"}
+            try:
+                point = _point(event.get("point"), width, height)
+            except ValueError as exc:
+                return {"graded": True, "passed": False, "feedback": str(exc)}
+            if not _inside(point, worktable):
+                return {"graded": True, "passed": False, "feedback": "proxy placement leaves the worktable"}
+            states[proxy["object_id"]].update({"x": point[0], "y": point[1], "placed": True})
+            proxy_place_count += 1
+            proxy = None
+            continue
         if kind == "depth_start":
             object_id = str(event.get("object_id") or "")
-            if drag is not None or depth_drag is not None or settle is not None or object_id not in states or not states[object_id]["placed"]:
+            if condition is not None and (interaction != "full" or event.get("input_source") != "depth_rail"):
+                return {"graded": True, "passed": False, "feedback": "depth rail used the wrong interaction input"}
+            if drag is not None or proxy is not None or depth_drag is not None or settle is not None or object_id not in states or not states[object_id]["placed"]:
                 return {"graded": True, "passed": False, "feedback": "depth rail started without a placed selection"}
             if event.get("value") != states[object_id]["depth"]:
                 return {"graded": True, "passed": False, "feedback": "depth rail start value mismatch"}
             depth_drag = {"object_id": object_id, "start": states[object_id]["depth"], "moves": 0}
             continue
         if kind == "depth_move":
+            if condition is not None and (interaction != "full" or event.get("input_source") != "depth_rail"):
+                return {"graded": True, "passed": False, "feedback": "depth rail used the wrong interaction input"}
             if depth_drag is None or event.get("object_id") != depth_drag["object_id"]:
                 return {"graded": True, "passed": False, "feedback": "depth motion has no selected object"}
             value = int(event.get("value"))
@@ -224,6 +323,8 @@ def grade(payload: dict[str, Any], ground_truth: dict[str, Any], public_state: d
             depth_samples += 1
             continue
         if kind == "depth_end":
+            if condition is not None and (interaction != "full" or event.get("input_source") != "depth_rail"):
+                return {"graded": True, "passed": False, "feedback": "depth rail used the wrong interaction input"}
             if depth_drag is None or event.get("object_id") != depth_drag["object_id"] or event.get("value") != states[depth_drag["object_id"]]["depth"]:
                 return {"graded": True, "passed": False, "feedback": "depth rail end mismatch"}
             if depth_drag["moves"] < 2:
@@ -231,8 +332,24 @@ def grade(payload: dict[str, Any], ground_truth: dict[str, Any], public_state: d
             depth_distance += abs(states[depth_drag["object_id"]]["depth"] - depth_drag["start"])
             depth_drag = None
             continue
+        if kind == "depth_nudge":
+            if condition is None or interaction != "simplified" or event.get("input_source") != "depth_buttons":
+                return {"graded": True, "passed": False, "feedback": "depth button used the wrong interaction input"}
+            object_id = str(event.get("object_id") or "")
+            if drag is not None or proxy is not None or depth_drag is not None or settle is not None or object_id not in states or not states[object_id]["placed"]:
+                return {"graded": True, "passed": False, "feedback": "depth button has no placed selection"}
+            delta = event.get("delta")
+            if isinstance(delta, bool) or delta not in {-10, -1, 1, 10}:
+                return {"graded": True, "passed": False, "feedback": "depth button delta is invalid"}
+            value = states[object_id]["depth"] + int(delta)
+            if not 0 <= value <= 100 or event.get("value") != value:
+                return {"graded": True, "passed": False, "feedback": "depth button value is invalid"}
+            states[object_id]["depth"] = value
+            depth_samples += 1
+            depth_distance += abs(int(delta))
+            continue
         if kind == "settle_start":
-            if drag is not None or depth_drag is not None or settle is not None or not all(state["placed"] for state in states.values()):
+            if drag is not None or proxy is not None or depth_drag is not None or settle is not None or not all(state["placed"] for state in states.values()):
                 return {"graded": True, "passed": False, "feedback": "settle began before all objects were placed"}
             settle = {"next_tick": 1, "elapsed": 0}
             continue
@@ -273,6 +390,8 @@ def grade(payload: dict[str, Any], ground_truth: dict[str, Any], public_state: d
         "settle_samples": settle_samples,
         "reset_count": reset_count,
     }
+    if condition is not None:
+        expected["proxy_place_count"] = proxy_place_count
     for field, value in expected.items():
         if payload.get(field) != value:
             return {"graded": True, "passed": False, "feedback": f"submitted {field} does not match replay"}
@@ -285,15 +404,21 @@ def grade(payload: dict[str, Any], ground_truth: dict[str, Any], public_state: d
         )
         for object_id, state in states.items()
     }
+    full_motion = (
+        drag_count >= object_count
+        and drag_samples >= object_count * 3
+        and total_drag_distance >= object_count * 150
+    )
+    proxy_motion = proxy_place_count >= object_count and drag_count == 0 and drag_samples == 0
+    motion_ok = full_motion if condition is None or interaction == "full" else proxy_motion
     passed = (
         settled
         and drag is None
+        and proxy is None
         and depth_drag is None
         and all(state["placed"] for state in states.values())
         and all(projection_results.values())
-        and drag_count >= 5
-        and drag_samples >= 15
-        and total_drag_distance >= 900
+        and motion_ok
         and settle_samples == settle_ticks
     )
     return {
@@ -301,8 +426,8 @@ def grade(payload: dict[str, Any], ground_truth: dict[str, Any], public_state: d
         "passed": passed,
         "score": 100 if passed else 0,
         "feedback": (
-            f"dual-projection replay: seals {sum(projection_results.values())}/5; placed {sum(state['placed'] for state in states.values())}/5; "
-            f"drags {drag_count}; depth travel {depth_distance}; settle ticks {settle_samples}/{settle_ticks}"
+            f"dual-projection replay: seals {sum(projection_results.values())}/{object_count}; placed {sum(state['placed'] for state in states.values())}/{object_count}; "
+            f"drags {drag_count}; proxy placements {proxy_place_count}; depth travel {depth_distance}; settle ticks {settle_samples}/{settle_ticks}"
         ),
     }
 

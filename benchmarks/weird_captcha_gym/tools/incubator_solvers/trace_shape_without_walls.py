@@ -58,6 +58,15 @@ def _drift(sample_index: int, spec: dict) -> tuple[int, int]:
     return _browser_round(dx), _browser_round(dy)
 
 
+def _interaction(truth: dict) -> str:
+    return str((truth.get("control_condition") or {}).get("interaction") or "full")
+
+
+def _set_coordinate(page, point: list[int] | tuple[int, int]) -> None:
+    page.locator("#trace-coordinate-x").fill(str(point[0]))
+    page.locator("#trace-coordinate-y").fill(str(point[1]))
+
+
 def fail_once(page, state_dir: Path, out_dir: Path, mechanic: str) -> None:
     if mechanic != MECHANIC_ID:
         raise AssertionError(f"unexpected mechanic {mechanic!r}")
@@ -69,9 +78,13 @@ def fail_once(page, state_dir: Path, out_dir: Path, mechanic: str) -> None:
     _screenshot(page, out_dir, mechanic, "fail-refresh")
 
 
-def _probe_path(page, stage_box: dict, stage: dict, points: list[list[int]], stride: int = 2) -> None:
+def _probe_path(page, stage_box: dict, stage: dict, points: list[list[int]], interaction: str, stride: int = 2) -> None:
     for point in points[::stride]:
-        page.mouse.move(*_screen_point(stage_box, stage, point), steps=1)
+        if interaction == "full":
+            page.mouse.move(*_screen_point(stage_box, stage, point), steps=1)
+        else:
+            _set_coordinate(page, point)
+            page.locator("#trace-proxy-sonar").click()
 
 
 def solve(page, state_dir: Path, out_dir: Path, mechanic: str) -> None:
@@ -80,13 +93,14 @@ def solve(page, state_dir: Path, out_dir: Path, mechanic: str) -> None:
     truth = _read_json(state_dir / "ground_truth.json")
     stage = truth["stage"]
     box = _stage_box(page)
+    interaction = _interaction(truth)
 
     # Map the true corridor with ordinary hover sonar. False echoes remain part
     # of the scene, but a clean expert solve is not forced to inspect them.
-    _probe_path(page, box, stage, truth["main_path"][:32], stride=2)
+    _probe_path(page, box, stage, truth["main_path"][:32], interaction, stride=2)
     page.wait_for_timeout(90)
     _screenshot(page, out_dir, mechanic, "active-local-sonar")
-    _probe_path(page, box, stage, truth["main_path"][30:], stride=2)
+    _probe_path(page, box, stage, truth["main_path"][30:], interaction, stride=2)
 
     page.wait_for_function("() => document.querySelector('.trace-start-beacon')?.dataset.armed === 'true'", timeout=5_000)
     mapped = page.evaluate("""() => ({
@@ -100,20 +114,32 @@ def solve(page, state_dir: Path, out_dir: Path, mechanic: str) -> None:
         raise AssertionError(f"sonar exploration did not satisfy the mapping contract: {mapped}")
 
     # Trace the spline physically while compensating each raw sample for visible deterministic drift.
-    start = page.locator(".trace-start-beacon").bounding_box()
-    if not start:
-        raise AssertionError("START beacon disappeared after re-arm")
-    page.mouse.move(start["x"] + start["width"] / 2, start["y"] + start["height"] / 2)
-    page.mouse.down()
+    if interaction == "full":
+        start = page.locator(".trace-start-beacon").bounding_box()
+        if not start:
+            raise AssertionError("START beacon disappeared after re-arm")
+        page.mouse.move(start["x"] + start["width"] / 2, start["y"] + start["height"] / 2)
+        page.mouse.down()
+    else:
+        _set_coordinate(page, truth["start"])
+        page.locator("#trace-proxy-start").click()
     for sample_index, effective in enumerate(truth["main_path"][1:], start=1):
         dx, dy = _drift(sample_index, truth["drift"])
         raw = [effective[0] - dx, effective[1] - dy]
-        page.mouse.move(*_screen_point(box, stage, raw), steps=1)
+        if interaction == "full":
+            page.mouse.move(*_screen_point(box, stage, raw), steps=1)
+        else:
+            _set_coordinate(page, raw)
+            page.locator("#trace-proxy-sample").click()
         page.wait_for_timeout(9)
         if sample_index == 48:
             out_dir.mkdir(parents=True, exist_ok=True)
             page.screenshot(path=str(out_dir / f"{mechanic}-active-crosswind-trace.png"), full_page=False)
-    page.mouse.up()
+    if interaction == "full":
+        page.mouse.up()
+    else:
+        _set_coordinate(page, raw)
+        page.locator("#trace-proxy-end").click()
 
     expect(page.locator(".trace-stage.is-complete")).to_be_visible(timeout=4_000)
     expect(page.locator(".trace-exit-beacon[data-complete='true']")).to_be_visible()

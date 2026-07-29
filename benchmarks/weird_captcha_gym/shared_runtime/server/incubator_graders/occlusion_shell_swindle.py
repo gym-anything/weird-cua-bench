@@ -5,6 +5,19 @@ from typing import Any
 
 
 MECHANIC_ID = "occlusion_shell_swindle"
+CONTROL_FIELDS = {
+    "shell_count_values",
+    "round_count",
+    "transfer_round_count_values",
+    "frame_count_min",
+    "frame_count_max",
+    "tick_ms",
+    "preview_ms",
+    "handoff_window_ticks",
+    "inspection_minimum_samples",
+    "inspection_port_radius",
+    "decoy_port_count",
+}
 
 
 def _fail(message: str) -> dict[str, Any]:
@@ -17,6 +30,21 @@ def _circle_inside(point: dict[str, Any], rect: dict[str, Any], radius: int) -> 
 
 def _public_round(round_state: dict[str, Any]) -> dict[str, Any]:
     return {key: value for key, value in round_state.items() if key not in {"handoff", "final_carrier"}}
+
+
+def _control_parameters(ground_truth: dict[str, Any], public_state: dict[str, Any]) -> tuple[dict[str, Any] | None, str | None]:
+    condition = ground_truth.get("control_condition")
+    if condition is None:
+        if public_state.get("control_condition") is not None:
+            raise ValueError("public shell control condition is unexpected")
+        return None, None
+    if not isinstance(condition, dict) or public_state.get("control_condition") != condition:
+        raise ValueError("shell control condition differs between public and hidden state")
+    interaction = str(condition.get("interaction") or "")
+    parameters = condition.get("difficulty_parameters")
+    if interaction not in {"simplified", "full"} or not isinstance(parameters, dict) or set(parameters) != CONTROL_FIELDS:
+        raise ValueError("shell control condition is malformed")
+    return parameters, interaction
 
 
 def _validate_round(round_state: dict[str, Any], radius: int) -> None:
@@ -37,6 +65,15 @@ def _validate_round(round_state: dict[str, Any], radius: int) -> None:
     expected_final = handoff["to_shell"] if handoff["transfers"] else handoff["from_shell"]
     if expected_final != round_state["final_carrier"] or handoff["to_shell"] != expected_final:
         raise ValueError("final carrier does not follow the visible shuttle")
+    for decoy in round_state.get("decoy_ports") or []:
+        if not isinstance(decoy, dict):
+            raise ValueError("decoy peephole is malformed")
+        cover = next((item for item in round_state["occluders"] if item["id"] == decoy.get("occluder_id")), None)
+        point = decoy.get("port")
+        if not cover or cover["id"] == handoff["occluder_id"] or not isinstance(point, list) or len(point) != 2:
+            raise ValueError("decoy peephole is not bound to a distinct physical cover")
+        if not _circle_inside({"x": point[0], "y": point[1]}, cover, 0):
+            raise ValueError("decoy peephole lies outside its visible cover")
 
 
 def grade(payload: dict[str, Any], ground_truth: dict[str, Any], public_state: dict[str, Any]) -> dict[str, Any]:
@@ -48,12 +85,25 @@ def grade(payload: dict[str, Any], ground_truth: dict[str, Any], public_state: d
     try:
         radius = int(ground_truth["shell_radius"])
         rounds = [dict(item) for item in ground_truth["rounds"]]
-        if len(rounds) != 3 or public_state.get("rounds") != [_public_round(item) for item in rounds]:
-            raise ValueError("three public tracking rounds differ from the replay contract")
+        parameters, interaction = _control_parameters(ground_truth, public_state)
+        expected_round_count = int(parameters["round_count"]) if parameters is not None else 3
+        if not 1 <= len(rounds) <= 5 or len(rounds) != expected_round_count or public_state.get("rounds") != [_public_round(item) for item in rounds]:
+            raise ValueError("public tracking rounds differ from the replay contract")
         for round_state in rounds:
             if len(round_state["frames"]) != int(round_state["frame_count"]):
                 raise ValueError("tracking frames are incomplete")
             _validate_round(round_state, radius)
+            if parameters is not None:
+                if (
+                    not int(parameters["frame_count_min"]) <= int(round_state["frame_count"]) <= int(parameters["frame_count_max"])
+                    or int(round_state["tick_ms"]) != int(parameters["tick_ms"])
+                    or int(round_state["preview_ms"]) != int(parameters["preview_ms"])
+                    or int(round_state["inspection"]["window_end"]) - int(round_state["inspection"]["window_start"]) != int(parameters["handoff_window_ticks"]) * 2
+                    or int(round_state["inspection"]["minimum_samples"]) != int(parameters["inspection_minimum_samples"])
+                    or int(round_state["inspection"]["radius"]) != int(parameters["inspection_port_radius"])
+                    or len(round_state.get("decoy_ports") or []) != int(parameters["decoy_port_count"])
+                ):
+                    raise ValueError("round does not implement its selected shell profile")
     except (KeyError, TypeError, ValueError) as exc:
         return _fail(f"invalid observable-shell contract: {exc}")
     events = payload.get("events")
@@ -64,7 +114,7 @@ def grade(payload: dict[str, Any], ground_truth: dict[str, Any], public_state: d
     active: dict[str, Any] | None = None
     choices: list[dict[str, Any]] = []
     total_ticks = observed_ms = inspection_samples = rewind_count = 0
-    attempt_counts = [0, 0, 0]
+    attempt_counts = [0] * len(rounds)
 
     for sequence, event in enumerate(events, start=1):
         if not isinstance(event, dict) or event.get("sequence") != sequence:
@@ -77,7 +127,7 @@ def grade(payload: dict[str, Any], ground_truth: dict[str, Any], public_state: d
             if active is not None or event.get("round") != round_index:
                 return _fail("tracking round start is out of order")
             attempt_counts[round_index] += 1
-            active = {"next_tick": 1, "last_elapsed": 0, "stopped": False, "carrier": str(current["initial_carrier"]), "inspection_ticks": set()}
+            active = {"next_tick": 1, "last_elapsed": 0, "stopped": False, "carrier": str(current["initial_carrier"]), "inspection_ticks": set(), "relay_port": None}
             continue
         if kind == "round_tick":
             if active is None or active["stopped"] or event.get("round") != round_index or event.get("tick") != active["next_tick"]:
@@ -101,6 +151,16 @@ def grade(payload: dict[str, Any], ground_truth: dict[str, Any], public_state: d
             active["last_elapsed"] = elapsed
             total_ticks += 1
             continue
+        if kind == "inspection_relay_arm":
+            if interaction != "simplified" or active is None or active["stopped"] or active["relay_port"] is not None or event.get("round") != round_index or event.get("input_source") != "peephole_relay_choice":
+                return _fail("peephole relay is invalid for this interaction mode")
+            inspection = current["inspection"]
+            visible_ports = [{"occluder_id": inspection["occluder_id"], "port": inspection["port"]}, *(current.get("decoy_ports") or [])]
+            selected = next((item for item in visible_ports if item.get("occluder_id") == event.get("occluder_id")), None)
+            if selected is None or event.get("point") != selected.get("port"):
+                return _fail("peephole relay is not aligned with a visible relay choice")
+            active["relay_port"] = {"occluder_id": selected["occluder_id"], "port": selected["port"]}
+            continue
         if kind == "inspection_sample":
             if active is None or active["stopped"] or event.get("round") != round_index:
                 return _fail("peephole sample occurs outside an active shuffle")
@@ -115,6 +175,12 @@ def grade(payload: dict[str, Any], ground_truth: dict[str, Any], public_state: d
                 return _fail("peephole sample misses the visible port")
             if str(event.get("from_shell") or "") != str(inspection["from_shell"]) or str(event.get("to_shell") or "") != str(inspection["to_shell"]):
                 return _fail("peephole sample fabricates shuttle engraving")
+            if interaction is not None:
+                expected_source = "peephole_relay_choice" if interaction == "simplified" else "direct_cursor"
+                if event.get("input_source") != expected_source:
+                    return _fail("peephole sample uses the wrong interaction input")
+                if interaction == "simplified" and active["relay_port"] != {"occluder_id": inspection["occluder_id"], "port": inspection["port"]}:
+                    return _fail("peephole sample is not bound to the selected genuine relay")
             active["inspection_ticks"].add(tick)
             inspection_samples += 1
             continue
@@ -143,6 +209,10 @@ def grade(payload: dict[str, Any], ground_truth: dict[str, Any], public_state: d
                 return _fail("shell selection is invalid or premature")
             if len(active["inspection_ticks"]) < int(current["inspection"]["minimum_samples"]):
                 return _fail("shell selection lacks a physical peephole observation")
+            if interaction is not None:
+                expected_source = "carrier_controls" if interaction == "simplified" else "direct_shell"
+                if event.get("input_source") != expected_source:
+                    return _fail("shell selection uses the wrong interaction input")
             if active["carrier"] != str(current["final_carrier"]) or shell_id != active["carrier"]:
                 return _fail("selected shell disagrees with path plus shuttle replay")
             choices.append({"round": round_index, "shell_id": shell_id})
@@ -155,8 +225,8 @@ def grade(payload: dict[str, Any], ground_truth: dict[str, Any], public_state: d
     for field, value in expected.items():
         if payload.get(field) != value:
             return _fail(f"submitted {field} does not match shell replay")
-    passed = round_index == 3 and active is None and len(choices) == 3 and inspection_samples >= sum(int(item["inspection"]["minimum_samples"]) for item in rounds)
-    return {"graded": True, "passed": passed, "score": 100 if passed else 0, "feedback": f"observable shell replay: rounds {round_index}/3; attempts {sum(attempt_counts)}; frames {total_ticks}; peephole samples {inspection_samples}; rewinds {rewind_count}; observation {observed_ms} ms"}
+    passed = round_index == len(rounds) and active is None and len(choices) == len(rounds) and inspection_samples >= sum(int(item["inspection"]["minimum_samples"]) for item in rounds)
+    return {"graded": True, "passed": passed, "score": 100 if passed else 0, "feedback": f"observable shell replay: rounds {round_index}/{len(rounds)}; attempts {sum(attempt_counts)}; frames {total_ticks}; peephole samples {inspection_samples}; rewinds {rewind_count}; observation {observed_ms} ms"}
 
 
 def cheat(public_state: dict[str, Any], ground_truth: dict[str, Any]) -> dict[str, Any]:

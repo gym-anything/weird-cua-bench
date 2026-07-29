@@ -4,6 +4,8 @@ import copy
 import importlib.util
 import json
 import math
+import subprocess
+import types
 from pathlib import Path
 
 
@@ -17,22 +19,31 @@ CONTROLLED_ENVIRONMENTS = (
     "clockwork_clutch_safe_env",
     "clockwork_doppelganger_customs_env",
     "code_to_diagram_captcha_env",
+    "craftcha_alchemy_bench_env",
     "dead_mans_switch_env",
+    "domino_autopsy_env",
     "elastic_membrane_sorter_env",
+    "exit_vim_terminal_escape_env",
     "marionette_checkpoint_env",
+    "photograph_eats_the_room_env",
     "fake_desktop_automation_inversion_env",
     "funeral_ritual_env",
     "impossible_ecology_env",
+    "impossible_panorama_env",
+    "jigsaw_slider_alignment_env",
+    "magnetic_stripe_purgatory_env",
     "consequences_boss_env",
     "crash_deadline_hovercar_env",
     "input_lag_forklift_env",
     "surreal_apple_on_tree_grid_env",
+    "top_face_dice_arithmetic_env",
     "rotating_keyboard_env",
     "rotate_wrong_thing_upright_env",
     "insider_trading_captcha_env",
     "flat_prisoner_env",
     "forced_perspective_moving_day_env",
     "hologram_silhouette_foundry_env",
+    "orbital_docking_customs_env",
     "lidar_blacksite_env",
     "board_game_captcha_env",
     "flat_pack_compliance_env",
@@ -40,6 +51,12 @@ CONTROLLED_ENVIRONMENTS = (
     "motion_only_ghost_jigsaw_env",
     "microgame_gauntlet_env",
     "modifier_stack_image_grid_env",
+    "moving_checkbox_evasive_button_env",
+    "occlusion_shell_swindle_env",
+    "pheromone_dispatch_env",
+    "popup_exorcist_env",
+    "relation_prompt_grounding_env",
+    "reverse_identity_gate_env",
     "cursor_constellation_hunt_env",
     "cursor_lens_reveal_env",
     "exact_change_candy_cascade_env",
@@ -48,6 +65,8 @@ CONTROLLED_ENVIRONMENTS = (
     "minecraft_block_grid_env",
     "slime_commute_env",
     "slot_reel_capture_env",
+    "trace_shape_without_walls_env",
+    "wonky_text_hostile_rendering_env",
 )
 
 APPROVED_BASELINE_LEVELS = {
@@ -58,12 +77,19 @@ APPROVED_BASELINE_LEVELS = {
     "clockwork_clutch_safe_env": 3,
     "clockwork_doppelganger_customs_env": 4,
     "code_to_diagram_captcha_env": 4,
+    "craftcha_alchemy_bench_env": 4,
     "dead_mans_switch_env": 4,
+    "domino_autopsy_env": 3,
     "elastic_membrane_sorter_env": 4,
+    "exit_vim_terminal_escape_env": 4,
     "marionette_checkpoint_env": 4,
+    "photograph_eats_the_room_env": 4,
     "fake_desktop_automation_inversion_env": 3,
     "funeral_ritual_env": 3,
     "impossible_ecology_env": 4,
+    "impossible_panorama_env": 4,
+    "jigsaw_slider_alignment_env": 4,
+    "magnetic_stripe_purgatory_env": 4,
     "consequences_boss_env": 1,
     "crash_deadline_hovercar_env": 4,
     "board_game_captcha_env": 3,
@@ -76,6 +102,7 @@ APPROVED_BASELINE_LEVELS = {
     "flat_prisoner_env": 4,
     "forced_perspective_moving_day_env": 4,
     "hologram_silhouette_foundry_env": 4,
+    "orbital_docking_customs_env": 4,
     "input_lag_forklift_env": 4,
     "insider_trading_captcha_env": 2,
     "lidar_blacksite_env": 4,
@@ -83,12 +110,21 @@ APPROVED_BASELINE_LEVELS = {
     "motion_only_ghost_jigsaw_env": 4,
     "microgame_gauntlet_env": 4,
     "modifier_stack_image_grid_env": 3,
+    "moving_checkbox_evasive_button_env": 4,
+    "occlusion_shell_swindle_env": 2,
+    "pheromone_dispatch_env": 4,
+    "popup_exorcist_env": 2,
+    "relation_prompt_grounding_env": 4,
+    "reverse_identity_gate_env": 4,
     "rotate_wrong_thing_upright_env": 4,
     "rotating_keyboard_env": 4,
     "slime_commute_env": 4,
     "specular_lighthouse_relay_env": 3,
     "surreal_apple_on_tree_grid_env": 4,
+    "top_face_dice_arithmetic_env": 5,
     "slot_reel_capture_env": 4,
+    "trace_shape_without_walls_env": 4,
+    "wonky_text_hostile_rendering_env": 3,
 }
 
 DIFFICULTY_NAMES = {
@@ -108,14 +144,23 @@ HISTORICAL_TASK_DIFFICULTY_OVERRIDES = {
     "clockwork_doppelganger_customs_env": "extreme",
     "crash_deadline_hovercar_env": "extreme",
     "code_to_diagram_captcha_env": "extreme",
+    "craftcha_alchemy_bench_env": "very_hard",
     "fake_desktop_automation_inversion_env": "extreme",
     "funeral_ritual_env": "hard",
     "impossible_ecology_env": "extreme",
     "forced_perspective_moving_day_env": "extreme",
     "hologram_silhouette_foundry_env": "extreme",
+    "orbital_docking_customs_env": "extreme",
     "marionette_checkpoint_env": "extreme",
+    "photograph_eats_the_room_env": "extreme",
     "microgame_gauntlet_env": "extreme",
     "modifier_stack_image_grid_env": "hard",
+    "moving_checkbox_evasive_button_env": "extreme",
+    "occlusion_shell_swindle_env": "extreme",
+    "relation_prompt_grounding_env": "extreme",
+    "reverse_identity_gate_env": "extreme",
+    "trace_shape_without_walls_env": "extreme",
+    "wonky_text_hostile_rendering_env": "hard",
 }
 
 
@@ -287,6 +332,216 @@ def test_original_tasks_match_their_independently_assigned_baselines() -> None:
         else:
             assert without_control_identity(baseline_public) == without_control_identity(original_public)
             assert without_control_identity(baseline_truth) == without_control_identity(original_truth)
+
+
+def _wonky_delta(target: float, initial: float) -> float:
+    return (target - initial + 180.0) % 360.0 - 180.0
+
+
+def _wonky_payload(public: dict, truth: dict, interaction: str) -> dict:
+    parameters = truth["control_condition"]["difficulty_parameters"]
+    source = {"simplified": "proxy_step", "full": "wheel_drag"}[interaction]
+    events: list[dict] = []
+
+    def push(kind: str, **details: object) -> None:
+        events.append({"sequence": len(events) + 1, "kind": kind, **details})
+
+    for plate in truth["press"]["plates"]:
+        remaining = _wonky_delta(float(plate["target"]), float(plate["initial"]))
+        if interaction == "simplified":
+            step = float(parameters["proxy_step_degrees"])
+            coarse_step = float(parameters.get("proxy_coarse_step_degrees") or 0.0)
+            for visible_step in sorted({step, coarse_step} - {0.0}, reverse=True):
+                while abs(remaining) >= visible_step - 1e-8:
+                    chunk = visible_step if remaining > 0 else -visible_step
+                    push("wheel_drag", plate_id=plate["id"], delta=chunk, input_source=source)
+                    remaining -= chunk
+            assert abs(remaining) < 1e-8
+        else:
+            push("wheel_drag", plate_id=plate["id"], delta=remaining, input_source=source)
+        push("lock", plate_id=plate["id"], locked=True)
+    push("press")
+    return {
+        "mechanic_id": public["mechanic_id"],
+        "task_id": public["task_id"],
+        "challenge_id": public["challenge_id"],
+        "events": events,
+    }
+
+
+def test_wonky_registration_profiles_preserve_l3_and_bind_both_input_surfaces() -> None:
+    env_name = "wonky_text_hostile_rendering_env"
+    mechanic = "wonky_text_hostile_rendering"
+    controls = controls_for(env_name)
+    grader = load_module(
+        "controlled_wonky_registration_grader",
+        BENCHMARK / "shared_runtime" / "server" / "incubator_graders" / f"{mechanic}.py",
+    )
+    verifier_helpers = load_module(
+        "controlled_wonky_registration_verifier",
+        BENCHMARK / "shared_runtime" / "verifier_helpers.py",
+    )
+    original = base_task_for(env_name, mechanic)
+    assert original["natural_language"] == "Register all three color plates, lock them, then press."
+    assert controls["baseline"] == {"difficulty": 3, "interaction": "full", "real_time": "live"}
+    assert controls["difficulty"]["3"]["natural_language"] == original["natural_language"]
+
+    for seed in ("wonky-baseline-a", "wonky-baseline-b", "wonky-baseline-c"):
+        original_public, original_truth = SETUP.generate_task_state(original, seed)
+        baseline_public, baseline_truth = SETUP.generate_task_state(task_for_level(env_name, 3, "full"), seed)
+        assert original_public["challenge_id"] == baseline_public["challenge_id"]
+        assert without_control_identity(baseline_public) == without_control_identity(original_public)
+        assert without_control_identity(baseline_truth) == without_control_identity(original_truth)
+
+    for level in range(1, 6):
+        parameters = controls["difficulty"][str(level)]["parameters"]
+        simplified_public, simplified_truth = SETUP.generate_task_state(task_for_level(env_name, level, "simplified"), f"wonky-d{level}")
+        full_public, full_truth = SETUP.generate_task_state(task_for_level(env_name, level, "full"), f"wonky-d{level}")
+        assert simplified_public["challenge_id"] == full_public["challenge_id"]
+        assert without_control_identity(simplified_public) == without_control_identity(full_public)
+        assert without_control_identity(simplified_truth) == without_control_identity(full_truth)
+        assert len(full_public["press"]["plates"]) == int(parameters["plate_count"])
+        assert len(full_public["press"]["token"]) == int(parameters["token_length"])
+        assert full_public["press"]["tolerance"] == float(parameters["tolerance"])
+        assert full_public["press"]["degrees_per_pixel"] == float(parameters["degrees_per_pixel"])
+        assert all(
+            int(plate["harmonic"]) in set(parameters["harmonic_values"])
+            and float(parameters["warp_min"]) <= float(plate["warp"]) <= float(parameters["warp_max"])
+            and abs(_wonky_delta(float(plate["target"]), float(plate["initial"]))) >= float(parameters["min_initial_delta_degrees"])
+            for plate in full_public["press"]["plates"]
+        )
+
+        for interaction, public, truth in (("simplified", simplified_public, simplified_truth), ("full", full_public, full_truth)):
+            payload = _wonky_payload(public, truth, interaction)
+            accepted = grader.grade(payload, truth, public)
+            assert accepted["passed"] is True
+            verified = verifier_helpers.verify_wonky_text_hostile_rendering({"result": payload, "ground_truth": truth, "public_state": public})
+            assert verified["passed"] is True
+            wrong_surface = copy.deepcopy(payload)
+            wheel_event = next(event for event in wrong_surface["events"] if event["kind"] == "wheel_drag")
+            wheel_event["input_source"] = "wheel_drag" if interaction == "simplified" else "proxy_step"
+            rejected = grader.grade(wrong_surface, truth, public)
+            assert rejected["passed"] is False
+            assert rejected["feedback"] == "plate rotation uses the wrong interaction input"
+
+        failure_events = [
+            {"sequence": index + 1, "kind": "lock", "plate_id": plate["id"], "locked": True}
+            for index, plate in enumerate(full_truth["press"]["plates"])
+        ]
+        failure_events.append({"sequence": len(failure_events) + 1, "kind": "press"})
+        failed = grader.grade({"mechanic_id": mechanic, "task_id": full_public["task_id"], "challenge_id": full_public["challenge_id"], "events": failure_events}, full_truth, full_public)
+        assert failed["passed"] is False
+        assert failed["feedback"].startswith("plate registration")
+
+    boundary_seed = "wonky-event-limit-preservation"
+    original_public, original_truth = SETUP.generate_task_state(original, boundary_seed)
+    baseline_public, baseline_truth = SETUP.generate_task_state(task_for_level(env_name, 3, "full"), boundary_seed)
+
+    def boundary_payload(public: dict, truth: dict, zero_releases: int) -> dict:
+        events = [{"sequence": index + 1, "kind": "wheel_drag", "plate_id": truth["press"]["plates"][0]["id"], "delta": 0.0, "input_source": "wheel_drag"} for index in range(zero_releases)]
+        for plate in truth["press"]["plates"]:
+            events.append({"sequence": len(events) + 1, "kind": "wheel_drag", "plate_id": plate["id"], "delta": _wonky_delta(float(plate["target"]), float(plate["initial"])), "input_source": "wheel_drag"})
+            events.append({"sequence": len(events) + 1, "kind": "lock", "plate_id": plate["id"], "locked": True})
+        events.append({"sequence": len(events) + 1, "kind": "press"})
+        return {"mechanic_id": mechanic, "task_id": public["task_id"], "challenge_id": public["challenge_id"], "events": events}
+
+    for zero_releases, expected_passed in ((93, True), (94, False)):
+        original_payload = boundary_payload(original_public, original_truth, zero_releases)
+        baseline_payload = boundary_payload(baseline_public, baseline_truth, zero_releases)
+        assert len(original_payload["events"]) == len(baseline_payload["events"]) == zero_releases + 7
+        assert grader.grade(original_payload, original_truth, original_public)["passed"] is expected_passed
+        assert grader.grade(baseline_payload, baseline_truth, baseline_public)["passed"] is expected_passed
+
+    for public, truth in ((original_public, original_truth), (baseline_public, baseline_truth)):
+        unlocked_payload = boundary_payload(public, truth, 0)
+        unlocked_payload["events"].insert(2, {"kind": "lock", "plate_id": truth["press"]["plates"][0]["id"], "locked": False})
+        for sequence, event in enumerate(unlocked_payload["events"], start=1):
+            event["sequence"] = sequence
+        rejected_unlock = grader.grade(unlocked_payload, truth, public)
+        assert rejected_unlock["passed"] is False
+        assert rejected_unlock["feedback"] == "plate lock is invalid"
+
+    # The L3 simplified surface retains 5-degree precision but adds a visible
+    # 10-degree coarse step.  Its largest possible three-plate replay is 58
+    # events (18 rotations per plate, three locks, and the press), below the
+    # preserved historical 100-event L3 limit.
+    assert controls["difficulty"]["3"]["parameters"]["proxy_coarse_step_degrees"] == 10.0
+    for index in range(16):
+        simplified_public, simplified_truth = SETUP.generate_task_state(
+            task_for_level(env_name, 3, "simplified"), f"wonky-l3-simplified-bound-{index}"
+        )
+        simplified_payload = _wonky_payload(simplified_public, simplified_truth, "simplified")
+        assert len(simplified_payload["events"]) <= 58
+        assert grader.grade(simplified_payload, simplified_truth, simplified_public)["passed"] is True
+
+    renderer = (BENCHMARK / "shared_runtime" / "app" / "mechanics" / f"{mechanic}.js").read_text(encoding="utf-8")
+    assert "WeirdCaptchaTime" not in renderer
+    assert "requestAnimationFrame" not in renderer
+    assert "EXPOSURE SWEEP" not in renderer
+
+
+def test_scroll_cage_profiles_preserve_l4_and_bind_scroll_surfaces() -> None:
+    env_name = "moving_checkbox_evasive_button_env"
+    controls = controls_for(env_name)
+    grader = load_module(
+        "controlled_scroll_cage_grader",
+        BENCHMARK / "shared_runtime" / "server" / "incubator_graders" / "moving_checkbox_evasive_button.py",
+    )
+    original_task = base_task_for(env_name, "moving_checkbox_evasive_button")
+    assert original_task["natural_language"] == "Check the box."
+    assert controls["difficulty"]["4"]["natural_language"] == "Check the box."
+    for seed in ("scroll-cage-l4-preservation-a", "scroll-cage-l4-preservation-b"):
+        original_public, original_truth = SETUP.generate_task_state(original_task, seed)
+        baseline_public, baseline_truth = SETUP.generate_task_state(
+            task_for_level(env_name, 4, "simplified"), seed
+        )
+        assert without_control_identity(baseline_public) == without_control_identity(original_public)
+        assert without_control_identity(baseline_truth) == without_control_identity(original_truth)
+
+    expected_sources = {"simplified": "shaft_button", "full": "shaft_wheel"}
+    for level in range(1, 6):
+        parameters = controls["difficulty"][str(level)]["parameters"]
+        simplified_public, simplified_truth = SETUP.generate_task_state(
+            task_for_level(env_name, level, "simplified"), f"scroll-cage-profile-{level}"
+        )
+        full_public, full_truth = SETUP.generate_task_state(
+            task_for_level(env_name, level, "full"), f"scroll-cage-profile-{level}"
+        )
+        assert without_control_identity(simplified_public) == without_control_identity(full_public)
+        assert without_control_identity(simplified_truth) == without_control_identity(full_truth)
+        assert len(simplified_public["scene"]["shaft_lefts"]) == parameters["shaft_count"]
+        assert len(simplified_public["scene"]["boundaries"]) == parameters["shaft_count"] - 1
+        assert simplified_public["physics"]["cursor_radius"] == parameters["cursor_radius"]
+        assert simplified_public["physics"]["friction_milli"] == parameters["friction_milli"]
+        assert simplified_public["scene"]["clamp"]["capture_radius"] == parameters["capture_radius"]
+
+        scene = simplified_truth["scene"]
+        before = int(scene["initial_offsets"][0])
+        delta = -int(scene["offset_step"]) if before > int(scene["offset_min"]) else int(scene["offset_step"])
+        wrong_source = "shaft_wheel" if expected_sources["simplified"] == "shaft_button" else "shaft_button"
+        payload = {
+            "mechanic_id": "moving_checkbox_evasive_button",
+            "task_id": simplified_truth["task_id"],
+            "challenge_id": simplified_truth["challenge_id"],
+            "events": [{
+                "seq": sequence,
+                "type": "scroll",
+                "shaft": 0,
+                "before": before,
+                "delta": delta,
+                "after": before + delta,
+                "input_source": wrong_source,
+            } for sequence in range(1, 4)],
+            "completed": False,
+        }
+        rejected = grader.grade(payload, simplified_truth, simplified_public)
+        assert "wrong interaction input" in rejected["feedback"]
+
+    renderer = (BENCHMARK / "shared_runtime" / "app" / "mechanics" / "moving_checkbox_evasive_button.js").read_text(encoding="utf-8")
+    styles = (BENCHMARK / "shared_runtime" / "app" / "mechanics" / "moving_checkbox_evasive_button.css").read_text(encoding="utf-8")
+    assert 'data-shaft-count="${scene.shaft_lefts.length}"' in renderer
+    assert '.scroll-cage[data-shaft-count="5"] .scroll-cage-console' in styles
+    assert '.scroll-cage[data-shaft-count="5"] .scroll-cage-check' in styles
 
 
 def test_impossible_ecology_visible_rules_match_each_generated_goal_count() -> None:
@@ -852,6 +1107,93 @@ def test_hologram_foundry_profiles_preserve_l4_and_bind_both_input_surfaces() ->
     assert 'const interaction = state.control_condition?.interaction || "simplified";' in source
     assert 'input_source:"transform_button"' in source
     assert 'input_source:"gizmo_drag"' in source
+
+
+def test_orbital_docking_profiles_preserve_l4_and_bind_both_input_surfaces() -> None:
+    env_name = "orbital_docking_customs_env"
+    controls = controls_for(env_name)
+    grader = load_module(
+        "controlled_orbital_docking_grader",
+        BENCHMARK / "shared_runtime" / "server" / "incubator_graders" / "orbital_docking_customs.py",
+    )
+    original = base_task_for(env_name, "orbital_docking_customs")
+    l4 = task_for_level(env_name, 4, "simplified")
+    for seed in ("orbital-l4-preservation-a", "orbital-l4-preservation-b"):
+        original_public, original_truth = SETUP.generate_task_state(original, seed)
+        controlled_public, controlled_truth = SETUP.generate_task_state(l4, seed)
+        assert without_control_identity(controlled_public) == without_control_identity(original_public)
+        assert without_control_identity(controlled_truth) == without_control_identity(original_truth)
+
+    for level in range(1, 6):
+        parameters = controls["difficulty"][str(level)]["parameters"]
+        seed = f"orbital-profile-{level}"
+        simplified_public, simplified_truth = SETUP.generate_task_state(
+            task_for_level(env_name, level, "simplified"), seed
+        )
+        full_public, full_truth = SETUP.generate_task_state(
+            task_for_level(env_name, level, "full"), seed
+        )
+        assert len(simplified_public["debris"]) == parameters["debris_count"]
+        assert len(simplified_public["beacons"]) == parameters["beacon_count"]
+        assert simplified_public["station"]["y_amplitude"] in parameters["station_y_amplitude_options"]
+        assert simplified_public["station"]["y_rate"] in parameters["station_y_rate_options"]
+        assert simplified_public["station"]["rotation_deg_per_tick"] in parameters["station_port_rate_options"]
+        for key in ("fuel", "dock_distance", "dock_speed", "angle_tolerance_deg", "max_ticks"):
+            assert simplified_public["physics"][key] == parameters[key]
+        assert without_control_identity(simplified_public) == without_control_identity(full_public)
+        assert without_control_identity(simplified_truth) == without_control_identity(full_truth)
+        assert simplified_public["challenge_id"] != full_public["challenge_id"]
+
+        before = copy.deepcopy(simplified_public["ship"])
+        after = copy.deepcopy(before)
+        after["vx"] += simplified_public["physics"]["impulse"]
+        payload = {
+            "mechanic_id": simplified_public["mechanic_id"],
+            "task_id": simplified_public["task_id"],
+            "challenge_id": simplified_public["challenge_id"],
+            "events": [{
+                "seq": 1,
+                "type": "control",
+                "action": "thrust",
+                "before": before,
+                "after": after,
+                "fuel_after": simplified_public["physics"]["fuel"] - 1,
+                "ticks_after": 0,
+                "scans_after": [],
+                "collision": None,
+                "input_source": "rcs_button",
+            }],
+            "completed": False,
+        }
+        accepted_surface = grader.grade(payload, simplified_truth, simplified_public)
+        assert accepted_surface["passed"] is False
+        assert accepted_surface["feedback"] == "no hard-dock request"
+        wrong_surface = copy.deepcopy(payload)
+        wrong_surface["events"][0]["input_source"] = "rcs_keyboard"
+        assert grader.grade(wrong_surface, simplified_truth, simplified_public)["feedback"] == "RCS control uses the wrong interaction input"
+
+        full_before = copy.deepcopy(full_public["ship"])
+        full_after = copy.deepcopy(full_before)
+        full_after["vx"] += full_public["physics"]["impulse"]
+        full_payload = copy.deepcopy(payload)
+        full_payload["task_id"] = full_public["task_id"]
+        full_payload["challenge_id"] = full_public["challenge_id"]
+        full_payload["events"][0].update({
+            "before": full_before,
+            "after": full_after,
+            "fuel_after": full_public["physics"]["fuel"] - 1,
+            "input_source": "rcs_keyboard",
+        })
+        assert grader.grade(full_payload, full_truth, full_public)["feedback"] == "no hard-dock request"
+        full_payload["events"][0]["input_source"] = "rcs_button"
+        assert grader.grade(full_payload, full_truth, full_public)["feedback"] == "RCS control uses the wrong interaction input"
+
+    source = (BENCHMARK / "shared_runtime" / "app" / "mechanics" / "_interaction_vii_viii.js").read_text(encoding="utf-8")
+    assert 'input_source: inputSource' in source
+    assert 'document.addEventListener("keydown", model.keyHandler)' in source
+    assert 'requestDock("dock_keyboard")' in source
+    assert '${model.scans.length}/${state.beacons.length}' in source
+    assert "time_mode" not in source
 
 
 def test_elastic_membrane_profiles_and_interaction_grader_are_bound() -> None:
@@ -2033,6 +2375,100 @@ def test_forced_perspective_profiles_change_projective_placement_and_bind_input_
         assert result["feedback"] == "pickup uses the wrong interaction input"
 
 
+def test_photograph_room_profiles_change_rewrites_and_bind_the_selected_surface() -> None:
+    controls = controls_for("photograph_eats_the_room_env")
+    profiles = list(generated_levels("photograph_eats_the_room_env"))
+    source_counts = []
+    void_widths = []
+    capture_ranges = []
+    bridge_half_widths = []
+    for level, (public, truth) in enumerate(profiles, start=1):
+        parameters = controls["difficulty"][str(level)]["parameters"]
+        assert public["control_condition"]["difficulty"] == level
+        assert public["control_condition"] == truth["control_condition"]
+        assert len(public["sources"]) == parameters["stage_count"]
+        assert len(public["sockets"]) == parameters["stage_count"]
+        assert public["controls"]["plane_rotation_step_deg"] == parameters["plane_rotation_step_deg"]
+        assert math.isclose(public["controls"]["plane_scale_step"], parameters["plane_scale_step"])
+        assert math.isclose(public["qualification"]["capture_range"], parameters["capture_range"])
+        assert math.isclose(public["qualification"]["bridge_half_width"], parameters["bridge_half_width"])
+        assert all(math.isclose(socket["tolerance"], parameters["socket_tolerance"]) for socket in public["sockets"])
+        source_counts.append(len(public["sources"]))
+        void_widths.append(public["room"]["void"]["x2"] - public["room"]["void"]["x1"])
+        capture_ranges.append(public["qualification"]["capture_range"])
+        bridge_half_widths.append(public["qualification"]["bridge_half_width"])
+    assert source_counts == [1, 2, 2, 2, 2]
+    assert void_widths == sorted(void_widths)
+    assert capture_ranges == sorted(capture_ranges, reverse=True)
+    assert bridge_half_widths == [0.7, 0.62, 0.55, 0.48, 0.4]
+
+    grader = load_module(
+        "controlled_photograph_room_grader",
+        BENCHMARK / "shared_runtime" / "server" / "incubator_graders" / "photograph_eats_the_room.py",
+    )
+    for interaction, wrong_surface in (("simplified", "full"), ("full", "simplified")):
+        public, truth = SETUP.generate_task_state(
+            task_for_level("photograph_eats_the_room_env", 4, interaction),
+            f"photograph-room-interaction-{interaction}",
+        )
+        result = grader.grade({
+            "mechanic_id": public["mechanic_id"],
+            "task_id": public["task_id"],
+            "challenge_id": public["challenge_id"],
+            "events": [{
+                "seq": 1,
+                "t_ms": 0,
+                "type": "challenge_start",
+                "input_surface": wrong_surface,
+                "camera": public["initial_camera"],
+            }],
+            "final_state": {},
+        }, truth, public)
+        assert result["passed"] is False
+        assert result["feedback"] == "room event 1 uses the wrong interaction input"
+
+    for public, _truth in profiles:
+        bridge_half_width = float(public["qualification"]["bridge_half_width"])
+        void = public["room"]["void"]
+        bridge = {
+            "operation": "add_walkway",
+            "center": dict(public["sockets"][0]["center"]),
+            "angle_deg": 0,
+            "length": float(public["sockets"][0]["minimum_length"]),
+        }
+        accepted_before = {
+            "x": float(void["x1"]) - 0.15,
+            "y": float(public["room"]["lane_y"]) + bridge_half_width - 0.01,
+        }
+        accepted = grader._collision_move(
+            dict(accepted_before), 0.4, 0.0, public["room"], [bridge], public["qualification"]
+        )
+        assert accepted["x"] > accepted_before["x"]
+        blocked_before = {
+            "x": float(void["x1"]) - 0.15,
+            "y": float(public["room"]["lane_y"]) + bridge_half_width + 0.01,
+        }
+        blocked = grader._collision_move(
+            dict(blocked_before), 0.4, 0.0, public["room"], [bridge], public["qualification"]
+        )
+        assert blocked == blocked_before
+
+    renderer = (
+        BENCHMARK / "shared_runtime" / "app" / "mechanics" / "photograph_eats_the_room.js"
+    ).read_text(encoding="utf-8")
+    styles = (
+        BENCHMARK / "shared_runtime" / "app" / "mechanics" / "photograph_eats_the_room.css"
+    ).read_text(encoding="utf-8")
+    assert 'const interaction=state.control_condition?.interaction||"simplified"' in renderer
+    assert 'supportsHistoricalKeys=interaction==="simplified"' in renderer
+    assert '"WASD MOVE · ← → TURN · C CAPTURE"' in renderer
+    assert "function scenePointerDown" in renderer
+    assert "input_surface:model?.interaction" in renderer
+    assert "width = Number(model.state.qualification.bridge_half_width)" in renderer
+    assert "width = .48" not in renderer
+    assert '.photo-room[data-interaction="full"] .photo-nav' in styles
+
+
 def test_board_game_profiles_match_lamp_obstacle_and_physics_contracts() -> None:
     controls = controls_for("board_game_captcha_env")
     for level, (public, truth) in enumerate(generated_levels("board_game_captcha_env"), start=1):
@@ -2831,6 +3267,335 @@ def test_every_controlled_generator_is_deterministic_and_binds_the_condition() -
             for state in first:
                 assert state["control_condition"] == task["metadata"]["control_condition"]
         assert len(challenge_ids) == 5
+
+
+def _top_face_dice_payload(public: dict, truth: dict, interaction: str, grader) -> dict:
+    sources = {
+        "simplified": {"select": "die_clamp", "roll": "roll_pad"},
+        "full": {"select": "rail_drag_select", "roll": "direct_rail_drag"},
+    }[interaction]
+    dice = {
+        item["id"]: {
+            "position": dict(item["start"]),
+            "orientation": copy.deepcopy(item["initial_orientation"]),
+            "accepted_rolls": 0,
+            "docked": False,
+            "initial_reveal": True,
+            "scanner_cells": {tuple(cell.values()) for cell in item["scanner_cells"]},
+        }
+        for item in truth["dice"]
+    }
+    events: list[dict] = []
+    selected = truth["initial_selected_die_id"]
+    for plan in truth["solution_plans"]:
+        die_id = plan["die_id"]
+        events.append({
+            "seq": len(events) + 1,
+            "t_ms": len(events),
+            "type": "select",
+            "die_id": die_id,
+            "selected_before": selected,
+            "selected_after": die_id,
+            "input_source": sources["select"],
+        })
+        selected = die_id
+        die = dice[die_id]
+        for world_direction in plan["world_directions"]:
+            before = dict(die["position"])
+            dx, dy = grader.DIRECTIONS[world_direction]
+            candidate = {"x": before["x"] + dx, "y": before["y"] + dy}
+            die["position"] = candidate
+            die["orientation"] = grader._roll(die["orientation"], world_direction)
+            die["accepted_rolls"] += 1
+            die["initial_reveal"] = False
+            die["docked"] = candidate == truth["dice"][list(dice).index(die_id)]["dock"]
+            top_visible = (
+                public.get("orientation_visibility", "initial_and_scanners") == "always"
+                or tuple(candidate.values()) in die["scanner_cells"]
+                or die["docked"]
+            )
+            events.append({
+                "seq": len(events) + 1,
+                "t_ms": len(events),
+                "type": "roll",
+                "die_id": die_id,
+                "input_direction": world_direction,
+                "world_direction": world_direction,
+                "view": 0,
+                "from": before,
+                "to": dict(candidate),
+                "accepted": True,
+                "orientation_after": copy.deepcopy(die["orientation"]),
+                "accepted_rolls_after": die["accepted_rolls"],
+                "docked": die["docked"],
+                "top_visible": top_visible,
+                "input_source": sources["roll"],
+            })
+    events.append({"seq": len(events) + 1, "t_ms": len(events), "type": "settle_start", "sample_count": 7})
+    for sample_index, deflection in enumerate([26, -16, 10, -6, 3, -1, 0], start=1):
+        events.append({"seq": len(events) + 1, "t_ms": len(events), "type": "settle_sample", "sample_index": sample_index, "deflection": deflection})
+    top_sum = sum(int(die["orientation"]["top"]) for die in dice.values())
+    events.append({"seq": len(events) + 1, "t_ms": len(events), "type": "settle_complete", "balanced": True, "top_sum": top_sum})
+    final_dice = [{
+        "die_id": item["id"],
+        "position": dict(dice[item["id"]]["position"]),
+        "orientation": copy.deepcopy(dice[item["id"]]["orientation"]),
+        "accepted_rolls": dice[item["id"]]["accepted_rolls"],
+        "docked": dice[item["id"]]["docked"],
+        "top_visible": (
+            public.get("orientation_visibility", "initial_and_scanners") == "always"
+            or tuple(dice[item["id"]]["position"].values()) in dice[item["id"]]["scanner_cells"]
+            or dice[item["id"]]["docked"]
+        ),
+    } for item in truth["dice"]]
+    return {
+        "mechanic_id": public["mechanic_id"],
+        "task_id": public["task_id"],
+        "challenge_id": public["challenge_id"],
+        "events": events,
+        "final_state": {
+            "view": 0,
+            "selected_die_id": selected,
+            "view_rotations": 0,
+            "reset_count": 0,
+            "dice": final_dice,
+            "top_sum": top_sum,
+            "settled": True,
+            "settle_samples": [26, -16, 10, -6, 3, -1, 0],
+        },
+    }
+
+
+def test_top_face_dice_profiles_preserve_l5_and_bind_both_input_surfaces() -> None:
+    env_name = "top_face_dice_arithmetic_env"
+    controls = controls_for(env_name)
+    grader = load_module(
+        "controlled_top_face_dice_grader",
+        BENCHMARK / "shared_runtime" / "server" / "incubator_graders" / "top_face_dice_arithmetic.py",
+    )
+    helpers = load_module(
+        "controlled_top_face_dice_verifier",
+        BENCHMARK / "shared_runtime" / "verifier_helpers.py",
+    )
+    original = base_task_for(env_name, "top_face_dice_arithmetic")
+    baseline = task_for_level(env_name, 5, "simplified")
+    for seed in ("top-face-l5-preservation-a", "top-face-l5-preservation-b"):
+        original_public, original_truth = SETUP.generate_task_state(original, seed)
+        baseline_public, baseline_truth = SETUP.generate_task_state(baseline, seed)
+        assert without_control_identity(baseline_public) == without_control_identity(original_public)
+        assert without_control_identity(baseline_truth) == without_control_identity(original_truth)
+
+    profile_dice_counts: list[int] = []
+    visibility: list[str] = []
+    for level in range(1, 6):
+        parameters = controls["difficulty"][str(level)]["parameters"]
+        seed = f"top-face-profile-{level}"
+        simplified_public, simplified_truth = SETUP.generate_task_state(task_for_level(env_name, level, "simplified"), seed)
+        full_public, full_truth = SETUP.generate_task_state(task_for_level(env_name, level, "full"), seed)
+        assert without_control_identity(simplified_public) == without_control_identity(full_public)
+        assert without_control_identity(simplified_truth) == without_control_identity(full_truth)
+        assert len(simplified_public["dice"]) == parameters["dice_count"]
+        effective_visibility = simplified_public.get("orientation_visibility", "initial_and_scanners")
+        assert effective_visibility == parameters["orientation_visibility"]
+        profile_dice_counts.append(len(simplified_public["dice"]))
+        visibility.append(effective_visibility)
+        for interaction, public, truth in (("simplified", simplified_public, simplified_truth), ("full", full_public, full_truth)):
+            payload = _top_face_dice_payload(public, truth, interaction, grader)
+            assert grader.grade(payload, truth, public)["passed"] is True
+            verifier_payload = {
+                "result": payload,
+                "ground_truth": truth,
+                "public_state": public,
+            }
+            assert helpers.verify_external_mechanic(verifier_payload, "top_face_dice_arithmetic")["passed"] is True
+            forged = copy.deepcopy(payload)
+            first_roll = next(event for event in forged["events"] if event["type"] == "roll")
+            first_roll["input_source"] = "direct_rail_drag" if interaction == "simplified" else "roll_pad"
+            assert grader.grade(forged, truth, public)["feedback"] == "die roll uses the wrong interaction input"
+            verifier_payload["result"] = forged
+            assert helpers.verify_external_mechanic(verifier_payload, "top_face_dice_arithmetic") == {
+                "passed": False,
+                "score": 0,
+                "feedback": "die roll uses the wrong interaction input",
+            }
+            stale = copy.deepcopy(payload)
+            stale["challenge_id"] = "stale-top-face-challenge"
+            assert grader.grade(stale, truth, public)["feedback"] == "stale challenge"
+            verifier_payload["result"] = stale
+            assert helpers.verify_external_mechanic(verifier_payload, "top_face_dice_arithmetic") == {
+                "passed": False,
+                "score": 0,
+                "feedback": "stale challenge",
+            }
+
+    assert profile_dice_counts == [1, 2, 3, 3, 4]
+    assert visibility == ["always", "always", "always", "initial_and_scanners", "initial_and_scanners"]
+    browser = (BENCHMARK / "shared_runtime" / "app" / "mechanics" / "top_face_dice_arithmetic.js").read_text(encoding="utf-8")
+    styles = (BENCHMARK / "shared_runtime" / "app" / "mechanics" / "top_face_dice_arithmetic.css").read_text(encoding="utf-8")
+    assert 'data-interaction="${helpers.text(interaction)}"' in browser
+    assert 'rollSelected(direction, "direct_rail_drag")' in browser
+    assert 'model.interaction !== "simplified"' in browser
+    assert 'repeat(var(--foundry-dice), 1fr)' in styles
+
+
+def test_top_face_dice_controlled_exhaustion_constructs_a_valid_lot(monkeypatch) -> None:
+    env_name = "top_face_dice_arithmetic_env"
+    controls = controls_for(env_name)
+    generator = load_module(
+        "controlled_top_face_dice_generator_exhaustion",
+        BENCHMARK / "shared_scripts" / "incubator_generators" / "top_face_dice_arithmetic.py",
+    )
+    grader = load_module(
+        "controlled_top_face_dice_grader_exhaustion",
+        BENCHMARK / "shared_runtime" / "server" / "incubator_graders" / "top_face_dice_arithmetic.py",
+    )
+
+    class ExhaustedLotRng:
+        def shuffle(self, _items) -> None:
+            return None
+
+        def randint(self, lower: int, _upper: int) -> int:
+            return lower
+
+        def choice(self, options):
+            values = tuple(options)
+            if values == generator.ROUTE_PLANS:
+                return generator.ROUTE_PLANS[5]
+            return values[0]
+
+    monkeypatch.setattr(generator.random, "Random", lambda _seed: ExhaustedLotRng())
+    monkeypatch.setattr(generator, "_initial_orientation", lambda _rng: dict(generator.CANONICAL))
+
+    task = SETUP.task_with_control_condition(task_for_level(env_name, 4, "simplified"))
+    full_task = SETUP.task_with_control_condition(task_for_level(env_name, 4, "full"))
+    parameters = controls["difficulty"]["4"]["parameters"]
+    forced_candidate = generator._candidate_lot(
+        [dict(generator.CANONICAL)] * 3,
+        (generator.ROUTE_PLANS[5],) * 3,
+    )
+    assert not generator._matches_profile(
+        forced_candidate,
+        parameters["minimum_target_sum"],
+        parameters["maximum_target_sum"],
+        parameters["dice_count"],
+    )
+
+    public, truth = generator.generate(task, "top-face-forced-exhaustion")
+    full_public, full_truth = generator.generate(full_task, "top-face-forced-exhaustion")
+    final_tops = [plan["final_top"] for plan in truth["solution_plans"]]
+    assert parameters["minimum_target_sum"] <= public["target_sum"] <= parameters["maximum_target_sum"]
+    assert public["target_sum"] == sum(final_tops)
+    assert len(set(final_tops)) >= 3
+    assert public["target_sum"] != 18
+    assert without_control_identity(public) == without_control_identity(full_public)
+    assert without_control_identity(truth) == without_control_identity(full_truth)
+    payload = _top_face_dice_payload(public, truth, "simplified", grader)
+    assert grader.grade(payload, truth, public)["passed"] is True
+    full_payload = _top_face_dice_payload(full_public, full_truth, "full", grader)
+    assert grader.grade(full_payload, full_truth, full_public)["passed"] is True
+
+
+def test_top_face_dice_l5_matches_head_generator_including_exhaustion(monkeypatch) -> None:
+    env_name = "top_face_dice_arithmetic_env"
+    controls = controls_for(env_name)
+    historical_source = subprocess.run(
+        [
+            "git",
+            "show",
+            "HEAD:benchmarks/weird_captcha_gym/shared_scripts/incubator_generators/top_face_dice_arithmetic.py",
+        ],
+        cwd=ROOT,
+        check=True,
+        capture_output=True,
+        text=True,
+    ).stdout
+    historical = types.ModuleType("head_top_face_dice_generator")
+    exec(compile(historical_source, "HEAD:top_face_dice_arithmetic.py", "exec"), historical.__dict__)
+    current = load_module(
+        "controlled_top_face_dice_generator_head_comparison",
+        BENCHMARK / "shared_scripts" / "incubator_generators" / "top_face_dice_arithmetic.py",
+    )
+    grader = load_module(
+        "controlled_top_face_dice_grader_head_comparison",
+        BENCHMARK / "shared_runtime" / "server" / "incubator_graders" / "top_face_dice_arithmetic.py",
+    )
+    historical_task = json.loads(
+        subprocess.run(
+            [
+                "git",
+                "show",
+                "HEAD:benchmarks/weird_captcha_gym/environments/top_face_dice_arithmetic_env/tasks/top_face_dice_arithmetic_seed_0001/task.json",
+            ],
+            cwd=ROOT,
+            check=True,
+            capture_output=True,
+            text=True,
+        ).stdout
+    )
+    controlled_task = copy.deepcopy(historical_task)
+    controlled_task["_control_condition"] = {
+        "difficulty": 5,
+        "interaction": "simplified",
+        "real_time": "live",
+        "difficulty_parameters": copy.deepcopy(controls["difficulty"]["5"]["parameters"]),
+    }
+    materialized_l5_task = SETUP.task_with_control_condition(task_for_level(env_name, 5, "simplified"))
+
+    def without_condition(value: dict) -> dict:
+        result = copy.deepcopy(value)
+        result.pop("control_condition", None)
+        return result
+
+    def without_materialized_identity(value: dict) -> dict:
+        result = without_condition(value)
+        result.pop("task_id", None)
+        result.pop("challenge_id", None)
+        return result
+
+    for seed in ("top-face-baseline-a", "top-face-baseline-b"):
+        historical_public, historical_truth = historical.generate(historical_task, seed)
+        uncontrolled_public, uncontrolled_truth = current.generate(historical_task, seed)
+        controlled_public, controlled_truth = current.generate(controlled_task, seed)
+        materialized_public, materialized_truth = current.generate(materialized_l5_task, seed)
+        assert uncontrolled_public == historical_public
+        assert uncontrolled_truth == historical_truth
+        assert without_condition(controlled_public) == historical_public
+        assert without_condition(controlled_truth) == historical_truth
+        assert without_materialized_identity(materialized_public) == without_materialized_identity(historical_public)
+        assert without_materialized_identity(materialized_truth) == without_materialized_identity(historical_truth)
+        assert "orientation_visibility" not in controlled_public
+
+    class ExhaustedLotRng:
+        def shuffle(self, _items) -> None:
+            return None
+
+        def randint(self, lower: int, _upper: int) -> int:
+            return lower
+
+        def choice(self, options):
+            values = tuple(options)
+            if values == current.ROUTE_PLANS:
+                return current.ROUTE_PLANS[5]
+            return values[0]
+
+    monkeypatch.setattr(historical.random, "Random", lambda _seed: ExhaustedLotRng())
+    monkeypatch.setattr(current.random, "Random", lambda _seed: ExhaustedLotRng())
+    monkeypatch.setattr(historical, "_initial_orientation", lambda _rng: dict(historical.CANONICAL))
+    monkeypatch.setattr(current, "_initial_orientation", lambda _rng: dict(current.CANONICAL))
+    historical_public, historical_truth = historical.generate(historical_task, "top-face-l5-head-exhaustion")
+    uncontrolled_public, uncontrolled_truth = current.generate(historical_task, "top-face-l5-head-exhaustion")
+    controlled_public, controlled_truth = current.generate(controlled_task, "top-face-l5-head-exhaustion")
+    materialized_public, materialized_truth = current.generate(materialized_l5_task, "top-face-l5-head-exhaustion")
+    assert uncontrolled_public == historical_public
+    assert uncontrolled_truth == historical_truth
+    assert without_condition(controlled_public) == historical_public
+    assert without_condition(controlled_truth) == historical_truth
+    assert without_materialized_identity(materialized_public) == without_materialized_identity(historical_public)
+    assert without_materialized_identity(materialized_truth) == without_materialized_identity(historical_truth)
+    assert controlled_public["target_sum"] == 24
+    assert "orientation_visibility" not in controlled_public
+    payload = _top_face_dice_payload(controlled_public, controlled_truth, "simplified", grader)
+    assert grader.grade(payload, controlled_truth, controlled_public)["passed"] is True
 
 
 def _grillmaster_payload(
@@ -3812,3 +4577,167 @@ def test_modifier_stack_gate_instruction_pluralization_covers_every_profile() ->
         assert {1: "the one gate", 2: "both gates"}.get(
             gate_count, f"all {['zero', 'one', 'two', 'three', 'four'][gate_count]} gates"
         ) == expected_phrase
+
+
+def _reverse_identity_gate_payload(public: dict, truth: dict, interaction: str) -> dict:
+    """Build a replayable ordinary-input ledger for source-binding checks."""
+
+    events: list[dict] = []
+
+    def record(kind: str, **details) -> None:
+        events.append({"seq": len(events) + 1, "type": kind, **details})
+
+    stations = [int(station["id"]) for station in truth["stations"]]
+    for station in stations:
+        record("deploy", station=station, deployed_count=station + 1)
+
+    physics = truth["physics"]
+    key_source = "keyboard" if interaction == "full" else "direction_button"
+    contact_source = "pointer_hold" if interaction == "full" else "contact_toggle"
+    for stage_index, stage in enumerate(truth["stages"]):
+        station = int(stage["station"])
+        direction = 1 if int(stage["pulse_speed_deg_per_tick"]) > 0 else -1
+        record(
+            "key",
+            stage=stage_index,
+            station=station,
+            before=0,
+            after=direction,
+            input_source=key_source,
+        )
+        record(
+            "contact",
+            stage=stage_index,
+            station=station,
+            before=False,
+            after=True,
+            input_source=contact_source,
+        )
+        pulse = int(stage["pulse_start_deg"])
+        receiver = int(stage["receiver_initial_deg"])
+        charge = 0
+        tick = 0
+        while charge < int(physics["hold_ticks"]):
+            tick += 1
+            pulse = (pulse + int(stage["pulse_speed_deg_per_tick"])) % 360
+            receiver = (receiver + direction * int(physics["receiver_control_deg_per_tick"])) % 360
+            phase_error = abs((receiver - pulse + 180) % 360 - 180)
+            locked = phase_error <= int(physics["capture_tolerance_deg"])
+            if locked:
+                receiver = pulse
+                phase_error = 0
+                charge += 1
+            else:
+                charge = max(0, charge - int(physics["charge_decay_per_tick"]))
+            record(
+                "tick",
+                stage=stage_index,
+                station=station,
+                tick=tick,
+                state={
+                    "pulse_deg": pulse,
+                    "receiver_deg": receiver,
+                    "error_deg": phase_error,
+                    "charge": charge,
+                    "locked": locked,
+                    "direction": direction,
+                    "contact": True,
+                },
+            )
+        record(
+            "relay",
+            stage=stage_index,
+            station=station,
+            tick=tick,
+            charge=charge,
+            next_station=(
+                truth["stages"][stage_index + 1]["station"]
+                if stage_index + 1 < len(truth["stages"])
+                else None
+            ),
+        )
+    record("verify", completed_stages=len(truth["stages"]), deployed=stations)
+    return {
+        "mechanic_id": "reverse_identity_gate",
+        "task_id": truth["task_id"],
+        "challenge_id": truth["challenge_id"],
+        "events": events,
+        "completed": True,
+    }
+
+
+def test_reverse_identity_gate_controls_preserve_the_historical_full_reference_and_pair_simplified() -> None:
+    env_name = "reverse_identity_gate_env"
+    controls = controls_for(env_name)
+    grader = load_module(
+        "controlled_reverse_identity_gate_grader",
+        BENCHMARK / "shared_runtime" / "server" / "incubator_graders" / "reverse_identity_gate.py",
+    )
+    original_task = base_task_for(env_name, "reverse_identity_gate")
+    assert controls["baseline"] == {"difficulty": 4, "interaction": "full", "real_time": "live"}
+    assert original_task["natural_language"] == controls["difficulty"]["4"]["natural_language"]
+
+    for seed in ("reverse-identity-l4-preservation-a", "reverse-identity-l4-preservation-b"):
+        original_public, original_truth = SETUP.generate_task_state(original_task, seed)
+        reference_public, reference_truth = SETUP.generate_task_state(
+            task_for_level(env_name, 4), seed
+        )
+        assert reference_public["control_condition"]["interaction"] == "full"
+        assert reference_truth["control_condition"]["interaction"] == "full"
+        assert without_control_identity(reference_public) == without_control_identity(original_public)
+        assert without_control_identity(reference_truth) == without_control_identity(original_truth)
+        simplified_public, simplified_truth = SETUP.generate_task_state(
+            task_for_level(env_name, 4, "simplified"), seed
+        )
+        assert simplified_public["control_condition"]["interaction"] == "simplified"
+        assert simplified_truth["control_condition"]["interaction"] == "simplified"
+        assert without_control_identity(simplified_public) == without_control_identity(original_public)
+        assert without_control_identity(simplified_truth) == without_control_identity(original_truth)
+
+    for level in range(1, 6):
+        parameters = controls["difficulty"][str(level)]["parameters"]
+        simplified_public, simplified_truth = SETUP.generate_task_state(
+            task_for_level(env_name, level, "simplified"), f"reverse-identity-profile-{level}"
+        )
+        full_public, full_truth = SETUP.generate_task_state(
+            task_for_level(env_name, level, "full"), f"reverse-identity-profile-{level}"
+        )
+        assert without_control_identity(simplified_public) == without_control_identity(full_public)
+        assert without_control_identity(simplified_truth) == without_control_identity(full_truth)
+        assert len(full_public["stations"]) == parameters["station_count"]
+        assert len(full_public["stages"]) == sum(parameters["station_relays"])
+        assert full_public["physics"] == {
+            "tick_ms": parameters["tick_ms"],
+            "receiver_control_deg_per_tick": parameters["receiver_control_deg_per_tick"],
+            "capture_tolerance_deg": parameters["capture_tolerance_deg"],
+            "hold_ticks": parameters["hold_ticks"],
+            "charge_decay_per_tick": parameters["charge_decay_per_tick"],
+            "maximum_ticks_per_stage": parameters["maximum_ticks_per_stage"],
+        }
+        for interaction, public, truth in (
+            ("simplified", simplified_public, simplified_truth),
+            ("full", full_public, full_truth),
+        ):
+            payload = _reverse_identity_gate_payload(public, truth, interaction)
+            accepted = grader.grade(payload, truth, public)
+            assert accepted["passed"] is True, accepted
+            wrong_source = copy.deepcopy(payload)
+            source_event = next(event for event in wrong_source["events"] if event["type"] == "key")
+            source_event["input_source"] = "keyboard" if interaction == "simplified" else "direction_button"
+            rejected = grader.grade(wrong_source, truth, public)
+            assert rejected["passed"] is False
+            assert rejected["feedback"] == "receiver drive uses the wrong interaction input"
+            wrong_contact = copy.deepcopy(payload)
+            contact_event = next(event for event in wrong_contact["events"] if event["type"] == "contact")
+            contact_event["input_source"] = "pointer_hold" if interaction == "simplified" else "contact_toggle"
+            rejected = grader.grade(wrong_contact, truth, public)
+            assert rejected["passed"] is False
+            assert rejected["feedback"] == "phase contact uses the wrong interaction input"
+
+    renderer = (
+        BENCHMARK / "shared_runtime" / "app" / "mechanics" / "reverse_identity_gate.js"
+    ).read_text(encoding="utf-8")
+    assert 'data-interaction="${esc(bridge.interaction)}"' in renderer
+    assert 'state.control_condition?.interaction || "full"' in renderer
+    assert '"direction_button"' in renderer
+    assert '"pointer_hold"' in renderer

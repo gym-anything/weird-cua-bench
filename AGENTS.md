@@ -67,6 +67,14 @@ Also inspect `python benchmarks/weird_captcha_gym/tools/audit_quality.py --stric
 
 For dashboard or browser-runtime changes, also export the static site and run `tools/smoke_static_browser_play.py`; companion changes still require the shared-dashboard smoke. Real runner/VNC and human calibration remain separate gates from automation.
 
+## Browser and desktop isolation
+
+Never control the user's live browser, desktop, mouse, keyboard, or foreground applications. Do not use the in-app Browser, a connected Chrome session, Computer Use, AppleScript, `osascript`, `open`, or any existing browser profile or window for repository work.
+
+Browser validation must run only through isolated background processes. Use the repository's Playwright scripts in headless mode with a fresh temporary browser profile and local loopback servers. The process must not open a visible window, take focus, move the system pointer, type into another application, or reuse the user's cookies, tabs, sessions, or browser data.
+
+Before starting browser validation, verify that the command is headless and isolated. If a required check cannot be performed under these conditions, leave it unrun and report the missing evidence. Never fall back to the user's live browser or desktop.
+
 ## Computer-use evaluation boundary
 
 For every benchmark evaluation, inject a mandatory visible-task-UI-only rule at both the model system-instruction level and in every task description. The model must solve only from screenshots and visible controls in the task webpage. Explicitly forbid code, scripts, automation, Developer Tools, console/debugger/inspector/network/source/DOM/page-state inspection, terminal/shell/Python, address-bar or URL/query edits, reload/navigation, browser extensions, external applications, and all other implementation or hidden-state access.

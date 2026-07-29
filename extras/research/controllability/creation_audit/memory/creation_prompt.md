@@ -4,6 +4,8 @@ Implement difficulty, interaction, and real-time controllability for the target 
 
 Read `AGENTS.md`, `benchmarks/weird_captcha_gym/docs/interaction-puzzle-field-notes.md`, `benchmarks/weird_captcha_gym/docs/controllability-plan.md`, and every file in `benchmarks/weird_captcha_gym/docs/controllability/` before acting. Inspect the approved controlled environments as working examples. Read the target environment's task, generator, browser runtime, grader, verifier, solver, and existing controls end to end before making any decisions.
 
+Never control the user's live browser, desktop, mouse, keyboard, or foreground applications. Do not use the in-app Browser, connected Chrome, Computer Use, AppleScript, `osascript`, `open`, or an existing browser profile. Run browser checks only through isolated headless background processes with fresh temporary profiles and local loopback servers. Verify isolation before launching them. If a check cannot run this way, report it as missing evidence instead of using the user's browser.
+
 Assign the existing configuration to its actual difficulty level and preserve it exactly there. Construct the other four levels around that configuration. Implement simplified and full interaction for the same generated world. Configure real-time behavior through the shared framework without adding task-level live and paused branches.
 
 Do not change the original task or the uncontrolled generator behavior to justify a preferred level. If the original belongs at L1 then preserve it at L1. Changing the original and comparing the controlled baseline against that changed version is not preservation.

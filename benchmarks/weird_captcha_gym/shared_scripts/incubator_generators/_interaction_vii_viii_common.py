@@ -314,39 +314,135 @@ def _hologram(task: dict[str, Any], seed: str):
 def _orbital(task: dict[str, Any], seed: str):
     mechanic = "orbital_docking_customs"
     rng, public, truth = _identity(mechanic, task, seed)
+    condition = task.get("_control_condition")
+    parameters = dict((condition or {}).get("difficulty_parameters") or {})
     lane_y = 240.0
     thrusts = 6
     acceleration = 0.20
     velocity = thrusts * acceleration
-    total_coast_ticks = 600
-    station_angle = rng.randrange(0, 360, 15)
-    port_rate = rng.choice((-1.5, 1.5))
-    final_port_angle = (station_angle + total_coast_ticks * port_rate) % 360
-    plan = [
-        {"action": "thrust", "count": thrusts},
-        {"action": "strafe-up", "count": 5},
-        {"action": "coast", "ticks": 60},
-        {"action": "strafe-down", "count": 5},
-        {"action": "coast", "ticks": 120},
-        {"action": "strafe-down", "count": 10},
-        {"action": "coast", "ticks": 60},
-        {"action": "strafe-up", "count": 10},
-        {"action": "coast", "ticks": 360},
-        {"action": "retro", "count": thrusts},
-        {"action": "rotate", "target_deg": final_port_angle},
-        {"action": "dock"},
-    ]
-    distance = round(velocity * total_coast_ticks, 3)
-    station_x = 115.0 + distance
-    station_amplitude = rng.choice((20.0, 24.0, 28.0))
-    station_motion_rate = rng.choice((0.016, 0.018, 0.020))
+    routes = {
+        "single_beacon": {
+            "station_y": lane_y - 60.0,
+            "debris": [{"id": "debris-a", "x": 265.0, "y": lane_y, "radius": 39}],
+            "beacons": [{"id": "scan-a", "x": 187.0, "y": lane_y - 60.0, "radius": 27}],
+            "plan": [
+                {"action": "thrust", "count": thrusts},
+                {"action": "strafe-up", "count": 5},
+                {"action": "coast", "ticks": 60},
+                {"action": "strafe-down", "count": 5},
+                {"action": "coast", "ticks": 300},
+                {"action": "retro", "count": thrusts},
+            ],
+        },
+        "double_s": {
+            "station_y": lane_y + 60.0,
+            "debris": [
+                {"id": "debris-a", "x": 265.0, "y": lane_y, "radius": 39},
+                {"id": "debris-b", "x": 505.0, "y": lane_y, "radius": 39},
+            ],
+            "beacons": [
+                {"id": "scan-a", "x": 187.0, "y": lane_y - 60.0, "radius": 27},
+                {"id": "scan-b", "x": 403.0, "y": lane_y + 60.0, "radius": 27},
+            ],
+            "plan": [
+                {"action": "thrust", "count": thrusts},
+                {"action": "strafe-up", "count": 5},
+                {"action": "coast", "ticks": 60},
+                {"action": "strafe-down", "count": 5},
+                {"action": "coast", "ticks": 120},
+                {"action": "strafe-down", "count": 10},
+                {"action": "coast", "ticks": 60},
+                {"action": "strafe-up", "count": 10},
+                {"action": "coast", "ticks": 360},
+                {"action": "retro", "count": thrusts},
+            ],
+        },
+        "triple_s": {
+            "station_y": lane_y - 60.0,
+            "debris": [
+                {"id": "debris-a", "x": 265.0, "y": lane_y, "radius": 39},
+                {"id": "debris-b", "x": 505.0, "y": lane_y, "radius": 39},
+                {"id": "debris-c", "x": 715.0, "y": lane_y, "radius": 39},
+            ],
+            "beacons": [
+                {"id": "scan-a", "x": 187.0, "y": lane_y - 60.0, "radius": 27},
+                {"id": "scan-b", "x": 403.0, "y": lane_y + 60.0, "radius": 27},
+                {"id": "scan-c", "x": 619.0, "y": lane_y - 60.0, "radius": 27},
+            ],
+            "plan": [
+                {"action": "thrust", "count": thrusts},
+                {"action": "strafe-up", "count": 5},
+                {"action": "coast", "ticks": 60},
+                {"action": "strafe-down", "count": 5},
+                {"action": "coast", "ticks": 120},
+                {"action": "strafe-down", "count": 10},
+                {"action": "coast", "ticks": 60},
+                {"action": "strafe-up", "count": 10},
+                {"action": "strafe-up", "count": 10},
+                {"action": "coast", "ticks": 60},
+                {"action": "strafe-down", "count": 10},
+                {"action": "coast", "ticks": 120},
+                {"action": "coast", "ticks": 180},
+                {"action": "retro", "count": thrusts},
+            ],
+        },
+    }
+    if condition is None:
+        # Keep the historical generated world byte-for-byte intact. The
+        # controlled L4 branch below uses the same route and random draws.
+        parameters = {
+            "route_profile": "double_s",
+            "debris_count": 2,
+            "beacon_count": 2,
+            "station_angle_mode": "random_15",
+            "station_y_amplitude_options": [20.0, 24.0, 28.0],
+            "station_y_rate_options": [0.016, 0.018, 0.020],
+            "station_port_rate_options": [-1.5, 1.5],
+            "dock_distance": 22,
+            "dock_speed": 0.12,
+            "angle_tolerance_deg": 8,
+            "fuel": 64,
+            "max_ticks": 760,
+        }
+    route_name = str(parameters.get("route_profile") or "")
+    route = routes.get(route_name)
+    if route is None:
+        raise ValueError("orbital docking route profile is invalid")
+    if int(parameters.get("debris_count", -1)) != len(route["debris"]) or int(parameters.get("beacon_count", -1)) != len(route["beacons"]):
+        raise ValueError("orbital docking route does not match its debris or beacon profile")
+    angle_mode = str(parameters.get("station_angle_mode") or "")
+    if angle_mode == "random_15":
+        station_angle = rng.randrange(0, 360, 15)
+    elif angle_mode == "fixed_zero":
+        station_angle = 0.0
+    else:
+        raise ValueError("orbital docking station angle mode is invalid")
+    port_rates = tuple(float(value) for value in parameters.get("station_port_rate_options") or ())
+    amplitudes = tuple(float(value) for value in parameters.get("station_y_amplitude_options") or ())
+    motion_rates = tuple(float(value) for value in parameters.get("station_y_rate_options") or ())
+    if not port_rates or not amplitudes or not motion_rates or any(value < 0 for value in amplitudes) or any(value < 0 for value in motion_rates):
+        raise ValueError("orbital docking station motion profile is invalid")
+    port_rate = rng.choice(port_rates)
+    total_coast_ticks = sum(int(item["ticks"]) for item in route["plan"] if item["action"] == "coast")
+    station_amplitude = rng.choice(amplitudes)
+    station_motion_rate = rng.choice(motion_rates)
     station_phase = round(math.pi / 2 - total_coast_ticks * station_motion_rate, 6)
+    final_port_angle = (station_angle + total_coast_ticks * port_rate) % 360
+    plan = [*route["plan"], {"action": "rotate", "target_deg": final_port_angle}, {"action": "dock"}]
+    station_x = 115.0 + round(velocity * total_coast_ticks, 3)
+    dock_distance = float(parameters.get("dock_distance"))
+    dock_speed = float(parameters.get("dock_speed"))
+    angle_tolerance = float(parameters.get("angle_tolerance_deg"))
+    fuel = int(parameters.get("fuel"))
+    max_ticks = int(parameters.get("max_ticks"))
+    if not 1 <= fuel <= 96 or not total_coast_ticks < max_ticks <= 900 or not 8 <= dock_distance <= 40 or not .04 <= dock_speed <= .30 or not 3 <= angle_tolerance <= 25:
+        raise ValueError("orbital docking physical profile is outside supported limits")
     public.update({
         "generator": {"name": "scanned_s_rendezvous_v3", "variant_count": 10**11},
         "canvas": {"width": 900, "height": 480},
         "ship": {"x": 115.0, "y": lane_y, "vx": 0.0, "vy": 0.0, "angle_deg": 0.0, "radius": 16},
         "station": {
-            "x": station_x, "base_y": lane_y + 60.0 - station_amplitude,
+            "x": station_x, "base_y": float(route["station_y"]) - station_amplitude,
             "y_amplitude": station_amplitude, "y_rate": station_motion_rate,
             "y_phase": station_phase, "angle_deg": station_angle,
             "rotation_deg_per_tick": port_rate, "port_radius": 26,
@@ -354,19 +450,21 @@ def _orbital(task: dict[str, Any], seed: str):
         "physics": {
             "impulse": acceleration, "rotation_step_deg": 15,
             "coast_step_ticks": 10, "coast_long_ticks": 30,
-            "fuel": 64, "dock_speed": 0.12, "dock_distance": 22,
-            "angle_tolerance_deg": 8, "max_ticks": 760,
+            "fuel": fuel, "dock_speed": dock_speed, "dock_distance": dock_distance,
+            "angle_tolerance_deg": angle_tolerance, "max_ticks": max_ticks,
         },
-        "debris": [
-            {"id": "debris-a", "x": 265.0, "y": lane_y, "radius": 39},
-            {"id": "debris-b", "x": 505.0, "y": lane_y, "radius": 39},
-        ],
-        "beacons": [
-            {"id": "scan-a", "x": 187.0, "y": lane_y - 60.0, "radius": 27},
-            {"id": "scan-b", "x": 403.0, "y": lane_y + 60.0, "radius": 27},
-        ],
+        "debris": route["debris"],
+        "beacons": route["beacons"],
     })
     truth.update({"reference_plan": plan, "station": public["station"], "physics": public["physics"]})
+    if condition:
+        challenge_id = hashlib.sha256(
+            f"{seed}|{mechanic}|d{condition['difficulty']}|{condition['interaction']}|{task.get('id')}".encode()
+        ).hexdigest()[:12]
+        public["challenge_id"] = challenge_id
+        truth["challenge_id"] = challenge_id
+        public["control_condition"] = copy.deepcopy(condition)
+        truth["control_condition"] = copy.deepcopy(condition)
     return public, truth
 
 
@@ -722,22 +820,36 @@ def _membrane(task: dict[str, Any], seed: str):
 def _pheromone(task: dict[str, Any], seed: str):
     mechanic = "pheromone_dispatch"
     rng, public, truth = _identity(mechanic, task, seed)
+    condition = task.get("_control_condition")
+    parameters = dict((condition or {}).get("difficulty_parameters") or {})
+    if condition:
+        challenge_id = hashlib.sha256(f"{seed}|{mechanic}|d{condition['difficulty']}".encode()).hexdigest()[:12]
+        public["challenge_id"] = challenge_id
+        truth["challenge_id"] = challenge_id
     centre = rng.randint(232, 248)
     nest = [rng.randint(55, 70), centre]
     dock = [rng.randint(830, 845), centre]
     upper = rng.randint(78, 103)
     lower = rng.randint(377, 402)
-    fields = [
-        {"id": "amber", "label": "AMBER / UPPER CACHE", "color": "#d94f72", "cache": [450, upper], "trail_ttl_ticks": 96, "speed": 3.25},
-        {"id": "violet", "label": "VIOLET / LOWER CACHE", "color": "#6f5bd8", "cache": [450, lower], "trail_ttl_ticks": 112, "speed": 2.85},
-    ]
-    obstacles = [
+    all_fields = {
+        "amber": {"id": "amber", "label": "AMBER / UPPER CACHE", "color": "#d94f72", "cache": [450, upper], "trail_ttl_ticks": int(parameters.get("amber_ttl_ticks", 96)), "speed": float(parameters.get("amber_speed", 3.25))},
+        "violet": {"id": "violet", "label": "VIOLET / LOWER CACHE", "color": "#6f5bd8", "cache": [450, lower], "trail_ttl_ticks": int(parameters.get("violet_ttl_ticks", 112)), "speed": float(parameters.get("violet_speed", 2.85))},
+    }
+    field_ids = tuple(parameters.get("field_ids") or ("amber", "violet"))
+    if not field_ids or any(field_id not in all_fields for field_id in field_ids):
+        raise ValueError("pheromone dispatch field profile is invalid")
+    fields = [all_fields[field_id] for field_id in field_ids]
+    all_obstacles = [
         {"x": rng.randint(285, 315), "y": centre, "w": rng.randint(88, 108), "h": rng.randint(175, 195)},
         {"x": rng.randint(585, 615), "y": centre, "w": rng.randint(88, 108), "h": rng.randint(175, 195)},
     ]
+    obstacle_count = int(parameters.get("obstacle_count", 2))
+    if not 1 <= obstacle_count <= len(all_obstacles):
+        raise ValueError("pheromone dispatch obstacle profile is invalid")
+    obstacles = all_obstacles[:obstacle_count]
     reference_paths = {
-        "amber": [nest, [175, upper], [380, upper], fields[0]["cache"], [690, upper], dock],
-        "violet": [nest, [175, lower], [380, lower], fields[1]["cache"], [690, lower], dock],
+        field["id"]: [nest, [175, field["cache"][1]], [380, field["cache"][1]], field["cache"], [690, field["cache"][1]], dock]
+        for field in fields
     }
     public.update({
         "generator": {"name": "dual_decaying_pheromone_fields_v3", "variant_count": 10**10},
@@ -746,10 +858,19 @@ def _pheromone(task: dict[str, Any], seed: str):
         "dock": dock,
         "fields": fields,
         "obstacles": obstacles,
-        "ant_count": 10,
-        "physics": {"tick_ms": 45, "sample_radius": 22, "brush_radius": 23, "delivery_required": 7, "ant_spacing": 18},
+        "ant_count": int(parameters.get("ant_count", 10)),
+        "physics": {
+            "tick_ms": 45,
+            "sample_radius": 22,
+            "brush_radius": 23,
+            "delivery_required": int(parameters.get("delivery_required", 7)),
+            "ant_spacing": int(parameters.get("ant_spacing", 18)),
+        },
     })
     truth.update({"reference_paths": reference_paths, "obstacles": obstacles, "physics": public["physics"]})
+    if condition:
+        public["control_condition"] = copy.deepcopy(condition)
+        truth["control_condition"] = copy.deepcopy(condition)
     return public, truth
 
 

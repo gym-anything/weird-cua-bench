@@ -77,8 +77,13 @@ def _settle_profile(delta: int) -> list[int]:
     return [bias + 22, bias - 13, bias + 8, bias - 5, bias + 3, bias - 1, bias]
 
 
-def _visible(die: dict[str, Any]) -> bool:
-    return bool(die["initial_reveal"] or die["position"] in die["scanner_cells"] or die["docked"])
+def _visible(die: dict[str, Any], orientation_visibility: str) -> bool:
+    return bool(
+        orientation_visibility == "always"
+        or die["initial_reveal"]
+        or die["position"] in die["scanner_cells"]
+        or die["docked"]
+    )
 
 
 def _snapshot(
@@ -90,6 +95,7 @@ def _snapshot(
     reset_count: int,
     settled: bool,
     settle_samples: list[int],
+    orientation_visibility: str,
 ) -> dict[str, Any]:
     die_states = []
     for die_id in order:
@@ -100,7 +106,7 @@ def _snapshot(
             "orientation": dict(die["orientation"]),
             "accepted_rolls": die["accepted_rolls"],
             "docked": die["docked"],
-            "top_visible": _visible(die),
+            "top_visible": _visible(die, orientation_visibility),
         })
     return {
         "view": view,
@@ -134,9 +140,52 @@ def grade(payload: dict[str, Any], ground_truth: dict[str, Any], public_state: d
     if public_state.get("target_sum") != target_sum:
         return _failure("public scale target disagrees with hidden state")
 
+    truth_condition = ground_truth.get("control_condition")
+    if truth_condition != public_state.get("control_condition"):
+        return _failure("public foundry control condition disagrees with hidden state")
+    interaction = str((truth_condition or {}).get("interaction") or "")
+    expected_select_sources: set[str] | None = None
+    expected_roll_sources: set[str] | None = None
+    parameters: dict[str, Any] = {}
+    orientation_visibility = "initial_and_scanners"
+    if truth_condition is not None:
+        if interaction == "simplified":
+            expected_select_sources = {"die_clamp", "keyboard_select", "rail_token_select"}
+            expected_roll_sources = {"roll_pad", "keyboard_roll"}
+        elif interaction == "full":
+            expected_select_sources = {"rail_drag_select"}
+            expected_roll_sources = {"direct_rail_drag"}
+        else:
+            return _failure("foundry interaction condition is invalid")
+        parameters = dict(truth_condition.get("difficulty_parameters") or {})
+        orientation_visibility = str(parameters.get("orientation_visibility") or "")
+        if (
+            orientation_visibility not in {"always", "initial_and_scanners"}
+            or str(public_state.get("orientation_visibility") or "initial_and_scanners")
+            != orientation_visibility
+        ):
+            return _failure("foundry orientation-visibility condition differs from generated state")
+
     raw_dice = ground_truth.get("dice")
-    if not isinstance(raw_dice, list) or len(raw_dice) != 4:
-        return _failure("hidden four-die manifest is missing")
+    if not isinstance(raw_dice, list) or not 1 <= len(raw_dice) <= 4:
+        return _failure("hidden foundry die manifest is missing")
+    if truth_condition is not None:
+        try:
+            expected_dice_count = int(parameters["dice_count"])
+            minimum_target_sum = int(parameters["minimum_target_sum"])
+            maximum_target_sum = int(parameters["maximum_target_sum"])
+        except (KeyError, TypeError, ValueError):
+            return _failure("foundry difficulty condition is malformed")
+        baseline_l5 = int(truth_condition.get("difficulty") or 0) == 5
+        if (
+            expected_dice_count != len(raw_dice)
+            or not len(raw_dice) <= minimum_target_sum <= maximum_target_sum <= 6 * len(raw_dice)
+            # L5 preserves the historical 80th-candidate fallback exactly.
+            # Its bounds guide normal lot selection but did not constrain that
+            # rare historical fallback, so replay must not reject it first.
+            or (not baseline_l5 and not minimum_target_sum <= target_sum <= maximum_target_sum)
+        ):
+            return _failure("foundry difficulty condition differs from the generated lot")
     dice: dict[str, dict[str, Any]] = {}
     order: list[str] = []
     for raw in raw_dice:
@@ -196,6 +245,8 @@ def grade(payload: dict[str, Any], ground_truth: dict[str, Any], public_state: d
             die_id = str(event.get("die_id") or "")
             if settling or die_id not in dice or event.get("selected_before") != selected:
                 return _failure(f"die selection {index} disagrees with replay")
+            if expected_select_sources is not None and event.get("input_source") not in expected_select_sources:
+                return _failure("die selection uses the wrong interaction input")
             selected = die_id
             if event.get("selected_after") != selected:
                 return _failure(f"die selection {index} has a false result")
@@ -234,6 +285,8 @@ def grade(payload: dict[str, Any], ground_truth: dict[str, Any], public_state: d
             screen_direction = str(event.get("input_direction") or "").upper()
             if settling or die_id != selected or die_id not in dice or screen_direction not in DIRECTIONS:
                 return _failure(f"die roll {index} is not bound to the selected die")
+            if expected_roll_sources is not None and event.get("input_source") not in expected_roll_sources:
+                return _failure("die roll uses the wrong interaction input")
             die = dice[die_id]
             if event.get("view") != view or _point(event.get("from")) != die["position"]:
                 return _failure(f"die roll {index} has stale view or origin")
@@ -257,7 +310,7 @@ def grade(payload: dict[str, Any], ground_truth: dict[str, Any], public_state: d
                 return _failure(f"die roll {index} reports a false 3D orientation")
             if event.get("accepted_rolls_after") != die["accepted_rolls"] or bool(event.get("docked")) != die["docked"]:
                 return _failure(f"die roll {index} disagrees with the dock ledger")
-            if bool(event.get("top_visible")) != _visible(die):
+            if bool(event.get("top_visible")) != _visible(die, orientation_visibility):
                 return _failure(f"die roll {index} disagrees with scanner occlusion")
             continue
 
@@ -297,7 +350,17 @@ def grade(payload: dict[str, Any], ground_truth: dict[str, Any], public_state: d
 
         return _failure(f"foundry event {index} has invalid action {action!r}")
 
-    final_state = _snapshot(order, dice, view, selected, view_rotations, reset_count, settled, settle_samples)
+    final_state = _snapshot(
+        order,
+        dice,
+        view,
+        selected,
+        view_rotations,
+        reset_count,
+        settled,
+        settle_samples,
+        orientation_visibility,
+    )
     if payload.get("final_state") != final_state:
         return _failure("claimed final foundry state does not match transcript replay")
     top_sum = sum(die["orientation"]["top"] for die in dice.values())
@@ -312,7 +375,7 @@ def grade(payload: dict[str, Any], ground_truth: dict[str, Any], public_state: d
         "graded": True,
         "passed": passed,
         "score": 100 if passed else 0,
-        "feedback": f"replayed four docked dice; top sum {top_sum}/{target_sum}; optional view turns {view_rotations}; settle samples {len(settle_samples)}; resets {reset_count}",
+        "feedback": f"replayed {len(dice)} docked dice; top sum {top_sum}/{target_sum}; optional view turns {view_rotations}; settle samples {len(settle_samples)}; resets {reset_count}",
     }
 
 

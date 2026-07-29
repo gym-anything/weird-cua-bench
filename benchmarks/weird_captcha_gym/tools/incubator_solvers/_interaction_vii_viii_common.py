@@ -224,17 +224,28 @@ def _hologram(page, state_dir: Path, out_dir: Path, mechanic: str) -> None:
 
 def _orbital(page, state_dir: Path, out_dir: Path, mechanic: str) -> None:
     truth = _read(state_dir / "ground_truth.json")
+    interaction = str((truth.get("control_condition") or {}).get("interaction") or "simplified")
     plan = truth["reference_plan"]
     _shot(page, out_dir, mechanic, "initial-rendezvous")
+    key_for = {
+        "thrust": "KeyW", "retro": "KeyS", "strafe-up": "KeyA", "strafe-down": "KeyD",
+        "rotate-left": "KeyQ", "rotate-right": "KeyE", "coast": "Space", "coast-long": "Shift+Space",
+    }
+    def act(action: str, count: int = 1) -> None:
+        if interaction == "full":
+            for _ in range(count):
+                page.keyboard.press(key_for[action])
+        else:
+            _click_many(page.locator(f'[data-orbit="{action}"]'), count)
     coast_seen = 0
     for item in plan:
         action = str(item["action"])
         if action in {"thrust", "retro", "strafe-up", "strafe-down"}:
-            _click_many(page.locator(f'[data-orbit="{action}"]'), int(item["count"]))
+            act(action, int(item["count"]))
         elif action == "coast":
             ticks = int(item["ticks"])
-            _click_many(page.locator('[data-orbit="coast-long"]'), ticks // 30)
-            _click_many(page.locator('[data-orbit="coast"]'), ticks % 30 // 10)
+            act("coast-long", ticks // 30)
+            act("coast", ticks % 30 // 10)
             coast_seen += 1
             if coast_seen == 2:
                 _shot(page, out_dir, mechanic, "first-scan-s-corridor")
@@ -243,9 +254,12 @@ def _orbital(page, state_dir: Path, out_dir: Path, mechanic: str) -> None:
             current = int(round(float(page.evaluate("() => window.orbitalDockingCustomsModel.ship.angle_deg")))) % 360
             right = ((target - current) % 360) // 15
             left = ((current - target) % 360) // 15
-            _click_many(page.locator(f'[data-orbit="rotate-{"right" if right <= left else "left"}"]'), min(right, left))
+            act(f'rotate-{"right" if right <= left else "left"}', min(right, left))
         elif action == "dock":
-            page.locator("#orbital-dock").click()
+            if interaction == "full":
+                page.keyboard.press("Enter")
+            else:
+                page.locator("#orbital-dock").click()
         else:
             raise AssertionError(f"unknown orbital reference action: {action}")
 
@@ -412,18 +426,38 @@ def _membrane(page, state_dir: Path, out_dir: Path, mechanic: str) -> None:
 def _pheromone(page, state_dir: Path, out_dir: Path, mechanic: str) -> None:
     truth = _read(state_dir / "ground_truth.json")
     public = _read(state_dir / "public_state.json")
+    interaction = str((truth.get("control_condition") or {}).get("interaction") or "full")
     canvas = page.locator("#pheromone-canvas")
     box = canvas.bounding_box()
     if not box: raise AssertionError("pheromone habitat has no pointer geometry")
     def screen(point): return box["x"] + point[0] / 900 * box["width"], box["y"] + point[1] / 480 * box["height"]
+
+    def has_passed() -> bool:
+        verdict = page.locator(".ivv-verdict.is-pass")
+        return verdict.count() > 0 and verdict.is_visible()
+
     def paint_route(field_id: str) -> None:
-        page.locator(f'[data-field="{field_id}"]').click()
         path = truth["reference_paths"][field_id]
+        if interaction == "simplified":
+            page.locator(f'[data-field="{field_id}"]').click()
+            points = [path[0]]
+            for first, second in zip(path, path[1:]):
+                steps = max(1, math.ceil(math.dist(first, second) / 120))
+                points.extend([
+                    [first[0] + (second[0] - first[0]) * step / steps, first[1] + (second[1] - first[1]) * step / steps]
+                    for step in range(1, steps + 1)
+                ])
+            for point in points:
+                page.mouse.click(*screen(point))
+            page.locator("#pheromone-commit").click()
+            return
+        page.locator(f'[data-field="{field_id}"]').click()
         page.mouse.move(*screen(path[0])); page.mouse.down()
         try:
             for first, second in zip(path, path[1:]):
-                for step in range(1, 13):
-                    amount = step / 12
+                steps = max(1, math.ceil(math.dist(first, second) / 120))
+                for step in range(1, steps + 1):
+                    amount = step / steps
                     page.mouse.move(*screen([first[0] + (second[0] - first[0]) * amount, first[1] + (second[1] - first[1]) * amount]))
         finally:
             page.mouse.up()
@@ -434,10 +468,12 @@ def _pheromone(page, state_dir: Path, out_dir: Path, mechanic: str) -> None:
     photographed = False
     deadline = time.time() + 38
     while time.time() < deadline:
-        if page.locator(".ivv-verdict.is-pass").count() and page.locator(".ivv-verdict.is-pass").is_visible():
+        if has_passed():
             break
         snapshot = page.evaluate("() => {const m=window.pheromoneDispatchModel;return {tick:m.tick,lastRefresh:{...m.lastRefresh},delivered:{...m.delivered},carrying:Object.values(m.ants).flat().some(a=>a.carrying)}}")
         for field in truth["reference_paths"]:
+            if has_passed():
+                break
             spec = next(item for item in public["fields"] if item["id"] == field)
             if int(snapshot["tick"]) - int(snapshot["lastRefresh"][field]) >= int(spec["trail_ttl_ticks"]) - 28:
                 paint_route(field)

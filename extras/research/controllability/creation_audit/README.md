@@ -4,6 +4,8 @@ This workflow gives one Weird CUA Bench environment to a persistent creation age
 
 After the initial pass and one blind recheck, a fresh audit agent explores the repository and audits the implementation from the code, running environment, and evidence. The auditor writes a report without fixing anything. The creator receives that report and fixes the supported issues. A new audit session is used for every audit round.
 
+All browser checks must run as isolated headless background processes with fresh temporary profiles. Creation and audit agents are forbidden from controlling the user's live browser, desktop, mouse, keyboard, foreground applications, or existing browser profiles. A check that cannot run in isolation remains missing evidence.
+
 Run it from the repository root:
 
 ```bash

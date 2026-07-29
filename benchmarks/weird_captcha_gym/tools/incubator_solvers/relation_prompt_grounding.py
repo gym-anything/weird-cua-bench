@@ -65,6 +65,29 @@ def _set_depth(page, object_id: str, depth: int) -> None:
     page.mouse.up()
 
 
+def _proxy_place(page, object_id: str, target: dict, stage: dict) -> None:
+    locator = page.locator(f'.rel-object[data-object-id="{object_id}"]')
+    box = locator.bounding_box()
+    if not box:
+        raise AssertionError(f"assembly object {object_id} is not visible")
+    destination = _stage_target(page, int(target["x"]), int(target["y"]), int(stage["width"]), int(stage["height"]))
+    page.mouse.click(box["x"] + box["width"] / 2, box["y"] + box["height"] / 2)
+    page.mouse.click(destination[0], destination[1])
+
+
+def _nudge_depth(page, object_id: str, depth: int) -> None:
+    page.locator(f'.rel-console .rel-select[data-object-id="{object_id}"]').click()
+    current = 50
+    while abs(depth - current) >= 10:
+        delta = 10 if depth > current else -10
+        page.locator(f'.rel-depth-proxies button[data-delta="{delta}"]').click()
+        current += delta
+    while current != depth:
+        delta = 1 if depth > current else -1
+        page.locator(f'.rel-depth-proxies button[data-delta="{delta}"]').click()
+        current += delta
+
+
 def fail_once(page, state_dir: Path, out_dir: Path, mechanic: str) -> None:
     if mechanic != MECHANIC_ID:
         raise AssertionError(f"unexpected mechanic {mechanic!r}")
@@ -81,27 +104,37 @@ def solve(page, state_dir: Path, out_dir: Path, mechanic: str) -> None:
         raise AssertionError(f"unexpected mechanic {mechanic!r}")
     truth = _read_json(state_dir / "ground_truth.json")
     stage = truth["stage"]
+    interaction = str((truth.get("control_condition") or {}).get("interaction") or "full")
 
     solutions = truth["solution_positions"]
     # The frame goes down before any object that may need to sit inside it.
     ordered_ids = [item["id"] for item in truth["objects"] if item.get("container")]
     ordered_ids.extend(item["id"] for item in truth["objects"] if not item.get("container"))
     for object_id in ordered_ids:
-        _drag_object(page, object_id, solutions[object_id], stage)
+        if interaction == "simplified":
+            _proxy_place(page, object_id, solutions[object_id], stage)
+        else:
+            _drag_object(page, object_id, solutions[object_id], stage)
 
-    expect(page.locator(".rel-placed-count[data-ready='true']")).to_contain_text("5/5")
+    expect(page.locator(".rel-placed-count[data-ready='true']")).to_contain_text(f"{len(solutions)}/{len(solutions)}")
     for object_id, target in solutions.items():
         if int(target["depth"]) != 50:
-            _set_depth(page, object_id, int(target["depth"]))
+            if interaction == "simplified":
+                _nudge_depth(page, object_id, int(target["depth"]))
+            else:
+                _set_depth(page, object_id, int(target["depth"]))
 
     physical = page.evaluate("""() => ({
       drags: window.relationAssemblyModel.dragCount,
       dragSamples: window.relationAssemblyModel.dragSamples,
       depthSamples: window.relationAssemblyModel.depthSamples,
       depthDistance: window.relationAssemblyModel.depthDistance,
+      proxyPlaceCount: window.relationAssemblyModel.proxyPlaceCount,
       resetCount: window.relationAssemblyModel.resetCount,
     })""")
-    if physical["drags"] != 5 or physical["dragSamples"] < 15 or physical["depthSamples"] < 10 or physical["depthDistance"] < 80 or physical["resetCount"] != 0:
+    direct_ok = physical["drags"] == len(solutions) and physical["dragSamples"] >= len(solutions) * 3
+    proxy_ok = physical["proxyPlaceCount"] == len(solutions) and physical["drags"] == 0 and physical["dragSamples"] == 0
+    if (not (proxy_ok if interaction == "simplified" else direct_ok) or physical["depthSamples"] < 1 or physical["depthDistance"] < 1 or physical["resetCount"] != 0):
         raise AssertionError(f"relation workflow lacked required physical evidence: {physical}")
 
     page.locator(".rel-settle").click()

@@ -4,6 +4,7 @@ import math
 from typing import Any
 
 MECHANIC_ID = "pheromone_dispatch"
+MAX_ROUTE_SAMPLE_GAP = 160.0
 
 
 def _fail(message: str) -> dict[str, Any]:
@@ -68,8 +69,21 @@ def grade(payload: dict[str, Any], truth: dict[str, Any], public: dict[str, Any]
         return _fail("stale task or challenge")
     events = payload.get("events")
     fields = {item["id"]: item for item in public["fields"]}
-    if not isinstance(events, list) or len(events) > 4200 or len(fields) != 2:
-        return _fail("dual field transcript malformed")
+    condition = truth.get("control_condition")
+    expected_surface = str((condition or {}).get("interaction") or "")
+    expected_method = {
+        "simplified": "waypoint_clicks",
+        "full": "continuous_pointer_trace",
+    }.get(expected_surface, "")
+    if not isinstance(events, list) or len(events) > 4200 or not 1 <= len(fields) <= 2:
+        return _fail("field transcript malformed")
+    if condition is not None and (
+        public.get("control_condition") != condition
+        or expected_surface not in {"simplified", "full"}
+        or not expected_method
+        or payload.get("interaction_mode") != expected_surface
+    ):
+        return _fail("controlled interaction surface mismatch")
     working = {field_id: [] for field_id in fields}
     active_field = None
     active_mode = None
@@ -80,6 +94,11 @@ def grade(payload: dict[str, Any], truth: dict[str, Any], public: dict[str, Any]
     for sequence, item in enumerate(events, 1):
         if not isinstance(item, dict) or item.get("seq") != sequence:
             return _fail(f"event {sequence} sequence invalid")
+        if condition is not None and (
+            item.get("input_surface") != expected_surface
+            or item.get("input_method") != expected_method
+        ):
+            return _fail("controlled event used the wrong input procedure")
         action = item.get("type")
         if action == "abandon":
             return _fail("colony fumigated")
@@ -105,7 +124,7 @@ def grade(payload: dict[str, Any], truth: dict[str, Any], public: dict[str, Any]
             working[field_id] = [point]
         elif action == "stroke_point":
             point = _point(item.get("point"))
-            if point is None or field_id != active_field or item.get("mode") != active_mode or not working[field_id] or math.dist(working[field_id][-1], point) > 160:
+            if point is None or field_id != active_field or item.get("mode") != active_mode or not working[field_id] or math.dist(working[field_id][-1], point) > MAX_ROUTE_SAMPLE_GAP:
                 return _fail("pheromone brush teleported, switched color, or changed mode")
             working[field_id].append(point)
         elif action == "stroke_end":
@@ -176,4 +195,5 @@ def grade(payload: dict[str, Any], truth: dict[str, Any], public: dict[str, Any]
     if completion_tick != delivery_tick or delivery.get("delivered") != delivered or delivery.get("last_refresh") != last_refresh:
         return _fail("dual delivery count, time, or independent freshness ledger disagrees with replay")
     passed = payload.get("completed") is True
-    return {"graded": True, "passed": passed, "feedback": "alternating complete refreshes sustained both independently decaying carrier teams" if passed else "completion flag missing"}
+    field_phrase = "the independent decaying carrier teams" if len(fields) == 2 else "the decaying carrier team"
+    return {"graded": True, "passed": passed, "feedback": f"complete refreshes sustained {field_phrase}" if passed else "completion flag missing"}
