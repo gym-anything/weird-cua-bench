@@ -115,7 +115,7 @@
     paint();
   }
 
-  function setOffset(shaft, delta) {
+  function setOffset(shaft, delta, inputSource = "legacy") {
     if (!model || model.terminal || model.submitting) return;
     clearFreshFailure();
     const scene = model.state.scene;
@@ -123,7 +123,7 @@
     const after = clamp(before + delta, Number(scene.offset_min), Number(scene.offset_max));
     if (before === after) return;
     model.offsets[shaft] = after;
-    record("scroll", {shaft, delta: after - before, before, after});
+    record("scroll", {shaft, delta: after - before, before, after, input_source: inputSource});
     model.helpers.setReadout(`SHAFT 0${shaft + 1} INDEX ${after > 0 ? "+" : ""}${after} · PORTALS MOVED`, "idle");
     paint();
   }
@@ -244,6 +244,7 @@
     document.body.dataset.mechanic = "scroll-cage-checkbox";
     document.body.dataset.cheatMode = helpers.isCheatMode() ? "true" : "false";
     const scene = state.scene;
+    const interaction = state.control_condition?.interaction || "legacy";
     model = {
       state,
       helpers,
@@ -258,9 +259,20 @@
       terminal: false,
       timer: null,
       drag: null,
+      interaction,
     };
     window.scrollCageModel = model;
-    helpers.app.innerHTML = `<section class="scroll-cage palette-${esc(state.palette)}" data-fresh-failure="${options.freshFailure ? "true" : "false"}" data-verdict="">
+    const shaftControlMarkup = (_left, shaft) => {
+      const heading = `<header><b>0${shaft + 1}</b><span>INDEPENDENT SHAFT</span><em data-offset-label="${shaft}">${scene.initial_offsets[shaft] > 0 ? "+" : ""}${scene.initial_offsets[shaft]}</em></header>`;
+      if (interaction === "full") {
+        return `<section class="shaft-control" data-shaft-control="${shaft}">${heading}<div class="shaft-control-direct" data-shaft-drag="${shaft}"><i></i><span>DRAG REGISTER / WHEEL SHAFT</span></div></section>`;
+      }
+      if (interaction === "simplified") {
+        return `<section class="shaft-control" data-shaft-control="${shaft}">${heading}<div class="shaft-control-buttons shaft-control-buttons-proxy"><button type="button" data-shaft-up="${shaft}" aria-label="scroll shaft ${shaft + 1} up">↑</button><span>LABELLED<br>NUDGE</span><button type="button" data-shaft-down="${shaft}" aria-label="scroll shaft ${shaft + 1} down">↓</button></div></section>`;
+      }
+      return `<section class="shaft-control" data-shaft-control="${shaft}">${heading}<div class="shaft-control-buttons"><button type="button" data-shaft-up="${shaft}" aria-label="scroll shaft ${shaft + 1} up">↑</button><div class="shaft-drag" data-shaft-drag="${shaft}"><i></i><span>DRAG / WHEEL</span></div><button type="button" data-shaft-down="${shaft}" aria-label="scroll shaft ${shaft + 1} down">↓</button></div></section>`;
+    };
+    helpers.app.innerHTML = `<section class="scroll-cage palette-${esc(state.palette)}" data-interaction="${esc(interaction)}" data-shaft-count="${scene.shaft_lefts.length}" data-fresh-failure="${options.freshFailure ? "true" : "false"}" data-verdict="">
       <div class="scroll-cage-verdict" aria-live="assertive"><b>${options.freshFailure ? "FAIL" : ""}</b><span>${options.freshFailure ? "CAGE RE-INDEXED" : ""}</span></div>
       <header class="scroll-cage-head">
         <div><span>DEPARTMENT OF ORDINARY CONFIRMATIONS / FORM ${esc(state.challenge_id)}</span><h1>${esc(state.prompt)}</h1></div>
@@ -283,10 +295,7 @@
         </section>
         <aside class="scroll-cage-console">
           <div class="scroll-cage-register"><span>SHAFT INDEX</span><p>OFFSET REGISTER / PAPER-BOUND APERTURES</p></div>
-          ${scene.shaft_lefts.map((_left, shaft) => `<section class="shaft-control" data-shaft-control="${shaft}">
-            <header><b>0${shaft + 1}</b><span>INDEPENDENT SHAFT</span><em data-offset-label="${shaft}">${scene.initial_offsets[shaft] > 0 ? "+" : ""}${scene.initial_offsets[shaft]}</em></header>
-            <div class="shaft-control-buttons"><button type="button" data-shaft-up="${shaft}" aria-label="scroll shaft ${shaft + 1} up">↑</button><div class="shaft-drag" data-shaft-drag="${shaft}"><i></i><span>DRAG / WHEEL</span></div><button type="button" data-shaft-down="${shaft}" aria-label="scroll shaft ${shaft + 1} down">↓</button></div>
-          </section>`).join("")}
+          ${scene.shaft_lefts.map(shaftControlMarkup).join("")}
           <button type="button" id="scroll-cage-check" class="scroll-cage-check" role="checkbox" aria-checked="false" data-checked="false" disabled><i></i><span>CHECK THE BOX</span></button>
         </aside>
       </main>
@@ -304,25 +313,35 @@
         x: Math.round(clamp((event.clientX - rect.left) / rect.width * scene.width, 0, scene.width)),
         y: Math.round(clamp((event.clientY - rect.top) / rect.height * scene.height, 0, scene.height)),
       };
-      record("cursor", {...model.cursor});
+      record("cursor", {...model.cursor, input_source: "pointer_field"});
       paint();
     });
     arena.addEventListener("pointerleave", () => {
       if (!model || !model.cursor.active || model.terminal || model.submitting) return;
       model.cursor = {active: false, x: 0, y: 0};
-      record("cursor", {active: false});
+      record("cursor", {active: false, input_source: "pointer_field"});
       paint();
     });
-    document.querySelectorAll("[data-shaft]").forEach((shaftNode) => shaftNode.addEventListener("wheel", (event) => {
-      event.preventDefault();
-      setOffset(Number(shaftNode.dataset.shaft), event.deltaY > 0 ? Number(scene.offset_step) : -Number(scene.offset_step));
-    }, {passive: false}));
-    document.querySelectorAll("[data-shaft-control]").forEach((node) => node.addEventListener("wheel", (event) => {
-      event.preventDefault();
-      setOffset(Number(node.dataset.shaftControl), event.deltaY > 0 ? Number(scene.offset_step) : -Number(scene.offset_step));
-    }, {passive: false}));
-    document.querySelectorAll("[data-shaft-up]").forEach((button) => button.addEventListener("click", () => setOffset(Number(button.dataset.shaftUp), -Number(scene.offset_step))));
-    document.querySelectorAll("[data-shaft-down]").forEach((button) => button.addEventListener("click", () => setOffset(Number(button.dataset.shaftDown), Number(scene.offset_step))));
+    if (interaction === "full" || interaction === "legacy") {
+      document.querySelectorAll("[data-shaft]").forEach((shaftNode) => shaftNode.addEventListener("wheel", (event) => {
+        event.preventDefault();
+        setOffset(Number(shaftNode.dataset.shaft), event.deltaY > 0 ? Number(scene.offset_step) : -Number(scene.offset_step), "shaft_wheel");
+      }, {passive: false}));
+      document.querySelectorAll("[data-shaft-drag]").forEach((node) => node.addEventListener("wheel", (event) => {
+        event.preventDefault();
+        setOffset(Number(node.closest("[data-shaft-control]").dataset.shaftControl), event.deltaY > 0 ? Number(scene.offset_step) : -Number(scene.offset_step), "shaft_wheel");
+      }, {passive: false}));
+      if (interaction === "legacy") {
+        document.querySelectorAll("[data-shaft-control]").forEach((node) => node.addEventListener("wheel", (event) => {
+          event.preventDefault();
+          setOffset(Number(node.dataset.shaftControl), event.deltaY > 0 ? Number(scene.offset_step) : -Number(scene.offset_step), "shaft_wheel");
+        }, {passive: false}));
+      }
+    }
+    if (interaction === "simplified" || interaction === "legacy") {
+      document.querySelectorAll("[data-shaft-up]").forEach((button) => button.addEventListener("click", () => setOffset(Number(button.dataset.shaftUp), -Number(scene.offset_step), "shaft_button")));
+      document.querySelectorAll("[data-shaft-down]").forEach((button) => button.addEventListener("click", () => setOffset(Number(button.dataset.shaftDown), Number(scene.offset_step), "shaft_button")));
+    }
     document.querySelectorAll("[data-shaft-drag]").forEach((drag) => {
       drag.addEventListener("pointerdown", (event) => {
         if (!model || model.terminal || model.submitting) return;
@@ -336,7 +355,7 @@
         model.drag.y = event.clientY;
         while (Math.abs(model.drag.residual) >= 18) {
           const direction = sign(model.drag.residual);
-          setOffset(model.drag.shaft, direction * Number(scene.offset_step));
+          setOffset(model.drag.shaft, direction * Number(scene.offset_step), "shaft_drag");
           model.drag.residual -= direction * 18;
         }
       });

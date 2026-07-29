@@ -71,7 +71,11 @@
   }
 
   function isVisible(die) {
-    return die.initialReveal || die.scannerCells.has(pointKey(die.position)) || die.docked;
+    return model.orientationVisibility === "always" || die.initialReveal || die.scannerCells.has(pointKey(die.position)) || die.docked;
+  }
+
+  function withInputSource(event, inputSource) {
+    return model.controlled ? {...event, input_source: inputSource} : event;
   }
 
   function pipMarkup(value) {
@@ -174,11 +178,11 @@
     });
   }
 
-  function selectDie(dieId) {
+  function selectDie(dieId, inputSource = "rail_token_select") {
     if (!model || model.completed || model.settling || !model.dice.has(dieId)) return;
     const before = model.selectedId;
     model.selectedId = dieId;
-    pushEvent({type: "select", die_id: dieId, selected_before: before, selected_after: dieId});
+    pushEvent(withInputSource({type: "select", die_id: dieId, selected_before: before, selected_after: dieId}, inputSource));
     model.helpers.setReadout("DIE CLAMP SELECTED", "idle");
     updateScene();
   }
@@ -196,7 +200,7 @@
     updateScene();
   }
 
-  function rollSelected(inputDirection) {
+  function rollSelected(inputDirection, inputSource = "roll_pad") {
     if (!model || model.completed || model.settling || !DIRECTIONS[inputDirection]) return;
     const die = model.dice.get(model.selectedId);
     if (!die) return;
@@ -212,7 +216,7 @@
       die.initialReveal = false;
       die.docked = samePoint(die.position, die.config.dock);
     }
-    pushEvent({
+    pushEvent(withInputSource({
       type: "roll",
       die_id: die.id,
       input_direction: inputDirection,
@@ -225,7 +229,7 @@
       accepted_rolls_after: die.acceptedRolls,
       docked: die.docked,
       top_visible: isVisible(die),
-    });
+    }, inputSource));
     const token = document.querySelector(`[data-foundry-token="${die.id}"]`);
     token?.classList.remove("is-rolling");
     void token?.offsetWidth;
@@ -244,6 +248,53 @@
       model.helpers.setReadout("FACE UNDER HOUSING", "idle");
     }
     updateScene();
+  }
+
+  function directRailDrag(event, dieId) {
+    if (!model || model.interaction !== "full" || model.completed || model.settling || event.button !== 0) return;
+    const die = model.dice.get(dieId);
+    if (!die) return;
+    event.preventDefault();
+    if (model.selectedId !== dieId) selectDie(dieId, "rail_drag_select");
+    const token = event.currentTarget;
+    model.draggingDieId = dieId;
+    token?.setPointerCapture?.(event.pointerId);
+    token?.classList.add("is-direct-dragging");
+
+    const finish = (releaseEvent) => {
+      if (!model || model.draggingDieId !== dieId) return;
+      model.draggingDieId = null;
+      token?.removeEventListener("pointerup", finish);
+      token?.removeEventListener("pointercancel", finish);
+      token?.classList.remove("is-direct-dragging");
+      if (releaseEvent.type === "pointercancel") {
+        model.helpers.setReadout("ROLL RELEASED", "idle");
+        return;
+      }
+      const lane = document.querySelector(`[data-foundry-lane="${dieId}"]`);
+      const grid = lane?.querySelector(".foundry-grid");
+      const bounds = grid?.getBoundingClientRect();
+      if (!bounds || releaseEvent.clientX < bounds.left || releaseEvent.clientX >= bounds.right || releaseEvent.clientY < bounds.top || releaseEvent.clientY >= bounds.bottom) {
+        model.helpers.setReadout("DRAG TO AN ADJACENT RAIL CELL", "error");
+        return;
+      }
+      const columns = Number(model.state.board.columns);
+      const rows = Number(model.state.board.rows);
+      const displayX = Math.max(0, Math.min(columns - 1, Math.floor(((releaseEvent.clientX - bounds.left) / bounds.width) * columns)));
+      const displayY = Math.max(0, Math.min(rows - 1, Math.floor(((releaseEvent.clientY - bounds.top) / bounds.height) * rows)));
+      const candidate = model.view === 0
+        ? {x: displayX, y: displayY}
+        : {x: columns - 1 - displayX, y: rows - 1 - displayY};
+      const delta = {x: candidate.x - die.position.x, y: candidate.y - die.position.y};
+      const direction = Object.entries(DIRECTIONS).find(([, value]) => value[0] === delta.x && value[1] === delta.y)?.[0];
+      if (!direction) {
+        model.helpers.setReadout("DRAG ONE RAIL CELL", "error");
+        return;
+      }
+      rollSelected(direction, "direct_rail_drag");
+    };
+    token?.addEventListener("pointerup", finish, {once: true});
+    token?.addEventListener("pointercancel", finish, {once: true});
   }
 
   function resetTable() {
@@ -454,10 +505,17 @@
         initialReveal: true,
       });
     }
+    const interaction = state.control_condition?.interaction || "simplified";
+    const orientationVisibility = state.orientation_visibility
+      || state.control_condition?.difficulty_parameters?.orientation_visibility
+      || "initial_and_scanners";
     model = {
       state,
       helpers,
       dice,
+      interaction,
+      orientationVisibility,
+      controlled: Boolean(state.control_condition),
       startedAt: performance.now(),
       events: [],
       selectedId: state.initial_selected_die_id,
@@ -470,31 +528,35 @@
       settled: false,
       submitting: false,
       completed: false,
+      draggingDieId: null,
       timers: new Set(),
     };
     window.topFaceDiceModel = model;
 
     helpers.app.innerHTML = `
-      <section class="foundry-scale palette-${helpers.text(state.palette)}" data-view="0" data-fresh-failure="${options.freshFailure ? "true" : "false"}" tabindex="0">
+      <section class="foundry-scale palette-${helpers.text(state.palette)}" data-view="0" data-interaction="${helpers.text(interaction)}" data-orientation-visibility="${helpers.text(orientationVisibility)}" data-fresh-failure="${options.freshFailure ? "true" : "false"}" tabindex="0" style="--foundry-dice:${Math.max(1, (state.dice || []).length)}">
         <div class="foundry-verdict" aria-live="assertive"></div>
         <header class="foundry-head">
           <div class="foundry-title"><span>${state.dice.length}-DIE FOUNDRY SCALE / ${helpers.text(state.foundry_serial)}</span><h1>${helpers.text(state.prompt)}</h1></div>
           <div class="foundry-target"><span>TOP SUM</span><b>${Number(state.target_sum)}</b><i>TARE / D6×${state.dice.length}</i></div>
         </header>
         <main class="foundry-workbench">
-          <aside class="foundry-controls">
-            <div class="control-heading"><span>DIE CLAMPS</span><b>SELECT</b></div>
-            <div class="foundry-die-selectors">
-              ${(state.dice || []).map((config, index) => `<button type="button" class="foundry-die-selector" data-die-select="${helpers.text(config.id)}" data-selected="${index === 0}" data-docked="false" style="--die-color:${helpers.text(config.color)}"><i>${helpers.text(config.label.slice(0, 1))}</i><span>${helpers.text(config.label)}</span><b>${helpers.text(config.rail_code)}</b></button>`).join("")}
-            </div>
-            <div class="control-heading roll-heading"><span>ROLL JOG</span><b>WASD / ↕↔</b></div>
-            <div class="foundry-roll-pad">
-              <button type="button" class="foundry-roll-key key-n" id="foundry-roll-n" data-roll-direction="N">N</button>
-              <button type="button" class="foundry-roll-key key-w" id="foundry-roll-w" data-roll-direction="W">W</button>
-              <span class="roll-hub">D6</span>
-              <button type="button" class="foundry-roll-key key-e" id="foundry-roll-e" data-roll-direction="E">E</button>
-              <button type="button" class="foundry-roll-key key-s" id="foundry-roll-s" data-roll-direction="S">S</button>
-            </div>
+          <aside class="foundry-controls" data-input-surface="${helpers.text(interaction)}">
+            ${interaction === "simplified" ? `
+              <div class="control-heading"><span>DIE CLAMPS</span><b>SELECT</b></div>
+              <div class="foundry-die-selectors">
+                ${(state.dice || []).map((config, index) => `<button type="button" class="foundry-die-selector" data-die-select="${helpers.text(config.id)}" data-selected="${index === 0}" data-docked="false" style="--die-color:${helpers.text(config.color)}"><i>${helpers.text(config.label.slice(0, 1))}</i><span>${helpers.text(config.label)}</span><b>${helpers.text(config.rail_code)}</b></button>`).join("")}
+              </div>
+              <div class="control-heading roll-heading"><span>ROLL JOG</span><b>WASD / ↕↔</b></div>
+              <div class="foundry-roll-pad">
+                <button type="button" class="foundry-roll-key key-n" id="foundry-roll-n" data-roll-direction="N">N</button>
+                <button type="button" class="foundry-roll-key key-w" id="foundry-roll-w" data-roll-direction="W">W</button>
+                <span class="roll-hub">D6</span>
+                <button type="button" class="foundry-roll-key key-e" id="foundry-roll-e" data-roll-direction="E">E</button>
+                <button type="button" class="foundry-roll-key key-s" id="foundry-roll-s" data-roll-direction="S">S</button>
+              </div>` : `
+              <div class="control-heading"><span>DIRECT RAIL</span><b>DRAG</b></div>
+              <div class="foundry-direct-guide"><i>1</i><span>Grab a die on its rail.</span><i>2</i><span>Release it on one adjacent rail cell.</span><b>THE DROP DIRECTION ROLLS THE DIE.</b></div>`}
           </aside>
           <section class="foundry-table-wrap">
             <div class="foundry-table-toolbar"><span>ORIENTATION TABLE</span><button type="button" id="foundry-view-rotate"><i>↻</i> ROTATE VIEW <b id="foundry-view-label">000°</b></button></div>
@@ -532,22 +594,29 @@
         return;
       }
       if (["1", "2", "3", "4"].includes(key)) {
+        if (model.interaction !== "simplified") return;
         event.preventDefault();
         const config = state.dice[Number(key) - 1];
-        if (config) selectDie(config.id);
+        if (config) selectDie(config.id, "keyboard_select");
         return;
       }
       const direction = KEY_DIRECTIONS[key];
-      if (!direction) return;
+      if (!direction || model.interaction !== "simplified") return;
       event.preventDefault();
-      rollSelected(direction);
+      rollSelected(direction, "keyboard_roll");
     };
     window.addEventListener("keydown", keydown);
-    document.querySelectorAll("[data-die-select], [data-foundry-token]").forEach((element) => {
-      const dieId = element.dataset.dieSelect || element.dataset.foundryToken;
-      element.addEventListener("click", () => selectDie(dieId));
+    document.querySelectorAll("[data-die-select]").forEach((element) => {
+      element.addEventListener("click", () => selectDie(element.dataset.dieSelect, "die_clamp"));
     });
-    document.querySelectorAll("[data-roll-direction]").forEach((button) => button.addEventListener("click", () => rollSelected(button.dataset.rollDirection)));
+    document.querySelectorAll("[data-foundry-token]").forEach((token) => {
+      const dieId = token.dataset.foundryToken;
+      if (interaction === "full") token.addEventListener("pointerdown", (event) => directRailDrag(event, dieId));
+      else token.addEventListener("click", () => selectDie(dieId, "rail_token_select"));
+    });
+    document.querySelectorAll("[data-roll-direction]").forEach((button) => {
+      button.addEventListener("click", () => rollSelected(button.dataset.rollDirection, "roll_pad"));
+    });
     document.getElementById("foundry-view-rotate")?.addEventListener("click", rotateView);
     document.getElementById("foundry-reset")?.addEventListener("click", resetTable);
     document.getElementById("foundry-weigh")?.addEventListener("click", runSettlement);

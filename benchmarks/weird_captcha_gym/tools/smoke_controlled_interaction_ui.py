@@ -45,6 +45,11 @@ def parse_args() -> argparse.Namespace:
         help="Exercise one specified difficulty pair instead of the baseline pair.",
     )
     parser.add_argument(
+        "--interaction",
+        choices=("simplified", "full"),
+        help="Exercise one input surface; by default both surfaces are run.",
+    )
+    parser.add_argument(
         "--time-mode",
         choices=("live", "paused"),
         default="live",
@@ -163,7 +168,7 @@ def main() -> None:
         browser = playwright.chromium.launch(headless=True)
         for difficulty in difficulties:
             level_summary: dict[str, dict] = {}
-            for interaction in ("simplified", "full"):
+            for interaction in ((args.interaction,) if args.interaction else ("simplified", "full")):
                 task_json = controlled_task(tasks_root, difficulty, interaction)
                 state_dir = temp_root / f"d{difficulty}-{interaction}"
                 state_dir.mkdir(parents=True, exist_ok=True)
@@ -196,6 +201,9 @@ def main() -> None:
                         expect(page.locator(".parasite-foot")).to_be_visible()
                         page.wait_for_timeout(150)
                     initial_public_state = read_json(state_dir / "public_state.json")
+                    initial_challenge_id = str(initial_public_state.get("challenge_id") or "")
+                    if not initial_challenge_id:
+                        raise AssertionError("controlled task did not expose an initial challenge identity")
                     clock_initial = page.evaluate("() => WeirdCaptchaTime.status()")
                     page.screenshot(path=str(evidence_dir / "initial.png"))
                     clock_after_model_delay = clock_initial
@@ -215,6 +223,36 @@ def main() -> None:
                     if args.time_mode == "paused":
                         page.evaluate("() => WeirdCaptchaTime.resume()")
                     solver.fail_once(page, state_dir, evidence_dir, mechanic)
+                    failed_attempt_path = state_dir / "attempts.jsonl"
+                    if not failed_attempt_path.is_file():
+                        raise AssertionError("failed certification was not archived by the server")
+                    failed_attempts = [
+                        json.loads(line)
+                        for line in failed_attempt_path.read_text(encoding="utf-8").splitlines()
+                        if line.strip()
+                    ]
+                    if not failed_attempts:
+                        raise AssertionError("failed certification archive is empty")
+                    failed_attempt = failed_attempts[-1]
+                    failed_grade = dict(failed_attempt.get("server_grade") or {})
+                    if failed_grade.get("passed") is not False:
+                        raise AssertionError(f"intentional failed certification was accepted: {failed_grade}")
+                    retry_public_state = read_json(state_dir / "public_state.json")
+                    retry_challenge_id = str(retry_public_state.get("challenge_id") or "")
+                    if not retry_challenge_id or retry_challenge_id == initial_challenge_id:
+                        raise AssertionError("failed certification did not issue a fresh challenge")
+                    (evidence_dir / "failed-attempts.jsonl").write_text(
+                        "".join(json.dumps(attempt, sort_keys=True) + "\n" for attempt in failed_attempts),
+                        encoding="utf-8",
+                    )
+                    (evidence_dir / "failure-server-grade.json").write_text(
+                        json.dumps(failed_grade, indent=2, sort_keys=True) + "\n",
+                        encoding="utf-8",
+                    )
+                    (evidence_dir / "retry_public_state.json").write_text(
+                        json.dumps(retry_public_state, indent=2, sort_keys=True) + "\n",
+                        encoding="utf-8",
+                    )
                     if args.time_mode == "paused":
                         page.evaluate("() => WeirdCaptchaTime.pause()")
                     clock_after_failure = page.evaluate("() => WeirdCaptchaTime.status()")
@@ -277,7 +315,11 @@ def main() -> None:
                         or result.get("orders")
                         or []
                     )
-                    sources = sorted({event.get("input_source") for event in events if event.get("input_source")})
+                    sources = sorted({
+                        event.get("input_source") or event.get("input_surface")
+                        for event in events
+                        if event.get("input_source") or event.get("input_surface")
+                    })
                     placement_sources = result.get("placement_sources") or {}
                     if isinstance(placement_sources, dict):
                         sources = sorted(set(sources) | {source for source in placement_sources.values() if source})
@@ -286,6 +328,14 @@ def main() -> None:
                         "server_grade": server_grade,
                         "verifier": direct_grade,
                         "input_sources": sources,
+                        "failure_and_retry": {
+                            "initial_challenge_id": initial_challenge_id,
+                            "failed_server_grade": failed_grade,
+                            "retry_challenge_id": retry_challenge_id,
+                            "fresh_challenge_issued": True,
+                            "retry_passed": True,
+                            "retry_world_fingerprint": world_fingerprint(retry_public_state),
+                        },
                         "clock": {
                             "initial": clock_initial,
                             "after_model_delay": clock_after_model_delay,
@@ -295,6 +345,11 @@ def main() -> None:
                         "initial_browser_run_world_fingerprint": world_fingerprint(initial_public_state),
                         "solved_browser_run_world_fingerprint": world_fingerprint(exported["public_state"]),
                     }
+                except Exception:
+                    attempts = state_dir / "attempts.jsonl"
+                    if attempts.is_file():
+                        (evidence_dir / "failed-attempts.jsonl").write_bytes(attempts.read_bytes())
+                    raise
                 finally:
                     page.close()
                     process.terminate()

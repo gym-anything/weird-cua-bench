@@ -131,6 +131,60 @@ def grade(payload: dict[str, Any], truth: dict[str, Any], public: dict[str, Any]
     physics = truth.get("physics")
     if not isinstance(scene, dict) or public.get("scene") != scene or not isinstance(physics, dict) or public.get("physics") != physics:
         return _fail("scroll-cage geometry contract mismatch")
+    shaft_lefts = scene.get("shaft_lefts")
+    boundaries = scene.get("boundaries")
+    if not isinstance(shaft_lefts, list) or not isinstance(boundaries, list):
+        return _fail("scroll-cage shaft or gate geometry is malformed")
+    shaft_count = len(shaft_lefts)
+    gate_count = len(boundaries)
+    if not 2 <= shaft_count <= 5 or gate_count != shaft_count - 1 or len(scene.get("initial_offsets") or []) != shaft_count:
+        return _fail("scroll-cage shaft and gate counts are invalid")
+    if any(
+        not isinstance(boundary, dict)
+        or int(boundary.get("left_shaft", -1)) != index
+        or int(boundary.get("right_shaft", -1)) != index + 1
+        for index, boundary in enumerate(boundaries)
+    ):
+        return _fail("scroll-cage gate chain is malformed")
+    condition = truth.get("control_condition")
+    if public.get("control_condition") != condition:
+        return _fail("public interaction condition differs from scroll-cage contract")
+    expected_scroll_sources: set[str] | None = None
+    if condition is not None:
+        if not isinstance(condition, dict):
+            return _fail("scroll-cage control condition is malformed")
+        interaction = str(condition.get("interaction") or "")
+        expected_scroll_sources = {
+            "simplified": {"shaft_button"},
+            "full": {"shaft_drag", "shaft_wheel"},
+        }.get(interaction)
+        if expected_scroll_sources is None:
+            return _fail("scroll-cage interaction condition is invalid")
+        parameters = condition.get("difficulty_parameters")
+        if not isinstance(parameters, dict):
+            return _fail("scroll-cage difficulty parameters are malformed")
+        try:
+            expected_values = {
+                "shaft_count": shaft_count,
+                "opening_half_height": int(boundaries[0]["opening_half_height"]),
+                "alignment_tolerance": int(boundaries[0]["alignment_tolerance"]),
+                "capture_radius": int(scene["clamp"]["capture_radius"]),
+                "cursor_radius": int(physics["cursor_radius"]),
+                "cursor_acceleration": int(physics["cursor_acceleration"]),
+                "friction_milli": int(physics["friction_milli"]),
+                "max_speed": int(physics["max_speed"]),
+                "maximum_ticks": int(physics["maximum_ticks"]),
+            }
+        except (KeyError, TypeError, ValueError):
+            return _fail("scroll-cage controlled geometry is malformed")
+        if any(parameters.get(key) != value for key, value in expected_values.items()):
+            return _fail("scroll-cage generated state differs from its difficulty profile")
+        if any(
+            int(boundary["opening_half_height"]) != expected_values["opening_half_height"]
+            or int(boundary["alignment_tolerance"]) != expected_values["alignment_tolerance"]
+            for boundary in boundaries
+        ):
+            return _fail("scroll-cage gates use inconsistent profile geometry")
     events = payload.get("events")
     if not isinstance(events, list) or not 3 <= len(events) <= 12_000:
         return _fail("scroll-cage transcript missing or outside limits")
@@ -159,6 +213,8 @@ def grade(payload: dict[str, Any], truth: dict[str, Any], public: dict[str, Any]
         action = event.get("type")
         if action == "cursor":
             active = event.get("active") is True
+            if expected_scroll_sources is not None and event.get("input_source") != "pointer_field":
+                return _fail(f"event {sequence} cursor uses the wrong interaction input")
             if active:
                 try:
                     x, y = int(event["x"]), int(event["y"])
@@ -171,7 +227,7 @@ def grade(payload: dict[str, Any], truth: dict[str, Any], public: dict[str, Any]
                 cursor = {"active": False, "x": 0, "y": 0}
         elif action == "scroll":
             shaft = event.get("shaft")
-            if shaft not in range(4):
+            if shaft not in range(shaft_count):
                 return _fail(f"event {sequence} scroll shaft invalid")
             before = offsets[shaft]
             try:
@@ -183,6 +239,8 @@ def grade(payload: dict[str, Any], truth: dict[str, Any], public: dict[str, Any]
             expected = _clamp(before + delta, int(scene["offset_min"]), int(scene["offset_max"]))
             if expected == before or event.get("after") != expected:
                 return _fail(f"event {sequence} scroll crosses a stop or reports false offset")
+            if expected_scroll_sources is not None and event.get("input_source") not in expected_scroll_sources:
+                return _fail(f"event {sequence} scroll uses the wrong interaction input")
             offsets[shaft] = expected
             scroll_events += 1
         elif action == "tick":
@@ -218,13 +276,13 @@ def grade(payload: dict[str, Any], truth: dict[str, Any], public: dict[str, Any]
         verified
         and checked
         and body["captured"]
-        and forward_crossings == {0, 1, 2}
+        and forward_crossings == set(range(gate_count))
         and scroll_events > 0
         and payload.get("completed") is True
     )
     feedback = (
         f"fixed-step cage replay: ticks {tick}; scrolls {scroll_events}; "
-        f"forward gates {len(forward_crossings)}/3; captured {str(body['captured']).lower()}; checked {str(checked).lower()}"
+        f"forward gates {len(forward_crossings)}/{gate_count}; captured {str(body['captured']).lower()}; checked {str(checked).lower()}"
     )
     return {"graded": True, "passed": passed, "feedback": feedback}
 

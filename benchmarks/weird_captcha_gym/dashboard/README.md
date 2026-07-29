@@ -20,7 +20,7 @@ The Environment collection exposes the benchmark annotations as composable filte
 
 ## Play controlled tasks
 
-Sixteen environments expose difficulty levels 1 through 5 plus simplified and full interaction modes on their environment dossiers. Choose both values in the runtime console before selecting **Play in browser**. The selected task summary, agent instruction, task identity, generated challenge, and grader all use the same condition.
+Fifty-five environments expose difficulty levels 1 through 5 plus simplified and full interaction modes on their environment dossiers. Choose both values in the runtime console before selecting **Play in browser**. The selected task summary, agent instruction, task identity, generated challenge, and grader all use the same condition.
 
 Public browser play bundles four deterministic challenges for every difficulty and interaction pair. A connected local dashboard generates a fresh controlled challenge in the session's temporary directory. The original 75-task corpus remains unchanged.
 

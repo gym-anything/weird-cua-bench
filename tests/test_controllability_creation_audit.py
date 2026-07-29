@@ -50,10 +50,15 @@ def test_codex_commands_start_and_resume_named_sessions(tmp_path: Path) -> None:
         session_id="creator-session",
     )
 
-    assert fresh[:3] == [str(binary), "exec", "--yolo"]
+    assert fresh[:3] == [str(binary), "exec", "--ignore-user-config"]
     assert "--cd" in fresh
     assert "resume" not in fresh
-    assert resumed[:4] == [str(binary), "exec", "resume", "--yolo"]
+    assert resumed[:4] == [str(binary), "exec", "resume", "--ignore-user-config"]
+    for command in (fresh, resumed):
+        assert "--yolo" in command
+        for feature in method.DISABLED_INTERACTIVE_FEATURES:
+            index = command.index(feature)
+            assert command[index - 1] == "--disable"
     assert resumed[-2:] == ["creator-session", "continue"]
 
 

@@ -66,7 +66,7 @@ def _projection_claim(value: Any, expected: dict[str, Any]) -> bool:
     )
 
 
-def _projection(camera: dict[str, float], source: dict[str, Any], fov_deg: float, capture_range: float) -> dict[str, Any] | None:
+def _projection(camera: dict[str, float], source: dict[str, Any], fov_deg: float, capture_range: float, frustum_margin: float = 0.04) -> dict[str, Any] | None:
     yaw = math.radians(camera["yaw_deg"])
     cosine, sine = math.cos(yaw), math.sin(yaw)
     projected = []
@@ -79,12 +79,12 @@ def _projection(camera: dict[str, float], source: dict[str, Any], fov_deg: float
         projected.append({"u": round(u, 4), "depth": round(forward, 4)})
     midpoint = source["midpoint"]
     distance = math.hypot(float(midpoint["x"]) - camera["x"], float(midpoint["y"]) - camera["y"])
-    if distance > capture_range or any(not 0.04 <= item["u"] <= 0.96 for item in projected):
+    if distance > capture_range or any(not frustum_margin <= item["u"] <= 1.0 - frustum_margin for item in projected):
         return None
     return {"endpoints": projected, "distance": round(distance, 4)}
 
 
-def _occluded(camera: dict[str, float], source: dict[str, Any], room: dict[str, Any], operations: list[dict[str, Any]]) -> bool:
+def _occluded(camera: dict[str, float], source: dict[str, Any], room: dict[str, Any], operations: list[dict[str, Any]], door_half_width: float = 0.45) -> bool:
     wall_x = float(room["divider"]["x"])
     target_x, target_y = float(source["midpoint"]["x"]), float(source["midpoint"]["y"])
     if (camera["x"] - wall_x) * (target_x - wall_x) >= 0 or abs(target_x - camera["x"]) < 1e-9:
@@ -92,7 +92,7 @@ def _occluded(camera: dict[str, float], source: dict[str, Any], room: dict[str, 
     amount = (wall_x - camera["x"]) / (target_x - camera["x"])
     crossing_y = camera["y"] + (target_y - camera["y"]) * amount
     opening = next((item for item in operations if item["operation"] == "carve_opening"), None)
-    return opening is None or not _near_segment((wall_x, crossing_y), (opening["center"]["x"], opening["center"]["y"]), opening["angle_deg"], opening["length"], 0.45)
+    return opening is None or not _near_segment((wall_x, crossing_y), (opening["center"]["x"], opening["center"]["y"]), opening["angle_deg"], opening["length"], door_half_width)
 
 
 def _near_segment(point: tuple[float, float], center: tuple[float, float], angle_deg: float, length: float, half_width: float) -> bool:
@@ -103,7 +103,7 @@ def _near_segment(point: tuple[float, float], center: tuple[float, float], angle
     return abs(along) <= length / 2.0 + 0.12 + 1e-9 and abs(across) <= half_width + 1e-9
 
 
-def _collision_move(camera: dict[str, float], dx: float, dy: float, room: dict[str, Any], operations: list[dict[str, Any]], qualification: dict[str, Any]) -> dict[str, float]:
+def _collision_move(camera: dict[str, float], dx: float, dy: float, room: dict[str, Any], operations: list[dict[str, Any]], qualification: dict[str, Any], door_half_width: float = 0.45) -> dict[str, float]:
     radius = float(qualification["collision_radius"])
     bridge = next((item for item in operations if item["operation"] == "add_walkway"), None)
     opening = next((item for item in operations if item["operation"] == "carve_opening"), None)
@@ -119,7 +119,7 @@ def _collision_move(camera: dict[str, float], dx: float, dy: float, room: dict[s
         crosses_wall = (previous[0] - wall_x) * (x - wall_x) <= 0 and abs(x - previous[0]) > 1e-9
         inside_wall = abs(x - wall_x) < radius
         if crosses_wall or inside_wall:
-            if opening is None or not _near_segment((wall_x, y), (opening["center"]["x"], opening["center"]["y"]), opening["angle_deg"], opening["length"], 0.45):
+            if opening is None or not _near_segment((wall_x, y), (opening["center"]["x"], opening["center"]["y"]), opening["angle_deg"], opening["length"], door_half_width):
                 return False
         return True
 
@@ -165,7 +165,7 @@ def grade(payload: dict[str, Any], ground_truth: dict[str, Any], public_state: d
         return _failure("public room identity mismatch")
     room, sources, sockets = ground_truth.get("room"), ground_truth.get("sources"), ground_truth.get("sockets")
     initial, controls, qualification = ground_truth.get("initial_camera"), ground_truth.get("controls"), ground_truth.get("qualification")
-    if not isinstance(room, dict) or not isinstance(sources, list) or len(sources) != 2 or not isinstance(sockets, list) or len(sockets) != 2 or not all(isinstance(value, dict) for value in (initial, controls, qualification)):
+    if not isinstance(room, dict) or not isinstance(sources, list) or not 1 <= len(sources) <= 2 or not isinstance(sockets, list) or len(sockets) != len(sources) or not all(isinstance(value, dict) for value in (initial, controls, qualification)):
         return _failure("hidden room manifest is malformed")
     for key, value in (("room", room), ("sources", sources), ("sockets", sockets), ("initial_camera", initial), ("controls", controls), ("qualification", qualification)):
         if public_state.get(key) != value:
@@ -173,6 +173,18 @@ def grade(payload: dict[str, Any], ground_truth: dict[str, Any], public_state: d
     events = payload.get("events")
     if not isinstance(events, list) or not events or len(events) > 1600:
         return _failure("room transcript is missing or too long")
+    condition = ground_truth.get("control_condition")
+    if condition is not None and condition != public_state.get("control_condition"):
+        return _failure("controlled room condition mismatch")
+    parameters = dict((condition or {}).get("difficulty_parameters") or {})
+    expected_surface = str((condition or {}).get("interaction") or "")
+    if condition is not None and expected_surface not in {"simplified", "full"}:
+        return _failure("controlled room interaction is malformed")
+    frustum_margin = float(parameters.get("frustum_margin", 0.04))
+    door_half_width = float(parameters.get("door_half_width", 0.45))
+    angle_tolerance = float(parameters.get("angle_tolerance_deg", 10))
+    rotation_step = int(controls.get("plane_rotation_step_deg", 15))
+    scale_step = float(controls.get("plane_scale_step", 0.1))
 
     camera = {"x": float(initial["x"]), "y": float(initial["y"]), "yaw_deg": float(initial["yaw_deg"])}
     operations: list[dict[str, Any]] = []
@@ -201,6 +213,8 @@ def grade(payload: dict[str, Any], ground_truth: dict[str, Any], public_state: d
         event_time = _number(event.get("t_ms"))
         if event_time is None or not 0 <= event_time <= 1_200_000 or event_time < previous_time:
             return _failure(f"room event {sequence} has invalid timestamp")
+        if expected_surface and event.get("input_surface") != expected_surface:
+            return _failure(f"room event {sequence} uses the wrong interaction input")
         previous_time = event_time
         action = str(event.get("type") or "")
         if action == "challenge_start":
@@ -227,7 +241,7 @@ def grade(payload: dict[str, Any], ground_truth: dict[str, Any], public_state: d
             direction = {"forward": forward, "back": (-forward[0], -forward[1]), "right": right, "left": (-right[0], -right[1])}[moving["code"]]
             distance = float(controls["move_speed"]) * dt / 1000.0
             before = (camera["x"], camera["y"])
-            expected = _collision_move(camera, direction[0] * distance, direction[1] * distance, room, operations, qualification)
+            expected = _collision_move(camera, direction[0] * distance, direction[1] * distance, room, operations, qualification, door_half_width)
             if not _camera_claim(event.get("to"), expected):
                 return _failure(f"movement sample {sequence} walks through collision or lies about position")
             camera = expected
@@ -263,8 +277,8 @@ def grade(payload: dict[str, Any], ground_truth: dict[str, Any], public_state: d
             for source in sources:
                 if str(source["id"]) in used_sources:
                     continue
-                projection = _projection(camera, source, float(controls["fov_deg"]), float(qualification["capture_range"]))
-                if projection is not None and not _occluded(camera, source, room, operations):
+                projection = _projection(camera, source, float(controls["fov_deg"]), float(qualification["capture_range"]), frustum_margin)
+                if projection is not None and not _occluded(camera, source, room, operations, door_half_width):
                     candidates.append((projection["distance"], source, projection))
             if not candidates:
                 return _failure(f"capture {sequence} contains no visible, unoccluded geometry")
@@ -301,7 +315,7 @@ def grade(payload: dict[str, Any], ground_truth: dict[str, Any], public_state: d
             continue
         if action == "plane_rotate":
             delta = event.get("delta_deg")
-            if carrying is None or moving is not None or plane_dragging or delta not in {-15, 15} or not _close(event.get("before"), plane["rotation_deg"]):
+            if carrying is None or moving is not None or plane_dragging or delta not in {-rotation_step, rotation_step} or not _close(event.get("before"), plane["rotation_deg"]):
                 return _failure(f"photo-plane rotation {sequence} is malformed")
             plane["rotation_deg"] = (plane["rotation_deg"] + int(delta)) % 360
             if not _close(event.get("after"), plane["rotation_deg"]):
@@ -310,7 +324,7 @@ def grade(payload: dict[str, Any], ground_truth: dict[str, Any], public_state: d
             continue
         if action == "plane_scale":
             delta = _number(event.get("delta"))
-            if carrying is None or moving is not None or plane_dragging or delta not in {-0.1, 0.1} or not _close(event.get("before"), plane["scale"]):
+            if carrying is None or moving is not None or plane_dragging or delta not in {-scale_step, scale_step} or not _close(event.get("before"), plane["scale"]):
                 return _failure(f"photo-plane scale {sequence} is malformed")
             next_scale = _round(plane["scale"] + delta)
             if not float(controls["plane_scale_min"]) <= next_scale <= float(controls["plane_scale_max"]):
@@ -336,7 +350,7 @@ def grade(payload: dict[str, Any], ground_truth: dict[str, Any], public_state: d
             if not _mapped_claim(event.get("mapped"), mapped):
                 return _failure(f"development {sequence} fabricates transformed geometry")
             socket = next((item for item in sockets if item["source_kind"] == carrying["kind"]), None)
-            qualified = bool(socket) and math.hypot(mapped["center"]["x"] - float(socket["center"]["x"]), mapped["center"]["y"] - float(socket["center"]["y"])) <= float(socket["tolerance"]) and _angle_error(mapped["angle_deg"], float(socket["angle_deg"])) <= 10 and mapped["length"] >= float(socket["minimum_length"]) and capture_adjustments["drag_moves"] >= int(qualification["minimum_plane_drag_moves"]) and capture_adjustments["scales"] >= int(qualification["minimum_scale_changes"])
+            qualified = bool(socket) and math.hypot(mapped["center"]["x"] - float(socket["center"]["x"]), mapped["center"]["y"] - float(socket["center"]["y"])) <= float(socket["tolerance"]) and _angle_error(mapped["angle_deg"], float(socket["angle_deg"])) <= angle_tolerance and mapped["length"] >= float(socket["minimum_length"]) and capture_adjustments["drag_moves"] >= int(qualification["minimum_plane_drag_moves"]) and capture_adjustments["scales"] >= int(qualification["minimum_scale_changes"])
             if bool(event.get("developed")) != qualified:
                 return _failure(f"development {sequence} lies about room overwrite")
             if qualified:
@@ -388,7 +402,7 @@ def grade(payload: dict[str, Any], ground_truth: dict[str, Any], public_state: d
                 break
     if not state_matches:
         return _failure("claimed room state does not match primitive replay")
-    passed = terminal and terminal_contact and [item["operation"] for item in operations] == ["add_walkway", "carve_opening"] and move_samples >= int(qualification["minimum_move_samples"]) and travel >= float(qualification["minimum_travel"])
+    passed = terminal and terminal_contact and [item["operation"] for item in operations] == [str(socket["operation"]) for socket in sockets] and move_samples >= int(qualification["minimum_move_samples"]) and travel >= float(qualification["minimum_travel"])
     return {
         "graded": True, "passed": passed, "score": 100 if passed else 0,
         "feedback": f"replayed {move_samples} timed movement samples over {travel:.1f}m; captures {captures}; developed {[item['operation'] for item in operations]}; local failures {local_failures}; plane resets {plane_resets}; terminal contact {terminal_contact}",

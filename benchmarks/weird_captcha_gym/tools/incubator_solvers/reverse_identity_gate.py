@@ -47,9 +47,11 @@ def solve(page, state_dir: Path, out_dir: Path, mechanic: str) -> None:
     if mechanic != MECHANIC_ID:
         raise AssertionError(f"unexpected mechanic {mechanic!r}")
     truth = _read(state_dir / "ground_truth.json")
+    interaction = str((truth.get("control_condition") or {}).get("interaction") or "full")
     context = page.context
     tabs = {}
-    for station in range(4):
+    for station_meta in truth["stations"]:
+        station = int(station_meta["id"])
         page.bring_to_front()
         with page.expect_popup() as popup:
             page.locator(f'[data-deploy="{station}"]').click()
@@ -58,7 +60,7 @@ def solve(page, state_dir: Path, out_dir: Path, mechanic: str) -> None:
         expect(child.locator(f'[data-station-page="{station}"]')).to_be_visible()
         tabs[station] = child
     page.bring_to_front()
-    expect(page.locator("#robot-deployment-count")).to_have_text("4/4")
+    expect(page.locator("#robot-deployment-count")).to_have_text(f"{len(truth['stations'])}/{len(truth['stations'])}")
     _screenshot(page, out_dir, mechanic, "four-tabs-online")
 
     for index, stage in enumerate(truth["stages"]):
@@ -68,21 +70,27 @@ def solve(page, state_dir: Path, out_dir: Path, mechanic: str) -> None:
         root = child.locator(f'[data-station-page="{station}"]')
         expect(root).to_have_attribute("data-active", "true", timeout=5_000)
         key = "d" if int(stage["pulse_speed_deg_per_tick"]) > 0 else "a"
-        child.keyboard.down(key)
         contact = child.locator("#station-contact")
-        bounds = contact.bounding_box()
-        if not bounds:
-            raise AssertionError(f"station {station} contact has no bounds")
-        child.mouse.move(bounds["x"] + bounds["width"] / 2, bounds["y"] + bounds["height"] / 2)
-        child.mouse.down()
+        if interaction == "simplified":
+            direction = "1" if key == "d" else "-1"
+            child.locator(f'[data-station-drive="{direction}"]').click()
+            contact.click()
+        else:
+            child.keyboard.down(key)
+            bounds = contact.bounding_box()
+            if not bounds:
+                raise AssertionError(f"station {station} contact has no bounds")
+            child.mouse.move(bounds["x"] + bounds["width"] / 2, bounds["y"] + bounds["height"] / 2)
+            child.mouse.down()
         expect(root).to_have_attribute("data-active", "false", timeout=16_000)
-        child.mouse.up()
-        child.keyboard.up(key)
+        if interaction == "full":
+            child.mouse.up()
+            child.keyboard.up(key)
         if index == 0:
             _screenshot(child, out_dir, mechanic, "first-relay-sealed")
 
     page.bring_to_front()
-    expect(page.locator("#robot-relay-count")).to_have_text("8/8", timeout=5_000)
+    expect(page.locator("#robot-relay-count")).to_have_text(f"{len(truth['stages'])}/{len(truth['stages'])}", timeout=5_000)
     _screenshot(page, out_dir, mechanic, "eight-relays")
     page.locator("#robot-verify").click()
     expect(page.locator(".robot-master-foot .readout")).to_have_text("PASS", timeout=8_000)

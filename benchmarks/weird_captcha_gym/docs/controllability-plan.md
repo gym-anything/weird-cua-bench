@@ -1,6 +1,6 @@
 # Controllability Plan
 
-Status: twenty-four environments have complete difficulty and interaction controls. All 75 environments have real-time evaluation settings.
+Status: fifty-five environments have complete difficulty and interaction controls. All 75 environments have real-time evaluation settings.
 
 This document records how Weird CUA Bench should vary difficulty, interaction, and real time without duplicating puzzle implementations.
 
@@ -55,7 +55,7 @@ The second extension adds four environments:
 3. Bureaucratic Signature Trap
 4. Clockwork Clutch Safe
 
-The approved baseline assignments are:
+The originally hand-reviewed baseline assignments are:
 
 | Environment | Current level |
 |---|---:|
@@ -86,7 +86,7 @@ The approved baseline assignments are:
 
 These assignments describe the exact current configurations. They do not rank the environment ideas in isolation. They also do not claim that an L5 profile is the hardest version that could be built.
 
-Each environment now has a `controls.json` file with an assigned baseline and five difficulty profiles. A level describes the complete task at that setting. The assignment considers the number of required stages, the work needed within each stage, the information available, required precision, motion speed, and time pressure together.
+Each listed environment has a `controls.json` file with an assigned baseline and five difficulty profiles. A level describes the complete task at that setting. The assignment considers the number of required stages, the work needed within each stage, the information available, required precision, motion speed, and time pressure together.
 
 The existing task remains unchanged. Controlled tasks are materialized into a separate output directory with:
 
@@ -96,7 +96,7 @@ python3 benchmarks/weird_captcha_gym/tools/materialize_controlled_tasks.py \
   --output-root /tmp/weird-cua-controlled
 ```
 
-The command writes five tasks for every implemented interaction mode. Every controlled environment now implements both modes. The complete twenty-four-environment matrix contains 240 tasks.
+The command writes five tasks for every implemented interaction mode. Every controlled environment now implements both modes. The complete fifty-five-environment matrix contains 550 tasks.
 
 The selected condition is copied into the task metadata, public state, and hidden state. Difficulty-specific instructions replace the baseline instructions when a profile changes a rule that the agent must know.
 

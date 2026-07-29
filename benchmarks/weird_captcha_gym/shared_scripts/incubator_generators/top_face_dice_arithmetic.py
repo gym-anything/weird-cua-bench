@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import hashlib
 import random
+from itertools import product
 from typing import Any
 
 
@@ -92,16 +93,62 @@ def _trace(initial: dict[str, int], commands: tuple[str, ...]) -> tuple[list[dic
     return trace, orientation
 
 
+def _candidate_lot(
+    initials: list[dict[str, int]],
+    plans: tuple[tuple[str, ...], ...],
+) -> list[tuple[tuple[str, ...], list[dict[str, Any]], dict[str, int]]]:
+    return [
+        (plan, *_trace(initial, plan))
+        for initial, plan in zip(initials, plans)
+    ]
+
+
+def _matches_profile(
+    candidate: list[tuple[tuple[str, ...], list[dict[str, Any]], dict[str, int]]],
+    minimum_target_sum: int,
+    maximum_target_sum: int,
+    dice_count: int,
+) -> bool:
+    total = sum(item[2]["top"] for item in candidate)
+    tops = {item[2]["top"] for item in candidate}
+    return (
+        minimum_target_sum <= total <= maximum_target_sum
+        and len(tops) >= min(3, dice_count)
+    )
+
+
 def generate(task: dict[str, Any], seed: str) -> tuple[dict[str, Any], dict[str, Any]]:
+    condition = task.get("_control_condition")
+    parameters = dict((condition or {}).get("difficulty_parameters") or {})
+    dice_count = int(parameters.get("dice_count", len(LABELS)))
+    orientation_visibility = str(parameters.get("orientation_visibility", "initial_and_scanners"))
+    minimum_target_sum = int(parameters.get("minimum_target_sum", 10))
+    maximum_target_sum = int(parameters.get("maximum_target_sum", 20))
+    if not 1 <= dice_count <= len(LABELS):
+        raise ValueError("foundry dice count is outside supported limits")
+    if orientation_visibility not in {"always", "initial_and_scanners"}:
+        raise ValueError("foundry orientation visibility is unsupported")
+    if not dice_count <= minimum_target_sum <= maximum_target_sum <= 6 * dice_count:
+        raise ValueError("foundry target-sum bounds are malformed")
+
     rng = random.Random(_seed_int(seed, MECHANIC_ID))
-    challenge_id = hashlib.sha256(f"{seed}|{MECHANIC_ID}".encode("utf-8")).hexdigest()[:12]
+    # L5 is the historical uncontrolled configuration, including its visible
+    # foundry serial derived from the challenge identity. Lower profiles need
+    # distinct identities, while the paired interaction modes deliberately do
+    # not participate in this salt.
+    challenge_salt = (
+        MECHANIC_ID
+        if condition is None or int(condition["difficulty"]) == 5
+        else f"{MECHANIC_ID}|d{condition['difficulty']}"
+    )
+    challenge_id = hashlib.sha256(f"{seed}|{challenge_salt}".encode("utf-8")).hexdigest()[:12]
     task_id = str(task.get("id") or "top_face_dice_arithmetic_seed_0001@0.1")
     colors = list(COLORWAYS)
     rng.shuffle(colors)
 
     dice: list[dict[str, Any]] = []
     private_initials: list[dict[str, int]] = []
-    for index, label in enumerate(LABELS):
+    for index, label in enumerate(LABELS[:dice_count]):
         initial = _initial_orientation(rng)
         private_initials.append(initial)
         token = hashlib.sha256(f"{seed}|die|{index}".encode("utf-8")).hexdigest()[:5]
@@ -125,19 +172,37 @@ def generate(task: dict[str, Any], seed: str) -> tuple[dict[str, Any], dict[str,
         })
 
     chosen: list[tuple[tuple[str, ...], list[dict[str, Any]], dict[str, int]]] | None = None
+    last_candidate: list[tuple[tuple[str, ...], list[dict[str, Any]], dict[str, int]]] | None = None
     for _ in range(80):
-        candidate: list[tuple[tuple[str, ...], list[dict[str, Any]], dict[str, int]]] = []
-        for initial in private_initials:
-            plan = rng.choice(ROUTE_PLANS)
-            trace, final_orientation = _trace(initial, plan)
-            candidate.append((plan, trace, final_orientation))
-        total = sum(item[2]["top"] for item in candidate)
-        tops = {item[2]["top"] for item in candidate}
-        chosen = candidate
-        if 10 <= total <= 20 and len(tops) >= 3:
+        candidate = _candidate_lot(
+            private_initials,
+            tuple(rng.choice(ROUTE_PLANS) for _ in range(dice_count)),
+        )
+        last_candidate = candidate
+        if _matches_profile(candidate, minimum_target_sum, maximum_target_sum, dice_count):
+            chosen = candidate
             break
     if chosen is None:
-        raise RuntimeError("could not construct a solver-backed foundry lot")
+        if condition is None or int(condition["difficulty"]) == 5:
+            # Preserve the uncontrolled generator byte-for-byte in behavior:
+            # the historical baseline emitted the final sampled lot after all
+            # retries. Controlled L5 deliberately keeps that same behavior.
+            if last_candidate is None:
+                raise RuntimeError("could not construct a solver-backed foundry lot")
+            chosen = last_candidate
+        else:
+            # Controlled lots must satisfy the published profile. Keep the
+            # historical random draws above, then deterministically enumerate
+            # the finite route-product space without consuming more RNG.
+            for plans in product(ROUTE_PLANS, repeat=dice_count):
+                candidate = _candidate_lot(private_initials, plans)
+                if _matches_profile(candidate, minimum_target_sum, maximum_target_sum, dice_count):
+                    chosen = candidate
+                    break
+            if chosen is None:
+                raise RuntimeError(
+                    "could not construct a foundry lot satisfying the controlled profile"
+                )
 
     target_sum = sum(item[2]["top"] for item in chosen)
     solution_plans = []
@@ -169,6 +234,11 @@ def generate(task: dict[str, Any], seed: str) -> tuple[dict[str, Any], dict[str,
         "initial_selected_die_id": dice[0]["id"],
         "submit_label": "WEIGH LOT",
     }
+    # The uncontrolled public contract did not export this field. L5 keeps
+    # that exact contract and the browser/grader use the historical default;
+    # lower controlled profiles need an explicit non-baseline visibility mode.
+    if condition is not None and int(condition["difficulty"]) != 5:
+        public_state["orientation_visibility"] = orientation_visibility
     ground_truth = {
         "mechanic_id": MECHANIC_ID,
         "task_id": task_id,
@@ -183,7 +253,10 @@ def generate(task: dict[str, Any], seed: str) -> tuple[dict[str, Any], dict[str,
         "settle_profile": [26, -16, 10, -6, 3, -1, 0],
         "variant_count": VARIANT_COUNT,
     }
-    assert len(dice) == 4
+    if condition:
+        public_state["control_condition"] = condition
+        ground_truth["control_condition"] = condition
+    assert len(dice) == dice_count
     assert all(len(plan["world_directions"]) >= 5 for plan in solution_plans)
     assert sum(plan["final_top"] for plan in solution_plans) == target_sum
     return public_state, ground_truth

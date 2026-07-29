@@ -40,7 +40,15 @@
     if (bridge.stageIndex >= bridge.state.stages.length) return "HANDSHAKE SEALED";
     if (Number(stage().station) === stationId) return "LIVE RELAY";
     const completedForStation = bridge.state.stages.slice(0, bridge.stageIndex).filter((item) => Number(item.station) === stationId).length;
-    return completedForStation >= 2 ? "SEALED" : "STANDBY";
+    return completedForStation >= stationRelayCount(stationId) ? "SEALED" : "STANDBY";
+  }
+
+  function stationRelayCount(stationId) {
+    return bridge.state.stages.filter((item) => Number(item.station) === stationId).length;
+  }
+
+  function relayPhrase(count) {
+    return count === 8 ? "EIGHT RELAYS" : `ALL ${count} RELAYS`;
   }
 
   function mainPaint() {
@@ -57,9 +65,11 @@
     });
     document.querySelectorAll("[data-limb]").forEach((limb) => {
       const id = Number(limb.dataset.limb);
-      limb.dataset.deployed = String(bridge.deployed.has(id));
-      limb.dataset.active = String(Boolean(current && Number(current.station) === id));
-      limb.dataset.sealed = String(bridge.state.stages.slice(0, bridge.stageIndex).filter((item) => Number(item.station) === id).length >= 2);
+      const configured = bridge.state.stations.some((station) => Number(station.id) === id);
+      limb.hidden = !configured;
+      limb.dataset.deployed = String(configured && bridge.deployed.has(id));
+      limb.dataset.active = String(configured && Boolean(current && Number(current.station) === id));
+      limb.dataset.sealed = String(configured && bridge.state.stages.slice(0, bridge.stageIndex).filter((item) => Number(item.station) === id).length >= stationRelayCount(id));
     });
     const glyph = document.getElementById("robot-next-glyph");
     const station = current ? stationMeta(Number(current.station)) : null;
@@ -70,9 +80,9 @@
     const stageLabel = document.getElementById("robot-stage-label");
     if (stageLabel) stageLabel.textContent = current ? `RELAY ${bridge.stageIndex + 1} / ${bridge.state.stages.length}` : "IDENTITY COMPLETE";
     const deployment = document.getElementById("robot-deployment-count");
-    if (deployment) deployment.textContent = `${bridge.deployed.size}/4`;
+    if (deployment) deployment.textContent = `${bridge.deployed.size}/${bridge.state.stations.length}`;
     const relays = document.getElementById("robot-relay-count");
-    if (relays) relays.textContent = `${bridge.stageIndex}/8`;
+    if (relays) relays.textContent = `${bridge.stageIndex}/${bridge.state.stages.length}`;
     const master = document.querySelector(".robot-master");
     if (master) master.dataset.ready = String(bridge.stageIndex === bridge.state.stages.length);
     const verify = document.getElementById("robot-verify");
@@ -94,7 +104,10 @@
     const status = doc.getElementById("station-status");
     if (status) status.textContent = stationStatus(stationId);
     const stageLabel = doc.getElementById("station-stage");
-    if (stageLabel) stageLabel.textContent = isActive ? `RELAY ${bridge.stageIndex + 1} / 8` : `SEALED ${bridge.state.stages.slice(0, bridge.stageIndex).filter((item) => Number(item.station) === stationId).length} / 2`;
+    if (stageLabel) {
+      const sealed = bridge.state.stages.slice(0, bridge.stageIndex).filter((item) => Number(item.station) === stationId).length;
+      stageLabel.textContent = isActive ? `RELAY ${bridge.stageIndex + 1} / ${bridge.state.stages.length}` : `SEALED ${sealed} / ${stationRelayCount(stationId)}`;
+    }
     const pulse = doc.getElementById("station-pulse");
     const receiver = doc.getElementById("station-receiver");
     const errorLabel = doc.getElementById("station-error");
@@ -115,6 +128,10 @@
       contact.disabled = !isActive || bridge.submitting || bridge.terminal;
       contact.dataset.contact = String(bridge.contact && isActive);
     }
+    doc.querySelectorAll("[data-station-drive]").forEach((button) => {
+      button.disabled = !isActive || bridge.submitting || bridge.terminal;
+      button.dataset.active = String(Number(button.dataset.stationDrive) === bridge.direction && isActive);
+    });
     root.dataset.locked = String(bridge.locked && isActive);
     root.dataset.direction = String(bridge.direction);
   }
@@ -124,24 +141,24 @@
     for (const stationId of bridge?.deployed || []) tabPaint(stationId);
   }
 
-  function setDirection(stationId, next) {
+  function setDirection(stationId, next, inputSource) {
     const current = stage();
     if (!bridge || !current || Number(current.station) !== stationId || bridge.submitting || bridge.terminal) return;
     if (![-1, 0, 1].includes(next) || next === bridge.direction) return;
     noteFocus(stationId);
     const before = bridge.direction;
     bridge.direction = next;
-    record("key", {stage: bridge.stageIndex, station: stationId, before, after: next});
+    record("key", {stage: bridge.stageIndex, station: stationId, before, after: next, input_source: inputSource});
     tabPaint(stationId);
   }
 
-  function setContact(stationId, next) {
+  function setContact(stationId, next, inputSource) {
     const current = stage();
     if (!bridge || !current || Number(current.station) !== stationId || bridge.submitting || bridge.terminal) return;
     if (Boolean(next) === bridge.contact) return;
     const before = bridge.contact;
     bridge.contact = Boolean(next);
-    record("contact", {stage: bridge.stageIndex, station: stationId, before, after: bridge.contact});
+    record("contact", {stage: bridge.stageIndex, station: stationId, before, after: bridge.contact, input_source: inputSource});
     tabPaint(stationId);
   }
 
@@ -169,7 +186,7 @@
       bridge.helpers.setReadout(`RELAY ${completedIndex + 1} SEALED · SWITCH TO ${target.glyph} TAB`, "passed");
       try { bridge.tabs.get(Number(next.station))?.focus(); } catch (_error) { /* browser may refuse programmatic focus */ }
     } else {
-      bridge.helpers.setReadout("EIGHT RELAYS SEALED · RETURN TO MASTER TAB", "passed");
+      bridge.helpers.setReadout(`${relayPhrase(bridge.state.stages.length)} SEALED · RETURN TO MASTER TAB`, "passed");
       try { window.focus(); } catch (_error) { /* best effort only */ }
     }
     paintAll();
@@ -178,7 +195,7 @@
   function tickActive() {
     if (!bridge || bridge.submitting || bridge.terminal) return;
     mainPaint();
-    if (bridge.deployed.size !== 4) return;
+    if (bridge.deployed.size !== bridge.state.stations.length) return;
     const current = stage();
     if (!current) return;
     bridge.stageTick += 1;
@@ -217,6 +234,7 @@
 
   function stationDocument(station) {
     const stylesheet = new URL("mechanics/reverse_identity_gate.css", window.location.href).href;
+    const simplified = bridge.interaction === "simplified";
     return `<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>${esc(station.glyph)} ${esc(station.name)}</title><link rel="stylesheet" href="${esc(stylesheet)}"></head><body class="robot-station-body"><main class="robot-station" data-station-page="${station.id}" data-active="false" data-status="standby" data-locked="false" style="--station-color:${esc(station.color)}">
       <header><div><span>DISTRIBUTED IDENTITY LIMB / 0${station.id + 1}</span><h1>${esc(station.glyph)} ${esc(station.name)}</h1></div><b id="station-status">STANDBY</b></header>
       <section class="station-bench">
@@ -226,13 +244,14 @@
         </div>
         <aside class="station-console">
           <div class="station-stage"><span id="station-stage">SEALED 0 / 2</span><b>TICK <i id="station-tick">000</i></b></div>
-          <div class="drive-readout"><span>RECEIVER DRIVE</span><b id="station-direction">NEUTRAL</b><small>A / D</small></div>
-          <button type="button" id="station-contact" class="station-contact" data-contact="false"><i></i><span>HOLD CONTACT</span><small>MOUSE PRESS</small></button>
+          <div class="drive-readout"><span>RECEIVER DRIVE</span><b id="station-direction">NEUTRAL</b><small>${simplified ? "VISIBLE DIRECTION CONTROLS" : "A / D"}</small></div>
+          ${simplified ? `<div class="station-drive-buttons"><button type="button" data-station-drive="-1">CCW</button><button type="button" data-station-drive="0">NEUTRAL</button><button type="button" data-station-drive="1">CW</button></div>` : ""}
+          <button type="button" id="station-contact" class="station-contact" data-contact="false"><i></i><span>${simplified ? "TOGGLE CONTACT" : "HOLD CONTACT"}</span><small>${simplified ? "CLICK TO LOCK / RELEASE" : "MOUSE PRESS"}</small></button>
           <div class="station-charge"><header><span>RELAY CHARGE</span><b id="station-charge-label">0/${bridge.state.physics.hold_ticks}</b></header><div><i id="station-charge-fill"></i></div></div>
           <p>DIRECTIONAL PHASE BUS / CONTACT DECAYS OUTSIDE CAPTURE APERTURE</p>
         </aside>
       </section>
-      <footer><span>A ← RECEIVER → D</span><b>KEEP THIS REAL TAB OPEN</b><span>CONTACT DRAINS ON PHASE LOSS</span></footer>
+      <footer><span>${simplified ? "CCW / NEUTRAL / CW" : "A ← RECEIVER → D"}</span><b>KEEP THIS REAL TAB OPEN</b><span>CONTACT DRAINS ON PHASE LOSS</span></footer>
     </main></body></html>`;
   }
 
@@ -248,38 +267,45 @@
       tabPaint(stationId);
     };
     tab.addEventListener("focus", focus);
-    doc.addEventListener("keydown", (event) => {
-      if (event.repeat) return;
-      if (event.key.toLowerCase() === "a" || event.key === "ArrowLeft") {
-        event.preventDefault();
-        setDirection(stationId, -1);
-      } else if (event.key.toLowerCase() === "d" || event.key === "ArrowRight") {
-        event.preventDefault();
-        setDirection(stationId, 1);
-      }
-    }, true);
-    doc.addEventListener("keyup", (event) => {
-      if ((event.key.toLowerCase() === "a" || event.key === "ArrowLeft") && bridge?.direction === -1) {
-        event.preventDefault();
-        setDirection(stationId, 0);
-      } else if ((event.key.toLowerCase() === "d" || event.key === "ArrowRight") && bridge?.direction === 1) {
-        event.preventDefault();
-        setDirection(stationId, 0);
-      }
-    }, true);
     const contact = doc.getElementById("station-contact");
-    contact.addEventListener("pointerdown", (event) => {
-      event.preventDefault();
-      contact.setPointerCapture(event.pointerId);
-      setContact(stationId, true);
-    });
-    const release = (event) => {
-      event?.preventDefault();
-      setContact(stationId, false);
-    };
-    contact.addEventListener("pointerup", release);
-    contact.addEventListener("pointercancel", release);
-    contact.addEventListener("lostpointercapture", release);
+    if (bridge.interaction === "simplified") {
+      doc.querySelectorAll("[data-station-drive]").forEach((button) => button.addEventListener("click", () => {
+        setDirection(stationId, Number(button.dataset.stationDrive), "direction_button");
+      }));
+      contact.addEventListener("click", () => setContact(stationId, !bridge.contact, "contact_toggle"));
+    } else {
+      doc.addEventListener("keydown", (event) => {
+        if (event.repeat) return;
+        if (event.key.toLowerCase() === "a" || event.key === "ArrowLeft") {
+          event.preventDefault();
+          setDirection(stationId, -1, "keyboard");
+        } else if (event.key.toLowerCase() === "d" || event.key === "ArrowRight") {
+          event.preventDefault();
+          setDirection(stationId, 1, "keyboard");
+        }
+      }, true);
+      doc.addEventListener("keyup", (event) => {
+        if ((event.key.toLowerCase() === "a" || event.key === "ArrowLeft") && bridge?.direction === -1) {
+          event.preventDefault();
+          setDirection(stationId, 0, "keyboard");
+        } else if ((event.key.toLowerCase() === "d" || event.key === "ArrowRight") && bridge?.direction === 1) {
+          event.preventDefault();
+          setDirection(stationId, 0, "keyboard");
+        }
+      }, true);
+      contact.addEventListener("pointerdown", (event) => {
+        event.preventDefault();
+        contact.setPointerCapture(event.pointerId);
+        setContact(stationId, true, "pointer_hold");
+      });
+      const release = (event) => {
+        event?.preventDefault();
+        setContact(stationId, false, "pointer_hold");
+      };
+      contact.addEventListener("pointerup", release);
+      contact.addEventListener("pointercancel", release);
+      contact.addEventListener("lostpointercapture", release);
+    }
     tabPaint(stationId);
   }
 
@@ -302,8 +328,9 @@
     }
     installTab(stationId, tab);
     const station = stationMeta(stationId);
-    bridge.helpers.setReadout(known ? `${station.glyph} LIMB RESTORED · RELAY STATE PRESERVED` : bridge.deployed.size === 4 ? "FOUR LIMBS ONLINE · FOLLOW THE MASTER GLYPH" : `${station.glyph} TAB ONLINE · DEPLOY NEXT LIMB`, "idle");
-    if (!known && bridge.deployed.size === 4) {
+    const allDeployed = bridge.deployed.size === bridge.state.stations.length;
+    bridge.helpers.setReadout(known ? `${station.glyph} LIMB RESTORED · RELAY STATE PRESERVED` : allDeployed ? `${bridge.state.stations.length === 4 ? "FOUR" : bridge.state.stations.length} LIMBS ONLINE · FOLLOW THE MASTER GLYPH` : `${station.glyph} TAB ONLINE · DEPLOY NEXT LIMB`, "idle");
+    if (!known && allDeployed) {
       const first = stage();
       try { bridge.tabs.get(Number(first.station))?.focus(); } catch (_error) { /* best effort */ }
     }
@@ -361,6 +388,7 @@
     bridge = {
       state,
       helpers,
+      interaction: state.control_condition?.interaction || "full",
       events: [],
       tabs: new Map(),
       deployed: new Set(),
@@ -379,7 +407,7 @@
       timer: null,
     };
     window.robotHandshakeBridge = bridge;
-    helpers.app.innerHTML = `<section class="robot-master palette-${esc(state.palette)}" data-fresh-failure="${options.freshFailure ? "true" : "false"}" data-verdict="" data-ready="false">
+    helpers.app.innerHTML = `<section class="robot-master palette-${esc(state.palette)}" data-interaction="${esc(bridge.interaction)}" data-fresh-failure="${options.freshFailure ? "true" : "false"}" data-verdict="" data-ready="false">
       <div class="robot-verdict"><b>${options.freshFailure ? "IDENTITY FAIL" : ""}</b><span>${options.freshFailure ? "ALL LIMBS RECALLED" : ""}</span></div>
       <header class="robot-master-head"><div><span>NON-HUMAN ACCESS AUTHORITY / ${esc(state.challenge_id)}</span><h1>${esc(state.prompt)}</h1></div><aside><i id="robot-next-glyph">${esc(state.stations[Number(state.stages[0].station)].glyph)}</i><span id="robot-stage-label">RELAY 1 / 8</span></aside></header>
       <main class="robot-master-bench">
@@ -392,11 +420,11 @@
             <svg viewBox="0 0 640 420" aria-hidden="true"><path d="M319 87v52M195 194h92M353 194h92M320 256v78M320 334l-72 61M320 334l72 61"/><circle cx="320" cy="210" r="102"/><circle cx="320" cy="210" r="70"/></svg>
             <div class="robot-next"><span>NEXT TAB</span><b>FOLLOW THE PULSING GLYPH</b></div>
           </div>
-          <div class="robot-master-stats"><span>LIMBS <b id="robot-deployment-count">0/4</b></span><span>RELAYS <b id="robot-relay-count">0/8</b></span><span>TOPOLOGY <b>REAL TABS</b></span></div>
+          <div class="robot-master-stats"><span>LIMBS <b id="robot-deployment-count">0/${state.stations.length}</b></span><span>RELAYS <b id="robot-relay-count">0/${state.stages.length}</b></span><span>TOPOLOGY <b>REAL TABS</b></span></div>
         </section>
-        <aside class="robot-deployment-rack"><header><span>DEPLOYMENT INTERLOCK</span><p>SEQUENTIAL LIMB BUS / FOUR LIVE TABS REQUIRED</p></header>
+        <aside class="robot-deployment-rack"><header><span>DEPLOYMENT INTERLOCK</span><p>SEQUENTIAL LIMB BUS / ${state.stations.length === 4 ? "FOUR" : state.stations.length} LIVE TABS REQUIRED</p></header>
           ${state.stations.map((station) => `<button type="button" data-deploy="${station.id}" data-deployed="false" style="--station-color:${esc(station.color)}"><i>${esc(station.glyph)}</i><span><b>${esc(station.name)}</b><small>LIMB 0${station.id + 1}</small></span><em>${station.id === 0 ? "DEPLOY TAB" : "INTERLOCKED"}</em></button>`).join("")}
-          <div class="robot-seal"><i>4×</i><span>ONE IDENTITY<br><b>FOUR WINDOWS</b></span></div>
+          <div class="robot-seal"><i>${state.stations.length}×</i><span>ONE IDENTITY<br><b>${state.stations.length === 4 ? "FOUR WINDOWS" : `${state.stations.length} WINDOWS`}</b></span></div>
         </aside>
       </main>
       <footer class="robot-master-foot"><div class="readout" data-status="idle">DEPLOY LIMB 01</div><button type="button" id="robot-verify">${esc(state.submit_label || "VERIFY IDENTITY")}</button></footer>

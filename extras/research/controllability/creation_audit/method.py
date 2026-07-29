@@ -21,6 +21,21 @@ DEFAULT_AUDIT_ROUNDS = 3
 ENVIRONMENTS_ROOT = Path("benchmarks/weird_captcha_gym/environments")
 AUDIT_PASS = "PASS"
 AUDIT_REVISION_REQUIRED = "REVISION_REQUIRED"
+DESKTOP_ISOLATION_RULE = (
+    "Never control the user's live browser, desktop, mouse, keyboard, or "
+    "foreground applications. Do not use the in-app Browser, connected Chrome, "
+    "Computer Use, AppleScript, osascript, open, or an existing browser profile. "
+    "Browser checks may run only as isolated headless background processes with "
+    "fresh temporary profiles. If that is impossible, report missing evidence."
+)
+DISABLED_INTERACTIVE_FEATURES = (
+    "apps",
+    "browser_use",
+    "browser_use_external",
+    "browser_use_full_cdp_access",
+    "in_app_browser",
+    "computer_use",
+)
 
 
 def _repo_root() -> Path:
@@ -65,21 +80,25 @@ def _initial_prompt(
         f"Read @{creation_prompt} and follow it. "
         f"The target environment is @{target}. "
         f"Write the required evidence to @{evidence_dir}. "
-        "Do not ask for input. Do not stop after writing a plan."
+        "Do not ask for input. Do not stop after writing a plan. "
+        f"{DESKTOP_ISOLATION_RULE}"
     )
 
 
 def _nudge_prompt(creation_prompt: Path, evidence_dir: Path) -> str:
     return (
         f"Reread @{creation_prompt}. You have not completed the task yet. "
-        f"Finish the implementation and the evidence in @{evidence_dir}."
+        f"Finish the implementation and the evidence in @{evidence_dir}. "
+        f"{DESKTOP_ISOLATION_RULE}"
     )
 
 
 def _audit_explore_prompt() -> str:
     return (
         "Deep explore this repository to understand what it is about and how "
-        "its individual components work. Do not modify any files."
+        "its individual components work. Inspect files and existing artifacts "
+        "directly. Do not modify any files. "
+        f"{DESKTOP_ISOLATION_RULE}"
     )
 
 
@@ -95,7 +114,8 @@ def _audit_run_prompt(
         f"The target environment is @{target}. "
         f"The creator's evidence is @{evidence_dir}. "
         f"Save the complete audit to @{audit_path}. "
-        "Do not modify the implementation."
+        "Do not modify the implementation. "
+        f"{DESKTOP_ISOLATION_RULE}"
     )
 
 
@@ -106,7 +126,8 @@ def _audit_feedback_prompt(audit_text: str, evidence_dir: Path) -> str:
         f"checks and update the evidence in @{evidence_dir}. Do not merely edit "
         "the written claims. Never change the original uncontrolled task to make "
         "it fit a chosen difficulty level. Move the exact original configuration "
-        "to its appropriate level instead."
+        "to its appropriate level instead. "
+        f"{DESKTOP_ISOLATION_RULE}"
     )
 
 
@@ -137,11 +158,15 @@ def _codex_command(
     session_id: str | None,
     output_last_message: Path | None = None,
 ) -> list[str]:
+    isolated_options = ["--ignore-user-config"]
+    for feature in DISABLED_INTERACTIVE_FEATURES:
+        isolated_options.extend(["--disable", feature])
     if session_id:
         command = [
             str(binary),
             "exec",
             "resume",
+            *isolated_options,
             "--yolo",
             "--model",
             model,
@@ -153,6 +178,7 @@ def _codex_command(
         command = [
             str(binary),
             "exec",
+            *isolated_options,
             "--yolo",
             "--model",
             model,

@@ -22,6 +22,17 @@ def _sign(value: int) -> int:
     return 1 if value > 0 else -1 if value < 0 else 0
 
 
+def _interaction(truth: dict[str, Any], public: dict[str, Any]) -> str | None:
+    public_condition = public.get("control_condition")
+    truth_condition = truth.get("control_condition")
+    if public_condition is None and truth_condition is None:
+        return "full"
+    if not isinstance(public_condition, dict) or public_condition != truth_condition:
+        return None
+    interaction = public_condition.get("interaction")
+    return interaction if interaction in {"simplified", "full"} else None
+
+
 def grade(payload: dict[str, Any], truth: dict[str, Any], public: dict[str, Any]) -> dict[str, Any]:
     if payload.get("mechanic_id") != MECHANIC_ID or truth.get("mechanic_id") != MECHANIC_ID or public.get("mechanic_id") != MECHANIC_ID:
         return _fail("mechanic mismatch")
@@ -31,14 +42,36 @@ def grade(payload: dict[str, Any], truth: dict[str, Any], public: dict[str, Any]
         return _fail("stale challenge")
     stages = truth.get("stages")
     physics = truth.get("physics")
-    if not isinstance(stages, list) or public.get("stages") != stages or not isinstance(physics, dict) or public.get("physics") != physics:
+    stations = truth.get("stations")
+    interaction = _interaction(truth, public)
+    if (
+        not isinstance(stages, list)
+        or public.get("stages") != stages
+        or not isinstance(physics, dict)
+        or public.get("physics") != physics
+        or not isinstance(stations, list)
+        or public.get("stations") != stations
+        or interaction is None
+    ):
         return _fail("distributed handshake contract mismatch")
-    if len(stages) != 8 or sorted(int(item["station"]) for item in stages) != [0, 0, 1, 1, 2, 2, 3, 3]:
+    station_ids = {int(item.get("id", -1)) for item in stations if isinstance(item, dict)}
+    stage_station_ids = [int(item.get("station", -1)) for item in stages if isinstance(item, dict)]
+    if (
+        not station_ids
+        or len(station_ids) != len(stations)
+        or not stages
+        or len(stage_station_ids) != len(stages)
+        or set(stage_station_ids) != station_ids
+    ):
         return _fail("distributed handshake stage structure invalid")
     events = payload.get("events")
     if not isinstance(events, list) or not 1 <= len(events) <= 20_000:
         return _fail("distributed handshake transcript missing or outside limits")
 
+    expected_sources = {
+        "full": {"key": "keyboard", "contact": "pointer_hold"},
+        "simplified": {"key": "direction_button", "contact": "contact_toggle"},
+    }[interaction]
     deployed: set[int] = set()
     focused: set[int] = set()
     stage_index = 0
@@ -65,7 +98,7 @@ def grade(payload: dict[str, Any], truth: dict[str, Any], public: dict[str, Any]
             return _fail("charged pulse was not handed off immediately")
         if action == "deploy":
             station = event.get("station")
-            if stage_tick or stage_index or station not in range(4) or station in deployed:
+            if stage_tick or stage_index or station not in station_ids or station in deployed:
                 return _fail("limb deployment is duplicate or late")
             deployed.add(station)
             if event.get("deployed_count") != len(deployed):
@@ -77,23 +110,27 @@ def grade(payload: dict[str, Any], truth: dict[str, Any], public: dict[str, Any]
             focused.add(station)
         elif action == "key":
             stage = current_stage()
-            if stage is None or deployed != {0, 1, 2, 3} or event.get("stage") != stage_index or event.get("station") != stage["station"]:
+            if stage is None or deployed != station_ids or event.get("stage") != stage_index or event.get("station") != stage["station"]:
                 return _fail("key input sent to the wrong limb or stage")
+            if event.get("input_source") != expected_sources["key"]:
+                return _fail("receiver drive uses the wrong interaction input")
             before, after = event.get("before"), event.get("after")
             if before != direction or after not in {-1, 0, 1} or before == after:
                 return _fail("receiver drive transition invalid")
             direction = after
         elif action == "contact":
             stage = current_stage()
-            if stage is None or deployed != {0, 1, 2, 3} or event.get("stage") != stage_index or event.get("station") != stage["station"]:
+            if stage is None or deployed != station_ids or event.get("stage") != stage_index or event.get("station") != stage["station"]:
                 return _fail("contact input sent to the wrong limb or stage")
+            if event.get("input_source") != expected_sources["contact"]:
+                return _fail("phase contact uses the wrong interaction input")
             before, after = event.get("before"), event.get("after")
             if before is not contact or not isinstance(after, bool) or before == after:
                 return _fail("contact transition invalid")
             contact = after
         elif action == "tick":
             stage = current_stage()
-            if stage is None or deployed != {0, 1, 2, 3} or event.get("stage") != stage_index or event.get("station") != stage["station"]:
+            if stage is None or deployed != station_ids or event.get("stage") != stage_index or event.get("station") != stage["station"]:
                 return _fail("fixed tick belongs to the wrong limb or stage")
             if event.get("tick") != stage_tick + 1:
                 return _fail("handshake fixed tick is missing or reordered")
@@ -155,13 +192,13 @@ def grade(payload: dict[str, Any], truth: dict[str, Any], public: dict[str, Any]
 
     passed = (
         verified
-        and deployed == {0, 1, 2, 3}
+        and deployed == station_ids
         and stage_index == len(stages)
         and payload.get("completed") is True
     )
     feedback = (
-        f"distributed replay: limbs {len(deployed)}/4; relays {stage_index}/8; "
-        f"ticks {total_ticks}; focused limbs {len(focused)}/4"
+        f"distributed replay: limbs {len(deployed)}/{len(station_ids)}; relays {stage_index}/{len(stages)}; "
+        f"ticks {total_ticks}; focused limbs {len(focused)}/{len(station_ids)}"
     )
     return {"graded": True, "passed": passed, "feedback": feedback}
 

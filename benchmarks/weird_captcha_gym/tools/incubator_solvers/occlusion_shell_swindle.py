@@ -40,26 +40,48 @@ def fail_once(page, state_dir: Path, out_dir: Path, mechanic: str) -> None:
     _screenshot(page, out_dir, mechanic, "fail-refresh")
 
 
+def _choose_relay(page, round_state: dict, *, cover_id: str | None = None) -> None:
+    visible_ports = [round_state["inspection"], *(round_state.get("decoy_ports") or [])]
+    relays = page.locator(".shell-inspection-relay")
+    expect(relays).to_have_count(len(visible_ports))
+    selected_cover = cover_id or str(round_state["inspection"]["occluder_id"])
+    relay = page.locator(f'.shell-inspection-relay[data-cover-id="{selected_cover}"]')
+    expect(relay).to_be_enabled()
+    relay.click()
+
+
 def solve(page, state_dir: Path, out_dir: Path, mechanic: str) -> None:
     if mechanic != MECHANIC_ID:
         raise AssertionError(f"unexpected mechanic {mechanic!r}")
     truth = _read_json(state_dir / "ground_truth.json")
+    interaction = str((truth.get("control_condition") or {}).get("interaction") or "full")
     for round_index, round_state in enumerate(truth["rounds"]):
         if round_index == 0:
-            # Intentionally miss the physical inspection port once, then prove
-            # that the visible rewind/recovery contract restores the same round.
+            # Intentionally miss the genuine port once, then prove that the
+            # visible rewind/recovery contract restores the same round.  In
+            # simplified decoy variants this is a wrong, visibly labelled
+            # relay choice rather than an omitted hidden action.
             page.locator(".shell-start-round").click()
+            decoys = round_state.get("decoy_ports") or []
+            if interaction == "simplified" and decoys:
+                decoy_cover = str(decoys[0]["occluder_id"])
+                _choose_relay(page, round_state, cover_id=decoy_cover)
+                expect(page.locator(f'.shell-occluder[data-cover-id="{decoy_cover}"]')).to_have_attribute("data-relay", "true")
+                _screenshot(page, out_dir, mechanic, "decoy-relay-selected")
             page.wait_for_function("() => window.occlusionShellModel.mode === 'rewind'", timeout=12_000)
             _screenshot(page, out_dir, mechanic, "missed-port-rewind")
             page.locator(".shell-start-round").click()
             page.wait_for_function("() => window.occlusionShellModel.mode === 'ready'")
         expect(page.locator(".shell-start-round")).to_be_enabled()
         page.locator(".shell-start-round").click()
-        stage = page.locator(".shell-stage").bounding_box()
-        if not stage:
-            raise AssertionError("shell theater is not visible")
-        port = round_state["inspection"]["port"]
-        page.mouse.move(stage["x"] + port[0] / truth["stage"]["width"] * stage["width"], stage["y"] + port[1] / truth["stage"]["height"] * stage["height"])
+        if interaction == "simplified":
+            _choose_relay(page, round_state)
+        else:
+            stage = page.locator(".shell-stage").bounding_box()
+            if not stage:
+                raise AssertionError("shell theater is not visible")
+            port = round_state["inspection"]["port"]
+            page.mouse.move(stage["x"] + port[0] / truth["stage"]["width"] * stage["width"], stage["y"] + port[1] / truth["stage"]["height"] * stage["height"])
         handoff_tick = int(round_state["handoff"]["tick"])
         page.wait_for_function("tick => window.occlusionShellModel.tick >= tick", arg=handoff_tick, timeout=10_000)
         if round_index == 1:
@@ -69,8 +91,11 @@ def solve(page, state_dir: Path, out_dir: Path, mechanic: str) -> None:
         if round_index == 0:
             _screenshot(page, out_dir, mechanic, "round-one-stop")
         carrier = str(round_state["final_carrier"])
-        page.locator(f'.shell-piece[data-shell-id="{carrier}"]').click()
-        if round_index < 2:
+        if interaction == "simplified":
+            page.locator(f'.shell-proxy-select[data-shell-id="{carrier}"]').click()
+        else:
+            page.locator(f'.shell-piece[data-shell-id="{carrier}"]').click()
+        if round_index < len(truth["rounds"]) - 1:
             page.wait_for_function("index => window.occlusionShellModel.roundIndex === index && window.occlusionShellModel.mode === 'ready'", arg=round_index + 1, timeout=4_000)
         else:
             page.wait_for_function("() => window.occlusionShellModel.mode === 'certify'", timeout=4_000)
@@ -85,8 +110,10 @@ def solve(page, state_dir: Path, out_dir: Path, mechanic: str) -> None:
     })""")
     expected_ticks = sum(int(item["frame_count"]) for item in truth["rounds"])
     minimum_inspections = sum(int(item["inspection"]["minimum_samples"]) for item in truth["rounds"])
-    if physical["rounds"] != 3 or len(physical["choices"]) != 3 or physical["ticks"] <= expected_ticks or physical["observed"] < 28_000 or physical["inspections"] < minimum_inspections or physical["rewinds"] != 1:
-        raise AssertionError(f"three-round physical observation ended unexpectedly: {physical}")
+    expected_rounds = len(truth["rounds"])
+    expected_observation = sum(int(item["preview_ms"]) + int(item["duration_ms"]) for item in truth["rounds"])
+    if physical["rounds"] != expected_rounds or len(physical["choices"]) != expected_rounds or physical["ticks"] <= expected_ticks or physical["observed"] < expected_observation or physical["inspections"] < minimum_inspections or physical["rewinds"] != 1:
+        raise AssertionError(f"physical shell observation ended unexpectedly: {physical}")
     _screenshot(page, out_dir, mechanic, "three-tracks-sealed")
     page.locator(".shell-certify").click()
     expect(page.locator(".readout")).to_have_text("PASS", timeout=8_000)

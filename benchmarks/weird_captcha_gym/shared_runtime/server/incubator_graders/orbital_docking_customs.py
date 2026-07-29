@@ -34,6 +34,14 @@ def grade(payload: dict[str, Any], truth: dict[str, Any], public: dict[str, Any]
         return _fail("mechanic mismatch")
     if payload.get("task_id") != truth.get("task_id") or payload.get("challenge_id") != truth.get("challenge_id") or public.get("challenge_id") != truth.get("challenge_id"):
         return _fail("stale task or challenge")
+    condition = truth.get("control_condition")
+    if condition is not None and public.get("control_condition") != condition:
+        return _fail("orbital control condition mismatch")
+    interaction = str((condition or {}).get("interaction") or "simplified")
+    expected_control_source = {"simplified": "rcs_button", "full": "rcs_keyboard"}.get(interaction)
+    expected_dock_source = {"simplified": "dock_button", "full": "dock_keyboard"}.get(interaction)
+    if expected_control_source is None or expected_dock_source is None:
+        return _fail("orbital interaction mode is invalid")
     events = payload.get("events")
     if not isinstance(events, list) or len(events) > 900:
         return _fail("orbital transcript malformed")
@@ -53,6 +61,8 @@ def grade(payload: dict[str, Any], truth: dict[str, Any], public: dict[str, Any]
         if action == "control":
             if dock_event is not None or not _same(item.get("before") or {}, ship):
                 return _fail("RCS control starts from stale inertial state")
+            if condition is not None and item.get("input_source") != expected_control_source:
+                return _fail("RCS control uses the wrong interaction input")
             control = item.get("action")
             radians = math.radians(float(ship["angle_deg"]))
             if control in {"thrust", "retro", "strafe-up", "strafe-down"}:
@@ -96,6 +106,8 @@ def grade(payload: dict[str, Any], truth: dict[str, Any], public: dict[str, Any]
         elif action == "dock":
             if dock_event is not None:
                 return _fail("duplicate hard-dock request")
+            if condition is not None and item.get("input_source") != expected_dock_source:
+                return _fail("hard-dock request uses the wrong interaction input")
             dock_event = item
         else:
             return _fail(f"unknown orbital event {action!r}")
@@ -113,4 +125,14 @@ def grade(payload: dict[str, Any], truth: dict[str, Any], public: dict[str, Any]
     if bool(dock_event.get("accepted")) != accepted or bool(dock_event.get("aligned")) != aligned or not _close(dock_event.get("target_angle"), target_angle, .025) or not _close(dock_event.get("station_y"), station_y, .025) or not _close(dock_event.get("distance"), distance, .025) or not _close(dock_event.get("speed"), speed, .025):
         return _fail("hard-dock verdict disagrees with moving-station replay")
     passed = accepted and payload.get("completed") is True
-    return {"graded": True, "passed": passed, "feedback": "collision-free replay cleared two scans and matched the moving rotating port" if passed else f"scans={len(scans)}/2; range={distance:.1f}; speed={speed:.2f}; aligned={aligned}"}
+    scan_count = len(public["beacons"])
+    motion = "moving rotating" if float(station["y_amplitude"]) or float(station["rotation_deg_per_tick"]) else "fixed aligned"
+    return {
+        "graded": True,
+        "passed": passed,
+        "feedback": (
+            f"collision-free replay cleared {scan_count} {'scan' if scan_count == 1 else 'scans'} and matched the {motion} port"
+            if passed
+            else f"scans={len(scans)}/{scan_count}; range={distance:.1f}; speed={speed:.2f}; aligned={aligned}"
+        ),
+    }
