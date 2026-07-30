@@ -14,9 +14,6 @@ import tempfile
 import time
 from pathlib import Path
 
-from playwright.sync_api import expect, sync_playwright
-
-
 ROOT = Path(__file__).resolve().parents[3]
 sys.path.insert(0, str(ROOT))
 BENCH_ROOT = ROOT / "benchmarks" / "weird_captcha_gym"
@@ -94,6 +91,8 @@ def world_fingerprint(public_state: dict) -> str:
 
 def assert_split_boxes_phase_geometry(page, public_state: dict, evidence_dir: Path) -> dict:
     """Check that visible phase ticks share the temporal input's geometry."""
+    from playwright.sync_api import expect
+
     phase_range = public_state["phase_range"]
     minimum = int(phase_range["minimum"])
     maximum = int(phase_range["maximum"])
@@ -218,6 +217,8 @@ def observation_viewport(env_root: Path) -> dict[str, int]:
 
 
 def main() -> None:
+    from playwright.sync_api import expect, sync_playwright
+
     args = parse_args()
     env_root = BENCH_ROOT / "environments" / args.environment
     controls = read_json(env_root / "controls.json")

@@ -22,9 +22,6 @@ from http.server import SimpleHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 from typing import Any
 
-from playwright.sync_api import expect, sync_playwright
-
-
 ROOT = Path(__file__).resolve().parents[3]
 sys.path.insert(0, str(ROOT))
 
@@ -100,6 +97,8 @@ def capture_local_screens(
     work_root: Path,
     output: Path,
 ) -> dict[str, dict[str, Any]]:
+    from playwright.sync_api import expect
+
     output.mkdir(parents=True, exist_ok=True)
     selected = [
         ("original-l3-uncontrolled", original_task),
@@ -203,6 +202,8 @@ def install_page_snapshot_capture(page: Any) -> None:
 
 
 def capture_static_observation(page: Any, *, base_url: str, mode: str, output: Path) -> dict[str, Any]:
+    from playwright.sync_api import expect
+
     page.goto(
         f"{base_url}/play/?environment={ENVIRONMENT}&attempt=0&difficulty=3&interaction=full&time_mode={mode}",
         wait_until="networkidle",
@@ -243,6 +244,8 @@ def capture_static_observation(page: Any, *, base_url: str, mode: str, output: P
 
 
 def capture_static_observations(output: Path) -> dict[str, Any]:
+    from playwright.sync_api import sync_playwright
+
     output.mkdir(parents=True, exist_ok=True)
     with tempfile.TemporaryDirectory(prefix="time-wheel-static-evidence-") as temporary:
         site = Path(temporary) / "site"
@@ -272,6 +275,8 @@ def capture_static_observations(output: Path) -> dict[str, Any]:
 
 
 def main() -> None:
+    from playwright.sync_api import sync_playwright
+
     args = parse_args()
     out_dir = args.out_dir.resolve()
     original_task = ENV_ROOT / "tasks" / f"{MECHANIC}_seed_0001" / "task.json"
