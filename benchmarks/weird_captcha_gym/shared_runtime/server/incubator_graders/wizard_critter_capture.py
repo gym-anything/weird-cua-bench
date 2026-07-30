@@ -141,7 +141,34 @@ def _bind(payload: dict[str, Any], ground_truth: dict[str, Any], public_state: d
         return "payload task mismatch"
     if str(public_state.get("task_id") or "") != task_id:
         return "public-state task mismatch"
+    truth_condition = ground_truth.get("control_condition")
+    public_condition = public_state.get("control_condition")
+    if truth_condition is not None and truth_condition != public_condition:
+        return "public-state control condition mismatch"
+    expected_interaction = "full"
+    if truth_condition is not None:
+        if not isinstance(truth_condition, dict) or str(truth_condition.get("interaction") or "") not in {"simplified", "full"}:
+            return "invalid interaction condition"
+        expected_interaction = str(truth_condition["interaction"])
+    if str(payload.get("interaction") or "full") != expected_interaction:
+        return "wrong interaction surface"
     return None
+
+
+def _expected_input_surface(interaction: str, action: str) -> str:
+    surfaces = {
+        "full": {
+            "lure": "arena_pointer",
+            "freeze": "freeze_key",
+            "net": "arena_pointer",
+        },
+        "simplified": {
+            "lure": "coordinate_console",
+            "freeze": "freeze_proxy",
+            "net": "coordinate_console",
+        },
+    }
+    return surfaces[interaction][action]
 
 
 def _contract(ground_truth: dict[str, Any], public_state: dict[str, Any]) -> dict[str, Any]:
@@ -152,12 +179,13 @@ def _contract(ground_truth: dict[str, Any], public_state: dict[str, Any]) -> dic
     critters = ground_truth.get("critters")
     occluders = ground_truth.get("occluders")
     requirements = ground_truth.get("requirements")
-    if not isinstance(arena, dict) or not isinstance(critters, list) or len(critters) != 5:
+    if not isinstance(arena, dict) or not isinstance(critters, list):
         raise ValueError("arena or familiar roster is malformed")
     if not isinstance(occluders, list) or len(occluders) < 3 or not isinstance(requirements, dict):
         raise ValueError("cover or ritual requirements are malformed")
     ids = [str(item.get("id") or "") for item in critters if isinstance(item, dict)]
-    if len(ids) != 5 or len(set(ids)) != 5 or any(not item for item in ids):
+    expected_count = _integer(requirements.get("critter_count", 5), "critter count")
+    if not 1 <= expected_count <= 5 or len(ids) != expected_count or len(set(ids)) != expected_count or any(not item for item in ids):
         raise ValueError("familiar identities are malformed")
     target_id = str(ground_truth.get("target_id") or "")
     if target_id not in ids:
@@ -174,6 +202,19 @@ def _contract(ground_truth: dict[str, Any], public_state: dict[str, Any]) -> dic
     origin = _point(arena.get("projectile_origin"), width, height, "projectile origin")
     if width < 600 or height < 300 or flight_ticks < 6:
         raise ValueError("interception arena is underspecified")
+    numeric_requirements = (
+        "preview_min_ms",
+        "minimum_freeze_ticks",
+        "target_portal_transitions",
+        "target_occluded_ticks",
+        "net_count",
+        "freeze_energy_ticks",
+        "time_limit_ticks",
+        "critter_count",
+    )
+    parsed_requirements = {key: _integer(requirements.get(key), key.replace("_", " ")) for key in numeric_requirements}
+    if str(requirements.get("target_reference_visibility") or "persistent") not in {"persistent", "preview_only"}:
+        raise ValueError("target reference visibility is malformed")
     return {
         "arena": arena,
         "width": width,
@@ -184,7 +225,7 @@ def _contract(ground_truth: dict[str, Any], public_state: dict[str, Any]) -> dic
         "initial_critters": copy.deepcopy(critters),
         "target_id": target_id,
         "signature": str(cue["signature"]),
-        "requirements": {key: int(value) for key, value in requirements.items()},
+        "requirements": parsed_requirements,
     }
 
 
@@ -201,6 +242,7 @@ def grade(payload: dict[str, Any], ground_truth: dict[str, Any], public_state: d
         return _fail("interception transcript is missing or outside limits")
 
     requirements = contract["requirements"]
+    interaction = str((ground_truth.get("control_condition") or {}).get("interaction") or "full")
     arena = contract["arena"]
     critters = copy.deepcopy(contract["initial_critters"])
     target_id = contract["target_id"]
@@ -283,6 +325,8 @@ def grade(payload: dict[str, Any], ground_truth: dict[str, Any], public_state: d
                 point = _point(event.get("point"), contract["width"], contract["height"], "lure")
             except ValueError as exc:
                 return _fail(f"event {sequence} is malformed: {exc}")
+            if event.get("input_surface") != _expected_input_surface(interaction, "lure"):
+                return _fail("lure uses the wrong interaction input")
             lure = (point[0] * 10, point[1] * 10)
             target = next(item for item in critters if item["id"] == target_id)
             if event.get("target_vector") != list(_lure_vector(target, lure)):
@@ -292,6 +336,8 @@ def grade(payload: dict[str, Any], ground_truth: dict[str, Any], public_state: d
         if kind == "freeze_down":
             if not preview_complete or lure is None or freeze_active or freeze_energy <= 0 or event.get("key") != "f" or event.get("tick") != tick:
                 return _fail(f"event {sequence} begins an invalid freeze hold")
+            if event.get("input_surface") != _expected_input_surface(interaction, "freeze"):
+                return _fail("freeze uses the wrong interaction input")
             freeze_active = True
             freeze_downs += 1
             continue
@@ -299,6 +345,8 @@ def grade(payload: dict[str, Any], ground_truth: dict[str, Any], public_state: d
         if kind == "freeze_up":
             if not freeze_active or event.get("key") != "f" or event.get("tick") != tick:
                 return _fail(f"event {sequence} releases an inactive freeze hold")
+            if event.get("input_surface") != _expected_input_surface(interaction, "freeze"):
+                return _fail("freeze uses the wrong interaction input")
             freeze_active = False
             freeze_releases += 1
             continue
@@ -312,6 +360,8 @@ def grade(payload: dict[str, Any], ground_truth: dict[str, Any], public_state: d
                 aim = _point(event.get("aim"), contract["width"], contract["height"], "net aim")
             except ValueError as exc:
                 return _fail(f"event {sequence} is malformed: {exc}")
+            if event.get("input_surface") != _expected_input_surface(interaction, "net"):
+                return _fail("net uses the wrong interaction input")
             expected_id = f"net-{launch_count + 1}"
             if event.get("net_id") != expected_id or event.get("origin") != list(contract["origin"]) or event.get("flight_ticks") != contract["flight_ticks"]:
                 return _fail(f"event {sequence} projectile manifest disagrees with replay")

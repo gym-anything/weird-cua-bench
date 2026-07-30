@@ -5,6 +5,38 @@ from typing import Any
 
 
 MECHANIC_ID = "ribbon_switchboard"
+DEFAULT_PARAMETERS = {
+    "ribbon_count_min": 4, "ribbon_count_max": 6, "control_column_count": 6,
+    "min_target_crossings": 5, "crossing_floor": 8, "crossing_per_ribbon_offset": 4,
+    "min_target_crossing_spacing": 1.8, "maximum_close_run": 9, "third_ribbon_clearance": 16,
+    "hover_radius_min": 58, "hover_radius_max": 66, "corridor_radius_min": 18, "corridor_radius_max": 22,
+    "min_hover_samples": 26, "min_hover_cells": 14, "target_coverage_ratio": 0.66,
+    "target_coverage_cap": 62, "min_crossing_coverage": 6, "min_trace_samples": 70,
+    "trace_coverage_ratio": 0.78, "min_trace_ms": 560, "max_raw_step": 44,
+    "max_parameter_jump": 4.5, "backtrack_tolerance": 1.5,
+}
+CONTROL_FIELDS = frozenset(DEFAULT_PARAMETERS)
+
+
+def _control_contract(ground_truth: dict[str, Any], public_state: dict[str, Any]) -> tuple[dict[str, Any] | None, str | None]:
+    condition = ground_truth.get("control_condition")
+    if condition is None:
+        if public_state.get("control_condition") is not None:
+            raise ValueError("public ribbon control condition is unexpected")
+        return None, None
+    if not isinstance(condition, dict) or public_state.get("control_condition") != condition:
+        raise ValueError("ribbon control condition differs between public and hidden state")
+    interaction = str(condition.get("interaction") or "")
+    parameters = condition.get("difficulty_parameters")
+    if (
+        int(condition.get("difficulty") or 0) not in {1, 2, 3, 4, 5}
+        or interaction not in {"simplified", "full"}
+        or str(condition.get("real_time") or "") != "live"
+        or not isinstance(parameters, dict)
+        or set(parameters) != CONTROL_FIELDS
+    ):
+        raise ValueError("ribbon control condition is malformed")
+    return dict(parameters), interaction
 
 
 def _point(value: Any, width: int, height: int, label: str) -> tuple[int, int]:
@@ -61,22 +93,52 @@ def grade(payload: dict[str, Any], ground_truth: dict[str, Any], public_state: d
     if str(public_state.get("challenge_id") or "") != challenge_id:
         return {"graded": True, "passed": False, "feedback": "public-state challenge mismatch"}
     try:
+        parameters, interaction = _control_contract(ground_truth, public_state)
+        parameters = parameters or dict(DEFAULT_PARAMETERS)
         stage = dict(ground_truth.get("stage") or {})
         width, height = int(stage["width"]), int(stage["height"])
         ribbons = [dict(item) for item in ground_truth.get("ribbons") or []]
-        if not 4 <= len(ribbons) <= 6:
-            raise ValueError("four to six ribbons are required")
+        if not int(parameters["ribbon_count_min"]) <= len(ribbons) <= int(parameters["ribbon_count_max"]):
+            raise ValueError("ribbon count does not implement the selected profile")
+        if public_state.get("ribbons") != ribbons or public_state.get("crossings") != ground_truth.get("crossings"):
+            raise ValueError("public weave differs from the replay contract")
         target_path = [[int(value) for value in point] for point in ground_truth.get("target_path") or []]
         target_terminal = [int(value) for value in ground_truth["target_terminal"]]
         target_crossings = sorted([dict(item) for item in ground_truth.get("target_crossings") or []], key=lambda item: float(item["target_parameter"]))
-        if len(target_path) < 80 or len(target_crossings) < 5:
+        minimum_path_points = (int(parameters["control_column_count"]) - 1) * 18 + 1
+        if len(target_path) < minimum_path_points or len(target_crossings) < int(parameters["min_target_crossings"]):
             raise ValueError("target route or crossing sequence is incomplete")
         hover_radius = int(ground_truth["hover_radius"])
         corridor_radius = int(ground_truth["corridor_radius"])
         requirements = dict(ground_truth.get("requirements") or {})
         clearance = dict(ground_truth.get("clearance_audit") or {})
-        if int(clearance["maximum_close_run"]) > 9 or float(clearance["minimum_target_crossing_spacing"]) < 1.8:
+        if not int(parameters["hover_radius_min"]) <= hover_radius <= int(parameters["hover_radius_max"]):
+            raise ValueError("local lens radius does not implement the selected profile")
+        if not int(parameters["corridor_radius_min"]) <= corridor_radius <= int(parameters["corridor_radius_max"]):
+            raise ValueError("trace corridor does not implement the selected profile")
+        if (
+            int(clearance["crossing_count"]) < max(int(parameters["crossing_floor"]), len(ribbons) + int(parameters["crossing_per_ribbon_offset"]))
+            or int(clearance["target_crossing_count"]) != len(target_crossings)
+            or int(clearance["maximum_close_run"]) > int(parameters["maximum_close_run"])
+            or float(clearance["minimum_target_crossing_spacing"]) < float(parameters["min_target_crossing_spacing"])
+            or int(clearance["third_ribbon_clearance"]) != int(parameters["third_ribbon_clearance"])
+        ):
             raise ValueError("layout clearance audit failed")
+        expected_requirements = {
+            "min_hover_samples": int(parameters["min_hover_samples"]),
+            "min_hover_cells": int(parameters["min_hover_cells"]),
+            "min_target_coverage": min(int(parameters["target_coverage_cap"]), round(len(target_path) * float(parameters["target_coverage_ratio"]))),
+            "min_crossing_coverage": min(int(parameters["min_crossing_coverage"]), len(target_crossings)),
+            "min_trace_samples": max(int(parameters["min_trace_samples"]), round(len(target_path) * float(parameters["trace_coverage_ratio"]))),
+            "min_trace_ms": int(parameters["min_trace_ms"]),
+            "max_raw_step": int(parameters["max_raw_step"]),
+            "max_parameter_jump": float(parameters["max_parameter_jump"]),
+            "backtrack_tolerance": float(parameters["backtrack_tolerance"]),
+        }
+        if requirements != expected_requirements:
+            raise ValueError("ribbon requirements do not implement the selected profile")
+        if interaction is not None and payload.get("interaction") != interaction:
+            raise ValueError("wrong ribbon interaction surface")
     except (KeyError, TypeError, ValueError) as exc:
         return {"graded": True, "passed": False, "feedback": f"invalid ribbon contract: {exc}"}
 
@@ -98,6 +160,20 @@ def grade(payload: dict[str, Any], ground_truth: dict[str, Any], public_state: d
         if not isinstance(event, dict) or event.get("sequence") != sequence:
             return {"graded": True, "passed": False, "feedback": f"event {sequence} sequence mismatch"}
         kind = str(event.get("kind") or "")
+        if interaction is not None:
+            expected_source = (
+                "rearm_button"
+                if kind == "rearm"
+                else "coordinate_hover"
+                if kind == "hover_probe" and interaction == "simplified"
+                else "direct_pointer_hover"
+                if kind == "hover_probe"
+                else "coordinate_trace"
+                if interaction == "simplified"
+                else "direct_pointer_trace"
+            )
+            if event.get("input_source") != expected_source:
+                return {"graded": True, "passed": False, "feedback": "ribbon event uses the wrong interaction input"}
         if completed:
             return {"graded": True, "passed": False, "feedback": "interaction continued after terminal lock"}
         if kind == "hover_probe":
@@ -218,6 +294,8 @@ def grade(payload: dict[str, Any], ground_truth: dict[str, Any], public_state: d
     for field, value in expected.items():
         if payload.get(field) != value:
             return {"graded": True, "passed": False, "feedback": f"submitted {field} does not match ribbon replay"}
+    if payload.get("completed") is not completed:
+        return {"graded": True, "passed": False, "feedback": "submitted completion state does not match ribbon replay"}
     passed = completed and trace is None and not collision_pending and _explored_enough(hover_count, hover_cells, target_coverage, crossing_coverage, requirements)
     return {
         "graded": True,

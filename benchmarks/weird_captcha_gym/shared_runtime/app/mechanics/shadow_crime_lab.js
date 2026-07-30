@@ -236,6 +236,10 @@
     } else if (object.shape === "bust") {
       context.beginPath(); context.arc(0, -radius * .55, radius * .58, 0, Math.PI * 2); context.fill(); context.stroke();
       context.beginPath(); context.ellipse(0, radius * .45, radius, radius * .68, 0, 0, Math.PI * 2); context.fill(); context.stroke();
+    } else if (object.shape === "arch") {
+      context.fillRect(-radius, 0, radius * .42, radius);
+      context.fillRect(radius * .58, 0, radius * .42, radius);
+      context.beginPath(); context.arc(0, 0, radius, Math.PI, 0); context.lineTo(radius, radius * .18); context.lineTo(-radius, radius * .18); context.closePath(); context.fill(); context.stroke();
     } else {
       context.beginPath(); context.moveTo(0, -radius * 1.35); context.lineTo(radius * .62, radius); context.lineTo(-radius * .62, radius); context.closePath(); context.fill(); context.stroke();
       context.fillStyle = "rgba(255,255,255,.18)"; context.fillRect(-2, -radius, 4, radius * 1.5);
@@ -298,9 +302,11 @@
     root.dataset.taggedObject = model.taggedId || "";
     root.dataset.dragging = String(model.dragging);
     root.dataset.tagDragging = String(Boolean(model.tagDrag));
+    root.dataset.proxyTagArmed = String(Boolean(model.proxyTagArmed));
     document.querySelectorAll("[data-probe-id]").forEach((slot) => {
       slot.dataset.visited = String(model.visited.includes(slot.dataset.probeId));
       slot.dataset.sampled = String(model.sampled.has(slot.dataset.probeId));
+      if (slot instanceof HTMLButtonElement) slot.disabled = model.sampled.has(slot.dataset.probeId) || model.submitting || model.completed;
     });
     document.querySelectorAll("[data-evidence-id]").forEach((row) => row.dataset.tagged = String(row.dataset.evidenceId === model.taggedId));
     const tag = document.getElementById("shadow-tag-readout");
@@ -310,7 +316,11 @@
     if (tagTool) {
       tagTool.disabled = !tagUnlocked || model.submitting || model.completed;
       tagTool.dataset.unlocked = String(tagUnlocked);
-      tagTool.querySelector("span")?.replaceChildren(document.createTextNode(tagUnlocked ? "DRAG ONTO SHADOW" : `LOCKED · ${model.sampled.size}/4 PROBES`));
+      const probeText = `${model.sampled.size}/${Number(model.state.minimum_probe_zones || 4)} PROBES`;
+      const label = model.interaction === "simplified"
+        ? (model.proxyTagArmed ? "ARMED · CLICK SHADOW" : "CLICK TO ARM")
+        : "DRAG ONTO SHADOW";
+      tagTool.querySelector("span")?.replaceChildren(document.createTextNode(tagUnlocked ? label : `LOCKED · ${probeText}`));
     }
     const submit = document.getElementById("shadow-submit");
     if (submit) submit.disabled = model.submitting || model.completed;
@@ -326,23 +336,48 @@
     };
   }
 
-  function recordZone(zone) {
+  function recordZone(zone, inputSurface = "direct_lamp_drag") {
     if (!zone || model.sampled.has(zone.id)) return;
     model.visited.push(zone.id);
     model.sampled.add(zone.id);
     const responses = responseSample();
-    pushEvent({type: "probe_sample", zone_id: zone.id, lamp: clonePoint(model.lamp), responses});
+    pushEvent({type: "probe_sample", input_surface: inputSurface, zone_id: zone.id, lamp: clonePoint(model.lamp), responses});
     model.snapshots.push({zoneId: zone.id, polygons: polygonsAt().map((entry) => ({objectId: entry.objectId, polygon: entry.polygon.map(clonePoint)}))});
     model.helpers.setReadout("PROBE RESPONSE RECORDED", "idle");
   }
 
+  function recordProxyProbe(zone) {
+    if (!model || model.interaction !== "simplified" || !zone || model.sampled.has(zone.id) || model.submitting || model.completed) return;
+    const before = clonePoint(model.lamp);
+    model.lamp = {x: round2(Number(zone.x)), y: round2(Number(zone.y))};
+    model.visited.push(zone.id);
+    model.sampled.add(zone.id);
+    const responses = responseSample();
+    pushEvent({
+      type: "proxy_probe",
+      input_surface: "probe_zone_button",
+      zone_id: zone.id,
+      from: before,
+      lamp: clonePoint(model.lamp),
+      responses,
+    });
+    model.snapshots.push({zoneId: zone.id, polygons: polygonsAt().map((entry) => ({objectId: entry.objectId, polygon: entry.polygon.map(clonePoint)}))});
+    model.helpers.setReadout("PROBE RESPONSE RECORDED", "idle");
+    updateInterface();
+  }
+
   function pointerDown(event) {
     if (!model || model.submitting || model.completed) return;
+    if (model.interaction === "simplified") {
+      if (model.proxyTagArmed) proxyTagPlace(event);
+      else model.helpers.setReadout("CLICK A PROBE-ZONE CARD, THEN ARM THE RED EVIDENCE TAG", "idle");
+      return;
+    }
     const point = canvasPoint(event);
     if (Math.hypot(point.x - model.lamp.x, point.y - model.lamp.y) <= Number(model.state.lamp.drag_radius)) {
       model.dragging = true;
       model.dragOffset = {x: round2(point.x - model.lamp.x), y: round2(point.y - model.lamp.y)};
-      pushEvent({type: "lamp_start", pointer: point, lamp: clonePoint(model.lamp), drag_offset: clonePoint(model.dragOffset)});
+      pushEvent({type: "lamp_start", input_surface: "direct_lamp_drag", pointer: point, lamp: clonePoint(model.lamp), drag_offset: clonePoint(model.dragOffset)});
       event.currentTarget.setPointerCapture?.(event.pointerId);
       model.helpers.setReadout("LIGHT PROBE ACTIVE", "idle");
       updateInterface();
@@ -353,25 +388,36 @@
       : "USE THE RED EVIDENCE TAG · DRAG IT ONTO A SHADOW", "error");
   }
 
-  function pointerMove(event) {
-    if (!model?.dragging || model.submitting || model.completed) return;
-    const pointer = canvasPoint(event);
+  function moveLampToPointer(pointer) {
+    if (!model?.dragging || model.submitting || model.completed) return false;
     const before = clonePoint(model.lamp);
-    model.lamp = {
+    const nextLamp = {
       x: round2(clamp(pointer.x - model.dragOffset.x, 20, Number(model.state.canvas.width) - 20)),
       y: round2(clamp(pointer.y - model.dragOffset.y, 20, Number(model.state.canvas.height) - 20)),
     };
+    // Sparse pointer delivery can yield only a final pointerup after a valid
+    // drag. Treat the endpoint as the same physical lamp movement, instead of
+    // requiring an arbitrary number of intermediate browser callbacks.
+    if (nextLamp.x === before.x && nextLamp.y === before.y) return false;
+    model.lamp = nextLamp;
     const zone = zoneAt(model.lamp);
-    pushEvent({type: "lamp_move", pointer, from: before, to: clonePoint(model.lamp), zone_id: zone ? zone.id : null});
+    pushEvent({type: "lamp_move", input_surface: "direct_lamp_drag", pointer, from: before, to: clonePoint(model.lamp), zone_id: zone ? zone.id : null});
     model.path.push(clonePoint(model.lamp));
     if (zone && !model.visited.includes(zone.id)) recordZone(zone);
     updateInterface();
+    return true;
+  }
+
+  function pointerMove(event) {
+    if (!model?.dragging || model.submitting || model.completed) return;
+    moveLampToPointer(canvasPoint(event));
   }
 
   function pointerUp(event) {
     if (!model?.dragging) return;
     const point = canvasPoint(event);
-    pushEvent({type: "lamp_end", pointer: point, lamp: clonePoint(model.lamp)});
+    moveLampToPointer(point);
+    pushEvent({type: "lamp_end", input_surface: "direct_lamp_drag", pointer: point, lamp: clonePoint(model.lamp)});
     model.dragging = false;
     event.currentTarget.releasePointerCapture?.(event.pointerId);
     model.helpers.setReadout("LIGHT PROBE PARKED", "idle");
@@ -395,8 +441,8 @@
       return;
     }
     event.preventDefault();
-    model.tagDrag = {pointerId: event.pointerId, moves: 0};
-    pushEvent({type: "tag_start", dock: "evidence_tag"});
+    model.tagDrag = {pointerId: event.pointerId};
+    pushEvent({type: "tag_start", input_surface: "direct_tag_drag", dock: "evidence_tag"});
     event.currentTarget.setPointerCapture?.(event.pointerId);
     moveTagGhost(event, true);
     model.helpers.setReadout("EVIDENCE TAG IN HAND · DROP ON THE IMPOSSIBLE SHADOW", "idle");
@@ -407,8 +453,7 @@
     if (!model?.tagDrag || model.tagDrag.pointerId !== event.pointerId) return;
     event.preventDefault();
     const point = canvasPoint(event);
-    model.tagDrag.moves += 1;
-    pushEvent({type: "tag_move", point});
+    pushEvent({type: "tag_move", input_surface: "direct_tag_drag", point});
     moveTagGhost(event, true);
   }
 
@@ -416,14 +461,40 @@
     if (!model?.tagDrag || model.tagDrag.pointerId !== event.pointerId) return;
     event.preventDefault();
     const point = canvasPoint(event);
-    const moves = model.tagDrag.moves;
-    const objectId = moves >= 3 ? raycastShadow(point) : null;
-    pushEvent({type: "tag_end", point, object_id: objectId, move_count: moves});
+    const objectId = raycastShadow(point);
+    pushEvent({type: "tag_end", input_surface: "direct_tag_drag", point, object_id: objectId});
     model.tagDrag = null;
     event.currentTarget.releasePointerCapture?.(event.pointerId);
     moveTagGhost(event, false);
     if (!objectId) {
-      model.helpers.setReadout(moves < 3 ? "EVIDENCE TAG WAS NOT DRAGGED" : "TAG MISSED EVERY SHADOW · TRY AGAIN", "error");
+      model.helpers.setReadout("TAG MISSED EVERY SHADOW · TRY AGAIN", "error");
+    } else {
+      model.taggedId = objectId;
+      model.helpers.setReadout("SHADOW TAGGED · FILE FINDING", "idle");
+    }
+    updateInterface();
+  }
+
+  function armProxyTag() {
+    if (!model || model.interaction !== "simplified" || model.submitting || model.completed) return;
+    if (model.sampled.size < Number(model.state.minimum_probe_zones || 4)) {
+      model.helpers.setReadout("EVIDENCE TAG LOCKED · COMPLETE EVERY PROBE", "error");
+      return;
+    }
+    model.proxyTagArmed = true;
+    pushEvent({type: "proxy_tag_arm", input_surface: "armed_tag_button", dock: "evidence_tag"});
+    model.helpers.setReadout("TAG ARMED · CLICK INSIDE THE IMPOSSIBLE SHADOW", "idle");
+    updateInterface();
+  }
+
+  function proxyTagPlace(event) {
+    if (!model || model.interaction !== "simplified" || !model.proxyTagArmed || model.submitting || model.completed) return;
+    const point = canvasPoint(event);
+    const objectId = raycastShadow(point);
+    pushEvent({type: "proxy_tag_place", input_surface: "armed_tag_click", point, object_id: objectId});
+    model.proxyTagArmed = false;
+    if (!objectId) {
+      model.helpers.setReadout("TAG MISSED EVERY SHADOW · ARM IT AND TRY AGAIN", "error");
     } else {
       model.taggedId = objectId;
       model.helpers.setReadout("SHADOW TAGGED · FILE FINDING", "idle");
@@ -441,8 +512,9 @@
     model.path = [clonePoint(model.lamp)];
     model.taggedId = null;
     model.tagDrag = null;
+    model.proxyTagArmed = false;
     model.resetCount += 1;
-    pushEvent({type: "reset", lamp_after: clonePoint(model.lamp)});
+    pushEvent({type: "reset", input_surface: "reset_button", lamp_after: clonePoint(model.lamp)});
     model.helpers.setReadout("SCENE RESET", "idle");
     updateInterface();
   }
@@ -454,6 +526,7 @@
       sample_count: model.sampled.size,
       tagged_object_id: model.taggedId,
       reset_count: model.resetCount,
+      proxy_tag_armed: Boolean(model.proxyTagArmed),
     };
   }
 
@@ -479,7 +552,7 @@
       const response = await fetch("/result", {
         method: "POST",
         headers: {"content-type": "application/json"},
-        body: JSON.stringify({mechanic_id: current.state.mechanic_id, task_id: current.state.task_id, challenge_id: current.state.challenge_id, completed: true, events: current.events, final_state: finalState()}),
+        body: JSON.stringify({mechanic_id: current.state.mechanic_id, task_id: current.state.task_id, challenge_id: current.state.challenge_id, interaction_mode: current.interaction, completed: true, events: current.events, final_state: finalState()}),
       });
       const outcome = await response.json();
       if (outcome.passed === true) {
@@ -528,6 +601,7 @@
     if (activeCleanup) activeCleanup();
     document.body.dataset.mechanic = "shadow-crime-lab";
     document.body.dataset.cheatMode = helpers.isCheatMode() ? "true" : "false";
+    const interaction = state.control_condition?.interaction === "simplified" ? "simplified" : "full";
     const initialLamp = {x: Number(state.lamp.x), y: Number(state.lamp.y)};
     model = {
       state,
@@ -545,6 +619,8 @@
       path: [clonePoint(initialLamp)],
       taggedId: null,
       tagDrag: null,
+      proxyTagArmed: false,
+      interaction,
       resetCount: 0,
       submitting: false,
       completed: false,
@@ -552,7 +628,7 @@
       timers: new Set(),
     };
     helpers.app.innerHTML = `
-      <section class="shadow-crime-lab palette-${helpers.text(state.palette)}" data-fresh-failure="${options.freshFailure ? "true" : "false"}" data-probe-count="0" tabindex="0">
+      <section class="shadow-crime-lab palette-${helpers.text(state.palette)}" data-fresh-failure="${options.freshFailure ? "true" : "false"}" data-probe-count="0" data-probe-total="${state.probe_zones.length}" data-interaction="${interaction}" tabindex="0">
         <div class="shadow-verdict" aria-live="assertive"></div>
         <header class="shadow-head">
           <div><span>PHOTOMETRIC EVIDENCE UNIT / ${helpers.text(state.case_number)}</span><h1>${helpers.text(state.prompt)}</h1></div>
@@ -561,11 +637,11 @@
         <main class="shadow-workbench">
           <section class="shadow-stage">
             <canvas id="shadow-canvas" width="${Number(state.canvas.width)}" height="${Number(state.canvas.height)}" aria-label="analytic shadow crime scene"></canvas>
-            <div class="stage-caption"><span>DRAG LIGHT THROUGH A–D / THEN DRAG THE RED TAG</span><b>ANALYTIC PROJECTION TABLE</b></div>
+            <div class="stage-caption"><span>${interaction === "simplified" ? "CLICK ZONE CARDS / ARM RED TAG / CLICK SHADOW" : "DRAG LIGHT THROUGH ZONES / THEN DRAG THE RED TAG"}</span><b>ANALYTIC PROJECTION TABLE</b></div>
           </section>
           <aside class="shadow-console">
             <div class="lamp-manifest"><span>LIGHT SOURCE</span><b>${helpers.text(String(state.lamp.type).toUpperCase())}</b><i>${Number(state.lamp.area_radius) > 0 ? `AREA Ø${Number(state.lamp.area_radius) * 2}` : "POINT EMITTER"}</i></div>
-            <div class="probe-ledger"><span>PROBE LEDGER</span>${state.probe_zones.map((zone, index) => `<div data-probe-id="${helpers.text(zone.id)}" data-visited="false" data-sampled="false"><i>${String.fromCharCode(65 + index)}</i><b>ZONE ${index + 1}</b><em></em></div>`).join("")}</div>
+            <div class="probe-ledger" data-proxy="${interaction === "simplified"}"><span>${interaction === "simplified" ? "CLICK PROBE ZONES" : "PROBE LEDGER"}</span>${state.probe_zones.map((zone, index) => interaction === "simplified" ? `<button type="button" class="shadow-proxy-probe" data-probe-id="${helpers.text(zone.id)}" data-visited="false" data-sampled="false"><i>${String.fromCharCode(65 + index)}</i><b>PROBE ZONE ${index + 1}</b><em></em></button>` : `<div data-probe-id="${helpers.text(zone.id)}" data-visited="false" data-sampled="false"><i>${String.fromCharCode(65 + index)}</i><b>ZONE ${index + 1}</b><em></em></div>`).join("")}</div>
             <div class="evidence-ledger"><span>SHADOW EVIDENCE</span>${state.objects.map((object) => `<div data-evidence-id="${helpers.text(object.id)}" data-tagged="false"><i>${helpers.text(object.case_label)}</i><b>${helpers.text(String(object.shape).toUpperCase())}</b><em>TAG</em></div>`).join("")}</div>
             <div class="shadow-tag-panel"><span id="shadow-tag-readout">NO SHADOW TAG</span><button type="button" id="shadow-tag-tool" data-unlocked="false"><b>EVIDENCE TAG</b><span>LOCKED · 0/4 PROBES</span></button><button type="button" id="shadow-reset">RESET SCENE</button></div>
           </aside>
@@ -580,10 +656,15 @@
     canvas.addEventListener("pointerup", pointerUp);
     canvas.addEventListener("pointercancel", pointerUp);
     const tagTool = document.getElementById("shadow-tag-tool");
-    tagTool?.addEventListener("pointerdown", tagDown);
-    tagTool?.addEventListener("pointermove", tagMove);
-    tagTool?.addEventListener("pointerup", tagUp);
-    tagTool?.addEventListener("pointercancel", tagUp);
+    if (interaction === "simplified") {
+      document.querySelectorAll(".shadow-proxy-probe").forEach((button) => button.addEventListener("click", () => recordProxyProbe(state.probe_zones.find((zone) => zone.id === button.dataset.probeId))));
+      tagTool?.addEventListener("click", armProxyTag);
+    } else {
+      tagTool?.addEventListener("pointerdown", tagDown);
+      tagTool?.addEventListener("pointermove", tagMove);
+      tagTool?.addEventListener("pointerup", tagUp);
+      tagTool?.addEventListener("pointercancel", tagUp);
+    }
     document.getElementById("shadow-reset")?.addEventListener("click", resetScene);
     document.getElementById("shadow-submit")?.addEventListener("click", submitFinding);
     installDeveloperReveal();
@@ -596,6 +677,7 @@
       tagTool?.removeEventListener("pointermove", tagMove);
       tagTool?.removeEventListener("pointerup", tagUp);
       tagTool?.removeEventListener("pointercancel", tagUp);
+      tagTool?.removeEventListener("click", armProxyTag);
       model?.timers.forEach((timer) => window.clearTimeout(timer));
     };
     updateInterface();

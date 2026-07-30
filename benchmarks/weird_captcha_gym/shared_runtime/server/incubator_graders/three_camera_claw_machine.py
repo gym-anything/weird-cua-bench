@@ -59,6 +59,15 @@ def grade(payload: dict[str, Any], ground_truth: dict[str, Any], public_state: d
     if not task_id or payload.get("task_id") != task_id: return {"graded": True, "passed": False, "feedback": "task identity mismatch"}
     for field in ("task_id", "world", "initial", "objects", "obstacles", "chute", "cameras", "requirements"):
         if public_state.get(field) != ground_truth.get(field): return {"graded": True, "passed": False, "feedback": f"public/private claw {field} contract skew"}
+    truth_condition = ground_truth.get("control_condition")
+    if public_state.get("control_condition") != truth_condition:
+        return {"graded": True, "passed": False, "feedback": "public interaction condition differs from claw contract"}
+    interaction = str((truth_condition or {}).get("interaction") or "simplified")
+    expected_source = {"simplified": "control_buttons", "full": "keyboard"}.get(interaction)
+    if expected_source is None:
+        return {"graded": True, "passed": False, "feedback": "three-camera claw interaction condition is invalid"}
+    if payload.get("interaction_mode") != interaction:
+        return {"graded": True, "passed": False, "feedback": "claw transcript declares the wrong interaction mode"}
     events = payload.get("events"); requirements = ground_truth["requirements"]
     if not isinstance(events, list) or not (1 <= len(events) <= requirements["max_events"]): return {"graded": True, "passed": False, "feedback": "claw transcript missing or outside limits"}
     initial = ground_truth["initial"]; position, velocity = list(initial["position"]), list(initial["velocity"]); objects = _clone_objects(ground_truth["objects"])
@@ -68,6 +77,8 @@ def grade(payload: dict[str, Any], ground_truth: dict[str, Any], public_state: d
         if terminal: return {"graded": True, "passed": False, "feedback": "interaction continued after chute delivery"}
         if not isinstance(event, dict) or event.get("sequence") != sequence: return {"graded": True, "passed": False, "feedback": f"event {sequence} sequence mismatch"}
         kind = event.get("kind")
+        if kind in {"control", "physics_tick", "gripper", "reset_claw"} and event.get("input_source") != expected_source:
+            return {"graded": True, "passed": False, "feedback": f"event {sequence} uses the wrong interaction input"}
         if kind == "control":
             if pending_control: return {"graded": True, "passed": False, "feedback": "control omitted its fixed physics tick"}
             axis = event.get("axis"); direction = int(event.get("direction", 0)); world = ground_truth["world"]

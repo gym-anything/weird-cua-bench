@@ -13,6 +13,8 @@
     frame: 0,
     audio: null,
     submitting: false,
+    interaction: "full",
+    controlled: false,
   };
   window.polyrhythmCustomsModel = model;
 
@@ -195,6 +197,11 @@
     if (count) count.textContent = String(model.transcript.length).padStart(2, "0");
   }
 
+  function togglePad(laneId) {
+    if (model.phase !== "performance" || model.submitting) return;
+    recordEvent(laneId, model.held.has(laneId) ? "up" : "down", "pointer_toggle");
+  }
+
   function drawPerformance(helpers) {
     if (model.phase !== "performance") return;
     const elapsed = performance.now() - model.performanceStartedAt;
@@ -217,7 +224,11 @@
     if (shell) shell.dataset.phase = "performance";
     const board = document.querySelector(".rhythm-score-board");
     if (board) board.innerHTML = '<div class="rhythm-performance-void"><span>MANIFEST HIDDEN</span><strong>PERFORM THE COMBINED SCORE</strong><i>taps · holds · simultaneous stamps</i></div>';
-    updatePhase("LIVE COMBINED INSPECTION", `${model.state.lanes.map((lane) => lane.key).join(" / ")} · keydown and release are both recorded`);
+    const keys = model.state.lanes.map((lane) => lane.key).join(" / ");
+    const inputInstruction = model.interaction === "simplified"
+      ? `${keys} · click once to press and again to release`
+      : `${keys} · keydown and release are both recorded`;
+    updatePhase("LIVE COMBINED INSPECTION", inputInstruction);
     helpers.setReadout(`PERFORM NOW · START WINDOW ±${model.state.rules.start_window_ms}ms`, "idle");
     drawPerformance(helpers);
     model.timer = window.setTimeout(() => endPerformance(helpers), Number(model.state.settings.performance_ms) + 260);
@@ -243,6 +254,7 @@
           mechanic_id: model.state.mechanic_id,
           task_id: model.state.task_id,
           challenge_id: model.state.challenge_id,
+          ...(model.controlled ? {interaction_mode: model.interaction} : {}),
           transcript: model.transcript,
         }),
       });
@@ -293,8 +305,19 @@
     model.transcript = [];
     model.held.clear();
     model.submitting = false;
+    model.interaction = state.control_condition?.interaction || "full";
+    model.controlled = Boolean(state.control_condition);
+    const simplified = model.interaction === "simplified";
+    const holdDurationRequired = state.control_condition?.difficulty_parameters?.require_hold_duration === true;
+    const padInstruction = simplified
+      ? "CLICK TO PRESS · CLICK AGAIN TO RELEASE"
+      : "KEYDOWN + KEYUP RECORDED";
+    const holdRule = holdDurationRequired
+      ? "Long bars must be held to their displayed duration."
+      : "Long bars earn a duration bonus when held to length.";
+    const holdToleranceLabel = holdDurationRequired ? "HOLD" : "HOLD BONUS";
     helpers.app.innerHTML = `
-      <section class="polyrhythm-customs-captcha" data-challenge-id="${clean(state.challenge_id)}" data-phase="ready">
+      <section class="polyrhythm-customs-captcha" data-challenge-id="${clean(state.challenge_id)}" data-interaction="${clean(model.interaction)}" data-phase="ready">
         <div class="rhythm-grain"></div>
         <header class="rhythm-head">
           <div><span>PORT OF ENTRY / SONIC DECLARATIONS</span><h1>${clean(state.prompt)}</h1></div>
@@ -307,9 +330,9 @@
             <div class="rhythm-phase-progress"><i></i></div>
           </section>
           <aside class="rhythm-rules">
-            <div class="rhythm-rule-card"><span>01</span><b>WATCH SEPARATELY</b><p>Only one lane is revealed at a time. Long bars must be held.</p></div>
-            <div class="rhythm-rule-card"><span>02</span><b>PERFORM TOGETHER</b><p>When the score vanishes, interleave all four lanes. Shared marks are chords.</p></div>
-            <div class="rhythm-tolerance-card"><span>INSPECTION TOLERANCE</span><dl><div><dt>START</dt><dd>±${state.rules.start_window_ms}ms</dd></div><div><dt>HOLD</dt><dd>±${state.rules.duration_tolerance_ms}ms</dd></div><div><dt>CHORD</dt><dd>${state.rules.chord_window_ms}ms</dd></div></dl></div>
+            <div class="rhythm-rule-card"><span>01</span><b>WATCH SEPARATELY</b><p>Only one lane is revealed at a time. ${holdRule}</p></div>
+            <div class="rhythm-rule-card"><span>02</span><b>PERFORM TOGETHER</b><p>When the score vanishes, interleave all ${state.lanes.length} lanes. Shared marks are chords${simplified ? "; click a pad again to release it" : ""}.</p></div>
+            <div class="rhythm-tolerance-card"><span>INSPECTION TOLERANCE</span><dl><div><dt>START</dt><dd>±${state.rules.start_window_ms}ms</dd></div><div><dt>${holdToleranceLabel}</dt><dd>±${state.rules.duration_tolerance_ms}ms</dd></div><div><dt>CHORD</dt><dd>${state.rules.chord_window_ms}ms</dd></div></dl></div>
           </aside>
         </main>
         <section class="rhythm-console">
@@ -320,7 +343,7 @@
           <button type="button" class="rhythm-certify-now">CERTIFY NOW</button>
           <button type="button" class="rhythm-replay">REPLAY WHOLE TRIAL</button>
         </section>
-        <footer class="rhythm-foot"><div class="readout" data-status="idle">READY · AUDIO OPTIONAL / VISUAL PULSES AUTHORITATIVE</div><span>KEYDOWN + KEYUP RECORDED · ${state.lanes.map((lane) => lane.key).join(" / ")}</span></footer>
+        <footer class="rhythm-foot"><div class="readout" data-status="idle">READY · AUDIO OPTIONAL / VISUAL PULSES AUTHORITATIVE</div><span>${padInstruction} · ${state.lanes.map((lane) => lane.key).join(" / ")}</span></footer>
         <div class="rhythm-terminal-stamp"></div>
         <div class="rhythm-start-curtain"><div><span>POLYRHYTHM CUSTOMS</span><strong>DECLARE<br>YOUR RHYTHM</strong><p>Four officers reveal their stamps one lane at a time. Then every manifest disappears.</p><button type="button" class="rhythm-start">BEGIN INSPECTION</button></div></div>
         ${helpers.cheatPanelTemplate()}
@@ -331,13 +354,13 @@
     shell.addEventListener("keydown", (event) => {
       if (event.repeat) return;
       const laneId = keyToLane[String(event.key).toLowerCase()];
-      if (!laneId) return;
+      if (!laneId || model.interaction !== "full") return;
       event.preventDefault();
       recordEvent(laneId, "down", "keyboard");
     });
     shell.addEventListener("keyup", (event) => {
       const laneId = keyToLane[String(event.key).toLowerCase()];
-      if (!laneId) return;
+      if (!laneId || model.interaction !== "full") return;
       event.preventDefault();
       recordEvent(laneId, "up", "keyboard");
     });
@@ -348,14 +371,22 @@
       if (model.phase === "performance") endPerformance(helpers);
     });
     document.querySelectorAll(".rhythm-pad").forEach((pad) => {
+      if (model.interaction === "simplified") {
+        pad.addEventListener("click", (event) => {
+          event.preventDefault();
+          togglePad(String(pad.dataset.lane));
+        });
+        return;
+      }
+      const pointerSource = model.controlled ? "pointer_direct" : "pointer";
       pad.addEventListener("pointerdown", (event) => {
         event.preventDefault();
         pad.setPointerCapture?.(event.pointerId);
-        recordEvent(String(pad.dataset.lane), "down", "pointer");
+        recordEvent(String(pad.dataset.lane), "down", pointerSource);
       });
       const release = (event) => {
         event.preventDefault();
-        recordEvent(String(pad.dataset.lane), "up", "pointer");
+        recordEvent(String(pad.dataset.lane), "up", pointerSource);
       };
       pad.addEventListener("pointerup", release);
       pad.addEventListener("pointercancel", release);

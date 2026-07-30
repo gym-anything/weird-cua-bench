@@ -1,6 +1,6 @@
 # Controllability Plan
 
-Status: fifty-five environments have complete difficulty and interaction controls. All 75 environments have real-time evaluation settings.
+Status: all seventy-five environments have complete difficulty and interaction controls. All 75 environments have real-time evaluation settings.
 
 This document records how Weird CUA Bench should vary difficulty, interaction, and real time without duplicating puzzle implementations.
 
@@ -96,7 +96,7 @@ python3 benchmarks/weird_captcha_gym/tools/materialize_controlled_tasks.py \
   --output-root /tmp/weird-cua-controlled
 ```
 
-The command writes five tasks for every implemented interaction mode. Every controlled environment now implements both modes. The complete fifty-five-environment matrix contains 550 tasks.
+The command writes five tasks for every implemented interaction mode. Every controlled environment now implements both modes. The complete seventy-five-environment matrix contains 750 tasks.
 
 The selected condition is copied into the task metadata, public state, and hidden state. Difficulty-specific instructions replace the baseline instructions when a profile changes a rule that the agent must know.
 

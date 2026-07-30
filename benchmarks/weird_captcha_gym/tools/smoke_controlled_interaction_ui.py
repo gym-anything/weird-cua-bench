@@ -14,9 +14,6 @@ import tempfile
 import time
 from pathlib import Path
 
-from playwright.sync_api import expect, sync_playwright
-
-
 ROOT = Path(__file__).resolve().parents[3]
 sys.path.insert(0, str(ROOT))
 BENCH_ROOT = ROOT / "benchmarks" / "weird_captcha_gym"
@@ -61,6 +58,10 @@ def parse_args() -> argparse.Namespace:
         default=0,
         help="Artificial inference delay after the initial observation; validates live/paused clock behavior.",
     )
+    parser.add_argument(
+        "--seed",
+        help="Fixed setup seed for a reproducible matrix; defaults to the historical interaction-pair seed.",
+    )
     return parser.parse_args()
 
 
@@ -79,10 +80,82 @@ def read_json(path: Path) -> dict:
 
 def world_fingerprint(public_state: dict) -> str:
     value = copy.deepcopy(public_state)
-    for key in ("task_id", "challenge_id", "control_condition"):
+    # Interaction modes can correctly name different visible controls while
+    # sharing one generated world. The prompt and rules are task-surface copy,
+    # not world geometry, timing, or success data.
+    for key in ("task_id", "challenge_id", "control_condition", "prompt", "rules"):
         value.pop(key, None)
     payload = json.dumps(value, sort_keys=True, separators=(",", ":")).encode("utf-8")
     return hashlib.sha256(payload).hexdigest()
+
+
+def assert_split_boxes_phase_geometry(page, public_state: dict, evidence_dir: Path) -> dict:
+    """Check that visible phase ticks share the temporal input's geometry."""
+    from playwright.sync_api import expect
+
+    phase_range = public_state["phase_range"]
+    minimum = int(phase_range["minimum"])
+    maximum = int(phase_range["maximum"])
+    expected_tick_count = maximum - minimum + 1
+    expected_master_index = -minimum
+    zero_ratio = (0 - minimum) / (maximum - minimum)
+    track = page.locator("#phase-track")
+    ticks = page.locator("#phase-track > i")
+    expect(track).to_be_visible()
+    expect(ticks).to_have_count(expected_tick_count)
+    expect(page.locator("#phase-track > i.master")).to_have_count(1)
+    tick_geometry = ticks.evaluate_all(
+        """nodes => nodes.map((node, index) => {
+          const rect = node.getBoundingClientRect();
+          return {index, master: node.classList.contains('master'), center_x: rect.left + rect.width / 2, center_y: rect.top + rect.height / 2};
+        })"""
+    )
+    master = next((item for item in tick_geometry if item["master"]), None)
+    if master is None or master["index"] != expected_master_index:
+        raise AssertionError(f"phase master tick mismatch: {tick_geometry}")
+    track_box = track.bounding_box()
+    if track_box is None or track_box["width"] <= 0:
+        raise AssertionError("phase track has no visible geometry")
+    expected_zero_x = track_box["x"] + track_box["width"] * zero_ratio
+    y_values = [float(item["center_y"]) for item in tick_geometry]
+    no_wrap = max(y_values) - min(y_values) <= 1.0
+    master_matches_zero = abs(float(master["center_x"]) - expected_zero_x) <= 1.0
+    if not no_wrap or not master_matches_zero:
+        raise AssertionError(
+            f"phase tick geometry diverges from visible input: no_wrap={no_wrap}; "
+            f"master_matches_zero={master_matches_zero}; ticks={tick_geometry}; track={track_box}"
+        )
+
+    # Exercise the same visible pointer coordinate used by a screenshot-only
+    # player, then verify its zero-valued handle lands on the master tick.
+    page.mouse.click(expected_zero_x, track_box["y"] + track_box["height"] / 2)
+    expect(page.locator("#phase-label")).to_have_text("MASTER PHASE")
+    handle_box = page.locator("#phase-handle").bounding_box()
+    if handle_box is None:
+        raise AssertionError("phase handle has no visible geometry")
+    handle_center_x = handle_box["x"] + handle_box["width"] / 2
+    handle_matches_master = abs(handle_center_x - float(master["center_x"])) <= 1.0
+    if not handle_matches_master:
+        raise AssertionError(
+            f"zero-valued phase handle does not align with master tick: "
+            f"handle={handle_center_x}; master={master['center_x']}"
+        )
+    page.screenshot(path=str(evidence_dir / "single_scene_split_boxes-phase-geometry.png"))
+    page.locator("#mosaic-reset").click()
+    return {
+        "expected_tick_count": expected_tick_count,
+        "rendered_tick_count": len(tick_geometry),
+        "expected_master_index": expected_master_index,
+        "rendered_master_index": master["index"],
+        "expected_zero_ratio": zero_ratio,
+        "master_center_ratio": (float(master["center_x"]) - track_box["x"]) / track_box["width"],
+        "zero_handle_center_ratio": (handle_center_x - track_box["x"]) / track_box["width"],
+        "no_wrap": no_wrap,
+        "master_matches_zero_input": master_matches_zero,
+        "zero_handle_matches_master": handle_matches_master,
+        "computed_grid_template_columns": track.evaluate("node => getComputedStyle(node).gridTemplateColumns"),
+        "screenshot": "single_scene_split_boxes-phase-geometry.png",
+    }
 
 
 def reserve_port() -> int:
@@ -91,9 +164,11 @@ def reserve_port() -> int:
         return int(handle.getsockname()[1])
 
 
-def start_server(task_json: Path, mechanic: str, interaction: str, state_dir: Path) -> tuple[subprocess.Popen, int]:
+def start_server(
+    task_json: Path, mechanic: str, interaction: str, state_dir: Path, setup_seed: str
+) -> tuple[subprocess.Popen, int]:
     subprocess.run(
-        ["python", "-B", str(SETUP), "--task-json", str(task_json), "--state-dir", str(state_dir), "--seed", f"interaction-pair-{mechanic}"],
+        ["python", "-B", str(SETUP), "--task-json", str(task_json), "--state-dir", str(state_dir), "--seed", setup_seed],
         cwd=ROOT,
         check=True,
         stdout=subprocess.DEVNULL,
@@ -142,6 +217,8 @@ def observation_viewport(env_root: Path) -> dict[str, int]:
 
 
 def main() -> None:
+    from playwright.sync_api import expect, sync_playwright
+
     args = parse_args()
     env_root = BENCH_ROOT / "environments" / args.environment
     controls = read_json(env_root / "controls.json")
@@ -152,6 +229,9 @@ def main() -> None:
         raise SystemExit("--all-difficulties and --difficulty are mutually exclusive")
     if args.model_delay_ms < 0:
         raise SystemExit("--model-delay-ms must be nonnegative")
+    setup_seed = args.seed or f"interaction-pair-{mechanic}"
+    if not setup_seed.strip():
+        raise SystemExit("--seed must not be empty")
     difficulties = range(1, 6) if args.all_difficulties else (args.difficulty or baseline_difficulty,)
     solver = load_module(f"interaction_solver_{mechanic}", BENCH_ROOT / "tools" / "incubator_solvers" / f"{mechanic}.py")
     helpers = load_module("controlled_interaction_verifier_helpers", HELPERS)
@@ -178,10 +258,18 @@ def main() -> None:
                     else out_dir / interaction
                 )
                 evidence_dir.mkdir(parents=True, exist_ok=True)
-                process, port = start_server(task_json, mechanic, interaction, state_dir)
+                process, port = start_server(task_json, mechanic, interaction, state_dir, setup_seed)
                 errors: list[str] = []
-                page = browser.new_page(viewport=viewport, device_scale_factor=1)
+                console_errors: list[str] = []
+                context = browser.new_context(viewport=viewport, device_scale_factor=1)
+                page = context.new_page()
                 page.on("pageerror", lambda error: errors.append(str(error)))
+                page.on(
+                    "console",
+                    lambda message: console_errors.append(message.text)
+                    if message.type == "error"
+                    else None,
+                )
                 try:
                     current_task_path = state_dir / "current_task.json"
                     current_task_text = current_task_path.read_text(encoding="utf-8")
@@ -204,6 +292,11 @@ def main() -> None:
                     initial_challenge_id = str(initial_public_state.get("challenge_id") or "")
                     if not initial_challenge_id:
                         raise AssertionError("controlled task did not expose an initial challenge identity")
+                    phase_geometry = (
+                        assert_split_boxes_phase_geometry(page, initial_public_state, evidence_dir)
+                        if mechanic == "single_scene_split_boxes"
+                        else None
+                    )
                     clock_initial = page.evaluate("() => WeirdCaptchaTime.status()")
                     page.screenshot(path=str(evidence_dir / "initial.png"))
                     clock_after_model_delay = clock_initial
@@ -280,8 +373,11 @@ def main() -> None:
                         raise AssertionError(f"server rejected difficulty {difficulty} {interaction}: {server_grade}")
                     if direct_grade.get("passed") is not True or direct_grade.get("score") != 100:
                         raise AssertionError(f"verifier rejected difficulty {difficulty} {interaction}: {direct_grade}")
-                    if errors:
-                        raise AssertionError(f"browser errors in difficulty {difficulty} {interaction}: {errors}")
+                    if errors or console_errors:
+                        raise AssertionError(
+                            f"browser errors in difficulty {difficulty} {interaction}: "
+                            f"page={errors}; console={console_errors}"
+                        )
                     (evidence_dir / "public_state.json").write_text(
                         json.dumps(exported["public_state"], indent=2, sort_keys=True) + "\n",
                         encoding="utf-8",
@@ -308,17 +404,19 @@ def main() -> None:
                     )
                     result = exported["result"]
                     events = (
-                        result.get("events")
+                        result.get("transcript")
+                        or result.get("events")
                         or result.get("actions")
+                        or result.get("probes")
                         or (result.get("trusted_witness") or {}).get("actions")
                         or result.get("issued_commands")
                         or result.get("orders")
                         or []
                     )
                     sources = sorted({
-                        event.get("input_source") or event.get("input_surface")
+                        event.get("input_source") or event.get("input_surface") or event.get("source")
                         for event in events
-                        if event.get("input_source") or event.get("input_surface")
+                        if event.get("input_source") or event.get("input_surface") or event.get("source")
                     })
                     placement_sources = result.get("placement_sources") or {}
                     if isinstance(placement_sources, dict):
@@ -328,6 +426,7 @@ def main() -> None:
                         "server_grade": server_grade,
                         "verifier": direct_grade,
                         "input_sources": sources,
+                        "browser_errors": {"page": errors, "console": console_errors},
                         "failure_and_retry": {
                             "initial_challenge_id": initial_challenge_id,
                             "failed_server_grade": failed_grade,
@@ -345,6 +444,8 @@ def main() -> None:
                         "initial_browser_run_world_fingerprint": world_fingerprint(initial_public_state),
                         "solved_browser_run_world_fingerprint": world_fingerprint(exported["public_state"]),
                     }
+                    if phase_geometry is not None:
+                        level_summary[interaction]["phase_geometry"] = phase_geometry
                 except Exception:
                     attempts = state_dir / "attempts.jsonl"
                     if attempts.is_file():
@@ -352,12 +453,22 @@ def main() -> None:
                     raise
                 finally:
                     page.close()
+                    context.close()
                     process.terminate()
                     try:
                         process.wait(timeout=3)
                     except subprocess.TimeoutExpired:
                         process.kill()
             summary[str(difficulty)] = level_summary
+            if args.interaction is None:
+                fingerprints = {
+                    value["initial_browser_run_world_fingerprint"]
+                    for value in level_summary.values()
+                }
+                if len(fingerprints) != 1:
+                    raise AssertionError(
+                        f"difficulty {difficulty} interaction modes did not share one generated world: {fingerprints}"
+                    )
         browser.close()
     if args.all_difficulties:
         output = {
@@ -365,6 +476,7 @@ def main() -> None:
             "mechanic": mechanic,
             "time_mode": args.time_mode,
             "model_delay_ms": args.model_delay_ms,
+            "seed": setup_seed,
             "difficulties": summary,
         }
     else:
@@ -374,6 +486,7 @@ def main() -> None:
             "mechanic": mechanic,
             "time_mode": args.time_mode,
             "model_delay_ms": args.model_delay_ms,
+            "seed": setup_seed,
             "difficulty": selected_difficulty,
             "interactions": summary[str(selected_difficulty)],
         }

@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import json
-import math
 import time
 from pathlib import Path
 
@@ -16,25 +15,30 @@ def _read(path: Path) -> dict:
 
 
 def _shot(page, out_dir: Path, mechanic: str, name: str) -> None:
-    out_dir.mkdir(parents=True, exist_ok=True); page.screenshot(path=str(out_dir / f"{mechanic}-{name}.png"), full_page=True)
+    out_dir.mkdir(parents=True, exist_ok=True)
+    page.screenshot(path=str(out_dir / f"{mechanic}-{name}.png"), full_page=True)
 
 
 def _wait_new(state_dir: Path, before: str) -> None:
     deadline = time.time() + 8
     while time.time() < deadline:
-        if str(_read(state_dir / "ground_truth.json").get("challenge_id")) != before: return
+        if str(_read(state_dir / "ground_truth.json").get("challenge_id")) != before:
+            return
         time.sleep(.05)
     raise AssertionError("dollhouse challenge did not regenerate")
 
 
 def fail_once(page, state_dir: Path, out_dir: Path, mechanic: str) -> None:
-    if mechanic != MECHANIC_ID: raise AssertionError(mechanic)
-    truth = _read(state_dir / "ground_truth.json"); before = str(truth["challenge_id"])
-    _drag(page, truth, "mini", truth["parcel"]["initial_center"], [[28, 50]], steps=16)
-    expect(page.locator(".doll-collision[data-visible='true']")).to_be_visible(); expect(page.locator(".readout")).to_contain_text("CONTACT")
-    _shot(page, out_dir, mechanic, "canonical-collision-negative-run")
-    page.locator(".doll-submit").click(); _wait_new(state_dir, before)
-    expect(page.locator(".dollhouse-captcha[data-fresh-failure='true']")).to_be_visible(timeout=8_000); expect(page.locator(".readout")).to_contain_text("FAIL"); _shot(page, out_dir, mechanic, "fail-fresh-room")
+    if mechanic != MECHANIC_ID:
+        raise AssertionError(mechanic)
+    truth = _read(state_dir / "ground_truth.json")
+    before = str(truth["challenge_id"])
+    # Invalid certification is intentionally separate from the clean solve.
+    page.locator(".doll-submit").click()
+    _wait_new(state_dir, before)
+    expect(page.locator(".dollhouse-captcha[data-fresh-failure='true']")).to_be_visible(timeout=8_000)
+    expect(page.locator(".readout")).to_contain_text("FAIL")
+    _shot(page, out_dir, mechanic, "fail-fresh-room")
 
 
 def _project(view: dict, point: list[float]) -> list[float]:
@@ -43,28 +47,74 @@ def _project(view: dict, point: list[float]) -> list[float]:
 
 
 def _screen(box: dict, view: dict, point: list[float]) -> tuple[float, float]:
-    projected = _project(view, point); return box["x"] + projected[0] / view["canvas"]["width"] * box["width"], box["y"] + projected[1] / view["canvas"]["height"] * box["height"]
+    projected = _project(view, point)
+    return box["x"] + projected[0] / view["canvas"]["width"] * box["width"], box["y"] + projected[1] / view["canvas"]["height"] * box["height"]
 
 
 def _drag(page, truth: dict, view_id: str, start: list[float], waypoints: list[list[float]], steps: int = 10) -> None:
-    view = next(item for item in truth["views"] if item["id"] == view_id); canvas = page.locator(f'.doll-canvas[data-view-id="{view_id}"]'); box = canvas.bounding_box()
-    if not box: raise AssertionError(f"{view_id} projection canvas missing")
-    page.mouse.move(*_screen(box, view, start)); page.mouse.down()
-    for point in waypoints: page.mouse.move(*_screen(box, view, point), steps=steps); page.wait_for_timeout(35)
-    page.mouse.up(); page.wait_for_timeout(80)
+    view = next(item for item in truth["views"] if item["id"] == view_id)
+    canvas = page.locator(f'.doll-canvas[data-view-id="{view_id}"]')
+    box = canvas.bounding_box()
+    if not box:
+        raise AssertionError(f"{view_id} projection canvas missing")
+    page.mouse.move(*_screen(box, view, start))
+    page.mouse.down()
+    for point in waypoints:
+        page.mouse.move(*_screen(box, view, point), steps=steps)
+        page.wait_for_timeout(35)
+    page.mouse.up()
+    page.wait_for_timeout(80)
+
+
+def _gates(truth: dict) -> list[dict]:
+    return ([truth["gate"]] if truth.get("gate") else []) + list(truth.get("additional_gates") or [])
+
+
+def _proxy(page, *, kind: str, gate_id: str | None = None) -> None:
+    selector = f'.doll-route-card[data-proxy-kind="{kind}"]'
+    if gate_id:
+        selector += f'[data-gate-id="{gate_id}"]'
+    page.locator(selector).click()
+    page.wait_for_timeout(80)
 
 
 def solve(page, state_dir: Path, out_dir: Path, mechanic: str) -> None:
-    if mechanic != MECHANIC_ID: raise AssertionError(mechanic)
+    if mechanic != MECHANIC_ID:
+        raise AssertionError(mechanic)
     truth = _read(state_dir / "ground_truth.json")
-    # Move one canonical gate through the giant projection; all copies update.
-    _drag(page, truth, "giant", truth["gate"]["center"], truth["solver_waypoints"]["gate"], steps=14)
-    expect(page.locator(".doll-gate-value")).to_contain_text("PARKED"); _shot(page, out_dir, mechanic, "giant-scale-gate-reposition")
-    _drag(page, truth, "mini", truth["parcel"]["initial_center"], truth["solver_waypoints"]["scale_0"], steps=18)
-    expect(page.locator(".doll-scale-value")).to_contain_text("HUMAN"); _shot(page, out_dir, mechanic, "mini-to-human-frame-transfer")
-    _drag(page, truth, "human", truth["portals"][0]["center"], truth["solver_waypoints"]["scale_1"], steps=12)
-    expect(page.locator(".doll-scale-value")).to_contain_text("GIANT"); _shot(page, out_dir, mechanic, "human-to-giant-frame-transfer")
-    _drag(page, truth, "giant", truth["portals"][1]["center"], truth["solver_waypoints"]["scale_2"], steps=12)
-    expect(page.locator(".doll-delivered[data-visible='true']")).to_be_visible(); state = page.evaluate("() => ({delivered:window.recursiveDollhouseSmugglingModel.delivered,scale:window.recursiveDollhouseSmugglingModel.parcelScale,transitions:window.recursiveDollhouseSmugglingModel.transitions,views:[...window.recursiveDollhouseSmugglingModel.viewsUsed].sort(),collisions:window.recursiveDollhouseSmugglingModel.collisions,resets:window.recursiveDollhouseSmugglingModel.resets})")
-    if not state["delivered"] or state["scale"] != 2 or len(state["transitions"]) != 2 or state["views"] != ["giant", "human", "mini"] or state["collisions"] != 0 or state["resets"] != 0: raise AssertionError(f"nested world clean solve was incomplete: {state}")
-    _shot(page, out_dir, mechanic, "solved-giant-bay"); page.locator(".doll-submit").click(); expect(page.locator(".readout")).to_have_text("PASS", timeout=8_000)
+    interaction = str((truth.get("control_condition") or {}).get("interaction") or "full")
+    required_gates = set((truth["requirements"].get("required_gate_ids") or (["gate"] if truth.get("gate") else [])))
+    for gate in _gates(truth):
+        if gate["id"] not in required_gates or gate.get("initially_parked"):
+            continue
+        if interaction == "simplified":
+            _proxy(page, kind="gate", gate_id=gate["id"])
+        else:
+            _drag(page, truth, gate["movable_in_view"], gate["center"], truth["solver_waypoints"][gate["id"]], steps=14)
+        _shot(page, out_dir, mechanic, f"{gate['id']}-reposition")
+    if required_gates:
+        expect(page.locator(".doll-gate-value")).to_contain_text("PARKED")
+
+    starts = {0: truth["parcel"]["initial_center"], 1: truth["portals"][0]["center"], 2: truth["portals"][1]["center"]}
+    views = {0: "mini", 1: "human", 2: "giant"}
+    scale = int(truth["parcel"]["initial_scale"])
+    while scale < 2:
+        if interaction == "simplified":
+            _proxy(page, kind="parcel")
+        else:
+            _drag(page, truth, views[scale], starts[scale], truth["solver_waypoints"][f"scale_{scale}"], steps=18 if scale == 0 else 12)
+        scale += 1
+        _shot(page, out_dir, mechanic, f"scale-{scale}-transfer")
+    if interaction == "simplified":
+        _proxy(page, kind="parcel")
+    else:
+        _drag(page, truth, "giant", starts[2], truth["solver_waypoints"]["scale_2"], steps=12)
+    expect(page.locator(".doll-delivered[data-visible='true']")).to_be_visible()
+    state = page.evaluate("() => ({delivered:window.recursiveDollhouseSmugglingModel.delivered,scale:window.recursiveDollhouseSmugglingModel.parcelScale,transitions:window.recursiveDollhouseSmugglingModel.transitions,views:[...window.recursiveDollhouseSmugglingModel.viewsUsed].sort(),collisions:window.recursiveDollhouseSmugglingModel.collisions,resets:window.recursiveDollhouseSmugglingModel.resets})")
+    required_portals = truth["requirements"].get("required_portal_ids") or ["frame-mini-human", "frame-human-giant"]
+    required_views = truth["requirements"].get("required_views") or ["mini", "human", "giant"]
+    if not state["delivered"] or state["scale"] != 2 or state["transitions"] != required_portals or state["views"] != sorted(required_views) or state["collisions"] != 0 or state["resets"] != 0:
+        raise AssertionError(f"nested world clean solve was incomplete: {state}")
+    _shot(page, out_dir, mechanic, "solved-giant-bay")
+    page.locator(".doll-submit").click()
+    expect(page.locator(".readout")).to_have_text("PASS", timeout=8_000)

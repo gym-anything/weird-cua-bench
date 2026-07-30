@@ -112,17 +112,17 @@ def _wind_sim(
     phase: float,
     pods: list[dict[str, Any]],
     physics: dict[str, Any],
+    fan_x: tuple[float, ...],
 ) -> dict[str, list[tuple[float, float, int]]]:
     """Author two routes with the same shared spooling/thermal plant used by the UI."""
-    commands = [0, 0, 0, 0]
-    actual = [0.0, 0.0, 0.0, 0.0]
-    heat = [0.0, 0.0, 0.0, 0.0]
+    commands = [0 for _ in fan_x]
+    actual = [0.0 for _ in fan_x]
+    heat = [0.0 for _ in fan_x]
     events: dict[int, list[dict[str, int]]] = {}
     for item in plan:
         events.setdefault(int(item["tick"]), []).append(item)
     bodies = {item["id"]: {key: float(item[key]) for key in ("x", "y", "vx", "vy")} for item in pods}
     samples: dict[str, list[tuple[float, float, int]]] = {item["id"]: [] for item in pods}
-    fan_x = (205.0, 365.0, 525.0, 685.0)
     for tick in range(ticks):
         for item in events.get(tick, []):
             commands[int(item["fan"])] = int(item["power"])
@@ -148,18 +148,49 @@ def _wind_sim(
 def _wind(task: dict[str, Any], seed: str):
     mechanic = "wind_tunnel_seed_courier"
     rng, public, truth = _identity(mechanic, task, seed)
+    condition = task.get("_control_condition")
+    parameters = dict((condition or {}).get("difficulty_parameters") or {})
+    if condition:
+        challenge_id = hashlib.sha256(
+            f"{seed}|{mechanic}|d{condition['difficulty']}|{task.get('id')}".encode()
+        ).hexdigest()[:12]
+        public["challenge_id"] = challenge_id
+        truth["challenge_id"] = challenge_id
     phase = round(rng.random() * math.tau, 5)
-    fan_x = (205, 365, 525, 685)
-    pods = [
+    all_fan_x = (205, 365, 525, 685)
+    fan_count = int(parameters.get("fan_count", 4))
+    gate_count = int(parameters.get("gate_count", 4))
+    pod_count = int(parameters.get("pod_count", 2))
+    if not 2 <= fan_count <= 4 or not 2 <= gate_count <= 5 or not 1 <= pod_count <= 2:
+        raise ValueError("wind courier profile is outside supported pod, fan, or gate counts")
+    raw_fan_x = parameters.get("fan_x")
+    fan_x = tuple(float(value) for value in raw_fan_x) if raw_fan_x is not None else all_fan_x[:fan_count]
+    if len(fan_x) != fan_count:
+        raise ValueError("wind courier fan count does not match its physical fan wall")
+    default_gate_x = (285, 445, 605, 765)
+    raw_gate_x = parameters.get("gate_x")
+    if raw_gate_x is None:
+        gate_x = default_gate_x[:gate_count]
+    else:
+        gate_x = tuple(float(value) for value in raw_gate_x)
+    if len(gate_x) != gate_count:
+        raise ValueError("wind courier gate count does not match its air corridor")
+    all_pods = [
         {"id": "thistle", "x": 76.0, "y": 166.0, "vx": 2.48, "vy": 0.0, "response": 1.0, "gust_phase": 0.0, "color": "#f4c84d"},
         {"id": "acorn", "x": -142.0, "y": 314.0, "vx": 2.18, "vy": 0.0, "response": 0.72, "gust_phase": 1.7, "color": "#a85b39"},
     ]
+    pods = copy.deepcopy(all_pods[:pod_count])
     physics = {
-        "tick_ms": 38, "ticks": 466, "phase": phase,
-        "fan_accel": 0.030, "drag": 0.968, "pod_radius": 11,
-        "spool_rate": 0.15, "heat_rate": 0.006, "cool_rate": 0.014,
-        "trip_heat": 1.0,
+        "tick_ms": int(parameters.get("tick_ms", 38)), "ticks": int(parameters.get("ticks", 466)), "phase": phase,
+        "fan_accel": float(parameters.get("fan_accel", 0.030)), "drag": float(parameters.get("drag", 0.968)), "pod_radius": int(parameters.get("pod_radius", 11)),
+        "spool_rate": float(parameters.get("spool_rate", 0.15)), "heat_rate": float(parameters.get("heat_rate", 0.006)), "cool_rate": float(parameters.get("cool_rate", 0.014)),
+        "trip_heat": float(parameters.get("trip_heat", 1.0)),
     }
+    amplitudes = tuple(int(value) for value in (parameters.get("gate_amplitudes") or (14, 17, 20)))
+    angular_rates = tuple(float(value) for value in (parameters.get("gate_angular_rates") or (0.061, 0.073, 0.087)))
+    half_gap = int(parameters.get("gate_half_gap", 31))
+    if not amplitudes or not angular_rates or half_gap <= int(physics["pod_radius"]):
+        raise ValueError("wind courier gate profile is invalid")
     plan: list[dict[str, int]] = []
     for pod in pods:
         for index, center in enumerate(fan_x):
@@ -171,28 +202,30 @@ def _wind(task: dict[str, Any], seed: str):
                 {"tick": off_tick, "fan": index, "power": 0},
             ))
     plan.sort(key=lambda item: (item["tick"], item["fan"]))
-    samples = _wind_sim(plan, int(physics["ticks"]), phase, pods, physics)
+    samples = _wind_sim(plan, int(physics["ticks"]), phase, pods, physics, fan_x)
     gates = []
-    for index, gx in enumerate((285, 445, 605, 765)):
+    for index, gx in enumerate(gate_x):
         slots = []
         for pod in pods:
             sample = min(samples[pod["id"]], key=lambda item: abs(item[0] - gx))
-            amplitude = rng.choice((14, 17, 20))
-            angular_rate = rng.choice((0.061, 0.073, 0.087))
+            amplitude = rng.choice(amplitudes)
+            angular_rate = rng.choice(angular_rates)
             gate_phase = round(rng.random() * math.tau, 5)
             base_y = sample[1] - amplitude * math.sin(sample[2] * angular_rate + gate_phase)
             slots.append({
                 "pod_id": pod["id"], "base_y": round(base_y, 3),
                 "amplitude": amplitude, "angular_rate": angular_rate,
-                "phase": gate_phase, "half_gap": 31,
+                "phase": gate_phase, "half_gap": half_gap,
             })
         gates.append({
             "id": f"gate-{index + 1}", "x": gx, "slots": slots,
         })
+    dock_x = parameters.get("dock_x", 855 if gate_count == 4 else gate_x[-1] + 90.0)
+    dock_radius = int(parameters.get("dock_radius", 32))
     docks = []
     for pod in pods:
-        sample = min(samples[pod["id"]], key=lambda item: abs(item[0] - 855))
-        docks.append({"pod_id": pod["id"], "x": 855, "y": round(sample[1], 2), "radius": 32})
+        sample = min(samples[pod["id"]], key=lambda item: abs(item[0] - dock_x))
+        docks.append({"pod_id": pod["id"], "x": dock_x, "y": round(sample[1], 2), "radius": dock_radius})
     public.update({
         "generator": {"name": "dual_pod_shared_wind_field_v3", "variant_count": 2**8 * 10**10},
         "canvas": {"width": 900, "height": 480},
@@ -203,6 +236,9 @@ def _wind(task: dict[str, Any], seed: str):
         "docks": docks,
     })
     truth.update({"plan": plan, "gates": gates, "physics": physics, "docks": docks})
+    if condition:
+        public["control_condition"] = copy.deepcopy(condition)
+        truth["control_condition"] = copy.deepcopy(condition)
     return public, truth
 
 

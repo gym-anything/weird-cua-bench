@@ -126,6 +126,14 @@
       (event.clientY - rect.top) / rect.height * canvas.height,
     ];
   }
+  function depthRail(canvas) {
+    return {
+      x: 28,
+      y: canvas.height - 27,
+      width: canvas.width - 56,
+      height: 16,
+    };
+  }
   function clearFresh() {
     document.querySelector(".tomo-fresh")?.remove();
     document.querySelector(".tomo-captcha")?.removeAttribute(
@@ -135,23 +143,29 @@
   function setMessage(message, status = "idle") {
     model.helpers.setReadout(message, status);
   }
-  function observe() {
+  function withInputSource(details, inputSource) {
+    return model.controlled && inputSource
+      ? { ...details, input_source: inputSource }
+      : details;
+  }
+  function observe(inputSource = null) {
     if (model.caseLocked) return;
     clearFresh();
     const records = intersections(model.axis, model.offset, model.rotation);
     model.lastRecords = records;
-    record("slice_observation", {
+    record("slice_observation", withInputSource({
       axis: model.axis,
       offset: round(model.offset),
       rotation: model.rotation,
       records,
       digest: digest(records),
-    });
+    }, inputSource));
     model.observations++;
     if (records.some((r) => r.material === "hot")) {
       model.targetSignatures.add(
         `${model.rotation}:${model.axis}:${round(model.offset)}`,
       );
+      model.targetRotations.add(model.rotation);
       model.targetHits = model.targetSignatures.size;
     }
     drawSlice();
@@ -174,10 +188,14 @@
       rotations.size >= model.state.requirements.min_rotations &&
       offsets.length && Math.max(...offsets) - Math.min(...offsets) >=
         model.state.requirements.min_offset_span &&
-      model.targetHits >= model.state.requirements.min_target_observations;
+      model.targetHits >= model.state.requirements.min_target_observations &&
+      model.targetRotations.size >=
+        (model.state.requirements.min_target_rotations || 0);
     if (!ready) {
       setMessage(
-        "LOCK REFUSED · COLLECT SEPARATED HOT SLICES ACROSS TWO CASE ORIENTATIONS",
+        model.state.requirements.min_target_rotations
+          ? "LOCK REFUSED · COLLECT HOT SLICES ACROSS THE REQUIRED CASE ORIENTATIONS"
+          : "LOCK REFUSED · COLLECT THE REQUIRED SEPARATED SLICES AND CASE ORIENTATIONS",
         "error",
       );
       return;
@@ -192,6 +210,70 @@
       "CASE LOCKED AT SURGERY ORIENTATION · PROBE VIEWS NOW CO-REGISTERED",
       "pending",
     );
+  }
+  function rotateCase(inputSource = null) {
+    if (model.caseLocked) return;
+    const from = model.rotation;
+    model.rotation = (model.rotation + 1) % 4;
+    record(
+      "rotate_case",
+      withInputSource({ from, to: model.rotation }, inputSource),
+    );
+    observe(inputSource === "case_handle_drag" ? "direct_slice_drag" : "slice_controls");
+  }
+  function directSliceStart(event) {
+    if (model.caseLocked || model.completed || model.submitting) return;
+    clearFresh();
+    const screen = canvasPoint(event.currentTarget, event);
+    const isRotateHandle = screen[0] >= 442 && screen[1] <= 64;
+    const rail = depthRail(event.currentTarget);
+    const isDepthRail = screen[0] >= rail.x && screen[0] <= rail.x + rail.width &&
+      screen[1] >= rail.y - 7 && screen[1] <= rail.y + rail.height + 7;
+    model.sliceDrag = {
+      kind: isRotateHandle ? "rotate" : isDepthRail ? "y-depth" : "slice",
+      start: screen,
+      canvas: event.currentTarget,
+      lastAxis: null,
+      lastOffset: null,
+    };
+    event.currentTarget.setPointerCapture?.(event.pointerId);
+  }
+  function directSliceMove(event) {
+    const drag = model.sliceDrag;
+    if (!drag || event.currentTarget !== drag.canvas || model.completed) return;
+    const screen = canvasPoint(event.currentTarget, event);
+    if (drag.kind === "rotate") return;
+    const dx = screen[0] - drag.start[0], dy = screen[1] - drag.start[1];
+    if (Math.hypot(dx, dy) < 5) return;
+    const axis = drag.kind === "y-depth"
+      ? "y"
+      : Math.abs(dx) >= Math.abs(dy) ? "x" : "z";
+    const rawOffset = axis === "x"
+      ? screen[0] / event.currentTarget.width * 6 - 3
+      : axis === "y"
+      ? (screen[0] - depthRail(event.currentTarget).x) /
+        depthRail(event.currentTarget).width * 6 - 3
+      : 3 - screen[1] / event.currentTarget.height * 6;
+    const offset = Math.max(
+      model.state.slice.minimum,
+      Math.min(model.state.slice.maximum, Math.round(rawOffset / .25) * .25),
+    );
+    if (axis === drag.lastAxis && offset === drag.lastOffset) return;
+    drag.lastAxis = axis;
+    drag.lastOffset = offset;
+    model.axis = axis;
+    model.offset = offset;
+    observe("direct_slice_drag");
+  }
+  function directSliceEnd(event) {
+    const drag = model.sliceDrag;
+    if (!drag || event.currentTarget !== drag.canvas) return;
+    const screen = canvasPoint(event.currentTarget, event);
+    if (
+      drag.kind === "rotate" &&
+      Math.hypot(screen[0] - drag.start[0], screen[1] - drag.start[1]) >= 8
+    ) rotateCase("case_handle_drag");
+    model.sliceDrag = null;
   }
   function drawSlice() {
     const canvas = model.sliceCanvas, ctx = canvas.getContext("2d");
@@ -254,6 +336,37 @@
       18,
       18,
     );
+    if (model.interaction === "full") {
+      ctx.save();
+      ctx.fillStyle = "#071419e8";
+      ctx.strokeStyle = model.state.palette.target;
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.arc(canvas.width - 45, 35, 24, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.stroke();
+      ctx.fillStyle = model.state.palette.target;
+      ctx.font = "700 15px ui-monospace";
+      ctx.fillText("↻", canvas.width - 51, 41);
+      ctx.fillStyle = "#d8fff7";
+      ctx.font = "700 8px ui-monospace";
+      ctx.fillText("DRAG", canvas.width - 60, 72);
+      const rail = depthRail(canvas);
+      ctx.fillStyle = "#071419e8";
+      ctx.strokeStyle = model.axis === "y" ? model.state.palette.target : "#6ff4db88";
+      ctx.lineWidth = 1;
+      ctx.fillRect(rail.x, rail.y, rail.width, rail.height);
+      ctx.strokeRect(rail.x, rail.y, rail.width, rail.height);
+      const depthX = rail.x + (model.offset - model.state.slice.minimum) /
+        (model.state.slice.maximum - model.state.slice.minimum) * rail.width;
+      ctx.fillStyle = model.axis === "y" ? model.state.palette.target : model.state.palette.scan;
+      ctx.fillRect(depthX - 3, rail.y + 2, 6, 12);
+      ctx.fillStyle = "#d8fff7";
+      ctx.font = "700 8px ui-monospace";
+      ctx.fillText("SURFACE: HORIZONTAL X · VERTICAL Z", 18, canvas.height - 42);
+      ctx.fillText("Y DEPTH RAIL · DRAG HORIZONTALLY", 35, canvas.height - 15);
+      ctx.restore();
+    }
   }
   function drawProbeView(viewId) {
     const canvas = document.querySelector(`.tomo-probe[data-view='${viewId}']`),
@@ -367,7 +480,7 @@
     if (Math.hypot(...axes.map((i) => mapped[i] - model.probe[i])) > .34) {
       return;
     }
-    model.drag = { viewId, canvas };
+    model.drag = { viewId, canvas, startingProbe: [...model.probe] };
     canvas.setPointerCapture?.(event.pointerId);
     record("probe_drag_start", { view_id: viewId, screen: screen.map(round) });
   }
@@ -389,6 +502,9 @@
       ...(hit ? { blocker: hit } : {}),
     });
     if (accepted) {
+      if (Math.hypot(...candidate.map((value, index) => value - model.drag.startingProbe[index])) > .1) {
+        model.movingViews.add(model.drag.viewId);
+      }
       model.probe = candidate;
       document.querySelector(".tomo-local-fail")?.setAttribute(
         "data-visible",
@@ -456,6 +572,7 @@
       mechanic_id: model.state.mechanic_id,
       task_id: model.state.task_id,
       challenge_id: model.state.challenge_id,
+      ...(model.controlled ? { interaction: model.interaction } : {}),
       events: model.events,
       extracted: model.completed,
       captured: model.captured,
@@ -469,6 +586,9 @@
         ),
       ].sort(),
       target_observations: model.targetHits,
+      ...(model.state.requirements.min_target_rotations
+        ? { target_rotations: [...model.targetRotations].sort((a, b) => a - b) }
+        : {}),
       damages: model.damages,
       resets: model.resets,
       views_used: [
@@ -478,6 +598,9 @@
           ),
         ),
       ].sort(),
+      ...(model.state.requirements.min_moving_views
+        ? { moving_views: [...model.movingViews].sort() }
+        : {}),
     };
     try {
       const response = await fetch("/result", {
@@ -516,17 +639,21 @@
   }
   async function render(state, helpers) {
     document.body.dataset.mechanic = "tomographic-baggage-surgery";
+    const interaction = state.control_condition?.interaction || "simplified";
+    const slicerControls = interaction === "simplified"
+      ? `<div class="tomo-slice-controls"><div class="tomo-axis-buttons">${
+        state.slice.axes.map((a) =>
+          `<button data-axis="${a}">${a.toUpperCase()}</button>`
+        ).join("")
+      }</div><button class="tomo-offset" data-delta="-.25">− PLANE</button><button class="tomo-offset" data-delta=".25">+ PLANE</button><button class="tomo-rotate">↻ CASE 90°</button><button class="tomo-observe">CAPTURE SLICE</button><button class="tomo-lock">LOCK FOR SURGERY</button></div>`
+      : `<div class="tomo-direct-slice-controls"><span><b>DIRECT SLICE SURFACE</b> · DRAG HORIZONTALLY FOR X, VERTICALLY FOR Z, OR USE THE LOWER Y-DEPTH RAIL</span><span><b>CASE HANDLE</b> · DRAG THE ↻ RING IN THE SCAN</span><button class="tomo-lock">LOCK FOR SURGERY</button></div>`;
     helpers.app.innerHTML = `<section class="tomo-captcha" data-challenge-id="${
       clean(state.challenge_id)
-    }"><header class="tomo-head"><div><span>VOLUMETRIC CUSTOMS / CASE ${
+    }" data-interaction="${clean(interaction)}"><header class="tomo-head"><div><span>VOLUMETRIC CUSTOMS / CASE ${
       clean(state.challenge_id)
     }</span><h1>${
       clean(state.prompt)
-    }</h1></div><p>OPAQUE CASE · LIVE PLANE INTERSECTIONS<br><b>NO DIRECT VOLUME VIEW</b></p></header><main class="tomo-main"><section class="tomo-slicer"><div class="tomo-panel-title"><b>X-RAY SLICE TABLE</b><span>ROTATE THE CASE, NOT THE ANSWER</span></div><canvas class="tomo-slice" width="520" height="245"></canvas><div class="tomo-slice-controls"><div class="tomo-axis-buttons">${
-      state.slice.axes.map((a) =>
-        `<button data-axis="${a}">${a.toUpperCase()}</button>`
-      ).join("")
-    }</div><button class="tomo-offset" data-delta="-.25">− PLANE</button><button class="tomo-offset" data-delta=".25">+ PLANE</button><button class="tomo-rotate">↻ CASE 90°</button><button class="tomo-observe">CAPTURE SLICE</button><button class="tomo-lock">LOCK FOR SURGERY</button></div><div class="tomo-stats"><span>AXIS <b class="tomo-axis-value">Z</b></span><span>OFFSET <b class="tomo-offset-value">0.00</b></span><span>ROTATION <b class="tomo-rotation-value">0°</b></span><span>SLICES <b class="tomo-observation-value">0</b></span></div></section><section class="tomo-surgery"><div class="tomo-panel-title"><b>ORTHOGONAL PROBE REGISTRATION</b><span>DRAG THE SAME BODY IN MULTIPLE VIEWS</span></div><div class="tomo-probe-grid">${
+    }</h1></div><p>OPAQUE CASE · LIVE PLANE INTERSECTIONS<br><b>NO DIRECT VOLUME VIEW</b></p></header><main class="tomo-main"><section class="tomo-slicer"><div class="tomo-panel-title"><b>X-RAY SLICE TABLE</b><span>ROTATE THE CASE, NOT THE ANSWER</span></div><canvas class="tomo-slice" width="520" height="245"></canvas>${slicerControls}<div class="tomo-stats"><span>AXIS <b class="tomo-axis-value">Z</b></span><span>OFFSET <b class="tomo-offset-value">0.00</b></span><span>ROTATION <b class="tomo-rotation-value">0°</b></span><span>SLICES <b class="tomo-observation-value">0</b></span></div></section><section class="tomo-surgery"><div class="tomo-panel-title"><b>ORTHOGONAL PROBE REGISTRATION</b><span>DRAG THE SAME BODY IN MULTIPLE VIEWS</span></div><div class="tomo-probe-grid">${
       Object.keys(state.views).map((v) =>
         `<canvas class="tomo-probe" data-view="${v}" width="330" height="224"></canvas>`
       ).join("")
@@ -536,6 +663,8 @@
     model = {
       state,
       helpers,
+      interaction,
+      controlled: Boolean(state.control_condition),
       events: [],
       axis: "z",
       offset: 0,
@@ -545,43 +674,53 @@
       observations: 0,
       targetHits: 0,
       targetSignatures: new Set(),
+      targetRotations: new Set(),
       probe: [...state.probe.initial],
       captured: false,
       completed: false,
       damages: 0,
       resets: 0,
+      movingViews: new Set(),
       drag: null,
+      sliceDrag: null,
       submitting: false,
       terminal: false,
       sliceCanvas: document.querySelector(".tomo-slice"),
     };
     window.tomographicBaggageSurgeryModel = model;
-    document.querySelectorAll(".tomo-axis-buttons button").forEach((button) =>
-      button.addEventListener("click", () => {
-        model.axis = button.dataset.axis;
-        observe();
-      })
-    );
-    document.querySelectorAll(".tomo-offset").forEach((button) =>
-      button.addEventListener("click", () => {
-        model.offset = Math.max(
-          state.slice.minimum,
-          Math.min(
-            state.slice.maximum,
-            model.offset + Number(button.dataset.delta),
-          ),
-        );
-        observe();
-      })
-    );
-    document.querySelector(".tomo-rotate").addEventListener("click", () => {
-      if (model.caseLocked) return;
-      const from = model.rotation;
-      model.rotation = (model.rotation + 1) % 4;
-      record("rotate_case", { from, to: model.rotation });
-      observe();
-    });
-    document.querySelector(".tomo-observe").addEventListener("click", observe);
+    if (interaction === "simplified") {
+      document.querySelectorAll(".tomo-axis-buttons button").forEach((button) =>
+        button.addEventListener("click", () => {
+          model.axis = button.dataset.axis;
+          observe("slice_controls");
+        })
+      );
+      document.querySelectorAll(".tomo-offset").forEach((button) =>
+        button.addEventListener("click", () => {
+          model.offset = Math.max(
+            state.slice.minimum,
+            Math.min(
+              state.slice.maximum,
+              model.offset + Number(button.dataset.delta),
+            ),
+          );
+          observe("slice_controls");
+        })
+      );
+      document.querySelector(".tomo-rotate").addEventListener(
+        "click",
+        () => rotateCase("case_rotate_button"),
+      );
+      document.querySelector(".tomo-observe").addEventListener(
+        "click",
+        () => observe("slice_controls"),
+      );
+    } else {
+      model.sliceCanvas.addEventListener("pointerdown", directSliceStart);
+      model.sliceCanvas.addEventListener("pointermove", directSliceMove);
+      model.sliceCanvas.addEventListener("pointerup", directSliceEnd);
+      model.sliceCanvas.addEventListener("pointercancel", directSliceEnd);
+    }
     document.querySelector(".tomo-lock").addEventListener("click", lockCase);
     document.querySelector(".tomo-reset").addEventListener("click", resetProbe);
     document.querySelector(".tomo-capture").addEventListener("click", capture);

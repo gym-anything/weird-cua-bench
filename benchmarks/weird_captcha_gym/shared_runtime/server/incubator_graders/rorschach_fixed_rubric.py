@@ -33,6 +33,31 @@ def _blot_at(point: tuple[int, int], rects: list[dict[str, Any]]) -> str | None:
     return None
 
 
+def _control_condition(
+    ground_truth: dict[str, Any], public_state: dict[str, Any],
+) -> tuple[dict[str, Any] | None, str | None]:
+    condition = ground_truth.get("control_condition")
+    if condition is None:
+        if public_state.get("control_condition") is not None:
+            return None, "public material control condition is unexpected"
+        return None, None
+    if not isinstance(condition, dict) or public_state.get("control_condition") != condition:
+        return None, "public material control condition differs from the replay contract"
+    try:
+        difficulty = int(condition.get("difficulty"))
+        interaction = str(condition.get("interaction") or "")
+        parameters = {key: int(value) for key, value in dict(condition.get("difficulty_parameters") or {}).items()}
+    except (TypeError, ValueError) as exc:
+        return None, f"material control condition is malformed: {exc}"
+    expected_keys = {
+        "specimen_count", "required_tool_count", "ticks_per_cycle", "tick_ms",
+        "fold_min_distance", "pressure_min_ms",
+    }
+    if difficulty not in {1, 2, 3, 4, 5} or interaction not in {"simplified", "full"} or set(parameters) != expected_keys:
+        return None, "material control condition is invalid"
+    return condition, None
+
+
 def grade(payload: dict[str, Any], ground_truth: dict[str, Any], public_state: dict[str, Any]) -> dict[str, Any]:
     challenge_id = str(ground_truth.get("challenge_id") or "")
     task_id = str(ground_truth.get("task_id") or "")
@@ -42,28 +67,49 @@ def grade(payload: dict[str, Any], ground_truth: dict[str, Any], public_state: d
         return _fail("stale challenge")
     if not task_id or str(payload.get("task_id") or "") != task_id or str(public_state.get("task_id") or "") != task_id:
         return _fail("task identity mismatch")
+    condition, condition_error = _control_condition(ground_truth, public_state)
+    if condition_error:
+        return _fail(condition_error)
+    interaction = str((condition or {}).get("interaction") or "")
+    if condition is not None and payload.get("interaction") != interaction:
+        return _fail("material transcript interaction differs from the selected task")
     try:
         required_tools = [str(tool) for tool in ground_truth.get("required_tools") or []]
-        if len(required_tools) != 2 or len(set(required_tools)) != 2 or not set(required_tools).issubset({"FOLD", "PRESSURE", "COOL"}):
+        required_tool_count = 2 if condition is None else int(condition["difficulty_parameters"]["required_tool_count"])
+        if len(required_tools) != required_tool_count or len(set(required_tools)) != required_tool_count or not set(required_tools).issubset({"FOLD", "PRESSURE", "COOL"}):
             raise ValueError("required material tools are malformed")
         if public_state.get("required_tools") != ground_truth.get("required_tools") or public_state.get("cycles") != ground_truth.get("cycles"):
             raise ValueError("public response rig differs from hidden contract")
+        tick_ms = int(public_state.get("tick_ms"))
+        if tick_ms <= 0:
+            raise ValueError("response cadence is malformed")
         stage = dict(ground_truth.get("stage") or {})
         width, height = int(stage["width"]), int(stage["height"])
         rects = [dict(item) for item in ground_truth.get("blot_rects") or []]
         blot_ids = [str(item["id"]) for item in rects]
-        if len(blot_ids) != 5 or len(set(blot_ids)) != 5:
-            raise ValueError("five material specimens are required")
+        specimen_count = 5 if condition is None else int(condition["difficulty_parameters"]["specimen_count"])
+        if len(blot_ids) != specimen_count or len(set(blot_ids)) != specimen_count:
+            raise ValueError("material specimen count differs from the selected difficulty")
         cycles = {(str(item["blot_id"]), str(item["tool"])): dict(item) for item in ground_truth.get("cycles") or []}
         required_pairs = {(blot_id, tool) for blot_id in blot_ids for tool in required_tools}
         if set(cycles) != required_pairs:
             raise ValueError("specimen-bound response cycles are incomplete")
         ticks_per_cycle = int(ground_truth.get("ticks_per_cycle"))
-        if ticks_per_cycle < 5 or any(len(cycle.get("frames") or []) != ticks_per_cycle for cycle in cycles.values()):
+        expected_ticks = ticks_per_cycle if condition is None else int(condition["difficulty_parameters"]["ticks_per_cycle"])
+        if ticks_per_cycle != expected_ticks or ticks_per_cycle < 5 or any(len(cycle.get("frames") or []) != ticks_per_cycle for cycle in cycles.values()):
             raise ValueError("response cycle frames are malformed")
         dock = dict(ground_truth.get("stamp_dock_rect") or {})
         fold_min_distance = int(ground_truth.get("fold_min_distance"))
         pressure_min_ms = int(ground_truth.get("pressure_min_ms"))
+        if condition is not None:
+            parameters = condition["difficulty_parameters"]
+            if (
+                tick_ms != int(parameters["tick_ms"])
+                or fold_min_distance != int(parameters["fold_min_distance"])
+                or pressure_min_ms != int(parameters["pressure_min_ms"])
+                or int(public_state.get("observations_required")) != specimen_count * required_tool_count
+            ):
+                raise ValueError("generated material contract differs from the selected difficulty")
     except (KeyError, TypeError, ValueError) as exc:
         return _fail(f"invalid specimen interrogation contract: {exc}")
 
@@ -86,6 +132,22 @@ def grade(payload: dict[str, Any], ground_truth: dict[str, Any], public_state: d
         if not isinstance(event, dict) or event.get("sequence") != sequence:
             return _fail(f"event {sequence} sequence mismatch")
         kind = str(event.get("kind") or "")
+        physical_sources = {
+            "fold_start": "direct_fold_sweep",
+            "fold_move": "direct_fold_sweep",
+            "fold_end": "direct_fold_sweep",
+            "fold_cancel": "direct_fold_sweep",
+            "pressure_down": "direct_pressure_hold",
+            "pressure_up": "direct_pressure_hold",
+            "pressure_cancel": "direct_pressure_hold",
+            "thermal_pulse": "direct_cooling_pulse",
+            "stamp_down": "direct_stamp_drag",
+            "stamp_move": "direct_stamp_drag",
+            "stamp_up": "direct_stamp_drag",
+        }
+        if condition is not None and kind in physical_sources:
+            if interaction != "full" or event.get("input_source") != physical_sources[kind]:
+                return _fail("material operation used the wrong interaction input")
         if kind == "reset":
             selected_id = None
             observed.clear()
@@ -107,6 +169,22 @@ def grade(payload: dict[str, Any], ground_truth: dict[str, Any], public_state: d
             continue
         if selected_id is None and kind not in {"stamp_down", "stamp_move", "stamp_up"}:
             return _fail("a specimen must be selected before using a material tool")
+
+        if kind == "proxy_probe":
+            tool = str(event.get("tool") or "")
+            if (
+                condition is None
+                or interaction != "simplified"
+                or event.get("input_source") != "labelled_tool_proxy"
+                or active is not None
+                or fold is not None
+                or pressure_down
+                or tool not in required_tools
+                or (selected_id, tool) in observed
+            ):
+                return _fail("material test proxy is not valid for the selected specimen")
+            ready_tool = tool
+            continue
 
         if kind == "fold_start":
             value = int(event.get("value"))
@@ -178,7 +256,7 @@ def grade(payload: dict[str, Any], ground_truth: dict[str, Any], public_state: d
             if event.get("blot_id") != blot_id or event.get("tool") != tool or event.get("tick") != tick or event.get("snapshot") != frames[tick - 1].get("snapshot"):
                 return _fail("specimen response sample was tampered or reordered")
             elapsed = int(event.get("elapsed_ms"))
-            if elapsed < tick * 65 or elapsed < active["elapsed"]:
+            if elapsed < tick * tick_ms or elapsed < active["elapsed"]:
                 return _fail("transient response was not observed long enough")
             active["elapsed"] = elapsed
             active["next_tick"] += 1
@@ -192,6 +270,22 @@ def grade(payload: dict[str, Any], ground_truth: dict[str, Any], public_state: d
                 return _fail("specimen response cycle identity mismatch")
             observed.add((blot_id, tool))
             active = None
+            continue
+        if kind == "proxy_stamp":
+            blot_id = str(event.get("blot_id") or "")
+            if (
+                condition is None
+                or interaction != "simplified"
+                or event.get("input_source") != "selected_card_stamp_proxy"
+                or active is not None
+                or fold is not None
+                or pressure_down
+                or observed != required_pairs
+                or blot_id != selected_id
+                or blot_id not in blot_ids
+            ):
+                return _fail("material stamp proxy is not valid for the loaded specimen")
+            stamped_id = blot_id
             continue
         if kind in {"stamp_down", "stamp_move", "stamp_up"}:
             try:

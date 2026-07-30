@@ -302,10 +302,18 @@ def _prototype_features(angle_deg: float, x_scale_milli: int) -> dict[str, dict[
     return {class_name: _extract_features(_transform_template(class_name, angle_deg, x_scale_milli)) for class_name in CLASSES}
 
 
-def _recognize(strokes: list[list[tuple[int, int]]], target: dict[str, Any], requirements: dict[str, int], width: int, height: int) -> dict[str, Any]:
+def _recognize(
+    strokes: list[list[tuple[int, int]]],
+    target: dict[str, Any],
+    requirements: dict[str, int],
+    vocabulary: tuple[str, ...],
+    width: int,
+    height: int,
+) -> dict[str, Any]:
     floating = [[(x / width, y / height) for x, y in stroke] for stroke in strokes]
     features = _extract_features(floating)
     prototypes = _prototype_features(float(target["pose"]["angle_deg"]), int(target["style"]["x_scale_milli"]))
+    prototypes = {class_name: prototypes[class_name] for class_name in vocabulary}
     scores = {class_name: round(_feature_score(features, prototype), 3) for class_name, prototype in prototypes.items()}
     target_class = str(target["class_name"])
     target_score = scores[target_class]
@@ -381,13 +389,35 @@ def _bind(payload: dict[str, Any], ground_truth: dict[str, Any], public_state: d
     return None
 
 
-def _contract(ground_truth: dict[str, Any], public_state: dict[str, Any]) -> tuple[int, int, dict[str, Any], dict[str, int]]:
+def _interaction_error(payload: dict[str, Any], ground_truth: dict[str, Any], public_state: dict[str, Any]) -> tuple[str | None, str | None]:
+    condition = ground_truth.get("control_condition")
+    if condition is None:
+        return None, None
+    if public_state.get("control_condition") != condition:
+        return "public interaction condition differs from robot-art contract", None
+    if not isinstance(condition, dict):
+        return "robot-art interaction condition is malformed", None
+    interaction = str(condition.get("interaction") or "")
+    source = {"simplified": "plot_clicks", "full": "continuous_pointer"}.get(interaction)
+    if source is None:
+        return "robot-art interaction condition is invalid", None
+    if payload.get("interaction_mode") != interaction:
+        return "robot-art drawing uses the wrong interaction input", None
+    return None, source
+
+
+def _contract(ground_truth: dict[str, Any], public_state: dict[str, Any]) -> tuple[int, int, dict[str, Any], dict[str, int], tuple[str, ...]]:
     for key in ("palette", "canvas", "target", "requirements"):
         if public_state.get(key) != ground_truth.get(key):
             raise ValueError(f"public {key} differs from hidden contract")
     public_vocab = [str(item).lower() for item in public_state.get("class_vocabulary") or []]
     hidden_vocab = [str(item) for item in ground_truth.get("class_vocabulary") or []]
-    if public_vocab != hidden_vocab or tuple(hidden_vocab) != CLASSES:
+    if (
+        public_vocab != hidden_vocab
+        or len(hidden_vocab) < 2
+        or len(set(hidden_vocab)) != len(hidden_vocab)
+        or any(item not in CLASSES for item in hidden_vocab)
+    ):
         raise ValueError("class vocabulary differs from recognizer corpus")
     canvas = ground_truth.get("canvas")
     target = ground_truth.get("target")
@@ -396,9 +426,9 @@ def _contract(ground_truth: dict[str, Any], public_state: dict[str, Any]) -> tup
         raise ValueError("canvas, target, or requirements are malformed")
     width = _integer(canvas.get("width"), "canvas width")
     height = _integer(canvas.get("height"), "canvas height")
-    if target.get("class_name") not in CLASSES or int(target.get("expected_strokes", 0)) != len(TEMPLATES[str(target.get("class_name"))]):
+    if target.get("class_name") not in hidden_vocab or int(target.get("expected_strokes", 0)) != len(TEMPLATES[str(target.get("class_name"))]):
         raise ValueError("target class topology is malformed")
-    return width, height, target, {key: int(value) for key, value in requirements.items()}
+    return width, height, target, {key: int(value) for key, value in requirements.items()}, tuple(hidden_vocab)
 
 
 def _summary(result: dict[str, Any], attempt_index: int) -> dict[str, Any]:
@@ -444,8 +474,11 @@ def grade(payload: dict[str, Any], ground_truth: dict[str, Any], public_state: d
     binding_error = _bind(payload, ground_truth, public_state)
     if binding_error:
         return _fail(binding_error)
+    interaction_error, input_source = _interaction_error(payload, ground_truth, public_state)
+    if interaction_error:
+        return _fail(interaction_error)
     try:
-        width, height, target, requirements = _contract(ground_truth, public_state)
+        width, height, target, requirements, vocabulary = _contract(ground_truth, public_state)
     except (KeyError, TypeError, ValueError) as exc:
         return _fail(f"invalid art-recognizer contract: {exc}")
     events = payload.get("events")
@@ -462,6 +495,8 @@ def grade(payload: dict[str, Any], ground_truth: dict[str, Any], public_state: d
     for sequence, event in enumerate(events, start=1):
         if not isinstance(event, dict) or event.get("sequence") != sequence:
             return _fail(f"event {sequence} has an invalid sequence")
+        if input_source is not None and event.get("input_source") != input_source:
+            return _fail("robot-art drawing uses the wrong interaction input")
         if terminal:
             return _fail("transcript continues after terminal review")
         kind = str(event.get("kind") or "")
@@ -537,7 +572,7 @@ def grade(payload: dict[str, Any], ground_truth: dict[str, Any], public_state: d
             if len(attempt_summaries) >= requirements["maximum_attempts"]:
                 return _fail(f"event {sequence} exceeds the review-attempt budget")
             replay_strokes = [stroke["points"] for stroke in strokes]
-            result = _recognize(replay_strokes, target, requirements, width, height)
+            result = _recognize(replay_strokes, target, requirements, vocabulary, width, height)
             if any(not stroke.get("dense") for stroke in strokes):
                 result = {**result, "accepted": False, "critique": "SPARSE_STROKE"}
             summary = _summary(result, len(attempt_summaries) + 1)

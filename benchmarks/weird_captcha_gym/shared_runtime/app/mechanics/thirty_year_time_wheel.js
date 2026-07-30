@@ -31,6 +31,16 @@
   const cloneDate = (date) => ({year: Number(date.year), month: Number(date.month), day: Number(date.day)});
   const sameDate = (first, second) => first.year === second.year && first.month === second.month && first.day === second.day;
 
+  function interactionMode() {
+    return model.state?.control_condition?.interaction || "full";
+  }
+
+  function requiredComponents() {
+    const configured = model.state?.required_components;
+    if (!Array.isArray(configured) || !configured.length) return COMPONENTS;
+    return configured.filter((component) => COMPONENTS.includes(component));
+  }
+
   function daysInMonth(year, month) {
     return new Date(Date.UTC(year, month, 0)).getUTCDate();
   }
@@ -146,23 +156,25 @@
         : "<b>REST</b><span>NO MOMENTUM</span><i>0 DETENTS</i>";
     }
     if (brake) brake.classList.toggle("is-live", Boolean(model.coast));
+    const required = requiredComponents();
     COMPONENTS.forEach((component) => {
       const lamp = document.querySelector(`[data-ring-proof="${component}"]`);
       lamp?.classList.toggle("is-lit", model.coverage.has(component));
+      lamp?.classList.toggle("is-required", required.includes(component));
     });
     const ready = sameDate(model.current, model.target)
-      && model.coverage.size === 3
+      && required.every((component) => model.coverage.has(component))
       && !model.coast;
     if (lock) lock.classList.toggle("is-ready", ready);
     paintRings();
   }
 
-  function applyDetent(component, direction, source) {
+  function applyDetent(component, direction, source, inputSource = null) {
     model.current = stepDate(model.current, component, direction);
     model.rotations[component] += direction * Number(model.state.detent_degrees || 12);
     if (source === "drag") model.coverage.add(component);
     if (source === "coast") model.coastDetents += 1;
-    record("detent", {source, component, direction});
+    record("detent", {source, component, direction, ...(inputSource ? {input_source: inputSource} : {})});
     updatePanels();
     const dial = document.querySelector(".time-wheel-dial");
     dial?.classList.remove("is-ticking");
@@ -205,7 +217,7 @@
   }
 
   function beginDrag(event) {
-    if (model.busy || model.terminal || model.coast || model.drag) return;
+    if (interactionMode() !== "full" || model.busy || model.terminal || model.coast || model.drag) return;
     document.querySelector(".time-verdict-fail")?.remove();
     document.querySelector(".time-wheel-captcha")?.classList.remove("is-fresh-fail");
     const dial = event.currentTarget;
@@ -213,6 +225,10 @@
     const component = ringForPointer(event, rect);
     if (!component) {
       model.helpers.setReadout("GRAB ONE OF THE THREE BRASS RINGS", "error");
+      return;
+    }
+    if (!requiredComponents().includes(component)) {
+      model.helpers.setReadout(`${component.toUpperCase()} RING IS NOT REQUIRED FOR THIS CLEARANCE`, "error");
       return;
     }
     event.preventDefault();
@@ -227,7 +243,7 @@
       lastDirection: 0,
       velocities: [],
     };
-    record("drag_start", {component});
+    record("drag_start", {component, input_source: "wheel_drag"});
     dial.dataset.dragging = component;
     model.helpers.setReadout(`${component.toUpperCase()} RING GRIPPED`, "idle");
     updatePanels();
@@ -252,7 +268,7 @@
       model.drag.accumulator -= direction * detent;
       model.drag.detents += 1;
       model.drag.lastDirection = direction;
-      applyDetent(model.drag.component, direction, "drag");
+      applyDetent(model.drag.component, direction, "drag", "wheel_drag");
     }
     paintRings();
   }
@@ -263,7 +279,7 @@
     event.currentTarget.releasePointerCapture?.(event.pointerId);
     event.currentTarget.dataset.dragging = "";
     model.drag = null;
-    record("drag_end", {component: drag.component, drag_detents: drag.detents});
+    record("drag_end", {component: drag.component, drag_detents: drag.detents, input_source: "wheel_drag"});
     paintRings();
     const recent = drag.velocities.filter((sample) => performance.now() - sample.at <= 180);
     const average = recent.length ? recent.reduce((sum, sample) => sum + sample.value, 0) / recent.length : 0;
@@ -296,6 +312,23 @@
       updatePanels();
       model.helpers.setReadout("BRAKE PRESSED · RINGS ALREADY STILL", "idle");
     }
+  }
+
+  function proxyDetent(component, direction) {
+    if (
+      interactionMode() !== "simplified"
+      || model.busy
+      || model.terminal
+      || model.coast
+      || model.drag
+      || !requiredComponents().includes(component)
+    ) return;
+    document.querySelector(".time-verdict-fail")?.remove();
+    document.querySelector(".time-wheel-captcha")?.classList.remove("is-fresh-fail");
+    record("drag_start", {component, input_source: "proxy_step"});
+    applyDetent(component, direction, "drag", "proxy_step");
+    record("drag_end", {component, drag_detents: 1, input_source: "proxy_step"});
+    model.helpers.setReadout(`${component.toUpperCase()} DETENT APPLIED`, "idle");
   }
 
   function resetWheel() {
@@ -339,6 +372,7 @@
       events: model.events,
       final_date: cloneDate(model.current),
       completed: sameDate(model.current, model.target),
+      ...(model.state.control_condition ? {interaction_mode: interactionMode()} : {}),
     };
     try {
       const response = await fetch("/result", {
@@ -374,6 +408,25 @@
     }
   }
 
+  function targetCalendarMarkup(target) {
+    const firstDay = new Date(Date.UTC(target.year, target.month - 1, 1)).getUTCDay();
+    const length = daysInMonth(target.year, target.month);
+    const cells = Array.from({length: firstDay + length}, (_, index) => {
+      if (index < firstDay) return "<i></i>";
+      const day = index - firstDay + 1;
+      return `<i class="${day === target.day ? "is-target" : ""}">${day}</i>`;
+    }).join("");
+    return `<div class="time-target-plaque time-target-calendar"><small>TARGET CALENDAR</small><strong>${MONTHS[target.month - 1]} ${target.year}</strong><div class="time-calendar-week"><b>S</b><b>M</b><b>T</b><b>W</b><b>T</b><b>F</b><b>S</b></div><div class="time-calendar-days">${cells}</div></div>`;
+  }
+
+  function proxyControlsMarkup() {
+    if (interactionMode() !== "simplified") return "";
+    return `<div class="time-proxy-controls" aria-label="calendar detent controls">
+      <b>DIRECT DETENTS</b>
+      ${requiredComponents().map((component) => `<div class="time-proxy-row"><span>${component.toUpperCase()}</span><button type="button" data-time-proxy-component="${component}" data-time-proxy-direction="-1">−1</button><button type="button" data-time-proxy-component="${component}" data-time-proxy-direction="1">+1</button></div>`).join("")}
+    </div>`;
+  }
+
   async function render(state, helpers) {
     stopCoastTimer();
     document.body.dataset.mechanic = "thirty-year-time-wheel";
@@ -400,18 +453,18 @@
       helpers,
     });
     helpers.app.innerHTML = `
-      <section class="time-wheel-captcha" data-challenge-id="${clean(state.challenge_id)}">
+      <section class="time-wheel-captcha" data-challenge-id="${clean(state.challenge_id)}" data-interaction="${interactionMode()}">
         <header class="time-head">
           <div class="time-title"><span>PERPETUAL ALMANAC / 30-YEAR CLEARANCE</span><h1>${clean(state.prompt)}</h1></div>
-          <div class="time-target-plaque"><small>TARGET CALENDAR</small><strong>${dateDisplay(model.target)}</strong><i>${dateCode(model.target)}</i></div>
+          ${state.target_presentation === "calendar_card" ? targetCalendarMarkup(model.target) : `<div class="time-target-plaque"><small>TARGET CALENDAR</small><strong>${dateDisplay(model.target)}</strong><i>${dateCode(model.target)}</i></div>`}
         </header>
         <main class="time-workbench">
           <section class="time-dial-stage">
             <div class="time-dial-caption"><span>DRAG BRASS · RELEASE TO COAST</span><b>${state.year_range.minimum}—${state.year_range.maximum}</b></div>
             <div class="time-wheel-dial" id="time-wheel-dial" aria-label="three concentric calendar rings">
-              <div class="time-ring time-ring-day" data-component="day">${ringMarkup("day", 31, (index) => index % 5 === 0 ? String(index + 1) : "")}</div>
-              <div class="time-ring time-ring-month" data-component="month">${ringMarkup("month", 12, (index) => MONTHS[index])}</div>
-              <div class="time-ring time-ring-year" data-component="year">${ringMarkup("year", 30, (index) => index % 5 === 0 ? String(state.year_range.minimum + index).slice(-2) : "")}</div>
+              <div class="time-ring time-ring-day ${requiredComponents().includes("day") ? "" : "is-inactive"}" data-component="day">${ringMarkup("day", 31, (index) => index % 5 === 0 ? String(index + 1) : "")}</div>
+              <div class="time-ring time-ring-month ${requiredComponents().includes("month") ? "" : "is-inactive"}" data-component="month">${ringMarkup("month", 12, (index) => MONTHS[index])}</div>
+              <div class="time-ring time-ring-year ${requiredComponents().includes("year") ? "" : "is-inactive"}" data-component="year">${ringMarkup("year", Math.min(30, state.year_range.maximum - state.year_range.minimum + 1), (index) => index % 5 === 0 ? String(state.year_range.minimum + index).slice(-2) : "")}</div>
               <div class="time-date-aperture"><small>LOCK DATE</small><strong id="time-current-date">${dateDisplay(model.current)}</strong><i id="time-current-code">${dateCode(model.current)}</i><em id="time-month-length">${daysInMonth(model.current.year, model.current.month)} DAYS</em></div>
               <div class="time-index-needle"></div>
             </div>
@@ -427,6 +480,7 @@
               <span data-ring-proof="year"><i></i>YEAR HAND</span>
             </div>
             <div class="time-rule-card"><b>CALENDAR LAW</b><p>Month lengths are real. Leap years count. Month and year changes clamp impossible days.</p></div>
+            ${proxyControlsMarkup()}
             <ol class="time-tape" id="time-tape">${recentMarkup()}</ol>
           </aside>
         </main>
@@ -445,6 +499,12 @@
     document.getElementById("time-brake")?.addEventListener("click", brakeMomentum);
     document.getElementById("time-reset")?.addEventListener("click", resetWheel);
     document.getElementById("time-lock")?.addEventListener("click", lockWheel);
+    document.querySelectorAll("[data-time-proxy-component]").forEach((button) => {
+      button.addEventListener("click", () => proxyDetent(
+        String(button.dataset.timeProxyComponent || ""),
+        Number(button.dataset.timeProxyDirection || 0),
+      ));
+    });
     updatePanels();
     helpers.installCheatPanel();
     window.thirtyYearTimeWheelModel = model;

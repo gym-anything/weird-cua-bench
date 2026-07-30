@@ -3,6 +3,7 @@ from __future__ import annotations
 import hashlib
 import math
 import random
+from copy import deepcopy
 from typing import Any
 
 
@@ -38,41 +39,70 @@ def _torus_distance(point: list[float],ring: dict[str,Any]) -> float:
 
 def generate(task: dict[str, Any], seed: str) -> tuple[dict[str, Any], dict[str, Any]]:
     rng = random.Random(_seed_int(seed, MECHANIC_ID))
-    challenge_id = hashlib.sha256(f"{seed}|{MECHANIC_ID}".encode()).hexdigest()[:12]
     task_id = str(task.get("id") or "zero_g_cable_autopsy_seed_0001@0.1")
+    condition = deepcopy(dict((task.get("metadata") or {}).get("control_condition") or {})) or None
+    difficulty = int((condition or {}).get("difficulty") or 4)
+    condition_token = "" if not condition or difficulty == 4 else f"|d{difficulty}"
+    challenge_id = hashlib.sha256(f"{seed}|{MECHANIC_ID}{condition_token}".encode()).hexdigest()[:12]
+    parameters = dict((condition or {}).get("difficulty_parameters") or {})
+    node_count = int(parameters.get("node_count", 9))
+    support_peg_count = int(parameters.get("support_peg_count", 2))
+    alarm_count = int(parameters.get("alarm_count", 2))
+    ring_pair_count = int(parameters.get("ring_pair_count", 1))
+    ring_spacing = float(parameters.get("ring_spacing", 0.68))
+    cable_arc_amplitude = float(parameters.get("cable_arc_amplitude", 1.05))
+    ring_height_choices = tuple(parameters.get("ring_height_choices", (1.5, 1.75, 2.0)))
+    peg_radius_choices = tuple(parameters.get("peg_radius_choices", (0.68, 0.72, 0.76)))
+    move_step = float(parameters.get("move_step", 0.25))
+    pbd_substeps = int(parameters.get("pbd_substeps", 4))
+    constraint_iterations = int(parameters.get("constraint_iterations", 8))
+    minimum_dual_ticks = int(parameters.get("minimum_dual_ticks", 8))
+    minimum_total_substeps = int(parameters.get("minimum_total_substeps", 40))
+    if not 5 <= node_count <= 13:
+        raise ValueError("zero-g cable node_count must be between 5 and 13")
+    if not 0 <= support_peg_count <= 2 or not 0 <= alarm_count <= 3 or not 1 <= ring_pair_count <= 2:
+        raise ValueError("zero-g cable profile has an unsupported topology count")
+    if not ring_height_choices or not peg_radius_choices or move_step <= 0:
+        raise ValueError("zero-g cable profile has invalid geometry parameters")
     sign = rng.choice((-1, 1))
-    ring_height = rng.choice((1.5, 1.75, 2.0))
-    peg_radius = rng.choice((0.68, 0.72, 0.76))
+    ring_height = float(rng.choice(ring_height_choices))
+    peg_radius = float(rng.choice(peg_radius_choices))
     nodes: list[list[float]] = []
-    for index in range(9):
-        x = -3.0 + index * 0.75
-        centered = abs(index - 4) / 4.0
-        z = sign * (1.05 * (1.0 - centered**1.45))
+    for index in range(node_count):
+        x = -3.0 + index * (6.0 / (node_count - 1))
+        centered = abs(index - (node_count - 1) / 2) / ((node_count - 1) / 2)
+        z = sign * (cable_arc_amplitude * (1.0 - centered**1.45))
         nodes.append([_round(x), 0.0, _round(z)])
-    rest_lengths = [_round(_distance(nodes[index], nodes[index + 1])) for index in range(8)]
+    rest_lengths = [_round(_distance(nodes[index], nodes[index + 1])) for index in range(node_count - 1)]
     peg = {"id": "central-peg", "center": [0.0, 0.0, 0.0], "radius": peg_radius}
-    pegs = [
-        peg,
+    support_pegs = [
         {"id": "lower-left", "center": [-1.45, -0.3, -sign * 0.86], "radius": 0.46},
         {"id": "lower-right", "center": [1.45, -0.3, -sign * 0.86], "radius": 0.46},
     ]
-    rings = [
-        {"id": "port-ring", "center": [-3.72, ring_height, 0.0], "normal": [-1.0, 0.0, 0.0], "radius": 0.78, "tube_radius": 0.12, "endpoint_index": 0},
-        {"id": "starboard-ring", "center": [3.72, ring_height, 0.0], "normal": [1.0, 0.0, 0.0], "radius": 0.78, "tube_radius": 0.12, "endpoint_index": 8},
-    ]
-    contacts = [
+    pegs = [peg, *support_pegs[:support_peg_count]]
+    rings: list[dict[str, Any]] = []
+    for pair_index in range(ring_pair_count):
+        ring_x = 3.72 + pair_index * ring_spacing
+        suffix = "" if pair_index == 0 else f"-{pair_index + 1}"
+        rings.extend((
+            {"id": f"port-ring{suffix}", "center": [-ring_x, ring_height, 0.0], "normal": [-1.0, 0.0, 0.0], "radius": 0.78, "tube_radius": 0.12, "endpoint_index": 0},
+            {"id": f"starboard-ring{suffix}", "center": [ring_x, ring_height, 0.0], "normal": [1.0, 0.0, 0.0], "radius": 0.78, "tube_radius": 0.12, "endpoint_index": node_count - 1},
+        ))
+    contact_options = [
         {"id": "alarm-low", "center": [0.0, 0.15, -sign * 1.42], "radius": 0.28},
         {"id": "alarm-high", "center": [0.9, 1.0, -sign * 1.24], "radius": 0.25},
+        {"id": "alarm-port", "center": [-1.05, 1.15, -sign * 1.04], "radius": 0.22},
     ]
+    contacts = contact_options[:alarm_count]
     controls = {
-        "move_step": 0.25, "pbd_substeps": 4, "constraint_iterations": 8,
+        "move_step": move_step, "pbd_substeps": pbd_substeps, "constraint_iterations": constraint_iterations,
         "damping": 0.985, "cable_radius": 0.09, "attachment_pick_radius_px": 24,
         "orbit_yaw_step_deg": 15, "orbit_pitch_step_deg": 10,
         "world_bounds": {"x": [-5.0, 5.0], "y": [-2.0, 4.2], "z": [-3.0, 3.0]},
     }
     qualification = {
-        "maximum_client_node_error": 0.018, "minimum_dual_ticks": 8,
-        "maximum_final_winding": 0.12, "minimum_total_substeps": 40,
+        "maximum_client_node_error": 0.018, "minimum_dual_ticks": minimum_dual_ticks,
+        "maximum_final_winding": 0.12, "minimum_total_substeps": minimum_total_substeps,
     }
     camera = {"yaw_deg": -18, "pitch_deg": -10, "distance": 10.5, "target": [0.0, 0.65, 0.0], "fov_deg": 48}
     public_state = {
@@ -86,14 +116,15 @@ def generate(task: dict[str, Any], seed: str) -> tuple[dict[str, Any], dict[str,
         "qualification": qualification, "initial_camera": camera, "submit_label": "SEAL AUTOPSY",
     }
     up_moves = int(round(ring_height / controls["move_step"]))
-    outward_moves = int(math.ceil((3.72 + 0.22 - 3.0) / controls["move_step"]))
+    farthest_ring_x = max(abs(float(ring["center"][0])) for ring in rings)
+    outward_moves = int(math.ceil((farthest_ring_x + 0.22 - 3.0) / controls["move_step"]))
     ground_truth = {
         "mechanic_id": MECHANIC_ID, "task_id": task_id, "seed": seed, "challenge_id": challenge_id,
         "canvas": public_state["canvas"], "nodes": nodes, "rest_lengths": rest_lengths,
         "pegs": pegs, "rings": rings, "contacts": contacts, "controls": controls,
         "qualification": qualification, "initial_camera": camera,
         "solution": {
-            "attachments": {"A": 0, "B": 8}, "up_moves": up_moves, "outward_moves": outward_moves,
+                "attachments": {"A": 0, "B": node_count - 1}, "up_moves": up_moves, "outward_moves": outward_moves,
             "moves": [
                 {"gripper": "A", "axis": "y", "delta": controls["move_step"], "count": up_moves},
                 {"gripper": "B", "axis": "y", "delta": controls["move_step"], "count": up_moves},
@@ -103,7 +134,10 @@ def generate(task: dict[str, Any], seed: str) -> tuple[dict[str, Any], dict[str,
         },
         "variant_count": VARIANT_COUNT,
     }
-    assert abs(sum(rest_lengths) - sum(_distance(nodes[i], nodes[i + 1]) for i in range(8))) < 1e-4
+    if condition:
+        public_state["control_condition"] = deepcopy(condition)
+        ground_truth["control_condition"] = deepcopy(condition)
+    assert abs(sum(rest_lengths) - sum(_distance(nodes[i], nodes[i + 1]) for i in range(node_count - 1))) < 1e-4
     cable_radius=float(controls["cable_radius"])
     assert all(_segment_distance(contact["center"],first,second)>float(contact["radius"])+cable_radius+.15 for first,second in zip(nodes,nodes[1:]) for contact in contacts)
     assert all(_segment_distance(peg_item["center"],first,second)>float(peg_item["radius"])+cable_radius+.05 for first,second in zip(nodes,nodes[1:]) for peg_item in pegs)

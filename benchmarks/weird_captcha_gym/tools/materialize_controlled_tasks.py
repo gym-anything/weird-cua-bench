@@ -63,6 +63,12 @@ def validate_controls(controls: dict[str, Any], env_root: Path) -> None:
         natural_language = profile.get("natural_language")
         if natural_language is not None and (not isinstance(natural_language, str) or not natural_language.strip()):
             raise ValueError(f"{env_root.name}: difficulty {level} has invalid natural_language")
+        natural_language_by_interaction = profile.get("natural_language_by_interaction")
+        if natural_language_by_interaction is not None:
+            if not isinstance(natural_language_by_interaction, dict) or not set(natural_language_by_interaction) <= {"simplified", "full"}:
+                raise ValueError(f"{env_root.name}: difficulty {level} has invalid natural_language_by_interaction")
+            if any(not isinstance(value, str) or not value.strip() for value in natural_language_by_interaction.values()):
+                raise ValueError(f"{env_root.name}: difficulty {level} has an empty interaction-specific instruction")
         summary = profile.get("summary")
         if summary is not None and (not isinstance(summary, str) or not summary.strip()):
             raise ValueError(f"{env_root.name}: difficulty {level} has invalid summary")
@@ -110,6 +116,8 @@ def controlled_task(
             f"Click CAPTURE SYMBOL {timing}. "
             f"Capture all {reel_count_text} reels."
         )
+    elif (profile.get("natural_language_by_interaction") or {}).get(interaction):
+        task["natural_language"] = str(profile["natural_language_by_interaction"][interaction])
     elif profile.get("natural_language"):
         task["natural_language"] = str(profile["natural_language"])
     hooks = dict(task.get("hooks") or {})

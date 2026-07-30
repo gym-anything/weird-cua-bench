@@ -42,6 +42,26 @@ def _moving_point(item: dict, elapsed: float) -> tuple[float, float]:
     )
 
 
+def _interaction(state: dict) -> str:
+    return str((state.get("control_condition") or {}).get("interaction") or "full")
+
+
+def _place_lens(page, state: dict, x: float, y: float) -> None:
+    if _interaction(state) == "full":
+        page.mouse.move(*_canvas_screen(page, x, y), steps=3)
+        return
+    page.locator(".tracking-lens-x").fill(str(round(x)))
+    page.locator(".tracking-lens-y").fill(str(round(y)))
+    page.locator(".tracking-place-lens").click()
+
+
+def _select_settled(page, state: dict, timeline: dict, object_id: str) -> None:
+    if _interaction(state) == "full":
+        page.mouse.click(*_canvas_screen(page, *_settled_point(timeline, object_id)))
+        return
+    page.locator(f'.tracking-slot-controls [data-object-id="{object_id}"]').click()
+
+
 def _wait_review(page) -> None:
     expect(page.locator('.tracking-review[data-visible="true"]')).to_be_visible(timeout=13_000)
     expect(page.locator(".tracking-return")).to_be_enabled()
@@ -55,7 +75,9 @@ def fail_once(page, state_dir: Path, out_dir: Path, mechanic: str) -> None:
     _wait_review(page)
     page.locator(".tracking-return").click()
     wrong = next(item["id"] for item in timeline["objects"] if item["id"] != truth["target_object_id"])
-    page.mouse.click(*_canvas_screen(page, *_settled_point(timeline, wrong)))
+    _select_settled(page, state, timeline, wrong)
+    page.wait_for_timeout(120)
+    shot(page, out_dir, mechanic, "wrong-uninspected-carrier-fail")
     expect_fail_and_fresh(page, state_dir, before)
     shot(page, out_dir, mechanic, "wrong-uninspected-carrier-rejected")
 
@@ -69,19 +91,21 @@ def solve(page, state_dir: Path, out_dir: Path, mechanic: str) -> None:
     page.locator(".tracking-arm").click()
     _wait_review(page)
 
-    pre_time = int(first["at_ms"]) - 160
-    _set_review_time(page, timeline, pre_time)
-    page.mouse.move(*_canvas_screen(page, *_moving_point(target, pre_time)))
-    page.wait_for_timeout(230)
-
-    change_time = int(first["at_ms"]) + int(first["duration_ms"]) // 2
-    _set_review_time(page, timeline, change_time)
-    page.mouse.move(*_canvas_screen(page, *_moving_point(target, change_time)), steps=3)
-    page.wait_for_timeout(380)
+    proof = timeline["proof"]
+    pre_count = int(proof["minimum_pre_hits"])
+    change_count = int(proof["minimum_change_hits"])
+    first_at = int(first["at_ms"])
+    for index in range(pre_count):
+        pre_time = first_at - 300 + int(220 * index / max(1, pre_count - 1))
+        _set_review_time(page, timeline, pre_time)
+        _place_lens(page, state, *_moving_point(target, pre_time))
+        page.wait_for_timeout(180)
+    for index in range(change_count):
+        change_time = first_at + int(int(first["duration_ms"]) * (index + 1) / (change_count + 1))
+        _set_review_time(page, timeline, change_time)
+        _place_lens(page, state, *_moving_point(target, change_time))
+        page.wait_for_timeout(180)
     shot(page, out_dir, mechanic, "active-review-lens-first-change")
 
     page.locator(".tracking-return").click()
-    settled = _settled_point(timeline, target_id)
-    page.mouse.move(*_canvas_screen(page, *settled))
-    page.wait_for_timeout(80)
-    page.mouse.click(*_canvas_screen(page, *settled))
+    _select_settled(page, state, timeline, target_id)

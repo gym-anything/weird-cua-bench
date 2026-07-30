@@ -54,33 +54,48 @@ def solve(page, state_dir: Path, out_dir: Path, mechanic: str) -> None:
         raise AssertionError(f"unexpected mechanic {mechanic!r}")
     page.wait_for_function("() => !document.querySelector('.shadow-crime-lab')?.classList.contains('is-failed')", timeout=4_000)
     truth = _read(state_dir / "ground_truth.json")
+    interaction = str((truth.get("control_condition") or {}).get("interaction") or "full")
     canvas = page.locator("#shadow-canvas")
     box = canvas.bounding_box()
     if not box:
         raise AssertionError("analytic shadow canvas has no physical geometry")
-    initial = truth["lamp"]
-    start = _screen(box, initial)
-    page.mouse.move(*start)
-    page.mouse.down()
-    for index, probe in enumerate(truth["solution"]["probe_path"]):
-        page.mouse.move(*_screen(box, probe), steps=14)
-        page.wait_for_timeout(45)
-        if index == 1:
-            _shot(page, out_dir, mechanic, "active-causal-probes")
-    page.mouse.up()
-    expect(page.locator(".shadow-crime-lab")).to_have_attribute("data-probe-count", "4")
+    if interaction == "simplified":
+        for index, probe in enumerate(truth["solution"]["probe_path"]):
+            page.locator(f'[data-probe-id="{probe["zone_id"]}"]').click()
+            page.wait_for_timeout(45)
+            if index == min(1, len(truth["solution"]["probe_path"]) - 1):
+                _shot(page, out_dir, mechanic, "active-causal-probes")
+    else:
+        initial = truth["lamp"]
+        start = _screen(box, initial)
+        page.mouse.move(*start)
+        page.mouse.down()
+        for index, probe in enumerate(truth["solution"]["probe_path"]):
+            # One browser movement per rendered zone exercises the normal
+            # sparse direct-drag path; success is the causal sample itself,
+            # not callback density or a travel quota.
+            page.mouse.move(*_screen(box, probe))
+            page.wait_for_timeout(45)
+            if index == 1:
+                _shot(page, out_dir, mechanic, "active-causal-probes")
+        page.mouse.up()
+    expect(page.locator(".shadow-crime-lab")).to_have_attribute("data-probe-count", str(len(truth["probe_zones"])))
     _shot(page, out_dir, mechanic, "active-four-zone-trace")
 
     tag_point = truth["solution"]["expected_tag_point"]
     tag = page.locator("#shadow-tag-tool")
     expect(tag).to_have_attribute("data-unlocked", "true")
-    tag_box = tag.bounding_box()
-    if not tag_box:
-        raise AssertionError("visible evidence tag has no physical geometry")
-    page.mouse.move(tag_box["x"] + tag_box["width"] / 2, tag_box["y"] + tag_box["height"] / 2)
-    page.mouse.down()
-    page.mouse.move(*_screen(box, tag_point), steps=9)
-    page.mouse.up()
+    if interaction == "simplified":
+        tag.click()
+        page.mouse.click(*_screen(box, tag_point))
+    else:
+        tag_box = tag.bounding_box()
+        if not tag_box:
+            raise AssertionError("visible evidence tag has no physical geometry")
+        page.mouse.move(tag_box["x"] + tag_box["width"] / 2, tag_box["y"] + tag_box["height"] / 2)
+        page.mouse.down()
+        page.mouse.move(*_screen(box, tag_point))
+        page.mouse.up()
     expect(page.locator(".shadow-crime-lab")).to_have_attribute("data-tagged-object", str(truth["forged_object_id"]))
     expect(page.locator("#shadow-tag-readout")).to_have_text("SHADOW TAGGED")
     _shot(page, out_dir, mechanic, "solved-forged-shadow-tag")

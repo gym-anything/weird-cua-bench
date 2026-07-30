@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import copy
 import hashlib
 import math
 import random
@@ -14,6 +15,18 @@ def _seed(seed: str) -> int:
 
 
 def generate(task: dict[str, Any], seed: str) -> tuple[dict[str, Any], dict[str, Any]]:
+    condition = task.get("_control_condition")
+    parameters = dict((condition or {}).get("difficulty_parameters") or {})
+    level = int((condition or {}).get("difficulty", 4))
+    if condition is not None and level not in {1, 2, 3, 4, 5}:
+        raise ValueError("three-camera claw difficulty must be 1 through 5")
+    interaction = str((condition or {}).get("interaction") or "simplified")
+    if interaction not in {"simplified", "full"}:
+        raise ValueError("three-camera claw interaction must be simplified or full")
+
+    # Keep this sequence intact for the uncontrolled task and the controlled
+    # L4 reference.  The exact current generator is the L4 world, rather than
+    # a new configuration that happens to be labelled L4.
     rng = random.Random(_seed(seed)); mirror = rng.choice((-1, 1))
     palettes = (
         {"cage": "#2a2c2f", "feed": "#d7ead0", "artifact": "#f3a447", "claw": "#d64c43", "chute": "#60c7a0"},
@@ -41,9 +54,59 @@ def generate(task: dict[str, Any], seed: str) -> tuple[dict[str, Any], dict[str,
     }
     world = {"bounds": {"x": [-5, 5], "y": [.45, 6], "z": [-5, 5]}, "claw_radius": .28, "tick_seconds": .12,
              "acceleration": rng.choice((.26, .28, .3)), "max_speed": .72, "damping": rng.choice((.8, .82, .84)), "collision_step": .06, "capture_distance": .78}
+
+    if condition is not None and level != 4:
+        try:
+            distractor_count = int(parameters["distractor_count"])
+            obstacle_profile = str(parameters["obstacle_profile"])
+            camera_delays = [int(value) for value in parameters["camera_delay_ticks"]]
+            controlled_scale = float(parameters["camera_scale"])
+            controlled_acceleration = float(parameters["acceleration"])
+            controlled_damping = float(parameters["damping"])
+            controlled_capture_distance = float(parameters["capture_distance"])
+        except (KeyError, TypeError, ValueError) as exc:
+            raise ValueError("three-camera claw controlled profile is incomplete") from exc
+        if not 0 <= distractor_count <= 4:
+            raise ValueError("three-camera claw distractor_count must be 0 through 4")
+        if len(camera_delays) != 3 or any(delay < 0 for delay in camera_delays):
+            raise ValueError("three-camera claw camera_delay_ticks must contain three nonnegative delays")
+        if obstacle_profile not in {"open", "crossbar", "crossbar_post", "dense"}:
+            raise ValueError("three-camera claw obstacle_profile is invalid")
+
+        distractors = objects[1:]
+        extra_distractors = [
+            {"id": "artifact-d", "center": [round(-.55 * mirror, 3), .9, round(-2.55 + rng.choice((-.15, 0, .15)), 3)], "radius": .43, "marked": False, "color": "#638e88"},
+            {"id": "artifact-e", "center": [round(-3.1 * mirror, 3), .9, round(.55 + rng.choice((-.15, 0, .15)), 3)], "radius": .43, "marked": False, "color": "#a68167"},
+        ]
+        objects = [objects[0], *(distractors + extra_distractors)[:distractor_count]]
+        if obstacle_profile == "open":
+            obstacles = []
+        elif obstacle_profile == "crossbar":
+            obstacles = obstacles[:1]
+        elif obstacle_profile == "crossbar_post":
+            obstacles = obstacles[:2]
+        else:
+            obstacles = [
+                *obstacles,
+                {"id": "midrail", "center": [0, 3.05, -2.15], "half": [1.9, .3, .45]},
+            ]
+        for view_id, delay in zip(("top", "front", "side"), camera_delays):
+            cameras[view_id]["delay"] = delay
+        for view in cameras.values():
+            view["matrix"] = [[controlled_scale * value / camera_scale for value in row] for row in view["matrix"]]
+        world.update({
+            "acceleration": controlled_acceleration,
+            "damping": controlled_damping,
+            "capture_distance": controlled_capture_distance,
+        })
     initial = {"position": [0, 5.25, -3.85], "velocity": [0, 0, 0], "gripper": "open"}
     task_id = str(task.get("id") or "three_camera_claw_machine_seed_0001@0.1")
-    challenge_id = hashlib.sha256(f"{seed}|{MECHANIC_ID}".encode()).hexdigest()[:12]
+    # The controlled suite needs a distinct replay identity per difficulty,
+    # while the uncontrolled task retains its historical identity.  Interaction
+    # intentionally does not enter this token: full and simplified render the
+    # same generated world and differ only in their bound visible input surface.
+    condition_token = f"|d{level}" if condition is not None else ""
+    challenge_id = hashlib.sha256(f"{seed}|{MECHANIC_ID}{condition_token}".encode()).hexdigest()[:12]
     public = {
         "benchmark": "weird_captcha_gym", "mechanic_id": MECHANIC_ID, "task_id": task_id, "challenge_id": challenge_id,
         "prompt": task.get("natural_language") or "Retrieve the marked artifact using only the three camera feeds.",
@@ -58,6 +121,9 @@ def generate(task: dict[str, Any], seed: str) -> tuple[dict[str, Any], dict[str,
     safe_y = 5.25
     truth = {**public, "seed": seed, "mirror": mirror, "target_id": "artifact-a",
              "solver": {"target": target_center, "chute": chute["center"], "safe_y": safe_y}}
+    if condition is not None:
+        public["control_condition"] = copy.deepcopy(condition)
+        truth["control_condition"] = copy.deepcopy(condition)
     for obstacle in obstacles:
         assert obstacle["center"][1] + obstacle["half"][1] + world["claw_radius"] < safe_y
     assert math.dist(target_center, chute["center"]) > 4

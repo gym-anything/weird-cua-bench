@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import copy
+import hashlib
 import importlib.util
 import json
 import math
@@ -26,6 +27,7 @@ CONTROLLED_ENVIRONMENTS = (
     "exit_vim_terminal_escape_env",
     "marionette_checkpoint_env",
     "photograph_eats_the_room_env",
+    "recursive_dollhouse_smuggling_env",
     "fake_desktop_automation_inversion_env",
     "funeral_ritual_env",
     "impossible_ecology_env",
@@ -44,19 +46,26 @@ CONTROLLED_ENVIRONMENTS = (
     "forced_perspective_moving_day_env",
     "hologram_silhouette_foundry_env",
     "orbital_docking_customs_env",
+    "portal_freight_oversized_parcel_env",
     "lidar_blacksite_env",
     "board_game_captcha_env",
     "flat_pack_compliance_env",
     "specular_lighthouse_relay_env",
+    "wind_tunnel_seed_courier_env",
     "motion_only_ghost_jigsaw_env",
     "microgame_gauntlet_env",
     "modifier_stack_image_grid_env",
     "moving_checkbox_evasive_button_env",
     "occlusion_shell_swindle_env",
+    "polyrhythm_customs_env",
+    "ribbon_switchboard_env",
     "pheromone_dispatch_env",
     "popup_exorcist_env",
     "relation_prompt_grounding_env",
+    "reload_interruption_env",
     "reverse_identity_gate_env",
+    "robot_art_critic_env",
+    "rorschach_fixed_rubric_env",
     "cursor_constellation_hunt_env",
     "cursor_lens_reveal_env",
     "exact_change_candy_cascade_env",
@@ -65,8 +74,20 @@ CONTROLLED_ENVIRONMENTS = (
     "minecraft_block_grid_env",
     "slime_commute_env",
     "slot_reel_capture_env",
+    "semantic_drag_drop_absurdity_env",
+    "shadow_crime_lab_env",
+    "single_scene_split_boxes_env",
+    "temporal_memory_first_change_env",
+    "tomographic_baggage_surgery_env",
+    "thirty_year_time_wheel_env",
+    "three_camera_claw_machine_env",
+    "tiny_fps_customs_env",
     "trace_shape_without_walls_env",
+    "trajectory_catcher_env",
     "wonky_text_hostile_rendering_env",
+    "wizard_critter_capture_env",
+    "wrong_number_env",
+    "zero_g_cable_autopsy_env",
 )
 
 APPROVED_BASELINE_LEVELS = {
@@ -84,6 +105,7 @@ APPROVED_BASELINE_LEVELS = {
     "exit_vim_terminal_escape_env": 4,
     "marionette_checkpoint_env": 4,
     "photograph_eats_the_room_env": 4,
+    "recursive_dollhouse_smuggling_env": 4,
     "fake_desktop_automation_inversion_env": 3,
     "funeral_ritual_env": 3,
     "impossible_ecology_env": 4,
@@ -103,6 +125,7 @@ APPROVED_BASELINE_LEVELS = {
     "forced_perspective_moving_day_env": 4,
     "hologram_silhouette_foundry_env": 4,
     "orbital_docking_customs_env": 4,
+    "portal_freight_oversized_parcel_env": 4,
     "input_lag_forklift_env": 4,
     "insider_trading_captcha_env": 2,
     "lidar_blacksite_env": 4,
@@ -112,19 +135,37 @@ APPROVED_BASELINE_LEVELS = {
     "modifier_stack_image_grid_env": 3,
     "moving_checkbox_evasive_button_env": 4,
     "occlusion_shell_swindle_env": 2,
+    "polyrhythm_customs_env": 4,
+    "ribbon_switchboard_env": 4,
     "pheromone_dispatch_env": 4,
     "popup_exorcist_env": 2,
     "relation_prompt_grounding_env": 4,
+    "reload_interruption_env": 4,
     "reverse_identity_gate_env": 4,
+    "robot_art_critic_env": 4,
+    "rorschach_fixed_rubric_env": 4,
     "rotate_wrong_thing_upright_env": 4,
     "rotating_keyboard_env": 4,
     "slime_commute_env": 4,
     "specular_lighthouse_relay_env": 3,
+    "wind_tunnel_seed_courier_env": 4,
     "surreal_apple_on_tree_grid_env": 4,
     "top_face_dice_arithmetic_env": 5,
     "slot_reel_capture_env": 4,
+    "semantic_drag_drop_absurdity_env": 3,
+    "shadow_crime_lab_env": 4,
+    "single_scene_split_boxes_env": 4,
+    "temporal_memory_first_change_env": 4,
+    "tomographic_baggage_surgery_env": 3,
+    "thirty_year_time_wheel_env": 3,
+    "three_camera_claw_machine_env": 4,
+    "tiny_fps_customs_env": 4,
     "trace_shape_without_walls_env": 4,
+    "trajectory_catcher_env": 4,
     "wonky_text_hostile_rendering_env": 3,
+    "wizard_critter_capture_env": 4,
+    "wrong_number_env": 4,
+    "zero_g_cable_autopsy_env": 4,
 }
 
 DIFFICULTY_NAMES = {
@@ -151,16 +192,28 @@ HISTORICAL_TASK_DIFFICULTY_OVERRIDES = {
     "forced_perspective_moving_day_env": "extreme",
     "hologram_silhouette_foundry_env": "extreme",
     "orbital_docking_customs_env": "extreme",
+    "portal_freight_oversized_parcel_env": "extreme",
     "marionette_checkpoint_env": "extreme",
     "photograph_eats_the_room_env": "extreme",
+    "recursive_dollhouse_smuggling_env": "extreme",
     "microgame_gauntlet_env": "extreme",
     "modifier_stack_image_grid_env": "hard",
     "moving_checkbox_evasive_button_env": "extreme",
     "occlusion_shell_swindle_env": "extreme",
+    "ribbon_switchboard_env": "extreme",
     "relation_prompt_grounding_env": "extreme",
+    "reload_interruption_env": "hard",
     "reverse_identity_gate_env": "extreme",
+    "robot_art_critic_env": "extreme",
+    "rorschach_fixed_rubric_env": "extreme",
+    "semantic_drag_drop_absurdity_env": "hard",
+    "tomographic_baggage_surgery_env": "extreme",
+    "thirty_year_time_wheel_env": "hard",
+    "three_camera_claw_machine_env": "extreme",
+    "tiny_fps_customs_env": "very_hard",
     "trace_shape_without_walls_env": "extreme",
     "wonky_text_hostile_rendering_env": "hard",
+    "zero_g_cable_autopsy_env": "extreme",
 }
 
 
@@ -234,7 +287,17 @@ def without_control_identity(value: dict, *, extra: tuple[str, ...] = ()) -> dic
     return result
 
 
+def canonical_sha256(value: object) -> str:
+    return hashlib.sha256(
+        json.dumps(value, ensure_ascii=False, sort_keys=True, separators=(",", ":")).encode("utf-8")
+    ).hexdigest()
+
+
 def test_control_files_have_one_baseline_and_five_profiles() -> None:
+    control_files = {
+        path.parent.name for path in (BENCHMARK / "environments").glob("*_env/controls.json")
+    }
+    assert set(CONTROLLED_ENVIRONMENTS) == control_files
     for env_name in CONTROLLED_ENVIRONMENTS:
         env_root = BENCHMARK / "environments" / env_name
         controls = controls_for(env_name)
@@ -286,7 +349,11 @@ def test_materializer_writes_every_implemented_interaction_deterministically(tmp
             ):
                 assert task["natural_language"].startswith("Click CAPTURE SYMBOL ")
             else:
-                assert task["natural_language"] == profile["natural_language"]
+                expected_instruction = (profile.get("natural_language_by_interaction") or {}).get(
+                    condition["interaction"],
+                    profile["natural_language"],
+                )
+                assert task["natural_language"] == expected_instruction
 
 
 def test_original_tasks_match_their_independently_assigned_baselines() -> None:
@@ -332,6 +399,556 @@ def test_original_tasks_match_their_independently_assigned_baselines() -> None:
         else:
             assert without_control_identity(baseline_public) == without_control_identity(original_public)
             assert without_control_identity(baseline_truth) == without_control_identity(original_truth)
+
+
+def _polyrhythm_payload(
+    public: dict, truth: dict, interaction: str, *, shorten_holds: bool = False
+) -> dict:
+    source = "pointer_toggle" if interaction == "simplified" else "keyboard"
+    events: list[dict] = []
+    for note in truth["expected_notes"]:
+        start = float(note["start_ms"])
+        duration = 100.0 if shorten_holds and note["kind"] == "hold" else float(note["duration_ms"])
+        events.extend((
+            {"lane": str(note["lane"]), "type": "down", "t_ms": start, "source": source},
+            {
+                "lane": str(note["lane"]),
+                "type": "up",
+                "t_ms": start + duration,
+                "source": source,
+            },
+        ))
+    events.sort(key=lambda item: (float(item["t_ms"]), 0 if item["type"] == "up" else 1, str(item["lane"])))
+    for sequence, event in enumerate(events):
+        event["seq"] = sequence
+    return {
+        "mechanic_id": public["mechanic_id"],
+        "task_id": public["task_id"],
+        "challenge_id": public["challenge_id"],
+        "interaction_mode": interaction,
+        "transcript": events,
+    }
+
+
+def test_polyrhythm_customs_controls_preserve_l4_and_bind_input_surfaces() -> None:
+    env_name = "polyrhythm_customs_env"
+    mechanic = "polyrhythm_customs"
+    controls = controls_for(env_name)
+    grader = load_module(
+        "controlled_polyrhythm_grader",
+        BENCHMARK / "shared_runtime" / "server" / "incubator_graders" / f"{mechanic}.py",
+    )
+    assert controls["baseline"] == {"difficulty": 4, "interaction": "full", "real_time": "live"}
+    assert controls["real_time"] == {
+        "play_time_seconds": 120,
+        "observation_window_ms": 1000,
+        "frames_per_observation": 8,
+    }
+    assert base_task_for(env_name, mechanic)["natural_language"] == controls["difficulty"]["4"]["natural_language_by_interaction"]["full"]
+
+    original = base_task_for(env_name, mechanic)
+    for seed in ("polyrhythm-baseline-a", "polyrhythm-baseline-b"):
+        original_public, original_truth = SETUP.generate_task_state(original, seed)
+        baseline_public, baseline_truth = SETUP.generate_task_state(task_for_level(env_name, 4, "full"), seed)
+        assert without_control_identity(baseline_public) == without_control_identity(original_public)
+        assert without_control_identity(baseline_truth) == without_control_identity(original_truth)
+
+    expected_lanes = [2, 3, 3, 4, 4]
+    expected_holds = [1, 1, 2, 2, 3]
+    expected_chords = [0, 1, 1, 2, 3]
+    for level in range(1, 6):
+        simplified_public, simplified_truth = SETUP.generate_task_state(
+            task_for_level(env_name, level, "simplified"), f"polyrhythm-profile-{level}"
+        )
+        full_public, full_truth = SETUP.generate_task_state(
+            task_for_level(env_name, level, "full"), f"polyrhythm-profile-{level}"
+        )
+        assert without_control_identity(simplified_public, extra=("prompt", "rules")) == without_control_identity(
+            full_public, extra=("prompt", "rules")
+        )
+        assert without_control_identity(simplified_truth) == without_control_identity(full_truth)
+        assert len(full_public["lanes"]) == expected_lanes[level - 1]
+        assert sum(note["kind"] == "hold" for note in full_truth["expected_notes"]) == expected_holds[level - 1]
+        assert len(full_truth["chords"]) == expected_chords[level - 1]
+        if level == 1:
+            assert len(full_truth["expected_notes"]) == 8
+        if level == 5:
+            assert len(full_truth["expected_notes"]) >= 23
+
+        for interaction, public, truth in (
+            ("simplified", simplified_public, simplified_truth),
+            ("full", full_public, full_truth),
+        ):
+            payload = _polyrhythm_payload(public, truth, interaction)
+            accepted = grader.grade(payload, truth, public)
+            assert accepted["passed"] is True
+            verifier = load_module(
+                f"controlled_polyrhythm_verifier_{level}_{interaction}",
+                BENCHMARK / "shared_runtime" / "verifier_helpers.py",
+            )
+            verification = verifier.verify_external_mechanic(
+                {"result": payload, "ground_truth": truth, "public_state": public}, mechanic
+            )
+            assert verification["passed"] is True and verification["score"] == 100
+            short_holds = _polyrhythm_payload(public, truth, interaction, shorten_holds=True)
+            short_hold_grade = grader.grade(short_holds, truth, public)
+            short_hold_verification = verifier.verify_external_mechanic(
+                {"result": short_holds, "ground_truth": truth, "public_state": public}, mechanic
+            )
+            if level == 5:
+                assert short_hold_grade["passed"] is False
+                assert "holds 0/" in str(short_hold_grade["feedback"])
+                assert short_hold_verification["passed"] is False and short_hold_verification["score"] == 0
+            else:
+                assert short_hold_grade["passed"] is True
+                assert short_hold_verification["passed"] is True and short_hold_verification["score"] == 100
+            if level == 4 and interaction == "full":
+                original_public, original_truth = SETUP.generate_task_state(original, "polyrhythm-profile-4")
+                original_short_holds = _polyrhythm_payload(
+                    original_public, original_truth, "full", shorten_holds=True
+                )
+                assert grader.grade(original_short_holds, original_truth, original_public) == short_hold_grade
+            wrong_mode = copy.deepcopy(payload)
+            wrong_mode["interaction_mode"] = "full" if interaction == "simplified" else "simplified"
+            assert grader.grade(wrong_mode, truth, public)["passed"] is False
+            wrong_source = copy.deepcopy(payload)
+            wrong_source["transcript"][0]["source"] = "keyboard" if interaction == "simplified" else "pointer_toggle"
+            assert grader.grade(wrong_source, truth, public)["passed"] is False
+            stale_identity = copy.deepcopy(payload)
+            stale_identity["challenge_id"] = "stale-polyrhythm-challenge"
+            assert grader.grade(stale_identity, truth, public)["passed"] is False
+
+
+def _temporal_position(item: dict, elapsed_ms: float) -> list[float]:
+    return [
+        float(item["x0"]) + math.sin(float(item["phase"]) + elapsed_ms * float(item["rate_x"])) * float(item["amp_x"]),
+        float(item["y0"]) + math.cos(float(item["phase"]) * .83 + elapsed_ms * float(item["rate_y"])) * float(item["amp_y"]),
+    ]
+
+
+def _temporal_payload(public: dict, truth: dict, interaction: str) -> dict:
+    timeline = truth["timeline"]
+    target_id = str(truth["target_object_id"])
+    target = next(item for item in timeline["objects"] if item["id"] == target_id)
+    first = timeline["events"][0]
+    observation_source, selection_source = {
+        "simplified": ("coordinate_controls", "settled_slot_button"),
+        "full": ("canvas_pointer", "canvas_pointer"),
+    }[interaction]
+    events: list[dict] = []
+
+    def push(kind: str, **details: object) -> None:
+        events.append({"sequence": len(events) + 1, "kind": kind, **details})
+
+    push("arm")
+    pre_count = int(timeline["proof"]["minimum_pre_hits"])
+    change_count = int(timeline["proof"]["minimum_change_hits"])
+    first_at = int(first["at_ms"])
+    for index in range(pre_count):
+        at_ms = first_at - 300 + int(220 * index / max(1, pre_count - 1))
+        push("observe", mode="review", timeline_ms=at_ms, cursor=_temporal_position(target, at_ms), input_source=observation_source)
+    for index in range(change_count):
+        at_ms = first_at + int(int(first["duration_ms"]) * (index + 1) / (change_count + 1))
+        push("observe", mode="review", timeline_ms=at_ms, cursor=_temporal_position(target, at_ms), input_source=observation_source)
+    target_index = timeline["settle_order"].index(target_id)
+    grid = timeline["settle_grid"]
+    point = [
+        grid["x0"] + target_index % grid["columns"] * grid["dx"],
+        grid["y0"] + target_index // grid["columns"] * grid["dy"],
+    ]
+    push("return_settled")
+    push("select", selected_object_id=target_id, point=point, input_source=selection_source)
+    return {
+        "mechanic_id": public["mechanic_id"],
+        "task_id": public["task_id"],
+        "challenge_id": public["challenge_id"],
+        "interaction_mode": interaction,
+        "selected_object_id": target_id,
+        "events": events,
+    }
+
+
+def test_first_change_controls_preserve_l4_share_world_and_bind_input_surfaces() -> None:
+    env_name = "temporal_memory_first_change_env"
+    mechanic = "temporal_memory_first_change"
+    controls = controls_for(env_name)
+    grader = load_module(
+        "controlled_first_change_grader",
+        BENCHMARK / "shared_runtime" / "server" / "incubator_graders" / f"{mechanic}.py",
+    )
+    helpers = load_module(
+        "controlled_first_change_verifier",
+        BENCHMARK / "shared_runtime" / "verifier_helpers.py",
+    )
+    original = base_task_for(env_name, mechanic)
+    historical = read_json(
+        BENCHMARK / "environments" / env_name / "historical_l4_baseline_fixture.json"
+    )
+    assert controls["baseline"] == {"difficulty": 4, "interaction": "full", "real_time": "live"}
+    assert original["natural_language"] == controls["difficulty"]["4"]["natural_language_by_interaction"]["full"]
+    assert historical["identity_fields_removed_for_controlled_comparison"] == [
+        "task_id",
+        "challenge_id",
+        "control_condition",
+    ]
+    assert historical["source"]["generator_path"] == "benchmarks/weird_captcha_gym/shared_scripts/incubator_generators/temporal_memory_first_change.py"
+    for historical_seed in historical["seeds"]:
+        seed = historical_seed["seed"]
+        original_public, original_truth = SETUP.generate_task_state(original, seed)
+        baseline_public, baseline_truth = SETUP.generate_task_state(task_for_level(env_name, 4, "full"), seed)
+        assert original_public["challenge_id"] == historical_seed["historical_challenge_id"]
+        assert canonical_sha256(original_public) == historical_seed["historical_public_state_sha256"]
+        assert canonical_sha256(original_truth) == historical_seed["historical_ground_truth_sha256"]
+        assert canonical_sha256(without_control_identity(original_public)) == historical_seed["normalized_public_state_sha256"]
+        assert canonical_sha256(without_control_identity(original_truth)) == historical_seed["normalized_ground_truth_sha256"]
+        assert canonical_sha256(without_control_identity(baseline_public)) == historical_seed["normalized_public_state_sha256"]
+        assert canonical_sha256(without_control_identity(baseline_truth)) == historical_seed["normalized_ground_truth_sha256"]
+        timeline = baseline_public["timeline"]
+        assert {
+            "object_count": len(timeline["objects"]),
+            "event_count": len(timeline["events"]),
+            "first_change_ms": timeline["first_change_ms"],
+            "first_change_duration_ms": timeline["events"][0]["duration_ms"],
+            "lens_radius": timeline["lens_radius"],
+            "occluders": timeline["occluders"],
+            "proof": timeline["proof"],
+            "settle_ms": timeline["settle_ms"],
+            "target_object_id": baseline_truth["target_object_id"],
+        } == historical_seed["contract"]
+    for seed in ("first-change-baseline-a", "first-change-baseline-b"):
+        original_public, original_truth = SETUP.generate_task_state(original, seed)
+        baseline_public, baseline_truth = SETUP.generate_task_state(task_for_level(env_name, 4, "full"), seed)
+        assert without_control_identity(baseline_public) == without_control_identity(original_public)
+        assert without_control_identity(baseline_truth) == without_control_identity(original_truth)
+
+    for level in range(1, 6):
+        parameters = controls["difficulty"][str(level)]["parameters"]
+        simplified_public, simplified_truth = SETUP.generate_task_state(task_for_level(env_name, level, "simplified"), f"first-change-profile-{level}")
+        full_public, full_truth = SETUP.generate_task_state(task_for_level(env_name, level, "full"), f"first-change-profile-{level}")
+        assert without_control_identity(simplified_public) == without_control_identity(full_public)
+        assert without_control_identity(simplified_truth) == without_control_identity(full_truth)
+        assert len(full_public["timeline"]["objects"]) == parameters["object_count"]
+        assert len(full_public["timeline"]["events"]) == parameters["decoy_event_count"] + 1
+        assert full_public["timeline"]["events"][0]["duration_ms"] == parameters["first_change_duration_ms"]
+        assert full_public["timeline"]["lens_radius"] == parameters["lens_radius"]
+        assert full_public["timeline"]["occluders"] == parameters["occluders"]
+        assert full_public["timeline"]["proof"]["minimum_pre_hits"] == parameters["minimum_pre_hits"]
+        assert full_public["timeline"]["proof"]["minimum_change_hits"] == parameters["minimum_change_hits"]
+        for public, truth, interaction in (
+            (simplified_public, simplified_truth, "simplified"),
+            (full_public, full_truth, "full"),
+        ):
+            payload = _temporal_payload(public, truth, interaction)
+            accepted = grader.grade(payload, truth, public)
+            assert accepted["passed"] is True, accepted
+            exported = {"result": payload, "public_state": public, "ground_truth": truth}
+            assert helpers.verify_temporal_memory_first_change(exported)["passed"] is True
+            wrong_mode = copy.deepcopy(payload)
+            wrong_mode["interaction_mode"] = "full" if interaction == "simplified" else "simplified"
+            rejected = grader.grade(wrong_mode, truth, public)
+            assert rejected["passed"] is False
+            wrong_source = copy.deepcopy(payload)
+            observation = next(event for event in wrong_source["events"] if event["kind"] == "observe")
+            observation["input_source"] = "canvas_pointer" if interaction == "simplified" else "coordinate_controls"
+            rejected = grader.grade(wrong_source, truth, public)
+            assert rejected["passed"] is False
+            wrong_selection_surface = copy.deepcopy(payload)
+            wrong_selection_surface["events"][-1]["input_source"] = "canvas_pointer" if interaction == "simplified" else "settled_slot_button"
+            rejected = grader.grade(wrong_selection_surface, truth, public)
+            assert rejected["passed"] is False
+            stale = copy.deepcopy(payload)
+            stale["challenge_id"] = "stale-first-change-challenge"
+            rejected = grader.grade(stale, truth, public)
+            assert rejected["passed"] is False
+            malformed = copy.deepcopy(payload)
+            malformed["events"] = [malformed["events"][0]]
+            rejected = grader.grade(malformed, truth, public)
+            assert rejected["passed"] is False
+
+
+def test_robot_art_critic_controls_preserve_l4_and_bind_plot_and_pointer_surfaces() -> None:
+    env_name = "robot_art_critic_env"
+    mechanic = "robot_art_critic"
+    controls = controls_for(env_name)
+    grader = load_module(
+        "controlled_robot_art_critic_grader",
+        BENCHMARK / "shared_runtime" / "server" / "incubator_graders" / f"{mechanic}.py",
+    )
+    original = base_task_for(env_name, mechanic)
+    assert controls["baseline"] == {"difficulty": 4, "interaction": "full", "real_time": "live"}
+    assert controls["real_time"] == {
+        "play_time_seconds": 180,
+        "observation_window_ms": 0,
+        "frames_per_observation": 1,
+    }
+    assert original["natural_language"] == controls["difficulty"]["4"]["natural_language_by_interaction"]["full"]
+
+    for seed in ("robot-art-baseline-a", "robot-art-baseline-b", "robot-art-baseline-c"):
+        original_public, original_truth = SETUP.generate_task_state(original, seed)
+        baseline_public, baseline_truth = SETUP.generate_task_state(task_for_level(env_name, 4, "full"), seed)
+        assert original_public["challenge_id"] == baseline_public["challenge_id"]
+        assert without_control_identity(original_public) == without_control_identity(baseline_public)
+        assert without_control_identity(original_truth) == without_control_identity(baseline_truth)
+
+    vocabulary_sizes = []
+    pose_counts = []
+    score_thresholds = []
+    margin_thresholds = []
+    for level in range(1, 6):
+        parameters = controls["difficulty"][str(level)]["parameters"]
+        full_public, full_truth = SETUP.generate_task_state(
+            task_for_level(env_name, level, "full"), f"robot-art-profile-{level}"
+        )
+        simplified_public, simplified_truth = SETUP.generate_task_state(
+            task_for_level(env_name, level, "simplified"), f"robot-art-profile-{level}"
+        )
+        assert full_public["control_condition"]["difficulty_parameters"] == parameters
+        assert full_public["challenge_id"] == simplified_public["challenge_id"]
+        assert without_control_identity(full_public, extra=("prompt", "rules")) == without_control_identity(
+            simplified_public, extra=("prompt", "rules")
+        )
+        assert without_control_identity(full_truth) == without_control_identity(simplified_truth)
+        assert full_public["target"]["class_name"] in parameters["class_vocabulary"]
+        assert full_public["target"]["pose"]["name"] in parameters["pose_options"]
+        assert full_public["target"]["style"]["name"] in parameters["style_options"]
+        requirements = full_public["requirements"]
+        assert requirements["stroke_budget"] == full_public["target"]["expected_strokes"] + parameters["stroke_budget_extra"]
+        for key in (
+            "maximum_attempts", "minimum_points_per_stroke", "minimum_stroke_ms",
+            "maximum_sample_gap_px", "maximum_sample_interval_ms", "minimum_bbox_fraction_milli",
+            "maximum_bbox_fraction_milli", "maximum_center_offset_milli", "acceptance_score_milli",
+            "minimum_margin_milli",
+        ):
+            assert requirements[key] == parameters[key]
+        vocabulary_sizes.append(len(full_truth["class_vocabulary"]))
+        pose_counts.append(len(parameters["pose_options"]))
+        score_thresholds.append(requirements["acceptance_score_milli"])
+        margin_thresholds.append(requirements["minimum_margin_milli"])
+
+        wrong_mode = {
+            "mechanic_id": mechanic,
+            "task_id": full_public["task_id"],
+            "challenge_id": full_public["challenge_id"],
+            "interaction_mode": "simplified",
+            "events": [],
+        }
+        rejected = grader.grade(wrong_mode, full_truth, full_public)
+        assert rejected["passed"] is False
+        assert rejected["feedback"] == "robot-art drawing uses the wrong interaction input"
+    assert vocabulary_sizes == [3, 5, 7, 8, 8]
+    assert pose_counts == [1, 3, 3, 3, 5]
+    assert score_thresholds == sorted(score_thresholds)
+    assert margin_thresholds == sorted(margin_thresholds)
+
+    renderer = (BENCHMARK / "shared_runtime" / "app" / "mechanics" / f"{mechanic}.js").read_text(encoding="utf-8")
+    assert 'data-interaction="${clean(interaction)}"' in renderer
+    assert 'id="finish-plot-stroke"' in renderer
+    assert '"plot_clicks"' in renderer
+    assert '"continuous_pointer"' in renderer
+
+
+def _split_boxes_payload(public: dict, truth: dict, interaction: str, grader: types.ModuleType) -> dict:
+    slots: list[str | None] = [None] * len(truth["tiles"])
+    for tile in truth["tiles"]:
+        slots[int(tile["initial_slot"])] = str(tile["id"])
+    assert all(slots)
+    slots = [str(tile_id) for tile_id in slots]
+    columns = int(truth["scene"].get("columns") or 3)
+    desired = {
+        int(tile["source"]["row"]) * columns + int(tile["source"]["column"]): str(tile["id"])
+        for tile in truth["tiles"]
+    }
+    rotations = {str(tile["id"]): int(tile["initial_rotation"]) for tile in truth["tiles"]}
+    phases = {str(tile["id"]): int(tile["initial_phase"]) for tile in truth["tiles"]}
+    events: list[dict] = []
+
+    def record(event_type: str, **details: object) -> None:
+        events.append({"sequence": len(events) + 1, "type": event_type, **details})
+
+    source = {"simplified": "slot_button", "full": "tile_drag"}[interaction]
+    for destination, tile_id in desired.items():
+        if slots[destination] == tile_id:
+            continue
+        origin = slots.index(tile_id)
+        displaced_id = slots[destination]
+        record("swap", tile_id=tile_id, displaced_id=displaced_id, from_slot=origin, to_slot=destination, input_source=source)
+        slots[origin], slots[destination] = slots[destination], slots[origin]
+    for tile_id, rotation in list(rotations.items()):
+        if rotation:
+            rotations[tile_id] = 0
+            record("rotate", tile_id=tile_id, rotation_after=0, input_source="rotation_button")
+    for tile_id, phase in list(phases.items()):
+        if phase:
+            phases[tile_id] = 0
+            record("phase", tile_id=tile_id, delta_ticks=-phase, phase_after=0, input_source="phase_track")
+    sync_start = 100
+    record("sync_start", scene_tick=sync_start)
+    tile_by_id = {str(tile["id"]): tile for tile in truth["tiles"]}
+    sample_count = int(truth["requirements"]["minimum_samples"])
+    sample_ms = int(truth["requirements"]["sample_ms"])
+    for sample_index in range(sample_count):
+        elapsed = sample_index * sample_ms
+        scene_tick = sync_start + elapsed
+        errors = grader._errors(truth["scene"], slots, tile_by_id, rotations, phases, scene_tick)
+        assert all(value == 0 for value in errors.values())
+        record("sync_sample", elapsed_ms=elapsed, scene_tick=scene_tick, **errors, stable=True)
+    record("sync_end", duration_ms=max(int(truth["requirements"]["hold_ms"]), (sample_count - 1) * sample_ms), sample_count=sample_count)
+    return {
+        "mechanic_id": public["mechanic_id"],
+        "task_id": public["task_id"],
+        "challenge_id": public["challenge_id"],
+        "events": events,
+        "final_slots": {tile_id: slot for slot, tile_id in enumerate(slots)},
+        "final_rotations": rotations,
+        "final_phases": phases,
+        "completed": True,
+    }
+
+
+def test_split_boxes_controls_preserve_l4_and_bind_both_input_surfaces() -> None:
+    env_name = "single_scene_split_boxes_env"
+    controls = controls_for(env_name)
+    grader = load_module("controlled_split_boxes_grader", BENCHMARK / "shared_runtime" / "server" / "incubator_graders" / "single_scene_split_boxes.py")
+    original = base_task_for(env_name, "single_scene_split_boxes")
+    historical_fixture = read_json(
+        BENCHMARK / "environments" / env_name / "historical_l4_baseline_fixture.json"
+    )
+    assert controls["baseline"] == {"difficulty": 4, "interaction": "full", "real_time": "live"}
+    assert original["natural_language"] == controls["difficulty"]["4"]["natural_language"]
+    assert historical_fixture["identity_fields_removed_for_comparison"] == [
+        "task_id",
+        "challenge_id",
+        "control_condition",
+    ]
+    # This fixture was generated from the explicit pre-control revision named
+    # in the fixture.  Compare both the uncontrolled path and controlled L4
+    # against it; comparing those two current paths alone cannot detect a
+    # shared regression in the generated task contract.
+    for historical in historical_fixture["seeds"]:
+        seed = historical["seed"]
+        expected_public = historical["public_state"]
+        expected_truth = historical["ground_truth"]
+        original_public, original_truth = SETUP.generate_task_state(original, seed)
+        baseline_public, baseline_truth = SETUP.generate_task_state(task_for_level(env_name, 4, "full"), seed)
+        assert original_public["challenge_id"] == expected_public["challenge_id"]
+        assert original_truth["challenge_id"] == expected_truth["challenge_id"]
+        assert baseline_public["challenge_id"] == expected_public["challenge_id"]
+        assert baseline_truth["challenge_id"] == expected_truth["challenge_id"]
+        assert original_public["scene"]["rows"] == original_public["scene"]["columns"] == 3
+        assert original_truth["scene"]["rows"] == original_truth["scene"]["columns"] == 3
+        assert baseline_public["scene"]["rows"] == baseline_public["scene"]["columns"] == 3
+        assert baseline_truth["scene"]["rows"] == baseline_truth["scene"]["columns"] == 3
+        assert original_public == expected_public
+        assert original_truth == expected_truth
+        assert without_control_identity(original_public) == without_control_identity(expected_public)
+        assert without_control_identity(original_truth) == without_control_identity(expected_truth)
+        assert without_control_identity(baseline_public) == without_control_identity(expected_public)
+        assert without_control_identity(baseline_truth) == without_control_identity(expected_truth)
+        assert without_control_identity(baseline_public) == without_control_identity(original_public)
+        assert without_control_identity(baseline_truth) == without_control_identity(original_truth)
+    for level in range(1, 6):
+        parameters = controls["difficulty"][str(level)]["parameters"]
+        simplified_public, simplified_truth = SETUP.generate_task_state(task_for_level(env_name, level, "simplified"), f"split-boxes-{level}")
+        full_public, full_truth = SETUP.generate_task_state(task_for_level(env_name, level, "full"), f"split-boxes-{level}")
+        assert without_control_identity(simplified_public) == without_control_identity(full_public)
+        assert without_control_identity(simplified_truth) == without_control_identity(full_truth)
+        assert len(full_public["tiles"]) == parameters["rows"] * parameters["columns"]
+        assert len(full_public["scene"]["decoys"]) == parameters["decoy_count"]
+        for interaction, public, truth in (("simplified", simplified_public, simplified_truth), ("full", full_public, full_truth)):
+            payload = _split_boxes_payload(public, truth, interaction, grader)
+            accepted = grader.grade(payload, truth, public)
+            assert accepted["passed"] is True, accepted
+            wrong_source = copy.deepcopy(payload)
+            next(event for event in wrong_source["events"] if event["type"] == "swap")["input_source"] = "tile_drag" if interaction == "simplified" else "slot_button"
+            rejected = grader.grade(wrong_source, truth, public)
+            assert rejected["passed"] is False
+            assert "wrong interaction input" in rejected["feedback"]
+
+
+def _reload_interruption_payload(public: dict, truth: dict, interaction: str, grader) -> dict:
+    events: list[dict] = []
+
+    def push(kind: str, **details: object) -> None:
+        events.append({"sequence": len(events) + 1, "kind": kind, **details})
+
+    interrupts = {
+        int(spec["after_step"]): spec
+        for spec in truth["interruptions"]
+    }
+    for index, direction in enumerate(truth["sequence"], start=1):
+        push("gesture", index=index - 1, direction=direction, surface=interaction)
+        spec = interrupts.get(index)
+        if spec is None:
+            continue
+        sample_count = int(spec["min_samples"])
+        duration = int(spec["hold_ms"])
+        samples = []
+        for sample_index in range(sample_count):
+            elapsed = round(duration * sample_index / max(1, sample_count - 1))
+            if interaction == "full":
+                x, y = grader._spark(spec, elapsed)
+                point = [x, y]
+            else:
+                point = [0, 0]
+            samples.append({"elapsed_ms": elapsed, "point": point})
+        push(
+            "interrupt",
+            interruption_id=spec["id"],
+            surface=interaction,
+            duration_ms=duration,
+            samples=samples,
+        )
+    return {
+        "mechanic_id": public["mechanic_id"],
+        "challenge_id": public["challenge_id"],
+        "interaction_mode": interaction,
+        "events": events,
+    }
+
+
+def test_reload_interruption_profiles_preserve_l4_and_bind_both_input_surfaces() -> None:
+    env_name = "reload_interruption_env"
+    controls = controls_for(env_name)
+    grader = load_module(
+        "controlled_reload_interruption_grader",
+        BENCHMARK / "shared_runtime" / "server" / "incubator_graders" / "reload_interruption.py",
+    )
+    helpers = load_module(
+        "controlled_reload_interruption_verifier",
+        BENCHMARK / "shared_runtime" / "verifier_helpers.py",
+    )
+    original = base_task_for(env_name, "reload_interruption")
+    for seed in ("reload-baseline-a", "reload-baseline-b"):
+        original_public, original_truth = SETUP.generate_task_state(original, seed)
+        baseline_public, baseline_truth = SETUP.generate_task_state(
+            task_for_level(env_name, 4, "full"), seed
+        )
+        assert without_control_identity(baseline_public) == without_control_identity(original_public)
+        assert without_control_identity(baseline_truth) == without_control_identity(original_truth)
+
+    for level in range(1, 6):
+        parameters = controls["difficulty"][str(level)]["parameters"]
+        simplified_public, simplified_truth = SETUP.generate_task_state(
+            task_for_level(env_name, level, "simplified"), f"reload-profile-{level}"
+        )
+        full_public, full_truth = SETUP.generate_task_state(
+            task_for_level(env_name, level, "full"), f"reload-profile-{level}"
+        )
+        assert without_control_identity(simplified_public) == without_control_identity(full_public)
+        assert without_control_identity(simplified_truth) == without_control_identity(full_truth)
+        assert len(simplified_public["sequence"]) == parameters["sequence_length"]
+        assert [item["after_step"] for item in simplified_public["interruptions"]] == parameters["interruption_steps"]
+        for public, truth, interaction in (
+            (simplified_public, simplified_truth, "simplified"),
+            (full_public, full_truth, "full"),
+        ):
+            payload = _reload_interruption_payload(public, truth, interaction, grader)
+            assert grader.grade(payload, truth, public)["passed"] is True
+            exported = {"result": payload, "public_state": public, "ground_truth": truth}
+            assert helpers.verify_reload_interruption(exported)["passed"] is True
+            wrong_surface = copy.deepcopy(payload)
+            wrong_surface["interaction_mode"] = "full" if interaction == "simplified" else "simplified"
+            assert grader.grade(wrong_surface, truth, public)["passed"] is False
 
 
 def _wonky_delta(target: float, initial: float) -> float:
@@ -745,11 +1362,30 @@ def test_implemented_interaction_pairs_share_generated_worlds_and_goals() -> Non
             )
             first_normalized = without_control_identity(first_public)
             normalized = without_control_identity(public)
-            if env_name == "slot_reel_capture_env":
+            if env_name in {
+                "shadow_crime_lab_env",
+                "slot_reel_capture_env",
+                "ribbon_switchboard_env",
+                "polyrhythm_customs_env",
+                "tomographic_baggage_surgery_env",
+            }:
                 first_normalized.pop("prompt")
                 normalized.pop("prompt")
+            if env_name in {"robot_art_critic_env", "wizard_critter_capture_env"}:
+                # The world and goal are identical, while the visible task
+                # copy must name the selected direct or proxy input surface.
+                for key in ("prompt", "rules"):
+                    first_normalized.pop(key)
+                    normalized.pop(key)
             assert normalized == first_normalized
-            assert without_control_identity(truth) == without_control_identity(first_truth)
+            first_truth_normalized = without_control_identity(first_truth)
+            truth_normalized = without_control_identity(truth)
+            if env_name == "tomographic_baggage_surgery_env":
+                # Mode-specific visible instructions travel in the truth bundle
+                # too, but do not change the generated volume or goal.
+                first_truth_normalized.pop("prompt")
+                truth_normalized.pop("prompt")
+            assert truth_normalized == first_truth_normalized
     assert paired >= 1
 
 
@@ -3269,6 +3905,256 @@ def test_every_controlled_generator_is_deterministic_and_binds_the_condition() -
         assert len(challenge_ids) == 5
 
 
+def _time_wheel_payload(grader, public: dict, truth: dict, interaction: str) -> dict:
+    current = copy.deepcopy(public["initial_date"])
+    source = "proxy_step" if interaction == "simplified" else "wheel_drag"
+    events: list[dict] = []
+
+    def append(kind: str, **details) -> None:
+        events.append({"sequence": len(events) + 1, "type": kind, **details, "date_after": copy.deepcopy(current)})
+
+    for action in truth["direct_recovery_route"]:
+        component = str(action["component"])
+        steps = int(action["steps"])
+        append("drag_start", component=component, input_source=source)
+        direction = 1 if steps > 0 else -1
+        for _ in range(abs(steps)):
+            current = grader._step(
+                current,
+                component,
+                direction,
+                int(public["year_range"]["minimum"]),
+                int(public["year_range"]["maximum"]),
+            )
+            append("detent", source="drag", component=component, direction=direction, input_source=source)
+        append("drag_end", component=component, drag_detents=abs(steps), input_source=source)
+    append("lock")
+    return {
+        "mechanic_id": public["mechanic_id"],
+        "task_id": public["task_id"],
+        "challenge_id": public["challenge_id"],
+        "interaction_mode": interaction,
+        "events": events,
+        "final_date": current,
+        "completed": current == public["target_date"],
+    }
+
+
+def test_thirty_year_time_wheel_profiles_preserve_l3_and_bind_both_input_surfaces() -> None:
+    env_name = "thirty_year_time_wheel_env"
+    mechanic = "thirty_year_time_wheel"
+    controls = controls_for(env_name)
+    grader = load_module(
+        "controlled_thirty_year_time_wheel_grader",
+        BENCHMARK / "shared_runtime" / "server" / "incubator_graders" / f"{mechanic}.py",
+    )
+    original = base_task_for(env_name, mechanic)
+    assert controls["baseline"] == {"difficulty": 3, "interaction": "full", "real_time": "live"}
+    assert controls["real_time"] == {
+        "play_time_seconds": 120,
+        "observation_window_ms": 600,
+        "frames_per_observation": 5,
+    }
+
+    for seed in ("time-wheel-baseline-a", "time-wheel-baseline-b", "time-wheel-baseline-c"):
+        original_public, original_truth = SETUP.generate_task_state(original, seed)
+        baseline_public, baseline_truth = SETUP.generate_task_state(task_for_level(env_name, 3, "full"), seed)
+        assert without_control_identity(baseline_public) == without_control_identity(original_public)
+        assert without_control_identity(baseline_truth) == without_control_identity(original_truth)
+
+    expected_sources = {"simplified": "proxy_step", "full": "wheel_drag"}
+    for level in range(1, 6):
+        parameters = controls["difficulty"][str(level)]["parameters"]
+        simplified_public, simplified_truth = SETUP.generate_task_state(
+            task_for_level(env_name, level, "simplified"), f"time-wheel-profile-{level}"
+        )
+        full_public, full_truth = SETUP.generate_task_state(
+            task_for_level(env_name, level, "full"), f"time-wheel-profile-{level}"
+        )
+        assert without_control_identity(simplified_public) == without_control_identity(full_public)
+        assert without_control_identity(simplified_truth) == without_control_identity(full_truth)
+        assert full_public["year_range"] == {
+            "minimum": parameters["year_min"],
+            "maximum": parameters["year_max"],
+        }
+        expected_required = parameters["required_components"]
+        assert full_public.get("required_components", ["month", "year", "day"]) == expected_required
+        assert full_truth.get("required_components", ["month", "year", "day"]) == expected_required
+        if level == 3:
+            assert "target_presentation" not in full_public
+        else:
+            assert full_public["target_presentation"] == parameters["target_presentation"]
+
+        for interaction, public, truth in (
+            ("simplified", simplified_public, simplified_truth),
+            ("full", full_public, full_truth),
+        ):
+            payload = _time_wheel_payload(grader, public, truth, interaction)
+            assert grader.grade(payload, truth, public)["passed"] is True
+            wrong_mode = copy.deepcopy(payload)
+            wrong_mode["interaction_mode"] = "full" if interaction == "simplified" else "simplified"
+            assert grader.grade(wrong_mode, truth, public)["passed"] is False
+            wrong_source = copy.deepcopy(payload)
+            next(event for event in wrong_source["events"] if event["type"] == "detent")["input_source"] = (
+                "wheel_drag" if interaction == "simplified" else "proxy_step"
+            )
+            assert grader.grade(wrong_source, truth, public)["passed"] is False
+
+    renderer = (
+        BENCHMARK / "shared_runtime" / "app" / "mechanics" / f"{mechanic}.js"
+    ).read_text(encoding="utf-8")
+    assert 'data-time-proxy-component' in renderer
+    assert 'if (interactionMode() !== "full"' in renderer
+    assert 'input_source: "proxy_step"' in renderer
+
+
+def _wrong_number_payload(public: dict, truth: dict, interaction: str, grader) -> dict:
+    source = {"simplified": "step_proxy", "full": "tuning_slider"}[interaction]
+    qualification = truth["qualification"]
+    target = next(line for line in truth["lines"] if line["id"] == truth["target_line_id"])
+    phase = int(truth["solution_phase_step"])
+    skew = int(truth["solution_skew_step"])
+    events: list[dict] = []
+
+    def push(event_type: str, timestamp: int, **details: object) -> dict:
+        event = {"seq": len(events) + 1, "t_ms": timestamp, "type": event_type, **details}
+        events.append(event)
+        return event
+
+    push("line_select", 0, line_id=target["id"])
+    push("tune", 1, control="phase", value=phase, input_source=source)
+    push("tune", 2, control="skew", value=skew, input_source=source)
+    trial_start = push("trial_start", 10, line_id=target["id"], phase=phase, skew=skew)
+    start_t = 10
+    locked_samples = 0
+    lock_history: list[bool] = []
+    sample_count = 0
+    sample_times = list(range(0, int(qualification["trial_ms"]) + 1, int(qualification["sample_ms"])))
+    if sample_times[-1] != int(qualification["trial_ms"]):
+        sample_times.append(int(qualification["trial_ms"]))
+    for elapsed in sample_times:
+        target_phase = (
+            -float(target["phase_offset_steps"])
+            - float(target["drift_milli_steps_per_second"]) * elapsed / 1_000_000
+        ) % int(qualification["phase_steps"])
+        desired_phase = int(math.floor(target_phase + .5)) % int(qualification["phase_steps"])
+        if desired_phase != phase:
+            push("tune", start_t + elapsed - 1, control="phase", value=desired_phase, input_source=source)
+            phase = desired_phase
+        residual, locked = grader._alignment(target, phase, skew, elapsed, qualification)
+        push(
+            "trial_sample",
+            start_t + elapsed,
+            line_id=target["id"],
+            elapsed_ms=elapsed,
+            phase=phase,
+            skew=skew,
+            locked=locked,
+            residual_milli=round(residual * 1000),
+        )
+        sample_count += 1
+        locked_samples += int(locked)
+        lock_history.append(locked)
+        lock_history = lock_history[-int(qualification["final_window_samples"]):]
+    passed_local = (
+        locked_samples >= int(qualification["minimum_lock_samples"])
+        and sum(lock_history) >= int(qualification["minimum_final_lock_samples"])
+    )
+    push(
+        "trial_end",
+        start_t + sample_times[-1] + 1,
+        line_id=target["id"],
+        passed_local=passed_local,
+        sample_count=sample_count,
+        locked_sample_count=locked_samples,
+        final_window_locked_samples=sum(lock_history),
+    )
+    return {
+        "mechanic_id": public["mechanic_id"],
+        "task_id": public["task_id"],
+        "challenge_id": public["challenge_id"],
+        "interaction_mode": interaction,
+        "events": events,
+        "completed": True,
+        "selected_line_id": target["id"],
+        "final_phase": phase,
+        "final_skew": skew,
+        "successful_trial_start_seq": trial_start["seq"],
+        "trial_count": 1,
+    }
+
+
+def test_wrong_number_profiles_preserve_l4_and_bind_both_tuning_surfaces() -> None:
+    env_name = "wrong_number_env"
+    mechanic = "wrong_number"
+    controls = controls_for(env_name)
+    grader = load_module(
+        "controlled_wrong_number_grader",
+        BENCHMARK / "shared_runtime" / "server" / "incubator_graders" / f"{mechanic}.py",
+    )
+    original = base_task_for(env_name, mechanic)
+    assert controls["baseline"] == {"difficulty": 4, "interaction": "full", "real_time": "live"}
+    assert original["natural_language"] == controls["difficulty"]["4"]["natural_language"]
+
+    for seed in ("wrong-number-baseline-a", "wrong-number-baseline-b"):
+        original_public, original_truth = SETUP.generate_task_state(original, seed)
+        baseline_public, baseline_truth = SETUP.generate_task_state(task_for_level(env_name, 4, "full"), seed)
+        assert without_control_identity(baseline_public) == without_control_identity(original_public)
+        assert without_control_identity(baseline_truth) == without_control_identity(original_truth)
+
+    line_counts: list[int] = []
+    phase_steps: list[int] = []
+    trial_lengths: list[int] = []
+    for level in range(1, 6):
+        parameters = controls["difficulty"][str(level)]["parameters"]
+        simplified_public, simplified_truth = SETUP.generate_task_state(
+            task_for_level(env_name, level, "simplified"), f"wrong-number-d{level}"
+        )
+        full_public, full_truth = SETUP.generate_task_state(
+            task_for_level(env_name, level, "full"), f"wrong-number-d{level}"
+        )
+        assert without_control_identity(simplified_public) == without_control_identity(full_public)
+        assert without_control_identity(simplified_truth) == without_control_identity(full_truth)
+        assert len(full_public["lines"]) == parameters["line_count"]
+        assert full_public["qualification"]["phase_steps"] == parameters["phase_steps"]
+        assert full_public["qualification"]["skew_min"] == parameters["skew_min"]
+        assert full_public["qualification"]["skew_max"] == parameters["skew_max"]
+        assert full_public["qualification"]["trial_ms"] == parameters["trial_ms"]
+        assert all(
+            int(line["drift_milli_steps_per_second"]) in parameters["drift_milli_values"]
+            for line in full_public["lines"]
+        )
+        assert all(
+            int(parameters["impostor_distortion_min_milli"]) <= int(line["distortion_milli"]) <= int(parameters["impostor_distortion_max_milli"])
+            for line in full_public["lines"]
+            if line["id"] != full_truth["target_line_id"]
+        )
+        line_counts.append(len(full_public["lines"]))
+        phase_steps.append(int(full_public["qualification"]["phase_steps"]))
+        trial_lengths.append(int(full_public["qualification"]["trial_ms"]))
+
+        for interaction, public, truth in (
+            ("simplified", simplified_public, simplified_truth),
+            ("full", full_public, full_truth),
+        ):
+            payload = _wrong_number_payload(public, truth, interaction, grader)
+            assert grader.grade(payload, truth, public)["passed"] is True
+            wrong_mode = copy.deepcopy(payload)
+            wrong_mode["interaction_mode"] = "full" if interaction == "simplified" else "simplified"
+            assert grader.grade(wrong_mode, truth, public)["passed"] is False
+            wrong_source = copy.deepcopy(payload)
+            first_tune = next(event for event in wrong_source["events"] if event["type"] == "tune")
+            first_tune["input_source"] = "tuning_slider" if interaction == "simplified" else "step_proxy"
+            assert grader.grade(wrong_source, truth, public)["passed"] is False
+            stale = copy.deepcopy(payload)
+            stale["challenge_id"] = "stale-switchboard"
+            assert grader.grade(stale, truth, public)["passed"] is False
+
+    assert line_counts == sorted(line_counts)
+    assert phase_steps == sorted(phase_steps)
+    assert trial_lengths == sorted(trial_lengths)
+
+
 def _top_face_dice_payload(public: dict, truth: dict, interaction: str, grader) -> dict:
     sources = {
         "simplified": {"select": "die_clamp", "roll": "roll_pad"},
@@ -4741,3 +5627,189 @@ def test_reverse_identity_gate_controls_preserve_the_historical_full_reference_a
     assert 'state.control_condition?.interaction || "full"' in renderer
     assert '"direction_button"' in renderer
     assert '"pointer_hold"' in renderer
+
+
+def _semantic_probe_payload(public: dict, truth: dict, interaction: str) -> dict:
+    probe_source = {"simplified": "proxy_probe", "full": "direct_probe_drag"}[interaction]
+    placement_source = {"simplified": "proxy_pair_click", "full": "direct_specimen_drag"}[interaction]
+    probes = []
+    for object_id in truth["expected_assignments"]:
+        for channel in ("thermal", "polarity"):
+            probes.append({
+                "sequence": len(probes) + 1,
+                "object_id": object_id,
+                "probe": channel,
+                "hold_ms": public["probe_hold_ms"],
+                "input_source": probe_source,
+            })
+    return {
+        "mechanic_id": public["mechanic_id"],
+        "task_id": public["task_id"],
+        "challenge_id": public["challenge_id"],
+        "interaction_mode": interaction,
+        "placements": truth["expected_assignments"],
+        "placement_sources": {
+            object_id: placement_source
+            for object_id in truth["expected_assignments"]
+        },
+        "probes": probes,
+    }
+
+
+def test_semantic_drag_drop_controls_preserve_l3_and_bind_probe_and_route_surfaces() -> None:
+    env_name = "semantic_drag_drop_absurdity_env"
+    mechanic = "semantic_drag_drop_absurdity"
+    controls = controls_for(env_name)
+    grader = load_module(
+        "controlled_semantic_drag_drop_grader",
+        BENCHMARK / "shared_runtime" / "server" / "incubator_graders" / f"{mechanic}.py",
+    )
+    assert controls["baseline"] == {"difficulty": 3, "interaction": "full", "real_time": "live"}
+    assert controls["real_time"] == {
+        "play_time_seconds": 150,
+        "observation_window_ms": 800,
+        "frames_per_observation": 6,
+    }
+
+    original = base_task_for(env_name, mechanic)
+    for seed in ("semantic-baseline-a", "semantic-baseline-b", "semantic-baseline-c"):
+        original_public, original_truth = SETUP.generate_task_state(original, seed)
+        baseline_public, baseline_truth = SETUP.generate_task_state(
+            task_for_level(env_name, 3, "full"), seed
+        )
+        assert original_public["challenge_id"] == baseline_public["challenge_id"]
+        assert without_control_identity(original_public) == without_control_identity(baseline_public)
+        assert without_control_identity(original_truth) == without_control_identity(baseline_truth)
+
+    expected_counts = {1: 2, 2: 3, 3: 4, 4: 5, 5: 6}
+    for level, count in expected_counts.items():
+        full_public, full_truth = SETUP.generate_task_state(
+            task_for_level(env_name, level, "full"), f"semantic-profile-{level}"
+        )
+        simplified_public, simplified_truth = SETUP.generate_task_state(
+            task_for_level(env_name, level, "simplified"), f"semantic-profile-{level}"
+        )
+        assert len(full_public["objects"]) == len(full_public["receivers"]) == count
+        assert len({(item["runtime_signature"]["thermal"], item["runtime_signature"]["polarity"]) for item in full_public["objects"]}) == count
+        assert full_public["control_condition"]["difficulty_parameters"] == controls["difficulty"][str(level)]["parameters"]
+        assert full_public["challenge_id"] == simplified_public["challenge_id"]
+        assert without_control_identity(full_public) == without_control_identity(simplified_public)
+        assert without_control_identity(full_truth) == without_control_identity(simplified_truth)
+
+        for interaction, public, truth in (
+            ("full", full_public, full_truth),
+            ("simplified", simplified_public, simplified_truth),
+        ):
+            payload = _semantic_probe_payload(public, truth, interaction)
+            accepted = grader.grade(payload, truth, public)
+            assert accepted["passed"] is True, accepted
+
+            wrong_mode = copy.deepcopy(payload)
+            wrong_mode["interaction_mode"] = "simplified" if interaction == "full" else "full"
+            rejected = grader.grade(wrong_mode, truth, public)
+            assert rejected["passed"] is False
+            assert rejected["feedback"] == "causal routing transcript uses the wrong interaction mode"
+
+            wrong_probe_source = copy.deepcopy(payload)
+            wrong_probe_source["probes"][0]["input_source"] = "proxy_probe" if interaction == "full" else "direct_probe_drag"
+            rejected = grader.grade(wrong_probe_source, truth, public)
+            assert rejected["passed"] is False
+            assert rejected["feedback"] == "material probe uses the wrong interaction input"
+
+            missing_probe = copy.deepcopy(payload)
+            missing_probe["probes"].pop()
+            rejected = grader.grade(missing_probe, truth, public)
+            assert rejected["passed"] is False
+
+    renderer = (
+        BENCHMARK / "shared_runtime" / "app" / "mechanics" / f"{mechanic}.js"
+    ).read_text(encoding="utf-8")
+    assert 'state.control_condition?.interaction || "full"' in renderer
+    assert 'data-interaction="${esc(interaction)}"' in renderer
+    assert 'data-proxy-probe="thermal"' in renderer
+    assert 'direct_specimen_drag' in renderer
+
+
+def test_portal_freight_controls_preserve_l4_and_bind_direct_canvas_input() -> None:
+    env_name = "portal_freight_oversized_parcel_env"
+    mechanic = "portal_freight_oversized_parcel"
+    controls = controls_for(env_name)
+    grader = load_module(
+        "controlled_portal_freight_grader",
+        BENCHMARK / "shared_runtime" / "server" / "incubator_graders" / f"{mechanic}.py",
+    )
+    assert controls["baseline"] == {"difficulty": 4, "interaction": "simplified", "real_time": "live"}
+    assert controls["real_time"] == {
+        "play_time_seconds": 180,
+        "observation_window_ms": 0,
+        "frames_per_observation": 1,
+    }
+
+    for seed in ("portal-freight-baseline-a", "portal-freight-baseline-b"):
+        original_public, original_truth = SETUP.generate_task_state(base_task_for(env_name, mechanic), seed)
+        baseline_public, baseline_truth = SETUP.generate_task_state(
+            task_for_level(env_name, 4, "simplified"), seed
+        )
+        assert original_public["challenge_id"] == baseline_public["challenge_id"]
+        assert without_control_identity(original_public) == without_control_identity(baseline_public)
+        assert without_control_identity(original_truth) == without_control_identity(baseline_truth)
+
+    for level in range(1, 6):
+        seed = f"portal-freight-profile-{level}"
+        simplified_public, simplified_truth = SETUP.generate_task_state(
+            task_for_level(env_name, level, "simplified"), seed
+        )
+        full_public, full_truth = SETUP.generate_task_state(
+            task_for_level(env_name, level, "full"), seed
+        )
+        parameters = controls["difficulty"][str(level)]["parameters"]
+        assert simplified_public["control_condition"]["difficulty_parameters"] == parameters
+        assert simplified_public["challenge_id"] == full_public["challenge_id"]
+        assert without_control_identity(simplified_public) == without_control_identity(full_public)
+        assert without_control_identity(simplified_truth) == without_control_identity(full_truth)
+        assert simplified_public["parcel"]["initial_angle_deg"] in parameters["initial_angles_deg"]
+        assert simplified_public["controls"]["portal_half_width"] in parameters["portal_half_widths"]
+        assert simplified_public["controls"]["push_step"] == parameters["push_step"]
+        assert simplified_truth["delivery"] == full_truth["delivery"]
+
+    public, truth = SETUP.generate_task_state(task_for_level(env_name, 4, "full"), "portal-freight-surface")
+    payload = {
+        "mechanic_id": mechanic,
+        "task_id": public["task_id"],
+        "challenge_id": public["challenge_id"],
+        "interaction_mode": "full",
+        "events": [
+            {"seq": 1, "t_ms": 0, "type": "challenge_start"},
+            {
+                "seq": 2,
+                "t_ms": 1,
+                "type": "aim",
+                "space": "A",
+                "delta_deg": 15,
+                "before_deg": public["tools"]["A"]["yaw_deg"],
+                "after_deg": public["tools"]["A"]["yaw_deg"] + 15,
+                "input_surface": "proxy_control",
+            },
+        ],
+        "final_state": {},
+    }
+    rejected = grader.grade(payload, truth, public)
+    assert rejected["passed"] is False
+    assert rejected["feedback"] == "aim event 2 uses the wrong interaction input"
+
+    stale = copy.deepcopy(payload)
+    stale["challenge_id"] = "stale-portal-freight-challenge"
+    rejected = grader.grade(stale, truth, public)
+    assert rejected["passed"] is False
+    assert rejected["feedback"] == "stale challenge"
+
+    malformed = copy.deepcopy(payload)
+    malformed["events"] = []
+    rejected = grader.grade(malformed, truth, public)
+    assert rejected["passed"] is False
+    assert rejected["feedback"] == "freight transcript is missing or too long"
+
+    renderer = (BENCHMARK / "shared_runtime" / "app" / "mechanics" / f"{mechanic}.js").read_text(encoding="utf-8")
+    assert 'inputSurface(){return interaction()==="full"?"direct_canvas":"proxy_control";}' in renderer
+    assert 'installDirectCanvasControls' in renderer
+    assert 'input_surface:surface' in renderer

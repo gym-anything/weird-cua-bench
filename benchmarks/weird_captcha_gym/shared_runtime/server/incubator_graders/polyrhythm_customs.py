@@ -51,7 +51,7 @@ def _normalize_transcript(raw: Any, lane_ids: set[str], max_time: float) -> tupl
         source = str(item.get("source") or "").lower()
         if seq != index or lane not in lane_ids or event_type not in {"down", "up"}:
             return None, "performance events are not a normalized monotonic transcript"
-        if source not in {"keyboard", "pointer"}:
+        if source not in {"keyboard", "pointer", "pointer_direct", "pointer_toggle"}:
             return None, "performance event source is invalid"
         if at_ms < previous_time or at_ms < -50 or at_ms > max_time + 750:
             return None, "performance event timestamp is out of bounds"
@@ -68,6 +68,36 @@ def _normalize_transcript(raw: Any, lane_ids: set[str], max_time: float) -> tupl
     if held:
         return None, "performance ended with a held lane"
     return normalized, None
+
+
+def _controlled_interaction(
+    payload: dict[str, Any], ground_truth: dict[str, Any], public_state: dict[str, Any]
+) -> tuple[set[str] | None, str | None]:
+    truth_condition = ground_truth.get("control_condition")
+    public_condition = public_state.get("control_condition")
+    if truth_condition is None and public_condition is None:
+        return None, None
+    if not isinstance(truth_condition, dict) or truth_condition != public_condition:
+        return None, "public interaction condition differs from the polyrhythm contract"
+    interaction = str(truth_condition.get("interaction") or "")
+    expected_sources = {
+        "simplified": {"pointer_toggle"},
+        "full": {"keyboard", "pointer_direct"},
+    }.get(interaction)
+    if expected_sources is None:
+        return None, "polyrhythm interaction condition is invalid"
+    if str(payload.get("interaction_mode") or "") != interaction:
+        return None, "performance transcript uses the wrong interaction mode"
+    return expected_sources, None
+
+
+def _requires_hold_duration(ground_truth: dict[str, Any]) -> bool:
+    """Return the explicit non-baseline profile rule, never infer it from a bar."""
+    condition = ground_truth.get("control_condition")
+    if not isinstance(condition, dict):
+        return False
+    parameters = condition.get("difficulty_parameters")
+    return isinstance(parameters, dict) and parameters.get("require_hold_duration") is True
 
 
 def _pair_notes(transcript: list[dict[str, Any]]) -> list[dict[str, Any]]:
@@ -118,6 +148,9 @@ def grade(payload: dict[str, Any], ground_truth: dict[str, Any], public_state: d
     settings = ground_truth.get("settings") or {}
     if expected != public_state.get("score"):
         return {"graded": True, "passed": False, "feedback": "preview score does not match hidden score commitment"}
+    expected_sources, interaction_error = _controlled_interaction(payload, ground_truth, public_state)
+    if interaction_error:
+        return {"graded": True, "passed": False, "feedback": interaction_error}
     try:
         performance_ms = float(settings.get("performance_ms"))
         start_window = float(settings.get("start_window_ms"))
@@ -130,22 +163,30 @@ def grade(payload: dict[str, Any], ground_truth: dict[str, Any], public_state: d
     transcript, transcript_error = _normalize_transcript(payload.get("transcript"), lane_ids, performance_ms)
     if transcript_error or transcript is None:
         return {"graded": True, "passed": False, "feedback": transcript_error or "invalid transcript"}
+    if expected_sources is not None and any(event["source"] not in expected_sources for event in transcript):
+        return {"graded": True, "passed": False, "feedback": "performance transcript uses the wrong interaction input"}
     actual_notes = _pair_notes(transcript)
     matched, extras = _match_notes(expected, actual_notes, start_window)
 
     points = 0.0
     total = float(len(expected))
+    expected_holds = 0
+    duration_matched_holds = 0
     for note in expected:
         actual = matched.get(str(note.get("id") or ""))
         if actual is None:
+            if str(note.get("kind") or "") == "hold":
+                expected_holds += 1
             continue
         expected_duration = float(note.get("duration_ms") or 0)
         actual_duration = float(actual["duration_ms"])
         if str(note.get("kind") or "") == "hold":
+            expected_holds += 1
             points += 1.0
             total += 1.0
             if abs(actual_duration - expected_duration) <= duration_tolerance:
                 points += 1.0
+                duration_matched_holds += 1
         elif 25 <= actual_duration <= 430:
             points += 1.0
 
@@ -164,13 +205,24 @@ def grade(payload: dict[str, Any], ground_truth: dict[str, Any], public_state: d
 
     points = max(0.0, points - extras * 0.5)
     accuracy = points / total if total else 0.0
-    passed = accuracy >= threshold and len(matched) >= 1 and chord_points == len(chords)
+    duration_required = _requires_hold_duration(ground_truth)
+    passed = (
+        accuracy >= threshold
+        and len(matched) >= 1
+        and chord_points == len(chords)
+        and (not duration_required or duration_matched_holds == expected_holds)
+    )
+    hold_feedback = (
+        f"holds {duration_matched_holds}/{expected_holds} duration-matched; "
+        if duration_required
+        else f"holds {expected_holds}; "
+    )
     return {
         "graded": True,
         "passed": passed,
         "feedback": (
             f"accuracy {accuracy * 100:.1f}%/{threshold * 100:.0f}%; notes {len(matched)}/{len(expected)}; "
-            f"holds {sum(1 for note in expected if note.get('kind') == 'hold')}; "
+            f"{hold_feedback}"
             f"chords {chord_points}/{len(chords)}; extras {extras}"
         ),
     }

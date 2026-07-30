@@ -67,12 +67,15 @@ def solve(page, state_dir: Path, out_dir: Path, mechanic: str) -> None:
         raise AssertionError(f"unexpected mechanic {mechanic!r}")
     truth = _read_json(state_dir / "ground_truth.json")
 
+    interaction = str((truth.get("control_condition") or {}).get("interaction") or "full")
     probe_index = 0
     for blot in truth["blot_rects"]:
         blot_id = blot["id"]
         page.locator(f'.ink-card[data-blot-id="{blot_id}"]').click()
         for tool in truth["required_tools"]:
-            if tool == "FOLD":
+            if interaction == "simplified":
+                page.locator(f'.ink-proxy-tool[data-tool="{tool}"]').click()
+            elif tool == "FOLD":
                 _fold(page)
             elif tool == "PRESSURE":
                 _pressure(page, int(truth["pressure_min_ms"]) + 110)
@@ -88,14 +91,18 @@ def solve(page, state_dir: Path, out_dir: Path, mechanic: str) -> None:
             page.wait_for_function("key => window.inkblotMaterialModel.observations.has(key)", arg=key, timeout=5_000)
 
     expect(page.locator(".ink-stamp[data-ready='true']")).to_be_visible()
-    stamp = page.locator(".ink-stamp").bounding_box()
-    target = page.locator(f'.ink-card[data-blot-id="{truth["culprit_id"]}"]').bounding_box()
-    if not stamp or not target:
-        raise AssertionError("verification stamp or target specimen is not visible")
-    page.mouse.move(stamp["x"] + stamp["width"] / 2, stamp["y"] + stamp["height"] / 2)
-    page.mouse.down()
-    page.mouse.move(target["x"] + target["width"] / 2, target["y"] + target["height"] / 2, steps=10)
-    page.mouse.up()
+    if interaction == "simplified":
+        page.locator(f'.ink-card[data-blot-id="{truth["culprit_id"]}"]').click()
+        page.locator(".ink-proxy-stamp").click()
+    else:
+        stamp = page.locator(".ink-stamp").bounding_box()
+        target = page.locator(f'.ink-card[data-blot-id="{truth["culprit_id"]}"]').bounding_box()
+        if not stamp or not target:
+            raise AssertionError("verification stamp or target specimen is not visible")
+        page.mouse.move(stamp["x"] + stamp["width"] / 2, stamp["y"] + stamp["height"] / 2)
+        page.mouse.down()
+        page.mouse.move(target["x"] + target["width"] / 2, target["y"] + target["height"] / 2, steps=10)
+        page.mouse.up()
     expect(page.locator(f'.ink-blot[data-blot-id="{truth["culprit_id"]}"].is-stamped')).to_be_visible()
     physical = page.evaluate("""() => ({
       observations: window.inkblotMaterialModel.observations.size,
@@ -109,10 +116,12 @@ def solve(page, state_dir: Path, out_dir: Path, mechanic: str) -> None:
     })""")
     expected_observations = int(truth["observations_required"])
     expected_ticks = expected_observations * int(truth["ticks_per_cycle"])
-    expected_fold = 5 if "FOLD" in truth["required_tools"] else 0
-    expected_pressure = 5 if "PRESSURE" in truth["required_tools"] else 0
-    expected_cool = 5 if "COOL" in truth["required_tools"] else 0
-    if physical["observations"] != expected_observations or physical["ticks"] != expected_ticks or physical["foldSamples"] < expected_fold * 3 or physical["pressureHolds"] != expected_pressure or physical["thermalPulses"] != expected_cool or physical["stampMoves"] < 3 or physical["stamped"] != truth["culprit_id"] or physical["resets"] != 0:
+    specimen_count = len(truth["blot_rects"])
+    expected_fold = specimen_count if "FOLD" in truth["required_tools"] else 0
+    expected_pressure = specimen_count if "PRESSURE" in truth["required_tools"] else 0
+    expected_cool = specimen_count if "COOL" in truth["required_tools"] else 0
+    required_stamp_moves = 0 if interaction == "simplified" else 3
+    if physical["observations"] != expected_observations or physical["ticks"] != expected_ticks or (interaction == "full" and physical["foldSamples"] < expected_fold * 3) or (interaction == "full" and physical["pressureHolds"] != expected_pressure) or (interaction == "full" and physical["thermalPulses"] != expected_cool) or physical["stampMoves"] < required_stamp_moves or physical["stamped"] != truth["culprit_id"] or physical["resets"] != 0:
         raise AssertionError(f"material workflow lacked required physical evidence: {physical}")
     _screenshot(page, out_dir, mechanic, "solved-specimen-matrix")
     page.locator(".ink-submit").click()

@@ -191,10 +191,47 @@ def _identity_error(
     return None
 
 
+def _control_condition_error(
+    payload: dict[str, Any],
+    ground_truth: dict[str, Any],
+    public_state: dict[str, Any],
+) -> tuple[dict[str, Any] | None, str | None]:
+    condition = ground_truth.get("control_condition")
+    if condition is None:
+        if public_state.get("control_condition") is not None:
+            return None, "public control condition is unexpected"
+        return None, None
+    if not isinstance(condition, dict) or public_state.get("control_condition") != condition:
+        return None, "public control condition differs from customs contract"
+    difficulty = _integer(condition.get("difficulty"))
+    interaction = str(condition.get("interaction") or "")
+    if (
+        difficulty not in {1, 2, 3, 4, 5}
+        or interaction not in {"simplified", "full"}
+        or str(condition.get("real_time") or "") != "live"
+        or not isinstance(condition.get("difficulty_parameters"), dict)
+    ):
+        return None, "customs control condition is malformed"
+    if payload.get("control_condition") != condition or payload.get("interaction_mode") != interaction:
+        return None, "customs transcript belongs to the other interaction mode"
+    return condition, None
+
+
+def _visible_trait_difference_count(wanted: dict[str, Any], protected: dict[str, Any]) -> int | None:
+    wanted_traits = wanted.get("traits") if isinstance(wanted, dict) else None
+    protected_traits = protected.get("traits") if isinstance(protected, dict) else None
+    if not isinstance(wanted_traits, dict) or not isinstance(protected_traits, dict):
+        return None
+    return sum(wanted_traits.get(name) != protected_traits.get(name) for name in ("horn", "eyes", "mark", "stripe"))
+
+
 def grade(payload: dict[str, Any], ground_truth: dict[str, Any], public_state: dict[str, Any]) -> dict[str, Any]:
     identity_error = _identity_error(payload, ground_truth, public_state)
     if identity_error:
         return _failure(identity_error)
+    condition, condition_error = _control_condition_error(payload, ground_truth, public_state)
+    if condition_error:
+        return _failure(condition_error)
 
     rows = ground_truth.get("map")
     creatures_list = ground_truth.get("creatures")
@@ -245,7 +282,7 @@ def grade(payload: dict[str, Any], ground_truth: dict[str, Any], public_state: d
         creatures[creature_id] = creature
     wanted = {str(item) for item in ground_truth.get("wanted_ids") or []}
     protected = {str(item) for item in ground_truth.get("protected_ids") or []}
-    if len(wanted) < 3 or len(protected) < 3 or wanted & protected or wanted | protected != set(creatures):
+    if len(wanted) < 2 or len(protected) < 2 or wanted & protected or wanted | protected != set(creatures):
         return _failure("invalid hidden customs classifications")
 
     expected_digest = _manifest_digest(rows, initial_raw, creatures_list, ammo_total)
@@ -254,6 +291,32 @@ def grade(payload: dict[str, Any], ground_truth: dict[str, Any], public_state: d
         or str(public_state.get("manifest_digest") or "") != expected_digest
     ):
         return _failure("customs manifest digest mismatch")
+
+    interaction = str((condition or {}).get("interaction") or "")
+    if condition is not None:
+        parameters = dict(condition["difficulty_parameters"])
+        map_width = _integer(parameters.get("map_width"))
+        map_height = _integer(parameters.get("map_height"))
+        wanted_count = _integer(parameters.get("wanted_count"))
+        trait_differences = _integer(parameters.get("decoy_trait_differences"))
+        condition_ammo = _integer(parameters.get("ammo"))
+        condition_step = _finite(parameters.get("move_step"))
+        paired_differences = [
+            _visible_trait_difference_count(creatures.get(wanted_id, {}), creatures.get(protected_id, {}))
+            for wanted_id, protected_id in zip(ground_truth.get("wanted_ids") or [], ground_truth.get("protected_ids") or [])
+        ]
+        if (
+            map_width != len(rows[0])
+            or map_height != len(rows)
+            or wanted_count != len(wanted)
+            or len(protected) != wanted_count
+            or trait_differences not in {1, 2, 3, 4}
+            or paired_differences != [trait_differences] * wanted_count
+            or condition_ammo != ammo_total
+            or condition_step is None
+            or abs(condition_step - move_step) > 1e-10
+        ):
+            return _failure("customs difficulty condition differs from generated world")
 
     actions = payload.get("actions")
     if not isinstance(actions, list) or not actions or len(actions) > 5000:
@@ -276,6 +339,8 @@ def grade(payload: dict[str, Any], ground_truth: dict[str, Any], public_state: d
             return _failure("action timestamps are invalid")
         previous_t = action_t
         action_type = str(action.get("type") or "")
+        if condition is not None and action.get("input_surface") != interaction:
+            return _failure("customs action uses the wrong interaction input")
 
         if action_type == "reset":
             x, y, angle_mdeg = initial

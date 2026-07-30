@@ -38,6 +38,40 @@ def _set_range(page, selector: str, value: int, minimum: int) -> None:
     expect(slider).to_have_value(str(value))
 
 
+def _click_steps(page, selector: str, count: int) -> None:
+    if count <= 0:
+        return
+    button = page.locator(selector)
+    box = button.bounding_box()
+    if box is None:
+        raise AssertionError(f"missing visible step control {selector}")
+    x = box["x"] + box["width"] / 2
+    y = box["y"] + box["height"] / 2
+    for _ in range(count):
+        page.mouse.click(x, y)
+
+
+def _set_tuning(page, control: str, value: int, minimum: int, maximum: int) -> None:
+    selector = f"#wrong-{'phase' if control == 'phase' else 'skew'}"
+    if page.locator(selector).count():
+        _set_range(page, selector, value, minimum)
+        return
+    model = page.evaluate("() => ({phase: window.wrongNumberPhaseLockModel.phase, skew: window.wrongNumberPhaseLockModel.skew})")
+    current = int(model["phase"] if control == "phase" else model["skew"])
+    if control == "phase":
+        span = maximum - minimum + 1
+        forward = (value - current) % span
+        backward = (current - value) % span
+        delta = forward if forward <= backward else -backward
+    else:
+        delta = value - current
+    _click_steps(
+        page,
+        f'[data-tune-control="{control}"][data-tune-delta="{1 if delta > 0 else -1}"]',
+        abs(delta),
+    )
+
+
 def fail_once(page, state_dir: Path, out_dir: Path, mechanic: str) -> None:
     if mechanic != MECHANIC_ID:
         raise AssertionError(mechanic)
@@ -45,8 +79,20 @@ def fail_once(page, state_dir: Path, out_dir: Path, mechanic: str) -> None:
     before = str(truth["challenge_id"])
     wrong = next(line for line in truth["lines"] if line["id"] != truth["target_line_id"])
     page.locator(f'.wrong-line[data-line-id="{wrong["id"]}"]').click()
-    _set_range(page, "#wrong-phase", (-int(wrong["phase_offset_steps"])) % int(truth["qualification"]["phase_steps"]), 0)
-    _set_range(page, "#wrong-skew", -int(wrong["skew_offset_steps"]), int(truth["qualification"]["skew_min"]))
+    _set_tuning(
+        page,
+        "phase",
+        (-int(wrong["phase_offset_steps"])) % int(truth["qualification"]["phase_steps"]),
+        0,
+        int(truth["qualification"]["phase_steps"]) - 1,
+    )
+    _set_tuning(
+        page,
+        "skew",
+        -int(wrong["skew_offset_steps"]),
+        int(truth["qualification"]["skew_min"]),
+        int(truth["qualification"]["skew_max"]),
+    )
     page.locator("#wrong-test").click()
     page.wait_for_function("() => Boolean(window.wrongNumberPhaseLockModel?.trial)")
     page.wait_for_timeout(520)
@@ -66,14 +112,28 @@ def solve(page, state_dir: Path, out_dir: Path, mechanic: str) -> None:
     truth = _read(state_dir / "ground_truth.json")
     target_id = str(truth["target_line_id"])
     page.locator(f'.wrong-line[data-line-id="{target_id}"]').click()
-    _set_range(page, "#wrong-phase", int(truth["solution_phase_step"]), 0)
-    _set_range(page, "#wrong-skew", int(truth["solution_skew_step"]), int(truth["qualification"]["skew_min"]))
+    _set_tuning(
+        page,
+        "phase",
+        int(truth["solution_phase_step"]),
+        0,
+        int(truth["qualification"]["phase_steps"]) - 1,
+    )
+    _set_tuning(
+        page,
+        "skew",
+        int(truth["solution_skew_step"]),
+        int(truth["qualification"]["skew_min"]),
+        int(truth["qualification"]["skew_max"]),
+    )
     expect(page.locator(".wrong-lock-state")).to_have_attribute("data-locked", "true")
     _shot(page, out_dir, mechanic, "aligned-authorized-carrier")
     page.locator("#wrong-test").click()
     page.wait_for_function("() => Boolean(window.wrongNumberPhaseLockModel?.trial)")
     phase_slider = page.locator("#wrong-phase")
-    phase_slider.focus()
+    full_tuning = phase_slider.count() > 0
+    if full_tuning:
+        phase_slider.focus()
     line = next(item for item in truth["lines"] if item["id"] == target_id)
     steps = int(truth["qualification"]["phase_steps"])
     captured = False
@@ -85,7 +145,7 @@ def solve(page, state_dir: Path, out_dir: Path, mechanic: str) -> None:
         target = (-float(line["phase_offset_steps"]) - float(line["drift_milli_steps_per_second"]) * float(snapshot["elapsed"]) / 1_000_000) % steps
         desired = int(round(target)) % steps
         current = int(snapshot["phase"])
-        if desired != current:
+        if desired != current and full_tuning:
             direct = desired - current
             if abs(direct) <= steps // 2:
                 key = "ArrowRight" if direct > 0 else "ArrowLeft"
@@ -99,6 +159,15 @@ def solve(page, state_dir: Path, out_dir: Path, mechanic: str) -> None:
                 page.keyboard.press("Home")
                 for _ in range(desired):
                     page.keyboard.press("ArrowRight")
+        elif desired != current:
+            forward = (desired - current) % steps
+            backward = (current - desired) % steps
+            delta = forward if forward <= backward else -backward
+            _click_steps(
+                page,
+                f'[data-tune-control="phase"][data-tune-delta="{1 if delta > 0 else -1}"]',
+                abs(delta),
+            )
         if not captured and snapshot["elapsed"] >= 2_000:
             _shot(page, out_dir, mechanic, "active-drift-correction")
             captured = True

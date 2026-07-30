@@ -130,6 +130,15 @@ def grade(payload:dict[str,Any],ground_truth:dict[str,Any],public_state:dict[str
     if str(public_state.get("mechanic_id") or "")!=MECHANIC_ID or str(public_state.get("challenge_id") or "")!=challenge_id or str(public_state.get("task_id") or "")!=task_id:return _failure("public freight identity mismatch")
     keys=("canvas","room","walls","tools","controls","parcel","delivery","qualification")
     if any(public_state.get(key)!=ground_truth.get(key) for key in keys):return _failure("public freight chamber disagrees with hidden state")
+    condition=ground_truth.get("control_condition")
+    interaction=""
+    expected_surface=""
+    if condition is not None:
+        if public_state.get("control_condition")!=condition:return _failure("public freight control condition disagrees with hidden state")
+        interaction=str(condition.get("interaction") or "")
+        expected_surface={"simplified":"proxy_control","full":"direct_canvas"}.get(interaction,"")
+        if not expected_surface:return _failure("freight interaction condition is invalid")
+        if payload.get("interaction_mode")!=interaction:return _failure("freight transcript uses the wrong interaction mode")
     events=payload.get("events")
     if not isinstance(events,list) or not events or len(events)>1600:return _failure("freight transcript is missing or too long")
     state=ground_truth;tools=copy.deepcopy(ground_truth["tools"]);portals={"blue":None,"orange":None};center=list(map(float,state["parcel"]["initial_center"]));angle=float(state["parcel"]["initial_angle_deg"]);initial,_blocker=_configuration(center,angle,portals,state,int(state["parcel"]["display_samples"]));samples=[{**item,"velocity":[0.0,0.0,0.0]} for item in initial]
@@ -146,16 +155,19 @@ def grade(payload:dict[str,Any],ground_truth:dict[str,Any],public_state:dict[str
         if not active:return _failure("freight operation occurred before chamber activation")
         if kind=="space_select":
             if pending or event.get("before")!=active_space or event.get("after") not in {"A","B"}:return _failure(f"space select {sequence} is malformed")
+            if expected_surface and event.get("input_surface")!=expected_surface:return _failure(f"space select {sequence} uses the wrong interaction input")
             active_space=event["after"];continue
         if kind=="aim":
             space=event.get("space");delta=_number(event.get("delta_deg"))
             if pending or space!=active_space or space not in {"A","B"} or delta is None or abs(abs(delta)-float(state["controls"]["aim_step_deg"]))>1e-9 or not _close(event.get("before_deg"),tools[space]["yaw_deg"]):return _failure(f"aim event {sequence} is malformed")
+            if expected_surface and event.get("input_surface")!=expected_surface:return _failure(f"aim event {sequence} uses the wrong interaction input")
             tools[space]["yaw_deg"]=_round(tools[space]["yaw_deg"]+delta,2)
             if not _close(event.get("after_deg"),tools[space]["yaw_deg"]):return _failure(f"aim event {sequence} lies about yaw")
             aim_turns+=1;continue
         if kind=="portal_place":
             color,space=event.get("color"),event.get("space")
             if pending or color not in {"blue","orange"} or space!=active_space:return _failure(f"portal ray {sequence} is malformed")
+            if expected_surface and event.get("input_surface")!=expected_surface:return _failure(f"portal ray {sequence} uses the wrong interaction input")
             origin=list(map(float,tools[space]["origin"]));direction=_direction(float(tools[space]["yaw_deg"]));hit=_raycast(space,origin,direction,state["walls"],float(state["controls"]["maximum_ray_distance"]))
             if hit is None:return _failure(f"portal ray {sequence} cannot hit the claimed chamber")
             claim_hit=event.get("hit")
@@ -168,6 +180,7 @@ def grade(payload:dict[str,Any],ground_truth:dict[str,Any],public_state:dict[str
             continue
         if kind in {"parcel_rotate","parcel_push"}:
             if pending:return _failure(f"parcel control {sequence} overlaps pending physics")
+            if expected_surface and event.get("input_surface")!=expected_surface:return _failure(f"parcel control {sequence} uses the wrong interaction input")
             before_center=list(center);before_angle=angle
             if kind=="parcel_rotate":
                 delta=_number(event.get("delta_deg"))
@@ -180,9 +193,10 @@ def grade(payload:dict[str,Any],ground_truth:dict[str,Any],public_state:dict[str
             proposed,blocker=_proposal(before_center,before_angle,after_center,after_angle,portals,state);accepted=blocker is None
             if event.get("accepted") is not accepted or event.get("blocker")!=(blocker or "") or not _vec_claim(event.get("proposed_center"),after_center) or not _close(event.get("proposed_angle_deg"),after_angle):return _failure(f"parcel control {sequence} fabricates swept collision result")
             if not accepted:collisions+=1;continue
-            pending={"source":"rotate" if kind=="parcel_rotate" else "push","center":after_center,"angle":after_angle,"samples":proposed};continue
+            pending={"source":"rotate" if kind=="parcel_rotate" else "push","center":after_center,"angle":after_angle,"samples":proposed,"input_surface":event.get("input_surface")};continue
         if kind=="freight_tick":
             if not pending or event.get("source")!=pending["source"] or not _vec_claim(event.get("center"),pending["center"]) or not _close(event.get("angle_deg"),pending["angle"]) or not _samples_claim(event.get("samples"),pending["samples"]):return _failure(f"freight tick {sequence} fabricates transformed parcel state")
+            if expected_surface and event.get("input_surface")!=pending["input_surface"]:return _failure(f"freight tick {sequence} uses the wrong interaction input")
             center=list(pending["center"]);angle=float(pending["angle"]);samples=pending["samples"]
             if pending["source"]=="push":push_ticks+=1
             else:rotation_events+=1

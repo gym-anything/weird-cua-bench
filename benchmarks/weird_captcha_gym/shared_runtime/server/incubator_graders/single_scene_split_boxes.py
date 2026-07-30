@@ -30,10 +30,14 @@ def _triangle(value: int, span: int) -> int:
 
 
 def _field(scene: dict[str, Any], x_milli: int, y_milli: int, time_ms: int) -> int:
+    columns = int(scene.get("columns") or 3)
+    rows = int(scene.get("rows") or 3)
+    world_width = columns * 1000
+    world_height = rows * 1000
     seed = int(scene["field_seed"])
     target = scene["target"]
-    target_x = _mod((seed % 3000) + (time_ms * int(target["speed_x_milli"]) // 1000), 3000)
-    target_y = _triangle(((seed // 17) % 6000) + (time_ms * int(target["speed_y_milli"]) // 1000), 3000)
+    target_x = _mod((seed % world_width) + (time_ms * int(target["speed_x_milli"]) // 1000), world_width)
+    target_y = _triangle(((seed // 17) % (world_height * 2)) + (time_ms * int(target["speed_y_milli"]) // 1000), world_height)
     base = _mod(x_milli * 17 + y_milli * 29 + (time_ms // 20) * 31 + seed, 4093)
     pulse = max(0, 1100 - (abs(x_milli - target_x) + abs(y_milli - target_y)) // 2)
     return _mod(base + pulse * 3, 8192)
@@ -50,22 +54,24 @@ def _continuity(
     scene: dict[str, Any], slots: list[str], tile_by_id: dict[str, dict[str, Any]], rotations: dict[str, int], phases: dict[str, int], scene_tick: int
 ) -> int:
     phase_ms = int(scene["phase_tick_ms"])
+    rows = int(scene.get("rows") or 3)
+    columns = int(scene.get("columns") or 3)
     error = 0
     samples = (220, 500, 780)
-    for row in range(3):
-        for column in range(2):
-            left_id = slots[row * 3 + column]
-            right_id = slots[row * 3 + column + 1]
+    for row in range(rows):
+        for column in range(columns - 1):
+            left_id = slots[row * columns + column]
+            right_id = slots[row * columns + column + 1]
             for local_y in samples:
                 left_x, left_y = _world_coordinate(tile_by_id[left_id], rotations[left_id], 1000, local_y)
                 right_x, right_y = _world_coordinate(tile_by_id[right_id], rotations[right_id], 0, local_y)
                 left_value = _field(scene, left_x, left_y, scene_tick + phases[left_id] * phase_ms)
                 right_value = _field(scene, right_x, right_y, scene_tick + phases[right_id] * phase_ms)
                 error += abs(left_value - right_value)
-    for row in range(2):
-        for column in range(3):
-            top_id = slots[row * 3 + column]
-            bottom_id = slots[(row + 1) * 3 + column]
+    for row in range(rows - 1):
+        for column in range(columns):
+            top_id = slots[row * columns + column]
+            bottom_id = slots[(row + 1) * columns + column]
             for local_x in samples:
                 top_x, top_y = _world_coordinate(tile_by_id[top_id], rotations[top_id], local_x, 1000)
                 bottom_x, bottom_y = _world_coordinate(tile_by_id[bottom_id], rotations[bottom_id], local_x, 0)
@@ -78,8 +84,9 @@ def _continuity(
 def _errors(
     scene: dict[str, Any], slots: list[str], tile_by_id: dict[str, dict[str, Any]], rotations: dict[str, int], phases: dict[str, int], scene_tick: int
 ) -> dict[str, int]:
+    columns = int(scene.get("columns") or 3)
     spatial = sum(
-        int(tile_by_id[tile_id]["source"]["row"]) * 3 + int(tile_by_id[tile_id]["source"]["column"]) != slot
+        int(tile_by_id[tile_id]["source"]["row"]) * columns + int(tile_by_id[tile_id]["source"]["column"]) != slot
         for slot, tile_id in enumerate(slots)
     )
     rotation = sum(rotations[tile_id] != 0 for tile_id in slots)
@@ -117,14 +124,18 @@ def _contract(ground_truth: dict[str, Any], public_state: dict[str, Any]):
     tiles = ground_truth.get("tiles")
     phase_range = ground_truth.get("phase_range")
     requirements = ground_truth.get("requirements")
-    if not isinstance(scene, dict) or not isinstance(tiles, list) or len(tiles) != 9:
+    if not isinstance(scene, dict) or not isinstance(tiles, list):
         raise ValueError("scene or tile contract is malformed")
     if not isinstance(phase_range, dict) or not isinstance(requirements, dict):
         raise ValueError("phase or sync contract is malformed")
+    rows = _integer(scene.get("rows", 3), "scene rows")
+    columns = _integer(scene.get("columns", 3), "scene columns")
+    if not 2 <= rows <= 4 or not 2 <= columns <= 4 or len(tiles) != rows * columns:
+        raise ValueError("scene grid dimensions are malformed")
     ids = [str(tile.get("id") or "") for tile in tiles if isinstance(tile, dict)]
-    if len(ids) != 9 or len(set(ids)) != 9 or any(not tile_id for tile_id in ids):
+    if len(ids) != len(tiles) or len(set(ids)) != len(tiles) or any(not tile_id for tile_id in ids):
         raise ValueError("tile identities are malformed")
-    slots: list[str | None] = [None] * 9
+    slots: list[str | None] = [None] * len(tiles)
     tile_by_id: dict[str, dict[str, Any]] = {}
     rotations: dict[str, int] = {}
     phases: dict[str, int] = {}
@@ -132,10 +143,11 @@ def _contract(ground_truth: dict[str, Any], public_state: dict[str, Any]):
         tile_id = str(tile["id"])
         slot = _integer(tile.get("initial_slot"), "initial slot")
         source = tile.get("source")
-        if not isinstance(source, dict) or not 0 <= slot < 9 or slots[slot] is not None:
+        if not isinstance(source, dict) or not 0 <= slot < len(tiles) or slots[slot] is not None:
             raise ValueError("initial tile placement is malformed")
-        source_index = _integer(source.get("row"), "source row") * 3 + _integer(source.get("column"), "source column")
-        if not 0 <= source_index < 9:
+        source_row = _integer(source.get("row"), "source row")
+        source_column = _integer(source.get("column"), "source column")
+        if not 0 <= source_row < rows or not 0 <= source_column < columns:
             raise ValueError("tile source is malformed")
         rotation = _integer(tile.get("initial_rotation"), "initial rotation")
         phase = _integer(tile.get("initial_phase"), "initial phase")
@@ -148,6 +160,26 @@ def _contract(ground_truth: dict[str, Any], public_state: dict[str, Any]):
     return scene, [str(tile_id) for tile_id in slots], tile_by_id, rotations, phases, {key: int(value) for key, value in requirements.items()}, int(phase_range["minimum"]), int(phase_range["maximum"])
 
 
+def _control_condition(ground_truth: dict[str, Any], public_state: dict[str, Any]) -> tuple[dict[str, Any] | None, str | None]:
+    condition = ground_truth.get("control_condition")
+    if condition is None:
+        return (None, None) if public_state.get("control_condition") is None else (None, "public control condition is unexpected")
+    if not isinstance(condition, dict) or condition != public_state.get("control_condition"):
+        return None, "public control condition differs from synchronizer contract"
+    try:
+        difficulty = _integer(condition.get("difficulty"), "control difficulty")
+    except ValueError:
+        return None, "synchronizer control condition is invalid"
+    if (
+        difficulty not in {1, 2, 3, 4, 5}
+        or str(condition.get("interaction") or "") not in {"simplified", "full"}
+        or str(condition.get("real_time") or "") != "live"
+        or not isinstance(condition.get("difficulty_parameters"), dict)
+    ):
+        return None, "synchronizer control condition is invalid"
+    return condition, None
+
+
 def grade(payload: dict[str, Any], ground_truth: dict[str, Any], public_state: dict[str, Any]) -> dict[str, Any]:
     binding_error = _bind(payload, ground_truth, public_state)
     if binding_error:
@@ -156,6 +188,11 @@ def grade(payload: dict[str, Any], ground_truth: dict[str, Any], public_state: d
         scene, slots, tile_by_id, rotations, phases, requirements, phase_min, phase_max = _contract(ground_truth, public_state)
     except (KeyError, TypeError, ValueError) as exc:
         return _fail(f"invalid shattered-scene contract: {exc}")
+    condition, condition_error = _control_condition(ground_truth, public_state)
+    if condition_error:
+        return _fail(condition_error)
+    interaction = str((condition or {}).get("interaction") or "")
+    swap_source = {"simplified": "slot_button", "full": "tile_drag"}.get(interaction)
     events = payload.get("events")
     if not isinstance(events, list) or not (3 <= len(events) <= 900):
         return _fail("synchronizer transcript is missing or outside limits")
@@ -179,6 +216,8 @@ def grade(payload: dict[str, Any], ground_truth: dict[str, Any], public_state: d
         if event_type == "swap":
             if sync_active:
                 return _fail(f"event {index} moves a tile during SYNC")
+            if condition is not None and event.get("input_source") != swap_source:
+                return _fail(f"event {index} swap uses the wrong interaction input")
             tile_id = str(event.get("tile_id") or "")
             displaced_id = str(event.get("displaced_id") or "")
             try:
@@ -188,13 +227,15 @@ def grade(payload: dict[str, Any], ground_truth: dict[str, Any], public_state: d
                 return _fail(f"event {index} is malformed: {exc}")
             if tile_id not in tile_by_id or displaced_id not in tile_by_id or from_slot == to_slot:
                 return _fail(f"event {index} has invalid swap identities")
-            if not 0 <= from_slot < 9 or not 0 <= to_slot < 9 or slots[from_slot] != tile_id or slots[to_slot] != displaced_id:
+            if not 0 <= from_slot < len(slots) or not 0 <= to_slot < len(slots) or slots[from_slot] != tile_id or slots[to_slot] != displaced_id:
                 return _fail(f"event {index} swap does not match replay")
             slots[from_slot], slots[to_slot] = slots[to_slot], slots[from_slot]
             spatial_touched.update((tile_id, displaced_id))
         elif event_type == "rotate":
             if sync_active:
                 return _fail(f"event {index} rotates a tile during SYNC")
+            if condition is not None and event.get("input_source") != "rotation_button":
+                return _fail(f"event {index} rotation uses the wrong interaction input")
             tile_id = str(event.get("tile_id") or "")
             if tile_id not in tile_by_id:
                 return _fail(f"event {index} rotates an unknown tile")
@@ -205,6 +246,8 @@ def grade(payload: dict[str, Any], ground_truth: dict[str, Any], public_state: d
         elif event_type == "phase":
             if sync_active:
                 return _fail(f"event {index} scrubs a tile during SYNC")
+            if condition is not None and event.get("input_source") != "phase_track":
+                return _fail(f"event {index} phase uses the wrong interaction input")
             tile_id = str(event.get("tile_id") or "")
             if tile_id not in tile_by_id:
                 return _fail(f"event {index} scrubs an unknown tile")
@@ -267,7 +310,8 @@ def grade(payload: dict[str, Any], ground_truth: dict[str, Any], public_state: d
 
     if sync_active or not sync_complete:
         return _fail("transcript does not end with a released SYNC hold")
-    expected_slots = {tile_id: int(tile["source"]["row"]) * 3 + int(tile["source"]["column"]) for tile_id, tile in tile_by_id.items()}
+    columns = int(scene.get("columns") or 3)
+    expected_slots = {tile_id: int(tile["source"]["row"]) * columns + int(tile["source"]["column"]) for tile_id, tile in tile_by_id.items()}
     final_slots = {tile_id: slot for slot, tile_id in enumerate(slots)}
     expected_spatial_touched = {tile_id for tile_id, tile in tile_by_id.items() if int(tile["initial_slot"]) != expected_slots[tile_id]}
     expected_rotation_touched = {tile_id for tile_id, tile in tile_by_id.items() if int(tile["initial_rotation"]) != 0}

@@ -5,6 +5,10 @@ from typing import Any
 
 
 MECHANIC_ID = "shadow_crime_lab"
+INTERACTION_SURFACES = {
+    "simplified": {"probe": "probe_zone_button", "tag_arm": "armed_tag_button", "tag_place": "armed_tag_click"},
+    "full": {"lamp": "direct_lamp_drag", "tag": "direct_tag_drag"},
+}
 
 
 def _failure(message: str) -> dict[str, Any]:
@@ -144,6 +148,54 @@ def _validate_responses(value: Any, polygons: list[tuple[str, list[tuple[float, 
     return True
 
 
+def _control_contract(
+    ground_truth: dict[str, Any],
+    public_state: dict[str, Any],
+    objects: list[dict[str, Any]],
+    zones: list[dict[str, Any]],
+) -> tuple[str, dict[str, int] | None, str | None]:
+    """Bind controlled profiles to the generated scene and input surface."""
+    truth_condition = ground_truth.get("control_condition")
+    public_condition = public_state.get("control_condition")
+    if truth_condition is None and public_condition is None:
+        return "full", None, None
+    if not isinstance(truth_condition, dict) or public_condition != truth_condition:
+        return "", None, "public shadow-lab control condition differs from the hidden contract"
+    interaction = str(truth_condition.get("interaction") or "")
+    parameters = truth_condition.get("difficulty_parameters")
+    try:
+        profile = {
+            "object_count": int(parameters["object_count"]),
+            "probe_count": int(parameters["probe_count"]),
+            "zone_radius": int(parameters["zone_radius"]),
+        }
+        difficulty = int(truth_condition["difficulty"])
+    except (KeyError, TypeError, ValueError):
+        return "", None, "shadow-lab difficulty profile is malformed"
+    if (
+        interaction not in INTERACTION_SURFACES
+        or difficulty not in {1, 2, 3, 4, 5}
+        or not 3 <= profile["object_count"] <= 6
+        or not 2 <= profile["probe_count"] <= 5
+        or not 34 <= profile["zone_radius"] <= 64
+    ):
+        return "", None, "shadow-lab difficulty profile is invalid"
+    if difficulty == 4 and profile != {
+        "object_count": 5,
+        "probe_count": 4,
+        "zone_radius": 42,
+    }:
+        return "", None, "shadow-lab L4 profile does not preserve the original scene"
+    if (
+        len(objects) != profile["object_count"]
+        or len(zones) != profile["probe_count"]
+        or any(int(zone.get("radius") or 0) != profile["zone_radius"] for zone in zones)
+        or int(ground_truth.get("minimum_probe_zones") or 0) != profile["probe_count"]
+    ):
+        return "", None, "shadow-lab generated scene differs from the selected profile"
+    return interaction, profile, None
+
+
 def grade(payload: dict[str, Any], ground_truth: dict[str, Any], public_state: dict[str, Any]) -> dict[str, Any]:
     challenge_id = str(ground_truth.get("challenge_id") or "")
     if str(payload.get("mechanic_id") or "") != MECHANIC_ID or str(ground_truth.get("mechanic_id") or "") != MECHANIC_ID:
@@ -158,12 +210,18 @@ def grade(payload: dict[str, Any], ground_truth: dict[str, Any], public_state: d
     objects = ground_truth.get("objects")
     zones = ground_truth.get("probe_zones")
     lamp_manifest = ground_truth.get("lamp")
-    if not isinstance(objects, list) or len(objects) != 5 or not isinstance(zones, list) or len(zones) != 4 or not isinstance(lamp_manifest, dict):
+    if not isinstance(objects, list) or not 3 <= len(objects) <= 6 or not isinstance(zones, list) or not 2 <= len(zones) <= 5 or not isinstance(lamp_manifest, dict):
         return _failure("hidden analytic scene is malformed")
-    if public_state.get("objects") != objects or public_state.get("probe_zones") != zones or public_state.get("lamp") != lamp_manifest:
+    if (
+        public_state.get("objects") != objects
+        or public_state.get("probe_zones") != zones
+        or public_state.get("lamp") != lamp_manifest
+        or public_state.get("minimum_probe_zones") != ground_truth.get("minimum_probe_zones")
+        or public_state.get("minimum_travel") != ground_truth.get("minimum_travel")
+    ):
         return _failure("public analytic geometry disagrees with hidden state")
     object_ids = [str(obj.get("id") or "") for obj in objects]
-    if "" in object_ids or len(set(object_ids)) != 5:
+    if "" in object_ids or len(set(object_ids)) != len(objects):
         return _failure("evidence object identities are malformed")
     initial_lamp = _point(lamp_manifest)
     if initial_lamp is None:
@@ -177,6 +235,11 @@ def grade(payload: dict[str, Any], ground_truth: dict[str, Any], public_state: d
     contract = _derive_contract(challenge_id, objects)
     if str(ground_truth.get("forged_object_id") or "") != contract["object_id"] or str(ground_truth.get("forged_law") or "") != contract["law"] or not _close(ground_truth.get("forged_parameter"), contract["parameter"], 1e-9):
         return _failure("hidden forged response does not match challenge derivation")
+    interaction, profile, control_error = _control_contract(ground_truth, public_state, objects, zones)
+    if control_error:
+        return _failure(control_error)
+    if ground_truth.get("control_condition") is not None and payload.get("interaction_mode") != interaction:
+        return _failure("wrong interaction mode")
 
     events = payload.get("events")
     if not isinstance(events, list) or not events or len(events) > 520:
@@ -191,6 +254,7 @@ def grade(payload: dict[str, Any], ground_truth: dict[str, Any], public_state: d
     move_count = 0
     tagged: str | None = None
     tag_drag: dict[str, Any] | None = None
+    proxy_tag_armed = False
     resets = 0
     previous_time = -1.0
 
@@ -202,6 +266,71 @@ def grade(payload: dict[str, Any], ground_truth: dict[str, Any], public_state: d
             return _failure(f"lab event {sequence} has invalid timing")
         previous_time = event_time
         action = str(event.get("type") or "")
+        if interaction == "simplified":
+            if action == "proxy_probe":
+                zone_id = str(event.get("zone_id") or "")
+                claimed_lamp = _point(event.get("lamp"))
+                if (
+                    event.get("input_surface") != INTERACTION_SURFACES["simplified"]["probe"]
+                    or dragging
+                    or tag_drag is not None
+                    or not zone_id
+                    or zone_id in sampled
+                ):
+                    return _failure(f"proxy probe {sequence} uses the wrong interaction input")
+                zone = next((candidate for candidate in zones if str(candidate.get("id") or "") == zone_id), None)
+                if zone is None or claimed_lamp is None:
+                    return _failure(f"proxy probe {sequence} is malformed")
+                expected_lamp = (round(float(zone["x"]), 2), round(float(zone["y"]), 2))
+                if not _close(claimed_lamp[0], expected_lamp[0]) or not _close(claimed_lamp[1], expected_lamp[1]):
+                    return _failure(f"proxy probe {sequence} does not land on its visible zone")
+                polygons = _polygons(objects, expected_lamp, initial_lamp, area_radius, contract)
+                if not _validate_responses(event.get("responses"), polygons):
+                    return _failure(f"proxy probe {sequence} disagrees with analytic projection")
+                lamp = expected_lamp
+                visited.append(zone_id)
+                sampled.append(zone_id)
+                for object_id, polygon in polygons:
+                    sample_centroids[object_id].append(_centroid(polygon))
+                continue
+            if action == "proxy_tag_arm":
+                if (
+                    event.get("input_surface") != INTERACTION_SURFACES["simplified"]["tag_arm"]
+                    or proxy_tag_armed
+                    or len(sampled) < len(zones)
+                ):
+                    return _failure(f"proxy evidence tag {sequence} uses the wrong interaction input")
+                if event.get("dock") != "evidence_tag":
+                    return _failure(f"proxy evidence tag {sequence} did not leave its visible dock")
+                proxy_tag_armed = True
+                continue
+            if action == "proxy_tag_place":
+                click = _point(event.get("point"))
+                if (
+                    event.get("input_surface") != INTERACTION_SURFACES["simplified"]["tag_place"]
+                    or not proxy_tag_armed
+                    or click is None
+                    or not (0 <= click[0] <= width and 0 <= click[1] <= height)
+                ):
+                    return _failure(f"proxy shadow tag {sequence} uses the wrong interaction input")
+                hit = _raycast(_polygons(objects, lamp, initial_lamp, area_radius, contract), click[0], click[1])
+                claimed = event.get("object_id")
+                if (str(claimed) if claimed is not None else None) != hit:
+                    return _failure(f"proxy shadow tag {sequence} violates physical polygon hit testing")
+                tagged = hit
+                proxy_tag_armed = False
+                continue
+            if action == "reset":
+                if event.get("input_surface") != "reset_button" or proxy_tag_armed:
+                    return _failure("proxy scene reset uses the wrong interaction input")
+            else:
+                return _failure(f"lab event {sequence} uses the wrong interaction input")
+        elif action in {"lamp_start", "lamp_move", "probe_sample", "lamp_end"} and event.get("input_surface") not in {None, INTERACTION_SURFACES["full"]["lamp"]}:
+            return _failure(f"lamp action {sequence} uses the wrong interaction input")
+        elif action in {"tag_start", "tag_move", "tag_end"} and event.get("input_surface") not in {None, INTERACTION_SURFACES["full"]["tag"]}:
+            return _failure(f"evidence-tag action {sequence} uses the wrong interaction input")
+        elif action == "reset" and event.get("input_surface") not in {None, "reset_button"}:
+            return _failure(f"scene reset {sequence} uses the wrong interaction input")
         if action == "lamp_start":
             pointer = _point(event.get("pointer"))
             claimed_lamp = _point(event.get("lamp"))
@@ -272,6 +401,7 @@ def grade(payload: dict[str, Any], ground_truth: dict[str, Any], public_state: d
             move_count = 0
             tagged = None
             tag_drag = None
+            proxy_tag_armed = False
             resets += 1
             claimed_lamp = _point(event.get("lamp_after"))
             if claimed_lamp is None or not _close(claimed_lamp[0], lamp[0]) or not _close(claimed_lamp[1], lamp[1]):
@@ -282,20 +412,17 @@ def grade(payload: dict[str, Any], ground_truth: dict[str, Any], public_state: d
                 return _failure(f"evidence tag {sequence} was lifted before causal probing completed")
             if event.get("dock") != "evidence_tag":
                 return _failure(f"evidence tag {sequence} did not leave its visible dock")
-            tag_drag = {"moves": 0}
+            tag_drag = {}
             continue
         if action == "tag_move":
             click = _point(event.get("point"))
             if dragging or tag_drag is None or click is None:
                 return _failure(f"evidence tag move {sequence} has no physical drag")
-            tag_drag["moves"] += 1
             continue
         if action == "tag_end":
             click = _point(event.get("point"))
-            if dragging or tag_drag is None or click is None or tag_drag["moves"] < 3 or not (0 <= click[0] <= width and 0 <= click[1] <= height):
-                return _failure(f"shadow tag {sequence} was not physically dragged from its dock")
-            if event.get("move_count") != tag_drag["moves"]:
-                return _failure(f"shadow tag {sequence} move count disagrees with replay")
+            if dragging or tag_drag is None or click is None or not (0 <= click[0] <= width and 0 <= click[1] <= height):
+                return _failure(f"shadow tag {sequence} has no valid dock-to-polygon drop")
             hit = _raycast(_polygons(objects, lamp, initial_lamp, area_radius, contract), click[0], click[1])
             claimed = event.get("object_id")
             if (str(claimed) if claimed is not None else None) != hit:
@@ -305,7 +432,7 @@ def grade(payload: dict[str, Any], ground_truth: dict[str, Any], public_state: d
             continue
         return _failure(f"lab event {sequence} has invalid action {action!r}")
 
-    if dragging or tag_drag is not None:
+    if dragging or tag_drag is not None or proxy_tag_armed:
         return _failure("a physical tool remained grabbed at submission")
     expected_state = {
         "lamp_position": _point_dict(lamp),
@@ -313,23 +440,21 @@ def grade(payload: dict[str, Any], ground_truth: dict[str, Any], public_state: d
         "sample_count": len(sampled),
         "tagged_object_id": tagged,
         "reset_count": resets,
+        "proxy_tag_armed": False,
     }
     if payload.get("final_state") != expected_state:
         return _failure("claimed lab state does not match transcript replay")
     required_zones = {str(zone["id"]) for zone in zones}
-    minimum_travel = float(ground_truth.get("minimum_travel") or 0)
     honest_responsive = all(
-        len(points) >= 4 and max(math.hypot(point[0] - points[0][0], point[1] - points[0][1]) for point in points[1:]) >= 20
+        len(points) >= len(zones) and max(math.hypot(point[0] - points[0][0], point[1] - points[0][1]) for point in points[1:]) >= 20
         for object_id, points in sample_centroids.items()
         if object_id != contract["object_id"]
     )
-    forged_replayed = len(sample_centroids[contract["object_id"]]) >= 4
+    forged_replayed = len(sample_centroids[contract["object_id"]]) >= len(zones)
     passed = (
         set(visited) == required_zones
         and set(sampled) == required_zones
-        and len(sampled) >= 4
-        and move_count >= 16
-        and travel >= minimum_travel
+        and len(sampled) >= len(zones)
         and honest_responsive
         and forged_replayed
         and tagged == contract["object_id"]
@@ -338,7 +463,7 @@ def grade(payload: dict[str, Any], ground_truth: dict[str, Any], public_state: d
         "graded": True,
         "passed": passed,
         "score": 100 if passed else 0,
-        "feedback": f"replayed {move_count} lamp moves across {len(sampled)}/4 analytic probes; travel {travel:.1f}/{minimum_travel:.0f}; tagged response {tagged or 'none'}; resets {resets}",
+        "feedback": f"replayed {move_count} lamp updates across {len(sampled)}/{len(zones)} analytic probes; path {travel:.1f}; tagged response {tagged or 'none'}; resets {resets}",
     }
 
 

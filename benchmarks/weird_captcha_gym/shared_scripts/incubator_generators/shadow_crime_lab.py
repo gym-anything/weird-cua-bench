@@ -12,9 +12,23 @@ CANVAS_WIDTH = 900
 CANVAS_HEIGHT = 480
 VARIANT_COUNT = 5 * 3 * 10_000_000_000
 SHAPES = ("cylinder", "crate", "prism", "bust", "obelisk")
+CONTROL_SHAPES = (*SHAPES, "arch")
 PALETTES = ("noir-sodium", "cold-case", "red-room")
 ANCHORS = ((450, 92), (690, 178), (606, 360), (294, 360), (210, 178))
+CONTROL_ANCHORS = (*ANCHORS, (450, 154))
 ZONE_ANCHORS = ((112, 82), (788, 82), (788, 398), (112, 398))
+CONTROL_ZONE_ANCHORS = (*ZONE_ANCHORS, (450, 432))
+
+BASELINE_PROFILE = {
+    "object_count": 5,
+    "probe_count": 4,
+    "zone_radius": 42,
+}
+# ``minimum_travel`` was historically exported even though it was not part of
+# the visible causal-shadow task. Keep that inert public field stable for the
+# uncontrolled/L4 fixed-seed contract; the grader no longer treats it as an
+# acceptance quota or a difficulty parameter.
+LEGACY_REFERENCE_TRAVEL = {1: 480, 2: 710, 3: 840, 4: 1_050, 5: 1_320}
 
 
 def _seed_int(seed: str, salt: str) -> int:
@@ -28,6 +42,45 @@ def _clamp(value: float, low: float, high: float) -> float:
 
 def _point(x: float, y: float) -> dict[str, float]:
     return {"x": round(x, 2), "y": round(y, 2)}
+
+
+def _controlled_profile(task: dict[str, Any]) -> tuple[dict[str, Any] | None, dict[str, Any]]:
+    """Validate the selected shared control profile.
+
+    The legacy task remains on the exact original path.  Controlled L4 uses
+    the same values and random-draw order as that path, so it reproduces the
+    original fixed-seed scene rather than merely resembling it.
+    """
+    condition = task.get("_control_condition")
+    if condition is None:
+        return None, dict(BASELINE_PROFILE)
+    if not isinstance(condition, dict):
+        raise ValueError("shadow-lab control condition must be an object")
+    parameters = condition.get("difficulty_parameters")
+    if not isinstance(parameters, dict):
+        raise ValueError("shadow-lab difficulty parameters are missing")
+    try:
+        profile = {
+            "object_count": int(parameters["object_count"]),
+            "probe_count": int(parameters["probe_count"]),
+            "zone_radius": int(parameters["zone_radius"]),
+        }
+        difficulty = int(condition["difficulty"])
+    except (KeyError, TypeError, ValueError) as exc:
+        raise ValueError("shadow-lab difficulty profile is malformed") from exc
+    if difficulty not in {1, 2, 3, 4, 5}:
+        raise ValueError("shadow-lab difficulty is invalid")
+    if str(condition.get("interaction") or "") not in {"simplified", "full"}:
+        raise ValueError("shadow-lab interaction is invalid")
+    if (
+        not 3 <= profile["object_count"] <= len(CONTROL_ANCHORS)
+        or not 2 <= profile["probe_count"] <= len(CONTROL_ZONE_ANCHORS)
+        or not 34 <= profile["zone_radius"] <= 64
+    ):
+        raise ValueError("shadow-lab difficulty profile is outside supported limits")
+    if difficulty == 4 and profile != BASELINE_PROFILE:
+        raise ValueError("shadow-lab L4 must preserve the original profile")
+    return dict(condition), profile
 
 
 def _forge_contract(challenge_id: str, objects: list[dict[str, Any]]) -> dict[str, Any]:
@@ -125,12 +178,25 @@ def _tag_point(polygons: list[tuple[str, list[tuple[float, float]]]], forged_id:
 
 def generate(task: dict[str, Any], seed: str) -> tuple[dict[str, Any], dict[str, Any]]:
     rng = random.Random(_seed_int(seed, MECHANIC_ID))
-    challenge_id = hashlib.sha256(f"{seed}|{MECHANIC_ID}".encode("utf-8")).hexdigest()[:12]
+    condition, profile = _controlled_profile(task)
+    reference_travel = LEGACY_REFERENCE_TRAVEL[
+        int(condition["difficulty"]) if condition is not None else 4
+    ]
+    challenge_salt = (
+        MECHANIC_ID
+        if condition is None or int(condition["difficulty"]) == 4
+        else f"{MECHANIC_ID}|d{condition['difficulty']}"
+    )
+    challenge_id = hashlib.sha256(f"{seed}|{challenge_salt}".encode("utf-8")).hexdigest()[:12]
     task_id = str(task.get("id") or "shadow_crime_lab_seed_0001@0.1")
-    shapes = list(SHAPES)
+    # Keep the legacy L4 path's five-item shuffle and all following random
+    # draws identical to the original uncontrolled generator.
+    shapes = list(SHAPES if profile["object_count"] <= len(SHAPES) else CONTROL_SHAPES)
     rng.shuffle(shapes)
     objects = []
-    for index, ((anchor_x, anchor_y), shape) in enumerate(zip(ANCHORS, shapes), start=1):
+    for index, ((anchor_x, anchor_y), shape) in enumerate(
+        zip(CONTROL_ANCHORS[:profile["object_count"]], shapes), start=1
+    ):
         token = hashlib.sha256(f"{seed}|shadow-object|{index}".encode("utf-8")).hexdigest()[:5]
         objects.append({
             "id": f"evidence-{token}",
@@ -146,8 +212,13 @@ def generate(task: dict[str, Any], seed: str) -> tuple[dict[str, Any], dict[str,
     lamp_type = rng.choice(("point", "area"))
     area_radius = 0.0 if lamp_type == "point" else float(rng.randint(14, 22))
     probe_zones = [
-        {"id": f"P{index + 1}", "x": x + rng.randint(-10, 10), "y": y + rng.randint(-9, 9), "radius": 42}
-        for index, (x, y) in enumerate(ZONE_ANCHORS)
+        {
+            "id": f"P{index + 1}",
+            "x": x + rng.randint(-10, 10),
+            "y": y + rng.randint(-9, 9),
+            "radius": profile["zone_radius"],
+        }
+        for index, (x, y) in enumerate(CONTROL_ZONE_ANCHORS[:profile["probe_count"]])
     ]
     contract = _forge_contract(challenge_id, objects)
 
@@ -182,8 +253,8 @@ def generate(task: dict[str, Any], seed: str) -> tuple[dict[str, Any], dict[str,
         "objects": objects,
         "lamp": {"type": lamp_type, "x": lamp_initial[0], "y": lamp_initial[1], "area_radius": area_radius, "drag_radius": 34},
         "probe_zones": probe_zones,
-        "minimum_probe_zones": 4,
-        "minimum_travel": 1_050,
+        "minimum_probe_zones": profile["probe_count"],
+        "minimum_travel": reference_travel,
         "submit_label": "FILE FINDING",
     }
     ground_truth = {
@@ -195,8 +266,8 @@ def generate(task: dict[str, Any], seed: str) -> tuple[dict[str, Any], dict[str,
         "objects": objects,
         "lamp": public_state["lamp"],
         "probe_zones": probe_zones,
-        "minimum_probe_zones": 4,
-        "minimum_travel": 1_050,
+        "minimum_probe_zones": profile["probe_count"],
+        "minimum_travel": reference_travel,
         "forged_object_id": contract["object_id"],
         "forged_law": contract["law"],
         "forged_parameter": contract["parameter"],
@@ -209,4 +280,7 @@ def generate(task: dict[str, Any], seed: str) -> tuple[dict[str, Any], dict[str,
         all(abs(first[axis] - second[axis]) < 1e-9 for first, second in zip(polygon, honest) for axis in (0, 1))
         for (_, polygon), honest in zip(initial_polygons, honest_initial)
     )
+    if condition is not None:
+        public_state["control_condition"] = condition
+        ground_truth["control_condition"] = condition
     return public_state, ground_truth

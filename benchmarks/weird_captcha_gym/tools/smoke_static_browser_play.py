@@ -269,6 +269,11 @@ def main() -> None:
             "total_environments": manifest["browser_play"]["environments"],
             "failures": failures,
         }
+        if args.out_dir:
+            (args.out_dir / "summary.json").write_text(
+                json.dumps(summary, indent=2) + "\n",
+                encoding="utf-8",
+            )
         print(json.dumps(summary, indent=2))
         if failures:
             raise SystemExit(1)
