@@ -1,0 +1,96 @@
+{
+  "schema_version": 1,
+  "mechanic_id": "thirty_year_time_wheel",
+  "baseline": {
+    "difficulty": 3,
+    "interaction": "full",
+    "real_time": "live"
+  },
+  "difficulty": {
+    "1": {
+      "label": "very_easy",
+      "summary": "Move only the visible day ring a short distance within one recent month. The date display stays direct and the slower detent prevents accidental coasting.",
+      "natural_language": "Move the required calendar ring to the displayed date, then lock it while still.",
+      "parameters": {
+        "year_min": 2022,
+        "year_max": 2025,
+        "required_components": ["day"],
+        "force_calendar_clamp": false,
+        "target_presentation": "direct",
+        "detent_degrees": 24,
+        "inertia": {"minimum_velocity_rad_s": 1.2, "tick_ms": 100, "maximum_detents": 4}
+      }
+    },
+    "2": {
+      "label": "easy",
+      "summary": "Set month and day in one fixed year. The later day adjustment depends on the month reached, but dates avoid a month-length clamp.",
+      "natural_language": "Set the required month and day rings to the displayed date, then lock while still.",
+      "parameters": {
+        "year_min": 2016,
+        "year_max": 2025,
+        "required_components": ["month", "day"],
+        "force_calendar_clamp": false,
+        "target_presentation": "direct",
+        "detent_degrees": 18,
+        "inertia": {"minimum_velocity_rad_s": 1.0, "tick_ms": 95, "maximum_detents": 6}
+      }
+    },
+    "3": {
+      "label": "medium",
+      "summary": "Preserves the existing three-ring 1996–2025 calendar: direct target date, real month and leap-year clamping, 12-degree detents, and optional visible coast and braking.",
+      "natural_language": "Wind every ring to the target date. Stop all release momentum before you LOCK.",
+      "parameters": {
+        "year_min": 1996,
+        "year_max": 2025,
+        "required_components": ["month", "year", "day"],
+        "force_calendar_clamp": false,
+        "target_presentation": "direct",
+        "detent_degrees": 12,
+        "inertia": {"minimum_velocity_rad_s": 0.8, "tick_ms": 90, "maximum_detents": 10}
+      }
+    },
+    "4": {
+      "label": "hard",
+      "summary": "Use all three rings across the full date range from a generated 29th–31st date through a forced short-month clamp. The changing current day makes the final correction state-dependent.",
+      "natural_language": "Set all three rings to the displayed date. Account for every calendar clamp, stop all motion, then lock.",
+      "parameters": {
+        "year_min": 1996,
+        "year_max": 2025,
+        "required_components": ["month", "year", "day"],
+        "force_calendar_clamp": true,
+        "target_presentation": "direct",
+        "detent_degrees": 10,
+        "inertia": {"minimum_velocity_rad_s": 0.65, "tick_ms": 85, "maximum_detents": 10}
+      }
+    },
+    "5": {
+      "label": "very_hard",
+      "summary": "Resolve a forced short-month clamp across all three rings with denser 8-degree detents, more readily released momentum, and a target shown as a compact rendered calendar rather than one date string.",
+      "natural_language": "Read the target calendar, set all three rings through its clamp, stop every ring, then lock.",
+      "parameters": {
+        "year_min": 1996,
+        "year_max": 2025,
+        "required_components": ["month", "year", "day"],
+        "force_calendar_clamp": true,
+        "target_presentation": "calendar_card",
+        "detent_degrees": 8,
+        "inertia": {"minimum_velocity_rad_s": 0.5, "tick_ms": 80, "maximum_detents": 10}
+      }
+    }
+  },
+  "interaction": {
+    "simplified": {
+      "implemented": true,
+      "summary": "Use labelled plus and minus buttons to apply one visible detent to each required ring."
+    },
+    "full": {
+      "implemented": true,
+      "summary": "Drag the required concentric brass ring directly through its angular detents, then brake any released momentum."
+    }
+  },
+  "real_time": {
+    "play_time_seconds": 120,
+    "observation_window_ms": 600,
+    "frames_per_observation": 5
+  }
+}

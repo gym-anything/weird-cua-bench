@@ -75,6 +75,16 @@
     return {x: round2((event.clientX - rect.left) / rect.width * canvas.width), y: round2((event.clientY - rect.top) / rect.height * canvas.height)};
   }
 
+  function worldPoint(local, catcher = model.catcher) {
+    const radians = Number(catcher.angle_deg) * Math.PI / 180;
+    const cosine = Math.cos(radians), sine = Math.sin(radians);
+    return {x: round2(catcher.x + local.x * cosine - local.y * sine), y: round2(catcher.y + local.x * sine + local.y * cosine)};
+  }
+
+  function directRingRadius(catcher = model.catcher) {
+    return Math.max(Number(currentRound().capture_depth) / 2, Number(catcher.aperture) / 2) + 18;
+  }
+
   function drawGrid(context, width, height) {
     context.fillStyle = "#071720"; context.fillRect(0, 0, width, height);
     context.strokeStyle = "rgba(91, 188, 190, .095)"; context.lineWidth = 1;
@@ -121,6 +131,13 @@
     context.strokeRect(-depth / 2 - 9, aperture / 2, depth + 18, 13);
     context.beginPath(); context.moveTo(-depth / 2, 0); context.lineTo(depth / 2, 0); context.stroke();
     context.beginPath(); context.moveTo(-depth / 2 + 8, -6); context.lineTo(-depth / 2, 0); context.lineTo(-depth / 2 + 8, 6); context.moveTo(depth / 2 - 8, -6); context.lineTo(depth / 2, 0); context.lineTo(depth / 2 - 8, 6); context.stroke();
+    if (model.interaction === "full" && !catcher.armed) {
+      const ring = directRingRadius(catcher);
+      context.setLineDash([3, 4]); context.beginPath(); context.arc(0, 0, ring, 0, Math.PI * 2); context.strokeStyle = "rgba(243,198,111,.82)"; context.lineWidth = 2; context.stroke(); context.setLineDash([]);
+      for (const side of [-1, 1]) {
+        context.beginPath(); context.arc(0, side * aperture / 2, 7, 0, Math.PI * 2); context.fillStyle = "#f3c66f"; context.fill(); context.strokeStyle = "#071319"; context.lineWidth = 2; context.stroke();
+      }
+    }
     context.setLineDash([]); context.beginPath(); context.arc(0, 0, 9, 0, Math.PI * 2); context.fillStyle = catcher.armed ? "#5de1bb" : "#e1aa51"; context.fill(); context.strokeStyle = "#071319"; context.lineWidth = 2; context.stroke();
     context.restore();
     context.fillStyle = catcher.armed ? "#83f6d5" : "#e7c07b"; context.font = "800 7px Courier New"; context.textAlign = "center"; context.fillText(`${catcher.angle_deg}° / ${catcher.aperture}`, catcher.x, catcher.y + catcher.aperture / 2 + 31);
@@ -180,7 +197,7 @@
 
   function startRound() {
     if (model.frameId) cancelAnimationFrame(model.frameId);
-    const round = currentRound(); model.catcher = initialCatcher(round); model.phase = "observing"; model.result = null; model.diagnostic = null; model.dragging = false; model.dragOffset = {x: 0, y: 0}; model.lastPointer = null; model.observedTail = []; model.lastObservation = -1000; model.roundStartedAt = performance.now(); model.attemptCounts[model.roundIndex] += 1;
+    const round = currentRound(); model.catcher = initialCatcher(round); model.phase = "observing"; model.result = null; model.diagnostic = null; model.dragging = false; model.gesture = null; model.rotationAnchor = 0; model.rotationStartAngle = 0; model.dragOffset = {x: 0, y: 0}; model.lastPointer = null; model.observedTail = []; model.lastObservation = -1000; model.roundStartedAt = performance.now(); model.attemptCounts[model.roundIndex] += 1;
     pushEvent({type: "round_start", round_id: round.id, attempt: model.attempt, round_t_ms: 0}); model.helpers.setReadout("OBSERVE FLIGHT", "idle"); updateInterface(); model.frameId = requestAnimationFrame(frame);
   }
 
@@ -193,8 +210,10 @@
     const resultTime = clamp(Math.round(performance.now() - model.roundStartedAt), Number(round.duration_ms), Number(round.duration_ms) + 500);
     if (model.dragging) {
       const pointer = model.lastPointer || {x: model.catcher.x, y: model.catcher.y};
-      pushEvent({type: "catcher_drag_end", round_id: round.id, attempt: model.attempt, round_t_ms: resultTime, pointer: point(pointer), catcher_after: catcherCopy(model.catcher)});
-      model.dragging = false;
+      const type = model.gesture === "move" ? "catcher_drag_end" : model.gesture === "rotate" ? "catcher_rotate_end" : "catcher_resize_end";
+      const inputSource = model.gesture === "move" ? "canvas_drag" : model.gesture === "rotate" ? "canvas_ring" : "canvas_mouth";
+      pushEvent({type, input_source: inputSource, round_id: round.id, attempt: model.attempt, round_t_ms: resultTime, pointer: point(pointer), catcher_after: catcherCopy(model.catcher)});
+      model.dragging = false; model.gesture = null;
     }
     const outcome = sweptCatch(round, model.catcher); model.phase = "result"; model.result = outcome.caught ? "caught" : "miss"; model.diagnostic = outcome.diagnostic;
     pushEvent({type: "round_result", round_id: round.id, attempt: model.attempt, round_t_ms: resultTime, caught: outcome.caught, crossing_ms: outcome.caught ? round2(outcome.crossing) : null, catcher: catcherCopy(model.catcher)});
@@ -203,29 +222,79 @@
     updateInterface();
   }
 
+  function startMove(pointer, event) {
+    model.dragging = true; model.gesture = "move"; model.dragOffset = {x: round2(pointer.x - model.catcher.x), y: round2(pointer.y - model.catcher.y)}; model.lastPointer = pointer;
+    pushEvent({type: "catcher_drag_start", input_source: "canvas_drag", round_id: currentRound().id, attempt: model.attempt, round_t_ms: roundTime(), pointer, catcher_before: catcherCopy(model.catcher)}); event.currentTarget.setPointerCapture?.(event.pointerId); updateInterface();
+  }
+
+  function startRotation(pointer, event) {
+    model.dragging = true; model.gesture = "rotate"; model.lastPointer = pointer; model.rotationAnchor = Math.atan2(pointer.y - model.catcher.y, pointer.x - model.catcher.x) * 180 / Math.PI; model.rotationStartAngle = model.catcher.angle_deg;
+    pushEvent({type: "catcher_rotate_start", input_source: "canvas_ring", round_id: currentRound().id, attempt: model.attempt, round_t_ms: roundTime(), pointer, catcher_before: catcherCopy(model.catcher)}); event.currentTarget.setPointerCapture?.(event.pointerId); updateInterface();
+  }
+
+  function startResize(pointer, side, event) {
+    model.dragging = true; model.gesture = "resize"; model.resizeSide = side; model.lastPointer = pointer;
+    pushEvent({type: "catcher_resize_start", input_source: "canvas_mouth", round_id: currentRound().id, attempt: model.attempt, round_t_ms: roundTime(), pointer, catcher_before: catcherCopy(model.catcher)}); event.currentTarget.setPointerCapture?.(event.pointerId); updateInterface();
+  }
+
   function pointerDown(event) {
     if (!model || !commitOpen() || model.dragging) return;
-    const pointer = canvasPoint(event); if (Math.hypot(pointer.x - model.catcher.x, pointer.y - model.catcher.y) > 42) return;
-    model.dragging = true; model.dragOffset = {x: round2(pointer.x - model.catcher.x), y: round2(pointer.y - model.catcher.y)}; model.lastPointer = pointer;
-    pushEvent({type: "catcher_drag_start", round_id: currentRound().id, attempt: model.attempt, round_t_ms: roundTime(), pointer, catcher_before: catcherCopy(model.catcher)}); event.currentTarget.setPointerCapture?.(event.pointerId); updateInterface();
+    const pointer = canvasPoint(event);
+    if (model.interaction !== "full") {
+      if (Math.hypot(pointer.x - model.catcher.x, pointer.y - model.catcher.y) <= 42) startMove(pointer, event);
+      return;
+    }
+    const local = localPoint(pointer, model.catcher);
+    if (Math.abs(local.x) <= 18 && Math.abs(Math.abs(local.y) - Number(model.catcher.aperture) / 2) <= 14) {
+      startResize(pointer, local.y < 0 ? -1 : 1, event);
+    } else if (Math.abs(Math.hypot(local.x, local.y) - directRingRadius()) <= 14) {
+      startRotation(pointer, event);
+    } else if (Math.hypot(local.x, local.y) <= 42) {
+      startMove(pointer, event);
+    }
   }
+
   function pointerMove(event) {
     if (!model?.dragging || !commitOpen()) return;
-    const pointer = canvasPoint(event); const before = {x: model.catcher.x, y: model.catcher.y}; model.catcher.x = round2(clamp(pointer.x - model.dragOffset.x, 34, 866)); model.catcher.y = round2(clamp(pointer.y - model.dragOffset.y, 34, 446));
-    pushEvent({type: "catcher_drag_move", round_id: currentRound().id, attempt: model.attempt, round_t_ms: roundTime(), pointer, from: before, to: {x: model.catcher.x, y: model.catcher.y}}); model.lastPointer = pointer; updateInterface();
+    const pointer = canvasPoint(event);
+    if (model.gesture === "move") {
+      const before = {x: model.catcher.x, y: model.catcher.y}; model.catcher.x = round2(clamp(pointer.x - model.dragOffset.x, 34, 866)); model.catcher.y = round2(clamp(pointer.y - model.dragOffset.y, 34, 446));
+      pushEvent({type: "catcher_drag_move", input_source: "canvas_drag", round_id: currentRound().id, attempt: model.attempt, round_t_ms: roundTime(), pointer, from: before, to: {x: model.catcher.x, y: model.catcher.y}});
+    } else if (model.gesture === "rotate") {
+      const before = model.catcher.angle_deg;
+      const current = Math.atan2(pointer.y - model.catcher.y, pointer.x - model.catcher.x) * 180 / Math.PI;
+      const delta = ((current - model.rotationAnchor + 540) % 360) - 180;
+      const step = Number(currentRound().rotation_step_deg);
+      const after = ((model.rotationStartAngle + Math.round(delta / step) * step) % 180 + 180) % 180;
+      if (after !== before) {
+        model.catcher.angle_deg = after;
+        pushEvent({type: "catcher_rotate", input_source: "canvas_ring", round_id: currentRound().id, attempt: model.attempt, round_t_ms: roundTime(), pointer, angle_before: before, angle_after: after});
+      }
+    } else if (model.gesture === "resize") {
+      const before = model.catcher.aperture; const local = localPoint(pointer, model.catcher); const step = Number(currentRound().aperture_step);
+      const after = Math.round(clamp(Math.round(Math.abs(local.y) * 2 / step) * step, Number(currentRound().aperture_min), Number(currentRound().aperture_max)));
+      if (after !== before) {
+        model.catcher.aperture = after;
+        pushEvent({type: "catcher_resize", input_source: "canvas_mouth", round_id: currentRound().id, attempt: model.attempt, round_t_ms: roundTime(), pointer, delta: after - before, aperture_before: before, aperture_after: after});
+      }
+    }
+    model.lastPointer = pointer; updateInterface();
   }
+
   function pointerUp(event) {
     if (!model?.dragging) return;
-    const pointer = canvasPoint(event); pushEvent({type: "catcher_drag_end", round_id: currentRound().id, attempt: model.attempt, round_t_ms: roundTime(), pointer, catcher_after: catcherCopy(model.catcher)}); model.dragging = false; event.currentTarget.releasePointerCapture?.(event.pointerId); updateInterface();
+    const pointer = canvasPoint(event); const type = model.gesture === "move" ? "catcher_drag_end" : model.gesture === "rotate" ? "catcher_rotate_end" : "catcher_resize_end";
+    const inputSource = model.gesture === "move" ? "canvas_drag" : model.gesture === "rotate" ? "canvas_ring" : "canvas_mouth";
+    pushEvent({type, input_source: inputSource, round_id: currentRound().id, attempt: model.attempt, round_t_ms: roundTime(), pointer, catcher_after: catcherCopy(model.catcher)}); model.dragging = false; model.gesture = null; event.currentTarget.releasePointerCapture?.(event.pointerId); updateInterface();
   }
 
   function rotateCatcher(delta) {
     if (!commitOpen() || model.dragging) return; const before = model.catcher.angle_deg; model.catcher.angle_deg = (before + delta + 180) % 180;
-    pushEvent({type: "catcher_rotate", round_id: currentRound().id, attempt: model.attempt, round_t_ms: roundTime(), delta_deg: delta, angle_before: before, angle_after: model.catcher.angle_deg}); updateInterface();
+    pushEvent({type: "catcher_rotate", input_source: "transform_button", round_id: currentRound().id, attempt: model.attempt, round_t_ms: roundTime(), delta_deg: delta, angle_before: before, angle_after: model.catcher.angle_deg}); updateInterface();
   }
   function resizeCatcher(delta) {
     if (!commitOpen() || model.dragging) return; const round = currentRound(); const before = model.catcher.aperture; const after = before + delta; if (after < Number(round.aperture_min) || after > Number(round.aperture_max)) return; model.catcher.aperture = after;
-    pushEvent({type: "catcher_resize", round_id: round.id, attempt: model.attempt, round_t_ms: roundTime(), delta, aperture_before: before, aperture_after: after}); updateInterface();
+    pushEvent({type: "catcher_resize", input_source: "transform_button", round_id: round.id, attempt: model.attempt, round_t_ms: roundTime(), delta, aperture_before: before, aperture_after: after}); updateInterface();
   }
   function resetCatcher() {
     if (!commitOpen() || model.dragging) return; model.catcher = initialCatcher(currentRound()); model.catcherResetCount += 1;
@@ -260,7 +329,7 @@
   async function submitLog() {
     if (!model || model.submitting || model.completedSubmission) return; const current = model; current.submitting = true; updateInterface();
     try {
-      const response = await fetch("/result", {method: "POST", headers: {"content-type": "application/json"}, body: JSON.stringify({mechanic_id: current.state.mechanic_id, task_id: current.state.task_id, challenge_id: current.state.challenge_id, events: current.events, final_state: finalState(), completed: current.completed.length === current.state.round_count})});
+      const response = await fetch("/result", {method: "POST", headers: {"content-type": "application/json"}, body: JSON.stringify({mechanic_id: current.state.mechanic_id, task_id: current.state.task_id, challenge_id: current.state.challenge_id, interaction: current.state.control_condition ? current.interaction : undefined, events: current.events, final_state: finalState(), completed: current.completed.length === current.state.round_count})});
       const outcome = await response.json();
       if (outcome.passed === true) { current.completedSubmission = true; current.helpers.setReadout("PASS", "passed"); showVerdict("pass"); }
       else if (outcome.passed === false) { const helpers = current.helpers; if (outcome.state) await render(outcome.state, helpers, {freshFailure: true}); model.helpers.setReadout("FAIL", "error"); showVerdict("fail"); }
@@ -274,16 +343,20 @@
 
   async function render(state, helpers, options = {}) {
     if (activeCleanup) activeCleanup(); document.body.dataset.mechanic = "trajectory-catcher"; document.body.dataset.cheatMode = helpers.isCheatMode() ? "true" : "false";
-    model = {state, helpers, startedAt: performance.now(), roundStartedAt: performance.now(), frameId: null, events: [], roundIndex: 0, attempt: 0, catcher: initialCatcher(state.rounds[0]), phase: "standby", result: null, diagnostic: null, dragging: false, dragOffset: {x: 0, y: 0}, lastPointer: null, observedTail: [], lastObservation: -1000, completed: [], replayUsed: state.rounds.map(() => 0), attemptCounts: state.rounds.map(() => 0), replayCount: 0, catcherResetCount: 0, challengeResetCount: 0, submitting: false, completedSubmission: false, timers: new Set()};
+    const interaction = state.control_condition?.interaction || "simplified";
+    model = {state, helpers, interaction, startedAt: performance.now(), roundStartedAt: performance.now(), frameId: null, events: [], roundIndex: 0, attempt: 0, catcher: initialCatcher(state.rounds[0]), phase: "standby", result: null, diagnostic: null, dragging: false, gesture: null, rotationAnchor: 0, rotationStartAngle: 0, dragOffset: {x: 0, y: 0}, lastPointer: null, observedTail: [], lastObservation: -1000, completed: [], replayUsed: state.rounds.map(() => 0), attemptCounts: state.rounds.map(() => 0), replayCount: 0, catcherResetCount: 0, challengeResetCount: 0, submitting: false, completedSubmission: false, timers: new Set()};
+    const transformSurface = interaction === "simplified"
+      ? `<div class="control-pair"><button class="catcher-transform" id="trajectory-rotate-left">−15°</button><b id="trajectory-angle">0°</b><button class="catcher-transform" id="trajectory-rotate-right">+15°</button></div><div class="control-pair"><button class="catcher-transform" id="trajectory-size-down">−</button><b id="trajectory-aperture">70</b><button class="catcher-transform" id="trajectory-size-up">+</button></div>`
+      : `<div class="direct-catcher-surface"><b id="trajectory-angle">0°</b><b id="trajectory-aperture">70</b><span>DRAG HUB TO MOVE<br>RING TO ROTATE · MOUTHS TO SIZE</span></div>`;
     helpers.app.innerHTML = `
-      <section class="trajectory-catcher palette-${helpers.text(state.palette)}" data-fresh-failure="${options.freshFailure ? "true" : "false"}" data-phase="standby" tabindex="0">
+      <section class="trajectory-catcher palette-${helpers.text(state.palette)}" data-interaction="${interaction}" data-round-count="${Number(state.round_count)}" data-fresh-failure="${options.freshFailure ? "true" : "false"}" data-phase="standby" tabindex="0">
         <div class="trajectory-verdict" aria-live="assertive"></div>
         <header class="trajectory-head"><div><span>PREDICTIVE INTERCEPT RANGE / ${helpers.text(state.range_id)}</span><h1>${helpers.text(state.prompt)}</h1></div><div class="trajectory-mark"><i>⤷</i><span>HIDDEN<br><b>FLIGHT</b></span></div></header>
         <main class="trajectory-workbench">
           <section class="trajectory-stage"><canvas id="trajectory-canvas" width="${Number(state.canvas.width)}" height="${Number(state.canvas.height)}" aria-label="hidden trajectory flight range"></canvas><div class="trajectory-caption"><span>OBSERVE / COMMIT UNDER OCCLUSION</span><b>NO OPTICAL RETURN THROUGH WALL</b></div></section>
           <aside class="trajectory-console">
             <div class="trajectory-round-card"><span>FLIGHT</span><b id="trajectory-round">1 / ${Number(state.round_count)}</b><i id="trajectory-phase">OBSERVE</i></div>
-            <div class="catcher-controls"><span>CAPTURE TUNNEL TRANSFORM</span><div class="control-pair"><button class="catcher-transform" id="trajectory-rotate-left">−15°</button><b id="trajectory-angle">0°</b><button class="catcher-transform" id="trajectory-rotate-right">+15°</button></div><div class="control-pair"><button class="catcher-transform" id="trajectory-size-down">−</button><b id="trajectory-aperture">70</b><button class="catcher-transform" id="trajectory-size-up">+</button></div><button id="trajectory-reset-catcher">RESET TUNNEL</button><button id="trajectory-arm">ARM TUNNEL</button></div>
+            <div class="catcher-controls"><span>CAPTURE TUNNEL TRANSFORM</span>${transformSurface}<button id="trajectory-reset-catcher">RESET TUNNEL</button><button id="trajectory-arm">ARM TUNNEL</button></div>
             <div class="trajectory-diagnostic" id="trajectory-diagnostic"><b>VISIBLE PHYSICS</b><span>THE PROJECTILE CENTER MUST ENTER THE TINTED TUNNEL ALONG ITS AXIS.</span></div>
             <div class="flight-ledger"><span>FLIGHT LEDGER</span>${state.rounds.map((_round, index) => `<div data-flight-ledger="${index}"><i>${String(index + 1).padStart(2, "0")}</i><b>OBSERVATION SEALED</b><em>VECTOR WITHHELD</em></div>`).join("")}</div>
             <div class="round-actions"><button id="trajectory-replay" hidden>REWIND ROUND</button><button id="trajectory-next" hidden>NEXT FLIGHT</button><button id="trajectory-restart" hidden>RESTART TEST</button></div>

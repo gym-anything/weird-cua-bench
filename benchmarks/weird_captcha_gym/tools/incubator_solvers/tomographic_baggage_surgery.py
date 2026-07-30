@@ -35,16 +35,115 @@ def _set_offset(page, target: float) -> None:
     raise AssertionError("slice offset failed to settle")
 
 
+def _interaction(truth: dict) -> str:
+    return str((truth.get("control_condition") or {}).get("interaction") or "simplified")
+
+
+def _direct_sweep_x(page, offset: float) -> None:
+    canvas = page.locator(".tomo-slice")
+    box = canvas.bounding_box()
+    if not box:
+        raise AssertionError("missing direct tomography canvas")
+    center_x, center_y = box["x"] + box["width"] / 2, box["y"] + box["height"] / 2
+    target_x = box["x"] + (max(-3.0, min(3.0, offset)) + 3.0) / 6.0 * box["width"]
+    page.mouse.move(center_x, center_y)
+    page.mouse.down()
+    page.mouse.move(target_x, center_y, steps=8)
+    page.mouse.up()
+    page.wait_for_timeout(35)
+
+
+def _direct_sweep_y(page, offset: float) -> None:
+    canvas = page.locator(".tomo-slice")
+    box = canvas.bounding_box()
+    if not box:
+        raise AssertionError("missing direct tomography canvas")
+    # The Y plane has its own visible rail: x=28..492 and y=218..234 in the
+    # 520x245 source canvas.  Use that rail rather than the X/Z surface.
+    rail_left, rail_width, rail_y = 28, 464, 226
+    start_x = box["x"] + (rail_left + rail_width / 24) / 520 * box["width"]
+    target_x = box["x"] + (rail_left + (max(-3.0, min(3.0, offset)) + 3.0) / 6.0 * rail_width) / 520 * box["width"]
+    target_y = box["y"] + rail_y / 245 * box["height"]
+    page.mouse.move(start_x, target_y)
+    page.mouse.down()
+    page.mouse.move(target_x, target_y, steps=8)
+    page.mouse.up()
+    page.wait_for_timeout(35)
+
+
+def _direct_rotate_case(page) -> None:
+    canvas = page.locator(".tomo-slice")
+    box = canvas.bounding_box()
+    if not box:
+        raise AssertionError("missing direct tomography canvas")
+    handle_x = box["x"] + 470 / 520 * box["width"]
+    handle_y = box["y"] + 35 / 245 * box["height"]
+    page.mouse.move(handle_x, handle_y)
+    page.mouse.down()
+    page.mouse.move(handle_x - 12, handle_y + 26, steps=6)
+    page.mouse.up()
+    page.wait_for_timeout(35)
+
+
+def _target_x_at_rotation(target: list[float], rotation: int) -> float:
+    x, _, z = target
+    return (x, z, -x, -z)[rotation % 4]
+
+
 def _scan_and_lock(page, truth: dict, out_dir: Path | None = None) -> None:
     target = truth["solver"]["target"]
-    page.locator(".tomo-axis-buttons button[data-axis='x']").click(); _set_offset(page, target[0])
+    interaction = _interaction(truth)
+    if interaction == "full":
+        # A rejected report intentionally paints a brief full-scene FAIL stamp.
+        # Direct canvas drags must begin after that visible recovery surface has
+        # cleared rather than being delivered to the stamp.
+        page.locator(".tomo-fresh").wait_for(state="hidden", timeout=4_000)
+    required_rotations = max(
+        int(truth["requirements"]["min_rotations"]),
+        int(truth["requirements"]["min_target_observations"]),
+    )
+    # Exercise the shared Y plane on the interaction-specific surface.  This
+    # observation is additional evidence; the profile's required hot proof
+    # remains the original X/rotation sequence below.
+    if interaction == "simplified":
+        page.locator(".tomo-axis-buttons button[data-axis='y']").click()
+        _set_offset(page, target[1])
+    else:
+        _direct_sweep_y(page, target[1])
+    if out_dir is not None:
+        _shot(page, out_dir, MECHANIC_ID, "y-depth-slice")
+    if interaction == "simplified":
+        page.locator(".tomo-axis-buttons button[data-axis='x']").click(); _set_offset(page, _target_x_at_rotation(target, 0))
+    else:
+        _direct_sweep_x(page, _target_x_at_rotation(target, 0))
     if out_dir is not None: _shot(page, out_dir, MECHANIC_ID, "hot-slice-orientation-zero")
-    _set_offset(page, -2.5)
-    page.locator(".tomo-rotate").click()
-    page.locator(".tomo-axis-buttons button[data-axis='z']").click(); _set_offset(page, -target[0])
+    if interaction == "simplified":
+        _set_offset(page, -2.5)
+    else:
+        _direct_sweep_x(page, -2.5)
+    for rotation in range(1, required_rotations):
+        if interaction == "simplified":
+            page.locator(".tomo-rotate").click()
+            page.locator(".tomo-axis-buttons button[data-axis='x']").click()
+            _set_offset(page, _target_x_at_rotation(target, rotation))
+        else:
+            _direct_rotate_case(page)
+            _direct_sweep_x(page, _target_x_at_rotation(target, rotation))
+        if rotation == 1 and out_dir is not None:
+            _shot(page, out_dir, MECHANIC_ID, "hot-slice-rotated-case")
+        if rotation < required_rotations - 1:
+            if interaction == "simplified":
+                _set_offset(page, 2.5)
+            else:
+                _direct_sweep_x(page, 2.5)
+    if int(truth["requirements"]["min_observations"]) >= 6:
+        if interaction == "simplified":
+            _set_offset(page, -2.5)
+        else:
+            _direct_sweep_x(page, -2.5)
     if out_dir is not None: _shot(page, out_dir, MECHANIC_ID, "hot-slice-rotated-case")
     hits = page.evaluate("() => window.tomographicBaggageSurgeryModel.targetHits")
-    if hits < 2: raise AssertionError(f"distinct target slice signatures missing: {hits}")
+    if hits < int(truth["requirements"]["min_target_observations"]): raise AssertionError(f"distinct target slice signatures missing: {hits}")
     page.locator(".tomo-lock").click(); expect(page.locator(".tomo-slicer[data-locked='true']")).to_be_visible()
 
 
@@ -85,6 +184,13 @@ def solve(page, state_dir: Path, out_dir: Path, mechanic: str) -> None:
     target = truth["solver"]["target"]; safe = truth["solver"]["safe_y"]
     _drag_view(page, truth, "top", [target[0], safe, target[2]]); _shot(page, out_dir, mechanic, "cross-view-registration-top")
     _drag_view(page, truth, "front", target); _shot(page, out_dir, mechanic, "probe-on-target")
+    if int(truth["requirements"].get("min_moving_views", 0)) >= 3:
+        # A third registration must include a visible non-zero side-view move,
+        # then return to the target before capture.
+        _drag_view(page, truth, "side", [target[0], safe, target[2]])
+        _drag_view(page, truth, "side", target)
+    elif int(truth["requirements"].get("min_views", 2)) >= 3:
+        _drag_view(page, truth, "side", target)
     page.locator(".tomo-capture").click(); expect(page.locator(".tomo-probe-state")).to_have_text("TARGET HELD"); _shot(page, out_dir, mechanic, "geometric-target-capture")
     _drag_view(page, truth, "front", [target[0], safe, target[2]], steps=36)
     expect(page.locator(".tomo-complete[data-visible='true']")).to_be_visible(); _shot(page, out_dir, mechanic, "clean-target-extraction")

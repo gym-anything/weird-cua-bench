@@ -210,18 +210,26 @@ def _draw_strokes(
     canvas = truth["canvas"]
     width, height = int(canvas["width"]), int(canvas["height"])
     midpoint = max(0, len(strokes) // 2)
+    interaction = str((truth.get("control_condition") or {}).get("interaction") or "full")
     for stroke_index, normalized in enumerate(strokes):
         points = _resample(normalized, width, height)
         if len(points) < 5:
             raise AssertionError(f"stroke {stroke_index + 1} could not be sampled densely")
-        page.mouse.move(*_canvas_to_screen(box, canvas, points[0]))
-        page.mouse.down()
-        for point_index, point in enumerate(points[1:], start=1):
-            page.mouse.move(*_canvas_to_screen(box, canvas, point), steps=1)
-            page.wait_for_timeout(7)
-            if out_dir is not None and mid_label and stroke_index == midpoint and point_index == max(1, len(points) // 2):
-                _screenshot(page, out_dir, MECHANIC_ID, mid_label)
-        page.mouse.up()
+        if interaction == "simplified":
+            for point_index, point in enumerate(points):
+                page.mouse.click(*_canvas_to_screen(box, canvas, point))
+                if out_dir is not None and mid_label and stroke_index == midpoint and point_index == max(1, len(points) // 2):
+                    _screenshot(page, out_dir, MECHANIC_ID, mid_label)
+            page.locator("#finish-plot-stroke").click()
+        else:
+            page.mouse.move(*_canvas_to_screen(box, canvas, points[0]))
+            page.mouse.down()
+            for point_index, point in enumerate(points[1:], start=1):
+                page.mouse.move(*_canvas_to_screen(box, canvas, point), steps=1)
+                page.wait_for_timeout(7)
+                if out_dir is not None and mid_label and stroke_index == midpoint and point_index == max(1, len(points) // 2):
+                    _screenshot(page, out_dir, MECHANIC_ID, mid_label)
+            page.mouse.up()
         page.wait_for_timeout(12)
 
 
@@ -239,11 +247,10 @@ def fail_once(page, state_dir: Path, out_dir: Path, mechanic: str) -> None:
 
     truth = _read_json(state_dir / "ground_truth.json")
     target_class = str(truth["target"]["class_name"])
-    wrong_class = {
-        "umbrella": "fish", "sailboat": "fish", "fish": "flower",
-        "flower": "fish", "ladder": "umbrella", "bicycle": "lighthouse",
-        "lighthouse": "bicycle", "locomotive": "bicycle",
-    }[target_class]
+    vocabulary = [str(item).lower() for item in truth.get("class_vocabulary") or CLASSES]
+    wrong_class = next((item for item in vocabulary if item != target_class), None)
+    if wrong_class is None:
+        raise AssertionError("robot-art vocabulary does not contain a contrasting silhouette")
     _draw_strokes(page, truth, _transformed_sketch(wrong_class, truth))
     page.locator("#ask-critic").click()
     expect(page.locator("#critic-response[data-status='rejected']")).to_be_visible()
@@ -284,10 +291,15 @@ def solve(page, state_dir: Path, out_dir: Path, mechanic: str) -> None:
       reviews: window.robotArtCriticModel.attempts.length,
       clears: window.robotArtCriticModel.clearCount,
       undos: window.robotArtCriticModel.undoCount,
+      inputSources: [...new Set(window.robotArtCriticModel.events.map(event => event.input_source).filter(Boolean))],
     })""")
     expected_strokes = int(truth["target"]["expected_strokes"])
     if physical["strokes"] != expected_strokes or not physical["allDense"] or physical["moves"] < expected_strokes * 4 or physical["reviews"] != 0 or physical["clears"] != 0 or physical["undos"] != 0:
         raise AssertionError(f"art studio clean humanized drawing contract failed: {physical}")
+    interaction = str((truth.get("control_condition") or {}).get("interaction") or "full")
+    expected_source = {"simplified": "plot_clicks", "full": "continuous_pointer"}.get(interaction)
+    if expected_source is not None and physical["inputSources"] != [expected_source]:
+        raise AssertionError(f"art studio interaction source was not bound: {physical}")
     _screenshot(page, out_dir, mechanic, "accepted-drawing-before-review")
 
     page.locator("#ask-critic").click()

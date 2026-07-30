@@ -27,6 +27,9 @@
 
   const clamp = (value, minimum, maximum) => Math.max(minimum, Math.min(maximum, value));
   const mod = (value, modulus) => ((value % modulus) + modulus) % modulus;
+  const interactionMode = () => model.state?.control_condition?.interaction || "full";
+  const sceneRows = () => Number(model.state?.scene?.rows || model.state?.control_condition?.difficulty_parameters?.rows || 3);
+  const sceneColumns = () => Number(model.state?.scene?.columns || model.state?.control_condition?.difficulty_parameters?.columns || 3);
 
   function clean(value) {
     return String(value == null ? "" : value)
@@ -49,10 +52,12 @@
 
   function field(x, y, time) {
     const scene = model.state.scene;
+    const worldWidth = sceneColumns() * 1000;
+    const worldHeight = sceneRows() * 1000;
     const seed = Number(scene.field_seed);
     const target = scene.target;
-    const targetX = mod((seed % 3000) + Math.floor(time * Number(target.speed_x_milli) / 1000), 3000);
-    const targetY = triangle(mod(Math.floor(seed / 17), 6000) + Math.floor(time * Number(target.speed_y_milli) / 1000), 3000);
+    const targetX = mod((seed % worldWidth) + Math.floor(time * Number(target.speed_x_milli) / 1000), worldWidth);
+    const targetY = triangle(mod(Math.floor(seed / 17), worldHeight * 2) + Math.floor(time * Number(target.speed_y_milli) / 1000), worldHeight);
     const base = mod(x * 17 + y * 29 + Math.floor(time / 20) * 31 + seed, 4093);
     const pulse = Math.max(0, 1100 - Math.floor((Math.abs(x - targetX) + Math.abs(y - targetY)) / 2));
     return mod(base + pulse * 3, 8192);
@@ -70,10 +75,12 @@
     const samples = [220, 500, 780];
     const phaseMs = Number(model.state.scene.phase_tick_ms);
     let error = 0;
-    for (let row = 0; row < 3; row += 1) {
-      for (let column = 0; column < 2; column += 1) {
-        const leftId = model.slots[row * 3 + column];
-        const rightId = model.slots[row * 3 + column + 1];
+    const rows = sceneRows();
+    const columns = sceneColumns();
+    for (let row = 0; row < rows; row += 1) {
+      for (let column = 0; column < columns - 1; column += 1) {
+        const leftId = model.slots[row * columns + column];
+        const rightId = model.slots[row * columns + column + 1];
         for (const localY of samples) {
           const [leftX, leftY] = worldCoordinate(model.tileById.get(leftId), model.rotations[leftId], 1000, localY);
           const [rightX, rightY] = worldCoordinate(model.tileById.get(rightId), model.rotations[rightId], 0, localY);
@@ -84,10 +91,10 @@
         }
       }
     }
-    for (let row = 0; row < 2; row += 1) {
-      for (let column = 0; column < 3; column += 1) {
-        const topId = model.slots[row * 3 + column];
-        const bottomId = model.slots[(row + 1) * 3 + column];
+    for (let row = 0; row < rows - 1; row += 1) {
+      for (let column = 0; column < columns; column += 1) {
+        const topId = model.slots[row * columns + column];
+        const bottomId = model.slots[(row + 1) * columns + column];
         for (const localX of samples) {
           const [topX, topY] = worldCoordinate(model.tileById.get(topId), model.rotations[topId], localX, 1000);
           const [bottomX, bottomY] = worldCoordinate(model.tileById.get(bottomId), model.rotations[bottomId], localX, 0);
@@ -107,7 +114,7 @@
     let phaseError = 0;
     model.slots.forEach((tileId, slot) => {
       const tile = model.tileById.get(tileId);
-      const sourceSlot = Number(tile.source.row) * 3 + Number(tile.source.column);
+      const sourceSlot = Number(tile.source.row) * sceneColumns() + Number(tile.source.column);
       if (sourceSlot !== slot) spatialError += 1;
       if (model.rotations[tileId] !== 0) rotationError += 1;
       phaseError += Math.abs(model.phases[tileId]);
@@ -127,7 +134,7 @@
   function tileMarkup(tileId, slot) {
     const tile = model.tileById.get(tileId);
     const selected = tileId === model.selected;
-    return `<div class="mosaic-slot" data-slot="${slot}"><article class="mosaic-tile${selected ? " is-selected" : ""}" draggable="true" data-tile-id="${clean(tileId)}" data-slot="${slot}" data-rotation="${model.rotations[tileId]}">
+    return `<div class="mosaic-slot" data-slot="${slot}"><article class="mosaic-tile${selected ? " is-selected" : ""}" draggable="${interactionMode() === "full" ? "true" : "false"}" data-tile-id="${clean(tileId)}" data-slot="${slot}" data-rotation="${model.rotations[tileId]}">
       <canvas width="300" height="200" aria-label="animated scene shard ${slot + 1}"></canvas>
       <span class="tile-corners"><i></i><i></i><i></i><i></i></span>
       <b>${clean(tileId.slice(-4).toUpperCase())}</b><em>${model.rotations[tileId] ? "180°" : ""}</em>
@@ -138,7 +145,7 @@
     document.querySelectorAll(".mosaic-tile").forEach((tileNode) => {
       tileNode.addEventListener("click", () => selectTile(String(tileNode.dataset.tileId)));
       tileNode.addEventListener("dragstart", (event) => {
-        if (model.busy || model.terminal || model.sync) {
+        if (interactionMode() !== "full" || model.busy || model.terminal || model.sync) {
           event.preventDefault();
           return;
         }
@@ -156,7 +163,7 @@
         event.preventDefault();
         const movingId = event.dataTransfer.getData("text/plain") || model.dragged;
         const destinationSlot = Number(tileNode.dataset.slot);
-        swapTiles(String(movingId || ""), destinationSlot);
+        swapTiles(String(movingId || ""), destinationSlot, "tile_drag");
       });
       tileNode.addEventListener("dragend", () => {
         tileNode.classList.remove("is-dragging");
@@ -183,8 +190,8 @@
     model.helpers.setReadout("SHARD LOADED INTO TEMPORAL CONSOLE", "idle");
   }
 
-  function swapTiles(tileId, destinationSlot) {
-    if (!model.tileById.has(tileId) || !Number.isInteger(destinationSlot) || destinationSlot < 0 || destinationSlot >= 9) return;
+  function swapTiles(tileId, destinationSlot, inputSource) {
+    if (!model.tileById.has(tileId) || !Number.isInteger(destinationSlot) || destinationSlot < 0 || destinationSlot >= model.slots.length) return;
     const fromSlot = model.slots.indexOf(tileId);
     if (fromSlot < 0 || fromSlot === destinationSlot) {
       model.helpers.setReadout("DROP CANCELED · CHOOSE ANOTHER CELL", "error");
@@ -195,11 +202,17 @@
     model.slots[destinationSlot] = tileId;
     model.spatialTouched.add(tileId);
     model.spatialTouched.add(displacedId);
-    record("swap", {tile_id: tileId, from_slot: fromSlot, to_slot: destinationSlot, displaced_id: displacedId});
+    record("swap", {tile_id: tileId, from_slot: fromSlot, to_slot: destinationSlot, displaced_id: displacedId, input_source: inputSource});
     model.dragSucceeded = true;
     model.dragged = null;
     renderBoard();
     updatePanels("SPATIAL SHARDS EXCHANGED", "idle");
+  }
+
+  function swapSelectedWith(destinationSlot) {
+    if (interactionMode() !== "simplified" || !model.selected) return;
+    clearFreshFailure();
+    swapTiles(model.selected, destinationSlot, "slot_button");
   }
 
   function rotateSelected() {
@@ -207,7 +220,7 @@
     const tileId = model.selected;
     model.rotations[tileId] = model.rotations[tileId] === 180 ? 0 : 180;
     model.rotationTouched.add(tileId);
-    record("rotate", {tile_id: tileId, rotation_after: model.rotations[tileId]});
+    record("rotate", {tile_id: tileId, rotation_after: model.rotations[tileId], input_source: "rotation_button"});
     renderBoard();
     updatePanels("SHARD FLIPPED 180°", "idle");
   }
@@ -221,7 +234,7 @@
     if (nextPhase === previous) return;
     model.phases[tileId] = nextPhase;
     model.phaseTouched.add(tileId);
-    record("phase", {tile_id: tileId, delta_ticks: nextPhase - previous, phase_after: nextPhase});
+    record("phase", {tile_id: tileId, delta_ticks: nextPhase - previous, phase_after: nextPhase, input_source: "phase_track"});
     updateInspector();
     updatePanels(nextPhase === 0 ? "SHARD ON MASTER PHASE" : "SHARD TEMPORAL OFFSET CHANGED", nextPhase === 0 ? "passed" : "idle");
   }
@@ -388,8 +401,10 @@
       context.translate(canvas.width, canvas.height);
       context.rotate(Math.PI);
     }
-    context.scale(canvas.width / 300, canvas.height / 200);
-    context.translate(-Number(tile.source.column) * 300, -Number(tile.source.row) * 200);
+    const sourceWidth = Number(model.state.scene.width) / sceneColumns();
+    const sourceHeight = Number(model.state.scene.height) / sceneRows();
+    context.scale(canvas.width / sourceWidth, canvas.height / sourceHeight);
+    context.translate(-Number(tile.source.column) * sourceWidth, -Number(tile.source.row) * sourceHeight);
     drawFullScene(context, localTime);
     context.restore();
   }
@@ -453,7 +468,7 @@
     model.busy = true;
     model.terminal = true;
     document.querySelectorAll("button").forEach((button) => { button.disabled = true; });
-    model.helpers.setReadout("REPLAYING NINE CHANNELS…", "pending");
+    model.helpers.setReadout(`REPLAYING ${model.slots.length} CHANNELS…`, "pending");
     const payload = {
       mechanic_id: model.state.mechanic_id,
       task_id: model.state.task_id,
@@ -470,7 +485,7 @@
       if (outcome.passed === true) {
         const shell = document.querySelector(".mosaic-captcha");
         shell?.classList.add("is-pass");
-        shell?.insertAdjacentHTML("beforeend", '<div class="mosaic-verdict mosaic-verdict-pass"><small>NINE CHANNELS COHERENT</small><strong>PASS</strong></div>');
+        shell?.insertAdjacentHTML("beforeend", `<div class="mosaic-verdict mosaic-verdict-pass"><small>${model.slots.length} CHANNELS COHERENT</small><strong>PASS</strong></div>`);
         model.helpers.setReadout("PASS", "passed");
       } else if (outcome.passed === false && outcome.state) {
         await model.helpers.render(outcome.state);
@@ -530,7 +545,7 @@
     model.spatialTouched = new Set();
     model.rotationTouched = new Set();
     model.phaseTouched = new Set();
-    model.slots = Array(9).fill(null);
+    model.slots = Array(model.state.tiles.length).fill(null);
     model.state.tiles.forEach((tile) => {
       model.slots[Number(tile.initial_slot)] = String(tile.id);
       model.rotations[tile.id] = Number(tile.initial_rotation);
@@ -555,7 +570,7 @@
     document.body.dataset.mosaicPalette = String(state.palette || "abyssal_cyan");
     document.body.dataset.cheatMode = helpers.isCheatMode() ? "true" : "false";
     const tileById = new Map(state.tiles.map((tile) => [String(tile.id), tile]));
-    const slots = Array(9).fill(null);
+    const slots = Array(state.tiles.length).fill(null);
     const rotations = {};
     const phases = {};
     state.tiles.forEach((tile) => {
@@ -563,6 +578,17 @@
       rotations[tile.id] = Number(tile.initial_rotation);
       phases[tile.id] = Number(tile.initial_phase);
     });
+    const interaction = state.control_condition?.interaction || "full";
+    const rows = Number(state.scene.rows || state.control_condition?.difficulty_parameters?.rows || 3);
+    const columns = Number(state.scene.columns || state.control_condition?.difficulty_parameters?.columns || 3);
+    const phaseTickCount = Number(state.phase_range.maximum) - Number(state.phase_range.minimum) + 1;
+    const masterPhaseIndex = -Number(state.phase_range.minimum);
+    const visiblePrompt = interaction === "simplified"
+      ? String(state.prompt).replace("Drag shards into place", "Select shards and choose their positions")
+      : state.prompt;
+    const swapPad = interaction === "simplified"
+      ? `<div class="mosaic-swap-pad"><span>SWAP SELECTED WITH</span><div>${slots.map((_tileId, slot) => `<button type="button" data-swap-slot="${slot}">POSITION ${slot + 1}</button>`).join("")}</div></div>`
+      : "";
     Object.assign(model, {
       state,
       tileById,
@@ -586,17 +612,18 @@
       terminal: false,
       helpers,
     });
-    helpers.app.innerHTML = `<section class="mosaic-captcha" data-challenge-id="${clean(state.challenge_id)}">
-      <header class="mosaic-head"><div><span>LIVE SCENE SYNCHRONIZER / NINE CHANNELS</span><h1>${clean(state.prompt)}</h1></div><div class="master-clock" id="master-chronograph"><small>MASTER CHRONOGRAPH</small><b><i></i></b><em>${clean(state.scene.motif).replaceAll("_", " ")}</em></div></header>
-      <main class="mosaic-workbench"><section class="mosaic-stage"><div class="mosaic-grid" id="mosaic-grid">${slots.map(tileMarkup).join("")}</div><div class="mosaic-stage-caption"><span>DRAG TO EXCHANGE SHARDS</span><i>MOTION NEVER STOPS</i><b>3 × 3</b></div></section>
+    helpers.app.innerHTML = `<section class="mosaic-captcha" data-challenge-id="${clean(state.challenge_id)}" data-interaction="${clean(interaction)}">
+      <header class="mosaic-head"><div><span>LIVE SCENE SYNCHRONIZER / ${slots.length} CHANNELS</span><h1>${clean(visiblePrompt)}</h1></div><div class="master-clock" id="master-chronograph"><small>MASTER CHRONOGRAPH</small><b><i></i></b><em>${clean(state.scene.motif).replaceAll("_", " ")}</em></div></header>
+      <main class="mosaic-workbench"><section class="mosaic-stage"><div class="mosaic-grid" id="mosaic-grid" style="--mosaic-rows:${rows};--mosaic-columns:${columns}">${slots.map(tileMarkup).join("")}</div><div class="mosaic-stage-caption"><span>${interaction === "simplified" ? "SELECT · POSITION PAD · EXCHANGE" : "DRAG TO EXCHANGE SHARDS"}</span><i>MOTION NEVER STOPS</i><b>${rows} × ${columns}</b></div></section>
       <aside class="mosaic-console"><div class="mosaic-console-title"><span>SHARD TRANSFORM BAY</span><i>LIVE</i></div><div class="selected-shard"><small>SELECTED SHARD</small><b id="selected-shard-id">${clean(slots[0].slice(-6).toUpperCase())}</b><i id="selected-shard-channel">UNLABELED FEED</i></div>
-      <button type="button" class="mosaic-rotate" id="mosaic-rotate"><span>↻</span><b>FLIP 180°</b><small>SELECTED SHARD ONLY</small></button>
-      <div class="phase-console"><header><span>TEMPORAL SCRUB</span><b id="phase-label">OFFSET</b></header><div class="phase-track" id="phase-track">${Array.from({length: 9}, (_, index) => `<i class="${index === 4 ? "master" : ""}"></i>`).join("")}<button type="button" id="phase-handle" class="phase-handle"><span></span></button></div><footer><i>EARLY</i><b>MASTER</b><i>LATE</i></footer></div>
+      ${swapPad}<button type="button" class="mosaic-rotate" id="mosaic-rotate"><span>↻</span><b>FLIP 180°</b><small>SELECTED SHARD ONLY</small></button>
+      <div class="phase-console"><header><span>TEMPORAL SCRUB</span><b id="phase-label">OFFSET</b></header><div class="phase-track" id="phase-track" style="--phase-tick-count:${phaseTickCount}">${Array.from({length: phaseTickCount}, (_, index) => `<i class="${index === masterPhaseIndex ? "master" : ""}"></i>`).join("")}<button type="button" id="phase-handle" class="phase-handle"><span></span></button></div><footer><i>EARLY</i><b>MASTER</b><i>LATE</i></footer></div>
       <div class="mosaic-errors"><div data-error="space"><i></i><span>SPACE</span><b>DRIFT</b></div><div data-error="rotation"><i></i><span>ROTATION</span><b>DRIFT</b></div><div data-error="phase"><i></i><span>PHASE</span><b>DRIFT</b></div><div data-error="continuity"><i></i><span>SEAMS</span><b>DRIFT</b></div></div>
       <div class="mosaic-proof"><span data-proof="space"><i></i>SHARDS MOVED</span><span data-proof="rotation"><i></i>FLIPS WORKED</span><span data-proof="phase"><i></i>PHASES SCRUBBED</span></div><ol class="mosaic-tape" id="mosaic-tape">${tapeMarkup()}</ol></aside></main>
       <footer class="mosaic-foot"><button type="button" class="mosaic-reset" id="mosaic-reset">↺ RESET SHATTER</button><div><div class="readout" data-status="idle">REASSEMBLE SPACE · ORIENTATION · TIME</div><div class="mosaic-sync-progress"><i></i></div></div><button type="button" class="mosaic-sync" id="mosaic-sync"><span>${clean(state.submit_label || "HOLD SCENE SYNC")}</span><small>PRESS · HOLD · RELEASE</small></button></footer>
       ${helpers.cheatPanelTemplate()}</section>`;
     bindTiles();
+    document.querySelectorAll("[data-swap-slot]").forEach((button) => button.addEventListener("click", () => swapSelectedWith(Number(button.dataset.swapSlot))));
     document.getElementById("mosaic-rotate")?.addEventListener("click", rotateSelected);
     const phaseTrack = document.getElementById("phase-track");
     phaseTrack?.addEventListener("pointerdown", beginPhase);

@@ -91,6 +91,78 @@ def _state_matches(value: Any, state: dict[str, Any]) -> bool:
     return _close(value.get("x"), state["x"]) and _close(value.get("y"), state["y"]) and value.get("angle_deg") == state["angle_deg"] and value.get("aperture") == state["aperture"] and bool(value.get("armed")) == bool(state["armed"])
 
 
+def _control_condition(
+    ground_truth: dict[str, Any], public_state: dict[str, Any]
+) -> tuple[dict[str, Any] | None, str | None]:
+    condition = ground_truth.get("control_condition")
+    if condition is None:
+        return (None, None) if public_state.get("control_condition") is None else (None, "public flight control condition is unexpected")
+    if not isinstance(condition, dict) or condition != public_state.get("control_condition"):
+        return None, "public flight control condition differs from hidden state"
+    try:
+        difficulty = int(condition.get("difficulty"))
+    except (TypeError, ValueError):
+        return None, "flight control difficulty is invalid"
+    if difficulty not in {1, 2, 3, 4, 5} or str(condition.get("interaction") or "") not in {"simplified", "full"}:
+        return None, "flight control condition is invalid"
+    if str(condition.get("real_time") or "") != "live" or not isinstance(condition.get("difficulty_parameters"), dict):
+        return None, "flight control condition is incomplete"
+    return condition, None
+
+
+def _in_range(value: Any, low: Any, high: Any) -> bool:
+    number, minimum, maximum = _finite(value), _finite(low), _finite(high)
+    return number is not None and minimum is not None and maximum is not None and minimum <= number <= maximum
+
+
+def _matches_controlled_profile(rounds: list[dict[str, Any]], condition: dict[str, Any]) -> bool:
+    """Bind declared profile variables to the rendered flight contract."""
+    parameters = condition["difficulty_parameters"]
+    try:
+        timing_step = int(parameters["wall_timing_step_ms"])
+        duration_step = int(parameters["duration_step_ms"])
+        initial = dict(parameters["initial_catcher"])
+        families = {str(item) for item in parameters["family_pool"]}
+        if not families or len(rounds) != int(parameters["round_count"]):
+            return False
+        for round_data in rounds:
+            if str(round_data.get("family")) not in families:
+                return False
+            if not _in_range(round_data.get("duration_ms"), parameters["duration_min_ms"], parameters["duration_max_ms"]):
+                return False
+            if (int(round_data["duration_ms"]) - int(parameters["duration_min_ms"])) % duration_step:
+                return False
+            if not _in_range(round_data.get("wall_enter_ms"), parameters["wall_enter_min_ms"], parameters["wall_enter_max_ms"]):
+                return False
+            if (int(round_data["wall_enter_ms"]) - int(parameters["wall_enter_min_ms"])) % timing_step:
+                return False
+            if not int(parameters["wall_exit_min_ms"]) <= int(round_data["wall_exit_ms"]) < min(int(parameters["wall_exit_max_exclusive_ms"]), int(round_data["duration_ms"]) - int(parameters["minimum_post_exit_ms"])):
+                return False
+            if (int(round_data["wall_exit_ms"]) - int(parameters["wall_exit_min_ms"])) % timing_step:
+                return False
+            if int(round_data.get("minimum_observation_ms")) != int(parameters["minimum_observation_ms"]) or int(round_data.get("commit_margin_ms")) != int(parameters["commit_margin_ms"]):
+                return False
+            if not _in_range(round_data.get("base_y"), parameters["base_y_min"], parameters["base_y_max"]) or not _in_range(round_data.get("amplitude"), parameters["amplitude_min"], parameters["amplitude_max"]):
+                return False
+            if not _in_range(round_data.get("wobble"), parameters["wobble_min"], parameters["wobble_max"]) or not _in_range(round_data.get("phase"), parameters["phase_min"], parameters["phase_max"]):
+                return False
+            if not _in_range(round_data.get("projectile_radius"), parameters["projectile_radius_min"], parameters["projectile_radius_max"]):
+                return False
+            if int(round_data.get("alignment_tolerance_deg")) != int(parameters["alignment_tolerance_deg"]) or int(round_data.get("capture_depth")) != int(parameters["capture_depth"]):
+                return False
+            if int(round_data.get("aperture_min")) != int(parameters["aperture_min"]) or int(round_data.get("aperture_max")) != int(parameters["aperture_max"]) or int(round_data.get("aperture_step")) != int(parameters["aperture_step"]):
+                return False
+            if int(round_data.get("rotation_step_deg")) != int(parameters["rotation_step_deg"]) or int(round_data.get("replay_limit")) != int(parameters["replay_limit"]):
+                return False
+            if not _close(round_data["initial_catcher"].get("x"), initial["x"]) or not _close(round_data["initial_catcher"].get("y"), initial["y"]):
+                return False
+            if int(round_data["initial_catcher"].get("angle_deg")) != int(initial["angle_deg"]) or int(round_data["initial_catcher"].get("aperture")) != int(initial["aperture"]):
+                return False
+    except (KeyError, TypeError, ValueError, ZeroDivisionError):
+        return False
+    return True
+
+
 def grade(payload: dict[str, Any], ground_truth: dict[str, Any], public_state: dict[str, Any]) -> dict[str, Any]:
     challenge_id = str(ground_truth.get("challenge_id") or "")
     if str(payload.get("mechanic_id") or "") != MECHANIC_ID or str(ground_truth.get("mechanic_id") or "") != MECHANIC_ID: return _failure("mechanic mismatch")
@@ -98,8 +170,18 @@ def grade(payload: dict[str, Any], ground_truth: dict[str, Any], public_state: d
     if not task_id or str(payload.get("task_id") or "") != task_id or str(public_state.get("task_id") or "") != task_id: return _failure("task identity mismatch")
     if not challenge_id or str(payload.get("challenge_id") or "") != challenge_id: return _failure("stale challenge")
     if str(public_state.get("challenge_id") or "") != challenge_id or str(public_state.get("mechanic_id") or "") != MECHANIC_ID: return _failure("public flight log does not match hidden state")
+    condition, condition_error = _control_condition(ground_truth, public_state)
+    if condition_error:
+        return _failure(condition_error)
+    interaction = str((condition or {}).get("interaction") or "")
+    if condition is not None and str(payload.get("interaction") or "") != interaction:
+        return _failure("flight transcript belongs to the other interaction mode")
     rounds = ground_truth.get("rounds")
-    if not isinstance(rounds, list) or len(rounds) < 3 or public_state.get("rounds") != rounds: return _failure("analytic flight schedule is missing or inconsistent")
+    if not isinstance(rounds, list) or not rounds or public_state.get("rounds") != rounds: return _failure("analytic flight schedule is missing or inconsistent")
+    if int(ground_truth.get("round_count") or 0) != len(rounds) or int(public_state.get("round_count") or 0) != len(rounds):
+        return _failure("flight round count is inconsistent")
+    if condition is not None and not _matches_controlled_profile(rounds, condition):
+        return _failure("analytic flight schedule does not match its declared difficulty profile")
     events = payload.get("events")
     if not isinstance(events, list) or not events or len(events) > 1800: return _failure("flight transcript is missing or too long")
 
@@ -158,7 +240,7 @@ def grade(payload: dict[str, Any], ground_truth: dict[str, Any], public_state: d
             if event.get("round_id") != round_data["id"] or event.get("attempt") != expected_attempt or event.get("round_t_ms") != 0: return _failure("round start identity disagrees with replay")
             context = {
                 "catcher": _catcher(round_data), "last_round_t": 0.0, "observations": [], "dragging": False,
-                "drag_offset": (0.0, 0.0), "last_pointer": None, "drag_moves": 0, "rotations": 0, "resizes": 0,
+                "gesture": None, "drag_offset": (0.0, 0.0), "last_pointer": None, "drag_moves": 0, "rotations": 0, "resizes": 0,
                 "global_start": global_t,
             }
             attempt_counts[str(round_data["id"])] += 1
@@ -185,10 +267,11 @@ def grade(payload: dict[str, Any], ground_truth: dict[str, Any], public_state: d
         if action == "catcher_drag_start":
             point = _point(event.get("pointer"))
             state = context["catcher"]
+            if condition is not None and event.get("input_source") != "canvas_drag": return _failure(f"catcher drag {sequence} uses the wrong interaction input")
             if not in_commit_window or state["armed"] or context["dragging"] or point is None or math.hypot(point[0] - state["x"], point[1] - state["y"]) > 42: return _failure(f"catcher drag {sequence} starts outside the hidden physical handle")
             context["drag_offset"] = (point[0] - state["x"], point[1] - state["y"])
             context["last_pointer"] = point
-            context["dragging"] = True
+            context["dragging"] = True; context["gesture"] = "move"
             if not _state_matches(event.get("catcher_before"), state): return _failure(f"catcher drag {sequence} reports stale state")
             continue
         if action == "catcher_drag_move":
@@ -196,7 +279,8 @@ def grade(payload: dict[str, Any], ground_truth: dict[str, Any], public_state: d
             before = _point(event.get("from"))
             after = _point(event.get("to"))
             state = context["catcher"]
-            if not in_commit_window or not context["dragging"] or state["armed"] or point is None or before is None or after is None: return _failure(f"catcher drag move {sequence} occurs outside a valid drag")
+            if condition is not None and event.get("input_source") != "canvas_drag": return _failure(f"catcher drag move {sequence} uses the wrong interaction input")
+            if not in_commit_window or not context["dragging"] or context["gesture"] != "move" or state["armed"] or point is None or before is None or after is None: return _failure(f"catcher drag move {sequence} occurs outside a valid drag")
             if math.hypot(point[0] - context["last_pointer"][0], point[1] - context["last_pointer"][1]) > 150: return _failure(f"catcher drag move {sequence} teleports")
             if not _close(before[0], state["x"]) or not _close(before[1], state["y"]): return _failure(f"catcher drag move {sequence} has a stale origin")
             expected_x = round(_clamp(point[0] - context["drag_offset"][0], 34, 866), 2)
@@ -210,26 +294,70 @@ def grade(payload: dict[str, Any], ground_truth: dict[str, Any], public_state: d
             point = _point(event.get("pointer"))
             # Releasing after the commit horn changes no geometry and must not
             # poison a later replay; only drag starts/moves are commit-gated.
-            if not context["dragging"] or point is None or not _state_matches(event.get("catcher_after"), context["catcher"]): return _failure(f"catcher drag end {sequence} is malformed")
-            context["dragging"] = False
+            if condition is not None and event.get("input_source") != "canvas_drag": return _failure(f"catcher drag end {sequence} uses the wrong interaction input")
+            if not context["dragging"] or context["gesture"] != "move" or point is None or not _state_matches(event.get("catcher_after"), context["catcher"]): return _failure(f"catcher drag end {sequence} is malformed")
+            context["dragging"] = False; context["gesture"] = None
+            continue
+        if action == "catcher_rotate_start":
+            point = _point(event.get("pointer")); state = context["catcher"]
+            if condition is None or interaction != "full" or event.get("input_source") != "canvas_ring": return _failure(f"catcher rotation start {sequence} uses the wrong interaction input")
+            if not in_commit_window or state["armed"] or context["dragging"] or point is None or not _state_matches(event.get("catcher_before"), state): return _failure(f"catcher rotation start {sequence} is malformed")
+            radius = math.hypot(point[0] - state["x"], point[1] - state["y"])
+            if not 34 <= radius <= 100: return _failure(f"catcher rotation start {sequence} misses the visible ring")
+            context["dragging"] = True; context["gesture"] = "rotate"; context["last_pointer"] = point
             continue
         if action == "catcher_rotate":
             state = context["catcher"]
             delta = event.get("delta_deg")
-            if not in_commit_window or state["armed"] or context["dragging"] or delta not in {-15, 15} or event.get("angle_before") != state["angle_deg"]: return _failure(f"catcher rotation {sequence} is malformed")
-            state["angle_deg"] = (state["angle_deg"] + int(delta)) % 180
-            if event.get("angle_after") != state["angle_deg"]: return _failure(f"catcher rotation {sequence} lies about orientation")
+            if condition is not None and interaction == "simplified" and event.get("input_source") != "transform_button": return _failure(f"catcher rotation {sequence} uses the wrong interaction input")
+            if condition is not None and interaction == "full":
+                point = _point(event.get("pointer")); after = event.get("angle_after")
+                if not in_commit_window or state["armed"] or not context["dragging"] or context["gesture"] != "rotate" or point is None or event.get("input_source") != "canvas_ring" or event.get("angle_before") != state["angle_deg"]: return _failure(f"catcher rotation {sequence} is malformed")
+                radius = math.hypot(point[0] - state["x"], point[1] - state["y"])
+                step = int(round_data["rotation_step_deg"])
+                if not 34 <= radius <= 100 or not isinstance(after, int) or after % step or not 0 <= after < 180: return _failure(f"catcher rotation {sequence} lies about direct orientation")
+                state["angle_deg"] = after
+            else:
+                step = int(round_data["rotation_step_deg"])
+                if not in_commit_window or state["armed"] or context["dragging"] or delta not in {-step, step} or event.get("angle_before") != state["angle_deg"]: return _failure(f"catcher rotation {sequence} is malformed")
+                state["angle_deg"] = (state["angle_deg"] + int(delta)) % 180
+                if event.get("angle_after") != state["angle_deg"]: return _failure(f"catcher rotation {sequence} lies about orientation")
             context["rotations"] += 1
+            continue
+        if action == "catcher_rotate_end":
+            point = _point(event.get("pointer"))
+            if condition is None or interaction != "full" or event.get("input_source") != "canvas_ring" or not context["dragging"] or context["gesture"] != "rotate" or point is None or not _state_matches(event.get("catcher_after"), context["catcher"]): return _failure(f"catcher rotation end {sequence} is malformed")
+            context["dragging"] = False; context["gesture"] = None
+            continue
+        if action == "catcher_resize_start":
+            point = _point(event.get("pointer")); state = context["catcher"]
+            if condition is None or interaction != "full" or event.get("input_source") != "canvas_mouth": return _failure(f"catcher resize start {sequence} uses the wrong interaction input")
+            if not in_commit_window or state["armed"] or context["dragging"] or point is None or not _state_matches(event.get("catcher_before"), state): return _failure(f"catcher resize start {sequence} is malformed")
+            local = _local(point, state)
+            if abs(local[0]) > 22 or abs(abs(local[1]) - state["aperture"] / 2) > 18: return _failure(f"catcher resize start {sequence} misses the visible mouth handle")
+            context["dragging"] = True; context["gesture"] = "resize"; context["last_pointer"] = point
             continue
         if action == "catcher_resize":
             state = context["catcher"]
             delta = event.get("delta")
-            if not in_commit_window or state["armed"] or context["dragging"] or delta not in {-10, 10} or event.get("aperture_before") != state["aperture"]: return _failure(f"catcher resize {sequence} is malformed")
+            if condition is not None and interaction == "simplified" and event.get("input_source") != "transform_button": return _failure(f"catcher resize {sequence} uses the wrong interaction input")
+            step = int(round_data["aperture_step"])
+            direct_resize = condition is not None and interaction == "full"
+            if direct_resize:
+                point = _point(event.get("pointer"))
+                if not in_commit_window or state["armed"] or not context["dragging"] or context["gesture"] != "resize" or point is None or event.get("input_source") != "canvas_mouth" or event.get("aperture_before") != state["aperture"] or not isinstance(delta, int) or not delta or delta % step: return _failure(f"catcher resize {sequence} is malformed")
+            elif not in_commit_window or state["armed"] or context["dragging"] or delta not in {-step, step} or event.get("aperture_before") != state["aperture"]:
+                return _failure(f"catcher resize {sequence} is malformed")
             next_aperture = state["aperture"] + int(delta)
             if not int(round_data["aperture_min"]) <= next_aperture <= int(round_data["aperture_max"]): return _failure("catcher resize exceeds physical stops")
             state["aperture"] = next_aperture
             if event.get("aperture_after") != state["aperture"]: return _failure(f"catcher resize {sequence} lies about aperture")
             context["resizes"] += 1
+            continue
+        if action == "catcher_resize_end":
+            point = _point(event.get("pointer"))
+            if condition is None or interaction != "full" or event.get("input_source") != "canvas_mouth" or not context["dragging"] or context["gesture"] != "resize" or point is None or not _state_matches(event.get("catcher_after"), context["catcher"]): return _failure(f"catcher resize end {sequence} is malformed")
+            context["dragging"] = False; context["gesture"] = None
             continue
         if action == "catcher_reset":
             if not in_commit_window or context["catcher"]["armed"] or context["dragging"]: return _failure("catcher reset occurred outside the hidden setup interval")
@@ -249,7 +377,8 @@ def grade(payload: dict[str, Any], ground_truth: dict[str, Any], public_state: d
         if action == "round_result":
             if round_t < float(round_data["duration_ms"]) - 80 or context["dragging"]: return _failure("round terminated before its analytic flight completed")
             observations = context["observations"]
-            if len(observations) < 8 or max(observations) - min(observations) < float(round_data["minimum_observation_ms"]): return _failure("round lacks genuine visible observation duration")
+            required_samples = max(8, math.ceil(float(round_data["minimum_observation_ms"]) / 150.0))
+            if len(observations) < required_samples or max(observations) - min(observations) < float(round_data["minimum_observation_ms"]): return _failure("round lacks genuine visible observation duration")
             caught, crossing = _swept_catch(round_data, context["catcher"])
             if bool(event.get("caught")) != caught or not _state_matches(event.get("catcher"), context["catcher"]): return _failure("round result disagrees with swept catcher geometry")
             if caught:

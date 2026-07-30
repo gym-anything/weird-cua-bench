@@ -62,6 +62,7 @@
       mode: model.phase,
       timeline_ms: Math.round(timelineMs),
       cursor: [Number(model.lens[0].toFixed(2)), Number(model.lens[1].toFixed(2))],
+      input_source: model.lensSource,
     });
   }
 
@@ -150,11 +151,8 @@
     model.raf = requestAnimationFrame(draw);
   }
 
-  async function select(event) {
+  async function select(point, inputSource) {
     if (model.phase !== "select" || model.submitting) return;
-    const canvas = event.currentTarget;
-    const rect = canvas.getBoundingClientRect();
-    const point = [(event.clientX - rect.left) / rect.width * canvas.width, (event.clientY - rect.top) / rect.height * canvas.height];
     let best = null;
     let distance = Infinity;
     model.state.timeline.objects.forEach((object) => {
@@ -168,14 +166,20 @@
     if (!best || distance > 38) return;
     model.submitting = true;
     model.phase = "submitting";
-    record("select", {selected_object_id: best.id, point: point.map((value) => Number(value.toFixed(2)))});
+    record("select", {
+      selected_object_id: best.id,
+      point: point.map((value) => Number(value.toFixed(2))),
+      input_source: inputSource,
+    });
     try {
       const response = await fetch("/result", {
         method: "POST",
         headers: {"content-type": "application/json"},
         body: JSON.stringify({
           mechanic_id: model.state.mechanic_id,
+          task_id: model.state.task_id,
           challenge_id: model.state.challenge_id,
+          interaction_mode: model.interaction,
           selected_object_id: best.id,
           events: model.events,
         }),
@@ -196,40 +200,79 @@
     }
   }
 
+  function selectCanvas(event) {
+    const canvas = event.currentTarget;
+    const rect = canvas.getBoundingClientRect();
+    select([
+      (event.clientX - rect.left) / rect.width * canvas.width,
+      (event.clientY - rect.top) / rect.height * canvas.height,
+    ], "canvas_pointer");
+  }
+
+  function placeCoordinateLens() {
+    if (!model || model.interaction !== "simplified" || !["live", "review", "select"].includes(model.phase)) return;
+    const x = Number(document.querySelector(".tracking-lens-x")?.value);
+    const y = Number(document.querySelector(".tracking-lens-y")?.value);
+    const stage = model.state.timeline.stage;
+    if (!Number.isFinite(x) || !Number.isFinite(y) || x < 0 || y < 0 || x > stage.width || y > stage.height) return;
+    model.lens = [x, y];
+    model.lensSource = "coordinate_controls";
+    model.helpers.setReadout("LENS POSITIONED", "idle");
+  }
+
+  function selectSettledSlot(event) {
+    if (!model || model.interaction !== "simplified") return;
+    const objectId = String(event.currentTarget.dataset.objectId || "");
+    const object = model.state.timeline.objects.find((item) => item.id === objectId);
+    if (object) select(settledPosition(object), "settled_slot_button");
+  }
+
   async function render(state, helpers) {
     document.body.dataset.mechanic = "first-change-tracking-v3";
     if (model?.raf) cancelAnimationFrame(model.raf);
+    const interaction = state.control_condition?.interaction || "full";
     model = {
       state,
       helpers,
+      interaction,
       phase: "ready",
       startedAt: 0,
       timelineMs: 0,
       reviewMs: 0,
       lens: null,
+      lensSource: null,
       raf: 0,
       submitting: false,
       events: [],
       lastObservationAt: 0,
     };
     const timeline = state.timeline;
-    helpers.app.innerHTML = `<section class="tracking-captcha">
+    const coordinateControls = interaction === "simplified" ? `<div class="tracking-coordinate-controls" aria-label="identity lens coordinate controls"><label>X <input class="tracking-lens-x" type="number" min="0" max="${timeline.stage.width}" step="1" value="${Math.round(timeline.stage.width / 2)}"></label><label>Y <input class="tracking-lens-y" type="number" min="0" max="${timeline.stage.height}" step="1" value="${Math.round(timeline.stage.height / 2)}"></label><button class="tracking-place-lens" type="button">PLACE LENS</button></div>` : "";
+    const settledSlotControls = interaction === "simplified" ? `<nav class="tracking-slot-controls" data-visible="false" aria-label="settled carrier selection">${timeline.settle_order.map((objectId, index) => `<button type="button" data-object-id="${esc(objectId)}">MARK SLOT ${index + 1}</button>`).join("")}</nav>` : "";
+    helpers.app.innerHTML = `<section class="tracking-captcha" data-interaction="${esc(interaction)}">
       <header><div><span>TRANSIENT IDENTITY FIELD / FORENSIC SPOOL</span><h1>${esc(state.prompt)}</h1></div><b class="tracking-status">FIELD SAFE</b></header>
-      <section class="tracking-stage" data-phase="ready"><canvas class="tracking-canvas" width="700" height="330"></canvas><button class="tracking-arm" type="button">RUN FIELD ONCE</button></section>
-      <section class="tracking-review" data-visible="false"><div class="tracking-spikes">${timeline.events.map((item) => `<i style="left:${item.at_ms / timeline.review_end_ms * 100}%"></i>`).join("")}</div><input class="tracking-spool" type="range" min="0" max="${timeline.review_end_ms}" step="${timeline.review_step_ms}" value="0" aria-label="recorded field time"><button class="tracking-return" type="button" disabled>RETURN TO SETTLED FIELD</button></section>
+      <section class="tracking-stage" data-phase="ready"><canvas class="tracking-canvas" width="${timeline.stage.width}" height="${timeline.stage.height}"></canvas><button class="tracking-arm" type="button">RUN FIELD ONCE</button>${settledSlotControls}</section>
+      <section class="tracking-review" data-visible="false"><div class="tracking-spikes">${timeline.events.map((item) => `<i style="left:${item.at_ms / timeline.review_end_ms * 100}%"></i>`).join("")}</div><input class="tracking-spool" type="range" min="0" max="${timeline.review_end_ms}" step="${timeline.review_step_ms}" value="0" aria-label="recorded field time"><button class="tracking-return" type="button" disabled>RETURN TO SETTLED FIELD</button>${coordinateControls}</section>
       <footer><div class="readout" data-status="idle"></div><span>SCRUB THE DISTURBANCE TRACE · THE LENS REVEALS IDENTITY</span><i></i></footer>
     </section>`;
     const canvas = document.querySelector(".tracking-canvas");
-    canvas.addEventListener("pointermove", (event) => {
-      const rect = canvas.getBoundingClientRect();
-      model.lens = [(event.clientX - rect.left) / rect.width * canvas.width, (event.clientY - rect.top) / rect.height * canvas.height];
-    });
-    canvas.addEventListener("pointerleave", () => { model.lens = null; });
-    canvas.addEventListener("click", select);
+    if (interaction === "full") {
+      canvas.addEventListener("pointermove", (event) => {
+        const rect = canvas.getBoundingClientRect();
+        model.lens = [(event.clientX - rect.left) / rect.width * canvas.width, (event.clientY - rect.top) / rect.height * canvas.height];
+        model.lensSource = "canvas_pointer";
+      });
+      canvas.addEventListener("pointerleave", () => { model.lens = null; model.lensSource = null; });
+      canvas.addEventListener("click", selectCanvas);
+    } else {
+      document.querySelector(".tracking-place-lens").addEventListener("click", placeCoordinateLens);
+      document.querySelectorAll(".tracking-slot-controls [data-object-id]").forEach((button) => button.addEventListener("click", selectSettledSlot));
+    }
     document.querySelector(".tracking-arm").addEventListener("click", (event) => {
       model.phase = "live";
       model.startedAt = performance.now();
       model.lens = null;
+      model.lensSource = null;
       record("arm");
       document.querySelector(".tracking-stage").dataset.phase = "live";
       event.currentTarget.remove();
@@ -244,7 +287,9 @@
     document.querySelector(".tracking-return").addEventListener("click", () => {
       model.phase = "select";
       model.lens = null;
+      model.lensSource = null;
       document.querySelector(".tracking-stage").dataset.phase = "select";
+      document.querySelector(".tracking-slot-controls")?.setAttribute("data-visible", "true");
       record("return_settled");
     });
     draw();

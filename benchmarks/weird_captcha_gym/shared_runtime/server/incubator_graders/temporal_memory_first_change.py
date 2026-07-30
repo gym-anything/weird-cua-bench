@@ -40,6 +40,39 @@ def grade(payload: dict[str, Any], ground_truth: dict[str, Any], public_state: d
     timeline = ground_truth.get("timeline")
     if not isinstance(timeline, dict) or public_state.get("timeline") != timeline:
         return {"graded": True, "passed": False, "feedback": "public/private timeline mismatch"}
+    truth_condition = ground_truth.get("control_condition")
+    interaction = ""
+    observation_source = selection_source = None
+    if truth_condition is not None:
+        if public_state.get("control_condition") != truth_condition:
+            return {"graded": True, "passed": False, "feedback": "public/private control condition mismatch"}
+        task_id = str(ground_truth.get("task_id") or "")
+        if not task_id or str(public_state.get("task_id") or "") != task_id or str(payload.get("task_id") or "") != task_id:
+            return {"graded": True, "passed": False, "feedback": "task identity mismatch"}
+        interaction = str(truth_condition.get("interaction") or "")
+        sources = {
+            "simplified": ("coordinate_controls", "settled_slot_button"),
+            "full": ("canvas_pointer", "canvas_pointer"),
+        }.get(interaction)
+        if sources is None or payload.get("interaction_mode") != interaction:
+            return {"graded": True, "passed": False, "feedback": "first-change interaction mode mismatch"}
+        observation_source, selection_source = sources
+        parameters = dict(truth_condition.get("difficulty_parameters") or {})
+        try:
+            profile_matches = (
+                int(truth_condition.get("difficulty")) in range(1, 6)
+                and len(timeline.get("objects") or []) == int(parameters["object_count"])
+                and len(timeline.get("events") or []) == int(parameters["decoy_event_count"]) + 1
+                and int((timeline.get("events") or [])[0]["duration_ms"]) == int(parameters["first_change_duration_ms"])
+                and int(timeline["lens_radius"]) == int(parameters["lens_radius"])
+                and int(timeline["proof"]["minimum_pre_hits"]) == int(parameters["minimum_pre_hits"])
+                and int(timeline["proof"]["minimum_change_hits"]) == int(parameters["minimum_change_hits"])
+                and timeline.get("occluders") == parameters["occluders"]
+            )
+        except (IndexError, KeyError, TypeError, ValueError):
+            profile_matches = False
+        if not profile_matches:
+            return {"graded": True, "passed": False, "feedback": "first-change difficulty profile differs from timeline"}
     objects = {str(item["id"]): item for item in timeline.get("objects") or []}
     target_id = str(ground_truth.get("target_object_id") or "")
     if target_id not in objects:
@@ -68,6 +101,8 @@ def grade(payload: dict[str, Any], ground_truth: dict[str, Any], public_state: d
         if kind == "observe":
             if not armed or returned or selected or str(event.get("mode") or "") not in {"live", "review"}:
                 return {"graded": True, "passed": False, "feedback": "lens observation occurred outside the recorded field"}
+            if observation_source is not None and event.get("input_source") != observation_source:
+                return {"graded": True, "passed": False, "feedback": "lens observation used the wrong interaction surface"}
             try:
                 at_ms = float(event.get("timeline_ms"))
                 cursor = _point(event.get("cursor"))
@@ -92,6 +127,8 @@ def grade(payload: dict[str, Any], ground_truth: dict[str, Any], public_state: d
         if kind == "select":
             if not returned or selected:
                 return {"graded": True, "passed": False, "feedback": "carrier selected before returning to the settled field"}
+            if selection_source is not None and event.get("input_source") != selection_source:
+                return {"graded": True, "passed": False, "feedback": "settled carrier used the wrong interaction surface"}
             selected_id = str(event.get("selected_object_id") or "")
             if selected_id not in objects:
                 return {"graded": True, "passed": False, "feedback": "selected carrier does not exist"}

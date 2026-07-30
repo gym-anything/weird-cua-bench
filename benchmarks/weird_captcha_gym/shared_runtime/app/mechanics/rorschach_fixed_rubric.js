@@ -11,6 +11,10 @@
     return event;
   }
 
+  function physicalInput(source) {
+    return model.interaction === "full" ? {input_source: source} : {};
+  }
+
   function stagePoint(event) {
     const rect = document.querySelector(".ink-stage").getBoundingClientRect();
     return [
@@ -33,6 +37,19 @@
 
   function isObserved(blotId, tool) {
     return model.observations.has(observationKey(blotId, tool));
+  }
+
+  function requiredToolInstruction() {
+    const count = model.state.required_tools.length;
+    if (count === 1) return "THE HIGHLIGHTED TOOL";
+    if (count === 2) return "BOTH HIGHLIGHTED TOOLS";
+    return "ALL THREE HIGHLIGHTED TOOLS";
+  }
+
+  function stampInstruction() {
+    return model.interaction === "simplified"
+      ? "SELECT THE TARGET, THEN USE THE STAMP PROXY"
+      : "DRAG THE STAMP";
   }
 
   function updateUI() {
@@ -58,7 +75,11 @@
     const selected = document.querySelector(".ink-selected-specimen b");
     if (selected) selected.textContent = model.selectedId ? model.state.blots.find((item) => item.id === model.selectedId).specimen : "SELECT A CARD";
     const stamp = document.querySelector(".ink-stamp");
-    if (stamp) stamp.dataset.ready = count === model.state.observations_required && !model.active ? "true" : "false";
+    if (stamp) {
+      const ready = count === model.state.observations_required && !model.active;
+      stamp.dataset.ready = ready ? "true" : "false";
+      if (model.interaction === "simplified" && "disabled" in stamp) stamp.disabled = !ready || !model.selectedId;
+    }
   }
 
   function selectSpecimen(blotId) {
@@ -67,7 +88,7 @@
     model.selectedId = blotId;
     record("select", {blot_id: blotId});
     updateUI();
-    model.helpers.setReadout(`${blotId.toUpperCase()} LOADED · APPLY BOTH HIGHLIGHTED TOOLS`, "idle");
+    model.helpers.setReadout(`${blotId.toUpperCase()} LOADED · APPLY ${requiredToolInstruction()}`, "idle");
   }
 
   function applySnapshot(snapshot) {
@@ -100,13 +121,20 @@
     model.timer = null;
     updateUI();
     const complete = model.observations.size === model.state.observations_required;
-    model.helpers.setReadout(complete ? "ALL SPECIMEN RESPONSES ARCHIVED · DRAG THE STAMP" : `${cycle.blot_id.toUpperCase()} / ${cycle.tool} ARCHIVED`, complete ? "passed" : "idle");
+    model.helpers.setReadout(complete ? `ALL SPECIMEN RESPONSES ARCHIVED · ${stampInstruction()}` : `${cycle.blot_id.toUpperCase()} / ${cycle.tool} ARCHIVED`, complete ? "passed" : "idle");
+    const action = model.activeAction;
+    model.activeAction = null;
+    // A response cycle is a finite consequence of an accepted visible test.
+    // The shared paused evaluator waits on this handle before it freezes the
+    // world for the next model-inference turn.
+    action?.settle();
   }
 
   function startProbe(tool) {
     const blotId = model.selectedId;
     const cycle = cycleFor(blotId, tool);
     if (!cycle || isObserved(blotId, tool)) return;
+    model.activeAction = model.helpers.beginAction?.(`material-response:${blotId}:${tool}`) || null;
     record("probe", {blot_id: blotId, tool});
     model.active = true;
     updateUI();
@@ -117,7 +145,10 @@
       tick += 1;
       const frame = cycle.frames[tick - 1];
       applySnapshot(frame.snapshot);
-      const elapsed = Math.max(Math.round(performance.now() - startedAt), tick * 65);
+      // The exported transcript must bind each difficulty profile's actual
+      // response cadence.  Do not let a fast browser callback turn a slower
+      // profile into the same replay contract as every other profile.
+      const elapsed = Math.max(Math.round(performance.now() - startedAt), tick * model.state.tick_ms);
       record("tick", {blot_id: blotId, tool, tick, elapsed_ms: elapsed, snapshot: frame.snapshot});
       model.tickTotal += 1;
       const meter = document.querySelector(".ink-cycle-meter i");
@@ -138,7 +169,7 @@
     if (!model.selectedId || model.active || !isRequired("FOLD") || isObserved(model.selectedId, "FOLD")) return;
     event.preventDefault();
     const value = foldValue(event);
-    record("fold_start", {value});
+    record("fold_start", {value, ...physicalInput("direct_fold_sweep")});
     model.fold = {start: value, last: value, moves: 0};
     event.currentTarget.setPointerCapture(event.pointerId);
   }
@@ -147,7 +178,7 @@
     if (!model?.fold) return;
     event.preventDefault();
     const value = Math.max(model.fold.last, foldValue(event));
-    record("fold_move", {value});
+    record("fold_move", {value, ...physicalInput("direct_fold_sweep")});
     model.fold.last = value;
     model.fold.moves += 1;
     model.foldSamples += 1;
@@ -160,11 +191,11 @@
     const value = model.fold.last;
     const valid = model.fold.moves >= 3 && value - model.fold.start >= model.state.fold_min_distance;
     if (valid) {
-      record("fold_end", {value});
+      record("fold_end", {value, ...physicalInput("direct_fold_sweep")});
       model.fold = null;
       startProbe("FOLD");
     } else {
-      record("fold_cancel", {value});
+      record("fold_cancel", {value, ...physicalInput("direct_fold_sweep")});
       model.fold = null;
       model.helpers.setReadout("FOLD SWEEP TOO SHORT · RETRY THIS SPECIMEN", "error");
     }
@@ -174,7 +205,7 @@
   function pressureDown(event) {
     if (!model.selectedId || model.active || !isRequired("PRESSURE") || isObserved(model.selectedId, "PRESSURE")) return;
     event.preventDefault();
-    record("pressure_down");
+    record("pressure_down", physicalInput("direct_pressure_hold"));
     model.pressureStarted = performance.now();
     event.currentTarget.setPointerCapture(event.pointerId);
     event.currentTarget.classList.add("is-held");
@@ -188,27 +219,43 @@
     model.pressureStarted = null;
     event.currentTarget.classList.remove("is-held");
     if (duration >= model.state.pressure_min_ms) {
-      record("pressure_up", {duration_ms: duration});
+      record("pressure_up", {duration_ms: duration, ...physicalInput("direct_pressure_hold")});
       model.pressureHolds += 1;
       startProbe("PRESSURE");
     } else {
-      record("pressure_cancel", {duration_ms: duration});
+      record("pressure_cancel", {duration_ms: duration, ...physicalInput("direct_pressure_hold")});
       model.helpers.setReadout("PRESSURE RELEASED EARLY · RETRY THIS SPECIMEN", "error");
     }
   }
 
   function coolPulse() {
     if (!model.selectedId || model.active || !isRequired("COOL") || isObserved(model.selectedId, "COOL")) return;
-    record("thermal_pulse", {polarity: "COOL"});
+    record("thermal_pulse", {polarity: "COOL", ...physicalInput("direct_cooling_pulse")});
     model.thermalPulses += 1;
     startProbe("COOL");
   }
 
+  function proxyProbe(tool) {
+    if (!model.selectedId || model.active || !isRequired(tool) || isObserved(model.selectedId, tool)) return;
+    record("proxy_probe", {tool, input_source: "labelled_tool_proxy"});
+    startProbe(tool);
+  }
+
+  function proxyStamp() {
+    const stamp = document.querySelector(".ink-stamp");
+    if (!stamp || stamp.dataset.ready !== "true" || !model.selectedId || model.active || model.terminal) return;
+    record("proxy_stamp", {blot_id: model.selectedId, input_source: "selected_card_stamp_proxy"});
+    model.stampedId = model.selectedId;
+    document.querySelectorAll(".ink-blot").forEach((blot) => blot.classList.toggle("is-stamped", blot.dataset.blotId === model.stampedId));
+    model.helpers.setReadout(`${model.stampedId.toUpperCase()} STAMPED · CERTIFY WHEN READY`, "idle");
+  }
+
   function stampDown(event) {
+    if (model.interaction !== "full") return;
     const stamp = event.target.closest(".ink-stamp");
     if (!stamp || stamp.dataset.ready !== "true" || model.active || model.terminal) return;
     event.preventDefault();
-    record("stamp_down", {point: stagePoint(event)});
+    record("stamp_down", {point: stagePoint(event), ...physicalInput("direct_stamp_drag")});
     model.stampDrag = {moves: 0};
     document.querySelector(".ink-stage").setPointerCapture(event.pointerId);
     stamp.classList.add("is-dragging");
@@ -218,7 +265,7 @@
     if (!model?.stampDrag) return;
     event.preventDefault();
     const point = stagePoint(event);
-    record("stamp_move", {point});
+    record("stamp_move", {point, ...physicalInput("direct_stamp_drag")});
     model.stampDrag.moves += 1;
     model.stampMoves += 1;
     const ghost = document.querySelector(".ink-stamp-ghost");
@@ -231,7 +278,7 @@
     if (!model?.stampDrag) return;
     event.preventDefault();
     const point = stagePoint(event);
-    record("stamp_up", {point});
+    record("stamp_up", {point, ...physicalInput("direct_stamp_drag")});
     const rect = model.state.blot_rects.find((item) => inside(point, item));
     model.stampedId = rect ? rect.id : null;
     model.stampDrag = null;
@@ -249,6 +296,8 @@
     model.observations.clear();
     model.active = false;
     model.timer = null;
+    model.activeAction?.settle();
+    model.activeAction = null;
     model.fold = null;
     model.pressureStarted = null;
     model.stampDrag = null;
@@ -271,12 +320,13 @@
   async function submit() {
     if (model.submitting || model.terminal) return;
     model.submitting = true;
-    model.helpers.setReadout("REPLAYING TEN SPECIMEN-BOUND RESPONSES…", "pending");
+    model.helpers.setReadout(`REPLAYING ${model.state.observations_required} SPECIMEN-BOUND RESPONSES…`, "pending");
     try {
       const response = await fetch("/result", {method: "POST", headers: {"content-type": "application/json"}, body: JSON.stringify({
         mechanic_id: model.state.mechanic_id,
         task_id: model.state.task_id,
         challenge_id: model.state.challenge_id,
+        interaction: model.interaction,
         events: model.events,
         observation_keys: [...model.observations].sort(),
         observation_count: model.observations.size,
@@ -292,7 +342,8 @@
       const outcome = await response.json();
       if (outcome.passed === true) {
         model.terminal = true;
-        document.querySelector(".ink-material-captcha")?.insertAdjacentHTML("beforeend", '<div class="ink-verdict"><span>SPECIMEN RESPONSE MATRIX AUTHENTICATED</span><strong>PASS</strong><small>TEN PHYSICAL PROBES + STAMP REPLAY VERIFIED</small></div>');
+        const probeSurface = model.interaction === "full" ? "DIRECT" : "PROXY";
+        document.querySelector(".ink-material-captcha")?.insertAdjacentHTML("beforeend", `<div class="ink-verdict"><span>SPECIMEN RESPONSE MATRIX AUTHENTICATED</span><strong>PASS</strong><small>${model.state.observations_required} ${probeSurface} PROBES + STAMP REPLAY VERIFIED</small></div>`);
         model.helpers.setReadout("PASS", "passed");
       } else if (outcome.passed === false && outcome.state) {
         await model.helpers.render(outcome.state);
@@ -318,18 +369,36 @@
 
   async function render(state, helpers) {
     if (model?.timer) window.clearInterval(model.timer);
+    model?.activeAction?.settle();
     document.body.dataset.mechanic = "inkblot-material";
     document.body.dataset.cheatMode = helpers.isCheatMode() ? "true" : "false";
-    model = {state, helpers, events: [], selectedId: null, observations: new Set(), active: false, timer: null, fold: null, pressureStarted: null, stampDrag: null, stampedId: null, tickTotal: 0, foldSamples: 0, pressureHolds: 0, thermalPulses: 0, stampMoves: 0, resetCount: 0, submitting: false, terminal: false};
+    const interaction = state.control_condition?.interaction || "full";
+    model = {state, helpers, interaction, events: [], selectedId: null, observations: new Set(), active: false, timer: null, activeAction: null, fold: null, pressureStarted: null, stampDrag: null, stampedId: null, tickTotal: 0, foldSamples: 0, pressureHolds: 0, thermalPulses: 0, stampMoves: 0, resetCount: 0, submitting: false, terminal: false};
     window.inkblotMaterialModel = model;
     const dock = state.stamp_dock_rect;
-    helpers.app.innerHTML = `<section class="ink-material-captcha" data-challenge-id="${clean(state.challenge_id)}"><header class="ink-head"><div><span>SPECIMEN-BOUND MATERIAL INTERROGATION / ${clean(state.challenge_id)}</span><h1>${clean(state.objective)}</h1></div><div class="ink-protocol">${state.required_tools.map((tool, index) => `<div class="ink-protocol-step" data-status="next"><b>${index + 1}</b><span>${clean(tool)} EVERY CARD</span></div>`).join("")}<div class="ink-protocol-step ink-count"><b>Σ</b><span class="ink-observation-count">0/${state.observations_required}</span></div></div></header><main class="ink-main"><section class="ink-stage">${state.blots.map(blotMarkup).join("")}<div class="ink-stamp" data-ready="false" style="left:${dock.x / state.stage.width * 100}%;top:${dock.y / state.stage.height * 100}%;width:${dock.width / state.stage.width * 100}%;height:${dock.height / state.stage.height * 100}%"><i></i><b>VERIFICATION STAMP</b><span>LOCKED UNTIL ${state.observations_required}/${state.observations_required} PROBES</span></div><div class="ink-stamp-ghost"><b>STAMP</b></div></section><aside class="ink-console"><p>SPECIMEN TOOL RACK</p><h2>Select one card. Physically test both rubric responses.</h2><div class="ink-selected-specimen"><span>LOADED</span><b>SELECT A CARD</b></div><div class="ink-tool ink-fold-tool" data-tool="FOLD"><span>FOLD AXIS DRAG</span><div class="ink-fold-track"><i></i><b class="ink-fold-handle"></b></div><small>SWEEP LEFT → RIGHT</small></div><button type="button" class="ink-tool ink-pressure" data-tool="PRESSURE"><i></i><b>PRESSURE / HOLD</b><span>HOLD ≥ ${(state.pressure_min_ms / 1000).toFixed(1)}s</span></button><button type="button" class="ink-tool ink-cool" data-tool="COOL"><i>❄</i><b>COOLING PULSE</b><span>ONE SPECIMEN</span></button><div class="ink-cycle-meter"><span>TRANSIENT RESPONSE</span><b><i></i></b></div><ol>${state.rubric_labels.map((label, index) => `<li><b>${index + 1}</b><span>${clean(label)}</span></li>`).join("")}</ol><p class="ink-note">Initial appearance is non-diagnostic. A response is archived only for the loaded specimen.</p></aside></main><footer class="ink-foot"><button type="button" class="ink-reset">RESET MATERIAL RUN</button><div><span>LAB RECORD</span><div class="readout" data-status="idle">SELECT A SPECIMEN CARD</div></div><button type="button" class="ink-submit">${clean(state.submit_label)}</button></footer>${helpers.cheatPanelTemplate()}</section>`;
+    const stampMarkup = interaction === "simplified"
+      ? `<button type="button" class="ink-stamp ink-proxy-stamp" data-ready="false" disabled style="left:${dock.x / state.stage.width * 100}%;top:${dock.y / state.stage.height * 100}%;width:${dock.width / state.stage.width * 100}%;height:${dock.height / state.stage.height * 100}%"><i></i><b>VERIFICATION STAMP</b><span>STAMP THE LOADED CARD AFTER ${state.observations_required} PROBES</span></button>`
+      : `<div class="ink-stamp" data-ready="false" style="left:${dock.x / state.stage.width * 100}%;top:${dock.y / state.stage.height * 100}%;width:${dock.width / state.stage.width * 100}%;height:${dock.height / state.stage.height * 100}%"><i></i><b>VERIFICATION STAMP</b><span>LOCKED UNTIL ${state.observations_required}/${state.observations_required} PROBES</span></div>`;
+    const toolMarkup = interaction === "simplified"
+      ? state.required_tools.map((tool) => `<button type="button" class="ink-tool ink-proxy-tool" data-tool="${clean(tool)}"><i>${clean(tool.slice(0, 1))}</i><b>APPLY ${clean(tool)} TEST</b><span>TO LOADED SPECIMEN</span></button>`).join("")
+      : `<div class="ink-tool ink-fold-tool" data-tool="FOLD"><span>FOLD AXIS DRAG</span><div class="ink-fold-track"><i></i><b class="ink-fold-handle"></b></div><small>SWEEP LEFT → RIGHT</small></div><button type="button" class="ink-tool ink-pressure" data-tool="PRESSURE"><i></i><b>PRESSURE / HOLD</b><span>HOLD ≥ ${(state.pressure_min_ms / 1000).toFixed(1)}s</span></button><button type="button" class="ink-tool ink-cool" data-tool="COOL"><i>❄</i><b>COOLING PULSE</b><span>ONE SPECIMEN</span></button>`;
+    const fullToolInstruction = state.required_tools.length === 1
+      ? "Select one card. Physically test the required rubric response."
+      : state.required_tools.length === 2
+        ? "Select one card. Physically test both rubric responses."
+        : "Select one card. Physically test all three rubric responses.";
+    helpers.app.innerHTML = `<section class="ink-material-captcha" data-challenge-id="${clean(state.challenge_id)}" data-interaction="${clean(interaction)}"><header class="ink-head"><div><span>SPECIMEN-BOUND MATERIAL INTERROGATION / ${clean(state.challenge_id)}</span><h1>${clean(state.objective)}</h1></div><div class="ink-protocol">${state.required_tools.map((tool, index) => `<div class="ink-protocol-step" data-status="next"><b>${index + 1}</b><span>${clean(tool)} EVERY CARD</span></div>`).join("")}<div class="ink-protocol-step ink-count"><b>Σ</b><span class="ink-observation-count">0/${state.observations_required}</span></div></div></header><main class="ink-main"><section class="ink-stage">${state.blots.map(blotMarkup).join("")}${stampMarkup}<div class="ink-stamp-ghost"><b>STAMP</b></div></section><aside class="ink-console"><p>SPECIMEN TOOL RACK</p><h2>${interaction === "simplified" ? "Load a card, then apply each labelled test." : fullToolInstruction}</h2><div class="ink-selected-specimen"><span>LOADED</span><b>SELECT A CARD</b></div>${toolMarkup}<div class="ink-cycle-meter"><span>TRANSIENT RESPONSE</span><b><i></i></b></div><ol>${state.rubric_labels.map((label, index) => `<li><b>${index + 1}</b><span>${clean(label)}</span></li>`).join("")}</ol><p class="ink-note">Initial appearance is non-diagnostic. A response is archived only for the loaded specimen.</p></aside></main><footer class="ink-foot"><button type="button" class="ink-reset">RESET MATERIAL RUN</button><div><span>LAB RECORD</span><div class="readout" data-status="idle">SELECT A SPECIMEN CARD</div></div><button type="button" class="ink-submit">${clean(state.submit_label)}</button></footer>${helpers.cheatPanelTemplate()}</section>`;
     document.querySelectorAll(".ink-card").forEach((card) => card.addEventListener("click", () => selectSpecimen(card.dataset.blotId)));
-    const fold = document.querySelector(".ink-fold-track");
-    fold.addEventListener("pointerdown", foldDown); fold.addEventListener("pointermove", foldMove); fold.addEventListener("pointerup", foldUp); fold.addEventListener("pointercancel", foldUp);
-    const pressure = document.querySelector(".ink-pressure");
-    pressure.addEventListener("pointerdown", pressureDown); pressure.addEventListener("pointerup", pressureUp); pressure.addEventListener("pointercancel", pressureUp);
-    document.querySelector(".ink-cool").addEventListener("click", coolPulse);
+    if (interaction === "full") {
+      const fold = document.querySelector(".ink-fold-track");
+      fold.addEventListener("pointerdown", foldDown); fold.addEventListener("pointermove", foldMove); fold.addEventListener("pointerup", foldUp); fold.addEventListener("pointercancel", foldUp);
+      const pressure = document.querySelector(".ink-pressure");
+      pressure.addEventListener("pointerdown", pressureDown); pressure.addEventListener("pointerup", pressureUp); pressure.addEventListener("pointercancel", pressureUp);
+      document.querySelector(".ink-cool").addEventListener("click", coolPulse);
+    } else {
+      document.querySelectorAll(".ink-proxy-tool").forEach((button) => button.addEventListener("click", () => proxyProbe(button.dataset.tool)));
+      document.querySelector(".ink-proxy-stamp").addEventListener("click", proxyStamp);
+    }
     const stage = document.querySelector(".ink-stage");
     stage.addEventListener("pointerdown", stampDown); stage.addEventListener("pointermove", stampMove); stage.addEventListener("pointerup", stampUp); stage.addEventListener("pointercancel", stampUp);
     document.querySelector(".ink-reset").addEventListener("click", resetLab);

@@ -27,22 +27,50 @@ def _arena_click(page, point: list[int]) -> None:
     page.mouse.click(x, y)
 
 
+def _interaction(truth: dict) -> str:
+    return str((truth.get("control_condition") or {}).get("interaction") or "full")
+
+
+def _proxy_point(page, point: list[int]) -> None:
+    page.locator("#wizard-proxy-x").fill(str(point[0]))
+    page.locator("#wizard-proxy-y").fill(str(point[1]))
+
+
+def _place_lure(page, truth: dict) -> None:
+    if _interaction(truth) == "full":
+        page.locator("#wizard-lure-arm").click()
+        _arena_click(page, list(truth["solver_lure"]))
+    else:
+        _proxy_point(page, list(truth["solver_lure"]))
+        page.locator("#wizard-proxy-place").click()
+    page.wait_for_function("() => wizardCritterCaptureModel.phase === 'hunt' && Boolean(wizardCritterCaptureModel.lure)")
+
+
+def _launch_net(page, truth: dict, point: list[int]) -> None:
+    if _interaction(truth) == "full":
+        _arena_click(page, point)
+    else:
+        _proxy_point(page, point)
+        page.locator("#wizard-proxy-launch").click()
+
+
 def _wait_ready(page) -> None:
     page.wait_for_function("() => wizardCritterCaptureModel.phase === 'ready'", timeout=6_000)
 
 
 def _place_lure_and_freeze(page, truth: dict) -> None:
-    page.locator("#wizard-lure-arm").click()
-    _arena_click(page, list(truth["solver_lure"]))
-    page.wait_for_function("() => wizardCritterCaptureModel.phase === 'hunt' && Boolean(wizardCritterCaptureModel.lure)")
-    page.keyboard.down("f")
+    _place_lure(page, truth)
     required = int(truth["solver_freeze_ticks"])
-    page.wait_for_function(
-        "required => wizardCritterCaptureModel.freezeTicksUsed >= required",
-        arg=required,
-        timeout=5_000,
-    )
-    page.keyboard.up("f")
+    if _interaction(truth) == "full":
+        page.keyboard.down("f")
+        page.wait_for_function(
+            "required => wizardCritterCaptureModel.freezeTicksUsed >= required",
+            arg=required,
+            timeout=5_000,
+        )
+        page.keyboard.up("f")
+    else:
+        page.locator("#wizard-proxy-freeze").click()
     page.wait_for_function("() => !wizardCritterCaptureModel.freezeActive && wizardCritterCaptureModel.freezeReleases >= 1")
 
 
@@ -62,11 +90,10 @@ def fail_once(page, state_dir: Path, out_dir: Path, mechanic: str) -> None:
     before = str(truth["challenge_id"])
     _screenshot(page, out_dir, mechanic, "target-observation")
     _wait_ready(page)
-    page.locator("#wizard-lure-arm").click()
-    _arena_click(page, list(truth["solver_lure"]))
-    miss_points = ([18, 420], [822, 420], [30, 414], [810, 414])
+    _place_lure(page, truth)
+    miss_points = ([18, 420], [822, 420], [30, 414], [810, 414], [420, 425], [420, 12])[:int(truth["requirements"]["net_count"])]
     for index, point in enumerate(miss_points, start=1):
-        _arena_click(page, list(point))
+        _launch_net(page, truth, list(point))
         if index == 2:
             page.wait_for_function("() => wizardCritterCaptureModel.projectile?.age >= 4", timeout=3_000)
             _screenshot(page, out_dir, mechanic, "deliberate-net-miss")
@@ -102,7 +129,7 @@ def solve(page, state_dir: Path, out_dir: Path, mechanic: str) -> None:
         arg=int(plan["shot_tick"]),
         timeout=8_000,
     )
-    _arena_click(page, list(plan["aim"]))
+    _launch_net(page, truth, list(plan["aim"]))
     page.wait_for_function("() => wizardCritterCaptureModel.projectile?.age >= 3", timeout=3_000)
     _screenshot(page, out_dir, mechanic, "predictive-net-in-flight")
     page.wait_for_function("() => document.querySelector('.readout')?.textContent === 'PASS · PREDICTIVE INTERCEPTION CONFIRMED'", timeout=10_000)
@@ -116,7 +143,7 @@ def exercise_decoy_and_reset(page, state_dir: Path, out_dir: Path, mechanic: str
     _place_lure_and_freeze(page, truth)
     plan = _future_plan(page, list(truth["decoy_plans"]), margin=3)
     page.wait_for_function("tick => wizardCritterCaptureModel.tick === tick", arg=int(plan["shot_tick"]), timeout=8_000)
-    _arena_click(page, list(plan["aim"]))
+    _launch_net(page, truth, list(plan["aim"]))
     page.wait_for_function("() => wizardCritterCaptureModel.decoyHits === 1 && wizardCritterCaptureModel.projectile === null", timeout=6_000)
     _screenshot(page, out_dir, mechanic, "deliberate-decoy-strike")
     page.locator("#wizard-reset").click()

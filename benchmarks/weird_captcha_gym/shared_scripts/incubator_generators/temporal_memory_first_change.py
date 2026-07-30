@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import copy
 import hashlib
 import math
 import random
@@ -22,9 +23,35 @@ def _position(item: dict[str, Any], elapsed_ms: float) -> tuple[float, float]:
 
 def generate(task: dict[str, Any], seed: str) -> tuple[dict[str, Any], dict[str, Any]]:
     rng = random.Random(_seed(seed))
-    glyphs = rng.sample(["△", "○", "□", "◇", "✦", "⌁", "⊙", "⬡", "✣", "◐", "⌘", "♢"], 9)
+    condition = task.get("_control_condition")
+    parameters = dict((condition or {}).get("difficulty_parameters") or {})
+    object_count = int(parameters.get("object_count", 9))
+    decoy_event_count = int(parameters.get("decoy_event_count", 4))
+    first_change_duration_ms = int(parameters.get("first_change_duration_ms", 620))
+    lens_radius = int(parameters.get("lens_radius", 62))
+    minimum_pre_hits = int(parameters.get("minimum_pre_hits", 1))
+    minimum_change_hits = int(parameters.get("minimum_change_hits", 2))
+    raw_occluders = parameters.get("occluders", ((236, 286), (468, 522)))
+    if (
+        not 3 <= object_count <= 9
+        or not 0 <= decoy_event_count <= object_count - 1
+        or not 420 <= first_change_duration_ms <= 1200
+        or not 42 <= lens_radius <= 90
+        or not 1 <= minimum_pre_hits <= 3
+        or not 1 <= minimum_change_hits <= 4
+        or not isinstance(raw_occluders, (list, tuple))
+    ):
+        raise ValueError("first-change control parameters are outside supported limits")
+    try:
+        occluders = tuple((int(item[0]), int(item[1])) for item in raw_occluders)
+    except (IndexError, TypeError, ValueError) as exc:
+        raise ValueError("first-change occluders are malformed") from exc
+    if any(not 0 <= left < right <= 700 for left, right in occluders):
+        raise ValueError("first-change occluders leave the field")
+
+    glyphs = rng.sample(["△", "○", "□", "◇", "✦", "⌁", "⊙", "⬡", "✣", "◐", "⌘", "♢"], object_count)
     objects = []
-    for index in range(9):
+    for index in range(object_count):
         objects.append(
             {
                 "id": f"tracker-{hashlib.sha256(f'{seed}|tracker|{index}'.encode()).hexdigest()[:8]}",
@@ -39,7 +66,6 @@ def generate(task: dict[str, Any], seed: str) -> tuple[dict[str, Any], dict[str,
             }
         )
     first_change_ms = rng.randrange(2700, 3500, 100)
-    occluders = ((236, 286), (468, 522))
     visible = [
         item
         for item in objects
@@ -53,19 +79,19 @@ def generate(task: dict[str, Any], seed: str) -> tuple[dict[str, Any], dict[str,
         {
             "object_id": target["id"],
             "at_ms": first_change_ms,
-            "duration_ms": 620,
+            "duration_ms": first_change_duration_ms,
             "effect": effects[0],
         }
     ]
     cursor = first_change_ms + 900
-    for index, item in enumerate(decoys[:4], start=1):
+    for index, item in enumerate(decoys[:decoy_event_count], start=1):
         duration = rng.choice((480, 520, 560))
         events.append(
             {
                 "object_id": item["id"],
                 "at_ms": cursor,
                 "duration_ms": duration,
-                "effect": effects[index],
+                "effect": effects[index % len(effects)],
             }
         )
         cursor += rng.choice((690, 760, 830))
@@ -77,16 +103,21 @@ def generate(task: dict[str, Any], seed: str) -> tuple[dict[str, Any], dict[str,
         "objects": objects,
         "events": events,
         "first_change_ms": first_change_ms,
-        "lens_radius": 62,
+        "lens_radius": lens_radius,
         "occluders": [list(item) for item in occluders],
         "settle_ms": settle_ms,
         "review_end_ms": settle_ms - 120,
         "review_step_ms": 40,
         "settle_order": settle_order,
         "settle_grid": {"x0": 160, "y0": 75, "dx": 190, "dy": 95, "columns": 3},
-        "proof": {"pre_window_ms": 360, "minimum_pre_hits": 1, "minimum_change_hits": 2},
+        "proof": {
+            "pre_window_ms": 360,
+            "minimum_pre_hits": minimum_pre_hits,
+            "minimum_change_hits": minimum_change_hits,
+        },
     }
-    challenge_id = hashlib.sha256(f"{seed}|{MECHANIC_ID}|challenge-v3".encode()).hexdigest()[:12]
+    condition_token = f"|d{condition['difficulty']}" if condition is not None else ""
+    challenge_id = hashlib.sha256(f"{seed}|{MECHANIC_ID}|challenge-v3{condition_token}".encode()).hexdigest()[:12]
     public = {
         "benchmark": "weird_captcha_gym",
         "mechanic_id": MECHANIC_ID,
@@ -105,4 +136,7 @@ def generate(task: dict[str, Any], seed: str) -> tuple[dict[str, Any], dict[str,
         "target_object_id": target["id"],
         "timeline": contract,
     }
+    if condition is not None:
+        public["control_condition"] = copy.deepcopy(condition)
+        truth["control_condition"] = copy.deepcopy(condition)
     return public, truth

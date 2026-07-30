@@ -40,6 +40,47 @@ def _screen_point(box: dict, stage: dict, point: list[int]) -> tuple[float, floa
     return box["x"] + point[0] / int(stage["width"]) * box["width"], box["y"] + point[1] / int(stage["height"]) * box["height"]
 
 
+def _set_coordinate(page, point: list[int]) -> None:
+    page.locator("#ribbon-coordinate-x").fill(str(point[0]))
+    page.locator("#ribbon-coordinate-y").fill(str(point[1]))
+
+
+def _probe(page, box: dict, stage: dict, point: list[int], interaction: str) -> None:
+    if interaction == "simplified":
+        _set_coordinate(page, point)
+        page.locator("#ribbon-proxy-hover").click()
+    else:
+        page.mouse.move(*_screen_point(box, stage, point), steps=1)
+
+
+def _start_trace(page, box: dict, stage: dict, point: list[int], interaction: str) -> None:
+    if interaction == "simplified":
+        _set_coordinate(page, point)
+        page.locator("#ribbon-proxy-start").click()
+        return
+    source = page.locator(".ribbon-source").bounding_box()
+    if not source:
+        raise AssertionError("marked ribbon source is not visible")
+    page.mouse.move(source["x"] + source["width"] / 2, source["y"] + source["height"] / 2)
+    page.mouse.down()
+
+
+def _trace_sample(page, box: dict, stage: dict, point: list[int], interaction: str) -> None:
+    if interaction == "simplified":
+        _set_coordinate(page, point)
+        page.locator("#ribbon-proxy-sample").click()
+    else:
+        page.mouse.move(*_screen_point(box, stage, point), steps=1)
+
+
+def _end_trace(page, box: dict, stage: dict, point: list[int], interaction: str) -> None:
+    if interaction == "simplified":
+        _set_coordinate(page, point)
+        page.locator("#ribbon-proxy-end").click()
+    else:
+        page.mouse.up()
+
+
 def fail_once(page, state_dir: Path, out_dir: Path, mechanic: str) -> None:
     if mechanic != MECHANIC_ID:
         raise AssertionError(f"unexpected mechanic {mechanic!r}")
@@ -56,18 +97,19 @@ def solve(page, state_dir: Path, out_dir: Path, mechanic: str) -> None:
         raise AssertionError(f"unexpected mechanic {mechanic!r}")
     truth = _read_json(state_dir / "ground_truth.json")
     stage, target_path, requirements = truth["stage"], truth["target_path"], truth["requirements"]
+    interaction = str((truth.get("control_condition") or {}).get("interaction") or "full")
     box = _stage_box(page)
 
     for point in target_path[:38:2]:
-        page.mouse.move(*_screen_point(box, stage, point), steps=1)
+        _probe(page, box, stage, point, interaction)
     for crossing in truth["target_crossings"][:3]:
-        page.mouse.move(*_screen_point(box, stage, crossing["point"]), steps=1)
+        _probe(page, box, stage, crossing["point"], interaction)
     page.wait_for_timeout(100)
     _screenshot(page, out_dir, mechanic, "active-local-depth")
     for point in target_path[36::2]:
-        page.mouse.move(*_screen_point(box, stage, point), steps=1)
+        _probe(page, box, stage, point, interaction)
     for crossing in truth["target_crossings"]:
-        page.mouse.move(*_screen_point(box, stage, crossing["point"]), steps=1)
+        _probe(page, box, stage, crossing["point"], interaction)
     page.wait_for_function("() => document.querySelector('.ribbon-source')?.dataset.armed === 'true'", timeout=5_000)
 
     explored = page.evaluate("""() => ({
@@ -79,32 +121,24 @@ def solve(page, state_dir: Path, out_dir: Path, mechanic: str) -> None:
     if explored["hover"] < requirements["min_hover_samples"] or explored["cells"] < requirements["min_hover_cells"] or explored["route"] < requirements["min_target_coverage"] or explored["crossings"] < requirements["min_crossing_coverage"]:
         raise AssertionError(f"local depth exploration was insufficient: {explored}")
 
-    source = page.locator(".ribbon-source").bounding_box()
-    if not source:
-        raise AssertionError("marked ribbon source is not visible")
-    page.mouse.move(source["x"] + source["width"] / 2, source["y"] + source["height"] / 2)
-    page.mouse.down()
     start = target_path[0]
     collision = [start[0] + 48, int(stage["height"]) - 35 if start[1] < int(stage["height"]) / 2 else 35]
-    page.mouse.move(*_screen_point(box, stage, collision), steps=3)
-    page.mouse.up()
+    _start_trace(page, box, stage, start, interaction)
+    _trace_sample(page, box, stage, collision, interaction)
+    _end_trace(page, box, stage, collision, interaction)
     expect(page.locator(".ribbon-breach[data-visible='true']")).to_be_visible()
     _screenshot(page, out_dir, mechanic, "edge-breach-recovery")
     page.locator(".ribbon-rearm").click()
     expect(page.locator(".readout")).to_contain_text("RE-ARMED")
 
-    source = page.locator(".ribbon-source").bounding_box()
-    if not source:
-        raise AssertionError("marked source disappeared after re-arm")
-    page.mouse.move(source["x"] + source["width"] / 2, source["y"] + source["height"] / 2)
-    page.mouse.down()
+    _start_trace(page, box, stage, target_path[0], interaction)
     for sample_index, point in enumerate(target_path[1:], start=1):
-        page.mouse.move(*_screen_point(box, stage, point), steps=1)
+        _trace_sample(page, box, stage, point, interaction)
         page.wait_for_timeout(8)
         if sample_index == 48:
             out_dir.mkdir(parents=True, exist_ok=True)
             page.screenshot(path=str(out_dir / f"{mechanic}-active-continuous-route.png"), full_page=False)
-    page.mouse.up()
+    _end_trace(page, box, stage, target_path[-1], interaction)
     expect(page.locator(".ribbon-stage.is-complete")).to_be_visible(timeout=4_000)
     physical = page.evaluate("""() => ({
       completed: window.ribbonSwitchboardModel.completed,

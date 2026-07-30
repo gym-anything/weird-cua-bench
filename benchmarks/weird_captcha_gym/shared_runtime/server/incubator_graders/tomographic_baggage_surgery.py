@@ -10,7 +10,10 @@ AXIS_INDEX = {"x": 0, "y": 1, "z": 2}
 
 
 def _round(value: float) -> float:
-    return round(float(value), 4)
+    rounded = round(float(value), 4)
+    # JSON.stringify(-0) and JavaScript's fixed-point display both use zero,
+    # while Python's format would preserve a negative sign in the digest.
+    return 0.0 if rounded == 0 else rounded
 
 
 def _world_center(center: list[float], quarter: int) -> list[float]:
@@ -89,21 +92,36 @@ def grade(payload: dict[str, Any], ground_truth: dict[str, Any], public_state: d
     if not task_id or payload.get("task_id") != task_id: return {"graded": True, "passed": False, "feedback": "task identity mismatch"}
     skew = _bound(public_state, ground_truth)
     if skew: return {"graded": True, "passed": False, "feedback": f"public/private tomography {skew} contract skew"}
+    condition = ground_truth.get("control_condition")
+    if condition != public_state.get("control_condition"):
+        return {"graded": True, "passed": False, "feedback": "public tomography interaction condition differs from the contract"}
+    interaction = str((condition or {}).get("interaction") or "")
+    expected_scan_source = {"simplified": "slice_controls", "full": "direct_slice_drag"}.get(interaction)
+    expected_rotation_source = {"simplified": "case_rotate_button", "full": "case_handle_drag"}.get(interaction)
+    if condition is not None:
+        if expected_scan_source is None or expected_rotation_source is None:
+            return {"graded": True, "passed": False, "feedback": "tomography interaction condition is invalid"}
+        if payload.get("interaction") != interaction:
+            return {"graded": True, "passed": False, "feedback": "tomography transcript belongs to the other interaction mode"}
     events = payload.get("events"); requirements = ground_truth["requirements"]
     if not isinstance(events, list) or not (1 <= len(events) <= requirements["max_events"]): return {"graded": True, "passed": False, "feedback": "tomography transcript missing or outside limits"}
     target_id = ground_truth["target_id"]; target = next(s for s in ground_truth["solids"] if s["id"] == target_id)
-    probe = list(ground_truth["probe"]["initial"]); drag = None; captured = extracted = terminal = case_locked = False
+    probe = list(ground_truth["probe"]["initial"]); drag = drag_start = None; captured = extracted = terminal = case_locked = False
     scan_rotation = 0
-    observations: list[tuple[int, str, float]] = []; target_signatures: set[tuple[int, str, float]] = set(); damages = resets = 0; views_used: set[str] = set()
+    observations: list[tuple[int, str, float]] = []; target_signatures: set[tuple[int, str, float]] = set(); damages = resets = 0; views_used: set[str] = set(); moving_views: set[str] = set()
     for sequence, event in enumerate(events, 1):
         if terminal: return {"graded": True, "passed": False, "feedback": "interaction continued after extraction"}
         if not isinstance(event, dict) or event.get("sequence") != sequence: return {"graded": True, "passed": False, "feedback": f"event {sequence} sequence mismatch"}
         kind = event.get("kind")
         if kind == "rotate_case":
+            if condition is not None and event.get("input_source") != expected_rotation_source:
+                return {"graded": True, "passed": False, "feedback": "case rotation uses the wrong interaction input"}
             old, new = int(event.get("from", -1)), int(event.get("to", -1))
             if case_locked or old != scan_rotation or new != (old + 1) % 4: return {"graded": True, "passed": False, "feedback": "rigid suitcase quarter-turn transition mismatch"}
             scan_rotation = new
         elif kind == "slice_observation":
+            if condition is not None and event.get("input_source") != expected_scan_source:
+                return {"graded": True, "passed": False, "feedback": "slice sweep uses the wrong interaction input"}
             axis, quarter, offset = str(event.get("axis") or ""), int(event.get("rotation", -1)), float(event.get("offset", math.inf))
             if axis not in ground_truth["slice"]["axes"] or quarter not in ground_truth["slice"]["rotations"] or not (ground_truth["slice"]["minimum"] <= offset <= ground_truth["slice"]["maximum"]): return {"graded": True, "passed": False, "feedback": "invalid slice plane or suitcase rotation"}
             expected = intersection_records(ground_truth, axis, offset, quarter)
@@ -121,18 +139,21 @@ def grade(payload: dict[str, Any], ground_truth: dict[str, Any], public_state: d
             mapped = _screen_to_coord(ground_truth["views"][view_id], screen, probe)
             axes = [AXIS_INDEX[a] for a in ground_truth["views"][view_id]["axes"]]
             if math.hypot(*(mapped[i] - probe[i] for i in axes)) > .34: return {"graded": True, "passed": False, "feedback": "probe ray missed registered body"}
-            drag = view_id; views_used.add(view_id)
+            drag = view_id; drag_start = list(probe); views_used.add(view_id)
         elif kind == "probe_sample":
             if drag is None or event.get("view_id") != drag or not isinstance(event.get("screen"), list): return {"graded": True, "passed": False, "feedback": "orphan or cross-view probe sample"}
             candidate = _screen_to_coord(ground_truth["views"][drag], event["screen"], probe); claim = event.get("coordinate")
             if not isinstance(claim, list) or len(claim) != 3 or math.dist(candidate, [float(v) for v in claim]) > .08: return {"graded": True, "passed": False, "feedback": "probe coordinate was not reconstructed from active view"}
             blocker = _sweep(probe, candidate, ground_truth, target_id, captured); accepted = blocker is None
             if (event.get("accepted") is True) != accepted or (None if accepted else str(event.get("blocker") or "")) != blocker: return {"graded": True, "passed": False, "feedback": "probe collision claim disagrees with swept solid replay"}
-            if accepted: probe = candidate
+            if accepted:
+                if drag_start is not None and math.dist(drag_start, candidate) > .1:
+                    moving_views.add(drag)
+                probe = candidate
             else: damages += 1
         elif kind == "probe_drag_end":
             if drag is None or event.get("view_id") != drag: return {"graded": True, "passed": False, "feedback": "invalid probe drag release"}
-            drag = None
+            drag = drag_start = None
         elif kind == "reset_probe":
             if drag is not None or captured: return {"graded": True, "passed": False, "feedback": "probe reset during drag or after capture"}
             probe = list(ground_truth["probe"]["initial"]); resets += 1
@@ -145,15 +166,28 @@ def grade(payload: dict[str, Any], ground_truth: dict[str, Any], public_state: d
         else: return {"graded": True, "passed": False, "feedback": f"event {sequence} has unknown kind"}
     rotations = sorted(set(item[0] for item in observations)); offsets = [item[2] for item in observations]
     target_observations = len(target_signatures)
+    target_rotations = sorted({item[0] for item in target_signatures})
     summary = {"extracted": extracted, "captured": captured, "probe": [_round(v) for v in probe], "observations": len(observations), "rotations": rotations, "target_observations": target_observations, "damages": damages, "resets": resets, "views_used": sorted(views_used)}
+    if "min_target_rotations" in requirements:
+        summary["target_rotations"] = target_rotations
+    if "min_moving_views" in requirements:
+        summary["moving_views"] = sorted(moving_views)
     for field, value in summary.items():
         if field == "probe":
             actual = payload.get(field)
             if not isinstance(actual, list) or len(actual) != 3 or math.dist([float(v) for v in actual], value) > .01: return {"graded": True, "passed": False, "feedback": "submitted probe disagrees with replay"}
         elif payload.get(field) != value: return {"graded": True, "passed": False, "feedback": f"submitted {field} disagrees with tomography replay"}
     observation_ok = len(observations) >= requirements["min_observations"] and len(rotations) >= requirements["min_rotations"] and offsets and max(offsets) - min(offsets) >= requirements["min_offset_span"] and target_observations >= requirements["min_target_observations"]
-    passed = extracted and case_locked and damages == 0 and observation_ok and len(views_used) >= 2
-    return {"graded": True, "passed": passed, "score": 100 if passed else 0, "feedback": f"tomography replay: slices {len(observations)}; rotations {len(rotations)}; views {len(views_used)}; damages {damages}; target {'extracted' if extracted else 'inside'}"}
+    target_rotation_ok = len(target_rotations) >= int(requirements.get("min_target_rotations", 0))
+    moving_view_ok = len(moving_views) >= int(requirements.get("min_moving_views", 0))
+    passed = extracted and case_locked and damages == 0 and observation_ok and target_rotation_ok and moving_view_ok and len(views_used) >= int(requirements.get("min_views", 2))
+    feedback = f"tomography replay: slices {len(observations)}; rotations {len(rotations)}"
+    if "min_target_rotations" in requirements:
+        feedback += f"; target rotations {len(target_rotations)}"
+    if "min_moving_views" in requirements:
+        feedback += f"; moved views {len(moving_views)}"
+    feedback += f"; views {len(views_used)}; damages {damages}; target {'extracted' if extracted else 'inside'}"
+    return {"graded": True, "passed": passed, "score": 100 if passed else 0, "feedback": feedback}
 
 
 def cheat(public_state: dict[str, Any], ground_truth: dict[str, Any]) -> dict[str, Any]:

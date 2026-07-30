@@ -7,6 +7,7 @@ from typing import Any
 
 MECHANIC_ID = "thirty_year_time_wheel"
 COMPONENTS = {"day", "month", "year"}
+DEFAULT_REQUIRED_COMPONENTS = ("month", "year", "day")
 
 
 def _fail(feedback: str) -> dict[str, Any]:
@@ -67,13 +68,36 @@ def _step(date: dict[str, int], component: str, direction: int, minimum: int, ma
     raise ValueError("unknown ring component")
 
 
+def _control_contract(ground_truth: dict[str, Any], public_state: dict[str, Any]) -> tuple[dict[str, Any] | None, tuple[str, ...]]:
+    truth_condition = ground_truth.get("control_condition")
+    public_condition = public_state.get("control_condition")
+    if truth_condition is None and public_condition is None:
+        return None, DEFAULT_REQUIRED_COMPONENTS
+    if not isinstance(truth_condition, dict) or public_condition != truth_condition:
+        raise ValueError("control condition differs between public and hidden state")
+    interaction = str(truth_condition.get("interaction") or "")
+    parameters = truth_condition.get("difficulty_parameters")
+    if interaction not in {"simplified", "full"} or not isinstance(parameters, dict):
+        raise ValueError("control condition is malformed")
+    required = tuple(str(item) for item in parameters.get("required_components") or ())
+    if not required or len(set(required)) != len(required) or any(item not in COMPONENTS for item in required):
+        raise ValueError("required component contract is malformed")
+    state_required = tuple(str(item) for item in public_state.get("required_components", DEFAULT_REQUIRED_COMPONENTS))
+    truth_required = tuple(str(item) for item in ground_truth.get("required_components", DEFAULT_REQUIRED_COMPONENTS))
+    if state_required != required or truth_required != required:
+        raise ValueError("required components differ from the control condition")
+    return truth_condition, required
+
+
 def _contract(ground_truth: dict[str, Any], public_state: dict[str, Any]) -> tuple[dict[str, int], dict[str, int], int, int, float, int]:
     year_range = ground_truth.get("year_range")
-    if not isinstance(year_range, dict) or year_range.get("minimum") != 1996 or year_range.get("maximum") != 2025:
+    if not isinstance(year_range, dict):
         raise ValueError("hidden year range is malformed")
     if public_state.get("year_range") != year_range:
         raise ValueError("public year range differs from hidden contract")
     minimum, maximum = int(year_range["minimum"]), int(year_range["maximum"])
+    if minimum >= maximum:
+        raise ValueError("calendar range is invalid")
     initial = _date(ground_truth.get("initial_date"), minimum, maximum)
     target = _date(ground_truth.get("target_date"), minimum, maximum)
     if public_state.get("initial_date") != initial or public_state.get("target_date") != target:
@@ -94,14 +118,22 @@ def grade(payload: dict[str, Any], ground_truth: dict[str, Any], public_state: d
         return _fail(binding_error)
     try:
         current, target, minimum, maximum, velocity_threshold, maximum_detents = _contract(ground_truth, public_state)
+        control_condition, required_components = _control_contract(ground_truth, public_state)
     except (TypeError, ValueError) as exc:
         return _fail(f"invalid time-wheel contract: {exc}")
+
+    expected_input_source = None
+    if control_condition is not None:
+        interaction = str(control_condition["interaction"])
+        if payload.get("interaction_mode") != interaction:
+            return _fail("interaction mode does not match the controlled task")
+        expected_input_source = "proxy_step" if interaction == "simplified" else "wheel_drag"
 
     events = payload.get("events")
     if not isinstance(events, list) or not (2 <= len(events) <= 1200):
         return _fail("chronometer transcript is missing or outside limits")
 
-    active_drag: str | None = None
+    active_drag: dict[str, str] | None = None
     drag_detents = 0
     last_drag_direction = 0
     released_component: str | None = None
@@ -119,9 +151,11 @@ def grade(payload: dict[str, Any], ground_truth: dict[str, Any], public_state: d
 
         if event_type == "drag_start":
             component = str(event.get("component") or "")
-            if component not in COMPONENTS or active_drag is not None or coast is not None:
+            if component not in COMPONENTS or component not in required_components or active_drag is not None or coast is not None:
                 return _fail(f"event {index} starts an impossible drag")
-            active_drag = component
+            if expected_input_source is not None and event.get("input_source") != expected_input_source:
+                return _fail(f"event {index} used the wrong interaction surface")
+            active_drag = {"component": component, "input_source": str(event.get("input_source") or "")}
             drag_detents = 0
             last_drag_direction = 0
             released_component = None
@@ -132,8 +166,10 @@ def grade(payload: dict[str, Any], ground_truth: dict[str, Any], public_state: d
             if component not in COMPONENTS or direction not in {-1, 1}:
                 return _fail(f"event {index} has an invalid detent")
             if source == "drag":
-                if active_drag != component or coast is not None:
+                if active_drag is None or active_drag["component"] != component or coast is not None:
                     return _fail(f"event {index} has a drag detent outside its drag")
+                if expected_input_source is not None and event.get("input_source") != expected_input_source:
+                    return _fail(f"event {index} used the wrong interaction surface")
                 drag_detents += 1
                 last_drag_direction = direction
                 coverage.add(component)
@@ -150,8 +186,10 @@ def grade(payload: dict[str, Any], ground_truth: dict[str, Any], public_state: d
             current = _step(current, component, direction, minimum, maximum)
         elif event_type == "drag_end":
             component = str(event.get("component") or "")
-            if active_drag != component or event.get("drag_detents") != drag_detents:
+            if active_drag is None or active_drag["component"] != component or event.get("drag_detents") != drag_detents:
                 return _fail(f"event {index} does not close the active drag")
+            if expected_input_source is not None and event.get("input_source") != expected_input_source:
+                return _fail(f"event {index} used the wrong interaction surface")
             active_drag = None
             released_component = component if drag_detents > 0 else None
         elif event_type == "inertia_start":
@@ -159,7 +197,7 @@ def grade(payload: dict[str, Any], ground_truth: dict[str, Any], public_state: d
             direction = event.get("direction")
             velocity = event.get("velocity_rad_s")
             budget = event.get("budget")
-            if active_drag is not None or coast is not None or released_component != component:
+            if active_drag is not None or coast is not None or released_component != component or component not in required_components:
                 return _fail(f"event {index} starts inertia without a completed drag")
             if direction not in {-1, 1} or direction != last_drag_direction:
                 return _fail(f"event {index} has an invalid inertia direction")
@@ -214,14 +252,14 @@ def grade(payload: dict[str, Any], ground_truth: dict[str, Any], public_state: d
         payload.get("completed") is True
         and locked
         and current == target
-        and coverage == COMPONENTS
+        and coverage == set(required_components)
     )
     return {
         "graded": True,
         "passed": passed,
         "feedback": (
             f"calendar replay {current['year']:04d}-{current['month']:02d}-{current['day']:02d}; "
-            f"rings {len(coverage)}/3; coast detents {coast_detents}; effective coast brakes {qualifying_brakes}; "
+            f"rings {len(coverage)}/{len(required_components)}; coast detents {coast_detents}; effective coast brakes {qualifying_brakes}; "
             f"target {'locked' if current == target else 'not reached'}"
         ),
     }

@@ -4,6 +4,7 @@
   const model = {
     state: null,
     helpers: null,
+    interaction: "full",
     critters: [],
     targetId: null,
     phase: "preview",
@@ -22,6 +23,8 @@
     freezeTicksUsed: 0,
     freezeDowns: 0,
     freezeReleases: 0,
+    freezeInputSurface: null,
+    freezeProxyReleaseAt: null,
     nets: 0,
     cooldown: 0,
     projectile: null,
@@ -59,6 +62,14 @@
 
   function targetCritter() {
     return model.critters.find((item) => item.id === model.targetId);
+  }
+
+  function referenceIsShuttered() {
+    return model.state?.requirements?.target_reference_visibility === "preview_only" && model.phase !== "preview";
+  }
+
+  function referenceNeedsMemory() {
+    return model.state?.requirements?.target_reference_visibility === "preview_only";
   }
 
   function insideOccluder(x10, y10) {
@@ -148,6 +159,7 @@
       mechanic_id: model.state.mechanic_id,
       task_id: model.state.task_id,
       challenge_id: model.state.challenge_id,
+      interaction: model.interaction,
       events: model.events,
       final_tick: model.tick,
       nets_remaining: model.nets,
@@ -199,14 +211,17 @@
   function beginPreview() {
     setPhase("preview");
     model.previewStartedAt = performance.now();
-    updateReadout("MEMORIZE THE MARKED FAMILIAR · OBSERVATION WINDOW", "pending");
+    updateReadout(referenceNeedsMemory() ? "MEMORIZE THE MARKED FAMILIAR · OBSERVATION WINDOW" : "STUDY THE MARKED FAMILIAR REFERENCE · OBSERVATION WINDOW", "pending");
     model.previewTimer = window.setTimeout(() => {
       if (model.terminal || model.phase !== "preview") return;
       const elapsed = Math.max(Number(model.state.requirements.preview_min_ms), Math.round(performance.now() - model.previewStartedAt));
       record("preview_complete", {elapsed_ms: elapsed, signature: model.state.target_cue.signature});
       model.previewCount += 1;
       setPhase("ready");
-      updateReadout("SIGIL SHUTTERED · ARM AND PLACE THE LURE", "idle");
+      updateReadout(
+        referenceNeedsMemory() ? "SIGIL SHUTTERED · ARM AND PLACE THE LURE" : "REFERENCE PLATE REMAINS · ARM AND PLACE THE LURE",
+        "idle",
+      );
       updatePanels();
     }, 1080);
   }
@@ -227,18 +242,23 @@
     ];
   }
 
-  function placeLure(point) {
+  function placeLure(point, inputSurface) {
     model.lure = [point[0] * 10, point[1] * 10];
     model.lureArmed = false;
     const target = targetCritter();
-    record("lure", {point, target_vector: lureVector(target, model.lure)});
+    record("lure", {point, target_vector: lureVector(target, model.lure), input_surface: inputSurface});
     setPhase("hunt");
     model.worldTimer = window.setInterval(stepWorld, Number(model.state.arena.tick_ms));
-    updateReadout("TRAJECTORIES BENDING · HOLD F, RELEASE, THEN LEAD A NET", "passed");
+    updateReadout(
+      model.interaction === "full"
+        ? "TRAJECTORIES BENDING · HOLD F, RELEASE, THEN LEAD A NET"
+        : "TRAJECTORIES BENDING · SPEND REQUIRED FREEZE, THEN LEAD A NET",
+      "passed",
+    );
     updatePanels();
   }
 
-  function launchNet(point) {
+  function launchNet(point, inputSurface) {
     if (model.phase !== "hunt" || model.busy || model.terminal) return;
     if (model.projectile || model.cooldown > 0) {
       updateReadout("ORB STILL IN FLIGHT · WAIT FOR THE COOLDOWN RING", "error");
@@ -267,45 +287,88 @@
       origin,
       aim: point,
       flight_ticks: Number(model.state.arena.net_flight_ticks),
+      input_surface: inputSurface,
     });
     updateReadout("NET LAUNCHED · IT WILL ARRIVE IN TWELVE CLOCK TICKS", "pending");
     updatePanels();
   }
 
   function arenaClick(event) {
-    if (model.busy || model.terminal || model.phase === "preview") return;
+    if (model.interaction !== "full" || model.busy || model.terminal || model.phase === "preview") return;
     const point = arenaPoint(event);
     if (model.phase === "ready") {
       if (!model.lureArmed) {
         updateReadout("ARM THE LURE BEFORE TOUCHING THE FIELD", "error");
         return;
       }
-      placeLure(point);
+      placeLure(point, "arena_pointer");
       return;
     }
-    launchNet(point);
+    launchNet(point, "arena_pointer");
   }
 
-  function freezeDown(event) {
-    if (String(event.key).toLowerCase() !== "f" || event.repeat) return;
+  function beginFreeze(inputSurface, proxyReleaseAfter = null) {
     if (model.phase !== "hunt" || model.busy || model.terminal || model.freezeActive || model.freezeEnergy <= 0) return;
-    event.preventDefault();
     model.freezeActive = true;
     model.freezeDowns += 1;
-    record("freeze_down", {tick: model.tick, key: "f"});
+    model.freezeInputSurface = inputSurface;
+    model.freezeProxyReleaseAt = proxyReleaseAfter == null ? null : model.freezeTicksUsed + proxyReleaseAfter;
+    record("freeze_down", {tick: model.tick, key: "f", input_surface: inputSurface});
     document.querySelector(".wizard-observatory")?.classList.add("is-frozen");
     updateReadout("TIME GLASS ENGAGED · ENERGY DRAINING", "pending");
+    updatePanels();
   }
 
-  function freezeUp(event) {
-    if (String(event.key).toLowerCase() !== "f" || !model.freezeActive) return;
-    event.preventDefault();
+  function releaseFreeze(inputSurface) {
+    if (!model.freezeActive) return;
     model.freezeActive = false;
     model.freezeReleases += 1;
-    record("freeze_up", {tick: model.tick, key: "f"});
+    model.freezeProxyReleaseAt = null;
+    record("freeze_up", {tick: model.tick, key: "f", input_surface: inputSurface});
     document.querySelector(".wizard-observatory")?.classList.remove("is-frozen");
     updateReadout("TIME RELEASED · LEAD THE MOVING SIGIL", model.freezeTicksUsed >= Number(model.state.requirements.minimum_freeze_ticks) ? "passed" : "error");
     updatePanels();
+  }
+
+  function freezeDown(event) {
+    if (model.interaction !== "full" || String(event.key).toLowerCase() !== "f" || event.repeat) return;
+    event.preventDefault();
+    beginFreeze("freeze_key");
+  }
+
+  function freezeUp(event) {
+    if (model.interaction !== "full" || String(event.key).toLowerCase() !== "f" || !model.freezeActive) return;
+    event.preventDefault();
+    releaseFreeze("freeze_key");
+  }
+
+  function proxyPoint() {
+    const x = Number(document.getElementById("wizard-proxy-x")?.value);
+    const y = Number(document.getElementById("wizard-proxy-y")?.value);
+    if (!Number.isFinite(x) || !Number.isFinite(y)) return null;
+    return [
+      clamp(Math.round(x), 0, Number(model.state.arena.width)),
+      clamp(Math.round(y), 0, Number(model.state.arena.height)),
+    ];
+  }
+
+  function proxyPlaceLure() {
+    if (model.interaction !== "simplified" || model.phase !== "ready" || model.lure) return;
+    const point = proxyPoint();
+    if (!point) return;
+    placeLure(point, "coordinate_console");
+  }
+
+  function proxyLaunchNet() {
+    if (model.interaction !== "simplified" || model.phase !== "hunt") return;
+    const point = proxyPoint();
+    if (!point) return;
+    launchNet(point, "coordinate_console");
+  }
+
+  function proxyFreeze() {
+    if (model.interaction !== "simplified") return;
+    beginFreeze("freeze_proxy", Number(model.state.requirements.minimum_freeze_ticks));
   }
 
   function stepWorld() {
@@ -354,6 +417,7 @@
     }
     if (autoRelease) {
       model.freezeActive = false;
+      model.freezeProxyReleaseAt = null;
       document.querySelector(".wizard-observatory")?.classList.remove("is-frozen");
     }
     record("tick", {
@@ -369,6 +433,14 @@
       nets_after: model.nets,
       cooldown_after: model.cooldown,
     });
+    if (
+      model.freezeActive
+      && model.freezeInputSurface === "freeze_proxy"
+      && model.freezeProxyReleaseAt != null
+      && model.freezeTicksUsed >= model.freezeProxyReleaseAt
+    ) {
+      releaseFreeze("freeze_proxy");
+    }
     updatePanels();
     if (resolution?.kind === "target") {
       const complete = proofReady();
@@ -380,7 +452,8 @@
       updateReadout("NET CLOSED ON EMPTY AIR · LEAD FARTHER", "error");
     }
     if (!model.targetCaptured && model.nets === 0 && !model.projectile && model.cooldown === 0) {
-      finish(false, "ALL FOUR NETS SPENT");
+      const totalNets = Number(model.state.requirements.net_count);
+      finish(false, `ALL ${totalNets} ${totalNets === 1 ? "NET" : "NETS"} SPENT`);
     }
   }
 
@@ -398,6 +471,8 @@
     model.freezeTicksUsed = 0;
     model.freezeDowns = 0;
     model.freezeReleases = 0;
+    model.freezeInputSurface = null;
+    model.freezeProxyReleaseAt = null;
     model.nets = Number(model.state.requirements.net_count);
     model.cooldown = 0;
     model.projectile = null;
@@ -499,6 +574,16 @@
       lureButton.classList.toggle("is-spent", Boolean(model.lure));
       lureButton.disabled = model.phase !== "ready" || Boolean(model.lure) || model.busy;
     }
+    const proxyPlace = document.getElementById("wizard-proxy-place");
+    const proxyLaunch = document.getElementById("wizard-proxy-launch");
+    const proxyFreezeButton = document.getElementById("wizard-proxy-freeze");
+    if (proxyPlace) proxyPlace.disabled = model.phase !== "ready" || Boolean(model.lure) || model.busy;
+    if (proxyLaunch) proxyLaunch.disabled = model.phase !== "hunt" || Boolean(model.projectile) || model.cooldown > 0 || model.nets <= 0 || model.busy;
+    if (proxyFreezeButton) proxyFreezeButton.disabled = model.phase !== "hunt" || model.freezeActive || model.freezeEnergy <= 0 || model.busy;
+    const targetCard = document.querySelector(".wizard-target");
+    const targetMnemonic = document.getElementById("wizard-target-mnemonic");
+    if (targetCard) targetCard.classList.toggle("is-shuttered", referenceIsShuttered());
+    if (targetMnemonic) targetMnemonic.textContent = referenceIsShuttered() ? "SIGIL SHUTTERED" : model.state.target_cue.mnemonic;
     const phase = document.getElementById("wizard-phase");
     if (phase) phase.textContent = model.phase === "preview" ? "OBSERVE" : model.phase === "ready" ? "PLACE LURE" : model.phase === "hunt" ? "INTERCEPT" : "LEDGER";
     const tape = document.getElementById("wizard-tape");
@@ -624,7 +709,7 @@
     for (let radius = 55; radius < 250; radius += 42) { context.beginPath(); context.arc(width / 2, height / 2, radius, 0, Math.PI * 2); context.stroke(); }
     context.fillStyle = "rgba(51,199,180,.1)"; context.beginPath(); context.arc(width / 2, height / 2, 96, 0, Math.PI * 2); context.fill();
     drawCritter(context, {appearance: cue.appearance}, width / 2, height / 2 + 10, 2.45, true);
-    context.fillStyle = "#e7dfc5"; context.font = "700 14px Courier New"; context.textAlign = "center"; context.fillText("MEMORIZE THIS FAMILIAR", width / 2, 62);
+    context.fillStyle = "#e7dfc5"; context.font = "700 14px Courier New"; context.textAlign = "center"; context.fillText(referenceNeedsMemory() ? "MEMORIZE THIS FAMILIAR" : "STUDY THIS FAMILIAR REFERENCE", width / 2, 62);
     context.fillStyle = "#77d8c6"; context.font = "12px Courier New"; context.fillText(cue.mnemonic.toUpperCase(), width / 2, height - 54);
     context.restore();
   }
@@ -681,6 +766,15 @@
     if (!canvas) return;
     const context = canvas.getContext("2d");
     context.clearRect(0, 0, canvas.width, canvas.height);
+    if (referenceIsShuttered()) {
+      context.strokeStyle = "#b06771";
+      context.lineWidth = 2;
+      context.beginPath();
+      context.moveTo(18, 21); context.lineTo(canvas.width - 18, canvas.height - 21);
+      context.moveTo(canvas.width - 18, 21); context.lineTo(18, canvas.height - 21);
+      context.stroke();
+      return;
+    }
     drawCritter(context, {appearance: model.state.target_cue.appearance}, canvas.width / 2, canvas.height / 2 + 7, 1.28, true);
   }
 
@@ -703,6 +797,7 @@
     Object.assign(model, {
       state,
       helpers,
+      interaction: String(state.control_condition?.interaction || "full"),
       critters: clone(state.critters),
       targetId: String(state.critters.find((item) => appearancesMatch(item.appearance, state.target_cue.appearance))?.id || ""),
       phase: "preview",
@@ -717,6 +812,8 @@
       freezeTicksUsed: 0,
       freezeDowns: 0,
       freezeReleases: 0,
+      freezeInputSurface: null,
+      freezeProxyReleaseAt: null,
       nets: Number(state.requirements.net_count),
       cooldown: 0,
       projectile: null,
@@ -730,22 +827,36 @@
       flash: null,
       trail: [],
     });
-    helpers.app.innerHTML = `<section class="wizard-observatory" data-challenge-id="${clean(state.challenge_id)}" data-phase="preview">
+    const interaction = model.interaction;
+    const fullLureControl = '<button type="button" class="wizard-lure" id="wizard-lure-arm"><span>✦</span><b>ARM LURE WELL</b><small>ONE PLACEMENT · BENDS ALL PATHS</small></button>';
+    const simplifiedControls = `<section class="wizard-proxy-controls" aria-label="spell coordinate console"><header><span>SPELL COORDINATE CONSOLE</span><i>PROXY INPUT</i></header><label>X <input id="wizard-proxy-x" type="number" min="0" max="${state.arena.width}" value="${Math.round(state.arena.width / 2)}"></label><label>Y <input id="wizard-proxy-y" type="number" min="0" max="${state.arena.height}" value="${Math.round(state.arena.height / 2)}"></label><div><button type="button" id="wizard-proxy-place">PLACE LURE</button><button type="button" id="wizard-proxy-launch">LAUNCH NET</button></div><button type="button" id="wizard-proxy-freeze">SPEND REQUIRED FREEZE</button></section>`;
+    const targetReferenceNote = state.requirements.target_reference_visibility === "preview_only" ? "identity shutters after observation" : "reference remains during hunt";
+    const targetReferenceTitle = referenceNeedsMemory() ? "MEMORY PLATE" : "REFERENCE PLATE";
+    const initialReadout = referenceNeedsMemory() ? "MEMORIZE THE MARKED FAMILIAR · OBSERVATION WINDOW" : "STUDY THE MARKED FAMILIAR REFERENCE · OBSERVATION WINDOW";
+    const freezeControlLabel = interaction === "full" ? "TIME GLASS / HOLD F" : "TIME GLASS / SPEND REQUIRED FREEZE";
+    const interceptionHint = interaction === "full" ? "CLICKING ITS CURRENT POSITION ARRIVES LATE" : "ENTERING ITS CURRENT POSITION ARRIVES LATE";
+    helpers.app.innerHTML = `<section class="wizard-observatory" data-challenge-id="${clean(state.challenge_id)}" data-interaction="${clean(interaction)}" data-phase="preview">
       <header class="wizard-head"><div><span>ROYAL WIZARD INTERCEPTION OBSERVATORY / FIELD LEDGER Ⅳ</span><h1>${clean(state.prompt)}</h1></div><aside><small>CURRENT OPERATION</small><b id="wizard-phase">OBSERVE</b><i>${clean(state.palette.name).replaceAll("_", " ")}</i></aside></header>
-      <main class="wizard-workbench"><section class="wizard-stage"><canvas id="wizard-arena" width="${state.arena.width}" height="${state.arena.height}" aria-label="moving wizard familiar interception arena"></canvas><div class="wizard-stage-key"><span>F · HOLD TIME GLASS</span><i>CLICK · LAUNCH TRAVELING NET</i><b>PORTALS WRAP EAST ↔ WEST</b></div></section>
-      <aside class="wizard-console"><div class="wizard-console-title"><span>MARKED FAMILIAR / MEMORY PLATE</span><i>DO NOT LOSE IT</i></div><div class="wizard-target"><canvas id="wizard-target-token" width="116" height="86"></canvas><div><small>SIGIL MNEMONIC</small><b>${clean(state.target_cue.mnemonic)}</b><i>identity vanishes after observation</i></div></div>
-      <button type="button" class="wizard-lure" id="wizard-lure-arm"><span>✦</span><b>ARM LURE WELL</b><small>ONE PLACEMENT · BENDS ALL PATHS</small></button>
-      <section class="wizard-freeze"><header><span>TIME GLASS / HOLD F</span><b id="wizard-freeze-value">${state.requirements.freeze_energy_ticks} / ${state.requirements.freeze_energy_ticks}</b></header><div id="wizard-freeze-energy"><i></i></div><footer><span id="wizard-freeze-used">0 TICKS SPENT</span><b>${state.requirements.minimum_freeze_ticks} REQUIRED</b></footer></section>
+      <main class="wizard-workbench"><section class="wizard-stage"><canvas id="wizard-arena" width="${state.arena.width}" height="${state.arena.height}" aria-label="moving wizard familiar interception arena"></canvas><div class="wizard-stage-key"><span>${interaction === "full" ? "F · HOLD TIME GLASS" : "SPELL CONSOLE · ENTER X / Y"}</span><i>${interaction === "full" ? "CLICK · LAUNCH TRAVELING NET" : "BUTTONS · PLACE LURE / LAUNCH NET"}</i><b>PORTALS WRAP EAST ↔ WEST</b></div></section>
+      <aside class="wizard-console"><div class="wizard-console-title"><span>MARKED FAMILIAR / ${targetReferenceTitle}</span><i>TRACK ITS PATH</i></div><div class="wizard-target"><canvas id="wizard-target-token" width="116" height="86"></canvas><div><small>SIGIL MNEMONIC</small><b id="wizard-target-mnemonic">${clean(state.target_cue.mnemonic)}</b><i>${clean(targetReferenceNote)}</i></div></div>
+      ${interaction === "full" ? fullLureControl : simplifiedControls}
+      <section class="wizard-freeze"><header><span>${freezeControlLabel}</span><b id="wizard-freeze-value">${state.requirements.freeze_energy_ticks} / ${state.requirements.freeze_energy_ticks}</b></header><div id="wizard-freeze-energy"><i></i></div><footer><span id="wizard-freeze-used">0 TICKS SPENT</span><b>${state.requirements.minimum_freeze_ticks} REQUIRED</b></footer></section>
       <section class="wizard-ammo"><header><span>TRAVELING NET ORBS</span><b id="wizard-cooldown" data-ready="true">ORB READY</b></header><div id="wizard-nets">${Array.from({length: state.requirements.net_count}, () => '<i class="is-live"></i>').join("")}</div><small>DECOYS CONSUME ORBS · FLIGHT = ${state.arena.net_flight_ticks} TICKS</small></section>
       <div class="wizard-proof"><span data-wizard-proof="lure"><i></i>LURE CAST</span><span data-wizard-proof="freeze"><i></i>TIME SPENT</span><span data-wizard-proof="cover"><i></i>COVER TRACKED</span><span data-wizard-proof="portal"><i></i>PORTAL SEEN</span></div>
       <ol class="wizard-tape" id="wizard-tape"><li><b>000</b><span>NO SPELLS CAST</span><i>—</i></li></ol></aside></main>
-      <footer class="wizard-foot"><button type="button" id="wizard-reset">↺ RESET OBSERVATORY</button><div><div class="readout" data-status="pending">MEMORIZE THE MARKED FAMILIAR · OBSERVATION WINDOW</div><div class="wizard-clockline"><span>ASTRAL CLOCK</span><b id="wizard-clock">000 / ${state.requirements.time_limit_ticks}</b></div></div><section><span>INTERCEPTION RULE</span><b>LEAD THE TARGET</b><small>CLICKING ITS CURRENT POSITION ARRIVES LATE</small></section></footer>
+      <footer class="wizard-foot"><button type="button" id="wizard-reset">↺ RESET OBSERVATORY</button><div><div class="readout" data-status="pending">${initialReadout}</div><div class="wizard-clockline"><span>ASTRAL CLOCK</span><b id="wizard-clock">000 / ${state.requirements.time_limit_ticks}</b></div></div><section><span>INTERCEPTION RULE</span><b>LEAD THE TARGET</b><small>${interceptionHint}</small></section></footer>
       ${helpers.cheatPanelTemplate()}</section>`;
-    document.getElementById("wizard-arena")?.addEventListener("click", arenaClick);
-    document.getElementById("wizard-lure-arm")?.addEventListener("click", armLure);
+    if (interaction === "full") {
+      document.getElementById("wizard-arena")?.addEventListener("click", arenaClick);
+      document.getElementById("wizard-lure-arm")?.addEventListener("click", armLure);
+      window.addEventListener("keydown", freezeDown);
+      window.addEventListener("keyup", freezeUp);
+    } else {
+      document.getElementById("wizard-proxy-place")?.addEventListener("click", proxyPlaceLure);
+      document.getElementById("wizard-proxy-launch")?.addEventListener("click", proxyLaunchNet);
+      document.getElementById("wizard-proxy-freeze")?.addEventListener("click", proxyFreeze);
+    }
     document.getElementById("wizard-reset")?.addEventListener("click", (event) => { clearFreshFailure(); resetWorld(event); });
-    window.addEventListener("keydown", freezeDown);
-    window.addEventListener("keyup", freezeUp);
     helpers.installCheatPanel();
     window.wizardCritterCaptureModel = model;
     beginPreview();

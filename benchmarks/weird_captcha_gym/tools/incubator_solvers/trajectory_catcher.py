@@ -43,20 +43,53 @@ def _place_catcher(page, round_data: dict, solution: dict) -> None:
 
     current_angle = int(initial["angle_deg"]) % 180
     target_angle = int(solution["angle_deg"]) % 180
-    clockwise_steps = ((target_angle - current_angle) % 180) // 15
-    counter_steps = ((current_angle - target_angle) % 180) // 15
-    if clockwise_steps and clockwise_steps <= counter_steps:
-        for _ in range(clockwise_steps):
-            page.locator("#trajectory-rotate-right").click()
-    elif counter_steps:
-        for _ in range(counter_steps):
-            page.locator("#trajectory-rotate-left").click()
-
     aperture = int(initial["aperture"])
     target_aperture = int(solution["aperture"])
-    button = "#trajectory-size-up" if target_aperture > aperture else "#trajectory-size-down"
-    for _ in range(abs(target_aperture - aperture) // 10):
-        page.locator(button).click()
+    interaction = page.locator(".trajectory-catcher").get_attribute("data-interaction")
+    if interaction == "simplified":
+        clockwise_steps = ((target_angle - current_angle) % 180) // 15
+        counter_steps = ((current_angle - target_angle) % 180) // 15
+        if clockwise_steps and clockwise_steps <= counter_steps:
+            for _ in range(clockwise_steps):
+                page.locator("#trajectory-rotate-right").click()
+        elif counter_steps:
+            for _ in range(counter_steps):
+                page.locator("#trajectory-rotate-left").click()
+        button = "#trajectory-size-up" if target_aperture > aperture else "#trajectory-size-down"
+        for _ in range(abs(target_aperture - aperture) // 10):
+            page.locator(button).click()
+    elif interaction == "full":
+        bounds = page.locator("#trajectory-canvas").bounding_box()
+        if not bounds:
+            raise AssertionError("trajectory canvas has no visible bounds")
+
+        def screen_point(local_x: float, local_y: float, angle_deg: float) -> tuple[float, float]:
+            import math
+
+            radians = math.radians(angle_deg)
+            world_x = float(solution["x"]) + local_x * math.cos(radians) - local_y * math.sin(radians)
+            world_y = float(solution["y"]) + local_x * math.sin(radians) + local_y * math.cos(radians)
+            return (
+                bounds["x"] + world_x / 900.0 * bounds["width"],
+                bounds["y"] + world_y / 480.0 * bounds["height"],
+            )
+
+        ring_radius = max(float(round_data["capture_depth"]) / 2, aperture / 2) + 18
+        delta = ((target_angle - current_angle + 90) % 180) - 90
+        if delta:
+            page.mouse.move(*screen_point(ring_radius, 0, 0))
+            page.mouse.down()
+            import math
+
+            page.mouse.move(*screen_point(ring_radius * math.cos(math.radians(delta)), ring_radius * math.sin(math.radians(delta)), 0), steps=12)
+            page.mouse.up()
+        if target_aperture != aperture:
+            page.mouse.move(*screen_point(0, aperture / 2, target_angle))
+            page.mouse.down()
+            page.mouse.move(*screen_point(0, target_aperture / 2, target_angle), steps=10)
+            page.mouse.up()
+    else:
+        raise AssertionError(f"unexpected trajectory interaction {interaction!r}")
 
     root = page.locator(".trajectory-catcher")
     expected = page.evaluate(
@@ -91,8 +124,8 @@ def solve(page, state_dir: Path, out_dir: Path, mechanic: str) -> None:
     truth = _read(state_dir / "ground_truth.json")
     rounds = truth["rounds"]
     solutions = truth["solutions"]
-    if len(rounds) != 3 or len(solutions) != 3:
-        raise AssertionError("trajectory challenge does not contain exactly three flights")
+    if not rounds or len(rounds) != len(solutions):
+        raise AssertionError("trajectory challenge has inconsistent flight rounds")
 
     # The refreshed challenge begins immediately. Preserve visual evidence of the
     # observable flight before any hidden commitment is made.
@@ -101,11 +134,26 @@ def solve(page, state_dir: Path, out_dir: Path, mechanic: str) -> None:
     _screenshot(page, out_dir, mechanic, "active-observation")
 
     for index, (round_data, solution) in enumerate(zip(rounds, solutions)):
-        _wait_for_phase(page, "hidden")
-        _place_catcher(page, round_data, solution)
-        if index == 0:
-            _screenshot(page, out_dir, mechanic, "hidden-commit")
-        expect(page.locator(".trajectory-catcher")).to_have_attribute("data-result", "caught", timeout=7_000)
+        attempts = 0
+        while True:
+            _wait_for_phase(page, "hidden")
+            _place_catcher(page, round_data, solution)
+            if index == 0 and attempts == 0:
+                _screenshot(page, out_dir, mechanic, "hidden-commit")
+            page.wait_for_function(
+                "document.querySelector('.trajectory-catcher')?.dataset.result !== ''",
+                timeout=7_000,
+            )
+            result = page.locator(".trajectory-catcher").get_attribute("data-result")
+            if result == "caught":
+                break
+            if result == "miss" and attempts < int(round_data["replay_limit"]):
+                page.locator("#trajectory-replay").click()
+                attempts += 1
+                continue
+            raise AssertionError(
+                f"trajectory round {index + 1} did not catch after visible recovery: {result!r}"
+            )
         if index < len(rounds) - 1:
             page.locator("#trajectory-next").click()
 

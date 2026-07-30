@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import copy
 import hashlib
 import json
 import math
@@ -35,8 +36,13 @@ def _seed_int(seed: str, salt: str) -> int:
     return int(digest[:16], 16)
 
 
-def _challenge_id(seed: str) -> str:
-    return hashlib.sha256(f"{seed}|{MECHANIC_ID}|v2".encode("utf-8")).hexdigest()[:14]
+def _challenge_id(seed: str, difficulty: int | None = None) -> str:
+    # L4 is the historical reference condition, so its visible manifest ID is
+    # deliberately the same as the uncontrolled task for a fixed seed. The
+    # other profiles need distinct identities because their generated worlds
+    # differ while retaining the same runtime seed.
+    suffix = "" if difficulty in {None, 4} else f"|difficulty-{difficulty}"
+    return hashlib.sha256(f"{seed}|{MECHANIC_ID}|v2{suffix}".encode("utf-8")).hexdigest()[:14]
 
 
 def _creature_id(seed: str, index: int) -> str:
@@ -52,8 +58,13 @@ def _open_cells(rows: tuple[str, ...]) -> set[tuple[int, int]]:
     }
 
 
-def _maze_layout(rng: random.Random) -> tuple[tuple[str, ...], tuple[int, int], tuple[tuple[int, int], ...]]:
-    grid = [["#" for _ in range(MAP_WIDTH)] for _ in range(MAP_HEIGHT)]
+def _maze_layout(
+    rng: random.Random,
+    width: int = MAP_WIDTH,
+    height: int = MAP_HEIGHT,
+    spawn_count: int = 12,
+) -> tuple[tuple[str, ...], tuple[int, int], tuple[tuple[int, int], ...]]:
+    grid = [["#" for _ in range(width)] for _ in range(height)]
     start = (1, 1)
     grid[start[1]][start[0]] = "."
     visited = {start}
@@ -65,7 +76,7 @@ def _maze_layout(rng: random.Random) -> tuple[tuple[str, ...], tuple[int, int], 
         candidates = []
         for dx, dy in directions:
             target = (current[0] + dx, current[1] + dy)
-            if 1 <= target[0] < MAP_WIDTH - 1 and 1 <= target[1] < MAP_HEIGHT - 1 and target not in visited:
+            if 1 <= target[0] < width - 1 and 1 <= target[1] < height - 1 and target not in visited:
                 candidates.append((target, (current[0] + dx // 2, current[1] + dy // 2)))
         if not candidates:
             stack.pop()
@@ -91,7 +102,9 @@ def _maze_layout(rng: random.Random) -> tuple[tuple[str, ...], tuple[int, int], 
     pool = nodes[: min(30, len(nodes))]
     if len(pool) < 12:
         pool = nodes
-    spawn_cells = tuple(rng.sample(pool, 12))
+    if len(pool) < spawn_count:
+        raise AssertionError("generated maze has too few distant traveller cells")
+    spawn_cells = tuple(rng.sample(pool, spawn_count))
     return rows, start, spawn_cells
 
 
@@ -184,21 +197,26 @@ def _traits(rng: random.Random, index: int) -> dict[str, Any]:
     }
 
 
-def _decoy_traits(target: dict[str, Any], pair_index: int) -> dict[str, Any]:
+def _decoy_traits(target: dict[str, Any], pair_index: int, trait_differences: int = 1) -> dict[str, Any]:
     decoy = dict(target)
     # Each protected traveller is a close visual relative. One prominent trait
     # changes, rather than the palette, so a glance at colour alone is unsafe.
-    if pair_index == 0:
-        decoy["eyes"] = 1 + (int(target["eyes"]) % 3)
-    elif pair_index == 1:
-        mark_index = _MARKS.index(str(target["mark"]))
-        decoy["mark"] = _MARKS[(mark_index + 1) % len(_MARKS)]
-    elif pair_index == 2:
-        horn_index = _HORNS.index(str(target["horn"]))
-        decoy["horn"] = _HORNS[(horn_index + 1) % len(_HORNS)]
-    else:
-        stripe_index = _STRIPES.index(str(target["stripe"]))
-        decoy["stripe"] = _STRIPES[(stripe_index + 1) % len(_STRIPES)]
+    traits = ("eyes", "mark", "horn", "stripe")
+    if not 1 <= trait_differences <= len(traits):
+        raise ValueError("customs decoys must differ in one through four visible traits")
+    for offset in range(trait_differences):
+        trait = traits[(pair_index + offset) % len(traits)]
+        if trait == "eyes":
+            decoy[trait] = 1 + (int(target[trait]) % 3)
+        elif trait == "mark":
+            mark_index = _MARKS.index(str(target[trait]))
+            decoy[trait] = _MARKS[(mark_index + 1) % len(_MARKS)]
+        elif trait == "horn":
+            horn_index = _HORNS.index(str(target[trait]))
+            decoy[trait] = _HORNS[(horn_index + 1) % len(_HORNS)]
+        else:
+            stripe_index = _STRIPES.index(str(target[trait]))
+            decoy[trait] = _STRIPES[(stripe_index + 1) % len(_STRIPES)]
     return decoy
 
 
@@ -313,9 +331,14 @@ def _solver_segment(
     }, approach)
 
 
-def _manifest_digest(rows: tuple[str, ...], initial_pose: dict[str, Any], creatures: list[dict[str, Any]]) -> str:
+def _manifest_digest(
+    rows: tuple[str, ...],
+    initial_pose: dict[str, Any],
+    creatures: list[dict[str, Any]],
+    ammo: int,
+) -> str:
     encoded = json.dumps(
-        {"map": list(rows), "initial_pose": initial_pose, "creatures": creatures, "ammo": AMMO},
+        {"map": list(rows), "initial_pose": initial_pose, "creatures": creatures, "ammo": ammo},
         sort_keys=True,
         separators=(",", ":"),
     ).encode("utf-8")
@@ -324,7 +347,33 @@ def _manifest_digest(rows: tuple[str, ...], initial_pose: dict[str, Any], creatu
 
 def generate(task: dict[str, Any], seed: str) -> tuple[dict[str, Any], dict[str, Any]]:
     rng = random.Random(_seed_int(seed, MECHANIC_ID))
-    base_rows, base_start, base_spawns = _maze_layout(rng)
+    condition = task.get("_control_condition")
+    parameters = dict((condition or {}).get("difficulty_parameters") or {})
+    width = int(parameters.get("map_width", MAP_WIDTH))
+    height = int(parameters.get("map_height", MAP_HEIGHT))
+    wanted_count = int(parameters.get("wanted_count", WANTED_COUNT))
+    trait_differences = int(parameters.get("decoy_trait_differences", 1))
+    ammo = int(parameters.get("ammo", AMMO))
+    move_step = float(parameters.get("move_step", MOVE_STEP))
+    if (
+        width < 11
+        or height < 9
+        or width > 25
+        or height > 19
+        or width % 2 != 1
+        or height % 2 != 1
+        or not 2 <= wanted_count <= 5
+        or not 1 <= trait_differences <= 4
+        or not wanted_count + 4 <= ammo <= 16
+        or not math.isclose(move_step, MOVE_STEP, rel_tol=0, abs_tol=1e-12)
+    ):
+        raise ValueError("tiny FPS customs control condition is outside the supported contract")
+
+    # The historical level-four generator sampled twelve distant spawn cells
+    # before assigning its eight travellers. Retain that sample size whenever
+    # possible so L4's fixed-seed world is byte-for-byte unchanged.
+    spawn_count = max(12, wanted_count * 2)
+    base_rows, base_start, base_spawns = _maze_layout(rng, width, height, spawn_count)
     layout_variant = rng.choice(("identity", "mirror_x", "mirror_y", "rotate_180"))
     rows, start_cell, initial_angle, spawn_cells = _layout_variant(base_rows, base_start, base_spawns, layout_variant)
     open_cells = _open_cells(rows)
@@ -332,10 +381,10 @@ def generate(task: dict[str, Any], seed: str) -> tuple[dict[str, Any], dict[str,
 
     selected_cells = list(spawn_cells)
     rng.shuffle(selected_cells)
-    selected_cells = selected_cells[: WANTED_COUNT * 2]
+    selected_cells = selected_cells[: wanted_count * 2]
     occupied = set(selected_cells)
 
-    wanted_traits = [_traits(rng, index) for index in range(WANTED_COUNT)]
+    wanted_traits = [_traits(rng, index) for index in range(wanted_count)]
     # Repair the extremely unlikely possibility that randomized feature choices
     # create identical warrants.
     for index in range(1, len(wanted_traits)):
@@ -346,7 +395,7 @@ def generate(task: dict[str, Any], seed: str) -> tuple[dict[str, Any], dict[str,
     creatures: list[dict[str, Any]] = []
     wanted_ids: list[str] = []
     protected_ids: list[str] = []
-    for pair_index in range(WANTED_COUNT):
+    for pair_index in range(wanted_count):
         wanted_id = _creature_id(seed, pair_index * 2)
         protected_id = _creature_id(seed, pair_index * 2 + 1)
         wanted_cell = selected_cells[pair_index * 2]
@@ -362,7 +411,7 @@ def generate(task: dict[str, Any], seed: str) -> tuple[dict[str, Any], dict[str,
             "id": protected_id,
             "x": protected_cell[0] + 0.5,
             "y": protected_cell[1] + 0.5,
-            "traits": _decoy_traits(wanted_traits[pair_index], pair_index),
+            "traits": _decoy_traits(wanted_traits[pair_index], pair_index, trait_differences),
             "pose": rng.choice(("alert", "stooped", "side-eye")),
         })
         wanted_ids.append(wanted_id)
@@ -402,9 +451,9 @@ def generate(task: dict[str, Any], seed: str) -> tuple[dict[str, Any], dict[str,
         int(protected_plan["aim_mdeg"]),
     ) == protected_ids[0]
 
-    challenge_id = _challenge_id(seed)
+    challenge_id = _challenge_id(seed, int(condition["difficulty"]) if condition is not None else None)
     task_id = str(task.get("id") or "")
-    digest = _manifest_digest(rows, initial_pose, creatures)
+    digest = _manifest_digest(rows, initial_pose, creatures, ammo)
     public_state = {
         "benchmark": "weird_captcha_gym",
         "mechanic_id": MECHANIC_ID,
@@ -419,8 +468,8 @@ def generate(task: dict[str, Any], seed: str) -> tuple[dict[str, Any], dict[str,
         "initial_pose": initial_pose,
         "player_radius": PLAYER_RADIUS,
         "creature_radius": CREATURE_RADIUS,
-        "move_step": MOVE_STEP,
-        "ammo": AMMO,
+        "move_step": move_step,
+        "ammo": ammo,
         "creatures": creatures,
         "wanted_posters": posters,
         "manifest_digest": digest,
@@ -435,8 +484,8 @@ def generate(task: dict[str, Any], seed: str) -> tuple[dict[str, Any], dict[str,
         "initial_pose": initial_pose,
         "player_radius": PLAYER_RADIUS,
         "creature_radius": CREATURE_RADIUS,
-        "move_step": MOVE_STEP,
-        "ammo": AMMO,
+        "move_step": move_step,
+        "ammo": ammo,
         "creatures": creatures,
         "wanted_ids": wanted_ids,
         "protected_ids": protected_ids,
@@ -447,8 +496,12 @@ def generate(task: dict[str, Any], seed: str) -> tuple[dict[str, Any], dict[str,
     }
 
     assert _reachable(start_cell, open_cells) == open_cells
-    assert len(creatures) == WANTED_COUNT * 2
-    assert len(wanted_ids) == len(protected_ids) == WANTED_COUNT
+    if condition is not None:
+        public_state["control_condition"] = copy.deepcopy(condition)
+        ground_truth["control_condition"] = copy.deepcopy(condition)
+
+    assert len(creatures) == wanted_count * 2
+    assert len(wanted_ids) == len(protected_ids) == wanted_count
     assert not (set(wanted_ids) & set(protected_ids))
     assert all("id" not in poster and "wanted" not in poster for poster in posters)
     assert all(len(segment["route_cells"]) >= 1 for segment in solver_plan)

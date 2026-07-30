@@ -89,10 +89,22 @@ def grade(payload: dict[str, Any], ground_truth: dict[str, Any], public_state: d
     lines = ground_truth.get("lines")
     qualification = ground_truth.get("qualification")
     waveform = ground_truth.get("waveform")
-    if not isinstance(lines, list) or len(lines) < 7 or not isinstance(qualification, dict) or not isinstance(waveform, dict):
+    if not isinstance(lines, list) or len(lines) < 3 or not isinstance(qualification, dict) or not isinstance(waveform, dict):
         return _failure("hidden switchboard contract is malformed")
     if public_state.get("lines") != lines or public_state.get("qualification") != qualification or public_state.get("waveform") != waveform:
         return _failure("public switchboard commitment disagrees with hidden state")
+    condition = ground_truth.get("control_condition")
+    expected_tune_source: str | None = None
+    if condition is not None:
+        if public_state.get("control_condition") != condition:
+            return _failure("controlled switchboard condition mismatch")
+        interaction = str(condition.get("interaction") or "")
+        if interaction not in {"simplified", "full"} or payload.get("interaction_mode") != interaction:
+            return _failure("wrong switchboard interaction mode")
+        expected_tune_source = {
+            "simplified": "step_proxy",
+            "full": "tuning_slider",
+        }[interaction]
     line_map = {str(line.get("id") or ""): line for line in lines if isinstance(line, dict)}
     if len(line_map) != len(lines) or "" in line_map:
         return _failure("hidden carrier bank is malformed")
@@ -137,6 +149,8 @@ def grade(payload: dict[str, Any], ground_truth: dict[str, Any], public_state: d
             value = _integer(event.get("value"))
             if value is None:
                 return _failure("tuning value is invalid")
+            if expected_tune_source is not None and event.get("input_source") != expected_tune_source:
+                return _failure("tuning used the wrong interaction input")
             if control == "phase":
                 if not 0 <= value < int(qualification["phase_steps"]):
                     return _failure("phase tuning left its physical range")

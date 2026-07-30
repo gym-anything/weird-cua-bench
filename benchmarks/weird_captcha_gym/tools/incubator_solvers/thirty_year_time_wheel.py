@@ -21,6 +21,16 @@ def _screenshot(page, out_dir: Path, mechanic: str, label: str) -> None:
 def _drag_detents(page, component: str, steps: int, *, brake_immediately: bool) -> None:
     if not steps:
         return
+    interaction = page.locator(".time-wheel-captcha").get_attribute("data-interaction") or "full"
+    if interaction == "simplified":
+        direction = 1 if steps > 0 else -1
+        selector = (
+            f'[data-time-proxy-component="{component}"]'
+            f'[data-time-proxy-direction="{direction}"]'
+        )
+        for _ in range(abs(steps)):
+            page.locator(selector).click()
+        return
     dial = page.locator("#time-wheel-dial")
     box = dial.bounding_box()
     if box is None:
@@ -32,8 +42,9 @@ def _drag_detents(page, component: str, steps: int, *, brake_immediately: bool) 
     angle = -math.pi / 2
     page.mouse.move(center_x + radius * math.cos(angle), center_y + radius * math.sin(angle))
     page.mouse.down()
+    detent_degrees = float(page.evaluate("() => window.thirtyYearTimeWheelModel.state.detent_degrees"))
     for _ in range(abs(steps)):
-        angle += direction * math.radians(12.12)
+        angle += direction * math.radians(detent_degrees + 0.12)
         page.mouse.move(center_x + radius * math.cos(angle), center_y + radius * math.sin(angle))
     page.mouse.up()
     page.wait_for_function("() => window.thirtyYearTimeWheelModel.drag === null", timeout=3000)
@@ -86,11 +97,12 @@ def solve(page, state_dir: Path, out_dir: Path, mechanic: str) -> None:
         """target => ({
           current: {...window.thirtyYearTimeWheelModel.current},
           coverage: [...window.thirtyYearTimeWheelModel.coverage].sort(),
+          required: [...(window.thirtyYearTimeWheelModel.state.required_components || ["month", "year", "day"])].sort(),
           target,
         })""",
         target,
     )
-    if contract["current"] != target or contract["coverage"] != ["day", "month", "year"]:
+    if contract["current"] != target or contract["coverage"] != contract["required"]:
         raise AssertionError(f"time wheel proof is incomplete: {contract}")
     _screenshot(page, out_dir, mechanic, "solved")
     page.locator("#time-lock").click()

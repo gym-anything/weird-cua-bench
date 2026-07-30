@@ -1,6 +1,7 @@
 (() => {
   "use strict";
   let model = null;
+  let keyHandler = null;
   const clean = (value) =>
     String(value ?? "").replaceAll("&", "&amp;").replaceAll("<", "&lt;")
       .replaceAll(">", "&gt;").replaceAll('"', "&quot;");
@@ -102,7 +103,7 @@
   function setMessage(message, status = "idle") {
     model.helpers.setReadout(message, status);
   }
-  function applyControl(axis, direction = 0) {
+  function applyControl(axis, direction = 0, inputSource = "control_buttons") {
     if (model.terminal || model.submitting || model.delivered) return;
     clearFresh();
     const world = model.state.world;
@@ -119,10 +120,11 @@
     record("control", {
       axis,
       ...(axis === "x" || axis === "y" || axis === "z" ? { direction } : {}),
+      input_source: inputSource,
     });
-    physicsTick();
+    physicsTick(inputSource);
   }
-  function physicsTick() {
+  function physicsTick(inputSource) {
     const start = [...model.position],
       candidate = model.position.map((v, i) => v + model.velocity[i]),
       radius = model.captured
@@ -171,11 +173,12 @@
       position: model.position.map(round),
       velocity: model.velocity.map(round),
       visible_frames: visibleFrames,
+      input_source: inputSource,
     });
     drawFeeds();
     updateHUD();
   }
-  function grip() {
+  function grip(inputSource = "control_buttons") {
     if (model.terminal || model.submitting || model.delivered) return;
     clearFresh();
     if (model.gripper === "open") {
@@ -198,7 +201,7 @@
       }
       model.gripper = "closed";
       model.captured = captured;
-      record("gripper", { action: "close", captured_id: captured });
+      record("gripper", { action: "close", captured_id: captured, input_source: inputSource });
       if (captured) {
         model.objects[captured].center = [...model.position];
         setMessage(
@@ -216,7 +219,7 @@
               model.state.chute,
             ),
         );
-      record("gripper", { action: "open", released_id: released, delivered });
+      record("gripper", { action: "open", released_id: released, delivered, input_source: inputSource });
       model.gripper = "open";
       model.captured = null;
       if (delivered) {
@@ -234,9 +237,9 @@
     drawFeeds();
     updateHUD();
   }
-  function resetClaw() {
+  function resetClaw(inputSource = "control_buttons") {
     if (model.captured || model.delivered || model.submitting) return;
-    record("reset_claw");
+    record("reset_claw", { input_source: inputSource });
     model.resets++;
     model.position = [...model.state.initial.position];
     model.velocity = [...model.state.initial.velocity];
@@ -386,9 +389,12 @@
       ? "LOAD"
       : "EMPTY";
     document.querySelector(".claw-tick").textContent = String(model.tick);
-    document.querySelector(".claw-grip").textContent = model.gripper === "open"
-      ? "CLOSE GRIPPER"
-      : "OPEN / RELEASE";
+    const gripButton = document.querySelector(".claw-grip");
+    if (gripButton) {
+      gripButton.textContent = model.gripper === "open"
+        ? "CLOSE GRIPPER"
+        : "OPEN / RELEASE";
+    }
   }
   async function submit() {
     if (model.submitting || model.terminal && !model.delivered) return;
@@ -401,6 +407,7 @@
       mechanic_id: model.state.mechanic_id,
       task_id: model.state.task_id,
       challenge_id: model.state.challenge_id,
+      interaction_mode: model.interaction,
       events: model.events,
       delivered: model.delivered,
       position: model.position.map(round),
@@ -449,7 +456,21 @@
   }
   async function render(state, helpers) {
     document.body.dataset.mechanic = "three-camera-claw-machine";
-    helpers.app.innerHTML = `<section class="claw-captcha" data-challenge-id="${
+    if (keyHandler) window.removeEventListener("keydown", keyHandler);
+    const interaction = state.control_condition?.interaction || "simplified";
+    if (!["simplified", "full"].includes(interaction)) {
+      throw new Error("three-camera claw interaction is invalid");
+    }
+    const consoleControls = interaction === "simplified"
+      ? `<div class="claw-controls">${
+        ["x", "y", "z"].map((axis) =>
+          `<div><b>${axis.toUpperCase()} AXIS</b><button class="claw-control" data-axis="${axis}" data-direction="-1">${axis.toUpperCase()}−</button><button class="claw-control" data-axis="${axis}" data-direction="1">${axis.toUpperCase()}+</button></div>`
+        ).join("")
+      }</div><button class="claw-control claw-coast" data-axis="coast">COAST ONE PHYSICS TICK</button><button class="claw-control claw-brake" data-axis="brake">BRAKE / DAMP INERTIA</button><button class="claw-grip">CLOSE GRIPPER</button><button class="claw-reset">REWIND GANTRY</button>`
+      : `<div class="claw-direct-controls"><b>DIRECT KEYBOARD TELEOPERATION</b><span>A / D · X− / X+</span><span>W / S · Y+ / Y−</span><span>Q / E · Z− / Z+</span><span>C · COAST ONE TICK</span><span>SPACE · BRAKE</span><span>F · CLOSE / RELEASE</span><span>R · REWIND GANTRY</span></div>`;
+    helpers.app.innerHTML = `<section class="claw-captcha" data-interaction="${
+      clean(interaction)
+    }" data-challenge-id="${
       clean(state.challenge_id)
     }"><header class="claw-head"><div><span>REMOTE RECOVERY CELL / ${
       clean(state.challenge_id)
@@ -461,16 +482,15 @@
           clean(camera.label)
         }</b><span class="claw-feed-tick" data-view="${id}">T0</span></header><canvas class="claw-feed" data-view="${id}" width="340" height="230"></canvas></article>`
       ).join("")
-    }</section><aside class="claw-console"><span class="claw-kicker">SIX-AXIS INERTIAL GANTRY</span><h2>Correct what the cameras have not shown you yet.</h2><div class="claw-controls">${
-      ["x", "y", "z"].map((axis) =>
-        `<div><b>${axis.toUpperCase()} AXIS</b><button class="claw-control" data-axis="${axis}" data-direction="-1">${axis.toUpperCase()}−</button><button class="claw-control" data-axis="${axis}" data-direction="1">${axis.toUpperCase()}+</button></div>`
-      ).join("")
-    }</div><button class="claw-control claw-coast" data-axis="coast">COAST ONE PHYSICS TICK</button><button class="claw-control claw-brake" data-axis="brake">BRAKE / DAMP INERTIA</button><button class="claw-grip">CLOSE GRIPPER</button><button class="claw-reset">REWIND GANTRY</button><div class="claw-stats"><span>SPEED<b class="claw-speed">0.00</b></span><span>GRIP<b class="claw-grip-state">OPEN</b></span><span>LOAD<b class="claw-load-state">EMPTY</b></span><span>TICK<b class="claw-tick">0</b></span></div></aside><div class="claw-impact" data-visible="false"><b>CAGE CONTACT</b><span>RECOVER</span></div><div class="claw-complete" data-visible="false"><b>DELIVERY CONTAINED</b><span>MARKED LOAD IN CHUTE</span></div></main><footer class="claw-foot"><div><span>DELAY-AWARE PHYSICS REPLAY</span><div class="readout" data-status="idle">TRIANGULATE THE MARKED ARTIFACT</div></div><button class="claw-submit">${
+    }</section><aside class="claw-console"><span class="claw-kicker">SIX-AXIS INERTIAL GANTRY</span><h2>Correct what the cameras have not shown you yet.</h2>${
+      consoleControls
+    }<div class="claw-stats"><span>SPEED<b class="claw-speed">0.00</b></span><span>GRIP<b class="claw-grip-state">OPEN</b></span><span>LOAD<b class="claw-load-state">EMPTY</b></span><span>TICK<b class="claw-tick">0</b></span></div></aside><div class="claw-impact" data-visible="false"><b>CAGE CONTACT</b><span>RECOVER</span></div><div class="claw-complete" data-visible="false"><b>DELIVERY CONTAINED</b><span>MARKED LOAD IN CHUTE</span></div></main><footer class="claw-foot"><div><span>DELAY-AWARE PHYSICS REPLAY</span><div class="readout" data-status="idle">TRIANGULATE THE MARKED ARTIFACT</div></div><button class="claw-submit">${
       clean(state.submit_label)
     }</button></footer>${helpers.cheatPanelTemplate()}</section>`;
     model = {
       state,
       helpers,
+      interaction,
       events: [],
       position: [...state.initial.position],
       velocity: [...state.initial.velocity],
@@ -498,12 +518,38 @@
           applyControl(
             button.dataset.axis,
             Number(button.dataset.direction || 0),
+            "control_buttons",
           ),
       )
     );
-    document.querySelector(".claw-grip").addEventListener("click", grip);
-    document.querySelector(".claw-reset").addEventListener("click", resetClaw);
+    document.querySelector(".claw-grip")?.addEventListener("click", () => grip("control_buttons"));
+    document.querySelector(".claw-reset")?.addEventListener("click", () => resetClaw("control_buttons"));
     document.querySelector(".claw-submit").addEventListener("click", submit);
+    keyHandler = (event) => {
+      if (event.repeat || model?.interaction !== "full" || model.submitting || model.terminal) return;
+      const key = event.key.toLowerCase();
+      const directions = {
+        a: ["x", -1], d: ["x", 1], w: ["y", 1], s: ["y", -1],
+        q: ["z", -1], e: ["z", 1],
+      };
+      if (directions[key]) {
+        event.preventDefault();
+        applyControl(...directions[key], "keyboard");
+      } else if (key === "c") {
+        event.preventDefault();
+        applyControl("coast", 0, "keyboard");
+      } else if (key === " ") {
+        event.preventDefault();
+        applyControl("brake", 0, "keyboard");
+      } else if (key === "f") {
+        event.preventDefault();
+        grip("keyboard");
+      } else if (key === "r") {
+        event.preventDefault();
+        resetClaw("keyboard");
+      }
+    };
+    window.addEventListener("keydown", keyHandler);
     helpers.installCheatPanel();
     drawFeeds();
     updateHUD();

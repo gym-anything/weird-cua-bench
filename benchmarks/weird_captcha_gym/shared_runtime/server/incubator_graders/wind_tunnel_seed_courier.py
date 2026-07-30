@@ -30,6 +30,20 @@ def grade(payload: dict[str, Any], truth: dict[str, Any], public: dict[str, Any]
         return _fail("mechanic mismatch")
     if payload.get("task_id") != truth.get("task_id") or payload.get("challenge_id") != truth.get("challenge_id") or public.get("challenge_id") != truth.get("challenge_id"):
         return _fail("stale task or challenge")
+    condition = truth.get("control_condition")
+    expected_input_source = None
+    if condition is not None:
+        if public.get("control_condition") != condition:
+            return _fail("public wind control condition differs from the replay contract")
+        if not isinstance(condition, dict):
+            return _fail("wind control condition is malformed")
+        interaction = str(condition.get("interaction") or "")
+        expected_input_source = {
+            "simplified": "fan_button",
+            "full": "fan_lever_drag",
+        }.get(interaction)
+        if expected_input_source is None:
+            return _fail("wind interaction mode is unsupported")
     events = payload.get("events")
     if not isinstance(events, list) or len(events) > 1800:
         return _fail("dual wind transcript malformed")
@@ -55,8 +69,10 @@ def grade(payload: dict[str, Any], truth: dict[str, Any], public: dict[str, Any]
             last_time = event_tick
         if action == "fan_control":
             fan, power = item.get("fan"), item.get("power")
-            if fan not in range(4) or power not in {-1, 0, 1}:
+            if fan not in range(len(public["fans"])) or power not in {-1, 0, 1}:
                 return _fail("fan control outside physical stops")
+            if expected_input_source is not None and item.get("input_source") != expected_input_source:
+                return _fail("fan control uses the wrong interaction input")
             schedule.setdefault(int(item["tick"]), []).append((int(fan), int(power)))
         elif action == "launch":
             if launched or item.get("tick") != 0:
@@ -76,9 +92,9 @@ def grade(payload: dict[str, Any], truth: dict[str, Any], public: dict[str, Any]
         return _fail("pods were never launched")
 
     physics = public["physics"]
-    powers = [0, 0, 0, 0]
-    actual = [0.0, 0.0, 0.0, 0.0]
-    heat = [0.0, 0.0, 0.0, 0.0]
+    powers = [0 for _ in public["fans"]]
+    actual = [0.0 for _ in public["fans"]]
+    heat = [0.0 for _ in public["fans"]]
     pods = [{**item, "x": float(item["x"]), "y": float(item["y"]), "vx": float(item["vx"]), "vy": float(item["vy"]), "docked": False} for item in public["pods"]]
     passed = {pod["id"]: [] for pod in pods}
     replay_gates: list[dict[str, Any]] = []

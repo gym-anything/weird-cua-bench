@@ -15,7 +15,9 @@ def _spark(spec: dict[str, Any], elapsed_ms: float) -> tuple[float, float]:
     )
 
 
-def _validate_interrupt(event: dict[str, Any], spec: dict[str, Any]) -> str | None:
+def _validate_interrupt(event: dict[str, Any], spec: dict[str, Any], interaction: str) -> str | None:
+    if str(event.get("surface") or "") != interaction:
+        return "overload used the wrong interaction surface"
     samples = event.get("samples")
     try:
         duration = int(event.get("duration_ms"))
@@ -38,6 +40,8 @@ def _validate_interrupt(event: dict[str, Any], spec: dict[str, Any]) -> str | No
         if clean and (elapsed <= clean[-1][0] or elapsed - clean[-1][0] > int(spec["max_gap_ms"])):
             return "overload tracking samples are not continuous"
         clean.append((elapsed, (x, y)))
+    if interaction == "simplified":
+        return None
     # Pointer-down can happen after the overlay appears. Infer that visible path
     # offset from the first physical sample, then validate every later sample.
     first_elapsed, first_point = clean[0]
@@ -61,10 +65,16 @@ def grade(payload: dict[str, Any], ground_truth: dict[str, Any], public_state: d
     if not challenge_id or str(payload.get("challenge_id") or "") != challenge_id or str(public_state.get("challenge_id") or "") != challenge_id:
         return {"graded": True, "passed": False, "feedback": "stale challenge"}
     events = payload.get("events")
-    if not isinstance(events, list) or not 9 <= len(events) <= 24:
+    if not isinstance(events, list):
         return {"graded": True, "passed": False, "feedback": "reload transcript is missing or outside limits"}
     expected = [str(item) for item in ground_truth.get("sequence") or []]
     interrupts = {str(item["id"]): dict(item) for item in ground_truth.get("interruptions") or []}
+    interaction = str((ground_truth.get("control_condition") or {}).get("interaction") or "full")
+    if str(payload.get("interaction_mode") or "") != interaction:
+        return {"graded": True, "passed": False, "feedback": "reload used the wrong interaction surface"}
+    expected_event_count = len(expected) + len(interrupts)
+    if not expected or not interrupts or len(events) != expected_event_count:
+        return {"graded": True, "passed": False, "feedback": "reload transcript is missing or outside limits"}
     gestures: list[str] = []
     cleared: list[str] = []
     for sequence, event in enumerate(events, start=1):
@@ -76,6 +86,8 @@ def grade(payload: dict[str, Any], ground_truth: dict[str, Any], public_state: d
         if kind == "gesture":
             if len(gestures) >= len(expected) or event.get("index") != len(gestures):
                 return {"graded": True, "passed": False, "feedback": "gesture index is invalid"}
+            if str(event.get("surface") or "") != interaction:
+                return {"graded": True, "passed": False, "feedback": "gesture used the wrong interaction surface"}
             direction = str(event.get("direction") or "")
             if direction != expected[len(gestures)]:
                 return {"graded": True, "passed": False, "feedback": "remembered gesture was wrong"}
@@ -89,7 +101,7 @@ def grade(payload: dict[str, Any], ground_truth: dict[str, Any], public_state: d
             spec = interrupts.get(interrupt_id)
             if spec is None or interrupt_id in cleared or len(gestures) != int(spec["after_step"]):
                 return {"graded": True, "passed": False, "feedback": "overload occurred at the wrong reload state"}
-            error = _validate_interrupt(event, spec)
+            error = _validate_interrupt(event, spec, interaction)
             if error:
                 return {"graded": True, "passed": False, "feedback": error}
             cleared.append(interrupt_id)

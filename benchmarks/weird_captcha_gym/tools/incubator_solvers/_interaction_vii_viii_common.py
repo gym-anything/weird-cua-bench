@@ -146,13 +146,33 @@ def _specular(page, state_dir: Path, out_dir: Path, mechanic: str) -> None:
 
 def _wind(page, state_dir: Path, out_dir: Path, mechanic: str) -> None:
     truth = _read(state_dir / "ground_truth.json")
+    public = _read(state_dir / "public_state.json")
+    interaction = str((truth.get("control_condition") or {}).get("interaction") or "simplified")
+    canvas = page.locator("#wind-canvas")
+
+    def set_fan(fan: int, power: int) -> None:
+        if interaction == "simplified":
+            page.locator(f'[data-fan="{fan}"][data-power="{power}"]').click()
+            return
+        box = canvas.bounding_box()
+        if not box:
+            raise AssertionError("wind tunnel has no visible fan-lever geometry")
+        x = box["x"] + float(public["fans"][fan]["x"]) * box["width"] / 900
+        start_y = box["y"] + 435 * box["height"] / 480
+        target_y = box["y"] + {-1: 410, 0: 435, 1: 460}[power] * box["height"] / 480
+        page.mouse.move(x, start_y)
+        page.mouse.down()
+        page.mouse.move(x, target_y, steps=2)
+        page.mouse.up()
+
     page.locator("#wind-launch").click()
     for event_index, item in enumerate(truth["plan"]):
         page.wait_for_function("tick => window.windTunnelSeedCourierModel.tick >= tick", arg=int(item["tick"]), timeout=8_000)
-        page.locator(f'[data-fan="{int(item["fan"])}"][data-power="{int(item["power"])}"]').click()
+        set_fan(int(item["fan"]), int(item["power"]))
         if event_index == 0:
             _shot(page, out_dir, mechanic, "fan-field-armed")
-    page.wait_for_function("() => window.windTunnelSeedCourierModel.tick > 245", timeout=12_000)
+    active_tick = max(1, int(truth["physics"]["ticks"]) * 55 // 100)
+    page.wait_for_function("tick => window.windTunnelSeedCourierModel.tick > tick", arg=active_tick, timeout=12_000)
     _shot(page, out_dir, mechanic, "active-gate-flight")
     expect(page.locator(".ivv-verdict.is-pass")).to_be_visible(timeout=20_000)
 

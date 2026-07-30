@@ -24,6 +24,7 @@
     feedbackText: "",
     submitting: false,
     terminal: false,
+    interaction: "full",
     spriteCache: new Map(),
   };
 
@@ -62,8 +63,8 @@
     return Math.max(0, Math.round(performance.now() - model.startedAt));
   }
 
-  function record(action) {
-    model.actions.push({...action, seq: model.actions.length + 1, t_ms: elapsed()});
+  function record(action, inputSurface = model.interaction) {
+    model.actions.push({...action, input_surface: inputSurface, seq: model.actions.length + 1, t_ms: elapsed()});
   }
 
   function traitKey(traits) {
@@ -213,18 +214,18 @@
     }
   }
 
-  function turn(deltaMdeg) {
+  function turn(deltaMdeg, inputSurface = model.interaction) {
     if (model.terminal || model.submitting) return;
     const delta = Math.max(-36000, Math.min(36000, Math.round(deltaMdeg)));
     if (!delta) return;
     const before = normalizeAngle(model.pose.angle_mdeg);
     model.pose.angle_mdeg = normalizeAngle(before + delta);
     model.counts.turns += 1;
-    record({type: "turn", delta_mdeg: delta, before_mdeg: before, after_mdeg: model.pose.angle_mdeg});
+    record({type: "turn", delta_mdeg: delta, before_mdeg: before, after_mdeg: model.pose.angle_mdeg}, inputSurface);
     updateHud();
   }
 
-  function move(forward, strafe) {
+  function move(forward, strafe, inputSurface = model.interaction) {
     if (model.terminal || model.submitting) return;
     const from = poseObject();
     const angle = angleRadians();
@@ -242,7 +243,7 @@
       model.counts.collisions += 1;
       setFeedback("BULKHEAD · ROUTE DENIED", "wall", 520);
     }
-    record({type: "move", forward, strafe, from, to: poseObject(), blocked_x: blockedX, blocked_y: blockedY});
+    record({type: "move", forward, strafe, from, to: poseObject(), blocked_x: blockedX, blocked_y: blockedY}, inputSurface);
     updateHud();
   }
 
@@ -265,6 +266,8 @@
       mechanic_id: model.state.mechanic_id,
       task_id: model.state.task_id,
       challenge_id: model.state.challenge_id,
+      control_condition: model.state.control_condition || null,
+      interaction_mode: model.interaction,
       actions: model.actions,
       completed,
       final_pose: poseObject(),
@@ -319,7 +322,7 @@
     }
   }
 
-  async function fire() {
+  async function fire(inputSurface = model.interaction) {
     if (model.terminal || model.submitting) return;
     const origin = poseObject();
     const ammoBefore = model.ammo;
@@ -341,7 +344,7 @@
       outcome: result.outcome,
       hit_id: result.hitId,
       distance: q(result.distance),
-    });
+    }, inputSurface);
     updateHud();
     const viewport = document.querySelector(".fps-viewport-frame");
     if (viewport) {
@@ -370,7 +373,7 @@
     }
   }
 
-  function resetLocal() {
+  function resetLocal(inputSurface = model.interaction) {
     if (model.submitting) return;
     model.pose = {...model.state.initial_pose};
     model.pose.x = Number(model.pose.x);
@@ -382,7 +385,7 @@
     model.eliminatedIds = [];
     model.terminal = false;
     model.counts.resets += 1;
-    record({type: "reset", pose: poseObject(), ammo: model.ammo});
+    record({type: "reset", pose: poseObject(), ammo: model.ammo}, inputSurface);
     const terminal = document.querySelector(".fps-terminal");
     if (terminal) terminal.remove();
     setFeedback("SHIFT RESET · ORIGINAL MANIFEST", "idle", 900);
@@ -623,23 +626,24 @@
 
   function installControls() {
     model.keyHandler = (event) => {
+      if (model.interaction !== "full") return;
       if (event.metaKey || event.ctrlKey || event.altKey) return;
       const code = event.code;
       if (["KeyW", "KeyA", "KeyS", "KeyD", "ArrowLeft", "ArrowRight", "Space"].includes(code)) event.preventDefault();
-      if (code === "KeyW") move(1, 0);
-      else if (code === "KeyS") move(-1, 0);
-      else if (code === "KeyA") move(0, -1);
-      else if (code === "KeyD") move(0, 1);
-      else if (code === "ArrowLeft") turn(-15000);
-      else if (code === "ArrowRight") turn(15000);
-      else if (code === "Space" && !event.repeat) fire();
+      if (code === "KeyW") move(1, 0, "full");
+      else if (code === "KeyS") move(-1, 0, "full");
+      else if (code === "KeyA") move(0, -1, "full");
+      else if (code === "KeyD") move(0, 1, "full");
+      else if (code === "ArrowLeft") turn(-15000, "full");
+      else if (code === "ArrowRight") turn(15000, "full");
+      else if (code === "Space" && !event.repeat) fire("full");
     };
     window.addEventListener("keydown", model.keyHandler);
 
     const canvas = document.querySelector(".fps-world");
     if (!canvas) return;
     canvas.addEventListener("pointerdown", (event) => {
-      if (model.terminal || model.submitting) return;
+      if (model.interaction !== "full" || model.terminal || model.submitting) return;
       canvas.setPointerCapture(event.pointerId);
       model.drag = {pointerId: event.pointerId, lastX: event.clientX, distance: 0};
       model.suppressClick = false;
@@ -650,7 +654,7 @@
       model.drag.lastX = event.clientX;
       model.drag.distance += Math.abs(deltaX);
       const quantized = Math.max(-36000, Math.min(36000, Math.round(deltaX * 400 / 250) * 250));
-      if (quantized) turn(quantized);
+      if (quantized) turn(quantized, "full");
     });
     canvas.addEventListener("pointerup", (event) => {
       if (!model.drag || model.drag.pointerId !== event.pointerId) return;
@@ -660,9 +664,22 @@
       if (model.suppressClick) window.setTimeout(() => { model.suppressClick = false; }, 80);
     });
     canvas.addEventListener("click", () => {
-      if (!model.suppressClick) fire();
+      if (model.interaction === "full" && !model.suppressClick) fire("full");
     });
-    document.querySelector(".fps-reset")?.addEventListener("click", resetLocal);
+    document.querySelectorAll(".fps-proxy-control").forEach((button) => {
+      button.addEventListener("click", () => {
+        if (model.interaction !== "simplified") return;
+        const command = button.dataset.command;
+        if (command === "move-forward") move(1, 0, "simplified");
+        else if (command === "move-back") move(-1, 0, "simplified");
+        else if (command === "strafe-left") move(0, -1, "simplified");
+        else if (command === "strafe-right") move(0, 1, "simplified");
+        else if (command === "turn-left") turn(-15000, "simplified");
+        else if (command === "turn-right") turn(15000, "simplified");
+        else if (command === "fire") fire("simplified");
+      });
+    });
+    document.querySelector(".fps-reset")?.addEventListener("click", () => resetLocal(model.interaction));
     document.querySelector(".fps-reissue")?.addEventListener("click", reissue);
   }
 
@@ -672,6 +689,7 @@
     document.body.dataset.cheatMode = helpers.isCheatMode() ? "true" : "false";
     model.state = state;
     model.helpers = helpers;
+    model.interaction = state.control_condition?.interaction || "full";
     model.pose = {
       x: Number(state.initial_pose.x),
       y: Number(state.initial_pose.y),
@@ -689,9 +707,15 @@
     model.drag = null;
     model.feedbackUntil = 0;
     model.spriteCache = new Map();
+    const protectedTraitDifferences = Number(
+      state.control_condition?.difficulty_parameters?.decoy_trait_differences || 1
+    );
+    const protectedFooter = protectedTraitDifferences === 1
+      ? `PROTECTED LOOK-ALIKES<br><b>ONE TRAIT MAY DIFFER</b>`
+      : `PROTECTED TRAVELLERS<br><b>${clean(protectedTraitDifferences)} TRAITS DIFFER</b>`;
 
     helpers.app.innerHTML = `
-      <section class="tiny-fps-customs" data-challenge-id="${clean(state.challenge_id)}">
+      <section class="tiny-fps-customs" data-challenge-id="${clean(state.challenge_id)}" data-interaction="${clean(model.interaction)}" data-warrant-count="${(state.wanted_posters || []).length}">
         <header class="fps-masthead">
           <div class="fps-seal"><i>${String((state.wanted_posters || []).length).padStart(2, "0")}</i><span>INTERZONE<br>CUSTOMS</span></div>
           <div class="fps-title"><span>LIVE BORDER EXAM / BALLISTIC IDENTITY CHECK</span><h1>${clean(state.prompt)}</h1></div>
@@ -708,7 +732,7 @@
                   <div><strong>${clean(poster.warrant)}</strong><span>${clean(poster.traits.palette_name)} / ${clean(poster.traits.horn)}</span></div>
                 </article>`).join("")}
             </div>
-            <footer>PROTECTED LOOK-ALIKES<br><b>ONE TRAIT MAY DIFFER</b></footer>
+            <footer>${protectedFooter}</footer>
           </aside>
           <section class="fps-viewport-column">
             <div class="fps-viewport-frame">
@@ -717,7 +741,16 @@
               <div class="fps-hit-feedback" data-kind="idle"></div>
               <div class="fps-corner corner-a"></div><div class="fps-corner corner-b"></div><div class="fps-corner corner-c"></div><div class="fps-corner corner-d"></div>
             </div>
-            <div class="fps-controls"><b>W/S</b> MOVE <b>A/D</b> STRAFE <b>←/→</b> TURN <b>DRAG</b> LOOK <b>CLICK / SPACE</b> FIRE</div>
+            <div class="fps-controls">${model.interaction === "simplified" ? `
+              <span>DIRECT COMMANDS</span>
+              <button type="button" class="fps-proxy-control" data-command="move-forward">FORWARD</button>
+              <button type="button" class="fps-proxy-control" data-command="move-back">BACK</button>
+              <button type="button" class="fps-proxy-control" data-command="strafe-left">STRAFE L</button>
+              <button type="button" class="fps-proxy-control" data-command="strafe-right">STRAFE R</button>
+              <button type="button" class="fps-proxy-control" data-command="turn-left">TURN L</button>
+              <button type="button" class="fps-proxy-control" data-command="turn-right">TURN R</button>
+              <button type="button" class="fps-proxy-control fps-fire-control" data-command="fire">FIRE</button>
+            ` : `<b>W/S</b> MOVE <b>A/D</b> STRAFE <b>←/→</b> TURN <b>DRAG</b> LOOK <b>CLICK / SPACE</b> FIRE`}</div>
           </section>
           <aside class="fps-ledger">
             <header><span>SHIFT LEDGER</span><i>ARMED</i></header>

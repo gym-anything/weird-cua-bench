@@ -7,6 +7,43 @@ from typing import Any
 MECHANIC_ID = "zero_g_cable_autopsy"
 
 
+def _input_surface(interaction: str, event_type: str, physics_source: str | None = None) -> str | None:
+    """Return the visible input surface required by a controlled transcript.
+
+    Canvas node attachment is intentionally common to both modes: it is the
+    direct task action in the historical interface as well as in the added
+    full surface.  Every route to a pass still contains selection and motion
+    events whose surfaces differ between modes.
+    """
+    surfaces = {
+        "simplified": {
+            "orbit": "orbit_button",
+            "select_gripper": "gripper_tab",
+            "attach": "canvas_node_click",
+            "detach": "detach_button",
+            "gripper_move": "axis_button",
+            "reset": "rewind_button",
+            "verify": "seal_button",
+        },
+        "full": {
+            "orbit": "canvas_orbit_drag",
+            "select_gripper": "keyboard_gripper",
+            "attach": "canvas_node_click",
+            "detach": "keyboard_detach",
+            "gripper_move": "keyboard_axis",
+            "reset": "keyboard_rewind",
+            "verify": "keyboard_seal",
+        },
+    }
+    if event_type == "physics_tick":
+        if physics_source == "control":
+            return surfaces[interaction]["gripper_move"]
+        if physics_source == "settle":
+            return "settle_button" if interaction == "simplified" else "keyboard_settle"
+        return None
+    return surfaces[interaction].get(event_type)
+
+
 def _failure(message: str) -> dict[str, Any]: return {"graded": True, "passed": False, "score": 0, "feedback": message}
 def _number(value: Any) -> float | None:
     try: result=float(value)
@@ -189,6 +226,14 @@ def grade(payload:dict[str,Any],ground_truth:dict[str,Any],public_state:dict[str
     if str(public_state.get("mechanic_id") or "")!=MECHANIC_ID or str(public_state.get("challenge_id") or "")!=challenge_id or str(public_state.get("task_id") or "")!=task_id:return _failure("public autopsy identity mismatch")
     keys=("canvas","nodes","rest_lengths","pegs","rings","contacts","controls","qualification","initial_camera")
     if any(public_state.get(key)!=ground_truth.get(key) for key in keys):return _failure("public cable geometry disagrees with hidden state")
+    condition=ground_truth.get("control_condition")
+    if condition is not None:
+        if public_state.get("control_condition")!=condition:return _failure("public cable control condition disagrees with hidden state")
+        interaction=str(condition.get("interaction") or "")
+        if interaction not in {"simplified","full"}:return _failure("controlled cable interaction is invalid")
+        if payload.get("interaction_mode")!=interaction:return _failure("cable transcript used the wrong interaction mode")
+    else:
+        interaction=""
     events=payload.get("events")
     if not isinstance(events,list) or not events or len(events)>1800:return _failure("cable transcript is missing or too long")
     nodes=[list(map(float,node)) for node in ground_truth["nodes"]];previous=[list(node) for node in nodes];camera=dict(ground_truth["initial_camera"]);controls=ground_truth["controls"];qualification=ground_truth["qualification"]
@@ -204,6 +249,9 @@ def grade(payload:dict[str,Any],ground_truth:dict[str,Any],public_state:dict[str
             if active or sequence!=1:return _failure("cable challenge start is malformed")
             active=True;continue
         if not active:return _failure("cable interaction occurred before fresh standby cleared")
+        expected_surface=_input_surface(interaction,kind,event.get("source")) if interaction else None
+        if expected_surface is not None and event.get("input_surface")!=expected_surface:
+            return _failure(f"cable event {sequence} used the wrong input surface")
         if kind=="orbit":
             axis=event.get("axis");delta=event.get("delta_deg")
             if pending or axis not in {"yaw","pitch"} or delta not in {-15,-10,10,15}:return _failure(f"orbit event {sequence} is malformed")

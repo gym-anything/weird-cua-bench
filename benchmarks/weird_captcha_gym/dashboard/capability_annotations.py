@@ -775,7 +775,7 @@ ANNOTATIONS: dict[str, dict[str, Any]] = {
     "wizard_critter_capture": {
         "public_name": "Wizard Interception Observatory",
         "real_time": "yes",
-        "interaction": "Observe and remember the marked familiar, place one lure, hold and release the freeze key, track the target, and launch a traveling net at a predicted interception point.",
+        "interaction": "Use the marked familiar reference plate, place one lure, hold and release the freeze key, track the target, and launch a traveling net at a predicted interception point.",
         "difficulty": "Creature count, visual similarity, preview duration, target motion, occluder geometry, portal crossings, lure placement, freeze budget, projectile flight time, net count, and time limit.",
         "visual": "2D",
         "temporal": True,

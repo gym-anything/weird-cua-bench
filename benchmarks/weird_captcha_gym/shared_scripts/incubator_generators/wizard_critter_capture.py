@@ -134,28 +134,39 @@ def _snapshot(critters: list[dict[str, Any]]) -> list[dict[str, Any]]:
     ]
 
 
-def _baseline_states(critters: list[dict[str, Any]], lure: tuple[int, int], ticks: int = 130) -> list[list[dict[str, Any]]]:
+def _baseline_states(
+    critters: list[dict[str, Any]],
+    lure: tuple[int, int],
+    *,
+    freeze_ticks: int = SOLVER_FREEZE_TICKS,
+    ticks: int = 130,
+) -> list[list[dict[str, Any]]]:
     state = copy.deepcopy(critters)
     states = [state]
     for tick in range(1, ticks + 1):
-        frozen = tick <= SOLVER_FREEZE_TICKS
+        frozen = tick <= freeze_ticks
         state = [_step_critter(item, lure, frozen) for item in state]
         states.append(state)
     return states
 
 
-def _projectile_point(aim: tuple[int, int], age: int) -> tuple[int, int]:
+def _projectile_point(aim: tuple[int, int], age: int, flight_ticks: int = NET_FLIGHT_TICKS) -> tuple[int, int]:
     origin_x, origin_y = PROJECTILE_ORIGIN
     return (
-        origin_x + _trunc_div((aim[0] - origin_x) * age, NET_FLIGHT_TICKS),
-        origin_y + _trunc_div((aim[1] - origin_y) * age, NET_FLIGHT_TICKS),
+        origin_x + _trunc_div((aim[0] - origin_x) * age, flight_ticks),
+        origin_y + _trunc_div((aim[1] - origin_y) * age, flight_ticks),
     )
 
 
-def _first_projectile_hit(states: list[list[dict[str, Any]]], shot_tick: int, aim: tuple[int, int]) -> tuple[str | None, int | None]:
+def _first_projectile_hit(
+    states: list[list[dict[str, Any]]],
+    shot_tick: int,
+    aim: tuple[int, int],
+    flight_ticks: int = NET_FLIGHT_TICKS,
+) -> tuple[str | None, int | None]:
     radius_squared = COLLISION_RADIUS_X10 * COLLISION_RADIUS_X10
-    for age in range(1, NET_FLIGHT_TICKS + 1):
-        projectile_x, projectile_y = _projectile_point(aim, age)
+    for age in range(1, flight_ticks + 1):
+        projectile_x, projectile_y = _projectile_point(aim, age, flight_ticks)
         for critter in states[shot_tick + age]:
             dx = projectile_x - int(critter["x10"])
             dy = projectile_y - int(critter["y10"])
@@ -165,26 +176,35 @@ def _first_projectile_hit(states: list[list[dict[str, Any]]], shot_tick: int, ai
 
 
 def _intercept_plans(
-    critters: list[dict[str, Any]], target_id: str, lure: tuple[int, int]
+    critters: list[dict[str, Any]],
+    target_id: str,
+    lure: tuple[int, int],
+    *,
+    freeze_ticks: int = SOLVER_FREEZE_TICKS,
+    portal_transitions: int = 1,
+    occluded_ticks: int = 3,
+    flight_ticks: int = NET_FLIGHT_TICKS,
+    time_limit_ticks: int = TIME_LIMIT_TICKS,
 ) -> tuple[list[dict[str, Any]], list[dict[str, Any]]]:
-    states = _baseline_states(critters, lure)
+    states = _baseline_states(critters, lure, freeze_ticks=freeze_ticks)
     target_plans: list[dict[str, Any]] = []
     decoy_plans: list[dict[str, Any]] = []
-    for shot_tick in range(SOLVER_FREEZE_TICKS + 4, 86):
-        future = {str(item["id"]): item for item in states[shot_tick + NET_FLIGHT_TICKS]}
+    maximum_shot_tick = min(85, time_limit_ticks - flight_ticks)
+    for shot_tick in range(freeze_ticks + 4, maximum_shot_tick + 1):
+        future = {str(item["id"]): item for item in states[shot_tick + flight_ticks]}
         target = future[target_id]
         aim = (round(int(target["x10"]) / 10) * 10, round(int(target["y10"]) / 10) * 10)
-        hit_id, hit_tick = _first_projectile_hit(states, shot_tick, aim)
+        hit_id, hit_tick = _first_projectile_hit(states, shot_tick, aim, flight_ticks)
         target_now = next(item for item in states[shot_tick] if str(item["id"]) == target_id)
         current_aim = (round(int(target_now["x10"]) / 10) * 10, round(int(target_now["y10"]) / 10) * 10)
-        current_hit_id, _current_hit_tick = _first_projectile_hit(states, shot_tick, current_aim)
+        current_hit_id, _current_hit_tick = _first_projectile_hit(states, shot_tick, current_aim, flight_ticks)
         target_at_hit = next(item for item in states[int(hit_tick or shot_tick)] if item["id"] == target_id)
         if (
             hit_id == target_id
             and current_hit_id != target_id
             and hit_tick is not None
-            and int(target_at_hit.get("portal_count", 0)) >= 1
-            and int(target_at_hit.get("occluded_ticks", 0)) >= 3
+            and int(target_at_hit.get("portal_count", 0)) >= portal_transitions
+            and int(target_at_hit.get("occluded_ticks", 0)) >= occluded_ticks
         ):
             target_plans.append(
                 {
@@ -196,7 +216,7 @@ def _intercept_plans(
         for decoy_id in (str(item["id"]) for item in critters if str(item["id"]) != target_id):
             decoy = future[decoy_id]
             decoy_aim = (round(int(decoy["x10"]) / 10) * 10, round(int(decoy["y10"]) / 10) * 10)
-            decoy_hit_id, decoy_hit_tick = _first_projectile_hit(states, shot_tick, decoy_aim)
+            decoy_hit_id, decoy_hit_tick = _first_projectile_hit(states, shot_tick, decoy_aim, flight_ticks)
             if decoy_hit_id == decoy_id and decoy_hit_tick is not None:
                 decoy_plans.append(
                     {
@@ -243,22 +263,69 @@ def _signature(appearance: dict[str, Any]) -> str:
 
 
 def generate(task: dict[str, Any], seed: str) -> tuple[dict[str, Any], dict[str, Any]]:
+    condition = task.get("_control_condition")
+    if condition is not None and not isinstance(condition, dict):
+        raise ValueError("wizard control condition must be an object")
+    parameters = dict((condition or {}).get("difficulty_parameters") or {})
+    try:
+        difficulty = int(condition["difficulty"]) if condition is not None else 4
+    except (KeyError, TypeError, ValueError) as exc:
+        raise ValueError("wizard control condition has no valid difficulty") from exc
+    critter_count = int(parameters.get("critter_count", 5))
+    minimum_freeze_ticks = int(parameters.get("minimum_freeze_ticks", MIN_FREEZE_TICKS))
+    freeze_energy_ticks = int(parameters.get("freeze_energy_ticks", FREEZE_ENERGY_TICKS))
+    target_portal_transitions = int(parameters.get("target_portal_transitions", 1))
+    target_occluded_ticks = int(parameters.get("target_occluded_ticks", 3))
+    net_count = int(parameters.get("net_count", NET_COUNT))
+    time_limit_ticks = int(parameters.get("time_limit_ticks", TIME_LIMIT_TICKS))
+    target_spawn = str(parameters.get("target_spawn", "covered"))
+    target_reference_visibility = str(parameters.get("target_reference_visibility", "persistent"))
+    solver_freeze_ticks = int(parameters.get("solver_freeze_ticks", SOLVER_FREEZE_TICKS))
+    interaction = str((condition or {}).get("interaction") or "full")
+    if not 1 <= critter_count <= 5:
+        raise ValueError("wizard critter_count must be between one and five")
+    if not 0 <= minimum_freeze_ticks <= freeze_energy_ticks:
+        raise ValueError("wizard freeze requirement exceeds its energy budget")
+    if not minimum_freeze_ticks <= solver_freeze_ticks <= freeze_energy_ticks:
+        raise ValueError("wizard solver freeze plan is outside the freeze budget")
+    if target_portal_transitions not in {0, 1} or target_occluded_ticks < 0:
+        raise ValueError("wizard tracking requirements are unsupported")
+    if not 1 <= net_count <= 6 or not 30 <= time_limit_ticks <= 240:
+        raise ValueError("wizard net or time settings are outside supported limits")
+    if target_spawn not in {"covered", "visible"}:
+        raise ValueError("wizard target spawn must be covered or visible")
+    if target_reference_visibility not in {"persistent", "preview_only"}:
+        raise ValueError("wizard target reference visibility is unsupported")
+    if interaction not in {"simplified", "full"}:
+        raise ValueError("wizard interaction must be simplified or full")
+
     rng = random.Random(_seed_int(seed, MECHANIC_ID))
     task_id = str(task.get("id") or "wizard_critter_capture_seed_0001@0.1")
-    challenge_id = hashlib.sha256(f"{seed}|{MECHANIC_ID}|interception-v1".encode("utf-8")).hexdigest()[:14]
+    condition_token = "" if condition is None or difficulty == 4 else f"|difficulty-{difficulty}"
+    challenge_id = hashlib.sha256(f"{seed}|{MECHANIC_ID}|interception-v1{condition_token}".encode("utf-8")).hexdigest()[:14]
     palette = copy.deepcopy(rng.choice(PALETTES))
     family = rng.choice(FAMILY_COLORS)
-    target_index = rng.randrange(5)
+    target_index = rng.randrange(critter_count)
     target_appearance = _appearance(rng, target_index, family)
 
-    # The marked familiar begins behind the eastern archive curtain, emerges,
-    # and crosses a real portal before any generated valid interception window.
-    target_state = {
-        "x10": rng.randint(6980, 7240),
-        "y10": rng.randint(1120, 2020),
-        "vx10": rng.randint(48, 59),
-        "vy10": rng.randint(-14, 16),
-    }
+    # The original L4 familiar begins behind the eastern archive curtain,
+    # emerges, and crosses a real portal before a valid interception window.
+    # The lower profiles can instead begin in open space; the L4 branch keeps
+    # its historical random draws and resulting world unchanged.
+    if target_spawn == "covered":
+        target_state = {
+            "x10": rng.randint(6980, 7240),
+            "y10": rng.randint(1120, 2020),
+            "vx10": rng.randint(48, 59),
+            "vy10": rng.randint(-14, 16),
+        }
+    else:
+        target_state = {
+            "x10": rng.randint(5400, 5900),
+            "y10": rng.randint(560, 1000),
+            "vx10": rng.randint(34, 43),
+            "vy10": rng.randint(8, 22),
+        }
     decoy_states = (
         (rng.randint(480, 1300), rng.randint(620, 1700), rng.randint(38, 55), rng.randint(13, 31)),
         (rng.randint(3320, 4500), rng.randint(620, 1560), rng.randint(-52, -38), rng.randint(12, 32)),
@@ -267,7 +334,7 @@ def generate(task: dict[str, Any], seed: str) -> tuple[dict[str, Any], dict[str,
     )
     critters: list[dict[str, Any]] = []
     decoy_cursor = 0
-    for index in range(5):
+    for index in range(critter_count):
         critter_id = _critter_id(seed, index)
         if index == target_index:
             state = target_state
@@ -301,7 +368,15 @@ def generate(task: dict[str, Any], seed: str) -> tuple[dict[str, Any], dict[str,
     decoy_plans: list[dict[str, Any]] = []
     lure = lure_candidates[0]
     for candidate in lure_candidates:
-        candidate_targets, candidate_decoys = _intercept_plans(critters, target_id, candidate)
+        candidate_targets, candidate_decoys = _intercept_plans(
+            critters,
+            target_id,
+            candidate,
+            freeze_ticks=solver_freeze_ticks,
+            portal_transitions=target_portal_transitions,
+            occluded_ticks=target_occluded_ticks,
+            time_limit_ticks=time_limit_ticks,
+        )
         if candidate_targets:
             lure = candidate
             solver_plans = candidate_targets
@@ -317,12 +392,14 @@ def generate(task: dict[str, Any], seed: str) -> tuple[dict[str, Any], dict[str,
     }
     requirements = {
         "preview_min_ms": 900,
-        "minimum_freeze_ticks": MIN_FREEZE_TICKS,
-        "target_portal_transitions": 1,
-        "target_occluded_ticks": 3,
-        "net_count": NET_COUNT,
-        "freeze_energy_ticks": FREEZE_ENERGY_TICKS,
-        "time_limit_ticks": TIME_LIMIT_TICKS,
+        "minimum_freeze_ticks": minimum_freeze_ticks,
+        "target_portal_transitions": target_portal_transitions,
+        "target_occluded_ticks": target_occluded_ticks,
+        "net_count": net_count,
+        "freeze_energy_ticks": freeze_energy_ticks,
+        "time_limit_ticks": time_limit_ticks,
+        "critter_count": critter_count,
+        "target_reference_visibility": target_reference_visibility,
     }
     arena = {
         "width": ARENA_WIDTH,
@@ -359,9 +436,17 @@ def generate(task: dict[str, Any], seed: str) -> tuple[dict[str, Any], dict[str,
         "target_cue": target_cue,
         "requirements": requirements,
         "rules": [
-            "The marked sigil is shown only during the opening observation window.",
+            (
+                "The marked familiar reference remains visible during the hunt."
+                if target_reference_visibility == "persistent"
+                else "The marked familiar reference shutters after the opening observation window."
+            ),
             "Arm one lure and place it in the arena; its well bends every familiar's velocity.",
-            "Hold F to spend finite freeze energy. Nets travel for twelve clock ticks, so lead the target.",
+            (
+                "Hold F to spend finite freeze energy. Nets travel for twelve clock ticks, so lead the target."
+                if interaction == "full"
+                else "Use SPEND REQUIRED FREEZE to spend finite freeze energy. Nets travel for twelve clock ticks, so lead the target."
+            ),
             "A decoy consumes a net. Capture requires a lure, meaningful freeze, cover tracking, and a real target intersection.",
         ],
     }
@@ -379,12 +464,15 @@ def generate(task: dict[str, Any], seed: str) -> tuple[dict[str, Any], dict[str,
         "requirements": requirements,
         "target_id": target_id,
         "solver_lure": [lure[0] // 10, lure[1] // 10],
-        "solver_freeze_ticks": SOLVER_FREEZE_TICKS,
+        "solver_freeze_ticks": solver_freeze_ticks,
         "solver_plans": solver_plans,
         "decoy_plans": decoy_plans,
         "variant_count": VARIANT_COUNT,
         "variant_count_kind": public_state["generator"]["variant_count_kind"],
     }
+    if condition is not None:
+        public_state["control_condition"] = copy.deepcopy(condition)
+        ground_truth["control_condition"] = copy.deepcopy(condition)
     assert target_cue["signature"] == _signature(next(item for item in critters if item["id"] == target_id)["appearance"])
     assert target_id not in str(public_state.get("target_cue"))
     return public_state, ground_truth

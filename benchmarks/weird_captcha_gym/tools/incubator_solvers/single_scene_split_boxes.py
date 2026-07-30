@@ -49,27 +49,33 @@ def solve(page, state_dir: Path, out_dir: Path, mechanic: str) -> None:
     if mechanic != MECHANIC_ID:
         raise AssertionError(f"unexpected mechanic {mechanic!r}")
     truth = _read_json(state_dir / "ground_truth.json")
+    interaction = str((truth.get("control_condition") or {}).get("interaction") or "full")
     tiles = list(truth["tiles"])
-    slots: list[str | None] = [None] * 9
+    slots: list[str | None] = [None] * len(tiles)
     for tile in tiles:
         slots[int(tile["initial_slot"])] = str(tile["id"])
     if any(tile_id is None for tile_id in slots):
         raise AssertionError("generated mosaic has an empty slot")
     slots = [str(tile_id) for tile_id in slots]
+    columns = int(truth["scene"].get("columns") or 3)
     desired = {
-        int(tile["source"]["row"]) * 3 + int(tile["source"]["column"]): str(tile["id"])
+        int(tile["source"]["row"]) * columns + int(tile["source"]["column"]): str(tile["id"])
         for tile in tiles
     }
     swap_count = 0
-    for destination in range(9):
+    for destination in range(len(slots)):
         tile_id = desired[destination]
         if slots[destination] == tile_id:
             continue
         origin = slots.index(tile_id)
         displaced = slots[destination]
-        page.locator(f'.mosaic-tile[data-tile-id="{tile_id}"]').drag_to(
-            page.locator(f'.mosaic-tile[data-tile-id="{displaced}"]')
-        )
+        if interaction == "simplified":
+            page.locator(f'.mosaic-tile[data-tile-id="{tile_id}"]').click()
+            page.locator(f'[data-swap-slot="{destination}"]').click()
+        else:
+            page.locator(f'.mosaic-tile[data-tile-id="{tile_id}"]').drag_to(
+                page.locator(f'.mosaic-tile[data-tile-id="{displaced}"]')
+            )
         page.wait_for_function(
             "({tileId, slot}) => window.singleSceneSplitBoxesModel.slots[slot] === tileId",
             arg={"tileId": tile_id, "slot": destination},
@@ -127,5 +133,5 @@ def solve(page, state_dir: Path, out_dir: Path, mechanic: str) -> None:
         raise AssertionError(f"temporal operation proof is incomplete: {proof}")
     page.wait_for_timeout(180)
     _screenshot(page, out_dir, mechanic, "coherent")
-    _hold_sync(page, 790)
+    _hold_sync(page, int(requirements["hold_ms"]) + 140)
     page.wait_for_function("() => document.querySelector('.readout')?.textContent === 'PASS'", timeout=8000)

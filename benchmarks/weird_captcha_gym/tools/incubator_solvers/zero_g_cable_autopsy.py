@@ -29,7 +29,12 @@ def _wait_new(state_dir: Path, before: str) -> None:
 
 def fail_once(page,state_dir:Path,out_dir:Path,mechanic:str)->None:
     if mechanic!=MECHANIC_ID:raise AssertionError(mechanic)
-    before=str(_read(state_dir/"ground_truth.json")["challenge_id"]);page.locator("#cable-submit").click();_wait_new(state_dir,before)
+    before=str(_read(state_dir/"ground_truth.json")["challenge_id"])
+    if page.locator(".cable-autopsy").get_attribute("data-interaction") == "full":
+        page.keyboard.press("Enter")
+    else:
+        page.locator("#cable-submit").click()
+    _wait_new(state_dir,before)
     expect(page.locator(".cable-autopsy[data-fresh-failure='true']")).to_be_visible(timeout=8_000);expect(page.locator(".readout")).to_contain_text("FAIL");_shot(page,out_dir,mechanic,"fail-fresh-autopsy")
 
 
@@ -56,27 +61,67 @@ def _canvas_click(page,truth:dict,node_index:int)->None:
     page.mouse.click(box["x"]+px/truth["canvas"]["width"]*box["width"],box["y"]+py/truth["canvas"]["height"]*box["height"])
 
 
-def _move(page,gripper:str,axis:str,direction:int,count:int)->None:
+def _move(page,gripper:str,axis:str,direction:int,count:int,interaction:str)->None:
+    if interaction == "full":
+        page.keyboard.press("Digit1" if gripper == "A" else "Digit2")
+        key = {
+            ("x", -1): "KeyA", ("x", 1): "KeyD", ("y", -1): "KeyS",
+            ("y", 1): "KeyW", ("z", -1): "KeyQ", ("z", 1): "KeyE",
+        }[(axis, direction)]
+        for _ in range(count):
+            page.keyboard.press(key)
+        return
     page.locator(f'[data-gripper-select="{gripper}"]').click()
     for _ in range(count):page.locator(f'[data-gripper-move="{axis}:{direction}"]').click()
 
 
 def solve(page,state_dir:Path,out_dir:Path,mechanic:str)->None:
     if mechanic!=MECHANIC_ID:raise AssertionError(mechanic)
-    expect(page.locator('.cable-autopsy[data-active="true"]')).to_be_visible(timeout=8_000);truth=_read(state_dir/"ground_truth.json")
-    for selector in ('[data-orbit="yaw:15"]','[data-orbit="pitch:10"]'):page.locator(selector).click()
+    root=page.locator('.cable-autopsy[data-active="true"]');expect(root).to_be_visible(timeout=8_000);truth=_read(state_dir/"ground_truth.json")
+    interaction=root.get_attribute("data-interaction") or "simplified"
+    if interaction == "full":
+        canvas=page.locator("#cable-canvas");box=canvas.bounding_box()
+        if not box:raise AssertionError("cable canvas missing")
+        page.mouse.move(box["x"]+box["width"]*.72,box["y"]+box["height"]*.28)
+        page.mouse.down();page.mouse.move(box["x"]+box["width"]*.80,box["y"]+box["height"]*.20);page.mouse.up()
+        page.mouse.move(box["x"]+box["width"]*.80,box["y"]+box["height"]*.20)
+        page.mouse.down();page.mouse.move(box["x"]+box["width"]*.72,box["y"]+box["height"]*.28);page.mouse.up()
+    else:
+        for selector in ('[data-orbit="yaw:15"]','[data-orbit="pitch:10"]'):page.locator(selector).click()
     _shot(page,out_dir,mechanic,"orbited-depth-inspection")
-    for selector in ('[data-orbit="pitch:-10"]','[data-orbit="yaw:-15"]'):page.locator(selector).click()
-    page.locator('[data-gripper-select="A"]').click();_canvas_click(page,truth,0)
-    page.locator('[data-gripper-select="B"]').click();_canvas_click(page,truth,8)
-    expect(page.locator("#gripper-A-status")).to_contain_text("NODE 0");expect(page.locator("#gripper-B-status")).to_contain_text("NODE 8");_shot(page,out_dir,mechanic,"dual-grippers-attached")
+    if interaction == "full":
+        page.keyboard.press("Digit1")
+    else:
+        for selector in ('[data-orbit="pitch:-10"]','[data-orbit="yaw:-15"]'):page.locator(selector).click()
+        page.locator('[data-gripper-select="A"]').click()
+    _canvas_click(page,truth,0)
+    if interaction == "full":
+        page.keyboard.press("KeyX")
+        expect(page.locator("#gripper-A-status")).to_have_text("FREE")
+        page.keyboard.press("Digit1")
+        _canvas_click(page,truth,0)
+        page.keyboard.press("Backspace")
+        expect(page.locator("#gripper-A-status")).to_have_text("FREE")
+        expect(page.locator("#gripper-B-status")).to_have_text("FREE")
+        _shot(page,out_dir,mechanic,"direct-recovery-bindings")
+        page.keyboard.press("Digit1")
+        _canvas_click(page,truth,0)
+    if interaction == "full":page.keyboard.press("Digit2")
+    else:page.locator('[data-gripper-select="B"]').click()
+    _canvas_click(page,truth,len(truth["nodes"])-1)
+    expect(page.locator("#gripper-A-status")).to_contain_text("NODE 0");expect(page.locator("#gripper-B-status")).to_contain_text(f"NODE {len(truth['nodes']) - 1}");_shot(page,out_dir,mechanic,"dual-grippers-attached")
     up=int(truth["solution"]["up_moves"])
-    for _ in range(up):_move(page,"A","y",1,1);_move(page,"B","y",1,1)
+    for _ in range(up):_move(page,"A","y",1,1,interaction);_move(page,"B","y",1,1,interaction)
     _shot(page,out_dir,mechanic,"cable-lifted-clear")
     outward=int(truth["solution"]["outward_moves"])
-    for _ in range(outward):_move(page,"A","x",-1,1);_move(page,"B","x",1,1)
-    for _ in range(2):page.locator("#cable-settle").click()
-    root=page.locator(".cable-autopsy");expect(root).to_have_attribute("data-ring-count","2");expect(root).to_have_attribute("data-alarm","false");expect(root).to_have_attribute("data-clear","true")
+    for _ in range(outward):_move(page,"A","x",-1,1,interaction);_move(page,"B","x",1,1,interaction)
+    for _ in range(2):
+        if interaction == "full":page.keyboard.press("Space")
+        else:page.locator("#cable-settle").click()
+    root=page.locator(".cable-autopsy");expect(root).to_have_attribute("data-ring-count",str(len(truth["rings"])));expect(root).to_have_attribute("data-alarm","false");expect(root).to_have_attribute("data-clear","true")
     state=page.evaluate("() => ({rings:[...document.querySelectorAll('[data-ring-ledger]')].map(x=>x.dataset.passed), alarm:document.getElementById('alarm-ledger').dataset.alarm, clear:document.querySelector('.cable-autopsy').dataset.clear})")
-    if state!={"rings":["true","true"],"alarm":"false","clear":"true"}:raise AssertionError(f"autopsy not clear: {state}")
-    _shot(page,out_dir,mechanic,"solved-topology-clean");page.locator("#cable-submit").click();expect(page.locator(".readout")).to_have_text("PASS",timeout=8_000)
+    if state!={"rings":["true"]*len(truth["rings"]),"alarm":"false","clear":"true"}:raise AssertionError(f"autopsy not clear: {state}")
+    _shot(page,out_dir,mechanic,"solved-topology-clean")
+    if interaction == "full":page.keyboard.press("Enter")
+    else:page.locator("#cable-submit").click()
+    expect(page.locator(".readout")).to_have_text("PASS",timeout=8_000)

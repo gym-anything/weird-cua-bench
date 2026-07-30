@@ -34,6 +34,14 @@
     return model.state.lines.find((line) => line.id === model.selectedLineId) || null;
   }
 
+  function interactionMode() {
+    return model.state.control_condition?.interaction || "full";
+  }
+
+  function isControlled() {
+    return Boolean(model.state.control_condition);
+  }
+
   function targetPhase(line, elapsedMs) {
     const drift = Number(line.drift_milli_steps_per_second) * Number(elapsedMs) / 1_000_000;
     return wrapPhase(-Number(line.phase_offset_steps) - drift);
@@ -176,14 +184,23 @@
     updateInterface();
   }
 
-  function tune(control, value) {
+  function tune(control, value, inputSource = "tuning_slider") {
     if (!model || model.submitting || model.terminal) return;
     clearFreshFailure();
-    const parsed = Number(value);
+    let parsed = Number(value);
+    if (control === "phase") parsed = wrapPhase(parsed);
+    else if (control === "skew") {
+      parsed = Math.max(
+        Number(model.state.qualification.skew_min),
+        Math.min(Number(model.state.qualification.skew_max), parsed),
+      );
+    }
     if (control === "phase" && parsed !== model.phase) model.phase = parsed;
     else if (control === "skew" && parsed !== model.skew) model.skew = parsed;
     else return;
-    record("tune", {control, value: parsed});
+    const details = {control, value: parsed};
+    if (isControlled()) details.input_source = inputSource;
+    record("tune", details);
     model.helpers.setReadout("TUNING LIVE OVERLAY", "idle");
     updateInterface();
   }
@@ -273,6 +290,7 @@
       successful_trial_start_seq: model.successfulTrialStartSeq,
       trial_count: model.trialCount,
     };
+    if (isControlled()) payload.interaction_mode = interactionMode();
     try {
       const response = await fetch("/result", {method: "POST", headers: {"content-type": "application/json"}, body: JSON.stringify(payload)});
       const outcome = await response.json();
@@ -307,8 +325,19 @@
       canvas: null, context: null, raf: 0,
     };
     window.wrongNumberPhaseLockModel = model;
+    const interaction = interactionMode();
+    const tuningSurface = interaction === "simplified"
+      ? `<div class="wrong-proxy-controls">
+          <label><span>PHASE</span><div><button type="button" data-tune-control="phase" data-tune-delta="-1">−</button><b id="wrong-phase-value">00</b><button type="button" data-tune-control="phase" data-tune-delta="1">+</button></div></label>
+          <label><span>SHAPE</span><div><button type="button" data-tune-control="skew" data-tune-delta="-1">−</button><b id="wrong-skew-value">0</b><button type="button" data-tune-control="skew" data-tune-delta="1">+</button></div></label>
+        </div>`
+      : `<label><span>PHASE</span><input id="wrong-phase" type="range" min="0" max="${Number(state.qualification.phase_steps) - 1}" step="1" value="0"><b id="wrong-phase-value">00</b></label>
+        <label><span>SHAPE</span><input id="wrong-skew" type="range" min="${Number(state.qualification.skew_min)}" max="${Number(state.qualification.skew_max)}" step="1" value="0"><b id="wrong-skew-value">0</b></label>`;
+    const tuningInstruction = interaction === "simplified"
+      ? "Select a jack. Use the labelled step controls to align amber to cyan, then keep correcting phase drift through the live lock test."
+      : "Select a jack. Directly adjust the two tuning sliders to align amber to cyan, then keep correcting phase drift through the live lock test.";
     helpers.app.innerHTML = `
-      <section class="wrong-number-captcha" data-challenge-id="${clean(state.challenge_id)}" ${options.freshFailure ? 'data-fresh-failure="true"' : ""}>
+      <section class="wrong-number-captcha" data-challenge-id="${clean(state.challenge_id)}" data-interaction="${clean(interaction)}" style="--wrong-line-min-height: ${state.lines.length >= 8 ? "42px" : "50px"}" ${options.freshFailure ? 'data-fresh-failure="true"' : ""}>
         ${options.freshFailure ? '<div class="wrong-fresh-stamp"><b>FAIL</b><span>FRESH CARRIERS PATCHED</span></div>' : ""}
         <header class="wrong-number-head">
           <div><span>ANALOG SWITCHBOARD / NIGHT DESK</span><h1>${clean(state.prompt)}</h1></div>
@@ -318,13 +347,12 @@
           <aside class="wrong-line-rack">
             <header><span>INCOMING JACKS</span><b>${state.lines.length} LIVE</b></header>
             <div class="wrong-lines">${state.lines.map((line) => `<button type="button" class="wrong-line tone-${clean(line.tone)}" data-line-id="${clean(line.id)}" data-selected="false"><i></i><span>PATCH ${String(Number(line.slot) + 1).padStart(2, "0")}</span><b><em></em><em></em><em></em><em></em></b></button>`).join("")}</div>
-            <p>Select a jack. Tune amber onto cyan, then keep correcting phase drift for the entire live test.</p>
+            <p>${tuningInstruction}</p>
           </aside>
           <section class="wrong-scope-bay">
             <div class="wrong-scope-shell"><canvas id="wrong-scope" width="780" height="290" aria-label="live reference and caller oscilloscope"></canvas><div class="wrong-scope-glass"></div></div>
             <div class="wrong-tuning-desk">
-              <label><span>PHASE</span><input id="wrong-phase" type="range" min="0" max="${Number(state.qualification.phase_steps) - 1}" step="1" value="0"><b id="wrong-phase-value">00</b></label>
-              <label><span>SHAPE</span><input id="wrong-skew" type="range" min="${Number(state.qualification.skew_min)}" max="${Number(state.qualification.skew_max)}" step="1" value="0"><b id="wrong-skew-value">0</b></label>
+              ${tuningSurface}
               <div class="wrong-lock-panel"><span class="wrong-lock-state" data-locked="false">SELECT A JACK</span><em class="wrong-lock-meter"><i></i></em><small>CYAN = REFERENCE · AMBER = PATCHED LINE</small></div>
               <button type="button" id="wrong-test" disabled>${clean(state.submit_label)}</button>
             </div>
@@ -337,8 +365,14 @@
     model.canvas = document.getElementById("wrong-scope");
     model.context = model.canvas.getContext("2d");
     document.querySelectorAll(".wrong-line").forEach((button) => button.addEventListener("click", () => selectLine(button.dataset.lineId)));
-    document.getElementById("wrong-phase")?.addEventListener("input", (event) => tune("phase", event.target.value));
-    document.getElementById("wrong-skew")?.addEventListener("input", (event) => tune("skew", event.target.value));
+    document.getElementById("wrong-phase")?.addEventListener("input", (event) => tune("phase", event.target.value, "tuning_slider"));
+    document.getElementById("wrong-skew")?.addEventListener("input", (event) => tune("skew", event.target.value, "tuning_slider"));
+    document.querySelectorAll("[data-tune-control]").forEach((button) => button.addEventListener("click", () => {
+      const control = String(button.dataset.tuneControl || "");
+      const delta = Number(button.dataset.tuneDelta || 0);
+      const current = control === "phase" ? model.phase : model.skew;
+      tune(control, current + delta, "step_proxy");
+    }));
     document.getElementById("wrong-test")?.addEventListener("click", startTrial);
     document.getElementById("wrong-abandon")?.addEventListener("click", () => submit(false));
     helpers.installCheatPanel();
