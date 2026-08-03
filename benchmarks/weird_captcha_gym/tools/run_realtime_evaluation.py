@@ -68,7 +68,13 @@ def build_parser() -> argparse.ArgumentParser:
         choices=("core", "baseline_setup"),
         default="core",
     )
-    parser.add_argument("--play-time-seconds", type=int)
+    play_time = parser.add_mutually_exclusive_group()
+    play_time.add_argument("--play-time-seconds", type=int)
+    play_time.add_argument(
+        "--no-play-time-limit",
+        action="store_true",
+        help="Disable the task-clock cutoff. Step and model-request limits still apply.",
+    )
     parser.add_argument("--observation-window-ms", type=int)
     parser.add_argument("--frames-per-observation", type=int)
     parser.add_argument("--verbose", action="store_true")
@@ -83,7 +89,11 @@ def _settings(args: argparse.Namespace) -> tuple[str, RealTimeSettings]:
     mechanic_id = mechanic_id_from_env_dir(args.env_dir)
     base = load_real_time_settings(mechanic_id)
     return mechanic_id, RealTimeSettings.from_dict({
-        "play_time_seconds": args.play_time_seconds or base.play_time_seconds,
+        "play_time_seconds": (
+            base.play_time_seconds
+            if args.play_time_seconds is None
+            else args.play_time_seconds
+        ),
         "observation_window_ms": (
             base.observation_window_ms
             if args.observation_window_ms is None
@@ -95,6 +105,17 @@ def _settings(args: argparse.Namespace) -> tuple[str, RealTimeSettings]:
             else args.frames_per_observation
         ),
     })
+
+
+def _play_time_limit_seconds(
+    args: argparse.Namespace,
+    settings: RealTimeSettings,
+) -> int | None:
+    return None if args.no_play_time_limit else settings.play_time_seconds
+
+
+def _play_time_exhausted(task_time_ms: float, limit_seconds: int | None) -> bool:
+    return limit_seconds is not None and task_time_ms >= limit_seconds * 1000
 
 
 def _time_command(env, command: str) -> dict:
@@ -283,6 +304,7 @@ def _make_env(args: argparse.Namespace):
 
 def run(args: argparse.Namespace) -> int:
     mechanic_id, settings = _settings(args)
+    play_time_limit_seconds = _play_time_limit_seconds(args, settings)
     agent_args = json.loads(args.agent_args)
     agent_args.setdefault("request_timeout_seconds", args.request_timeout_seconds)
     agent_args.setdefault("request_attempts", args.request_attempts)
@@ -334,6 +356,8 @@ def run(args: argparse.Namespace) -> int:
             "mechanic_id": mechanic_id,
             "time_mode": args.time_mode,
             "settings": settings.__dict__,
+            "task_play_time_limit_seconds": play_time_limit_seconds,
+            "task_play_time_limit_enabled": play_time_limit_seconds is not None,
             "clock": ready,
             "request_timeout_seconds": args.request_timeout_seconds,
             "request_attempts": args.request_attempts,
@@ -368,7 +392,7 @@ def run(args: argparse.Namespace) -> int:
 
         while turn < max_steps and model_turn < max_steps and not done:
             before_model_ms = _task_time_ms(env)
-            if before_model_ms >= settings.play_time_seconds * 1000:
+            if _play_time_exhausted(before_model_ms, play_time_limit_seconds):
                 reason = "play_time_limit"
                 break
 
@@ -387,7 +411,10 @@ def run(args: argparse.Namespace) -> int:
             action_outputs = []
             action_records = []
 
-            if args.time_mode == "live" and after_model_ms >= settings.play_time_seconds * 1000:
+            if args.time_mode == "live" and _play_time_exhausted(
+                after_model_ms,
+                play_time_limit_seconds,
+            ):
                 reason = "play_time_limit"
                 _write_record(timing_path, {
                     "event": "turn",
@@ -449,8 +476,12 @@ def run(args: argparse.Namespace) -> int:
                     "following_observation_screen": obs["screen"]["path"],
                 })
                 task_time_ms = float(obs["time"]["task_time_ms"] or 0)
-                if done or turn >= max_steps or task_time_ms >= settings.play_time_seconds * 1000:
-                    if task_time_ms >= settings.play_time_seconds * 1000:
+                if (
+                    done
+                    or turn >= max_steps
+                    or _play_time_exhausted(task_time_ms, play_time_limit_seconds)
+                ):
+                    if _play_time_exhausted(task_time_ms, play_time_limit_seconds):
                         reason = "play_time_limit"
                     break
 
