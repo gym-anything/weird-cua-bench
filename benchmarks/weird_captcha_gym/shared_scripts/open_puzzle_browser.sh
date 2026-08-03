@@ -73,6 +73,29 @@ if [ -n "$xauth" ]; then
 fi
 
 if [[ "$browser_cmd" == *firefox ]]; then
+  firefox_profile_root="$home_dir/snap/firefox/common/.mozilla/firefox"
+  if [ ! -f "$firefox_profile_root/profiles.ini" ]; then
+    firefox_profile_root="$home_dir/.mozilla/firefox"
+  fi
+  if [ -f "$firefox_profile_root/profiles.ini" ]; then
+    firefox_profile_path="$(awk -F= '
+      /^Path=/ { path=$2 }
+      /^Default=1$/ && path != "" { print path; exit }
+      END { if (path != "") print path }
+    ' "$firefox_profile_root/profiles.ini" | head -n 1)"
+    if [ -n "$firefox_profile_path" ]; then
+      if [[ "$firefox_profile_path" != /* ]]; then
+        firefox_profile_path="$firefox_profile_root/$firefox_profile_path"
+      fi
+      mkdir -p "$firefox_profile_path"
+      firefox_user_js="$firefox_profile_path/user.js"
+      firefox_notice_pref='user_pref("datareporting.policy.dataSubmissionPolicyBypassNotification", true);'
+      if ! grep -Fqx "$firefox_notice_pref" "$firefox_user_js" 2>/dev/null; then
+        printf '%s\n' "$firefox_notice_pref" >> "$firefox_user_js"
+      fi
+      chown "$launch_as_user:$launch_as_user" "$firefox_profile_path" "$firefox_user_js" 2>/dev/null || true
+    fi
+  fi
   launch="$env_prefix $browser_cmd --kiosk '$URL'"
 else
   launch="$env_prefix $browser_cmd --kiosk '$URL' --force-device-scale-factor=1 --no-first-run --no-default-browser-check --disable-background-networking --disable-sync --disable-infobars --disable-session-crashed-bubble --hide-crash-restore-bubble --no-sandbox --disable-dev-shm-usage --user-data-dir='$profile_dir'"
