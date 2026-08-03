@@ -57,6 +57,32 @@ def test_evaluator_parser_accepts_gym_remote_and_fast_io_options() -> None:
     assert args.remote_worker_reset_policy == "baseline_setup"
 
 
+def test_evaluator_sends_the_controlled_task_instruction_to_the_agent() -> None:
+    env = SimpleNamespace(
+        task_spec=SimpleNamespace(
+            natural_language="Solve the L1 task.",
+            description="Generic environment description.",
+        )
+    )
+    args = SimpleNamespace(env_dir="unused", task="unused")
+    description = evaluator._task_description(env, args)
+    assert description.startswith("Solve the L1 task.\n\n")
+    assert evaluator.VISIBLE_UI_ONLY_RULE in description
+
+
+def test_evaluator_falls_back_to_task_description() -> None:
+    env = SimpleNamespace(
+        task_spec=SimpleNamespace(
+            natural_language=None,
+            description="Fallback task description.",
+        )
+    )
+    args = SimpleNamespace(env_dir="unused", task="unused")
+    assert evaluator._task_description(env, args).startswith(
+        "Fallback task description.\n\n"
+    )
+
+
 def test_make_env_uses_the_gym_remote_environment_contract(monkeypatch) -> None:
     sentinel = object()
     received = {}

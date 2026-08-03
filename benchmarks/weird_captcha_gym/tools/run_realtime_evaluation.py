@@ -249,10 +249,14 @@ def _call_agent_with_retry(
 
 
 def _task_description(env, args: argparse.Namespace) -> str:
-    description = env.task_spec.description if env.task_spec else ""
-    if not description:
+    task_spec = env.task_spec
+    description = task_spec.natural_language if task_spec else ""
+    if not isinstance(description, str) or not description.strip():
+        description = task_spec.description if task_spec else ""
+    if not isinstance(description, str) or not description.strip():
         task_path = Path(args.env_dir) / "tasks" / args.task / "task.json"
-        description = json.loads(task_path.read_text(encoding="utf-8")).get("description", "")
+        task = json.loads(task_path.read_text(encoding="utf-8"))
+        description = task.get("natural_language") or task.get("description", "")
     return f"{description}\n\n{VISIBLE_UI_ONLY_RULE}"
 
 
