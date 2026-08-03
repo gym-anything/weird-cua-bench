@@ -55,9 +55,9 @@ if [ -n "$xauth" ]; then
 fi
 
 if [[ "$browser_cmd" == *firefox ]]; then
-  launch="$env_prefix $browser_cmd --new-window '$URL'"
+  launch="$env_prefix $browser_cmd --kiosk '$URL'"
 else
-  launch="$env_prefix $browser_cmd --app='$URL' --window-size=1280,720 --force-device-scale-factor=1 --no-first-run --no-default-browser-check --disable-background-networking --disable-sync --disable-infobars --disable-session-crashed-bubble --hide-crash-restore-bubble --no-sandbox --disable-dev-shm-usage --user-data-dir='$profile_dir'"
+  launch="$env_prefix $browser_cmd --kiosk '$URL' --force-device-scale-factor=1 --no-first-run --no-default-browser-check --disable-background-networking --disable-sync --disable-infobars --disable-session-crashed-bubble --hide-crash-restore-bubble --no-sandbox --disable-dev-shm-usage --user-data-dir='$profile_dir'"
 fi
 
 echo "Launching puzzle browser as $launch_as_user via $browser_cmd -> $URL" >> /tmp/weird_captcha_browser.log
@@ -68,11 +68,10 @@ else
 fi
 
 for _ in $(seq 1 60); do
-  if DISPLAY=:1 wmctrl -l 2>/dev/null | grep -Eiq 'firefox|mozilla|chrom|weird captcha|machine eligibility'; then
-    DISPLAY=:1 wmctrl -r "Weird CAPTCHA Gym" -b add,maximized_vert,maximized_horz 2>/dev/null || true
-    DISPLAY=:1 wmctrl -r "Machine Eligibility" -b add,maximized_vert,maximized_horz 2>/dev/null || true
-    DISPLAY=:1 wmctrl -a "Weird CAPTCHA Gym" 2>/dev/null || true
-    DISPLAY=:1 wmctrl -a "Machine Eligibility" 2>/dev/null || true
+  window_id="$(DISPLAY=:1 wmctrl -lx 2>/dev/null | awk 'tolower($0) ~ /firefox|mozilla|chrom|weird captcha|machine eligibility/ {print $1; exit}' || true)"
+  if [ -n "$window_id" ]; then
+    DISPLAY=:1 wmctrl -i -r "$window_id" -b add,fullscreen,maximized_vert,maximized_horz 2>/dev/null || true
+    DISPLAY=:1 wmctrl -i -a "$window_id" 2>/dev/null || true
     echo "Puzzle browser window detected." >> /tmp/weird_captcha_browser.log
     exit 0
   fi

@@ -543,6 +543,23 @@ def test_frame_selection_uses_nearest_capture_time(tmp_path: Path) -> None:
     assert CAPTURE.select_frames(paths, [1010, 1190]) == [paths[0], paths[2]]
 
 
+def test_authoritative_capture_preserves_the_native_desktop_resolution() -> None:
+    source = (BENCHMARK / "shared_scripts" / "capture_observation_window.py").read_text(
+        encoding="utf-8"
+    )
+    assert '"-vf", "scale=' not in source
+    assert '"resolution": [width, height]' in source
+
+
+def test_puzzle_browser_launches_full_screen() -> None:
+    source = (BENCHMARK / "shared_scripts" / "open_puzzle_browser.sh").read_text(
+        encoding="utf-8"
+    )
+    assert "--kiosk" in source
+    assert "--window-size=" not in source
+    assert "fullscreen,maximized_vert,maximized_horz" in source
+
+
 def test_time_control_server_sequences_commands_and_records_status(tmp_path: Path) -> None:
     app_dir = tmp_path / "app"
     state_dir = tmp_path / "state"

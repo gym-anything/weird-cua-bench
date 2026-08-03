@@ -63,7 +63,7 @@ weird-cua-evaluate \
   --time-mode live
 ```
 
-Public browser play includes an observation inspector. Choose live or paused mode inside the puzzle tab, then capture one configured observation window to inspect the same frame count and 1280 by 720 image sequence used by evaluation. Paused browser play stops the task between observations and briefly runs it while a mouse or keyboard action is applied. The browser will ask you to share the current tab before its first pixel capture; the inspector is hidden from the captured frames.
+Public browser play includes an observation inspector. Choose live or paused mode inside the puzzle tab, then capture one configured observation window to inspect the same frame count used by evaluation. Authoritative evaluation preserves the environment's native desktop resolution so screenshot coordinates and action coordinates share one space. Paused browser play stops the task between observations and briefly runs it while a mouse or keyboard action is applied. The browser will ask you to share the current tab before its first pixel capture; the inspector is hidden from the captured frames.
 
 This browser control is for inspection. Authoritative evaluation still uses `--time-mode` and records its frames and timing manifest in the episode artifacts.
 

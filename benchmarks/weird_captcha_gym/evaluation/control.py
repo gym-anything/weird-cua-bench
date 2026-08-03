@@ -113,11 +113,24 @@ def capture_observation_window(
     manifest_path = host_dir / "guest-capture-manifest.json"
     env.runner.copy_from(f"{guest_dir}/manifest.json", str(manifest_path))
     time_status = manifest["time_status"]
+    resolution = manifest.get("resolution")
+    if (
+        not isinstance(resolution, list)
+        or len(resolution) != 2
+        or not all(isinstance(value, int) and value > 0 for value in resolution)
+    ):
+        raise RuntimeError(f"capture returned an invalid resolution: {resolution!r}")
+    configured_resolution = list(env.env_spec.observation[0].resolution)
+    if resolution != configured_resolution:
+        raise RuntimeError(
+            "capture resolution does not match the environment: "
+            f"captured {resolution}, configured {configured_resolution}"
+        )
     return {
         "screen": {
             "path": frames[-1]["path"],
             "format": "png",
-            "resolution": [1280, 720],
+            "resolution": resolution,
         },
         "frames": frames,
         "capture_manifest": str(manifest_path),
