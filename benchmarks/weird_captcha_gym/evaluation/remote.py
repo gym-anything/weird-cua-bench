@@ -6,6 +6,9 @@ from typing import Any
 from gym_anything.remote import RemoteGymEnv
 
 
+WEIRD_CUA_WORKER_CAPABILITY = "weird_cua"
+
+
 class RemoteEvaluationControl:
     def __init__(self, env: "WeirdRemoteGymEnv"):
         self.env = env
@@ -76,6 +79,13 @@ class RemoteEvaluationControl:
 
 class WeirdRemoteGymEnv(RemoteGymEnv):
     """Gym Anything's remote environment with Weird CUA protocol controls."""
+
+    def _infer_runner_hint(self) -> str:
+        # Gym's master already filters workers by their advertised runner
+        # capabilities. The Weird worker advertises this additional key so a
+        # mixed fleet cannot route this client to an ordinary Gym worker that
+        # lacks the benchmark's fixed clock and frame routes.
+        return WEIRD_CUA_WORKER_CAPABILITY
 
     @property
     def local_artifacts_dir(self) -> Path:
