@@ -658,8 +658,19 @@ def test_puzzle_browser_suppresses_the_firefox_data_notice(tmp_path: Path) -> No
         path.write_text(source, encoding="utf-8")
         path.chmod(0o755)
 
-    executable("firefox", "#!/usr/bin/env bash\nexit 0\n")
+    executable(
+        "firefox",
+        "#!/usr/bin/env bash\necho launch >> \"$FAKE_BROWSER_MARKER\"\nexit 0\n",
+    )
     executable("xhost", "#!/usr/bin/env bash\nexit 0\n")
+    executable(
+        "pgrep",
+        "#!/usr/bin/env bash\nif [ ! -f \"$FAKE_FIREFOX_STOPPED\" ]; then echo 123; exit 0; fi\nexit 1\n",
+    )
+    executable(
+        "pkill",
+        "#!/usr/bin/env bash\ntouch \"$FAKE_FIREFOX_STOPPED\"\nexit 0\n",
+    )
     executable(
         "xdpyinfo",
         "#!/usr/bin/env bash\necho '  dimensions:    1920x1080 pixels'\n",
@@ -667,7 +678,7 @@ def test_puzzle_browser_suppresses_the_firefox_data_notice(tmp_path: Path) -> No
     executable(
         "wmctrl",
         """#!/usr/bin/env bash
-if [ "$1" = "-lx" ]; then
+if [ "$1" = "-lx" ] && [ -f "$FAKE_BROWSER_MARKER" ]; then
   echo '0x001 0 firefox.Firefox host Weird CAPTCHA Gym'
 elif [ "$1" = "-lG" ]; then
   echo '0x001 0 0 0 1920 1080 host Weird CAPTCHA Gym'
@@ -693,6 +704,10 @@ exit 0
             "WEIRD_CAPTCHA_BROWSER_USER": "root",
             "WEIRD_CAPTCHA_BROWSER_HOME": str(home),
             "WEIRD_CAPTCHA_STATE_DIR": str(tmp_path / "state"),
+            "FAKE_BROWSER_MARKER": str(tmp_path / "browser-launched"),
+            "FAKE_FIREFOX_STOPPED": str(tmp_path / "firefox-stopped"),
+            "WEIRD_CAPTCHA_WINDOW_ATTEMPTS": "100",
+            "WEIRD_CAPTCHA_WINDOW_POLL_SECONDS": "0.02",
             "WEIRD_CAPTCHA_GEOMETRY_ATTEMPTS": "1",
             "WEIRD_CAPTCHA_GEOMETRY_POLL_SECONDS": "0",
         },
@@ -707,6 +722,10 @@ exit 0
             "WEIRD_CAPTCHA_BROWSER_USER": "root",
             "WEIRD_CAPTCHA_BROWSER_HOME": str(home),
             "WEIRD_CAPTCHA_STATE_DIR": str(tmp_path / "state"),
+            "FAKE_BROWSER_MARKER": str(tmp_path / "browser-launched"),
+            "FAKE_FIREFOX_STOPPED": str(tmp_path / "firefox-stopped"),
+            "WEIRD_CAPTCHA_WINDOW_ATTEMPTS": "100",
+            "WEIRD_CAPTCHA_WINDOW_POLL_SECONDS": "0.02",
             "WEIRD_CAPTCHA_GEOMETRY_ATTEMPTS": "1",
             "WEIRD_CAPTCHA_GEOMETRY_POLL_SECONDS": "0",
         },
@@ -715,6 +734,10 @@ exit 0
 
     assert completed.returncode == 0
     assert repeated.returncode == 0
+    assert (tmp_path / "firefox-stopped").is_file()
+    assert (tmp_path / "browser-launched").read_text(encoding="utf-8").splitlines() == [
+        "launch"
+    ]
     assert (profile / "user.js").read_text(encoding="utf-8") == (
         'user_pref("datareporting.policy.dataSubmissionEnabled", false);\n'
     )

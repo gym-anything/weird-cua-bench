@@ -175,6 +175,21 @@ if [ -n "$existing_window_id" ]; then
   exit $?
 fi
 
+if [[ "$browser_cmd" == *firefox ]] && pgrep -u "$launch_as_user" -x firefox >/dev/null 2>&1; then
+  echo "Stopping the VM's pre-existing Firefox process before kiosk launch." >> /tmp/weird_captcha_browser.log
+  pkill -TERM -u "$launch_as_user" -x firefox 2>/dev/null || true
+  for _ in $(seq 1 50); do
+    if ! pgrep -u "$launch_as_user" -x firefox >/dev/null 2>&1; then
+      break
+    fi
+    sleep 0.1
+  done
+  if pgrep -u "$launch_as_user" -x firefox >/dev/null 2>&1; then
+    echo "Pre-existing Firefox process did not exit before kiosk launch." >> /tmp/weird_captcha_browser.log
+    exit 1
+  fi
+fi
+
 echo "Launching puzzle browser as $launch_as_user via $browser_cmd -> $URL" >> /tmp/weird_captcha_browser.log
 if [ "$launch_as_user" = "root" ]; then
   nohup bash -lc "$launch" >> /tmp/weird_captcha_browser.log 2>&1 &
