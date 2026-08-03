@@ -23,6 +23,8 @@ A static task uses a zero-length window and one frame. A changing task needs a w
 
 The latest captured frame remains `obs["screen"]`. The complete chronological sequence is `obs["frames"]`.
 
+Both values remain ordinary Gym-Anything observations. Local runs store the frames in the Gym-Anything episode directory. Remote runs use the normal Gym-Anything master and worker routing, then download the captured frame window into the remote client's local artifact cache. The Weird CUA Qwen 3.5 adapter subclasses Gym-Anything's current `Qwen35VLAgent` and changes only image ingestion so paths, in-memory FastIO images, remote base64 images, and chronological frame sequences are accepted.
+
 ## Paused action cycle
 
 The shared paused cycle is:

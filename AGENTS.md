@@ -49,6 +49,9 @@ Never simulate a claimed mechanic with presentation hacks. Visible geometry, hit
 ## Repository boundary
 
 - Keep benchmark code under `benchmarks/weird_captcha_gym/`.
+- Treat Weird CUA as an installable benchmark for Gym-Anything. Reuse Gym-Anything's environment lifecycle, runners, action API, verification, artifacts, benchmark registry, and remote master/worker stack.
+- Do not create a Weird CUA version of the `gym-anything benchmark` CLI. The existing `weird-cua-evaluate` entry point is limited to the live-versus-paused observation schedule that Gym-Anything's stepwise evaluator does not provide.
+- Remote protocol support may extend Gym-Anything's worker application with fixed Weird CUA clock and frame routes. It must not replace the master, worker registry, scheduler, transport, or environment API.
 - Do not add CUA-World or any unrelated Gym-Anything environment.
 - Do not vendor Gym-Anything's core source tree; it is an optional external runtime dependency.
 - Do not publish the mined Survey archive. Static exports contain the built catalog and its dashboard media only.

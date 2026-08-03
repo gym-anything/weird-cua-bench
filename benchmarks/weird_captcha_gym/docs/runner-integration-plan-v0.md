@@ -2,7 +2,22 @@
 
 Date: 2026-07-08
 
-This note records how Weird CAPTCHA Gym should integrate with Gym-Anything runners. The goal is to build a benchmark inside the fork, not a separate environment library.
+This note records how Weird CUA Bench integrates with Gym-Anything. Weird CUA is an installable Gym-Anything benchmark package. It does not fork, vendor, or imitate Gym-Anything.
+
+## Ownership boundary
+
+Gym-Anything owns environment loading, runner selection, reset, actions, episode limits, trajectories, verification, artifacts, and remote scheduling. Weird CUA supplies environment and task files plus its live-versus-paused observation schedule.
+
+The `weird-cua-evaluate` entry point exists because the Weird CUA protocol sends a chronological frame window and can stop task time during model inference. It creates local environments with `gym_anything.from_config` and remote environments with `RemoteGymEnv.from_config`. It does not define another runner or action API.
+
+Remote runs use the normal Gym-Anything master. `weird-cua-worker` imports the normal Gym-Anything worker application and adds four fixed environment routes:
+
+- configure the allowed Weird CUA time and seed values before reset;
+- issue one of the supported clock commands;
+- capture one configured frame window;
+- collect a fixed list of benchmark evidence files.
+
+The Gym-Anything master's existing environment proxy forwards these routes to the worker that owns the environment. The Weird client subclasses `RemoteGymEnv` only to call those fixed routes. It inherits environment creation, reset, actions, observation capture, verification, retries, and cleanup. No second master, worker registry, scheduler, or remote transport is introduced.
 
 ## Runner Facts From Code Reading
 
@@ -21,6 +36,8 @@ This note records how Weird CAPTCHA Gym should integrate with Gym-Anything runne
 
 - Do not write a custom Weird CAPTCHA runner.
 - Do not write a separate normalized action executor inside the benchmark.
+- Do not create a second benchmark CLI that copies `gym-anything benchmark`.
+- Keep `weird-cua-evaluate` limited to the Weird CUA observation schedule.
 - Do not create per-mechanic action spaces.
 - Do not bypass Gym-Anything artifacts or verifier dispatch.
 - Use Gym-Anything's existing runner action format:
