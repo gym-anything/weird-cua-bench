@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import json
 import os
+import subprocess
 import threading
 import urllib.request
 from http.server import ThreadingHTTPServer
@@ -558,6 +559,62 @@ def test_puzzle_browser_launches_full_screen() -> None:
     assert "--kiosk" in source
     assert "--window-size=" not in source
     assert "fullscreen,maximized_vert,maximized_horz" in source
+    assert "xdpyinfo" in source
+    assert "wmctrl -lG" in source
+    assert "Puzzle browser fullscreen verified" in source
+    assert "Puzzle browser fullscreen verification failed" in source
+
+
+def test_puzzle_browser_requires_the_task_window_and_exact_display_geometry(
+    tmp_path: Path,
+) -> None:
+    fake_bin = tmp_path / "bin"
+    fake_bin.mkdir()
+
+    def executable(name: str, source: str) -> None:
+        path = fake_bin / name
+        path.write_text(source, encoding="utf-8")
+        path.chmod(0o755)
+
+    executable("google-chrome-stable", "#!/usr/bin/env bash\nexit 0\n")
+    executable("xhost", "#!/usr/bin/env bash\nexit 0\n")
+    executable(
+        "xdpyinfo",
+        "#!/usr/bin/env bash\necho '  dimensions:    1920x1080 pixels'\n",
+    )
+    executable(
+        "wmctrl",
+        """#!/usr/bin/env bash
+if [ "$1" = "-lx" ] && [ "${FAKE_WMCTRL_MODE:-success}" = "success" ]; then
+  echo '0x001 0 google-chrome.Google-chrome host Weird CAPTCHA Gym'
+elif [ "$1" = "-lG" ]; then
+  echo '0x001 0 0 0 1920 1080 host Weird CAPTCHA Gym'
+fi
+exit 0
+""",
+    )
+    script = BENCHMARK / "shared_scripts" / "open_puzzle_browser.sh"
+    environment = {
+        **os.environ,
+        "PATH": f"{fake_bin}{os.pathsep}{os.environ['PATH']}",
+        "WEIRD_CAPTCHA_BROWSER_COMMAND": str(fake_bin / "google-chrome-stable"),
+        "WEIRD_CAPTCHA_BROWSER_USER": "root",
+        "WEIRD_CAPTCHA_BROWSER_HOME": str(tmp_path / "home"),
+        "WEIRD_CAPTCHA_WINDOW_ATTEMPTS": "1",
+        "WEIRD_CAPTCHA_WINDOW_POLL_SECONDS": "0",
+        "WEIRD_CAPTCHA_GEOMETRY_ATTEMPTS": "1",
+        "WEIRD_CAPTCHA_GEOMETRY_POLL_SECONDS": "0",
+    }
+
+    accepted = subprocess.run([str(script)], env=environment, check=False)
+    rejected = subprocess.run(
+        [str(script)],
+        env={**environment, "FAKE_WMCTRL_MODE": "no-window"},
+        check=False,
+    )
+
+    assert accepted.returncode == 0
+    assert rejected.returncode != 0
 
 
 def test_time_control_server_sequences_commands_and_records_status(tmp_path: Path) -> None:

@@ -7,7 +7,6 @@ from typing import Any, Optional
 
 from PIL import Image
 from agents.agents.qwen35vl import Qwen35VLAgent
-from agents.shared.llm_clients import smart_resize
 
 
 def image_from_screen(value: Any) -> Image.Image:
@@ -48,23 +47,30 @@ class WeirdQwen35VLAgent(Qwen35VLAgent):
         self.frame_sequences: list[list[str]] = []
         self._current_extra_frames: list[str] = []
 
-    def _process_frame(self, value: Any, *, step: int, index: int) -> tuple[str, str]:
+    def _native_image(self, value: Any) -> Image.Image:
         image = image_from_screen(value)
-        width, height = image.size
-        parent_resize = getattr(self, "_smart_resize", None)
-        if callable(parent_resize):
-            resized_height, resized_width = parent_resize(
-                height=height,
-                width=width,
+        expected = tuple(int(item) for item in self.display_resolution)
+        if image.size != expected:
+            raise ValueError(
+                f"observation image is {image.size[0]}x{image.size[1]}; "
+                f"expected {expected[0]}x{expected[1]}"
             )
-        else:
-            resized_height, resized_width = smart_resize(
-                height=height,
-                width=width,
-                factor=32,
-                max_pixels=16 * 16 * 4 * 1280,
-            )
-        image = image.resize((resized_width, resized_height))
+        return image
+
+    def process_image(self, image_path: str) -> tuple[str, str]:
+        """Send the native observation pixels to Qwen without resampling."""
+        image = self._native_image(image_path)
+        path = Path(self.save_folder_custom) / f"observation_{self.step_idx}.png"
+        image.save(path, format="PNG")
+        encoded = base64.b64encode(path.read_bytes()).decode("utf-8")
+        original_sizes = getattr(self, "original_sizes", None)
+        if isinstance(original_sizes, list):
+            original_sizes.append(image.size)
+        self.processed_size = image.size
+        return encoded, str(path)
+
+    def _process_frame(self, value: Any, *, step: int, index: int) -> tuple[str, str]:
+        image = self._native_image(value)
         path = Path(self.save_folder_custom) / f"observation_{step}_frame_{index:03d}.png"
         image.save(path, format="PNG")
         encoded = base64.b64encode(path.read_bytes()).decode("utf-8")

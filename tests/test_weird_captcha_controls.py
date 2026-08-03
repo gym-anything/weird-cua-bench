@@ -9,6 +9,10 @@ import subprocess
 import types
 from pathlib import Path
 
+from benchmarks.weird_captcha_gym.shared_runtime.verifier_helpers import (
+    verify_rotating_keyboard,
+)
+
 
 ROOT = Path(__file__).resolve().parents[1]
 BENCHMARK = ROOT / "benchmarks" / "weird_captcha_gym"
@@ -1371,12 +1375,16 @@ def test_implemented_interaction_pairs_share_generated_worlds_and_goals() -> Non
             }:
                 first_normalized.pop("prompt")
                 normalized.pop("prompt")
-            if env_name in {"robot_art_critic_env", "wizard_critter_capture_env"}:
+            if env_name in {
+                "robot_art_critic_env",
+                "rotating_keyboard_env",
+                "wizard_critter_capture_env",
+            }:
                 # The world and goal are identical, while the visible task
                 # copy must name the selected direct or proxy input surface.
                 for key in ("prompt", "rules"):
-                    first_normalized.pop(key)
-                    normalized.pop(key)
+                    first_normalized.pop(key, None)
+                    normalized.pop(key, None)
             assert normalized == first_normalized
             first_truth_normalized = without_control_identity(first_truth)
             truth_normalized = without_control_identity(truth)
@@ -2641,6 +2649,25 @@ def test_rotating_keyboard_profiles_match_motion_contracts() -> None:
     controls = controls_for("rotating_keyboard_env")
     for level, (public, truth) in enumerate(generated, start=1):
         parameters = controls["difficulty"][str(level)]["parameters"]
+        instructions = controls["difficulty"][str(level)]["natural_language_by_interaction"]
+        simplified_task = task_for_level("rotating_keyboard_env", level, "simplified")
+        full_task = task_for_level("rotating_keyboard_env", level, "full")
+        assert simplified_task["natural_language"] == instructions["simplified"]
+        assert full_task["natural_language"] == instructions["full"]
+        simplified_public, simplified_truth = SETUP.generate_task_state(
+            simplified_task,
+            f"rotating-pair-{level}",
+        )
+        full_public, full_truth = SETUP.generate_task_state(
+            full_task,
+            f"rotating-pair-{level}",
+        )
+        normalized_simplified = without_control_identity(simplified_public)
+        normalized_full = without_control_identity(full_public)
+        normalized_simplified.pop("prompt")
+        normalized_full.pop("prompt")
+        assert normalized_simplified == normalized_full
+        assert without_control_identity(simplified_truth) == without_control_identity(full_truth)
         keyboard = public["keyboard"]
         assert sum(len(row) for row in keyboard["rows"]) == parameters["key_count"]
         assert len(truth["target"]) == parameters["code_length"]
@@ -2650,6 +2677,36 @@ def test_rotating_keyboard_profiles_match_motion_contracts() -> None:
             assert keyboard["duration_ms"] in parameters["duration_ms_values"]
         else:
             assert parameters["duration_ms_min"] <= keyboard["duration_ms"] <= parameters["duration_ms_max"]
+
+
+def test_rotating_keyboard_final_verifier_enforces_both_input_surfaces() -> None:
+    sources = {
+        "simplified": ("physical_keyboard", "onscreen_keys"),
+        "full": ("onscreen_keys", "physical_keyboard"),
+    }
+    for interaction, (correct_source, wrong_source) in sources.items():
+        public, truth = SETUP.generate_task_state(
+            task_for_level("rotating_keyboard_env", 1, interaction),
+            f"rotating-verifier-{interaction}",
+        )
+        accepted = verify_rotating_keyboard({
+            "public_state": public,
+            "ground_truth": truth,
+            "result": {
+                "text": truth["target"],
+                "input_source": correct_source,
+            },
+        })
+        rejected = verify_rotating_keyboard({
+            "public_state": public,
+            "ground_truth": truth,
+            "result": {
+                "text": truth["target"],
+                "input_source": wrong_source,
+            },
+        })
+        assert accepted["passed"] is True
+        assert rejected["passed"] is False
 
 
 def test_slot_reel_profiles_match_temporal_precision_and_recovery_contracts() -> None:

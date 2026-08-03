@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import base64
 import json
+from io import BytesIO
 from pathlib import Path
 from types import SimpleNamespace
 
@@ -392,6 +393,80 @@ def test_qwen_screen_loader_accepts_path_image_and_remote_base64(tmp_path: Path)
     assert observation_frames({"screen": {"path": str(path)}}) == [
         {"path": str(path)}
     ]
+
+
+def test_qwen_sends_every_frame_at_the_native_display_resolution(tmp_path: Path) -> None:
+    source = tmp_path / "native.png"
+    Image.new("RGB", (1920, 1080), "navy").save(source)
+    agent = object.__new__(WeirdQwen35VLAgent)
+    agent.display_resolution = [1920, 1080]
+    agent.save_folder_custom = str(tmp_path)
+    agent.step_idx = 3
+    agent.b64_to_path = {}
+    agent.original_sizes = []
+
+    _latest_encoded, latest_path = agent.process_image(str(source))
+    _earlier_encoded, earlier_path = agent._process_frame(
+        {"path": str(source)},
+        step=4,
+        index=0,
+    )
+
+    with Image.open(latest_path) as latest:
+        assert latest.size == (1920, 1080)
+    with Image.open(earlier_path) as earlier:
+        assert earlier.size == (1920, 1080)
+    assert agent.original_sizes == [(1920, 1080)]
+    assert agent.processed_size == (1920, 1080)
+
+
+def test_qwen_multiframe_step_serializes_only_native_resolution_images(
+    tmp_path: Path,
+    monkeypatch,
+) -> None:
+    frame_paths = []
+    for index in range(6):
+        path = tmp_path / f"source-{index}.png"
+        Image.new("RGB", (1920, 1080), (index * 20, 0, 0)).save(path)
+        frame_paths.append(str(path))
+
+    agent = object.__new__(WeirdQwen35VLAgent)
+    agent.display_resolution = [1920, 1080]
+    agent.save_folder_custom = str(tmp_path)
+    agent.step_idx = -1
+    agent.b64_to_path = {}
+    agent.original_sizes = []
+    agent.frame_sequences = []
+    agent._current_extra_frames = []
+    agent.screenshots = []
+    agent.history = []
+    agent.responses = []
+    agent.history_n = 1
+    agent.image_max = 20
+    agent.fold_size = 10
+    agent.task_description = "Confirm the code."
+
+    def parent_step(self, obs, _action_outputs):
+        self.step_idx += 1
+        encoded, _path = self.process_image(obs["screen"]["path"])
+        self.screenshots.append(encoded)
+        return self.build_messages(encoded)
+
+    monkeypatch.setattr(WeirdQwen35VLAgent.__mro__[1], "step", parent_step)
+    messages = agent.step(
+        {"frames": [{"path": path} for path in frame_paths]},
+        [],
+    )
+    image_urls = [
+        item["image_url"]["url"]
+        for item in messages[-1]["content"]
+        if item["type"] == "image_url"
+    ]
+
+    assert len(image_urls) == 6
+    for url in image_urls:
+        with Image.open(BytesIO(base64.b64decode(url.split(",", 1)[1]))) as image:
+            assert image.size == (1920, 1080)
 
 
 def test_qwen_messages_preserve_chronological_frame_order() -> None:

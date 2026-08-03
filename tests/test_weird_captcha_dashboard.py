@@ -1068,6 +1068,51 @@ class WeirdCaptchaDashboardTests(unittest.TestCase):
                 self.assertEqual(browser_grade, server_grade(success), f"success parity: {mechanic_id}")
                 self.assertTrue(browser_grade["passed"], mechanic_id)
 
+    def test_rotating_keyboard_live_grade_enforces_the_selected_input_surface(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            state_dir = Path(temporary)
+            server = object.__new__(PuzzleServer)
+            server.state_dir = state_dir
+            sources = {
+                "simplified": ("physical_keyboard", "onscreen_keys"),
+                "full": ("onscreen_keys", "physical_keyboard"),
+            }
+            for interaction, (correct_source, wrong_source) in sources.items():
+                condition = {
+                    "difficulty": 1,
+                    "interaction": interaction,
+                    "real_time": "live",
+                    "difficulty_parameters": {},
+                }
+                truth = {
+                    "mechanic_id": "rotating_keyboard",
+                    "target": "ABC",
+                    "control_condition": condition,
+                }
+                public_state = {
+                    "mechanic_id": "rotating_keyboard",
+                    "control_condition": condition,
+                }
+                (state_dir / "ground_truth.json").write_text(
+                    json.dumps(truth),
+                    encoding="utf-8",
+                )
+                (state_dir / "public_state.json").write_text(
+                    json.dumps(public_state),
+                    encoding="utf-8",
+                )
+
+                accepted = server._grade_rotating_keyboard_submission(
+                    {"text": "ABC", "input_source": correct_source}
+                )
+                rejected = server._grade_rotating_keyboard_submission(
+                    {"text": "ABC", "input_source": wrong_source}
+                )
+
+                self.assertTrue(accepted["passed"], interaction)
+                self.assertFalse(rejected["passed"], interaction)
+                self.assertIn("wrong interaction input", rejected["feedback"])
+
     def test_browser_session_canceled_during_setup_cannot_boot_after_shutdown(self) -> None:
         manager = SessionManager("local")
         setup_started = threading.Event()
