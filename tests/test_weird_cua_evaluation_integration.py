@@ -358,10 +358,13 @@ def test_worker_extension_exposes_fixed_clock_commands(monkeypatch) -> None:
 
 def test_worker_advertises_the_weird_cua_capability(monkeypatch) -> None:
     observed = []
+    preflight_calls = []
     monkeypatch.setattr(
         remote_worker.gym_worker,
         "run_runner_preflight",
-        lambda *, must_support, skip: ["qemu"],
+        lambda *, must_support, skip: (
+            preflight_calls.append((must_support, skip)) or ["qemu"]
+        ),
     )
     monkeypatch.setattr(
         remote_worker.gym_worker,
@@ -374,7 +377,8 @@ def test_worker_advertises_the_weird_cua_capability(monkeypatch) -> None:
         ),
     )
     remote_worker.main()
-    assert observed == ["qemu", WEIRD_CUA_WORKER_CAPABILITY]
+    assert preflight_calls == [(["qemu"], False)]
+    assert observed == [WEIRD_CUA_WORKER_CAPABILITY]
 
 
 def test_qwen_screen_loader_accepts_path_image_and_remote_base64(tmp_path: Path) -> None:

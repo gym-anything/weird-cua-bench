@@ -165,8 +165,12 @@ def main() -> None:
     gym_preflight = gym_worker.run_runner_preflight
 
     def weird_cua_preflight(*, must_support, skip):
-        available = gym_preflight(must_support=must_support, skip=skip)
-        return sorted(set(available) | {WEIRD_CUA_WORKER_CAPABILITY})
+        gym_preflight(must_support=must_support, skip=skip)
+        # The worker still verifies and uses QEMU locally. Advertising only
+        # the benchmark routing key excludes requests explicitly tagged for
+        # another runner. Legacy clients without a runner hint remain subject
+        # to the shared master's fallback routing.
+        return [WEIRD_CUA_WORKER_CAPABILITY]
 
     gym_worker.run_runner_preflight = weird_cua_preflight
     gym_worker.main()
