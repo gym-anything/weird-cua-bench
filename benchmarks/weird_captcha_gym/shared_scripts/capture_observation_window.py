@@ -40,7 +40,7 @@ def start_recorder(raw_dir: Path, *, display: str, width: int, height: int, fps:
         "ffmpeg", "-nostdin", "-y", "-loglevel", "error",
         "-f", "x11grab", "-draw_mouse", "1", "-framerate", str(fps),
         "-video_size", f"{width}x{height}", "-i", display_input,
-        "-vf", "scale=1280:720:flags=fast_bilinear", "-compression_level", "1",
+        "-compression_level", "1",
         str(raw_dir / "raw-%06d.png"),
     ]
     return subprocess.Popen(command, stdout=subprocess.DEVNULL, stderr=subprocess.PIPE)
@@ -167,6 +167,7 @@ def capture(args: argparse.Namespace) -> dict:
     shutil.rmtree(raw_dir)
     manifest = {
         "mode": args.mode,
+        "resolution": [width, height],
         "observation_window_ms": args.duration_ms,
         "frames_per_observation": args.frames,
         "window_started_wall_ms": start_ms,

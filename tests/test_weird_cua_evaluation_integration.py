@@ -188,6 +188,7 @@ def test_capture_returns_absolute_paths_for_remote_fetching(
                             "target_offset_ms": 0,
                         }
                     ],
+                    "resolution": [1920, 1080],
                     "time_status": {"task_time_ms": 0},
                 }
             )
@@ -199,7 +200,12 @@ def test_capture_returns_absolute_paths_for_remote_fetching(
             path.write_bytes(b"file")
 
     observation = capture_observation_window(
-        SimpleNamespace(runner=FakeRunner()),
+        SimpleNamespace(
+            runner=FakeRunner(),
+            env_spec=SimpleNamespace(
+                observation=[SimpleNamespace(resolution=[1920, 1080])]
+            ),
+        ),
         mode="paused",
         duration_ms=0,
         frames_per_observation=1,
@@ -208,6 +214,54 @@ def test_capture_returns_absolute_paths_for_remote_fetching(
     )
     assert Path(observation["screen"]["path"]).is_absolute()
     assert Path(observation["capture_manifest"]).is_absolute()
+    assert observation["screen"]["resolution"] == [1920, 1080]
+
+
+def test_capture_rejects_a_resolution_that_cannot_share_action_coordinates(
+    tmp_path: Path,
+) -> None:
+    class FakeRunner:
+        @staticmethod
+        def exec_capture(_command):
+            return json.dumps(
+                {
+                    "frames": [
+                        {
+                            "path": "/guest/frame.png",
+                            "offset_ms": 0,
+                            "target_offset_ms": 0,
+                        }
+                    ],
+                    "resolution": [1280, 720],
+                    "time_status": {"task_time_ms": 0},
+                }
+            )
+
+        @staticmethod
+        def copy_from(_source, destination):
+            path = Path(destination)
+            path.parent.mkdir(parents=True, exist_ok=True)
+            path.write_bytes(b"file")
+
+    env = SimpleNamespace(
+        runner=FakeRunner(),
+        env_spec=SimpleNamespace(
+            observation=[SimpleNamespace(resolution=[1920, 1080])]
+        ),
+    )
+    try:
+        capture_observation_window(
+            env,
+            mode="paused",
+            duration_ms=0,
+            frames_per_observation=1,
+            turn=0,
+            host_dir=tmp_path / "artifacts",
+        )
+    except RuntimeError as error:
+        assert "captured [1280, 720], configured [1920, 1080]" in str(error)
+    else:
+        raise AssertionError("capture accepted incompatible observation coordinates")
 
 
 def test_remote_control_uses_the_standard_remote_environment_transport(tmp_path: Path) -> None:
