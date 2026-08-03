@@ -584,7 +584,9 @@ def test_puzzle_browser_requires_the_task_window_and_exact_display_geometry(
     executable("xhost", "#!/usr/bin/env bash\nexit 0\n")
     executable(
         "xdpyinfo",
-        "#!/usr/bin/env bash\necho '  dimensions:    1920x1080 pixels'\n",
+        "#!/usr/bin/env bash\n"
+        "echo '  dimensions:    1920x1080 pixels'\n"
+        "for _ in $(seq 1 10000); do echo 'visual metadata'; done\n",
     )
     executable(
         "wmctrl",

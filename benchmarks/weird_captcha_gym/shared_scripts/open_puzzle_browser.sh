@@ -89,7 +89,10 @@ verify_puzzle_window() {
 
   DISPLAY=:1 wmctrl -i -r "$window_id" -b add,fullscreen,maximized_vert,maximized_horz 2>/dev/null || true
   DISPLAY=:1 wmctrl -i -a "$window_id" 2>/dev/null || true
-  display_size="$(DISPLAY=:1 xdpyinfo 2>/dev/null | awk '/dimensions:/ {print $2; exit}')"
+  display_size="$(
+    DISPLAY=:1 xdpyinfo 2>/dev/null |
+      awk '/dimensions:/ && !found {print $2; found=1} END {if (!found) exit 1}' || true
+  )"
   display_width="${display_size%x*}"
   display_height="${display_size#*x}"
   if ! [[ "$display_width" =~ ^[0-9]+$ && "$display_height" =~ ^[0-9]+$ ]]; then
