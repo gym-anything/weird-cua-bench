@@ -73,29 +73,6 @@ if [ -n "$xauth" ]; then
 fi
 
 if [[ "$browser_cmd" == *firefox ]]; then
-  firefox_profile_root="$home_dir/snap/firefox/common/.mozilla/firefox"
-  if [ ! -f "$firefox_profile_root/profiles.ini" ]; then
-    firefox_profile_root="$home_dir/.mozilla/firefox"
-  fi
-  if [ -f "$firefox_profile_root/profiles.ini" ]; then
-    firefox_profile_path="$(awk -F= '
-      /^Path=/ { path=$2 }
-      /^Default=1$/ && path != "" { print path; exit }
-      END { if (path != "") print path }
-    ' "$firefox_profile_root/profiles.ini" | head -n 1)"
-    if [ -n "$firefox_profile_path" ]; then
-      if [[ "$firefox_profile_path" != /* ]]; then
-        firefox_profile_path="$firefox_profile_root/$firefox_profile_path"
-      fi
-      mkdir -p "$firefox_profile_path"
-      firefox_user_js="$firefox_profile_path/user.js"
-      firefox_notice_pref='user_pref("datareporting.policy.dataSubmissionEnabled", false);'
-      if ! grep -Fqx "$firefox_notice_pref" "$firefox_user_js" 2>/dev/null; then
-        printf '%s\n' "$firefox_notice_pref" >> "$firefox_user_js"
-      fi
-      chown "$launch_as_user:$launch_as_user" "$firefox_profile_path" "$firefox_user_js" 2>/dev/null || true
-    fi
-  fi
   launch="$env_prefix $browser_cmd --kiosk '$URL'"
 else
   launch="$env_prefix $browser_cmd --kiosk '$URL' --force-device-scale-factor=1 --no-first-run --no-default-browser-check --disable-background-networking --disable-sync --disable-infobars --disable-session-crashed-bubble --hide-crash-restore-bubble --no-sandbox --disable-dev-shm-usage --user-data-dir='$profile_dir'"
@@ -173,21 +150,6 @@ if [ -n "$existing_window_id" ]; then
   echo "Reusing existing puzzle browser window $existing_window_id." >> /tmp/weird_captcha_browser.log
   verify_puzzle_window "$existing_window_id"
   exit $?
-fi
-
-if [[ "$browser_cmd" == *firefox ]] && pgrep -u "$launch_as_user" -x firefox >/dev/null 2>&1; then
-  echo "Stopping the VM's pre-existing Firefox process before kiosk launch." >> /tmp/weird_captcha_browser.log
-  pkill -TERM -u "$launch_as_user" -x firefox 2>/dev/null || true
-  for _ in $(seq 1 50); do
-    if ! pgrep -u "$launch_as_user" -x firefox >/dev/null 2>&1; then
-      break
-    fi
-    sleep 0.1
-  done
-  if pgrep -u "$launch_as_user" -x firefox >/dev/null 2>&1; then
-    echo "Pre-existing Firefox process did not exit before kiosk launch." >> /tmp/weird_captcha_browser.log
-    exit 1
-  fi
 fi
 
 echo "Launching puzzle browser as $launch_as_user via $browser_cmd -> $URL" >> /tmp/weird_captcha_browser.log
