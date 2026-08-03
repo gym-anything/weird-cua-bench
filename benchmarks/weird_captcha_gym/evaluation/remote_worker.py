@@ -165,8 +165,11 @@ def main() -> None:
     gym_preflight = gym_worker.run_runner_preflight
 
     def weird_cua_preflight(*, must_support, skip):
-        available = gym_preflight(must_support=must_support, skip=skip)
-        return sorted(set(available) | {WEIRD_CUA_WORKER_CAPABILITY})
+        # Run Gym's normal checks, including any required QEMU check, without
+        # advertising the underlying runners to the shared scheduler. These
+        # workers should receive only clients that request the Weird protocol.
+        gym_preflight(must_support=must_support, skip=skip)
+        return [WEIRD_CUA_WORKER_CAPABILITY]
 
     gym_worker.run_runner_preflight = weird_cua_preflight
     gym_worker.main()
