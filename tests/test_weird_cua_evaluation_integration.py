@@ -57,6 +57,48 @@ def test_evaluator_parser_accepts_gym_remote_and_fast_io_options() -> None:
     assert args.remote_worker_reset_policy == "baseline_setup"
 
 
+def test_evaluator_can_disable_the_task_clock_limit() -> None:
+    args = evaluator.build_parser().parse_args(
+        [
+            "--env-dir",
+            "environment",
+            "--task",
+            "task",
+            "--agent",
+            "Qwen35VLAgent",
+            "--agent-args",
+            "{}",
+            "--time-mode",
+            "live",
+            "--no-play-time-limit",
+        ]
+    )
+    settings = SimpleNamespace(play_time_seconds=120)
+    assert evaluator._play_time_limit_seconds(args, settings) is None
+    assert evaluator._play_time_exhausted(10**12, None) is False
+
+
+def test_evaluator_keeps_the_configured_task_clock_limit_by_default() -> None:
+    args = evaluator.build_parser().parse_args(
+        [
+            "--env-dir",
+            "environment",
+            "--task",
+            "task",
+            "--agent",
+            "Qwen35VLAgent",
+            "--agent-args",
+            "{}",
+            "--time-mode",
+            "paused",
+        ]
+    )
+    settings = SimpleNamespace(play_time_seconds=120)
+    assert evaluator._play_time_limit_seconds(args, settings) == 120
+    assert evaluator._play_time_exhausted(119_999, 120) is False
+    assert evaluator._play_time_exhausted(120_000, 120) is True
+
+
 def test_evaluator_sends_the_controlled_task_instruction_to_the_agent() -> None:
     env = SimpleNamespace(
         task_spec=SimpleNamespace(

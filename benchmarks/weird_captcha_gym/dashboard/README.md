@@ -6,6 +6,18 @@ The shared dashboard is zero-setup for ordinary exploration. Every built puzzle 
 
 The mined Survey corpus is deliberately excluded from this product and from static exports.
 
+## Inspect evaluation trajectories
+
+Create a lazy-loading viewer beside an evaluation corpus:
+
+```bash
+weird-cua-export-trajectories --evaluation-root /path/to/evaluation
+cd /path/to/evaluation
+python -m http.server 8768 --bind 0.0.0.0
+```
+
+Open `http://HOST:8768/trajectory_dashboard/`. The generated viewer contains only compact JSON indexes. Screenshots remain in the original run directories and load on demand.
+
 ## Star and share a shortlist
 
 Use the star on any environment card or dossier to keep a personal shortlist. Stars are stored only in that browser's `localStorage`; they do not alter the review ledger or require a companion. The **Starred only** control composes with search, collection, stage, and review filters.
