@@ -55,11 +55,13 @@ def test_main_control_matrix_records_and_passes_no_task_time_limit(
         expected_environments=1,
         request_timeout_seconds=300.0,
         request_attempts=1,
+        max_steps=200,
         remote_url="http://master:5800",
         vlm_base_url="http://model:8600/v1",
     )
     assert run_control_matrix.create_manifest(create_args) == 0
     protocol = json.loads((output / "protocol.json").read_text())
+    assert protocol["max_steps"] == 200
     assert protocol["task_play_time_limit_seconds"] is None
 
     captured = {}
@@ -77,4 +79,5 @@ def test_main_control_matrix_records_and_passes_no_task_time_limit(
     )
     assert run_control_matrix.run_item(run_args) == 0
     assert "--fast-io" in captured["command"]
+    assert captured["command"][captured["command"].index("--steps") + 1] == "200"
     assert "--no-play-time-limit" in captured["command"]

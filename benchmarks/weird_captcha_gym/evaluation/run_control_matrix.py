@@ -116,6 +116,7 @@ def create_manifest(args: argparse.Namespace) -> int:
             "run_count": len(records),
             "request_timeout_seconds": args.request_timeout_seconds,
             "request_attempts": args.request_attempts,
+            "max_steps": args.max_steps,
             "task_play_time_limit_seconds": None,
             "remote_url": args.remote_url,
             "vlm_base_url": args.vlm_base_url,
@@ -188,6 +189,8 @@ def run_item(args: argparse.Namespace) -> int:
         "--cache-level",
         "pre_start",
         "--fast-io",
+        "--steps",
+        str(protocol.get("max_steps", 200)),
         "--no-play-time-limit",
         "--remote-url",
         protocol["remote_url"],
@@ -282,6 +285,7 @@ def build_parser() -> argparse.ArgumentParser:
     create.add_argument("--vlm-base-url", default="http://babel-p9-16:8600/v1")
     create.add_argument("--request-timeout-seconds", type=float, default=300.0)
     create.add_argument("--request-attempts", type=int, default=1)
+    create.add_argument("--max-steps", type=int, default=200)
     create.set_defaults(func=create_manifest)
 
     run = subparsers.add_parser("run")
