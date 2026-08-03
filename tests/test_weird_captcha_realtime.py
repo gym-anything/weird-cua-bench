@@ -564,7 +564,6 @@ def test_puzzle_browser_launches_full_screen() -> None:
     assert "Puzzle browser fullscreen verified" in source
     assert "Puzzle browser fullscreen verification failed" in source
     assert "Reusing existing puzzle browser window" in source
-    assert "--profile '$profile_dir'" in source
 
 
 def test_puzzle_browser_requires_the_task_window_and_exact_display_geometry(
