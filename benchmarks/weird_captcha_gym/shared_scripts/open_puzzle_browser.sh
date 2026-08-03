@@ -9,6 +9,8 @@ WINDOW_ATTEMPTS="${WEIRD_CAPTCHA_WINDOW_ATTEMPTS:-60}"
 WINDOW_POLL_SECONDS="${WEIRD_CAPTCHA_WINDOW_POLL_SECONDS:-0.5}"
 GEOMETRY_ATTEMPTS="${WEIRD_CAPTCHA_GEOMETRY_ATTEMPTS:-40}"
 GEOMETRY_POLL_SECONDS="${WEIRD_CAPTCHA_GEOMETRY_POLL_SECONDS:-0.25}"
+LOCK_ATTEMPTS="${WEIRD_CAPTCHA_BROWSER_LOCK_ATTEMPTS:-600}"
+LOCK_POLL_SECONDS="${WEIRD_CAPTCHA_BROWSER_LOCK_POLL_SECONDS:-0.1}"
 if [ "$TIME_MODE" != "live" ] && [ "$TIME_MODE" != "paused" ]; then
   echo "WEIRD_CAPTCHA_TIME_MODE must be live or paused" >&2
   exit 2
@@ -71,9 +73,83 @@ if [ -n "$xauth" ]; then
 fi
 
 if [[ "$browser_cmd" == *firefox ]]; then
-  launch="$env_prefix $browser_cmd --kiosk '$URL'"
+  launch="$env_prefix $browser_cmd --no-remote --profile '$profile_dir' --kiosk '$URL'"
 else
   launch="$env_prefix $browser_cmd --kiosk '$URL' --force-device-scale-factor=1 --no-first-run --no-default-browser-check --disable-background-networking --disable-sync --disable-infobars --disable-session-crashed-bubble --hide-crash-restore-bubble --no-sandbox --disable-dev-shm-usage --user-data-dir='$profile_dir'"
+fi
+
+find_puzzle_window() {
+  DISPLAY=:1 wmctrl -lx 2>/dev/null | awk 'tolower($0) ~ /weird captcha gym/ {print $1; exit}' || true
+}
+
+verify_puzzle_window() {
+  local window_id="$1"
+  local display_size display_width display_height geometry
+  local window_x window_y window_width window_height
+
+  DISPLAY=:1 wmctrl -i -r "$window_id" -b add,fullscreen,maximized_vert,maximized_horz 2>/dev/null || true
+  DISPLAY=:1 wmctrl -i -a "$window_id" 2>/dev/null || true
+  display_size="$(DISPLAY=:1 xdpyinfo 2>/dev/null | awk '/dimensions:/ {print $2; exit}')"
+  display_width="${display_size%x*}"
+  display_height="${display_size#*x}"
+  if ! [[ "$display_width" =~ ^[0-9]+$ && "$display_height" =~ ^[0-9]+$ ]]; then
+    echo "Puzzle browser fullscreen verification failed: display geometry unavailable." >> /tmp/weird_captcha_browser.log
+    return 1
+  fi
+
+  for _ in $(seq 1 "$GEOMETRY_ATTEMPTS"); do
+    geometry="$(DISPLAY=:1 wmctrl -lG 2>/dev/null | awk -v id="$window_id" '$1 == id {print $3, $4, $5, $6; exit}' || true)"
+    read -r window_x window_y window_width window_height <<< "$geometry"
+    if [ "$window_x" = "0" ] && [ "$window_y" = "0" ] && \
+       [ "$window_width" = "$display_width" ] && [ "$window_height" = "$display_height" ]; then
+      echo "Puzzle browser fullscreen verified at ${window_width}x${window_height}+${window_x}+${window_y}." >> /tmp/weird_captcha_browser.log
+      return 0
+    fi
+    sleep "$GEOMETRY_POLL_SECONDS"
+  done
+
+  echo "Puzzle browser fullscreen verification failed: display=${display_width}x${display_height} window=${geometry:-missing}." >> /tmp/weird_captcha_browser.log
+  return 1
+}
+
+# Serialize the discovery and launch path. Two concurrent hook invocations must
+# not both miss the window and start Firefox with the same profile.
+lock_dir="$STATE_DIR/browser-launch.lock"
+lock_acquired=0
+release_launch_lock() {
+  if [ "$lock_acquired" = "1" ]; then
+    rm -f "$lock_dir/owner"
+    rmdir "$lock_dir" 2>/dev/null || true
+  fi
+}
+trap release_launch_lock EXIT
+
+for _ in $(seq 1 "$LOCK_ATTEMPTS"); do
+  if mkdir "$lock_dir" 2>/dev/null; then
+    lock_acquired=1
+    printf '%s\n' "$$" > "$lock_dir/owner"
+    break
+  fi
+  owner_pid="$(cat "$lock_dir/owner" 2>/dev/null || true)"
+  if [[ "$owner_pid" =~ ^[0-9]+$ ]] && ! kill -0 "$owner_pid" 2>/dev/null; then
+    rm -f "$lock_dir/owner"
+    rmdir "$lock_dir" 2>/dev/null || true
+    continue
+  fi
+  sleep "$LOCK_POLL_SECONDS"
+done
+if [ "$lock_acquired" != "1" ]; then
+  echo "Puzzle browser launch lock timed out." >> /tmp/weird_captcha_browser.log
+  exit 1
+fi
+
+# Gym Anything can invoke the task hook twice during one reset. Once the first
+# call has opened the task, the next call reuses that exact puzzle window.
+existing_window_id="$(find_puzzle_window)"
+if [ -n "$existing_window_id" ]; then
+  echo "Reusing existing puzzle browser window $existing_window_id." >> /tmp/weird_captcha_browser.log
+  verify_puzzle_window "$existing_window_id"
+  exit $?
 fi
 
 echo "Launching puzzle browser as $launch_as_user via $browser_cmd -> $URL" >> /tmp/weird_captcha_browser.log
@@ -84,29 +160,10 @@ else
 fi
 
 for _ in $(seq 1 "$WINDOW_ATTEMPTS"); do
-  window_id="$(DISPLAY=:1 wmctrl -lx 2>/dev/null | awk 'tolower($0) ~ /weird captcha gym/ {print $1; exit}' || true)"
+  window_id="$(find_puzzle_window)"
   if [ -n "$window_id" ]; then
-    DISPLAY=:1 wmctrl -i -r "$window_id" -b add,fullscreen,maximized_vert,maximized_horz 2>/dev/null || true
-    DISPLAY=:1 wmctrl -i -a "$window_id" 2>/dev/null || true
-    display_size="$(DISPLAY=:1 xdpyinfo 2>/dev/null | awk '/dimensions:/ {print $2; exit}')"
-    display_width="${display_size%x*}"
-    display_height="${display_size#*x}"
-    if ! [[ "$display_width" =~ ^[0-9]+$ && "$display_height" =~ ^[0-9]+$ ]]; then
-      echo "Puzzle browser fullscreen verification failed: display geometry unavailable." >> /tmp/weird_captcha_browser.log
-      exit 1
-    fi
-    for _ in $(seq 1 "$GEOMETRY_ATTEMPTS"); do
-      geometry="$(DISPLAY=:1 wmctrl -lG 2>/dev/null | awk -v id="$window_id" '$1 == id {print $3, $4, $5, $6; exit}' || true)"
-      read -r window_x window_y window_width window_height <<< "$geometry"
-      if [ "$window_x" = "0" ] && [ "$window_y" = "0" ] && \
-         [ "$window_width" = "$display_width" ] && [ "$window_height" = "$display_height" ]; then
-        echo "Puzzle browser fullscreen verified at ${window_width}x${window_height}+${window_x}+${window_y}." >> /tmp/weird_captcha_browser.log
-        exit 0
-      fi
-      sleep "$GEOMETRY_POLL_SECONDS"
-    done
-    echo "Puzzle browser fullscreen verification failed: display=${display_width}x${display_height} window=${geometry:-missing}." >> /tmp/weird_captcha_browser.log
-    exit 1
+    verify_puzzle_window "$window_id"
+    exit $?
   fi
   sleep "$WINDOW_POLL_SECONDS"
 done
