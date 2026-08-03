@@ -3,7 +3,7 @@ from __future__ import annotations
 import base64
 from io import BytesIO
 from pathlib import Path
-from typing import Any
+from typing import Any, Optional
 
 from PIL import Image
 from agents.agents.qwen35vl import Qwen35VLAgent
@@ -51,12 +51,19 @@ class WeirdQwen35VLAgent(Qwen35VLAgent):
     def _process_frame(self, value: Any, *, step: int, index: int) -> tuple[str, str]:
         image = image_from_screen(value)
         width, height = image.size
-        resized_height, resized_width = smart_resize(
-            height=height,
-            width=width,
-            factor=32,
-            max_pixels=16 * 16 * 4 * 1280,
-        )
+        parent_resize = getattr(self, "_smart_resize", None)
+        if callable(parent_resize):
+            resized_height, resized_width = parent_resize(
+                height=height,
+                width=width,
+            )
+        else:
+            resized_height, resized_width = smart_resize(
+                height=height,
+                width=width,
+                factor=32,
+                max_pixels=16 * 16 * 4 * 1280,
+            )
         image = image.resize((resized_width, resized_height))
         path = Path(self.save_folder_custom) / f"observation_{step}_frame_{index:03d}.png"
         image.save(path, format="PNG")
@@ -104,18 +111,78 @@ class WeirdQwen35VLAgent(Qwen35VLAgent):
         )
         return parts
 
-    def build_messages(self, current_screenshot_b64):
-        current_sequence = [*self._current_extra_frames, current_screenshot_b64]
-        self.frame_sequences.append(current_sequence)
+    @staticmethod
+    def _wrap_tool_response(parts: list[dict[str, Any]]) -> list[dict[str, Any]]:
+        return (
+            [{"type": "text", "text": "<tool_response>\n"}]
+            + parts
+            + [{"type": "text", "text": "\n</tool_response>"}]
+        )
 
-        history_start_idx = max(0, len(self.history) - self.history_n)
+    def _record_current_sequence(self, current_screenshot_b64: str) -> None:
+        current_sequence = [*self._current_extra_frames, current_screenshot_b64]
+        current_index = max(0, len(self.screenshots) - 1)
+        if len(self.frame_sequences) <= current_index:
+            self.frame_sequences.append(current_sequence)
+        else:
+            self.frame_sequences[current_index] = current_sequence
+
+    def _collapsed_turns(
+        self,
+        *,
+        start_index: int,
+        image_max: int,
+        fold_size: int,
+    ) -> set[int]:
+        current_index = len(self.screenshots) - 1
+        candidates = list(range(start_index, current_index))
+        active_images = sum(
+            len(self.frame_sequences[index])
+            for index in range(start_index, current_index + 1)
+        )
+        collapsed: set[int] = set()
+        while active_images > image_max and candidates:
+            batch = candidates[:fold_size]
+            candidates = candidates[fold_size:]
+            for index in batch:
+                collapsed.add(index)
+                active_images -= len(self.frame_sequences[index])
+        return collapsed
+
+    def build_messages(
+        self,
+        current_screenshot_b64,
+        history_n: Optional[int] = None,
+        image_max: Optional[int] = None,
+        fold_size: Optional[int] = None,
+    ):
+        self._record_current_sequence(current_screenshot_b64)
+
+        history_n = max(1, int(self.history_n if history_n is None else history_n))
+        image_max = max(
+            1,
+            int(getattr(self, "image_max", 20) if image_max is None else image_max),
+        )
+        fold_size = max(
+            1,
+            int(getattr(self, "fold_size", 10) if fold_size is None else fold_size),
+        )
+        total_steps = len(self.screenshots)
+        start_step = max(1, total_steps - history_n)
+        start_index = start_step - 1
+        collapsed = self._collapsed_turns(
+            start_index=start_index,
+            image_max=image_max,
+            fold_size=fold_size,
+        )
+
         previous_actions = [
             f"Step {index + 1}: {self.history[index]}"
-            for index in range(history_start_idx, len(self.history))
+            for index in range(0, min(start_step - 1, len(self.history)))
         ]
         previous_actions_text = "\n".join(previous_actions) if previous_actions else "None"
         instruction = (
-            "Please generate the next move according to the UI screenshots, instruction, "
+            "\nPlease generate the next move according to the UI screenshots, instruction, "
             "and previous actions.\n\n"
             f"Instruction: {self.task_description}\n\n"
             f"Previous actions:\n{previous_actions_text}"
@@ -127,27 +194,26 @@ class WeirdQwen35VLAgent(Qwen35VLAgent):
             }
         ]
 
-        history_len = min(self.history_n, len(self.responses))
-        if history_len:
-            history_responses = self.responses[-history_len:]
-            history_sequences = self.frame_sequences[-history_len - 1 : -1]
-            for index, response in enumerate(history_responses):
-                if index < len(history_sequences):
-                    content = self._image_parts(history_sequences[index])
-                    if index == 0:
-                        content.append({"type": "text", "text": instruction})
-                    messages.append({"role": "user", "content": content})
+        for step_num in range(start_step, total_steps + 1):
+            index = step_num - 1
+            first = step_num == start_step
+            if index in collapsed:
+                parts = [{"type": "text", "text": "This screenshot has been collapsed."}]
+            else:
+                parts = self._image_parts(self.frame_sequences[index])
+            if first:
+                content = [*parts, {"type": "text", "text": instruction}]
+            else:
+                content = self._wrap_tool_response(parts)
+            messages.append({"role": "user", "content": content})
+
+            if step_num <= total_steps - 1 and index < len(self.responses):
                 messages.append(
                     {
                         "role": "assistant",
-                        "content": [{"type": "text", "text": str(response)}],
+                        "content": [
+                            {"type": "text", "text": str(self.responses[index])}
+                        ],
                     }
                 )
-            messages.append(
-                {"role": "user", "content": self._image_parts(current_sequence)}
-            )
-        else:
-            content = self._image_parts(current_sequence)
-            content.append({"type": "text", "text": instruction})
-            messages.append({"role": "user", "content": content})
         return messages

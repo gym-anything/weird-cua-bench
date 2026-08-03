@@ -274,12 +274,20 @@ def test_qwen_messages_preserve_chronological_frame_order() -> None:
     agent.frame_sequences = []
     agent.step_idx = 0
     agent.history_n = 1
+    agent.image_max = 20
+    agent.fold_size = 10
+    agent.screenshots = ["third"]
     agent.history = []
     agent.responses = []
     agent.task_description = "Do the task"
     agent.display_resolution = [1280, 720]
 
-    messages = agent.build_messages("third")
+    messages = agent.build_messages(
+        "third",
+        history_n=1,
+        image_max=20,
+        fold_size=10,
+    )
     user_content = messages[-1]["content"]
     image_urls = [
         item["image_url"]["url"]
@@ -291,6 +299,14 @@ def test_qwen_messages_preserve_chronological_frame_order() -> None:
         "data:image/png;base64,second",
         "data:image/png;base64,third",
     ]
+    assert agent.frame_sequences == [["first", "second", "third"]]
+
+    agent.build_messages(
+        "third",
+        history_n=1,
+        image_max=20,
+        fold_size=10,
+    )
     assert agent.frame_sequences == [["first", "second", "third"]]
 
 
