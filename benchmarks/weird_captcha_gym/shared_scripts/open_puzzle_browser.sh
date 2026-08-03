@@ -5,6 +5,10 @@ STATE_DIR="${WEIRD_CAPTCHA_STATE_DIR:-/tmp/weird_captcha_gym}"
 PORT="${WEIRD_CAPTCHA_PORT:-8787}"
 TIME_MODE="${WEIRD_CAPTCHA_TIME_MODE:-live}"
 START_PAUSED="${WEIRD_CAPTCHA_START_PAUSED:-0}"
+WINDOW_ATTEMPTS="${WEIRD_CAPTCHA_WINDOW_ATTEMPTS:-60}"
+WINDOW_POLL_SECONDS="${WEIRD_CAPTCHA_WINDOW_POLL_SECONDS:-0.5}"
+GEOMETRY_ATTEMPTS="${WEIRD_CAPTCHA_GEOMETRY_ATTEMPTS:-40}"
+GEOMETRY_POLL_SECONDS="${WEIRD_CAPTCHA_GEOMETRY_POLL_SECONDS:-0.25}"
 if [ "$TIME_MODE" != "live" ] && [ "$TIME_MODE" != "paused" ]; then
   echo "WEIRD_CAPTCHA_TIME_MODE must be live or paused" >&2
   exit 2
@@ -13,24 +17,36 @@ URL="http://127.0.0.1:${PORT}/?task=$(date +%s)&time_mode=${TIME_MODE}&start_pau
 
 mkdir -p "$STATE_DIR"
 
-browser_cmd=""
-for candidate in google-chrome-stable google-chrome chromium chromium-browser firefox /snap/bin/firefox; do
-  if command -v "$candidate" >/dev/null 2>&1 || [ -x "$candidate" ]; then
-    browser_cmd="$candidate"
-    break
-  fi
-done
+browser_cmd="${WEIRD_CAPTCHA_BROWSER_COMMAND:-}"
+if [ -z "$browser_cmd" ]; then
+  for candidate in google-chrome-stable google-chrome chromium chromium-browser firefox /snap/bin/firefox; do
+    if command -v "$candidate" >/dev/null 2>&1 || [ -x "$candidate" ]; then
+      browser_cmd="$candidate"
+      break
+    fi
+  done
+fi
 
 if [ -z "$browser_cmd" ]; then
   echo "No browser command found for Weird CAPTCHA Gym." | tee -a /tmp/weird_captcha_browser.log
   exit 0
 fi
 
-launch_as_user="root"
-home_dir="/root"
-if id ga >/dev/null 2>&1; then
-  launch_as_user="ga"
-  home_dir="/home/ga"
+launch_as_user="${WEIRD_CAPTCHA_BROWSER_USER:-}"
+home_dir="${WEIRD_CAPTCHA_BROWSER_HOME:-}"
+if [ -z "$launch_as_user" ]; then
+  launch_as_user="root"
+  home_dir="/root"
+  if id ga >/dev/null 2>&1; then
+    launch_as_user="ga"
+    home_dir="/home/ga"
+  fi
+elif [ -z "$home_dir" ]; then
+  home_dir="$(getent passwd "$launch_as_user" | cut -d: -f6)"
+  if [ -z "$home_dir" ]; then
+    echo "Cannot determine home directory for $launch_as_user." >&2
+    exit 1
+  fi
 fi
 
 xauth=""
@@ -67,16 +83,34 @@ else
   nohup sudo -u "$launch_as_user" bash -lc "$launch" >> /tmp/weird_captcha_browser.log 2>&1 &
 fi
 
-for _ in $(seq 1 60); do
-  window_id="$(DISPLAY=:1 wmctrl -lx 2>/dev/null | awk 'tolower($0) ~ /firefox|mozilla|chrom|weird captcha|machine eligibility/ {print $1; exit}' || true)"
+for _ in $(seq 1 "$WINDOW_ATTEMPTS"); do
+  window_id="$(DISPLAY=:1 wmctrl -lx 2>/dev/null | awk 'tolower($0) ~ /weird captcha gym/ {print $1; exit}' || true)"
   if [ -n "$window_id" ]; then
     DISPLAY=:1 wmctrl -i -r "$window_id" -b add,fullscreen,maximized_vert,maximized_horz 2>/dev/null || true
     DISPLAY=:1 wmctrl -i -a "$window_id" 2>/dev/null || true
-    echo "Puzzle browser window detected." >> /tmp/weird_captcha_browser.log
-    exit 0
+    display_size="$(DISPLAY=:1 xdpyinfo 2>/dev/null | awk '/dimensions:/ {print $2; exit}')"
+    display_width="${display_size%x*}"
+    display_height="${display_size#*x}"
+    if ! [[ "$display_width" =~ ^[0-9]+$ && "$display_height" =~ ^[0-9]+$ ]]; then
+      echo "Puzzle browser fullscreen verification failed: display geometry unavailable." >> /tmp/weird_captcha_browser.log
+      exit 1
+    fi
+    for _ in $(seq 1 "$GEOMETRY_ATTEMPTS"); do
+      geometry="$(DISPLAY=:1 wmctrl -lG 2>/dev/null | awk -v id="$window_id" '$1 == id {print $3, $4, $5, $6; exit}' || true)"
+      read -r window_x window_y window_width window_height <<< "$geometry"
+      if [ "$window_x" = "0" ] && [ "$window_y" = "0" ] && \
+         [ "$window_width" = "$display_width" ] && [ "$window_height" = "$display_height" ]; then
+        echo "Puzzle browser fullscreen verified at ${window_width}x${window_height}+${window_x}+${window_y}." >> /tmp/weird_captcha_browser.log
+        exit 0
+      fi
+      sleep "$GEOMETRY_POLL_SECONDS"
+    done
+    echo "Puzzle browser fullscreen verification failed: display=${display_width}x${display_height} window=${geometry:-missing}." >> /tmp/weird_captcha_browser.log
+    exit 1
   fi
-  sleep 0.5
+  sleep "$WINDOW_POLL_SECONDS"
 done
 
 echo "Puzzle browser window was not detected before timeout." >> /tmp/weird_captcha_browser.log
 DISPLAY=:1 wmctrl -l >> /tmp/weird_captcha_browser.log 2>&1 || true
+exit 1

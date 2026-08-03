@@ -779,10 +779,28 @@ class PuzzleServer(BaseHTTPRequestHandler):
 
     def _grade_rotating_keyboard_submission(self, payload: dict) -> dict:
         ground_truth = self._read_json_file(self.state_dir / "ground_truth.json")
-        expected = str(ground_truth.get("target") or "")
-        submitted = str(payload.get("text") or "").upper()
-        passed = bool(expected) and submitted == expected
-        return {"graded": True, "passed": passed, "feedback": "code accepted" if passed else "code rejected"}
+        public_state = self._read_json_file(self.state_dir / "public_state.json")
+        grader_path = Path(__file__).resolve().with_name("legacy_browser_grader.py")
+        spec = importlib.util.spec_from_file_location(
+            "weird_captcha_rotating_keyboard_server_grader",
+            grader_path,
+        )
+        if spec is None or spec.loader is None:
+            return {
+                "graded": True,
+                "passed": False,
+                "feedback": "cannot load Rotating Keyboard interaction grader",
+            }
+        module = importlib.util.module_from_spec(spec)
+        try:
+            spec.loader.exec_module(module)
+            return module.grade(payload, ground_truth, public_state)
+        except Exception as exc:
+            return {
+                "graded": True,
+                "passed": False,
+                "feedback": f"rotating-keyboard grader error: {exc}",
+            }
 
     def _grade_slot_reel_submission(self, payload: dict) -> dict:
         ground_truth = self._read_json_file(self.state_dir / "ground_truth.json")
