@@ -716,7 +716,7 @@ exit 0
     assert completed.returncode == 0
     assert repeated.returncode == 0
     assert (profile / "user.js").read_text(encoding="utf-8") == (
-        'user_pref("datareporting.policy.dataSubmissionPolicyBypassNotification", true);\n'
+        'user_pref("datareporting.policy.dataSubmissionEnabled", false);\n'
     )
 
 

@@ -89,7 +89,7 @@ if [[ "$browser_cmd" == *firefox ]]; then
       fi
       mkdir -p "$firefox_profile_path"
       firefox_user_js="$firefox_profile_path/user.js"
-      firefox_notice_pref='user_pref("datareporting.policy.dataSubmissionPolicyBypassNotification", true);'
+      firefox_notice_pref='user_pref("datareporting.policy.dataSubmissionEnabled", false);'
       if ! grep -Fqx "$firefox_notice_pref" "$firefox_user_js" 2>/dev/null; then
         printf '%s\n' "$firefox_notice_pref" >> "$firefox_user_js"
       fi
