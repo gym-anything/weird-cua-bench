@@ -67,6 +67,26 @@ Public browser play includes an observation inspector. Choose live or paused mod
 
 This browser control is for inspection. Authoritative evaluation still uses `--time-mode` and records its frames and timing manifest in the episode artifacts.
 
+The evaluator is a benchmark-specific observation schedule over Gym-Anything. Gym-Anything still creates the environment, selects the runner, applies actions, records the trajectory, runs the verifier, and owns remote scheduling. `Qwen35VLAgent` automatically uses the Weird CUA adapter so all chronological frames reach the model while retaining the latest Gym-Anything implementation.
+
+Remote evaluation uses the normal Gym-Anything master with the Weird CUA worker extension:
+
+```bash
+gym-anything-master --port 5000
+weird-cua-worker --master-url http://master:5000
+weird-cua-evaluate \
+  --env-dir benchmarks/weird_captcha_gym/environments/rotating_keyboard_env \
+  --task rotating_keyboard_seed_0001 \
+  --agent Qwen35VLAgent \
+  --agent-args '{"model":"Qwen/Qwen3.5-397B-A17B"}' \
+  --time-mode paused \
+  --remote-url http://master:5000
+```
+
+`weird-cua-worker` imports Gym-Anything's worker and adds only fixed routes for Weird CUA clock configuration, frame-window capture, and benchmark artifact collection. It does not replace the Gym-Anything master, worker registry, scheduler, runners, or environment API.
+
+Add `--fast-io` when the selected Gym-Anything runner reports FastIO support. AVF does not support it.
+
 ## Validate
 
 ```bash

@@ -5,7 +5,6 @@ import argparse
 import json
 import logging
 import os
-import shlex
 import signal
 import sys
 import time
@@ -18,8 +17,13 @@ REPO_ROOT = Path(__file__).resolve().parents[3]
 sys.path.insert(0, str(REPO_ROOT))
 
 import agents.agents as agent_registry
-from gym_anything.api import from_config
 
+from benchmarks.weird_captcha_gym.evaluation import (
+    WeirdRemoteGymEnv,
+    control_for_environment,
+)
+from benchmarks.weird_captcha_gym.evaluation.control import EvaluationControl
+from benchmarks.weird_captcha_gym.evaluation.qwen35vl import WeirdQwen35VLAgent
 from benchmarks.weird_captcha_gym.realtime import (
     RealTimeSettings,
     load_real_time_settings,
@@ -55,6 +59,15 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--use-cache", "--use_cache", action="store_true")
     parser.add_argument("--cache-level", "--cache_level", default="pre_start")
     parser.add_argument("--use-savevm", "--use_savevm", action="store_true")
+    parser.add_argument("--fast-io", "--fast_io", action="store_true")
+    parser.add_argument("--remote-url", "--remote_url")
+    parser.add_argument("--remote-timeout", "--remote_timeout", type=int, default=300)
+    parser.add_argument(
+        "--remote-worker-reset-policy",
+        "--remote_worker_reset_policy",
+        choices=("core", "baseline_setup"),
+        default="core",
+    )
     parser.add_argument("--play-time-seconds", type=int)
     parser.add_argument("--observation-window-ms", type=int)
     parser.add_argument("--frames-per-observation", type=int)
@@ -84,23 +97,8 @@ def _settings(args: argparse.Namespace) -> tuple[str, RealTimeSettings]:
     })
 
 
-def _guest_json(env, arguments: list[str]) -> dict:
-    command = " ".join(shlex.quote(part) for part in arguments)
-    output = env.runner.exec_capture(command)
-    for line in reversed(output.splitlines()):
-        try:
-            value = json.loads(line)
-        except json.JSONDecodeError:
-            continue
-        if isinstance(value, dict):
-            return value
-    raise RuntimeError(f"guest command returned no JSON object: {output}")
-
-
 def _time_command(env, command: str) -> dict:
-    return _guest_json(env, [
-        "python3", "/workspace/shared_scripts/time_control.py", command, "--timeout", "30",
-    ])
+    return control_for_environment(env).time(command)
 
 
 def _capture_observation(
@@ -119,52 +117,13 @@ def _capture_observation(
     same scheduled frame sequence during the subsequent frozen model-inference
     hold.
     """
-    if hold_paused and mode != "paused":
-        raise ValueError("hold_paused is valid only for paused observations")
-    guest_dir = f"/tmp/weird_cua_observations/turn-{turn:04d}"
-    command = [
-        "python3",
-        "/workspace/shared_scripts/capture_observation_window.py",
-        "--mode", mode,
-        "--duration-ms", str(settings.observation_window_ms),
-        "--frames", str(settings.frames_per_observation),
-        "--output-dir", guest_dir,
-    ]
-    if hold_paused:
-        command.append("--hold-paused")
-    manifest = _guest_json(env, command)
-    host_dir = Path(env.episode_dir) / "observations" / f"turn-{turn:04d}"
-    host_dir.mkdir(parents=True, exist_ok=True)
-    frames = []
-    for index, frame in enumerate(manifest["frames"]):
-        host_path = host_dir / f"frame-{index:03d}.png"
-        env.runner.copy_from(frame["path"], str(host_path))
-        frames.append({
-            "path": str(host_path),
-            "offset_ms": frame["offset_ms"],
-            "target_offset_ms": frame["target_offset_ms"],
-        })
-    manifest_path = host_dir / "guest-capture-manifest.json"
-    env.runner.copy_from(
-        f"{guest_dir}/manifest.json",
-        str(manifest_path),
+    return control_for_environment(env).capture(
+        mode=mode,
+        duration_ms=settings.observation_window_ms,
+        frames_per_observation=settings.frames_per_observation,
+        turn=turn,
+        hold_paused=hold_paused,
     )
-    time_status = manifest["time_status"]
-    return {
-        "screen": {
-            "path": frames[-1]["path"],
-            "format": "png",
-            "resolution": [1280, 720],
-        },
-        "frames": frames,
-        "capture_manifest": str(manifest_path),
-        "time": {
-            "mode": mode,
-            "task_time_ms": time_status.get("task_time_ms"),
-            "observation_window_ms": settings.observation_window_ms,
-            "frames_per_observation": settings.frames_per_observation,
-        },
-    }
 
 
 def _task_time_ms(env) -> float:
@@ -303,23 +262,39 @@ def _mark_done(env, *, reason: str) -> tuple[dict, float, bool, dict]:
     return obs, reward, done, info
 
 
+def _make_env(args: argparse.Namespace):
+    if not args.remote_url:
+        from gym_anything.api import from_config
+
+        return from_config(args.env_dir, task_id=args.task, fast_io=args.fast_io)
+    return WeirdRemoteGymEnv.from_config(
+        remote_url=args.remote_url,
+        env_dir=args.env_dir,
+        task_id=args.task,
+        timeout=args.remote_timeout,
+        worker_reset_policy=args.remote_worker_reset_policy,
+        fast_io=args.fast_io,
+    )
+
+
 def run(args: argparse.Namespace) -> int:
     mechanic_id, settings = _settings(args)
     agent_args = json.loads(args.agent_args)
     agent_args.setdefault("request_timeout_seconds", args.request_timeout_seconds)
     agent_args.setdefault("request_attempts", args.request_attempts)
 
-    env = from_config(args.env_dir, task_id=args.task, fast_io=False)
-    env.env_spec.security.resolved_env.update({
-        "WEIRD_CAPTCHA_TIME_MODE": args.time_mode,
-        "WEIRD_CAPTCHA_START_PAUSED": "1",
-        "WEIRD_CAPTCHA_CHALLENGE_SEED": str(args.seed),
-        "SEED": str(args.seed),
-    })
+    env = _make_env(args)
+    control: EvaluationControl = control_for_environment(env)
     info: dict[str, Any] = {}
     agent = None
     episode_dir = None
     try:
+        control.configure({
+            "WEIRD_CAPTCHA_TIME_MODE": args.time_mode,
+            "WEIRD_CAPTCHA_START_PAUSED": "1",
+            "WEIRD_CAPTCHA_CHALLENGE_SEED": str(args.seed),
+            "SEED": str(args.seed),
+        })
         env.reset(
             seed=args.seed,
             use_cache=args.use_cache,
@@ -328,16 +303,17 @@ def run(args: argparse.Namespace) -> int:
         )
         max_steps = args.steps or env.max_steps or 50
         env.set_episode_limits(max_steps=max_steps + 1, timeout_sec=86400)
-        episode_dir = Path(env.episode_dir)
+        episode_dir = control.artifacts_dir
         timing_path = episode_dir / "realtime_timing.jsonl"
 
         ready = _time_command(env, "wait-ready")
 
-        agent_cls = (
-            AuthoritativeObservationProbeAgent
-            if args.agent == "AuthoritativeObservationProbeAgent"
-            else getattr(agent_registry, args.agent)
-        )
+        if args.agent == "AuthoritativeObservationProbeAgent":
+            agent_cls = AuthoritativeObservationProbeAgent
+        elif args.agent in {"Qwen35VLAgent", "WeirdQwen35VLAgent"}:
+            agent_cls = WeirdQwen35VLAgent
+        else:
+            agent_cls = getattr(agent_registry, args.agent)
         agent = agent_cls(agent_args=agent_args, verbose=args.verbose, debug=args.debug)
         if getattr(agent, "autonomous", False):
             raise ValueError("the real-time evaluator requires turn-based agent.step observations")
@@ -345,7 +321,7 @@ def run(args: argparse.Namespace) -> int:
         agent.init(
             task_description=description,
             display_resolution=env.env_spec.observation[0].resolution,
-            save_path=env.episode_dir,
+            save_path=episode_dir,
         )
         if args.time_mode == "live":
             ready = _time_command(env, "resume")
@@ -357,6 +333,8 @@ def run(args: argparse.Namespace) -> int:
             "clock": ready,
             "request_timeout_seconds": args.request_timeout_seconds,
             "request_attempts": args.request_attempts,
+            "fast_io": args.fast_io,
+            "remote_url": args.remote_url,
             "request_retry_policy": {
                 "single_layer": True,
                 "total_attempt_limit": args.request_attempts,
@@ -489,50 +467,12 @@ def run(args: argparse.Namespace) -> int:
         logger.info("Episode finished: %s", info)
     finally:
         if episode_dir is None and env.episode_dir:
-            episode_dir = Path(env.episode_dir)
+            episode_dir = control.artifacts_dir
         if episode_dir is not None:
-            for guest_path, name in (
-                (
-                    "/tmp/weird_captcha_gym/current_task.json",
-                    "current_task.json",
-                ),
-                (
-                    "/tmp/weird_captcha_gym/public_state.json",
-                    "public_state.json",
-                ),
-                (
-                    "/tmp/weird_captcha_gym/"
-                    "parallel_grillmaster_witness_ledger.json",
-                    "parallel_grillmaster_witness_ledger.json",
-                ),
-                (
-                    "/tmp/weird_captcha_gym/"
-                    "parallel_grillmaster_witness_clock.json",
-                    "parallel_grillmaster_witness_clock.json",
-                ),
-                (
-                    "/tmp/weird_captcha_gym/"
-                    "slot_reel_witness_ledger.json",
-                    "slot_reel_witness_ledger.json",
-                ),
-                (
-                    "/tmp/weird_captcha_gym/"
-                    "slot_reel_witness_clock.json",
-                    "slot_reel_witness_clock.json",
-                ),
-            ):
-                try:
-                    present = env.runner.exec_capture(
-                        f"test -s {shlex.quote(guest_path)} && echo present"
-                    )
-                    if "present" not in present.split():
-                        continue
-                    env.runner.copy_from(
-                        guest_path,
-                        str(episode_dir / name),
-                    )
-                except Exception:
-                    pass
+            try:
+                control.collect_artifacts()
+            except Exception as error:
+                logger.warning("Could not collect Weird CUA artifacts: %s", error)
             if args.episode_summary_path is not None:
                 args.episode_summary_path.parent.mkdir(
                     parents=True,
