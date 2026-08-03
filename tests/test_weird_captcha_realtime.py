@@ -563,6 +563,8 @@ def test_puzzle_browser_launches_full_screen() -> None:
     assert "wmctrl -lG" in source
     assert "Puzzle browser fullscreen verified" in source
     assert "Puzzle browser fullscreen verification failed" in source
+    assert "Reusing existing puzzle browser window" in source
+    assert "--profile '$profile_dir'" in source
 
 
 def test_puzzle_browser_requires_the_task_window_and_exact_display_geometry(
@@ -576,7 +578,10 @@ def test_puzzle_browser_requires_the_task_window_and_exact_display_geometry(
         path.write_text(source, encoding="utf-8")
         path.chmod(0o755)
 
-    executable("google-chrome-stable", "#!/usr/bin/env bash\nexit 0\n")
+    executable(
+        "google-chrome-stable",
+        "#!/usr/bin/env bash\nsleep \"${FAKE_BROWSER_DELAY:-0}\"\necho launch >> \"$FAKE_BROWSER_MARKER\"\nexit 0\n",
+    )
     executable("xhost", "#!/usr/bin/env bash\nexit 0\n")
     executable(
         "xdpyinfo",
@@ -585,7 +590,7 @@ def test_puzzle_browser_requires_the_task_window_and_exact_display_geometry(
     executable(
         "wmctrl",
         """#!/usr/bin/env bash
-if [ "$1" = "-lx" ] && [ "${FAKE_WMCTRL_MODE:-success}" = "success" ]; then
+if [ "$1" = "-lx" ] && { [ "${FAKE_WMCTRL_MODE:-success}" = "success" ] || { [ "${FAKE_WMCTRL_MODE:-success}" = "after-launch" ] && [ -f "$FAKE_BROWSER_MARKER" ]; }; }; then
   echo '0x001 0 google-chrome.Google-chrome host Weird CAPTCHA Gym'
 elif [ "$1" = "-lG" ]; then
   echo '0x001 0 0 0 1920 1080 host Weird CAPTCHA Gym'
@@ -600,20 +605,48 @@ exit 0
         "WEIRD_CAPTCHA_BROWSER_COMMAND": str(fake_bin / "google-chrome-stable"),
         "WEIRD_CAPTCHA_BROWSER_USER": "root",
         "WEIRD_CAPTCHA_BROWSER_HOME": str(tmp_path / "home"),
-        "WEIRD_CAPTCHA_WINDOW_ATTEMPTS": "1",
-        "WEIRD_CAPTCHA_WINDOW_POLL_SECONDS": "0",
+        "WEIRD_CAPTCHA_STATE_DIR": str(tmp_path / "state"),
+        "FAKE_BROWSER_MARKER": str(tmp_path / "browser-launched"),
+        "WEIRD_CAPTCHA_WINDOW_ATTEMPTS": "200",
+        "WEIRD_CAPTCHA_WINDOW_POLL_SECONDS": "0.02",
         "WEIRD_CAPTCHA_GEOMETRY_ATTEMPTS": "1",
         "WEIRD_CAPTCHA_GEOMETRY_POLL_SECONDS": "0",
+        "WEIRD_CAPTCHA_BROWSER_LOCK_ATTEMPTS": "200",
+        "WEIRD_CAPTCHA_BROWSER_LOCK_POLL_SECONDS": "0.02",
     }
 
-    accepted = subprocess.run([str(script)], env=environment, check=False)
+    accepted = subprocess.run(
+        [str(script)],
+        env={**environment, "FAKE_WMCTRL_MODE": "after-launch"},
+        check=False,
+    )
+    assert accepted.returncode == 0
+    assert (tmp_path / "browser-launched").exists()
+    (tmp_path / "browser-launched").unlink()
+    reused = subprocess.run([str(script)], env=environment, check=False)
+    assert reused.returncode == 0
+    assert (tmp_path / "browser-launched").exists() is False
+
+    concurrent_environment = {
+        **environment,
+        "FAKE_WMCTRL_MODE": "after-launch",
+        "FAKE_BROWSER_DELAY": "0.25",
+    }
+    first = subprocess.Popen([str(script)], env=concurrent_environment)
+    second = subprocess.Popen([str(script)], env=concurrent_environment)
+    assert first.wait(timeout=10) == 0
+    assert second.wait(timeout=10) == 0
+    assert (tmp_path / "browser-launched").read_text(encoding="utf-8").splitlines() == [
+        "launch"
+    ]
+    (tmp_path / "browser-launched").unlink()
+
     rejected = subprocess.run(
         [str(script)],
         env={**environment, "FAKE_WMCTRL_MODE": "no-window"},
         check=False,
     )
 
-    assert accepted.returncode == 0
     assert rejected.returncode != 0
 
 
