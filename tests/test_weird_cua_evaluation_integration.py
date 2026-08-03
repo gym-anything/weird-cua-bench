@@ -15,7 +15,11 @@ from benchmarks.weird_captcha_gym.evaluation.qwen35vl import (
     image_from_screen,
     observation_frames,
 )
-from benchmarks.weird_captcha_gym.evaluation.remote import RemoteEvaluationControl
+from benchmarks.weird_captcha_gym.evaluation.remote import (
+    RemoteEvaluationControl,
+    WEIRD_CUA_WORKER_CAPABILITY,
+    WeirdRemoteGymEnv,
+)
 from benchmarks.weird_captcha_gym.evaluation import remote_worker
 from benchmarks.weird_captcha_gym.tools import run_realtime_evaluation as evaluator
 
@@ -79,6 +83,11 @@ def test_make_env_uses_the_gym_remote_environment_contract(monkeypatch) -> None:
         "worker_reset_policy": "baseline_setup",
         "fast_io": True,
     }
+
+
+def test_weird_remote_environment_requests_a_weird_worker() -> None:
+    env = object.__new__(WeirdRemoteGymEnv)
+    assert env._infer_runner_hint() == WEIRD_CUA_WORKER_CAPABILITY
 
 
 def test_local_control_configures_the_gym_environment_spec() -> None:
@@ -223,6 +232,27 @@ def test_worker_extension_exposes_fixed_clock_commands(monkeypatch) -> None:
 
     rejected = client.post("/envs/env-1/weird/time", json={"command": "shell"})
     assert rejected.status_code == 400
+
+
+def test_worker_advertises_the_weird_cua_capability(monkeypatch) -> None:
+    observed = []
+    monkeypatch.setattr(
+        remote_worker.gym_worker,
+        "run_runner_preflight",
+        lambda *, must_support, skip: ["qemu"],
+    )
+    monkeypatch.setattr(
+        remote_worker.gym_worker,
+        "main",
+        lambda: observed.extend(
+            remote_worker.gym_worker.run_runner_preflight(
+                must_support=["qemu"],
+                skip=False,
+            )
+        ),
+    )
+    remote_worker.main()
+    assert observed == ["qemu", WEIRD_CUA_WORKER_CAPABILITY]
 
 
 def test_qwen_screen_loader_accepts_path_image_and_remote_base64(tmp_path: Path) -> None:
