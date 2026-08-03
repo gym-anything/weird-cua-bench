@@ -310,6 +310,41 @@ def test_qwen_messages_preserve_chronological_frame_order() -> None:
     assert agent.frame_sequences == [["first", "second", "third"]]
 
 
+def test_qwen_context_backoff_folds_complete_old_observations() -> None:
+    agent = object.__new__(WeirdQwen35VLAgent)
+    agent._current_extra_frames = ["new-first"]
+    agent.frame_sequences = [["old-first", "old-last"]]
+    agent.step_idx = 1
+    agent.history_n = 100
+    agent.image_max = 20
+    agent.fold_size = 10
+    agent.screenshots = ["old-last", "new-last"]
+    agent.history = ["Clicked the old target"]
+    agent.responses = ["old response"]
+    agent.task_description = "Do the task"
+    agent.display_resolution = [1280, 720]
+
+    messages = agent.build_messages(
+        "new-last",
+        history_n=100,
+        image_max=2,
+        fold_size=1,
+    )
+    assert messages[1]["content"][0] == {
+        "type": "text",
+        "text": "This screenshot has been collapsed.",
+    }
+    latest_images = [
+        item["image_url"]["url"]
+        for item in messages[-1]["content"]
+        if item["type"] == "image_url"
+    ]
+    assert latest_images == [
+        "data:image/png;base64,new-first",
+        "data:image/png;base64,new-last",
+    ]
+
+
 def test_weird_corpus_is_enumerated_by_gym_anything_registry() -> None:
     pairs = evaluation_pairs(split="all")
     assert len(pairs) == 75
