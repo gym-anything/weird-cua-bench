@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from benchmarks.weird_captcha_gym.tools.render_agent_attempt_replays import (
+from weird_captcha_gym.tools.render_agent_attempt_replays import (
     _ass_document,
     _outcome_text,
     _pointer_points,

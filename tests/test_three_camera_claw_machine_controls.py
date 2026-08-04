@@ -8,7 +8,7 @@ from pathlib import Path
 
 
 ROOT = Path(__file__).resolve().parents[1]
-BENCHMARK = ROOT / "benchmarks" / "weird_captcha_gym"
+BENCHMARK = ROOT / "weird_captcha_gym"
 ENVIRONMENT = BENCHMARK / "environments" / "three_camera_claw_machine_env"
 MECHANIC = "three_camera_claw_machine"
 
@@ -73,7 +73,7 @@ def test_three_camera_claw_controls_preserve_l4_and_bind_input_surfaces(tmp_path
     historical = _read(ENVIRONMENT / "historical_l4_baseline_fixture.json")
     assert historical["source_commit"] == "94805e33c4e8e52130b9b62712c54e54bcbedd88"
     assert historical["generator_path"] == (
-        "benchmarks/weird_captcha_gym/shared_scripts/incubator_generators/three_camera_claw_machine.py"
+        "weird_captcha_gym/shared_scripts/incubator_generators/three_camera_claw_machine.py"
     )
     assert historical["identity_fields_removed_for_controlled_comparison"] == [
         "task_id",

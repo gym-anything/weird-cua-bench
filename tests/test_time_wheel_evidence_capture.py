@@ -6,7 +6,7 @@ from pathlib import Path
 def test_time_wheel_capture_adapts_the_shared_server_signature(monkeypatch, tmp_path: Path) -> None:
     """Keep the documented evidence command aligned with the shared smoke helper."""
 
-    from benchmarks.weird_captcha_gym.tools import capture_thirty_year_time_wheel_controllability_evidence as capture
+    from weird_captcha_gym.tools import capture_thirty_year_time_wheel_controllability_evidence as capture
 
     calls: list[tuple[Path, str, str, Path, str]] = []
 

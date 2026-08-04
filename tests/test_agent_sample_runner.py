@@ -4,10 +4,11 @@ import pickle
 import sys
 from pathlib import Path
 
-from benchmarks.weird_captcha_gym.tools.run_agent_sample import (
+from weird_captcha_gym.tools.run_agent_sample import (
     REPO_ROOT,
     build_command,
     corpus_snapshot,
+    corpus_snapshot_for_tasks,
     is_terminal_model_error_log,
     load_manifest,
     summarize_run,
@@ -16,7 +17,6 @@ from benchmarks.weird_captcha_gym.tools.run_agent_sample import (
 
 MANIFEST = (
     REPO_ROOT
-    / "benchmarks"
     / "weird_captcha_gym"
     / "evaluations"
     / "gemini_3_5_flash_random15_ui_only_fhd_request_retry_20260715"
@@ -25,7 +25,6 @@ MANIFEST = (
 
 STARRED_MANIFEST = (
     REPO_ROOT
-    / "benchmarks"
     / "weird_captcha_gym"
     / "evaluations"
     / "gemini_3_5_flash_starred15_ui_only_fhd_request_retry_20260716"
@@ -53,7 +52,7 @@ STARRED_ENVIRONMENTS = [
 
 def test_frozen_random_sample_matches_current_75_task_corpus() -> None:
     manifest = load_manifest(MANIFEST)
-    population, digest = corpus_snapshot()
+    population, digest = corpus_snapshot_for_tasks(manifest["tasks"])
 
     assert len(population) == 75
     assert digest == manifest["selection"]["population_sha256"]

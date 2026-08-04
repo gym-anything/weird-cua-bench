@@ -7,7 +7,7 @@ from pathlib import Path
 
 
 ROOT = Path(__file__).resolve().parents[1]
-BENCHMARK = ROOT / "benchmarks" / "weird_captcha_gym"
+BENCHMARK = ROOT / "weird_captcha_gym"
 ENV_ROOT = BENCHMARK / "environments" / "clockwork_clutch_safe_env"
 TASK_ROOT = ENV_ROOT / "tasks" / "clockwork_clutch_safe_seed_0001"
 

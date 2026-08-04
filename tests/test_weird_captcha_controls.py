@@ -9,13 +9,13 @@ import subprocess
 import types
 from pathlib import Path
 
-from benchmarks.weird_captcha_gym.shared_runtime.verifier_helpers import (
+from weird_captcha_gym.shared_runtime.verifier_helpers import (
     verify_rotating_keyboard,
 )
 
 
 ROOT = Path(__file__).resolve().parents[1]
-BENCHMARK = ROOT / "benchmarks" / "weird_captcha_gym"
+BENCHMARK = ROOT / "weird_captcha_gym"
 CONTROLLED_ENVIRONMENTS = (
     "parallel_grillmaster_env",
     "blind_dice_courier_env",
@@ -595,7 +595,7 @@ def test_first_change_controls_preserve_l4_share_world_and_bind_input_surfaces()
         "challenge_id",
         "control_condition",
     ]
-    assert historical["source"]["generator_path"] == "benchmarks/weird_captcha_gym/shared_scripts/incubator_generators/temporal_memory_first_change.py"
+    assert historical["source"]["generator_path"] == "weird_captcha_gym/shared_scripts/incubator_generators/temporal_memory_first_change.py"
     for historical_seed in historical["seeds"]:
         seed = historical_seed["seed"]
         original_public, original_truth = SETUP.generate_task_state(original, seed)
@@ -1614,10 +1614,12 @@ def test_gravity_room_browser_binds_direct_gimbal_only_for_full_interaction() ->
 
 
 def test_paused_evaluator_settles_registered_actions_before_pausing() -> None:
-    evaluator = (BENCHMARK / "tools" / "run_realtime_evaluation.py").read_text(encoding="utf-8")
+    # The settle-before-pause invariant moved into the world party: the
+    # runner settle-pauses inside capture_observation, before each window.
+    runner_source = (BENCHMARK / "runner.py").read_text(encoding="utf-8")
     controller = (BENCHMARK / "shared_runtime" / "app" / "time_controller.js").read_text(encoding="utf-8")
     runtime = (BENCHMARK / "shared_runtime" / "app" / "app.js").read_text(encoding="utf-8")
-    assert '_time_command(env, "settle-pause")' in evaluator
+    assert 'self.time_command("settle-pause")' in runner_source
     assert 'kind === "settle_pause"' in controller
     assert "await pauseAfterActions(sequence);" in controller
     assert "beginAction: (label) => window.WeirdCaptchaTime?.beginAction?.(label)" in runtime
@@ -4438,20 +4440,26 @@ def test_top_face_dice_controlled_exhaustion_constructs_a_valid_lot(monkeypatch)
     assert grader.grade(full_payload, full_truth, full_public)["passed"] is True
 
 
+def _git_show_head(path: str) -> str:
+    """Read a file at HEAD, tolerating the pre-rename package location."""
+    for candidate in (path, f"benchmarks/{path}"):
+        result = subprocess.run(
+            ["git", "show", f"HEAD:{candidate}"],
+            cwd=ROOT,
+            capture_output=True,
+            text=True,
+        )
+        if result.returncode == 0:
+            return result.stdout
+    raise FileNotFoundError(f"{path} not found at HEAD under either package root")
+
+
 def test_top_face_dice_l5_matches_head_generator_including_exhaustion(monkeypatch) -> None:
     env_name = "top_face_dice_arithmetic_env"
     controls = controls_for(env_name)
-    historical_source = subprocess.run(
-        [
-            "git",
-            "show",
-            "HEAD:benchmarks/weird_captcha_gym/shared_scripts/incubator_generators/top_face_dice_arithmetic.py",
-        ],
-        cwd=ROOT,
-        check=True,
-        capture_output=True,
-        text=True,
-    ).stdout
+    historical_source = _git_show_head(
+        "weird_captcha_gym/shared_scripts/incubator_generators/top_face_dice_arithmetic.py"
+    )
     historical = types.ModuleType("head_top_face_dice_generator")
     exec(compile(historical_source, "HEAD:top_face_dice_arithmetic.py", "exec"), historical.__dict__)
     current = load_module(
@@ -4463,17 +4471,9 @@ def test_top_face_dice_l5_matches_head_generator_including_exhaustion(monkeypatc
         BENCHMARK / "shared_runtime" / "server" / "incubator_graders" / "top_face_dice_arithmetic.py",
     )
     historical_task = json.loads(
-        subprocess.run(
-            [
-                "git",
-                "show",
-                "HEAD:benchmarks/weird_captcha_gym/environments/top_face_dice_arithmetic_env/tasks/top_face_dice_arithmetic_seed_0001/task.json",
-            ],
-            cwd=ROOT,
-            check=True,
-            capture_output=True,
-            text=True,
-        ).stdout
+        _git_show_head(
+            "weird_captcha_gym/environments/top_face_dice_arithmetic_env/tasks/top_face_dice_arithmetic_seed_0001/task.json"
+        )
     )
     controlled_task = copy.deepcopy(historical_task)
     controlled_task["_control_condition"] = {

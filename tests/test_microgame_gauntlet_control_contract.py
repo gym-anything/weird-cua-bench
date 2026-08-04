@@ -10,8 +10,8 @@ import types
 
 
 ROOT = Path(__file__).resolve().parents[1]
-GRADER_PATH = ROOT / "benchmarks" / "weird_captcha_gym" / "shared_runtime" / "server" / "incubator_graders" / "microgame_gauntlet.py"
-BENCH = ROOT / "benchmarks" / "weird_captcha_gym"
+GRADER_PATH = ROOT / "weird_captcha_gym" / "shared_runtime" / "server" / "incubator_graders" / "microgame_gauntlet.py"
+BENCH = ROOT / "weird_captcha_gym"
 ENVIRONMENT = BENCH / "environments" / "microgame_gauntlet_env"
 
 
@@ -82,25 +82,27 @@ def test_route_replay_rejects_teleported_checkpoints_and_accepts_sampled_corrido
     assert grader._grade_route(round_data, sampled) is None
 
 
+def _git_show_head(path: str) -> str:
+    """Read a file at HEAD, tolerating the pre-rename package location."""
+    for candidate in (path, f"benchmarks/{path}"):
+        result = subprocess.run(
+            ["git", "show", f"HEAD:{candidate}"],
+            cwd=ROOT,
+            capture_output=True,
+            text=True,
+        )
+        if result.returncode == 0:
+            return result.stdout
+    raise FileNotFoundError(f"{path} not found at HEAD under either package root")
+
+
 def test_l4_full_preserves_the_precontrol_head_generator_output_exactly() -> None:
     """Keep L4/full tied to the literal historical generator, not equivalents."""
-    source = subprocess.run(
-        ["git", "show", "HEAD:benchmarks/weird_captcha_gym/shared_scripts/incubator_generators/microgame_gauntlet.py"],
-        cwd=ROOT,
-        check=True,
-        capture_output=True,
-        text=True,
-    ).stdout
+    source = _git_show_head("weird_captcha_gym/shared_scripts/incubator_generators/microgame_gauntlet.py")
     historical_generator = types.ModuleType("microgame_gauntlet_head_generator")
     exec(compile(source, "HEAD:microgame_gauntlet.py", "exec"), historical_generator.__dict__)
     historical_task = json.loads(
-        subprocess.run(
-            ["git", "show", "HEAD:benchmarks/weird_captcha_gym/environments/microgame_gauntlet_env/tasks/microgame_gauntlet_seed_0001/task.json"],
-            cwd=ROOT,
-            check=True,
-            capture_output=True,
-            text=True,
-        ).stdout
+        _git_show_head("weird_captcha_gym/environments/microgame_gauntlet_env/tasks/microgame_gauntlet_seed_0001/task.json")
     )
     setup = _module("microgame_gauntlet_current_setup", BENCH / "shared_scripts" / "setup_task.py")
     materializer = _module("microgame_gauntlet_control_materializer", BENCH / "tools" / "materialize_controlled_tasks.py")

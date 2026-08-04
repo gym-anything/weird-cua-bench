@@ -6,23 +6,18 @@ from io import BytesIO
 from pathlib import Path
 from types import SimpleNamespace
 
+import pytest
 from PIL import Image
 
-from benchmarks.weird_captcha_gym.evaluation.control import LocalEvaluationControl
-from benchmarks.weird_captcha_gym.evaluation.control import capture_observation_window
-from benchmarks.weird_captcha_gym.evaluation.corpus import evaluation_pairs
-from benchmarks.weird_captcha_gym.evaluation.qwen35vl import (
+from weird_captcha_gym.runner import capture_observation_window
+from weird_captcha_gym.evaluation.corpus import evaluation_pairs
+from weird_captcha_gym.evaluation.qwen35vl import (
     WeirdQwen35VLAgent,
+    call_qwen_with_null_response_retry,
     image_from_screen,
     observation_frames,
 )
-from benchmarks.weird_captcha_gym.evaluation.remote import (
-    RemoteEvaluationControl,
-    WEIRD_CUA_WORKER_CAPABILITY,
-    WeirdRemoteGymEnv,
-)
-from benchmarks.weird_captcha_gym.evaluation import remote_worker
-from benchmarks.weird_captcha_gym.tools import run_realtime_evaluation as evaluator
+from weird_captcha_gym.tools import run_realtime_evaluation as evaluator
 
 
 class JsonResponse:
@@ -126,50 +121,84 @@ def test_evaluator_falls_back_to_task_description() -> None:
     )
 
 
-def test_make_env_uses_the_gym_remote_environment_contract(monkeypatch) -> None:
+def test_make_env_merges_runner_options_locally(monkeypatch) -> None:
     sentinel = object()
     received = {}
 
-    def fake_from_config(**kwargs):
-        received.update(kwargs)
+    def fake_from_config(env_dir, task_id, overrides, fast_io):
+        received.update(
+            env_dir=env_dir, task_id=task_id, overrides=overrides, fast_io=fast_io
+        )
         return sentinel
 
-    monkeypatch.setattr(evaluator.WeirdRemoteGymEnv, "from_config", fake_from_config)
+    import gym_anything.api
+
+    monkeypatch.setattr(gym_anything.api, "from_config", fake_from_config)
     args = SimpleNamespace(
-        remote_url="http://master:5000",
+        remote_url=None,
         env_dir="environment",
         task="task",
-        remote_timeout=123,
-        remote_worker_reset_policy="baseline_setup",
         fast_io=True,
     )
-    assert evaluator._make_env(args) is sentinel
+    options = {"time_mode": "paused", "observation_window_ms": 800}
+    assert evaluator._make_env(args, options) is sentinel
     assert received == {
-        "remote_url": "http://master:5000",
         "env_dir": "environment",
         "task_id": "task",
-        "timeout": 123,
-        "worker_reset_policy": "baseline_setup",
+        "overrides": {"runner_options": options},
         "fast_io": True,
     }
 
 
-def test_weird_remote_environment_requests_a_weird_worker() -> None:
-    env = object.__new__(WeirdRemoteGymEnv)
-    assert env._infer_runner_hint() == WEIRD_CUA_WORKER_CAPABILITY
+def test_make_env_creates_remote_by_benchmark_name_with_overrides(monkeypatch) -> None:
+    sentinel = object()
+    received = {}
 
+    def fake_from_benchmark(**kwargs):
+        received.update(kwargs)
+        return sentinel
 
-def test_local_control_configures_the_gym_environment_spec() -> None:
-    env = SimpleNamespace(
-        env_spec=SimpleNamespace(
-            security=SimpleNamespace(resolved_env={"EXISTING": "yes"})
-        )
+    from gym_anything.remote import RemoteGymEnv
+
+    monkeypatch.setattr(RemoteGymEnv, "from_benchmark", fake_from_benchmark)
+    args = SimpleNamespace(
+        remote_url="http://master:5000",
+        env_dir="weird_captcha_gym/environments/rotating_keyboard_env",
+        task="rotating_keyboard_seed_0001",
+        remote_timeout=123,
+        remote_worker_reset_policy="baseline_setup",
+        fast_io=True,
     )
-    LocalEvaluationControl(env).configure({"WEIRD_CAPTCHA_TIME_MODE": "paused"})
-    assert env.env_spec.security.resolved_env == {
-        "EXISTING": "yes",
-        "WEIRD_CAPTCHA_TIME_MODE": "paused",
+    options = {"time_mode": "live", "observation_window_ms": 800}
+    assert evaluator._make_env(args, options) is sentinel
+    assert received == {
+        "remote_url": "http://master:5000",
+        "benchmark": "weird_captcha_gym",
+        "env_name": "rotating_keyboard_env",
+        "task_id": "rotating_keyboard_seed_0001",
+        "timeout": 123,
+        "worker_reset_policy": "baseline_setup",
+        "fast_io": True,
+        "overrides": {"runner_options": options},
     }
+
+
+def test_runner_configures_the_guest_environment_on_episode_start(tmp_path: Path) -> None:
+    from gym_anything.runtime.runners import registry as runner_registry
+
+    from weird_captcha_gym.runner import WeirdCaptchaRunner
+    from tests.test_weird_captcha_runner import FAKE_INNER_KEY, FakeVMRunner, make_spec
+
+    runner_registry.register_runner(FAKE_INNER_KEY, FakeVMRunner, replace=True)
+    spec = make_spec()
+    spec.security.resolved_env["EXISTING"] = "yes"
+    runner = WeirdCaptchaRunner(spec)
+    runner.on_episode_start({"episode_dir": str(tmp_path), "seed": 42})
+    resolved = runner.inner.spec.security.resolved_env
+    assert resolved["EXISTING"] == "yes"
+    assert resolved["WEIRD_CAPTCHA_TIME_MODE"] == "paused"
+    assert resolved["WEIRD_CAPTCHA_START_PAUSED"] == "1"
+    assert resolved["WEIRD_CAPTCHA_CHALLENGE_SEED"] == "42"
 
 
 def test_capture_returns_absolute_paths_for_remote_fetching(
@@ -265,28 +294,24 @@ def test_capture_rejects_a_resolution_that_cannot_share_action_coordinates(
         raise AssertionError("capture accepted incompatible observation coordinates")
 
 
-def test_remote_control_uses_the_standard_remote_environment_transport(tmp_path: Path) -> None:
+def test_localize_observation_fetches_remote_frames(tmp_path: Path, monkeypatch) -> None:
     remote_observation = {
-        "screen": {"path": "/worker/turn/frame-001.png"},
+        "screen": {"path": "/worker/episode/observations/turn-0003/frame-001.png"},
         "frames": [
-            {"path": "/worker/turn/frame-000.png", "offset_ms": 0},
-            {"path": "/worker/turn/frame-001.png", "offset_ms": 100},
+            {"path": "/worker/episode/observations/turn-0003/frame-000.png", "offset_ms": 0},
+            {"path": "/worker/episode/observations/turn-0003/frame-001.png", "offset_ms": 100},
         ],
-        "capture_manifest": "/worker/turn/manifest.json",
+        "capture_manifest": "/worker/episode/observations/turn-0003/manifest.json",
         "time": {"task_time_ms": 100},
+        "time_status": {"state": "paused", "task_time_ms": 100},
+        "settle_status": {"state": "paused", "task_time_ms": 90},
     }
 
     class FakeRemoteEnv:
-        env_id = "env-1"
-        local_artifacts_dir = tmp_path
+        episode_dir = Path("/worker/episode_x")
 
         def __init__(self):
-            self.requests = []
             self.fetches = []
-
-        def _request(self, method, endpoint, **kwargs):
-            self.requests.append((method, endpoint, kwargs))
-            return JsonResponse({"observation": json.loads(json.dumps(remote_observation))})
 
         def fetch_path(self, remote_path, local_path):
             self.fetches.append((remote_path, local_path))
@@ -294,92 +319,19 @@ def test_remote_control_uses_the_standard_remote_environment_transport(tmp_path:
             Path(local_path).write_bytes(b"file")
             return local_path
 
+    monkeypatch.setattr(Path, "home", classmethod(lambda cls: tmp_path))
     env = FakeRemoteEnv()
-    control = RemoteEvaluationControl(env)
-    observation = control.capture(
-        mode="paused",
-        duration_ms=100,
-        frames_per_observation=2,
-        turn=3,
-    )
-    assert env.requests[0][1] == "/envs/env-1/weird/capture-window"
+    observation = evaluator._localize_observation(env, remote_observation)
+
     assert len(env.fetches) == 3
     assert observation["screen"]["path"] == observation["frames"][-1]["path"]
     assert Path(observation["capture_manifest"]).is_file()
-
-
-def test_worker_extension_configures_only_weird_protocol_values(monkeypatch) -> None:
-    env = SimpleNamespace(
-        env_spec=SimpleNamespace(security=SimpleNamespace(resolved_env={}))
-    )
-    monkeypatch.setattr(remote_worker, "_environment", lambda _env_id: env)
-    client = remote_worker.gym_worker.app.test_client()
-
-    response = client.post(
-        "/envs/env-1/weird/configure",
-        json={
-            "environment": {
-                "WEIRD_CAPTCHA_TIME_MODE": "paused",
-                "WEIRD_CAPTCHA_START_PAUSED": "1",
-                "SEED": "42",
-            }
-        },
-    )
-    assert response.status_code == 200
-    assert env.env_spec.security.resolved_env["WEIRD_CAPTCHA_TIME_MODE"] == "paused"
-
-    rejected = client.post(
-        "/envs/env-1/weird/configure",
-        json={"environment": {"ARBITRARY_COMMAND": "not allowed"}},
-    )
-    assert rejected.status_code == 400
-    assert "unsupported environment keys" in rejected.get_json()["error"]
-
-
-def test_worker_extension_exposes_fixed_clock_commands(monkeypatch) -> None:
-    sentinel_env = object()
-    monkeypatch.setattr(remote_worker, "_environment", lambda _env_id: sentinel_env)
-    monkeypatch.setattr(
-        remote_worker,
-        "time_command",
-        lambda env, command: {"env_matches": env is sentinel_env, "command": command},
-    )
-    client = remote_worker.gym_worker.app.test_client()
-
-    response = client.post("/envs/env-1/weird/time", json={"command": "settle-pause"})
-    assert response.status_code == 200
-    assert response.get_json()["status"] == {
-        "env_matches": True,
-        "command": "settle-pause",
-    }
-
-    rejected = client.post("/envs/env-1/weird/time", json={"command": "shell"})
-    assert rejected.status_code == 400
-
-
-def test_worker_advertises_the_weird_cua_capability(monkeypatch) -> None:
-    observed = []
-    preflight_calls = []
-    monkeypatch.setattr(
-        remote_worker.gym_worker,
-        "run_runner_preflight",
-        lambda *, must_support, skip: (
-            preflight_calls.append((must_support, skip)) or ["qemu"]
-        ),
-    )
-    monkeypatch.setattr(
-        remote_worker.gym_worker,
-        "main",
-        lambda: observed.extend(
-            remote_worker.gym_worker.run_runner_preflight(
-                must_support=["qemu"],
-                skip=False,
-            )
-        ),
-    )
-    remote_worker.main()
-    assert preflight_calls == [(["qemu"], False)]
-    assert observed == [WEIRD_CUA_WORKER_CAPABILITY]
+    for frame in observation["frames"]:
+        assert Path(frame["path"]).is_file()
+        assert str(tmp_path) in frame["path"]
+    # a local environment (no fetch_path) passes through untouched
+    plain = SimpleNamespace()
+    assert evaluator._localize_observation(plain, remote_observation) is remote_observation
 
 
 def test_qwen_screen_loader_accepts_path_image_and_remote_base64(tmp_path: Path) -> None:
@@ -393,6 +345,42 @@ def test_qwen_screen_loader_accepts_path_image_and_remote_base64(tmp_path: Path)
     assert observation_frames({"screen": {"path": str(path)}}) == [
         {"path": str(path)}
     ]
+
+
+def test_qwen_retries_null_content_from_successful_requests(monkeypatch) -> None:
+    responses = iter([None, None, "<tool_call>valid</tool_call>"])
+    calls = []
+
+    def fake_call_llm(*args, **kwargs):
+        calls.append((args, kwargs))
+        return next(responses)
+
+    monkeypatch.setattr(
+        "weird_captcha_gym.evaluation.qwen35vl.call_llm",
+        fake_call_llm,
+    )
+
+    response = WeirdQwen35VLAgent.llm_call(
+        [], "Qwen/Qwen3.5-9B", 0.0, 0.95, 20, 2048
+    )
+
+    assert response == "<tool_call>valid</tool_call>"
+    assert len(calls) == 3
+
+
+def test_qwen_null_content_retry_reports_exhaustion(monkeypatch) -> None:
+    monkeypatch.setattr(
+        "weird_captcha_gym.evaluation.qwen35vl.call_llm",
+        lambda *args, **kwargs: None,
+    )
+
+    with pytest.raises(
+        RuntimeError,
+        match="Qwen returned content=null after 3 attempts",
+    ):
+        call_qwen_with_null_response_retry(
+            [], "Qwen/Qwen3.5-9B", 0.0, 0.95, 20, 2048
+        )
 
 
 def test_qwen_sends_every_frame_at_the_native_display_resolution(tmp_path: Path) -> None:

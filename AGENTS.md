@@ -21,9 +21,9 @@ there there are 3 or 4 core capabilities that each game is trying to test:
 
 ## Controllability plan
 
-Before adding difficulty, interaction, or real-time variants, read `benchmarks/weird_captcha_gym/docs/controllability-plan.md` in full. Do not assume that the current interface is the full-interaction variant. Do not assume that the current difficulty is level 3. Both must be judged independently for every environment.
+Before adding difficulty, interaction, or real-time variants, read `weird_captcha_gym/docs/controllability-plan.md` in full. Do not assume that the current interface is the full-interaction variant. Do not assume that the current difficulty is level 3. Both must be judged independently for every environment.
 
-Environment-by-environment implementation work must also follow every file in `benchmarks/weird_captcha_gym/docs/controllability/`. That directory contains the reusable assignment prompt and the practical decision and validation rules distilled from the completed fifteen-environment implementation.
+Environment-by-environment implementation work must also follow every file in `weird_captcha_gym/docs/controllability/`. That directory contains the reusable assignment prompt and the practical decision and validation rules distilled from the completed fifteen-environment implementation.
 
 ## Capability annotation guidelines
 
@@ -40,7 +40,7 @@ Environment-by-environment implementation work must also follow every file in `b
 
 ## Binding design doctrine
 
-Before changing or adding a puzzle, read `benchmarks/weird_captcha_gym/docs/interaction-puzzle-field-notes.md` in full. Its one-sentence principle, human-feedback ledger, fairness rules, prohibited shortcuts, validation boundaries, and definition of done are binding.
+Before changing or adding a puzzle, read `weird_captcha_gym/docs/interaction-puzzle-field-notes.md` in full. Its one-sentence principle, human-feedback ledger, fairness rules, prohibited shortcuts, validation boundaries, and definition of done are binding.
 
 The benchmark is not a CAPTCHA security product and is not a collection of OCR, classification, static grid, arithmetic, or standard slider tasks. Useful tasks can require motion across frames, active cursor vision, temporal state, motor control, physical or spatial reasoning, causal probing, recovery, or changing interfaces.
 
@@ -48,7 +48,7 @@ Never simulate a claimed mechanic with presentation hacks. Visible geometry, hit
 
 ## Repository boundary
 
-- Keep benchmark code under `benchmarks/weird_captcha_gym/`.
+- Keep benchmark code under `weird_captcha_gym/`.
 - Treat Weird CUA as an installable benchmark for Gym-Anything. Reuse Gym-Anything's environment lifecycle, runners, action API, verification, artifacts, benchmark registry, and remote master/worker stack.
 - Do not create a Weird CUA version of the `gym-anything benchmark` CLI. The existing `weird-cua-evaluate` entry point is limited to the live-versus-paused observation schedule that Gym-Anything's stepwise evaluator does not provide.
 - Remote protocol support may extend Gym-Anything's worker application with fixed Weird CUA clock and frame routes. It must not replace the master, worker registry, scheduler, transport, or environment API.
@@ -66,7 +66,7 @@ Run the benchmark tests after relevant changes:
 python -m pytest tests -q
 ```
 
-Also inspect `python benchmarks/weird_captcha_gym/tools/audit_quality.py --strict` when changing task quality or status. It is expected to exit nonzero while candidates still lack the required human/VNC/agent evidence. Never weaken metadata or promote a task merely to make that audit green.
+Also inspect `python weird_captcha_gym/tools/audit_quality.py --strict` when changing task quality or status. It is expected to exit nonzero while candidates still lack the required human/VNC/agent evidence. Never weaken metadata or promote a task merely to make that audit green.
 
 For dashboard or browser-runtime changes, also export the static site and run `tools/smoke_static_browser_play.py`; companion changes still require the shared-dashboard smoke. Real runner/VNC and human calibration remain separate gates from automation.
 
@@ -158,7 +158,7 @@ The selection of benchmark capabilities still needs a convincing data-backed jus
 | Specular Lighthouse Relay | Simplified |
 | Parallax Orchard | Full |
 
-Both interaction modes are implemented for all twenty. The exact environment-specific mappings are recorded in `benchmarks/weird_captcha_gym/docs/controllability-plan.md`. Preserve the generated world, information, goal, and action effects across each pair. Bind browser events and grading to the selected input surface so one mode cannot pass with the other mode's transcript.
+Both interaction modes are implemented for all twenty. The exact environment-specific mappings are recorded in `weird_captcha_gym/docs/controllability-plan.md`. Preserve the generated world, information, goal, and action effects across each pair. Bind browser events and grading to the selected input surface so one mode cannot pass with the other mode's transcript.
 
 ## Collaboration rules learned from the project
 

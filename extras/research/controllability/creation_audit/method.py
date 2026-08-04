@@ -18,7 +18,7 @@ DEFAULT_REASONING_EFFORT = "xhigh"
 DEFAULT_TIMEOUT_SECONDS = 7200
 DEFAULT_BLIND_NUDGES = 1
 DEFAULT_AUDIT_ROUNDS = 3
-ENVIRONMENTS_ROOT = Path("benchmarks/weird_captcha_gym/environments")
+ENVIRONMENTS_ROOT = Path("weird_captcha_gym/environments")
 AUDIT_PASS = "PASS"
 AUDIT_REVISION_REQUIRED = "REVISION_REQUIRED"
 DESKTOP_ISOLATION_RULE = (
@@ -40,7 +40,7 @@ DISABLED_INTERACTIVE_FEATURES = (
 
 def _repo_root() -> Path:
     root = Path(__file__).resolve().parents[4]
-    if not (root / "benchmarks" / "weird_captcha_gym").is_dir():
+    if not (root / "weird_captcha_gym").is_dir():
         raise RuntimeError(
             f"Could not locate the Weird CUA Bench repository from {__file__}"
         )

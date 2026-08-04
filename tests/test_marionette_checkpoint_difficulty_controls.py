@@ -17,15 +17,15 @@ sync_playwright = pytest.importorskip("playwright.sync_api").sync_playwright
 ROOT = Path(__file__).resolve().parents[1]
 AUDIT = (
     ROOT
-    / "benchmarks/weird_captcha_gym/environments/marionette_checkpoint_env/evidence_docs/audit_passive_clearance.py"
+    / "weird_captcha_gym/environments/marionette_checkpoint_env/evidence_docs/audit_passive_clearance.py"
 )
 STATIC_SMOKE = (
     ROOT
-    / "benchmarks/weird_captcha_gym/environments/marionette_checkpoint_env/evidence_docs/smoke_target_static_browser_play.py"
+    / "weird_captcha_gym/environments/marionette_checkpoint_env/evidence_docs/smoke_target_static_browser_play.py"
 )
 sys.path.insert(0, str(ROOT))
-from benchmarks.weird_captcha_gym.dashboard.catalog import build_catalog
-from benchmarks.weird_captcha_gym.dashboard.export_static import _export_browser_play
+from weird_captcha_gym.dashboard.catalog import build_catalog
+from weird_captcha_gym.dashboard.export_static import _export_browser_play
 
 
 def _audit_module():

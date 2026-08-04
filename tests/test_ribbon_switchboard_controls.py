@@ -6,12 +6,12 @@ import importlib.util
 import json
 from pathlib import Path
 
-from benchmarks.weird_captcha_gym.realtime import load_real_time_settings
-from benchmarks.weird_captcha_gym.shared_scripts.setup_task import generate_task_state
+from weird_captcha_gym.realtime import load_real_time_settings
+from weird_captcha_gym.shared_scripts.setup_task import generate_task_state
 
 
 ROOT = Path(__file__).resolve().parents[1]
-BENCHMARK = ROOT / "benchmarks" / "weird_captcha_gym"
+BENCHMARK = ROOT / "weird_captcha_gym"
 ENVIRONMENT = BENCHMARK / "environments" / "ribbon_switchboard_env"
 BASE_TASK_PATH = ENVIRONMENT / "tasks" / "ribbon_switchboard_seed_0001" / "task.json"
 

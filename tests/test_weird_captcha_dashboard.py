@@ -12,20 +12,20 @@ from collections import Counter
 from pathlib import Path
 from unittest import mock
 
-from benchmarks.weird_captcha_gym.dashboard.catalog import BENCHMARK_ROOT, REPO_ROOT, build_catalog
-from benchmarks.weird_captcha_gym.dashboard.atlas import (
+from weird_captcha_gym.dashboard.catalog import BENCHMARK_ROOT, REPO_ROOT, build_catalog
+from weird_captcha_gym.dashboard.atlas import (
     AtlasCurationStore, COLLECTION_ROOT, artifact_page, build_atlas, instance_detail, instance_page,
     source_detail, specimen_detail,
 )
-from benchmarks.weird_captcha_gym.dashboard.server import (
+from weird_captcha_gym.dashboard.server import (
     DashboardServer, EvaluationManager, SessionManager, paired_dashboard_url,
 )
-from benchmarks.weird_captcha_gym.dashboard.export_static import _validate_output_path, export_dashboard
-from benchmarks.weird_captcha_gym.dashboard.reviews import EnvironmentReviewStore
-from benchmarks.weird_captcha_gym.shared_runtime.server.legacy_browser_grader import grade as grade_legacy_browser_result
-from benchmarks.weird_captcha_gym.shared_runtime.server import grillmaster_witness
-from benchmarks.weird_captcha_gym.shared_runtime.server.weird_captcha_server import PuzzleServer
-from benchmarks.weird_captcha_gym.shared_scripts.setup_task import generate_task_state, load_task
+from weird_captcha_gym.dashboard.export_static import _validate_output_path, export_dashboard
+from weird_captcha_gym.dashboard.reviews import EnvironmentReviewStore
+from weird_captcha_gym.shared_runtime.server.legacy_browser_grader import grade as grade_legacy_browser_result
+from weird_captcha_gym.shared_runtime.server import grillmaster_witness
+from weird_captcha_gym.shared_runtime.server.weird_captcha_server import PuzzleServer
+from weird_captcha_gym.shared_scripts.setup_task import generate_task_state, load_task
 from run import launcher_args
 
 
@@ -1130,8 +1130,8 @@ class WeirdCaptchaDashboardTests(unittest.TestCase):
             cancel_observed.set()
 
         with (
-            mock.patch("benchmarks.weird_captcha_gym.dashboard.server.subprocess.run", side_effect=delayed_setup),
-            mock.patch("benchmarks.weird_captcha_gym.dashboard.server.subprocess.Popen") as popen,
+            mock.patch("weird_captcha_gym.dashboard.server.subprocess.run", side_effect=delayed_setup),
+            mock.patch("weird_captcha_gym.dashboard.server.subprocess.Popen") as popen,
             mock.patch.object(manager, "_remove_browser_state", side_effect=observed_remove),
         ):
             session = manager.start_browser(
@@ -1159,8 +1159,8 @@ class WeirdCaptchaDashboardTests(unittest.TestCase):
             return subprocess.CompletedProcess([], 0, "", "")
 
         with (
-            mock.patch("benchmarks.weird_captcha_gym.dashboard.server.subprocess.run", side_effect=delayed_setup),
-            mock.patch("benchmarks.weird_captcha_gym.dashboard.server.subprocess.Popen") as popen,
+            mock.patch("weird_captcha_gym.dashboard.server.subprocess.run", side_effect=delayed_setup),
+            mock.patch("weird_captcha_gym.dashboard.server.subprocess.Popen") as popen,
         ):
             session = manager.start_browser(
                 "input_lag_forklift_env",

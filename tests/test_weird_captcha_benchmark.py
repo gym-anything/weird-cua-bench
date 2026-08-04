@@ -83,8 +83,12 @@ class WeirdCaptchaBenchmarkTests(unittest.TestCase):
                     encoding="utf-8"
                 )
             )
+            # rgb_screen is the historical screen surface; frame_window is the
+            # WeirdCaptchaRunner modality carrying the same desktop geometry.
             screens = [
-                item for item in spec["observation"] if item.get("type") == "rgb_screen"
+                item
+                for item in spec["observation"]
+                if item.get("type") in {"rgb_screen", "frame_window"}
             ]
             self.assertEqual(len(screens), 1, env_name)
             expected_resolution = (
@@ -337,7 +341,7 @@ class WeirdCaptchaBenchmarkTests(unittest.TestCase):
         self.assertEqual(helpers.verify_funeral_ritual({"result": funeral_result, "ground_truth": funeral})["score"], 100)
 
         slime_public, slime = generated("slime_commute", setup.generate_slime_commute)
-        from benchmarks.weird_captcha_gym.tools.incubator_solvers.slime_commute import _plan
+        from weird_captcha_gym.tools.incubator_solvers.slime_commute import _plan
         plan = _plan(slime["board"])
         slime_result = {
             "mechanic_id": "slime_commute",

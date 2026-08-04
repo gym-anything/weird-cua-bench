@@ -5,11 +5,11 @@ import importlib.util
 import json
 from pathlib import Path
 
-from benchmarks.weird_captcha_gym.realtime import load_real_time_settings
+from weird_captcha_gym.realtime import load_real_time_settings
 
 
 ROOT = Path(__file__).resolve().parents[1]
-BENCH = ROOT / "benchmarks" / "weird_captcha_gym"
+BENCH = ROOT / "weird_captcha_gym"
 ENVIRONMENT = BENCH / "environments" / "jigsaw_slider_alignment_env"
 MECHANIC = "jigsaw_slider_alignment"
 
@@ -252,6 +252,10 @@ def test_controls_use_the_shared_realtime_configuration() -> None:
 
 
 def test_baseline_keeps_the_original_1280_by_720_observation_surface() -> None:
-    screens = [item for item in ENV_SPEC["observation"] if item.get("type") == "rgb_screen"]
+    screens = [
+        item
+        for item in ENV_SPEC["observation"]
+        if item.get("type") in {"rgb_screen", "frame_window"}
+    ]
     assert len(screens) == 1
     assert screens[0]["resolution"] == [1280, 720]

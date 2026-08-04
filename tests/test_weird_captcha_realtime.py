@@ -8,18 +8,18 @@ import urllib.request
 from http.server import ThreadingHTTPServer
 from pathlib import Path
 
-from benchmarks.weird_captcha_gym.realtime import (
+from weird_captcha_gym.realtime import (
     RealTimeSettings,
     load_real_time_settings,
     mechanic_id_from_env_dir,
 )
-from benchmarks.weird_captcha_gym.shared_scripts import capture_observation_window as CAPTURE
-from benchmarks.weird_captcha_gym.shared_scripts.setup_task import generate_task_state
-from benchmarks.weird_captcha_gym.shared_runtime.server.weird_captcha_server import PuzzleServer
+from weird_captcha_gym.shared_scripts import capture_observation_window as CAPTURE
+from weird_captcha_gym.shared_scripts.setup_task import generate_task_state
+from weird_captcha_gym.shared_runtime.server.weird_captcha_server import PuzzleServer
 
 
 ROOT = Path(__file__).resolve().parents[1]
-BENCHMARK = ROOT / "benchmarks" / "weird_captcha_gym"
+BENCHMARK = ROOT / "weird_captcha_gym"
 
 
 def request_json(url: str, payload: dict | None = None) -> tuple[int, dict]:
