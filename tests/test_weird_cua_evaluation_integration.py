@@ -605,3 +605,37 @@ def test_weird_corpus_is_enumerated_by_gym_anything_registry() -> None:
     assert len(pairs) == 75
     assert len({task_id for _environment, task_id in pairs}) == 75
     assert all(environment.name.endswith("_env") for environment, _task in pairs)
+
+
+def test_summary_written_only_with_decided_verdict(tmp_path, monkeypatch) -> None:
+    """A crashed episode leaves no summary; a decided one writes it even
+    when env.close() fails against a dead worker."""
+
+    class FakeEnv:
+        episode_dir = None
+
+        def __init__(self):
+            self.closed = False
+
+        def reset(self, **kwargs):
+            raise RuntimeError("worker unreachable at create")
+
+        def close(self):
+            self.closed = True
+            raise RuntimeError("close also fails")
+
+    summary = tmp_path / "s.json"
+    args = evaluator.build_parser().parse_args([
+        "--env-dir", "weird_captcha_gym/environments/rotating_keyboard_env",
+        "--task", "rotating_keyboard_seed_0001",
+        "--agent", "AuthoritativeObservationProbeAgent",
+        "--agent-args", "{}",
+        "--time-mode", "paused",
+        "--episode-summary-path", str(summary),
+    ])
+    fake = FakeEnv()
+    monkeypatch.setattr(evaluator, "_make_env", lambda *a, **k: fake)
+    with pytest.raises(RuntimeError, match="worker unreachable"):
+        evaluator.run(args)
+    assert fake.closed
+    assert not summary.exists()

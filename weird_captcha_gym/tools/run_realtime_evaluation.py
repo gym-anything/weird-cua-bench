@@ -701,10 +701,15 @@ def run(args: argparse.Namespace) -> int:
     finally:
         if episode_dir is None and env.episode_dir:
             episode_dir = _client_episode_dir(env)
-        # Benchmark artifacts (public state, witness files) are collected by
-        # WeirdCaptchaRunner.stop() when the environment closes.
-        env.close()
-        if episode_dir is not None and args.episode_summary_path is not None:
+        # The summary is written only when the episode produced a verifier
+        # verdict: a crashed episode leaves no summary and a nonzero exit,
+        # so orchestrators can trust summary existence as completion.
+        decided = bool(((info.get("verifier") or {}).get("decided")))
+        if (
+            episode_dir is not None
+            and args.episode_summary_path is not None
+            and decided
+        ):
             args.episode_summary_path.parent.mkdir(
                 parents=True,
                 exist_ok=True,
@@ -724,6 +729,14 @@ def run(args: argparse.Namespace) -> int:
                 ),
                 encoding="utf-8",
             )
+        # Benchmark artifacts (public state, witness files) are collected by
+        # WeirdCaptchaRunner.stop() when the environment closes. Close after
+        # the summary: a close failure against a dead worker must not
+        # discard a completed episode's result.
+        try:
+            env.close()
+        except Exception:
+            logger.warning("env.close() failed", exc_info=True)
 
     if agent is not None:
         agent.finish(info=info)

@@ -50,6 +50,7 @@ def create_manifest(args: argparse.Namespace) -> int:
             f"expected {args.expected_environments} environments but found {len(controls_paths)}"
         )
 
+    time_modes = list(getattr(args, "time_modes", None) or TIME_MODES)
     records: list[dict[str, Any]] = []
     for controls_path in controls_paths:
         controls = json.loads(controls_path.read_text(encoding="utf-8"))
@@ -67,7 +68,7 @@ def create_manifest(args: argparse.Namespace) -> int:
             expected = {"difficulty": args.difficulty, "interaction": interaction}
             if any(condition.get(key) != value for key, value in expected.items()):
                 raise ValueError(f"{task_path}: wrong control condition {condition}")
-            for time_mode in TIME_MODES:
+            for time_mode in time_modes:
                 run_id = (
                     f"{mechanic_id}_l{args.difficulty}_{interaction}_{time_mode}_seed{args.seed}"
                 )
@@ -87,7 +88,7 @@ def create_manifest(args: argparse.Namespace) -> int:
                     }
                 )
 
-    expected_runs = args.expected_environments * len(INTERACTIONS) * len(TIME_MODES)
+    expected_runs = args.expected_environments * len(INTERACTIONS) * len(time_modes)
     if len(records) != expected_runs:
         raise ValueError(f"expected {expected_runs} runs but built {len(records)}")
 
@@ -110,7 +111,7 @@ def create_manifest(args: argparse.Namespace) -> int:
             ).strip(),
             "difficulty": args.difficulty,
             "interactions": list(INTERACTIONS),
-            "time_modes": list(TIME_MODES),
+            "time_modes": list(time_modes),
             "seed": args.seed,
             "model": args.model,
             "run_count": len(records),
@@ -286,6 +287,13 @@ def build_parser() -> argparse.ArgumentParser:
     create.add_argument("--request-timeout-seconds", type=float, default=300.0)
     create.add_argument("--request-attempts", type=int, default=1)
     create.add_argument("--max-steps", type=int, default=200)
+    create.add_argument(
+        "--time-modes",
+        nargs="+",
+        choices=list(TIME_MODES),
+        default=list(TIME_MODES),
+        help="Restrict the manifest to these time modes (default: both).",
+    )
     create.set_defaults(func=create_manifest)
 
     run = subparsers.add_parser("run")

@@ -81,3 +81,59 @@ def test_main_control_matrix_records_and_passes_no_task_time_limit(
     assert "--fast-io" in captured["command"]
     assert captured["command"][captured["command"].index("--steps") + 1] == "200"
     assert "--no-play-time-limit" in captured["command"]
+
+
+def test_create_manifest_supports_paused_only_time_mode(tmp_path, monkeypatch):
+    repo = tmp_path / "repo"
+    env_dir = repo / "weird_captcha_gym" / "environments" / "sample_env"
+    _write_json(
+        env_dir / "controls.json",
+        {
+            "mechanic_id": "sample",
+            "interaction": {
+                "simplified": {"implemented": True},
+                "full": {"implemented": True},
+            },
+        },
+    )
+    for interaction in run_control_matrix.INTERACTIONS:
+        _write_json(
+            env_dir / "tasks" / f"sample_d1_{interaction}_seed_0001" / "task.json",
+            {
+                "metadata": {
+                    "control_condition": {
+                        "difficulty": 1,
+                        "interaction": interaction,
+                    }
+                }
+            },
+        )
+    monkeypatch.setattr(
+        run_control_matrix.subprocess,
+        "check_output",
+        lambda *args, **kwargs: "abc123\n",
+    )
+    output = tmp_path / "evaluation"
+    create_args = argparse.Namespace(
+        repo_root=repo,
+        output_root=output,
+        difficulty=1,
+        seed=42,
+        model="Qwen/Qwen3.5-9B",
+        expected_environments=1,
+        request_timeout_seconds=300.0,
+        request_attempts=1,
+        max_steps=200,
+        remote_url="http://master:5800",
+        vlm_base_url="http://model:8600/v1",
+        time_modes=["paused"],
+    )
+    assert run_control_matrix.create_manifest(create_args) == 0
+    records = [
+        json.loads(line)
+        for line in (output / "manifest.jsonl").read_text().splitlines()
+    ]
+    assert len(records) == 2
+    assert {r["time_mode"] for r in records} == {"paused"}
+    protocol = json.loads((output / "protocol.json").read_text())
+    assert protocol["time_modes"] == ["paused"]
