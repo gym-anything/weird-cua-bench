@@ -5,7 +5,7 @@ import json
 from pathlib import Path
 from types import SimpleNamespace
 
-from benchmarks.weird_captcha_gym.evaluation import run_control_matrix
+from weird_captcha_gym.evaluation import run_control_matrix
 
 
 def _write_json(path: Path, value) -> None:
@@ -18,7 +18,7 @@ def test_main_control_matrix_records_and_passes_no_task_time_limit(
     monkeypatch,
 ) -> None:
     repo = tmp_path / "repo"
-    env_dir = repo / "benchmarks" / "weird_captcha_gym" / "environments" / "sample_env"
+    env_dir = repo / "weird_captcha_gym" / "environments" / "sample_env"
     _write_json(
         env_dir / "controls.json",
         {

@@ -8,7 +8,7 @@ from pathlib import Path
 
 
 ROOT = Path(__file__).resolve().parents[1]
-BENCHMARK = ROOT / "benchmarks" / "weird_captcha_gym"
+BENCHMARK = ROOT / "weird_captcha_gym"
 ENVIRONMENT = "wind_tunnel_seed_courier_env"
 MECHANIC = "wind_tunnel_seed_courier"
 

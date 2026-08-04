@@ -49,14 +49,14 @@ The public browser runtime is an exploration surface, not a secure evaluation en
 
 ## Live and paused evaluation
 
-Every environment has a task-time limit, observation-window duration, and frame count in `benchmarks/weird_captcha_gym/real_time.json`. Live and paused runs use the same frame schedule. Live mode keeps the task running while the model responds; paused mode stops task time during the model response.
+Every environment has a task-time limit, observation-window duration, and frame count in `weird_captcha_gym/real_time.json`. Live and paused runs use the same frame schedule. Live mode keeps the task running while the model responds; paused mode stops task time during the model response.
 
 Install the evaluation dependencies, then choose the condition with `--time-mode`:
 
 ```bash
 python -m pip install -e ".[evaluation]"
 weird-cua-evaluate \
-  --env-dir benchmarks/weird_captcha_gym/environments/rotating_keyboard_env \
+  --env-dir weird_captcha_gym/environments/rotating_keyboard_env \
   --task rotating_keyboard_seed_0001 \
   --agent GeminiComputerUseAgent \
   --agent-args '{"model":"gemini-3.5-flash"}' \
@@ -67,15 +67,15 @@ Public browser play includes an observation inspector. Choose live or paused mod
 
 This browser control is for inspection. Authoritative evaluation still uses `--time-mode` and records its frames and timing manifest in the episode artifacts.
 
-The evaluator is a benchmark-specific observation schedule over Gym-Anything. Gym-Anything still creates the environment, selects the runner, applies actions, records the trajectory, runs the verifier, and owns remote scheduling. `Qwen35VLAgent` automatically uses the Weird CUA adapter so all chronological frames reach the model while retaining the latest Gym-Anything implementation.
+The benchmark's world behavior lives in `WeirdCaptchaRunner`, registered with Gym-Anything's runner registry under the key `weird_captcha` and declared by every environment's `env.json`. It composes the inner VM runner and owns the puzzle clock, frame-window observation capture, guest configuration, and benchmark artifact collection. The evaluator is a thin turn scheduler over the standard `env.reset`/`env.step` doors. Gym-Anything creates the environment, applies actions, records the trajectory, runs the verifier, and owns remote scheduling. `Qwen35VLAgent` automatically uses the Weird CUA adapter so all chronological frames reach the model while retaining the latest Gym-Anything implementation.
 
-Remote evaluation uses the normal Gym-Anything master with the Weird CUA worker extension:
+Remote evaluation uses the plain Gym-Anything master and worker. The worker advertises the `weird_captcha` runner through the registry, the client creates environments by benchmark name with a task-content digest, and the run condition travels as spec overrides:
 
 ```bash
 gym-anything-master --port 5000
-weird-cua-worker --master-url http://master:5000
+gym-anything-worker --master-url http://master:5000 --must-support-runner weird_captcha
 weird-cua-evaluate \
-  --env-dir benchmarks/weird_captcha_gym/environments/rotating_keyboard_env \
+  --env-dir weird_captcha_gym/environments/rotating_keyboard_env \
   --task rotating_keyboard_seed_0001 \
   --agent Qwen35VLAgent \
   --agent-args '{"model":"Qwen/Qwen3.5-397B-A17B"}' \
@@ -83,7 +83,7 @@ weird-cua-evaluate \
   --remote-url http://master:5000
 ```
 
-`weird-cua-worker` imports Gym-Anything's worker and adds only fixed routes for Weird CUA clock configuration, frame-window capture, and benchmark artifact collection. It does not replace the Gym-Anything master, worker registry, scheduler, runners, or environment API.
+There is no benchmark-specific worker, route, or remote client anymore. Clock commands ride the standard action channel and answer through `info["world_action_results"]`; observation frames come back over the standard `fetch_path` route into `~/.captcha-bench/remote-episodes/`.
 
 Add `--fast-io` when the selected Gym-Anything runner reports FastIO support. AVF does not support it.
 
@@ -92,19 +92,19 @@ Add `--fast-io` when the selected Gym-Anything runner reports FastIO support. AV
 ```bash
 python -m pip install -e ".[test]"
 python -m pytest tests -q
-python benchmarks/weird_captcha_gym/tools/smoke_realtime_control.py
-python benchmarks/weird_captcha_gym/tools/smoke_realtime_environments.py
+python weird_captcha_gym/tools/smoke_realtime_control.py
+python weird_captcha_gym/tools/smoke_realtime_environments.py
 ```
 
 The strict promotion audit is deliberately red while the corpus remains candidate-only:
 
 ```bash
-python benchmarks/weird_captcha_gym/tools/audit_quality.py --strict
+python weird_captcha_gym/tools/audit_quality.py --strict
 ```
 
 Its blockers are the human/VNC/agent evidence still required before anything enters the empty `verified` split; do not weaken task status merely to make this command green.
 
-Read [`benchmarks/weird_captcha_gym/docs/interaction-puzzle-field-notes.md`](benchmarks/weird_captcha_gym/docs/interaction-puzzle-field-notes.md) before changing any puzzle. It records the binding interaction-first doctrine, human feedback, prohibited shortcuts, and current validation limits.
+Read [`weird_captcha_gym/docs/interaction-puzzle-field-notes.md`](weird_captcha_gym/docs/interaction-puzzle-field-notes.md) before changing any puzzle. It records the binding interaction-first doctrine, human feedback, prohibited shortcuts, and current validation limits.
 
 ## License
 

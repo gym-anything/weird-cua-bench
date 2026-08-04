@@ -5,7 +5,7 @@ from pathlib import Path
 
 import pytest
 
-from benchmarks.weird_captcha_gym.dashboard.export_trajectories import (
+from weird_captcha_gym.dashboard.export_trajectories import (
     export_trajectory_dashboard,
 )
 

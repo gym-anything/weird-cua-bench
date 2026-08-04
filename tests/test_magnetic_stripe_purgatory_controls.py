@@ -5,12 +5,12 @@ import importlib.util
 import json
 from pathlib import Path
 
-from benchmarks.weird_captcha_gym.realtime import load_real_time_settings
-from benchmarks.weird_captcha_gym.shared_scripts.setup_task import generate_task_state
+from weird_captcha_gym.realtime import load_real_time_settings
+from weird_captcha_gym.shared_scripts.setup_task import generate_task_state
 
 
 ROOT = Path(__file__).resolve().parents[1]
-BENCHMARK = ROOT / "benchmarks" / "weird_captcha_gym"
+BENCHMARK = ROOT / "weird_captcha_gym"
 ENVIRONMENT = BENCHMARK / "environments" / "magnetic_stripe_purgatory_env"
 BASE_TASK = ENVIRONMENT / "tasks" / "magnetic_stripe_purgatory_seed_0001" / "task.json"
 CONTROLS_PATH = ENVIRONMENT / "controls.json"
@@ -134,7 +134,7 @@ def test_controls_define_l4_full_reference_and_shared_real_time_settings() -> No
     MATERIALIZER.validate_controls(CONTROLS, ENVIRONMENT)
     assert CONTROLS["baseline"] == {"difficulty": 4, "interaction": "full", "real_time": "live"}
     assert CONTROLS["real_time"] == load_real_time_settings("magnetic_stripe_purgatory").__dict__
-    assert ENV["observation"] == [{"type": "rgb_screen", "fps": 10, "resolution": [1280, 720], "inline": False}]
+    assert ENV["observation"] == [{"type": "frame_window", "fps": 10, "resolution": [1280, 720], "inline": False}]
 
 
 def test_baseline_materializes_all_ten_and_preserves_the_original_world(tmp_path: Path) -> None:

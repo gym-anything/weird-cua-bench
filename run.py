@@ -5,7 +5,7 @@ from __future__ import annotations
 import sys
 from collections.abc import Sequence
 
-from benchmarks.weird_captcha_gym.dashboard.server import main as dashboard_main
+from weird_captcha_gym.dashboard.server import main as dashboard_main
 
 
 PUBLIC_DASHBOARD = "https://gym-anything.github.io/weird-cua-bench/"
