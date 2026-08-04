@@ -506,8 +506,9 @@ def _create_and_reset(args, runner_options):
     attempt = 0
     while True:
         attempt += 1
-        env = _make_env(args, runner_options)
+        env = None
         try:
+            env = _make_env(args, runner_options)
             obs = env.reset(
                 seed=args.seed,
                 use_cache=args.use_cache,
@@ -516,10 +517,11 @@ def _create_and_reset(args, runner_options):
             )
             return env, obs
         except Exception as error:
-            try:
-                env.close()
-            except Exception:
-                pass
+            if env is not None:
+                try:
+                    env.close()
+                except Exception:
+                    pass
             transient = _retryable_request_error(error) or "503" in str(error)
             if not transient or time.monotonic() >= deadline:
                 raise

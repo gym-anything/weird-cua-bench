@@ -653,7 +653,7 @@ def test_admission_waits_out_capacity_refusals(tmp_path, monkeypatch) -> None:
 
         def reset(self, **kwargs):
             calls["n"] += 1
-            if calls["n"] < 3:
+            if calls["n"] < 4:
                 raise RuntimeError(
                     "Remote request failed: 503 Server Error: for url: "
                     "http://master:5900/envs/create"
@@ -666,6 +666,14 @@ def test_admission_waits_out_capacity_refusals(tmp_path, monkeypatch) -> None:
     envs = []
 
     def fake_make_env(args, options):
+        # The remote client POSTs /envs/create in its constructor, so
+        # capacity refusals surface here, not at reset.
+        calls["n"] += 1
+        if calls["n"] == 1:
+            raise RuntimeError(
+                "Remote request failed: 503 Server Error: for url: "
+                "http://master:5900/envs/create"
+            )
         env = BusyEnv()
         envs.append(env)
         return env
@@ -681,8 +689,9 @@ def test_admission_waits_out_capacity_refusals(tmp_path, monkeypatch) -> None:
     )
     env, obs = evaluator._create_and_reset(args, {"time_mode": "paused"})
     assert obs == {"ok": True}
-    assert calls["n"] == 3
-    assert envs[0].closed and envs[1].closed and not envs[2].closed
+    assert calls["n"] == 5
+    assert len(envs) == 2
+    assert envs[0].closed and not envs[1].closed
 
     class FatalEnv:
         def reset(self, **kwargs):
