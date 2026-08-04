@@ -172,6 +172,9 @@ def run_item(args: argparse.Namespace) -> int:
         json.dumps(
             {
                 "model": record["model"],
+                "temperature": 1.0,
+                "top_p": 0.95,
+                "top_k": 20,
                 "history_n": 100,
                 "image_max": 20,
                 "fold_size": 10,
