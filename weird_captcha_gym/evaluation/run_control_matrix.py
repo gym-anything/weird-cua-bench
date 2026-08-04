@@ -136,7 +136,9 @@ def _result_from_summary(summary_path: Path) -> dict[str, Any]:
     if verifier.get("passed") is True:
         outcome = "passed"
     elif verifier.get("decided") is True:
-        outcome = "benchmark_failure"
+        # A decided, failed verdict means the agent failed the task; a
+        # benchmark defect is a different investigation entirely.
+        outcome = "agent_failure"
     else:
         outcome = "undecided"
     return {

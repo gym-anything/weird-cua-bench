@@ -50,7 +50,7 @@ def test_trajectory_export_preserves_model_evidence_and_lazy_image_urls(
     _write_json(
         run_dir / "done.json",
         {
-            "outcome": "benchmark_failure",
+            "outcome": "agent_failure",
             "benchmark_reason": "agent_completed",
             "duration_seconds": 12.5,
             "episode_dir": str(episode_dir),
