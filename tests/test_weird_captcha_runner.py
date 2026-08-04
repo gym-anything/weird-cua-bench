@@ -97,8 +97,9 @@ class FakeVMRunner(BaseRunner):
             frames = int(parts[parts.index("--frames") + 1])
             out_dir = parts[parts.index("--output-dir") + 1]
             # A scheduled observation window advances the task clock in both
-            # modes; in paused mode the capture script owns the brief run.
-            self.task_time_ms += duration
+            # modes; a hold-paused capture records frozen frames instead.
+            if "--hold-paused" not in parts:
+                self.task_time_ms += duration
             manifest = {
                 "frames": [
                     {
@@ -311,11 +312,20 @@ class StateMachineTest(WeirdCaptchaRunnerTestCase):
         runner = self._runner()
         fake = runner.inner
 
+        # Capture 0 is the frozen bootstrap: no task time spent, no turn.
         obs = runner.capture_observation()
         self.assertEqual(self._time_events(fake), ["wait-ready"])
+        self.assertTrue(obs.get("bootstrap"))
+        self.assertIn("bootstrap", obs["screen"]["path"])
+        self.assertEqual(fake.task_time_ms, 0.0)
+
+        # The first real observation advances exactly one window.
+        obs = runner.capture_observation()
         self.assertEqual(len(obs["frames"]), 3)
+        self.assertIn("turn-0000", obs["screen"]["path"])
         self.assertTrue(Path(obs["screen"]["path"]).exists())
         self.assertTrue(Path(obs["capture_manifest"]).exists())
+        self.assertEqual(fake.task_time_ms, 800.0)
         self.assertFalse(fake.clock_running)
 
         runner.inject_action({"mouse": {"left_click": [5, 5]}})
@@ -333,10 +343,15 @@ class StateMachineTest(WeirdCaptchaRunnerTestCase):
         )
         self.assertFalse(fake.clock_running)
         self.assertIn("turn-0001", obs["screen"]["path"])
+        self.assertEqual(obs["settle_status"]["state"], "paused")
 
     def test_live_mode_resumes_once(self):
         runner = self._runner(time_mode="live")
         fake = runner.inner
+        runner.capture_observation()
+        # The frozen bootstrap does not start the live clock.
+        self.assertEqual(self._time_events(fake), ["wait-ready"])
+        self.assertFalse(fake.clock_running)
         runner.capture_observation()
         runner.inject_action({"mouse": {"left_click": [5, 5]}})
         runner.capture_observation()
@@ -363,6 +378,38 @@ class StateMachineTest(WeirdCaptchaRunnerTestCase):
         runner.inner.capture_resolution = [1280, 720]
         with self.assertRaises(RuntimeError):
             runner.capture_observation()
+
+    def test_time_mode_prefers_task_condition_when_no_explicit_option(self):
+        import tempfile
+
+        task_root = Path(tempfile.mkdtemp())
+        task_dir = task_root / "t_live"
+        task_dir.mkdir()
+        (task_dir / "task.json").write_text(json.dumps({
+            "id": "t_live@0.1",
+            "metadata": {"control_condition": {"real_time": "live"}},
+        }))
+        spec = make_spec()
+        spec.runner_options.pop("time_mode")
+        from gym_anything.specs import MountSpec
+
+        spec.mounts = [
+            MountSpec(source=str(task_root), target="/workspace/tasks", mode="ro")
+        ]
+        runner = WeirdCaptchaRunner(spec)
+        runner.on_episode_start({"episode_dir": "/tmp/x", "task_id": "t_live@0.1", "seed": 1})
+        self.assertEqual(runner.time_mode, "live")
+        self.assertEqual(
+            runner.inner.spec.security.resolved_env["WEIRD_CAPTCHA_TIME_MODE"],
+            "live",
+        )
+
+        # An explicit run option wins over the task condition.
+        spec_explicit = make_spec(time_mode="paused")
+        spec_explicit.mounts = list(spec.mounts)
+        runner = WeirdCaptchaRunner(spec_explicit)
+        runner.on_episode_start({"episode_dir": "/tmp/x", "task_id": "t_live@0.1", "seed": 1})
+        self.assertEqual(runner.time_mode, "paused")
 
     def test_collect_artifacts_copies_present_files(self):
         runner = self._runner()
@@ -393,7 +440,10 @@ class FullEpisodeTest(WeirdCaptchaRunnerTestCase):
 
         obs = env.reset(seed=7)
         self.assertEqual(len(obs["frames"]), 3)
-        self.assertIn("turn-0000", obs["screen"]["path"])
+        # No pre_task hook in this toy env, so reset returns the frozen
+        # bootstrap capture (production envs have hooks, and their reset
+        # returns turn-0000).
+        self.assertIn("bootstrap", obs["screen"]["path"])
         self.assertIsNotNone(obs["time"]["task_time_ms"])
         self.assertEqual(
             fake.spec.security.resolved_env["WEIRD_CAPTCHA_CHALLENGE_SEED"], "7"
@@ -403,7 +453,7 @@ class FullEpisodeTest(WeirdCaptchaRunnerTestCase):
             [{"mouse": {"left_click": [5, 5]}}], wait_between_actions=0.0
         )
         self.assertFalse(done)
-        self.assertIn("turn-0001", obs["screen"]["path"])
+        self.assertIn("turn-0000", obs["screen"]["path"])
         time_events = [c[1] for c in fake.calls if c[0] == "time"]
         self.assertEqual(
             time_events, ["wait-ready", "resume", "settle-pause"]
@@ -416,6 +466,7 @@ class FullEpisodeTest(WeirdCaptchaRunnerTestCase):
         )
         self.assertEqual(obs, {})
         self.assertIn("task_time_ms", env.runner.last_action_result)
+        self.assertIn("task_time_ms", env.runner.last_time_status)
 
         _obs, _reward, done, info = env.step([], mark_done=True, capture_observation=False)
         self.assertTrue(done)
@@ -427,7 +478,7 @@ class FullEpisodeTest(WeirdCaptchaRunnerTestCase):
         self.assertTrue((episode_dir / "traj.jsonl").exists())
         observations = sorted((episode_dir / "observations").iterdir())
         self.assertEqual(
-            [d.name for d in observations], ["turn-0000", "turn-0001"]
+            [d.name for d in observations], ["bootstrap", "turn-0000"]
         )
 
 

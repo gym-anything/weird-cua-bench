@@ -15,6 +15,7 @@ import argparse
 import importlib
 import json
 import logging
+import shutil
 import signal
 import sys
 import time
@@ -140,24 +141,39 @@ def _play_time_exhausted(task_time_ms: float, limit_seconds: int | None) -> bool
 
 
 def _time_command(env, command: str) -> dict:
-    """Issue a clock command through the standard action door.
+    """Clock command for local evidence and probe tools.
 
-    The runner answers the action with the clock's status dict, which core
-    forwards under info["world_action_results"]. The same path works locally
-    and over the remote wire; the query appears in traj.jsonl for audit.
-    """
-    _obs, _reward, _done, info = env.step(
-        [{"action": "time", "command": command}],
-        capture_observation=False,
-        settle_after_actions=False,
-    )
-    results = info.get("world_action_results") or []
-    if not results:
-        raise RuntimeError(
-            f"time command {command!r} returned no world result; the "
-            "installed gym-anything predates info['world_action_results']"
-        )
-    return results[-1]
+    Evaluation itself never queries the clock: paused task time is exact in
+    every observation, and live task time is extrapolated from the last
+    observation by wall clock (see _TaskClock)."""
+    return env.runner.time_command(command)
+
+
+class _TaskClock:
+    """Task time as reported by observations.
+
+    Paused mode: the clock is frozen between observations, so the last
+    observation's task time is exact. Live mode: the virtual clock advances
+    with wall time while the task runs, so the tracker anchors each
+    observation and extrapolates by wall clock. The world and the grader own
+    authoritative expiry either way."""
+
+    def __init__(self, mode: str):
+        self.mode = mode
+        self._task_ms = 0.0
+        self._anchor: float | None = None
+
+    def observe(self, obs: dict[str, Any]) -> None:
+        value = (obs.get("time") or {}).get("task_time_ms")
+        if value is None:
+            return
+        self._task_ms = float(value)
+        self._anchor = time.perf_counter()
+
+    def now_ms(self) -> float:
+        if self.mode == "live" and self._anchor is not None:
+            return self._task_ms + (time.perf_counter() - self._anchor) * 1000
+        return self._task_ms
 
 
 def _guest_json(env, arguments: list[str]) -> dict[str, Any]:
@@ -190,6 +206,7 @@ def _capture_observation(
 
 
 def _task_time_ms(env) -> float:
+    """Local evidence and probe tools only; see _time_command."""
     return float(_time_command(env, "status").get("task_time_ms") or 0)
 
 
@@ -257,7 +274,7 @@ def _retryable_request_error(error: BaseException) -> bool:
 
 
 def _call_agent_with_retry(
-    env,
+    clock,
     agent,
     obs: dict[str, Any],
     action_outputs: list[dict[str, Any]],
@@ -269,14 +286,14 @@ def _call_agent_with_retry(
         raise ValueError("request attempts must be positive")
     records = []
     for attempt in range(1, attempts + 1):
-        before_task_ms = _task_time_ms(env)
+        before_task_ms = clock.now_ms()
         started = time.perf_counter()
         try:
             with _request_deadline(timeout_seconds):
                 actions = agent.step(obs, action_outputs)
         except Exception as error:
             elapsed_ms = (time.perf_counter() - started) * 1000
-            after_task_ms = _task_time_ms(env)
+            after_task_ms = clock.now_ms()
             retryable = _retryable_request_error(error)
             records.append(
                 {
@@ -295,7 +312,7 @@ def _call_agent_with_retry(
                 raise
             continue
         elapsed_ms = (time.perf_counter() - started) * 1000
-        after_task_ms = _task_time_ms(env)
+        after_task_ms = clock.now_ms()
         records.append(
             {
                 "attempt": attempt,
@@ -342,6 +359,47 @@ def _resolve_agent_class(name: str):
     return getattr(agent_registry, name)
 
 
+def _ensure_condition_task(env_dir: Path, task_id: str, mode: str) -> str:
+    """The effective task for a remote run: one whose declared real_time
+    condition equals the requested mode.
+
+    Remote workers resolve tasks by name, so a run condition must be task
+    identity. A task that already declares the condition is used as is;
+    otherwise a sibling task dir `<task>_t<mode>` is written (deterministic
+    content, safe to rewrite) with control_condition.real_time set. On the
+    cluster's shared filesystem the worker sees it immediately, and the
+    create digest covers it."""
+    source = env_dir / "tasks" / task_id
+    task = json.loads((source / "task.json").read_text(encoding="utf-8"))
+    condition = (task.get("metadata") or {}).get("control_condition") or {}
+    if condition.get("real_time") == mode:
+        return task_id
+
+    variant_id = f"{task_id}_t{mode}"
+    target = env_dir / "tasks" / variant_id
+    raw_id = str(task.get("id") or task_id)
+    name, sep, version = raw_id.partition("@")
+    task["id"] = f"{name}_t{mode}{sep}{version}" if sep else f"{raw_id}_t{mode}"
+    hooks = dict(task.get("hooks") or {})
+    for key, value in hooks.items():
+        hooks[key] = str(value).replace(f"/{task_id}/", f"/{variant_id}/")
+    task["hooks"] = hooks
+    metadata = dict(task.get("metadata") or {})
+    metadata["control_condition"] = {**condition, "real_time": mode}
+    task["metadata"] = metadata
+
+    target.mkdir(parents=True, exist_ok=True)
+    for item in source.iterdir():
+        if item.name in {"task.json", "__pycache__"}:
+            continue
+        if item.is_file():
+            shutil.copy2(item, target / item.name)
+    (target / "task.json").write_text(
+        json.dumps(task, indent=2) + "\n", encoding="utf-8"
+    )
+    return variant_id
+
+
 def _make_env(args: argparse.Namespace, runner_options: dict[str, Any] | None = None):
     if runner_options is None:
         _mechanic, settings = _settings(args)
@@ -355,11 +413,19 @@ def _make_env(args: argparse.Namespace, runner_options: dict[str, Any] | None = 
             overrides={"runner_options": runner_options},
             fast_io=args.fast_io,
         )
+    if args.observation_window_ms is not None or args.frames_per_observation is not None:
+        raise ValueError(
+            "remote runs take the observation schedule from the environment's "
+            "committed env.json; adjust it there (or run locally) instead of "
+            "passing --observation-window-ms/--frames-per-observation"
+        )
     from gym_anything.remote import RemoteGymEnv
 
     # By-name create: the worker resolves the benchmark against its own
-    # installation and verifies the task content digest; the run condition
-    # rides along as spec overrides.
+    # installation and verifies the task content digest. The run condition is
+    # task identity (metadata.control_condition.real_time), which the runner
+    # reads on the worker; args.task was resolved to a condition task before
+    # this call.
     return RemoteGymEnv.from_benchmark(
         remote_url=args.remote_url,
         benchmark="weird_captcha_gym",
@@ -368,7 +434,6 @@ def _make_env(args: argparse.Namespace, runner_options: dict[str, Any] | None = 
         timeout=args.remote_timeout,
         worker_reset_policy=args.remote_worker_reset_policy,
         fast_io=args.fast_io,
-        overrides={"runner_options": runner_options},
     )
 
 
@@ -436,6 +501,20 @@ def run(args: argparse.Namespace) -> int:
     agent_args.setdefault("request_timeout_seconds", args.request_timeout_seconds)
     agent_args.setdefault("request_attempts", args.request_attempts)
 
+    if args.remote_url:
+        # The run condition must be task identity for a by-name remote
+        # create; resolve (and if needed materialize) the condition task.
+        effective_task = _ensure_condition_task(
+            Path(args.env_dir), args.task, args.time_mode
+        )
+        if effective_task != args.task:
+            logger.info(
+                "Using condition task %s for time_mode=%s",
+                effective_task,
+                args.time_mode,
+            )
+            args.task = effective_task
+
     env = _make_env(args, runner_options)
     info: dict[str, Any] = {}
     agent = None
@@ -449,6 +528,8 @@ def run(args: argparse.Namespace) -> int:
         )
         _require_frames(obs, where="initial")
         obs = _localize_observation(env, obs)
+        clock = _TaskClock(args.time_mode)
+        clock.observe(obs)
         max_steps = args.steps or env.max_steps or 50
         # Clock queries ride env.step now, so the environment-level step
         # counter includes them; the loop below owns the real turn budget.
@@ -473,7 +554,8 @@ def run(args: argparse.Namespace) -> int:
             "settings": settings.__dict__,
             "task_play_time_limit_seconds": play_time_limit_seconds,
             "task_play_time_limit_enabled": play_time_limit_seconds is not None,
-            "clock": _time_command(env, "status"),
+            "clock": obs.get("time_status"),
+            "task_time_live_estimated": args.time_mode == "live",
             "request_timeout_seconds": args.request_timeout_seconds,
             "request_attempts": args.request_attempts,
             "fast_io": args.fast_io,
@@ -505,14 +587,14 @@ def run(args: argparse.Namespace) -> int:
         done = False
 
         while turn < max_steps and model_turn < max_steps and not done:
-            before_model_ms = _task_time_ms(env)
+            before_model_ms = clock.now_ms()
             if _play_time_exhausted(before_model_ms, play_time_limit_seconds):
                 reason = "play_time_limit"
                 break
 
             model_started = time.perf_counter()
             actions, request_records = _call_agent_with_retry(
-                env,
+                clock,
                 agent,
                 obs,
                 action_outputs,
@@ -521,7 +603,7 @@ def run(args: argparse.Namespace) -> int:
             )
             model_turn += 1
             model_ms = (time.perf_counter() - model_started) * 1000
-            after_model_ms = _task_time_ms(env)
+            after_model_ms = clock.now_ms()
             action_outputs = []
             action_records = []
 
@@ -544,7 +626,7 @@ def run(args: argparse.Namespace) -> int:
 
             for group in actions:
                 actual_actions = group["actions"]
-                task_time_before_action_ms = _task_time_ms(env)
+                task_time_before_action_ms = clock.now_ms()
                 action_started = time.perf_counter()
                 # The runner owns the turn discipline: in paused mode it
                 # resumes the clock for the first injected action and
@@ -558,6 +640,7 @@ def run(args: argparse.Namespace) -> int:
                 action_ms = (time.perf_counter() - action_started) * 1000
                 _require_frames(obs, where=f"turn {turn + 1}")
                 obs = _localize_observation(env, obs)
+                clock.observe(obs)
                 # Paused mode: the settle-pause result the runner recorded
                 # while capturing this observation. Live mode: the raw clock
                 # status the capture reported.

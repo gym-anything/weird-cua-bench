@@ -150,7 +150,7 @@ def test_make_env_merges_runner_options_locally(monkeypatch) -> None:
     }
 
 
-def test_make_env_creates_remote_by_benchmark_name_with_overrides(monkeypatch) -> None:
+def test_make_env_creates_remote_by_benchmark_name_without_overrides(monkeypatch) -> None:
     sentinel = object()
     received = {}
 
@@ -164,23 +164,89 @@ def test_make_env_creates_remote_by_benchmark_name_with_overrides(monkeypatch) -
     args = SimpleNamespace(
         remote_url="http://master:5000",
         env_dir="weird_captcha_gym/environments/rotating_keyboard_env",
-        task="rotating_keyboard_seed_0001",
+        task="rotating_keyboard_seed_0001_tlive",
         remote_timeout=123,
         remote_worker_reset_policy="baseline_setup",
         fast_io=True,
+        observation_window_ms=None,
+        frames_per_observation=None,
     )
     options = {"time_mode": "live", "observation_window_ms": 800}
     assert evaluator._make_env(args, options) is sentinel
+    # The run condition is task identity; nothing rides the create call.
     assert received == {
         "remote_url": "http://master:5000",
         "benchmark": "weird_captcha_gym",
         "env_name": "rotating_keyboard_env",
-        "task_id": "rotating_keyboard_seed_0001",
+        "task_id": "rotating_keyboard_seed_0001_tlive",
         "timeout": 123,
         "worker_reset_policy": "baseline_setup",
         "fast_io": True,
-        "overrides": {"runner_options": options},
     }
+
+
+def test_make_env_rejects_remote_observation_schedule_flags() -> None:
+    args = SimpleNamespace(
+        remote_url="http://master:5000",
+        env_dir="unused",
+        task="unused",
+        remote_timeout=300,
+        remote_worker_reset_policy="core",
+        fast_io=False,
+        observation_window_ms=500,
+        frames_per_observation=None,
+    )
+    with pytest.raises(ValueError):
+        evaluator._make_env(args, {"time_mode": "paused"})
+
+
+def test_condition_task_materializes_the_requested_mode(tmp_path: Path) -> None:
+    env_dir = tmp_path / "rotating_keyboard_env"
+    source = env_dir / "tasks" / "rotating_keyboard_seed_0001"
+    source.mkdir(parents=True)
+    (source / "task.json").write_text(json.dumps({
+        "id": "rotating_keyboard_seed_0001@0.1",
+        "description": "Type the code.",
+        "hooks": {
+            "pre_task": "/workspace/tasks/rotating_keyboard_seed_0001/setup_task.sh",
+            "post_task": "/workspace/tasks/rotating_keyboard_seed_0001/export_result.sh",
+        },
+        "success": {"mode": "program", "spec": {"program": "verifier.py::verify_task"}},
+        "metadata": {"mechanic_id": "rotating_keyboard"},
+    }))
+    (source / "setup_task.sh").write_text("#!/bin/sh\n")
+    (source / "verifier.py").write_text("def verify_task(*a): ...\n")
+
+    effective = evaluator._ensure_condition_task(
+        env_dir, "rotating_keyboard_seed_0001", "live"
+    )
+    assert effective == "rotating_keyboard_seed_0001_tlive"
+    variant = json.loads((env_dir / "tasks" / effective / "task.json").read_text())
+    assert variant["id"] == "rotating_keyboard_seed_0001_tlive@0.1"
+    assert variant["metadata"]["control_condition"]["real_time"] == "live"
+    assert variant["hooks"]["pre_task"] == (
+        "/workspace/tasks/rotating_keyboard_seed_0001_tlive/setup_task.sh"
+    )
+    assert (env_dir / "tasks" / effective / "verifier.py").exists()
+
+    # A task already declaring the condition is used as is.
+    assert evaluator._ensure_condition_task(env_dir, effective, "live") == effective
+
+
+def test_task_clock_paused_reads_observations_and_live_extrapolates() -> None:
+    import time as _time
+
+    paused = evaluator._TaskClock("paused")
+    paused.observe({"time": {"task_time_ms": 1200}})
+    assert paused.now_ms() == 1200
+    _time.sleep(0.05)
+    assert paused.now_ms() == 1200
+
+    live = evaluator._TaskClock("live")
+    live.observe({"time": {"task_time_ms": 1000}})
+    _time.sleep(0.05)
+    estimated = live.now_ms()
+    assert 1030 <= estimated <= 1500
 
 
 def test_runner_configures_the_guest_environment_on_episode_start(tmp_path: Path) -> None:

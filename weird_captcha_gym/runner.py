@@ -234,6 +234,8 @@ class WeirdCaptchaRunner(BaseRunner):
         self._ready = False
         self._live_started = False
         self._clock_running = False
+        self._bootstrap_done = False
+        self._resolved_time_mode: Optional[str] = None
         self.last_time_status: Dict[str, Any] = {}
         self.last_action_result: Optional[Dict[str, Any]] = None
         # Ordered (command, result) clock transitions for this episode, so
@@ -293,7 +295,41 @@ class WeirdCaptchaRunner(BaseRunner):
 
     @property
     def time_mode(self) -> str:
+        resolved = getattr(self, "_resolved_time_mode", None)
+        if resolved:
+            return resolved
         return (self.spec.runner_options or {}).get("time_mode", "paused")
+
+    def _task_condition_time_mode(self, task_id) -> Optional[str]:
+        """The task's declared real_time condition, read from the task folder
+        on this host via the tasks mount. This is how a run condition reaches
+        a worker that resolved the benchmark by name: the condition is task
+        identity, covered by the task content digest."""
+        if not task_id:
+            return None
+        task_dir = str(task_id).split("@", 1)[0]
+        tasks_source = next(
+            (
+                mount.source
+                for mount in self.spec.mounts
+                if mount.target == "/workspace/tasks"
+            ),
+            None,
+        )
+        if not tasks_source:
+            return None
+        try:
+            task = json.loads(
+                (Path(tasks_source) / task_dir / "task.json").read_text(
+                    encoding="utf-8"
+                )
+            )
+        except (OSError, json.JSONDecodeError):
+            return None
+        mode = ((task.get("metadata") or {}).get("control_condition") or {}).get(
+            "real_time"
+        )
+        return mode if mode in TIME_MODES else None
 
     @property
     def observation_window_ms(self) -> int:
@@ -323,11 +359,19 @@ class WeirdCaptchaRunner(BaseRunner):
         self._ready = False
         self._live_started = False
         self._clock_running = False
+        self._bootstrap_done = False
         self.last_time_status = {}
         self.last_action_result = None
         self.clock_log = []
 
         options = self.spec.runner_options or {}
+        # Precedence: an explicit local run option, then the task's declared
+        # condition, then the paused default.
+        self._resolved_time_mode = (
+            options.get("time_mode")
+            or self._task_condition_time_mode(context.get("task_id"))
+            or "paused"
+        )
         guest_env: Dict[str, str] = {
             "WEIRD_CAPTCHA_TIME_MODE": self.time_mode,
             "WEIRD_CAPTCHA_START_PAUSED": (
@@ -418,6 +462,23 @@ class WeirdCaptchaRunner(BaseRunner):
         if not self._context.get("episode_dir"):
             raise RuntimeError("no episode context; capture requires on_episode_start")
         self._ensure_ready()
+        episode_dir = Path(self._context["episode_dir"])
+
+        if not self._bootstrap_done:
+            # Core captures one observation mid-reset, right after the
+            # pre_task hook, as came-up evidence. That capture must not
+            # spend task time, so it is a frozen hold-paused window outside
+            # the turn numbering.
+            self._bootstrap_done = True
+            observation = self._capture_window(
+                mode="paused",
+                hold_paused=True,
+                host_dir=episode_dir / "observations" / "bootstrap",
+            )
+            observation["bootstrap"] = True
+            observation["settle_status"] = None
+            return observation
+
         settle_status = None
         if self.time_mode == "live":
             self._ensure_live_started()
@@ -428,24 +489,35 @@ class WeirdCaptchaRunner(BaseRunner):
             # cannot silently lose its input to a frozen action lock.
             settle_status = self.time_command("settle-pause")
 
-        turn = self._turn
-        guest_dir = f"{GUEST_OBSERVATION_ROOT}/turn-{turn:04d}"
-        manifest = self._guest_json(
-            [
-                "python3",
-                CAPTURE_SCRIPT,
-                "--mode",
-                self.time_mode,
-                "--duration-ms",
-                str(self.observation_window_ms),
-                "--frames",
-                str(self.frames_per_observation),
-                "--output-dir",
-                guest_dir,
-            ]
+        observation = self._capture_window(
+            mode=self.time_mode,
+            hold_paused=False,
+            host_dir=episode_dir / "observations" / f"turn-{self._turn:04d}",
         )
+        self._turn += 1
+        observation["settle_status"] = settle_status
+        return observation
 
-        host_dir = Path(self._context["episode_dir"]) / "observations" / f"turn-{turn:04d}"
+    def _capture_window(
+        self, *, mode: str, hold_paused: bool, host_dir: Path
+    ) -> Dict[str, Any]:
+        guest_dir = f"{GUEST_OBSERVATION_ROOT}/{host_dir.name}"
+        command = [
+            "python3",
+            CAPTURE_SCRIPT,
+            "--mode",
+            mode,
+            "--duration-ms",
+            str(self.observation_window_ms),
+            "--frames",
+            str(self.frames_per_observation),
+            "--output-dir",
+            guest_dir,
+        ]
+        if hold_paused:
+            command.append("--hold-paused")
+        manifest = self._guest_json(command)
+
         host_dir.mkdir(parents=True, exist_ok=True)
         frames = []
         for index, frame in enumerate(manifest["frames"]):
@@ -484,7 +556,6 @@ class WeirdCaptchaRunner(BaseRunner):
 
         time_status = manifest["time_status"]
         self.last_time_status = time_status
-        self._turn += 1
         return {
             "screen": {
                 "path": frames[-1]["path"],
@@ -494,17 +565,14 @@ class WeirdCaptchaRunner(BaseRunner):
             "frames": frames,
             "capture_manifest": str(manifest_path),
             "time": {
-                "mode": self.time_mode,
+                "mode": mode,
                 "task_time_ms": time_status.get("task_time_ms"),
                 "observation_window_ms": self.observation_window_ms,
                 "frames_per_observation": self.frames_per_observation,
             },
-            # Raw clock reports for callers that need them without another
-            # guest roundtrip (they also cross the remote wire this way):
-            # the post-window status, and the settle-pause result when this
-            # capture settled a running paused-mode clock.
+            # Raw clock report for callers that need it without another
+            # guest roundtrip; it also crosses the remote wire this way.
             "time_status": time_status,
-            "settle_status": settle_status,
         }
 
     # --- artifacts --------------------------------------------------------
