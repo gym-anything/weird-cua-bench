@@ -493,6 +493,46 @@ def _localize_observation(env, obs: dict[str, Any]) -> dict[str, Any]:
     return localized
 
 
+def _create_and_reset(args, runner_options):
+    """Create the environment and complete reset, waiting out transient
+    refusals.
+
+    A busy fleet answers creates with 503 (at capacity, or a worker died
+    moments ago and routing has not caught up). That is back pressure, not
+    failure: the client waits and retries until the admission deadline so a
+    full fleet queues work instead of shedding it.
+    """
+    deadline = time.monotonic() + max(float(args.remote_timeout), 60.0)
+    attempt = 0
+    while True:
+        attempt += 1
+        env = _make_env(args, runner_options)
+        try:
+            obs = env.reset(
+                seed=args.seed,
+                use_cache=args.use_cache,
+                cache_level=args.cache_level,
+                use_savevm=args.use_savevm,
+            )
+            return env, obs
+        except Exception as error:
+            try:
+                env.close()
+            except Exception:
+                pass
+            transient = _retryable_request_error(error) or "503" in str(error)
+            if not transient or time.monotonic() >= deadline:
+                raise
+            wait = min(60.0, 5.0 * attempt)
+            logger.info(
+                "admission attempt %d refused (%s); retrying in %.0fs",
+                attempt,
+                str(error)[:120],
+                wait,
+            )
+            time.sleep(wait)
+
+
 def run(args: argparse.Namespace) -> int:
     mechanic_id, settings = _settings(args)
     play_time_limit_seconds = _play_time_limit_seconds(args, settings)
@@ -515,17 +555,11 @@ def run(args: argparse.Namespace) -> int:
             )
             args.task = effective_task
 
-    env = _make_env(args, runner_options)
+    env, obs = _create_and_reset(args, runner_options)
     info: dict[str, Any] = {}
     agent = None
     episode_dir = None
     try:
-        obs = env.reset(
-            seed=args.seed,
-            use_cache=args.use_cache,
-            cache_level=args.cache_level,
-            use_savevm=args.use_savevm,
-        )
         _require_frames(obs, where="initial")
         obs = _localize_observation(env, obs)
         clock = _TaskClock(args.time_mode)

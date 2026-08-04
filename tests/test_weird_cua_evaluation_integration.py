@@ -639,3 +639,58 @@ def test_summary_written_only_with_decided_verdict(tmp_path, monkeypatch) -> Non
         evaluator.run(args)
     assert fake.closed
     assert not summary.exists()
+
+
+def test_admission_waits_out_capacity_refusals(tmp_path, monkeypatch) -> None:
+    """Create/reset 503s are back pressure: the client retries with backoff
+    instead of dying, and non-transient errors still raise immediately."""
+
+    calls = {"n": 0}
+
+    class BusyEnv:
+        def __init__(self):
+            self.closed = False
+
+        def reset(self, **kwargs):
+            calls["n"] += 1
+            if calls["n"] < 3:
+                raise RuntimeError(
+                    "Remote request failed: 503 Server Error: for url: "
+                    "http://master:5900/envs/create"
+                )
+            return {"ok": True}
+
+        def close(self):
+            self.closed = True
+
+    envs = []
+
+    def fake_make_env(args, options):
+        env = BusyEnv()
+        envs.append(env)
+        return env
+
+    monkeypatch.setattr(evaluator, "_make_env", fake_make_env)
+    monkeypatch.setattr(evaluator.time, "sleep", lambda s: None)
+    args = SimpleNamespace(
+        remote_timeout=600,
+        seed=42,
+        use_cache=False,
+        cache_level="pre_start",
+        use_savevm=False,
+    )
+    env, obs = evaluator._create_and_reset(args, {"time_mode": "paused"})
+    assert obs == {"ok": True}
+    assert calls["n"] == 3
+    assert envs[0].closed and envs[1].closed and not envs[2].closed
+
+    class FatalEnv:
+        def reset(self, **kwargs):
+            raise ValueError("bad spec")
+
+        def close(self):
+            pass
+
+    monkeypatch.setattr(evaluator, "_make_env", lambda a, o: FatalEnv())
+    with pytest.raises(ValueError):
+        evaluator._create_and_reset(args, {"time_mode": "paused"})
