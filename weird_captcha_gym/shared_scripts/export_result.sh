@@ -23,11 +23,29 @@ def read_json(name: str) -> dict:
         return {"_error": str(exc)}
     return data if isinstance(data, dict) else {"_value": data}
 
+def graded_failures() -> int:
+    # The server appends one line to attempts.jsonl per graded-and-failed
+    # submission, then issues a fresh challenge. Count them so a run can tell
+    # "never submitted" apart from "submitted and was rejected N times".
+    path = state_dir / "attempts.jsonl"
+    if not path.exists():
+        return 0
+    try:
+        text = path.read_text(encoding="utf-8")
+    except Exception:
+        return 0
+    return sum(1 for line in text.splitlines() if line.strip())
+
 payload = {
     "exported_at": time.time(),
     "public_state": read_json("public_state.json"),
     "ground_truth": read_json("ground_truth.json"),
     "result": read_json("result.json"),
+    "graded_failures": graded_failures(),
+    "current_task": {
+        key: read_json("current_task.json").get(key)
+        for key in ("challenge_index", "last_reason")
+    },
 }
 target = Path("/tmp/task_result.json")
 tmp = target.with_suffix(".json.tmp")

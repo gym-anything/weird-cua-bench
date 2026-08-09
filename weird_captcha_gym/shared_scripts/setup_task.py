@@ -196,8 +196,11 @@ def control_condition(task: dict[str, Any]) -> dict[str, Any] | None:
         raise ValueError("controlled task difficulty must be 1 through 5")
     if interaction not in {"simplified", "full"}:
         raise ValueError("controlled task interaction must be simplified or full")
-    if real_time != "live":
-        raise ValueError("task specifications use live real time; paused mode belongs to the runner")
+    if real_time not in {"live", "paused"}:
+        # The clock is owned by the runner; the task's real_time field is run
+        # identity only (condition tasks carry "paused" by design, see the
+        # remote by-name create flow). State generation is time-agnostic.
+        raise ValueError("controlled task real_time must be live or paused")
     if not isinstance(parameters, dict):
         raise ValueError("controlled task difficulty parameters must be an object")
     return {

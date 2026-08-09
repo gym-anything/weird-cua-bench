@@ -18,7 +18,9 @@ import logging
 import shutil
 import signal
 import sys
+import tempfile
 import time
+import uuid
 from contextlib import contextmanager
 from http.client import RemoteDisconnected
 from pathlib import Path
@@ -337,7 +339,40 @@ def _task_description(env, args: argparse.Namespace) -> str:
         task_path = Path(args.env_dir) / "tasks" / args.task / "task.json"
         task = json.loads(task_path.read_text(encoding="utf-8"))
         description = task.get("natural_language") or task.get("description", "")
-    return f"{description}\n\n{VISIBLE_UI_ONLY_RULE}"
+    submit_rule = (
+        "Your answer only counts once it is submitted: after completing the "
+        "task, press the visible submit/confirm/verify control and check the "
+        "UI acknowledges it before you declare the task finished."
+    )
+    return f"{description}\n\n{VISIBLE_UI_ONLY_RULE}\n\n{submit_rule}"
+
+
+def _submission_counts(env, *, passed: bool) -> dict:
+    """How many times the benchmark server graded a submission this episode.
+
+    The server appends every graded-and-failed submission to attempts.jsonl and
+    then issues a fresh challenge; a passing submission is not archived. Zero
+    graded submissions is the common case and means the agent never pressed
+    submit, so it is reported separately from the verdict."""
+    handle = tempfile.NamedTemporaryFile(delete=False, suffix=".json")
+    handle.close()
+    try:
+        # Two hops for a remote env: copy_from_env lands the file on the worker
+        # (its host_dst is remote), then fetch_path brings it back here.
+        staged = f"/tmp/task_result_attempts_{uuid.uuid4().hex}.json"
+        env.copy_from_env("/tmp/task_result.json", staged)
+        env.fetch_path(staged, handle.name)
+        exported = json.loads(Path(handle.name).read_text(encoding="utf-8"))
+    except Exception as exc:
+        return {"error": str(exc)}
+    finally:
+        Path(handle.name).unlink(missing_ok=True)
+    failures = int(exported.get("graded_failures") or 0)
+    return {
+        "graded_failures": failures,
+        "graded_total": failures + (1 if passed else 0),
+        "submitted": failures > 0 or passed,
+    }
 
 
 def _mark_done(env, *, reason: str) -> tuple[dict, float, bool, dict]:
@@ -578,9 +613,17 @@ def run(args: argparse.Namespace) -> int:
         if getattr(agent, "autonomous", False):
             raise ValueError("the real-time evaluator requires turn-based agent.step observations")
         description = _task_description(env, args)
+        # Select the frame_window entry by TYPE, as the worker-side runner
+        # does. Base-preset composition prepends the preset's rgb_screen
+        # (1920x1080) at observation[0], which mis-sized the agent for the
+        # eight 1280x720 environments.
+        frame_obs = next(
+            (o for o in env.env_spec.observation if o.type == "frame_window"),
+            env.env_spec.observation[0],
+        )
         agent.init(
             task_description=description,
-            display_resolution=env.env_spec.observation[0].resolution,
+            display_resolution=frame_obs.resolution,
             save_path=episode_dir,
         )
         _write_record(timing_path, {
@@ -750,6 +793,9 @@ def run(args: argparse.Namespace) -> int:
                 parents=True,
                 exist_ok=True,
             )
+            attempts = _submission_counts(
+                env, passed=bool((info.get("verifier") or {}).get("passed"))
+            )
             args.episode_summary_path.write_text(
                 json.dumps(
                     {
@@ -758,6 +804,7 @@ def run(args: argparse.Namespace) -> int:
                         "task": args.task,
                         "seed": args.seed,
                         "time_mode": args.time_mode,
+                        "attempts": attempts,
                         "info": info,
                     },
                     indent=2,
