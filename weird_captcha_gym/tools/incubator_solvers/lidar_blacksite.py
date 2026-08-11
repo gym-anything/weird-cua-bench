@@ -87,7 +87,7 @@ def _turn_to(page, target: tuple[float, float] | float) -> None:
     turn_speed = math.radians(float(page.evaluate(
         "() => window.lidarBlacksiteModel.state.controls.turn_speed_deg"
     )))
-    for _ in range(24):
+    for _ in range(6):
         difference = _normalize(desired - _heading(page))
         if abs(difference) <= .045:
             return
@@ -95,11 +95,12 @@ def _turn_to(page, target: tuple[float, float] | float) -> None:
             _drag_look(page, difference / .004)
             page.wait_for_timeout(22)
             continue
-        # A short ordinary key hold is more robust than waiting for a sampled
-        # sign crossing while Chromium is encoding video. Re-read after every
-        # pulse so capture load cannot turn one delayed poll into a large
-        # overshoot.
-        pulse_ms = max(22, min(120, round(abs(difference) / turn_speed * 650)))
+        # Use one physical hold for the remaining turn. Splitting a right-angle
+        # turn into many sampled pulses makes a recorded env.step replay depend
+        # on the oracle browser's exact 20 ms timer phase. One continuous hold
+        # has at most one tick of phase uncertainty; re-read once for any small
+        # final correction.
+        pulse_ms = max(22, round(abs(difference) / turn_speed * 1000))
         _hold_control(page, "turn_right" if difference > 0 else "turn_left", pulse_ms)
         page.wait_for_timeout(22)
     difference = abs(_normalize(desired - _heading(page)))
@@ -107,7 +108,7 @@ def _turn_to(page, target: tuple[float, float] | float) -> None:
         raise AssertionError(f"continuous turn stopped {difference:.4f} radians from its target")
 
 
-def _move_to(page, point: list[float] | tuple[float, float], tolerance: float = .15) -> None:
+def _move_to(page, point: list[float] | tuple[float, float], tolerance: float = .04) -> None:
     target = (float(point[0]), float(point[1]))
     stalls = 0
     for _ in range(180):
@@ -127,7 +128,11 @@ def _move_to(page, point: list[float] | tuple[float, float], tolerance: float = 
             return
         _turn_to(page, target)
         speed = float(page.evaluate("() => window.lidarBlacksiteModel.state.controls.move_speed"))
-        pulse_ms = max(80, min(220, round(max(.04, remaining - tolerance * .45) / speed * 1000)))
+        # Traverse the straight segment with one continuous physical hold.
+        # Repeated 220 ms pulses are closed-loop in the privileged oracle but
+        # become an open-loop sequence when replayed through env.step; a one-
+        # tick phase difference on every pulse can accumulate into a wall hit.
+        pulse_ms = max(40, round(remaining / speed * 1000))
         _hold_control(page, "forward", pulse_ms)
         page.wait_for_timeout(28)
         next_remaining = math.dist(_position(page), target)

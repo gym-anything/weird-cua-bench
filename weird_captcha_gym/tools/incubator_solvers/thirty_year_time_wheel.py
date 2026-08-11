@@ -39,18 +39,29 @@ def _drag_detents(page, component: str, steps: int, *, brake_immediately: bool) 
     center_y = box["y"] + box["height"] / 2
     radius = box["width"] * RADII[component]
     direction = 1 if steps > 0 else -1
-    angle = -math.pi / 2
-    page.mouse.move(center_x + radius * math.cos(angle), center_y + radius * math.sin(angle))
-    page.mouse.down()
     detent_degrees = float(page.evaluate("() => window.thirtyYearTimeWheelModel.state.detent_degrees"))
-    for _ in range(abs(steps)):
-        angle += direction * math.radians(detent_degrees + 0.12)
-        page.mouse.move(center_x + radius * math.cos(angle), center_y + radius * math.sin(angle))
-    page.mouse.up()
-    page.wait_for_function("() => window.thirtyYearTimeWheelModel.drag === null", timeout=3000)
-    if brake_immediately:
-        page.locator("#time-brake").click()
-        page.wait_for_timeout(20)
+    remaining = abs(steps)
+    # One delivered move may span well beyond the old 1.1-radian cutoff. Keep
+    # each chord below pi so its direction is geometrically unambiguous.
+    # A one-detent chord on the small year ring loses a fraction of a degree
+    # when its screen endpoint is rounded to an integer pixel. Overshoot by
+    # less than one detent so every requested chord still yields exactly the
+    # requested number of threshold crossings in either browser engine.
+    gesture_degrees = detent_degrees + 2.0
+    maximum_sparse_detents = max(1, int((math.pi - .15) / math.radians(gesture_degrees)))
+    while remaining:
+        chunk = min(remaining, maximum_sparse_detents)
+        start_angle = -math.pi / 2
+        end_angle = start_angle + direction * chunk * math.radians(gesture_degrees)
+        page.mouse.move(center_x + radius * math.cos(start_angle), center_y + radius * math.sin(start_angle))
+        page.mouse.down()
+        page.mouse.move(center_x + radius * math.cos(end_angle), center_y + radius * math.sin(end_angle))
+        page.mouse.up()
+        page.wait_for_function("() => window.thirtyYearTimeWheelModel.drag === null", timeout=3000)
+        if brake_immediately:
+            page.locator("#time-brake").click()
+            page.wait_for_timeout(20)
+        remaining -= chunk
 
 
 def _component_value(page, component: str) -> int:

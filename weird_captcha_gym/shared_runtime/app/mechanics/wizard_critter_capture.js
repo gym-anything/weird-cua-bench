@@ -417,6 +417,7 @@
     }
     if (autoRelease) {
       model.freezeActive = false;
+      model.freezeReleases += 1;
       model.freezeProxyReleaseAt = null;
       document.querySelector(".wizard-observatory")?.classList.remove("is-frozen");
     }

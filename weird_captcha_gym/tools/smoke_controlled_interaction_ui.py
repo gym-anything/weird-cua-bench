@@ -420,7 +420,8 @@ def main() -> None:
                     sources = sorted({
                         event.get("input_source") or event.get("input_surface") or event.get("source")
                         for event in events
-                        if event.get("input_source") or event.get("input_surface") or event.get("source")
+                        if isinstance(event, dict)
+                        and (event.get("input_source") or event.get("input_surface") or event.get("source"))
                     })
                     placement_sources = result.get("placement_sources") or {}
                     if isinstance(placement_sources, dict):

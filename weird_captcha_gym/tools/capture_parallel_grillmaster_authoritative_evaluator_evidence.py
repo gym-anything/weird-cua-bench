@@ -251,7 +251,7 @@ def run_mode(mode: str, runtime_env: Path, out_dir: Path) -> dict[str, Any]:
     if (
         len(actions) != 1
         or actions[0].get("input_source") != "food_drag"
-        or actions[0].get("event_surface") != "html_drag_drop"
+        or actions[0].get("event_surface") != "pointer_drag"
     ):
         raise AssertionError(
             f"{mode}: server did not witness the evaluator's drag"

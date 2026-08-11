@@ -5,7 +5,7 @@ import math
 import time
 from pathlib import Path
 
-from playwright.sync_api import expect
+from playwright.sync_api import Error, expect
 
 
 ABANDON = {
@@ -109,10 +109,20 @@ def _specular(page, state_dir: Path, out_dir: Path, mechanic: str) -> None:
             drag_steps(mirror_index, signed_steps)
         else:
             selector = f'[data-mirror="{mirror_index}"][data-delta="{step if plus_steps <= minus_steps else -step:g}"]'
-            _click_many(page.locator(selector), min(plus_steps, minus_steps))
+            for _ in range(min(plus_steps, minus_steps)):
+                if page.locator(".ivv-verdict.is-pass").count() and page.locator(".ivv-verdict.is-pass").is_visible():
+                    return
+                try:
+                    page.locator(selector).click(timeout=1_000)
+                except Error:
+                    if page.locator(".ivv-verdict.is-pass").count() and page.locator(".ivv-verdict.is-pass").is_visible():
+                        return
+                    raise
 
     for round_index, solution in enumerate(truth["solutions"]):
         for mirror_index, target in enumerate(solution["angles"]):
+            if page.locator(".ivv-verdict.is-pass").count() and page.locator(".ivv-verdict.is-pass").is_visible():
+                return
             aim(mirror_index, float(target))
         if round_index == 0:
             _shot(page, out_dir, mechanic, "three-mirror-beam-aligned")
@@ -141,6 +151,8 @@ def _specular(page, state_dir: Path, out_dir: Path, mechanic: str) -> None:
             page.wait_for_timeout(24)
         else:
             raise AssertionError(f"moving receiver {round_index + 1} did not charge")
+        if page.locator(".ivv-verdict.is-pass").count() and page.locator(".ivv-verdict.is-pass").is_visible():
+            return
     expect(page.locator(".ivv-verdict.is-pass")).to_be_visible(timeout=10_000)
 
 
@@ -530,23 +542,13 @@ def _clutch(page, state_dir: Path, out_dir: Path, mechanic: str) -> None:
     for schedule_index, item in enumerate(truth["release_schedule"]):
         target_tick = int(item["tick"])
         shaft = int(item["shaft"])
-        page.evaluate(
-            """target => new Promise((resolve, reject) => {
-              const deadline = performance.now() + 60000;
-              const watcher = window.setInterval(() => {
-                const model = window.clockworkClutchSafeModel;
-                if (model && model.tick >= target) {
-                  window.clearInterval(watcher);
-                  document.getElementById("clutch-brake").click();
-                  resolve();
-                } else if (performance.now() >= deadline) {
-                  window.clearInterval(watcher);
-                  reject(new Error(`clockwork did not reach tick ${target}`));
-                }
-              }, 4);
-            })""",
-            target_tick,
+        page.wait_for_function(
+            "target => window.clockworkClutchSafeModel?.tick >= target",
+            arg=target_tick,
+            polling=4,
+            timeout=60_000,
         )
+        page.locator("#clutch-brake").click(force=True)
         page.wait_for_function("() => window.clockworkClutchSafeModel.running === false", polling=50)
         stopped_tick = int(page.evaluate("() => window.clockworkClutchSafeModel.tick"))
         if stopped_tick != target_tick:

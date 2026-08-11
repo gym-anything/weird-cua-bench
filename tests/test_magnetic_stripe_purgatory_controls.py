@@ -89,16 +89,9 @@ def _passing_payload(truth: dict, interaction: str) -> dict:
         reader_id = str(card["assigned_reader"])
         reader = readers[reader_id]
         start, end = _center(card["initial_rect"]), _center(reader["slot"])
-        moves = int(truth["requirements"]["minimum_insert_moves"])
-        duration = int(truth["requirements"]["minimum_insert_ms"]) + 40
         record("insert_down", card_id=card_id, point=start, elapsed_ms=0, input_source=sources["insert"])
-        for index in range(1, moves + 1):
-            point = [
-                round(start[0] + (end[0] - start[0]) * index / moves),
-                round(start[1] + (end[1] - start[1]) * index / moves),
-            ]
-            record("insert_move", card_id=card_id, point=point, elapsed_ms=round(duration * index / moves), input_source=sources["insert"])
-        record("insert_up", card_id=card_id, reader_id=reader_id, point=end, duration_ms=duration, input_source=sources["insert"])
+        record("insert_move", card_id=card_id, point=end, elapsed_ms=0, input_source=sources["insert"])
+        record("insert_up", card_id=card_id, reader_id=reader_id, point=end, duration_ms=0, input_source=sources["insert"])
         track = reader["track"]
         x0 = int(track["x_start"] if track["direction"] == "ltr" else track["x_end"])
         x1 = int(track["x_end"] if track["direction"] == "ltr" else track["x_start"])
@@ -216,6 +209,9 @@ def test_browser_feedback_uses_each_profile_geometry_contract() -> None:
     assert "function swipeRequirements(reader)" in source
     assert "function segmentHitsZone(first, second, zone)" in source
     assert "function pathHitsZone(points, zones)" in source
+    assert "MAX_DIRECT_SAMPLE_INTERVAL_MS = 20" in source
+    assert "normalizedDuration" in source
+    assert "raw_duration_ms" in source
     assert "STATIC FIELD" in source
     for parameter in (
         "minimum_coverage_milli",

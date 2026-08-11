@@ -151,7 +151,7 @@ def grade(payload: dict[str, Any], ground_truth: dict[str, Any], public_state: d
             if math.hypot(body_pose[0] - drag["last_pose"][0], body_pose[1] - drag["last_pose"][1]) > 130 or _angle_error(body_pose[2], drag["last_pose"][2]) > 0.52:
                 return {"graded": True, "passed": False, "feedback": "unreplayed rigid-body jump during drag"}
             if math.hypot(body_pose[0] - candidate[0], body_pose[1] - candidate[1]) > 90:
-                return {"graded": True, "passed": False, "feedback": "dragged body escaped its pointer spring"}
+                return {"graded": True, "passed": False, "feedback": "dragged body escaped its pointer grab"}
             drag["last"] = candidate
             drag["last_pose"] = body_pose
             drag["samples"] += 1

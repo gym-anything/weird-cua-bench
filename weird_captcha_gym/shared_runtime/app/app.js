@@ -38,6 +38,7 @@ const ghostModel = {
   placements: {},
   placementSources: {},
   selectedPieceId: null,
+  pointerDrag: null,
   frame: 0,
   animationFrame: 0,
 };
@@ -54,7 +55,7 @@ const grillModel = {
   actions: [],
   selectedFoodId: null,
   selectedGesture: null,
-  dragGestures: {},
+  pointerDrag: null,
   interaction: "full",
   animationFrame: 0,
 };
@@ -103,7 +104,7 @@ const dominoModel = {
 };
 const consequenceModel = {state: null, phase: "choices", sceneIndex: 0, bossIndex: 0, choices: {}, actions: {}};
 const popupModel = {state: null, cleared: [], topZ: 20, submitting: false};
-const funeralModel = {state: null, events: [], actionSurfaces: [], brushed: new Set(), gathered: new Set(), flowerSources: {}, brushing: false, completed: false, pointerUpHandler: null};
+const funeralModel = {state: null, events: [], actionSurfaces: [], brushed: new Set(), gathered: new Set(), flowerSources: {}, brushing: false, bouquetDrag: null, completed: false, pointerUpHandler: null};
 const slimeModel = {state: null, startedAt: 0, player: {x: 0, y: 10}, deaths: 0, visited: new Set(), keyHandler: null, animationFrame: 0, completed: false, lastTick: -1};
 
 function runtimeAssetUrl(relative) {
@@ -212,6 +213,7 @@ async function renderExternalMechanic(state) {
     installCheatPanel,
     render: renderExternalMechanic,
     beginAction: (label) => window.WeirdCaptchaTime?.beginAction?.(label),
+    interactionNow: () => window.WeirdCaptchaTime?.interactionNow?.() ?? performance.now(),
   });
   return true;
 }
@@ -2459,6 +2461,44 @@ function selectGhostPiece(piece) {
   setReadout("PIECE SELECTED · CLICK A DESTINATION SLOT", "idle");
 }
 
+function beginGhostPointerDrag(piece, event) {
+  if (event.button !== 0 || ghostModel.pointerDrag) return;
+  event.preventDefault();
+  piece.setPointerCapture?.(event.pointerId);
+  ghostModel.pointerDrag = {
+    pointerId: event.pointerId,
+    piece,
+    startX: event.clientX,
+    startY: event.clientY,
+  };
+  piece.classList.add("is-dragging");
+  piece.setAttribute("aria-grabbed", "true");
+}
+
+function moveGhostPointerDrag(event) {
+  const drag = ghostModel.pointerDrag;
+  if (!drag || event.pointerId !== drag.pointerId) return;
+  event.preventDefault();
+  drag.piece.style.setProperty("--ghost-drag-x", `${event.clientX - drag.startX}px`);
+  drag.piece.style.setProperty("--ghost-drag-y", `${event.clientY - drag.startY}px`);
+}
+
+function endGhostPointerDrag(event, cancelled = false) {
+  const drag = ghostModel.pointerDrag;
+  if (!drag || event.pointerId !== drag.pointerId) return;
+  ghostModel.pointerDrag = null;
+  const piece = drag.piece;
+  piece.classList.remove("is-dragging");
+  piece.removeAttribute("aria-grabbed");
+  piece.style.removeProperty("--ghost-drag-x");
+  piece.style.removeProperty("--ghost-drag-y");
+  try { piece.releasePointerCapture?.(event.pointerId); } catch (_error) { /* capture already released */ }
+  if (cancelled) return;
+  const hit = document.elementFromPoint(event.clientX, event.clientY);
+  const target = hit?.closest?.(".ghost-slot, .ghost-piece-bank");
+  if (target) ghostDropTarget(target, piece.dataset.pieceId, "piece_drag");
+}
+
 function renderMotionOnlyGhostJigsaw(state) {
   if (ghostModel.animationFrame) cancelAnimationFrame(ghostModel.animationFrame);
   document.body.dataset.mechanic = "ghost-jigsaw";
@@ -2467,6 +2507,7 @@ function renderMotionOnlyGhostJigsaw(state) {
   ghostModel.placements = {};
   ghostModel.placementSources = {};
   ghostModel.selectedPieceId = null;
+  ghostModel.pointerDrag = null;
   ghostModel.frame = 0;
   const interaction = state.control_condition?.interaction || "full";
   app.innerHTML = `
@@ -2478,28 +2519,25 @@ function renderMotionOnlyGhostJigsaw(state) {
           ${Array.from({length: state.pieces.length}, (_, index) => `<div class="ghost-slot" data-slot-index="${index}" aria-label="position ${index + 1}"></div>`).join("")}
         </div>
         <div class="ghost-piece-bank" aria-label="moving jigsaw pieces" style="--ghost-columns:${Number(state.visual?.columns || 3)};--ghost-count:${state.pieces.length}">
-          ${(state.pieces || []).map((piece) => `<div class="ghost-piece" draggable="${interaction === "full"}" data-piece-id="${text(piece.id)}" data-source-index="${text(piece.source_index)}" data-noise-seed="${text(piece.noise_seed)}" data-phase="${text(piece.phase)}"><canvas width="58" height="58"></canvas></div>`).join("")}
+          ${(state.pieces || []).map((piece) => `<div class="ghost-piece" data-piece-id="${text(piece.id)}" data-source-index="${text(piece.source_index)}" data-noise-seed="${text(piece.noise_seed)}" data-phase="${text(piece.phase)}"><canvas width="58" height="58"></canvas></div>`).join("")}
         </div>
       </section>
       <footer class="interaction-foot"><div class="readout" data-status="idle"></div><button class="interaction-submit" id="submit-ghost" type="button">${text(state.submit_label || "VERIFY")}</button></footer>
       ${cheatPanelTemplate()}
     </section>`;
   document.querySelectorAll(".ghost-piece").forEach((piece) => {
-    if (interaction === "full") piece.addEventListener("dragstart", (event) => event.dataTransfer.setData("text/plain", piece.dataset.pieceId));
-    else piece.addEventListener("click", (event) => {
+    if (interaction === "full") {
+      piece.addEventListener("pointerdown", (event) => beginGhostPointerDrag(piece, event));
+      piece.addEventListener("pointermove", moveGhostPointerDrag);
+      piece.addEventListener("pointerup", endGhostPointerDrag);
+      piece.addEventListener("pointercancel", (event) => endGhostPointerDrag(event, true));
+      piece.addEventListener("lostpointercapture", (event) => endGhostPointerDrag(event, true));
+    } else piece.addEventListener("click", (event) => {
       event.stopPropagation();
       selectGhostPiece(piece);
     });
   });
-  if (interaction === "full") {
-    document.querySelectorAll(".ghost-slot, .ghost-piece-bank").forEach((target) => {
-      target.addEventListener("dragover", (event) => event.preventDefault());
-      target.addEventListener("drop", (event) => {
-        event.preventDefault();
-        ghostDropTarget(target, event.dataTransfer.getData("text/plain"), "piece_drag");
-      });
-    });
-  } else {
+  if (interaction !== "full") {
     document.querySelectorAll(".ghost-slot").forEach((slot) => slot.addEventListener("click", () => {
       if (ghostModel.selectedPieceId) ghostDropTarget(slot, ghostModel.selectedPieceId, "piece_slot_clicks");
     }));
@@ -2699,6 +2737,50 @@ function pointFromEvent(event) {
   ];
 }
 
+function grillDropZoneAt(event) {
+  return document.elementsFromPoint(event.clientX, event.clientY)
+    .find((node) => node.classList?.contains("grill-zone")) || null;
+}
+
+function moveGrillPointerDrag(event) {
+  const drag = grillModel.pointerDrag;
+  if (!drag || drag.pointerId !== event.pointerId) return;
+  event.preventDefault();
+  drag.node.style.setProperty("--grill-drag-x", `${event.clientX - drag.startPoint[0]}px`);
+  drag.node.style.setProperty("--grill-drag-y", `${event.clientY - drag.startPoint[1]}px`);
+}
+
+async function endGrillPointerDrag(event, cancelled = false) {
+  const drag = grillModel.pointerDrag;
+  if (!drag || drag.pointerId !== event.pointerId) return;
+  event.preventDefault();
+  const zone = cancelled ? null : grillDropZoneAt(event);
+  grillModel.pointerDrag = null;
+  drag.node.classList.remove("is-dragging");
+  drag.node.style.removeProperty("--grill-drag-x");
+  drag.node.style.removeProperty("--grill-drag-y");
+  try { drag.node.releasePointerCapture(event.pointerId); } catch (_error) { /* capture already released */ }
+  if (!zone) {
+    if (!cancelled) setReadout("DROP CANCELED", "error");
+    return;
+  }
+  try {
+    await commitGrillMove(
+      drag.foodId,
+      zone.dataset.dropZone,
+      await drag.token,
+      "/parallel-grillmaster/full/drop",
+      {
+        drop_zone: zone.dataset.dropZone,
+        start_point: drag.startPoint,
+        end_point: pointFromEvent(event),
+      },
+    );
+  } catch (_error) {
+    setReadout("GESTURE REJECTED", "error");
+  }
+}
+
 function applyWitnessedGrillMove(foodId, destination, witnessAction) {
   const node = document.querySelector(`.grill-food[data-food-id="${CSS.escape(foodId)}"]`);
   const record = grillModel.records[foodId];
@@ -2759,7 +2841,7 @@ function renderParallelGrillmaster(state) {
   grillModel.actions = [];
   grillModel.selectedFoodId = null;
   grillModel.selectedGesture = null;
-  grillModel.dragGestures = {};
+  grillModel.pointerDrag = null;
   grillModel.interaction = state.control_condition?.interaction || "full";
   (state.foods || []).forEach((food) => {
     grillModel.records[food.id] = {
@@ -2784,7 +2866,7 @@ function renderParallelGrillmaster(state) {
       <header class="interaction-head grill-head"><p>DINNER RUSH / 03</p><h1>${text(state.prompt)}</h1></header>
       ${batchRule}
       <section class="grill-stage">
-        <div class="grill-zone grill-prep" data-drop-zone="prep"><span class="zone-label">RAW ORDER</span>${(state.foods || []).map((food) => `<div class="grill-food" draggable="${grillModel.interaction === "full" ? "true" : "false"}" data-selected="false" data-food-id="${text(food.id)}" data-kind="${text(food.kind)}" data-cook-state="raw">${foodArt(food.kind)}</div>`).join("")}</div>
+        <div class="grill-zone grill-prep" data-drop-zone="prep"><span class="zone-label">RAW ORDER</span>${(state.foods || []).map((food) => `<div class="grill-food" data-selected="false" data-food-id="${text(food.id)}" data-kind="${text(food.kind)}" data-cook-state="raw">${foodArt(food.kind)}</div>`).join("")}</div>
         <div class="grill-zone grill-fire" data-drop-zone="grill"><span class="zone-label">LIVE FIRE</span><div class="grill-bars"></div><div class="heat-wave heat-wave-a"></div><div class="heat-wave heat-wave-b"></div></div>
         <div class="grill-zone grill-tray" data-drop-zone="tray"><span class="zone-label">SERVING TRAY</span></div>
       </section>
@@ -2793,55 +2875,29 @@ function renderParallelGrillmaster(state) {
     </section>`;
   if (grillModel.interaction === "full") {
     document.querySelectorAll(".grill-food").forEach((foodNode) => {
-      foodNode.addEventListener("dragstart", (event) => {
-        if (!event.isTrusted) return;
-        event.dataTransfer.setData("text/plain", foodNode.dataset.foodId);
+      foodNode.addEventListener("pointerdown", (event) => {
+        if (!event.isTrusted || event.button !== 0 || grillModel.pointerDrag) return;
+        event.preventDefault();
         const foodId = foodNode.dataset.foodId;
         const startPoint = pointFromEvent(event);
-        grillModel.dragGestures[foodId] = {
+        grillModel.pointerDrag = {
+          pointerId: event.pointerId,
+          node: foodNode,
+          foodId,
           startPoint,
           token: beginGrillGesture(
             foodId,
             "/parallel-grillmaster/full/drag-begin",
-            {
-              start_point: startPoint,
-              data_transfer_types: Array.from(event.dataTransfer.types || []),
-            },
+            {start_point: startPoint},
           ),
         };
+        foodNode.classList.add("is-dragging");
+        try { foodNode.setPointerCapture(event.pointerId); } catch (_error) { /* no capture support */ }
       });
-    });
-    document.querySelectorAll(".grill-zone").forEach((zone) => {
-      zone.addEventListener("dragover", (event) => event.preventDefault());
-      zone.addEventListener("drop", async (event) => {
-        event.preventDefault();
-        if (!event.isTrusted) {
-          setReadout("GESTURE REJECTED", "error");
-          return;
-        }
-        const foodId = event.dataTransfer.getData("text/plain");
-        const gesture = grillModel.dragGestures[foodId];
-        delete grillModel.dragGestures[foodId];
-        if (!gesture) {
-          setReadout("GESTURE REJECTED", "error");
-          return;
-        }
-        try {
-          await commitGrillMove(
-            foodId,
-            zone.dataset.dropZone,
-            await gesture.token,
-            "/parallel-grillmaster/full/drop",
-            {
-              drop_zone: zone.dataset.dropZone,
-              start_point: gesture.startPoint,
-              end_point: pointFromEvent(event),
-            },
-          );
-        } catch (_error) {
-          setReadout("GESTURE REJECTED", "error");
-        }
-      });
+      foodNode.addEventListener("pointermove", moveGrillPointerDrag);
+      foodNode.addEventListener("pointerup", (event) => endGrillPointerDrag(event));
+      foodNode.addEventListener("pointercancel", (event) => endGrillPointerDrag(event, true));
+      foodNode.addEventListener("lostpointercapture", (event) => endGrillPointerDrag(event, true));
     });
   } else {
     document.querySelectorAll(".grill-food").forEach((foodNode) => {
@@ -3756,13 +3812,35 @@ function gatherFuneralFlower(flower, source) {
 
 function offerFuneralBouquet(state, source) {
   if (!funeralGatherComplete() || funeralHas("offer")) return;
-  ritualPush("offer", source); updateFuneralState(); setTimeout(() => submitFuneral(state), 700);
+  ritualPush("offer", source); updateFuneralState(); submitFuneral(state);
+}
+
+function moveFuneralBouquet(event) {
+  const drag = funeralModel.bouquetDrag;
+  if (!drag || drag.pointerId !== event.pointerId) return;
+  event.preventDefault();
+  drag.node.style.setProperty("--bouquet-drag-x", `${event.clientX - drag.startX}px`);
+  drag.node.style.setProperty("--bouquet-drag-y", `${event.clientY - drag.startY}px`);
+}
+
+function endFuneralBouquet(event, state, cancelled = false) {
+  const drag = funeralModel.bouquetDrag;
+  if (!drag || drag.pointerId !== event.pointerId) return;
+  event.preventDefault();
+  const overBed = !cancelled && document.elementsFromPoint(event.clientX, event.clientY)
+    .some((node) => node.classList?.contains("grave-bed"));
+  funeralModel.bouquetDrag = null;
+  drag.node.classList.remove("is-dragging");
+  drag.node.style.removeProperty("--bouquet-drag-x");
+  drag.node.style.removeProperty("--bouquet-drag-y");
+  try { drag.node.releasePointerCapture(event.pointerId); } catch (_error) { /* capture already released */ }
+  if (overBed) offerFuneralBouquet(state, "full");
 }
 
 function renderFuneralRitual(state) {
   if (funeralModel.pointerUpHandler) window.removeEventListener("pointerup", funeralModel.pointerUpHandler);
   document.body.dataset.mechanic = "funeral-ritual"; document.body.dataset.cheatMode = isCheatMode() ? "true" : "false";
-  funeralModel.state = state; funeralModel.events = []; funeralModel.actionSurfaces = []; funeralModel.brushed = new Set(); funeralModel.gathered = new Set(); funeralModel.flowerSources = {}; funeralModel.brushing = false; funeralModel.completed = false;
+  funeralModel.state = state; funeralModel.events = []; funeralModel.actionSurfaces = []; funeralModel.brushed = new Set(); funeralModel.gathered = new Set(); funeralModel.flowerSources = {}; funeralModel.brushing = false; funeralModel.bouquetDrag = null; funeralModel.completed = false;
   const interaction = funeralInteraction(); const parameters = funeralParameters();
   const offeringWidth = Number(parameters.offering_width || 270); const offeringHeight = Number(parameters.offering_height || 83);
   const offeringStyle = offeringWidth === 270 && offeringHeight === 83 ? "" : ` style="--grave-bed-width:${offeringWidth}px;--grave-bed-height:${offeringHeight}px;--grave-bed-left:${385 - offeringWidth / 2}px"`;
@@ -3770,7 +3848,7 @@ function renderFuneralRitual(state) {
   const guidance = String(parameters.affordance_cues || "original") === "guided" ? `<div class="ritual-guidance" aria-live="polite"></div>` : "";
   const fullFlowers = (state.flowers || []).map((flower) => `<button type="button" class="ritual-flower flower-${text(flower.kind)}" data-flower-id="${text(flower.id)}" data-flower-kind="${text(flower.kind)}" style="left:${flower.x}%;top:${flower.y}%" aria-label="${text(flower.kind)}"><i></i><b></b></button>`).join("");
   const proxyControls = interaction === "simplified" ? `<section class="funeral-proxy-controls" aria-label="Memorial action controls"><button type="button" data-proxy-action="inspect">INSPECT MEMORIAL</button><button type="button" data-proxy-action="brush">BRUSH MOSS</button><button type="button" data-proxy-action="light">LIGHT CANDLE</button><div class="proxy-flower-row" aria-label="Gather flower controls">${(state.flowers || []).map((flower) => `<button type="button" class="proxy-flower flower-${text(flower.kind)}" data-proxy-flower-id="${text(flower.id)}" aria-label="Gather ${text(flower.kind)} flower"><i></i></button>`).join("")}</div><button type="button" data-proxy-action="offer">OFFER TRIBUTE</button></section>` : "";
-  app.innerHTML = `<section class="funeral-captcha" data-interaction="${text(interaction)}"><header class="funeral-head"><span>MEMORIAL № 10</span><h1>${text(state.prompt)}</h1></header><section class="funeral-stage" data-inspected="false" data-brushed="false" data-lit="false" data-gathered="false" data-offered="false" data-tribute-visible="false"><div class="rain rain-a"></div><div class="rain rain-b"></div><div class="grave-moon"></div><div class="grave-hill"></div><button type="button" class="tombstone"><span class="epitaph">${text(state.epitaph)}</span><div class="moss-grid">${Array.from({length: state.moss_cells || 0}, (_, index) => `<i class="moss-cell" data-moss-index="${index}" data-cleared="false"></i>`).join("")}</div><div class="moss-progress"></div>${tributeOrder ? `<div class="tribute-order" aria-label="Tribute order">${tributeOrder}</div>` : ""}</button><button type="button" class="grave-candle" aria-label="Candle"><i></i><b></b></button><div class="flower-field">${fullFlowers}</div><div class="ritual-brush"><i></i><b></b></div><div class="grave-bed"${offeringStyle}></div><div class="ritual-bouquet" draggable="${interaction === "full"}"><i></i><i></i><i></i><b></b></div><div class="ritual-whisper">look closer</div>${guidance}</section>${proxyControls}<footer class="funeral-foot"><div class="readout" data-status="idle"></div><div class="ritual-stars">✦　·　✦</div></footer>${cheatPanelTemplate()}</section>`;
+  app.innerHTML = `<section class="funeral-captcha" data-interaction="${text(interaction)}"><header class="funeral-head"><span>MEMORIAL № 10</span><h1>${text(state.prompt)}</h1></header><section class="funeral-stage" data-inspected="false" data-brushed="false" data-lit="false" data-gathered="false" data-offered="false" data-tribute-visible="false"><div class="rain rain-a"></div><div class="rain rain-b"></div><div class="grave-moon"></div><div class="grave-hill"></div><button type="button" class="tombstone"><span class="epitaph">${text(state.epitaph)}</span><div class="moss-grid">${Array.from({length: state.moss_cells || 0}, (_, index) => `<i class="moss-cell" data-moss-index="${index}" data-cleared="false"></i>`).join("")}</div><div class="moss-progress"></div>${tributeOrder ? `<div class="tribute-order" aria-label="Tribute order">${tributeOrder}</div>` : ""}</button><button type="button" class="grave-candle" aria-label="Candle"><i></i><b></b></button><div class="flower-field">${fullFlowers}</div><div class="ritual-brush"><i></i><b></b></div><div class="grave-bed"${offeringStyle}></div><div class="ritual-bouquet"><i></i><i></i><i></i><b></b></div><div class="ritual-whisper">look closer</div>${guidance}</section>${proxyControls}<footer class="funeral-foot"><div class="readout" data-status="idle"></div><div class="ritual-stars">✦　·　✦</div></footer>${cheatPanelTemplate()}</section>`;
   const tombstone = document.querySelector(".tombstone");
   if (interaction === "full") tombstone.addEventListener("click", () => { ritualPush("inspect", "full"); updateFuneralState(); });
   document.querySelectorAll(".moss-cell").forEach((cell) => { if (interaction !== "full") return; cell.addEventListener("pointerdown", (event) => { event.preventDefault(); funeralModel.brushing = true; brushMossCell(cell, "full"); }); cell.addEventListener("pointerenter", () => { if (funeralModel.brushing) brushMossCell(cell, "full"); }); });
@@ -3779,8 +3857,18 @@ function renderFuneralRitual(state) {
   if (interaction === "full") {
     document.querySelector(".grave-candle").addEventListener("click", () => { if (!funeralHas("brush")) return; ritualPush("light", "full"); updateFuneralState(); });
     document.querySelectorAll(".ritual-flower").forEach((flower) => flower.addEventListener("click", () => gatherFuneralFlower(flower, "full")));
-    const bouquet = document.querySelector(".ritual-bouquet"); bouquet.addEventListener("dragstart", (event) => event.dataTransfer.setData("text/plain", "bouquet"));
-    const bed = document.querySelector(".grave-bed"); bed.addEventListener("dragover", (event) => event.preventDefault()); bed.addEventListener("drop", (event) => { event.preventDefault(); offerFuneralBouquet(state, "full"); });
+    const bouquet = document.querySelector(".ritual-bouquet");
+    bouquet.addEventListener("pointerdown", (event) => {
+      if (event.button !== 0 || funeralModel.bouquetDrag || !funeralGatherComplete()) return;
+      event.preventDefault();
+      funeralModel.bouquetDrag = {pointerId: event.pointerId, node: bouquet, startX: event.clientX, startY: event.clientY};
+      bouquet.classList.add("is-dragging");
+      try { bouquet.setPointerCapture(event.pointerId); } catch (_error) { /* no capture support */ }
+    });
+    bouquet.addEventListener("pointermove", moveFuneralBouquet);
+    bouquet.addEventListener("pointerup", (event) => endFuneralBouquet(event, state));
+    bouquet.addEventListener("pointercancel", (event) => endFuneralBouquet(event, state, true));
+    bouquet.addEventListener("lostpointercapture", (event) => endFuneralBouquet(event, state, true));
   } else {
     document.querySelector('[data-proxy-action="inspect"]').addEventListener("click", () => { ritualPush("inspect", "simplified"); updateFuneralState(); });
     document.querySelector('[data-proxy-action="brush"]').addEventListener("click", proxyBrushMoss);
@@ -3845,7 +3933,8 @@ function renderSlimeCommute(state) {
 
 async function main() {
   try {
-    const response = await fetch(`/state?ts=${Date.now()}`, {cache: "no-store"});
+    const taskToken = new URLSearchParams(window.location.search).get("task") || "";
+    const response = await fetch(`/state?ts=${Date.now()}&task=${encodeURIComponent(taskToken)}`, {cache: "no-store"});
     if (!response.ok) {
       renderWaiting("Loading.");
       return;

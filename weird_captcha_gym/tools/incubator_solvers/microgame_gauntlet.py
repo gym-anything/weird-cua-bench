@@ -131,28 +131,32 @@ def solve(page, state_dir: Path, out_dir: Path, mechanic: str, start_round_index
                     page.wait_for_timeout(25)
                 page.mouse.up()
             _shot(page, out_dir, mechanic, "active-inertial-coast")
-            page.evaluate("""() => new Promise((resolve, reject) => {
-              const brake = document.getElementById('gauntlet-brake');
-              const finish = () => { observer.disconnect(); clearTimeout(timeout); brake.click(); resolve(true); };
-              const observer = new MutationObserver(() => { if (brake.dataset.inZone === 'true') finish(); });
-              const timeout = setTimeout(() => { observer.disconnect(); reject(new Error('dial never crossed target sector')); }, 6000);
-              observer.observe(brake, {attributes:true, attributeFilter:['data-in-zone']});
-              if (brake.dataset.inZone === 'true') finish();
-            })""")
+            page.wait_for_function(
+                "() => document.getElementById('gauntlet-brake')?.dataset.inZone === 'true'",
+                polling=4,
+                timeout=6_000,
+            )
+            page.locator("#gauntlet-brake").click(force=True)
         elif round_type == "intercept":
             page.locator("#intercept-proxy-arm" if interaction == "simplified" else "#intercept-arm").click()
             page.wait_for_timeout(120)
             _shot(page, out_dir, mechanic, "active-moving-intercept")
             for packet_index, _packet in enumerate(round_data["packets"]):
-                page.evaluate("""() => new Promise((resolve, reject) => {
-                  const target = document.getElementById('intercept-target');
-                  const capture = () => document.getElementById('intercept-proxy-capture') || target;
-                  const finish = () => { observer.disconnect(); clearTimeout(timeout); capture().click(); resolve(true); };
-                  const observer = new MutationObserver(() => { if (target.dataset.inGate === 'true') finish(); });
-                  const timeout = setTimeout(() => { observer.disconnect(); reject(new Error('packet never crossed capture gate')); }, 6000);
-                  observer.observe(target, {attributes:true, attributeFilter:['data-in-gate']});
-                  if (target.dataset.inGate === 'true') finish();
-                })""")
+                page.wait_for_function(
+                    "() => document.getElementById('intercept-target')?.dataset.inGate === 'true'",
+                    polling=4,
+                    timeout=6_000,
+                )
+                if interaction == "simplified":
+                    page.locator("#intercept-proxy-capture").click(force=True)
+                else:
+                    target_box = page.locator("#intercept-target").bounding_box()
+                    if not target_box:
+                        raise AssertionError("moving intercept target has no visible geometry")
+                    page.mouse.click(
+                        target_box["x"] + target_box["width"] / 2,
+                        target_box["y"] + target_box["height"] / 2,
+                    )
                 if packet_index < len(round_data["packets"]) - 1:
                     page.wait_for_function("index => document.querySelector(`[data-packet-mark=\"${index}\"]`)?.dataset.status === 'captured'", arg=packet_index)
         elif round_type == "route":

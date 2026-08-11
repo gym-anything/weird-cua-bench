@@ -49,7 +49,7 @@ The public browser runtime is an exploration surface, not a secure evaluation en
 
 ## Live and paused evaluation
 
-Every environment has a task-time limit, observation-window duration, and frame count in `weird_captcha_gym/real_time.json`. Live and paused runs use the same frame schedule. Live mode keeps the task running while the model responds; paused mode stops task time during the model response.
+Every environment has a task-time limit, observation-window duration, and frame count in `weird_captcha_gym/real_time.json`. Live and paused runs use the same frame schedule. Live mode keeps the task running while the model responds. Paused mode freezes task time during both the model response and native input delivery, then advances exactly one configured observation window after the browser confirms the input event.
 
 Install the evaluation dependencies, then choose the condition with `--time-mode`:
 
@@ -63,7 +63,7 @@ weird-cua-evaluate \
   --time-mode live
 ```
 
-Public browser play includes an observation inspector. Choose live or paused mode inside the puzzle tab, then capture one configured observation window to inspect the same frame count used by evaluation. Authoritative evaluation preserves the environment's native desktop resolution so screenshot coordinates and action coordinates share one space. Paused browser play stops the task between observations and briefly runs it while a mouse or keyboard action is applied. The browser will ask you to share the current tab before its first pixel capture; the inspector is hidden from the captured frames.
+Public browser play includes an observation inspector. Choose live or paused mode inside the puzzle tab, then capture one configured observation window to inspect the same frame count used by evaluation. Authoritative evaluation preserves the environment's native desktop resolution so screenshot coordinates and action coordinates share one space. In paused browser play, mouse and keyboard handlers run against the frozen state; timers, physics, and animations advance only when the next observation window is captured. The browser will ask you to share the current tab before its first pixel capture; the inspector is hidden from the captured frames.
 
 This browser control is for inspection. Authoritative evaluation still uses `--time-mode` and records its frames and timing manifest in the episode artifacts.
 

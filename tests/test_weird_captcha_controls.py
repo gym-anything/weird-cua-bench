@@ -474,6 +474,16 @@ def test_polyrhythm_customs_controls_preserve_l4_and_bind_input_surfaces() -> No
         assert len(full_public["lanes"]) == expected_lanes[level - 1]
         assert sum(note["kind"] == "hold" for note in full_truth["expected_notes"]) == expected_holds[level - 1]
         assert len(full_truth["chords"]) == expected_chords[level - 1]
+        assert full_public["generator"]["name"] == "polyrhythm_customs_v3"
+        for lane in full_truth["lanes"]:
+            lane_notes = sorted(
+                (note for note in full_truth["expected_notes"] if note["lane"] == lane["id"]),
+                key=lambda note: note["start_ms"],
+            )
+            assert all(
+                first["start_ms"] + first["duration_ms"] < second["start_ms"]
+                for first, second in zip(lane_notes, lane_notes[1:])
+            )
         if level == 1:
             assert len(full_truth["expected_notes"]) == 8
         if level == 5:
@@ -521,6 +531,17 @@ def test_polyrhythm_customs_controls_preserve_l4_and_bind_input_surfaces() -> No
             stale_identity = copy.deepcopy(payload)
             stale_identity["challenge_id"] = "stale-polyrhythm-challenge"
             assert grader.grade(stale_identity, truth, public)["passed"] is False
+
+    renderer = (
+        BENCHMARK / "shared_runtime" / "app" / "mechanics" / "polyrhythm_customs.js"
+    ).read_text(encoding="utf-8")
+    assert 'class="rhythm-entry-track"' in renderer
+    assert 'track.addEventListener("pointerdown"' in renderer
+    assert 'track.addEventListener("pointerup"' in renderer
+    assert 'source: "pointer_toggle"' in renderer
+    assert 'kind: dragged ? "hold" : "tap"' in renderer
+    assert 'model.interaction === "simplified" ? "COMBINED TIMING DECLARATION"' in renderer
+    assert "model.helpers = helpers;" in renderer
 
 
 def _temporal_position(item: dict, elapsed_ms: float) -> list[float]:
@@ -748,6 +769,8 @@ def test_robot_art_critic_controls_preserve_l4_and_bind_plot_and_pointer_surface
     assert 'data-interaction="${clean(interaction)}"' in renderer
     assert 'id="finish-plot-stroke"' in renderer
     assert '"plot_clicks"' in renderer
+    assert "model.helpers.interactionNow()" in renderer
+    assert "model.pointerClock = Math.max(raw, model.pointerClock + 16)" in renderer
     assert '"continuous_pointer"' in renderer
 
 
@@ -894,7 +917,11 @@ def _reload_interruption_payload(public: dict, truth: dict, interaction: str, gr
                 point = [x, y]
             else:
                 point = [0, 0]
-            samples.append({"elapsed_ms": elapsed, "point": point})
+            samples.append({
+                "elapsed_ms": elapsed,
+                "world_elapsed_ms": elapsed,
+                "point": point,
+            })
         push(
             "interrupt",
             interruption_id=spec["id"],
@@ -922,6 +949,16 @@ def test_reload_interruption_profiles_preserve_l4_and_bind_both_input_surfaces()
         BENCHMARK / "shared_runtime" / "verifier_helpers.py",
     )
     original = base_task_for(env_name, "reload_interruption")
+    renderer = (
+        BENCHMARK / "shared_runtime" / "app" / "mechanics" / "reload_interruption.js"
+    ).read_text(encoding="utf-8")
+    assert "model.helpers.interactionNow()" in renderer
+    assert "world_elapsed_ms" in renderer
+    assert "next.world_elapsed_ms===previous.world_elapsed_ms" in renderer
+    assert "sample(upEvent)" in renderer
+    assert 'spark.addEventListener("pointerdown"' in renderer
+    assert 'window.addEventListener("pointermove",sample,true)' in renderer
+    assert "spark.setPointerCapture" not in renderer
     for seed in ("reload-baseline-a", "reload-baseline-b"):
         original_public, original_truth = SETUP.generate_task_state(original, seed)
         baseline_public, baseline_truth = SETUP.generate_task_state(
@@ -953,6 +990,17 @@ def test_reload_interruption_profiles_preserve_l4_and_bind_both_input_surfaces()
             wrong_surface = copy.deepcopy(payload)
             wrong_surface["interaction_mode"] = "full" if interaction == "simplified" else "simplified"
             assert grader.grade(wrong_surface, truth, public)["passed"] is False
+
+            if interaction == "full":
+                paused_world = copy.deepcopy(payload)
+                for event in paused_world["events"]:
+                    if event["kind"] != "interrupt":
+                        continue
+                    first_point = event["samples"][0]["point"]
+                    for sample in event["samples"]:
+                        sample["world_elapsed_ms"] = 0
+                        sample["point"] = first_point
+                assert grader.grade(paused_world, truth, public)["passed"] is True
 
 
 def _wonky_delta(target: float, initial: float) -> float:
@@ -1006,6 +1054,13 @@ def test_wonky_registration_profiles_preserve_l3_and_bind_both_input_surfaces() 
     assert original["natural_language"] == "Register all three color plates, lock them, then press."
     assert controls["baseline"] == {"difficulty": 3, "interaction": "full", "real_time": "live"}
     assert controls["difficulty"]["3"]["natural_language"] == original["natural_language"]
+    renderer = (
+        BENCHMARK / "shared_runtime" / "app" / "mechanics" / f"{mechanic}.js"
+    ).read_text(encoding="utf-8")
+    submit_start = renderer.index("async function submit()")
+    submit_end = renderer.index("\n  function wheelMarkup", submit_start)
+    submit_source = renderer[submit_start:submit_end]
+    assert "await new Promise" not in submit_source[: submit_source.index('fetch("/result"')]
 
     for seed in ("wonky-baseline-a", "wonky-baseline-b", "wonky-baseline-c"):
         original_public, original_truth = SETUP.generate_task_state(original, seed)
@@ -1477,9 +1532,14 @@ def test_floodgate_profiles_and_both_input_surfaces_replay() -> None:
 
 def test_floodgate_browser_binds_the_selected_direct_surface() -> None:
     source = (BENCHMARK / "shared_runtime" / "app" / "mechanics" / "_interaction_vii_viii.js").read_text(encoding="utf-8")
+    styles = (BENCHMARK / "shared_runtime" / "app" / "mechanics" / "_interaction_vii_viii.css").read_text(encoding="utf-8")
     assert 'pump(circuitIndex, direction, "water_drag")' in source
     assert 'toggleGate(Number(lock.dataset.physicalLock), "lock_direct")' in source
     assert 'transfer(gate, "capsule_drag")' in source
+    water_rule = styles.split(".flood-tank i {", 1)[1].split("}", 1)[0]
+    capsule_rule = styles.split(".flood-tank span {", 1)[1].split("}", 1)[0]
+    assert "transition" not in water_rule
+    assert "transition" not in capsule_rule
 
 
 def test_floodgate_interaction_pair_has_distinct_challenge_identity() -> None:
@@ -1613,15 +1673,17 @@ def test_gravity_room_browser_binds_direct_gimbal_only_for_full_interaction() ->
     assert "time_mode" not in source
 
 
-def test_paused_evaluator_settles_registered_actions_before_pausing() -> None:
-    # The settle-before-pause invariant moved into the world party: the
-    # runner settle-pauses inside capture_observation, before each window.
+def test_paused_evaluator_delivers_input_before_the_fixed_window() -> None:
     runner_source = (BENCHMARK / "runner.py").read_text(encoding="utf-8")
     controller = (BENCHMARK / "shared_runtime" / "app" / "time_controller.js").read_text(encoding="utf-8")
     runtime = (BENCHMARK / "shared_runtime" / "app" / "app.js").read_text(encoding="utf-8")
-    assert 'self.time_command("settle-pause")' in runner_source
-    assert 'kind === "settle_pause"' in controller
-    assert "await pauseAfterActions(sequence);" in controller
+    assert 'self.input_command("arm", category=category, required=required)' in runner_source
+    assert 'self.input_command("complete", arm_sequence=arm_sequence)' in runner_source
+    assert 'self.time_command("settle-pause")' not in runner_source
+    assert 'native.fetch("/input-control/status"' in controller
+    assert 'observer.observe(document.documentElement, {' in controller
+    assert 'attributes: true' in controller
+    assert 'if (event.type === "keydown" && event.repeat) return;' in controller
     assert "beginAction: (label) => window.WeirdCaptchaTime?.beginAction?.(label)" in runtime
 
 
@@ -3012,8 +3074,14 @@ def test_flat_prisoner_profiles_match_camera_decoy_and_traversal_contracts() -> 
         assert public["controls"]["pan_step"] == parameters["pan_step"]
         assert public["physics"]["move_speed"] == parameters["move_speed"]
         assert public["physics"]["exit_radius"] == parameters["exit_radius"]
-        assert public["requirements"]["minimum_camera_events"] == parameters["minimum_camera_events"]
         assert public["requirements"]["minimum_traversal_ticks"] == parameters["minimum_traversal_ticks"]
+
+    source = (
+        BENCHMARK / "shared_runtime" / "app" / "mechanics" / "flat_prisoner.js"
+    ).read_text(encoding="utf-8")
+    assert "yaw=dx*.12,pitch=dy*.12" in source
+    assert "x=-dx*.018,y=dy*.018" in source
+    assert "minimum_camera_events" not in source
 
 
 def test_forced_perspective_profiles_change_projective_placement_and_bind_input_surface() -> None:
@@ -3294,6 +3362,20 @@ def test_specular_profiles_match_mirror_round_motion_and_tracking_contracts() ->
             assert round_data["tolerance_px"] == parameters["tolerance_px"]
             assert round_data["required_charge_ticks"] == parameters["required_charge_ticks"]
             assert round_data["miss_decay_ticks"] == parameters["miss_decay_ticks"]
+
+    renderer = (
+        BENCHMARK / "shared_runtime" / "app" / "mechanics" / "_interaction_vii_viii.js"
+    ).read_text(encoding="utf-8")
+    click_handler = renderer[
+        renderer.index('document.querySelectorAll("[data-mirror]")'):
+        renderer.index("const draw = () =>")
+    ]
+    assert "updateAngleDisplays(); draw();" in click_handler
+    assert "renderControls(); draw();" not in click_handler
+    assert "chargedPending: false" in renderer
+    assert 'setMessage(model, "RECEIVER CHARGED · CLOSE SHUTTER TO SEAL"' in renderer
+    assert "if (model.chargedPending) void advanceChargedReceiver();" in renderer
+    assert 'closeShutter("charged")' not in renderer
 
 
 def test_ghost_jigsaw_profiles_match_grid_size_and_motion_contracts() -> None:
@@ -3867,14 +3949,8 @@ def test_controlled_orchard_grader_accepts_each_target_count() -> None:
                     record("basket_click", apple_id=apple_id, point=destination, accepted=True, input_source="fruit_basket_clicks")
                 else:
                     record("pluck_start", apple_id=apple_id, point=center, angle=angles[-1], input_source="fruit_drag")
-                    for index in range(1, 5):
-                        fraction = index / 5
-                        point = [
-                            center[0] + (destination[0] - center[0]) * fraction,
-                            center[1] + (destination[1] - center[1]) * fraction,
-                        ]
-                        record("pluck_move", apple_id=apple_id, point=point, elapsed_ms=index * 20, input_source="fruit_drag")
-                    record("pluck_end", apple_id=apple_id, point=destination, duration_ms=100, in_basket=True, accepted=True, input_source="fruit_drag")
+                    record("pluck_move", apple_id=apple_id, point=destination, elapsed_ms=0, input_source="fruit_drag")
+                    record("pluck_end", apple_id=apple_id, point=destination, duration_ms=0, in_basket=True, accepted=True, input_source="fruit_drag")
             record("seal")
             travel = round(sum(abs(right - left) for left, right in zip(angles, angles[1:])), 2)
             span = round(max(angles) - min(angles), 2)
@@ -4607,7 +4683,7 @@ def _server_attested_grillmaster_payload(
         start_times=start_times,
     )
     surface = {
-        "food_drag": "html_drag_drop",
+        "food_drag": "pointer_drag",
         "grill_proxy_controls": "selection_plus_proxy_button",
     }[source]
     witnessed_route = {
@@ -4865,7 +4941,7 @@ def test_grillmaster_server_witness_derives_interaction_from_endpoint_route(
     )
     assert status == 200
     assert recorded["witness_action"]["input_source"] == "food_drag"
-    assert recorded["witness_action"]["event_surface"] == "html_drag_drop"
+    assert recorded["witness_action"]["event_surface"] == "pointer_drag"
     assert recorded["witness_action"]["witnessed_route"] == "full_drop"
 
 
@@ -5154,6 +5230,17 @@ def test_clockwork_customs_profiles_change_coupled_control_and_bind_input_surfac
         assert rejected["passed"] is False
         assert rejected["feedback"] == "customs difficulty condition differs from generated contract"
 
+    renderer = (
+        BENCHMARK / "shared_runtime" / "app" / "mechanics" / "clockwork_doppelganger_customs.js"
+    ).read_text(encoding="utf-8")
+    assert 'source === "timer" ? model.recording.timerSamples : model.recording.inputSamples' in renderer
+    assert "normalizeRecordingSamples(take, local);" in renderer
+    assert "flushRecordingEvents(take);" in renderer
+    assert 't_ms: take.startT + item.local_t_ms' in renderer
+    assert 'appendRecordingSample(local, point(model.cursor), "timer")' in renderer
+    assert "interactionPerformanceNow" not in renderer
+    assert "Math.round(performance.now() - model.recording.performanceStart)" in renderer
+
 
 def _fake_desktop_simplified_payload(public: dict, truth: dict) -> dict:
     """One clean selected-file proxy transcript for the preserved L3 world."""
@@ -5338,12 +5425,10 @@ def _modifier_stack_payload(public: dict, truth: dict, interaction: str) -> dict
             start = [rack["x"] + rack["width"] / 2, rack["y"] + rack["height"] / 2]
             end = [slot["x"] + slot["width"] / 2, slot["y"] + slot["height"] / 2]
             events.append({"sequence": len(events) + 1, "kind": "chip_down", "t_ms": timestamp, "input_source": source, "token_id": token["id"], "point": start})
-            for move in range(1, requirements["minimum_chip_moves"] + 1):
-                amount = move / requirements["minimum_chip_moves"]
-                timestamp += 10
-                events.append({"sequence": len(events) + 1, "kind": "chip_move", "t_ms": timestamp, "input_source": source, "token_id": token["id"], "point": [start[0] + (end[0] - start[0]) * amount, start[1] + (end[1] - start[1]) * amount], "elapsed_ms": move * 20})
             timestamp += 10
-            events.append({"sequence": len(events) + 1, "kind": "chip_up", "t_ms": timestamp, "input_source": source, "token_id": token["id"], "point": end, "duration_ms": requirements["minimum_chip_drag_ms"], "slot_index": slot["index"], "accepted": True})
+            events.append({"sequence": len(events) + 1, "kind": "chip_move", "t_ms": timestamp, "input_source": source, "token_id": token["id"], "point": end, "elapsed_ms": 0})
+            timestamp += 10
+            events.append({"sequence": len(events) + 1, "kind": "chip_up", "t_ms": timestamp, "input_source": source, "token_id": token["id"], "point": end, "duration_ms": 0, "slot_index": slot["index"], "accepted": True})
             timestamp += 10
         events.append({
             "sequence": len(events) + 1,
@@ -5684,6 +5769,8 @@ def test_reverse_identity_gate_controls_preserve_the_historical_full_reference_a
     assert 'state.control_condition?.interaction || "full"' in renderer
     assert '"direction_button"' in renderer
     assert '"pointer_hold"' in renderer
+    assert "tab.requestAnimationFrame(pump)" in renderer
+    assert "tab.setInterval(drainTaskTicks" not in renderer
 
 
 def _semantic_probe_payload(public: dict, truth: dict, interaction: str) -> dict:
@@ -5785,6 +5872,12 @@ def test_semantic_drag_drop_controls_preserve_l3_and_bind_probe_and_route_surfac
     assert 'data-interaction="${esc(interaction)}"' in renderer
     assert 'data-proxy-probe="thermal"' in renderer
     assert 'direct_specimen_drag' in renderer
+    direct_probe = renderer[
+        renderer.index("function installDirectProbe"):
+        renderer.index("function installSimplifiedProbe")
+    ]
+    assert "model.helpers.interactionNow()" in direct_probe
+    assert "performance.now()" not in direct_probe
 
 
 def test_portal_freight_controls_preserve_l4_and_bind_direct_canvas_input() -> None:

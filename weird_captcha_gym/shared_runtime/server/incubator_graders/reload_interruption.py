@@ -25,32 +25,35 @@ def _validate_interrupt(event: dict[str, Any], spec: dict[str, Any], interaction
         return "overload duration is invalid"
     if duration < int(spec["hold_ms"]) or not isinstance(samples, list) or len(samples) < int(spec["min_samples"]) or len(samples) > 120:
         return "overload hold was too short or sparse"
-    clean: list[tuple[int, tuple[float, float]]] = []
+    clean: list[tuple[int, int, tuple[float, float]]] = []
     for sample in samples:
         if not isinstance(sample, dict):
             return "overload sample is malformed"
         try:
             elapsed = int(sample["elapsed_ms"])
+            world_elapsed = int(sample["world_elapsed_ms"])
             point = sample["point"]
             x, y = float(point[0]), float(point[1])
         except (KeyError, TypeError, ValueError, IndexError):
             return "overload sample is malformed"
-        if elapsed < 0 or not math.isfinite(x) or not math.isfinite(y):
+        if elapsed < 0 or world_elapsed < 0 or not math.isfinite(x) or not math.isfinite(y):
             return "overload sample is not finite"
         if clean and (elapsed <= clean[-1][0] or elapsed - clean[-1][0] > int(spec["max_gap_ms"])):
             return "overload tracking samples are not continuous"
-        clean.append((elapsed, (x, y)))
+        if clean and world_elapsed < clean[-1][1]:
+            return "overload world samples moved backward"
+        clean.append((elapsed, world_elapsed, (x, y)))
     if interaction == "simplified":
         return None
     # Pointer-down can happen after the overlay appears. Infer that visible path
     # offset from the first physical sample, then validate every later sample.
-    first_elapsed, first_point = clean[0]
+    _first_elapsed, first_world_elapsed, first_point = clean[0]
     center_x, center_y = float(spec["center"][0]), float(spec["center"][1])
     normalized_angle = math.atan2((first_point[1] - center_y) / float(spec["radius_y"]), (first_point[0] - center_x) / float(spec["radius_x"]))
-    base_offset = (normalized_angle - float(spec["phase"])) / float(spec["rate"]) - first_elapsed
+    base_offset = (normalized_angle - float(spec["phase"])) / float(spec["rate"]) - first_world_elapsed
     tolerance = float(spec["tolerance"])
-    for elapsed, point in clean:
-        expected = _spark(spec, elapsed + base_offset)
+    for _elapsed, world_elapsed, point in clean:
+        expected = _spark(spec, world_elapsed + base_offset)
         if math.hypot(point[0] - expected[0], point[1] - expected[1]) > tolerance:
             return "pointer left the moving overload spark"
     if duration - clean[-1][0] > int(spec["max_gap_ms"]) + 90:

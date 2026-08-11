@@ -52,6 +52,16 @@ def test_existing_control_files_match_canonical_real_time_settings() -> None:
         assert controls["real_time"] == load_real_time_settings(mechanic_id).__dict__
 
 
+def test_existing_env_runner_options_match_canonical_real_time_settings() -> None:
+    keys = ("play_time_seconds", "observation_window_ms", "frames_per_observation")
+    for path in (BENCHMARK / "environments").glob("*_env/env.json"):
+        mechanic_id = path.parent.name.removesuffix("_env")
+        options = json.loads(path.read_text(encoding="utf-8"))["runner_options"]
+        assert {key: options[key] for key in keys} == load_real_time_settings(
+            mechanic_id
+        ).__dict__
+
+
 def test_lidar_real_time_settings_cover_motion_before_the_replay_ceiling() -> None:
     settings = load_real_time_settings("lidar_blacksite")
     assert settings == RealTimeSettings(
@@ -95,18 +105,18 @@ def test_lidar_real_time_settings_cover_motion_before_the_replay_ceiling() -> No
         assert environment_time_branch not in mechanic_source
 
 
-def test_consequences_real_time_settings_use_single_frames_for_untimed_memory_actions() -> None:
+def test_consequences_real_time_settings_advance_the_storm_with_one_result_frame() -> None:
     settings = load_real_time_settings("consequences_boss")
     assert settings == RealTimeSettings(
         play_time_seconds=180,
-        observation_window_ms=0,
+        observation_window_ms=800,
         frames_per_observation=1,
     )
     assert CAPTURE.frame_targets(
         0,
         settings.observation_window_ms,
         settings.frames_per_observation,
-    ) == [0]
+    ) == [800]
 
     controls = json.loads(
         (
@@ -129,6 +139,21 @@ def test_consequences_real_time_settings_use_single_frames_for_untimed_memory_ac
     assert "window.setTimeout(() => {" in mechanic_source
     assert "OPEN FRESH LEDGER" in mechanic_source
     assert "outcome.state && model.helpers.render(outcome.state), 850" not in mechanic_source
+    task_path = (
+        BENCHMARK
+        / "environments"
+        / "consequences_boss_env"
+        / "tasks"
+        / "consequences_boss_seed_0001"
+        / "task.json"
+    )
+    public_state, _ = generate_task_state(
+        json.loads(task_path.read_text(encoding="utf-8")),
+        "consequences-real-time-contract",
+    )
+    storm_ms = int(public_state["storm_ms"])
+    assert settings.observation_window_ms < storm_ms
+    assert 2 * settings.observation_window_ms >= storm_ms
     for environment_time_branch in (
         "time_mode",
         "WEIRD_CAPTCHA_TIME_MODE",
@@ -171,14 +196,79 @@ def test_fake_desktop_real_time_settings_use_one_static_observation_frame() -> N
         assert environment_time_branch not in mechanic_source
 
 
-def test_forced_perspective_uses_one_static_observation_frame() -> None:
+def test_flat_pack_real_time_settings_advance_every_difficulty_load_without_redundant_frames() -> None:
+    settings = load_real_time_settings("flat_pack_compliance")
+    assert settings == RealTimeSettings(
+        play_time_seconds=180,
+        observation_window_ms=800,
+        frames_per_observation=1,
+    )
+    assert CAPTURE.frame_targets(
+        0,
+        settings.observation_window_ms,
+        settings.frames_per_observation,
+    ) == [800]
+
+    controls = json.loads(
+        (
+            BENCHMARK
+            / "environments"
+            / "flat_pack_compliance_env"
+            / "controls.json"
+        ).read_text(encoding="utf-8")
+    )
+    assert controls["real_time"] == settings.__dict__
+    load_tick_ms = 72
+    load_durations = [
+        int(profile["parameters"]["load_step_count"]) * load_tick_ms
+        for profile in controls["difficulty"].values()
+    ]
+    windows_needed = [
+        (duration + settings.observation_window_ms - 1)
+        // settings.observation_window_ms
+        for duration in load_durations
+    ]
+    assert load_durations == [864, 1440, 2016, 2592, 3456]
+    assert windows_needed == [2, 2, 3, 4, 5]
+
+    mechanic_source = (
+        BENCHMARK
+        / "shared_runtime"
+        / "app"
+        / "mechanics"
+        / "flat_pack_compliance.js"
+    ).read_text(encoding="utf-8")
+    assert "model.loadTimer = setInterval(() => {" in mechanic_source
+    assert "}, 72);" in mechanic_source
+
+
+def test_forced_perspective_exposes_held_key_movement_across_four_frames() -> None:
     settings = load_real_time_settings("forced_perspective_moving_day")
     assert settings == RealTimeSettings(
         play_time_seconds=180,
-        observation_window_ms=0,
-        frames_per_observation=1,
+        observation_window_ms=400,
+        frames_per_observation=4,
     )
-    assert CAPTURE.frame_targets(0, settings.observation_window_ms, settings.frames_per_observation) == [0]
+    assert CAPTURE.frame_targets(
+        0,
+        settings.observation_window_ms,
+        settings.frames_per_observation,
+    ) == [0, 400 / 3, 800 / 3, 400]
+
+    task_path = (
+        BENCHMARK
+        / "environments"
+        / "forced_perspective_moving_day_env"
+        / "tasks"
+        / "forced_perspective_moving_day_seed_0001"
+        / "task.json"
+    )
+    public_state, _ = generate_task_state(
+        json.loads(task_path.read_text(encoding="utf-8")),
+        "forced-perspective-real-time-contract",
+    )
+    tick_ms = int(public_state["world"]["tick_ms"])
+    assert settings.observation_window_ms == 8 * tick_ms
 
     controls = json.loads(
         (
@@ -198,6 +288,48 @@ def test_forced_perspective_uses_one_static_observation_frame() -> None:
         / "forced_perspective_moving_day.js"
     ).read_text(encoding="utf-8")
     assert "movementTick() { if (!model || model.held || model.completed || model.submitting || model.keys.size === 0) return;" in mechanic_source
+    assert "setInterval(movementTick, state.world.tick_ms)" in mechanic_source
+
+
+def test_ribbon_switchboard_exposes_transient_weave_and_supports_longest_trace() -> None:
+    settings = load_real_time_settings("ribbon_switchboard")
+    assert settings == RealTimeSettings(
+        play_time_seconds=120,
+        observation_window_ms=500,
+        frames_per_observation=4,
+    )
+    targets = CAPTURE.frame_targets(
+        0,
+        settings.observation_window_ms,
+        settings.frames_per_observation,
+    )
+    assert targets == [0, 500 / 3, 1000 / 3, 500]
+
+    controls = json.loads(
+        (
+            BENCHMARK
+            / "environments"
+            / "ribbon_switchboard_env"
+            / "controls.json"
+        ).read_text(encoding="utf-8")
+    )
+    assert controls["real_time"] == settings.__dict__
+    trace_durations = [
+        int(profile["parameters"]["min_trace_ms"])
+        for profile in controls["difficulty"].values()
+    ]
+    assert trace_durations == [220, 350, 460, 560, 760]
+    assert max(trace_durations) <= 2 * settings.observation_window_ms
+
+    mechanic_source = (
+        BENCHMARK
+        / "shared_runtime"
+        / "app"
+        / "mechanics"
+        / "ribbon_switchboard.js"
+    ).read_text(encoding="utf-8")
+    assert "model.hoverExpiry=performance.now()+650" in mechanic_source
+    assert max(targets) < 650
 
 
 def test_clockwork_real_time_settings_expose_coupled_phase_motion_through_the_shared_clock() -> None:
@@ -380,6 +512,8 @@ def test_bomb_manual_real_time_settings_use_one_static_frame_and_shared_clock() 
     ):
         assert ambient_time_primitive not in mechanic_source
     assert "performance.now()" in mechanic_source
+    assert "suppressClickUntil" not in mechanic_source
+    assert "suppressNextCanvasClick" in mechanic_source
     for environment_time_branch in (
         "time_mode",
         "WEIRD_CAPTCHA_TIME_MODE",
@@ -564,6 +698,15 @@ def test_puzzle_browser_launches_full_screen() -> None:
     assert "Puzzle browser fullscreen verified" in source
     assert "Puzzle browser fullscreen verification failed" in source
     assert "Reusing existing puzzle browser window" in source
+    assert 'dataSubmissionPolicyBypassNotification", true' in source
+    assert 'browser.link.open_newwindow", 3' in source
+    assert 'browser.link.open_newwindow.restriction", 0' in source
+    assert "--new-instance --kiosk" in source
+    assert 'profile_dir="$home_dir/weird-captcha-profile"' in source
+    assert "--profile '$profile_dir'" in source
+    assert "--disable-backgrounding-occluded-windows" in source
+    assert "--disable-renderer-backgrounding" in source
+    assert "--disable-features=AutomaticTabDiscarding,MemorySaverMode" in source
 
 
 def test_puzzle_browser_requires_the_task_window_and_exact_display_geometry(
@@ -691,7 +834,99 @@ def test_time_control_server_sequences_commands_and_records_status(tmp_path: Pat
         assert current["command"] == "pause"
         assert status["phase"] == "completed"
         assert status["task_time_ms"] == 500
+
+        _, armed = request_json(
+            f"{base}/input-control",
+            {"command": "arm", "category": "mouse", "required": True},
+        )
+        _, completed_input = request_json(
+            f"{base}/input-control",
+            {"command": "complete", "arm_sequence": armed["arm_sequence"]},
+        )
+        assert armed["sequence"] == armed["arm_sequence"]
+        assert completed_input["sequence"] == armed["sequence"] + 1
+        request_json(
+            f"{base}/input-control/status",
+            {
+                "command_sequence": completed_input["sequence"],
+                "arm_sequence": armed["arm_sequence"],
+                "phase": "completed",
+                "receipt_confirmed": True,
+                "task_time_ms": 500,
+            },
+        )
+        _, input_command = request_json(f"{base}/input-control")
+        _, delivered = request_json(f"{base}/input-control/status")
+        assert input_command["command"] == "complete"
+        assert delivered["receipt_confirmed"] is True
+        assert delivered["task_time_ms"] == 500
     finally:
         server.shutdown()
         server.server_close()
         thread.join(timeout=3)
+
+
+def test_state_refresh_is_idempotent_for_one_task_window_token(
+    tmp_path: Path,
+    monkeypatch,
+) -> None:
+    state_dir = tmp_path / "state"
+    state_dir.mkdir()
+    server = object.__new__(PuzzleServer)
+    server.state_dir = state_dir
+    server.app_dir = tmp_path / "shared_runtime" / "app"
+    generated: list[str] = []
+
+    class FakeSetup:
+        @staticmethod
+        def generate_task_state(task: dict, seed: str) -> tuple[dict, dict]:
+            generated.append(seed)
+            challenge_id = f"challenge-{len(generated)}"
+            public = {
+                "mechanic_id": "token_refresh_test",
+                "task_id": task["id"],
+                "challenge_id": challenge_id,
+            }
+            return public, dict(public)
+
+    server._load_setup_module = lambda: FakeSetup
+    server._write_json(
+        state_dir / "current_task.json",
+        {"task": {"id": "token-refresh-task"}, "attempt": 0},
+    )
+    monkeypatch.setenv("WEIRD_CAPTCHA_CHALLENGE_SEED", "fixed")
+
+    first = server._try_regenerate_current_task(
+        reason="refresh",
+        client_task_token="window-a",
+    )
+    repeated = server._try_regenerate_current_task(
+        reason="refresh",
+        client_task_token="window-a",
+    )
+    assert repeated == first
+    assert len(generated) == 1
+
+    second_window = server._try_regenerate_current_task(
+        reason="refresh",
+        client_task_token="window-b",
+    )
+    assert second_window != first
+    assert len(generated) == 2
+
+    failed_retry = server._try_regenerate_current_task(reason="fail")
+    repeated_after_failure = server._try_regenerate_current_task(
+        reason="refresh",
+        client_task_token="window-b",
+    )
+    assert repeated_after_failure == failed_retry
+    assert len(generated) == 3
+    assert json.loads((state_dir / "current_task.json").read_text(encoding="utf-8"))[
+        "client_task_token"
+    ] == "window-b"
+
+    app_source = (BENCHMARK / "shared_runtime" / "app" / "app.js").read_text(
+        encoding="utf-8"
+    )
+    assert 'new URLSearchParams(window.location.search).get("task")' in app_source
+    assert "task=${encodeURIComponent(taskToken)}" in app_source

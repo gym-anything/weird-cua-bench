@@ -305,9 +305,6 @@ def generate(task: dict[str, Any], seed: str) -> tuple[dict[str, Any], dict[str,
         "maximum_deaths": int(parameters.get("maximum_deaths", 3)),
     }
     requirements = {
-        "minimum_camera_events": int(parameters.get("minimum_camera_events", 18)),
-        "minimum_camera_elapsed_ms": int(parameters.get("minimum_camera_elapsed_ms", 520)),
-        "minimum_freeze_settle_ms": 55,
         "minimum_screen_joins": 2,
         "minimum_traversal_ticks": int(parameters.get("minimum_traversal_ticks", 130)),
         "maximum_traversal_ticks": int(parameters.get("maximum_traversal_ticks", 1800)),

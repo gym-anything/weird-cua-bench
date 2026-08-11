@@ -25,11 +25,16 @@ def _move_candy(page, first: list[int], second: list[int], interaction: str) -> 
     if interaction == "full":
         first_row, first_column = (int(value) for value in first)
         second_row, second_column = (int(value) for value in second)
-        page.locator(
-            f'.candy-cell[data-row="{first_row}"][data-column="{first_column}"]'
-        ).drag_to(
-            page.locator(f'.candy-cell[data-row="{second_row}"][data-column="{second_column}"]')
-        )
+        source = page.locator(f'.candy-cell[data-row="{first_row}"][data-column="{first_column}"]')
+        target = page.locator(f'.candy-cell[data-row="{second_row}"][data-column="{second_column}"]')
+        source_box = source.bounding_box()
+        target_box = target.bounding_box()
+        if source_box is None or target_box is None:
+            raise AssertionError("candy transfer endpoints have no visible bounds")
+        page.mouse.move(source_box["x"] + source_box["width"] / 2, source_box["y"] + source_box["height"] / 2)
+        page.mouse.down()
+        page.mouse.move(target_box["x"] + target_box["width"] / 2, target_box["y"] + target_box["height"] / 2)
+        page.mouse.up()
     else:
         _click_cell(page, first)
         _click_cell(page, second)

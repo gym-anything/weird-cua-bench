@@ -413,7 +413,7 @@ def record_action(
             and _valid_point(end_point)
         ):
             return {"ok": False, "error": "drop event geometry is incomplete"}, 400
-        event_surface = "html_drag_drop"
+        event_surface = "pointer_drag"
     else:
         if witnessed_route != "simplified_proxy":
             return {"ok": False, "error": "simplified interaction requires the proxy route"}, 400

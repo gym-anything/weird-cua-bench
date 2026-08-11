@@ -73,9 +73,16 @@ def solve(page, state_dir: Path, out_dir: Path, mechanic: str) -> None:
             page.locator(f'.mosaic-tile[data-tile-id="{tile_id}"]').click()
             page.locator(f'[data-swap-slot="{destination}"]').click()
         else:
-            page.locator(f'.mosaic-tile[data-tile-id="{tile_id}"]').drag_to(
-                page.locator(f'.mosaic-tile[data-tile-id="{displaced}"]')
-            )
+            source = page.locator(f'.mosaic-tile[data-tile-id="{tile_id}"]')
+            target = page.locator(f'.mosaic-tile[data-tile-id="{displaced}"]')
+            source_box = source.bounding_box()
+            target_box = target.bounding_box()
+            if source_box is None or target_box is None:
+                raise AssertionError("mosaic transfer endpoints have no visible bounds")
+            page.mouse.move(source_box["x"] + source_box["width"] / 2, source_box["y"] + source_box["height"] / 2)
+            page.mouse.down()
+            page.mouse.move(target_box["x"] + target_box["width"] / 2, target_box["y"] + target_box["height"] / 2)
+            page.mouse.up()
         page.wait_for_function(
             "({tileId, slot}) => window.singleSceneSplitBoxesModel.slots[slot] === tileId",
             arg={"tileId": tile_id, "slot": destination},

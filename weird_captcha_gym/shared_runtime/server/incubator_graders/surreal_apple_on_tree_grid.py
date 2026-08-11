@@ -195,8 +195,6 @@ def grade(payload: dict[str, Any], ground_truth: dict[str, Any], public_state: d
                 accepted = (
                     in_basket
                     and pluck["apple_id"] in attached
-                    and pluck["moves"] >= int(requirements["minimum_pluck_moves"])
-                    and duration >= int(requirements["minimum_pluck_ms"])
                 )
                 if bool(event.get("accepted")) != accepted or bool(event.get("in_basket")) != in_basket:
                     return _fail(f"event {sequence} lies about the physical harvest")

@@ -3,7 +3,7 @@
 
 This is a validation tool, not a benchmark solver. It reads generated state to
 choose a scripted path, but drives the same visible buttons, pointer actions,
-and HTML drag/drop surface that a browser user receives.
+and pointer-drag surface that a browser user receives.
 """
 from __future__ import annotations
 
@@ -281,7 +281,17 @@ def solve_visible_ritual(
         on_stage("tribute-memory-hidden")
     for flower_id in flower_ids_in_ui_order(state):
         perform(f"gather:{flower_id}", lambda flower_id=flower_id: page.locator(f'.ritual-flower[data-flower-id="{flower_id}"]').click())
-    perform("offer", lambda: page.locator(".ritual-bouquet").drag_to(page.locator(".grave-bed")), running_ms=850)
+    def drag_bouquet() -> None:
+        bouquet = page.locator(".ritual-bouquet").bounding_box()
+        grave = page.locator(".grave-bed").bounding_box()
+        if bouquet is None or grave is None:
+            raise AssertionError("funeral bouquet transfer endpoints have no visible bounds")
+        page.mouse.move(bouquet["x"] + bouquet["width"] / 2, bouquet["y"] + bouquet["height"] / 2)
+        page.mouse.down()
+        page.mouse.move(grave["x"] + grave["width"] / 2, grave["y"] + grave["height"] / 2)
+        page.mouse.up()
+
+    perform("offer", drag_bouquet, running_ms=850)
     return action_cycles
 
 

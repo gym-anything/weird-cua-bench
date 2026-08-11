@@ -76,14 +76,16 @@ def _rotate_to_target(page, part: dict, interaction: str, box: dict, stage: dict
 
 
 def _drag_to(page, box: dict, stage: dict, part: dict) -> None:
-    for _attempt in range(4):
-        current = page.evaluate("part => { const b=window.flatPackComplianceModel.bodies.find(body=>body.label===part); return [b.position.x,b.position.y]; }", part["id"])
-        if math.hypot(current[0] - part["target_pose"][0], current[1] - part["target_pose"][1]) <= 4.5: return
-        page.mouse.move(*_screen(box, stage, current)); page.mouse.down()
-        page.mouse.move(*_screen(box, stage, part["target_pose"][:2]), steps=24); page.wait_for_timeout(460); page.mouse.up(); page.wait_for_timeout(120)
     current = page.evaluate("part => { const b=window.flatPackComplianceModel.bodies.find(body=>body.label===part); return [b.position.x,b.position.y]; }", part["id"])
-    if math.hypot(current[0] - part["target_pose"][0], current[1] - part["target_pose"][1]) > 16:
-        raise AssertionError(f"{part['id']} failed to settle at keyed target: {current} vs {part['target_pose']}")
+    if math.hypot(current[0] - part["target_pose"][0], current[1] - part["target_pose"][1]) <= 4.5: return
+    page.mouse.move(*_screen(box, stage, current)); page.mouse.down()
+    # Deliberately use one move event and no settling delay. The game must
+    # consume the pointer endpoint synchronously rather than depend on its
+    # Matter.js timer or on action interpolation performed elsewhere.
+    page.mouse.move(*_screen(box, stage, part["target_pose"][:2])); page.mouse.up()
+    current = page.evaluate("part => { const b=window.flatPackComplianceModel.bodies.find(body=>body.label===part); return [b.position.x,b.position.y]; }", part["id"])
+    if math.hypot(current[0] - part["target_pose"][0], current[1] - part["target_pose"][1]) > 4.5:
+        raise AssertionError(f"{part['id']} did not synchronously reach its keyed target: {current} vs {part['target_pose']}")
 
 
 def _mate(page, first: str, second: str) -> None:
@@ -92,11 +94,41 @@ def _mate(page, first: str, second: str) -> None:
     page.locator(f'.flat-part-chip[data-part-id="{first}"]').click(); page.locator(f'.flat-part-chip[data-part-id="{second}"]').click(); page.locator(".flat-mate").click()
 
 
+def _assert_visible_socket_is_draggable(page, box: dict, stage: dict) -> None:
+    candidate = page.evaluate(
+        """() => {
+          const model = window.flatPackComplianceModel;
+          const bodies = Object.fromEntries(model.bodies.map(body => [body.label, body]));
+          for (const joint of model.state.joints) {
+            for (const [partId, local] of [[joint.a, joint.socket_a], [joint.b, joint.socket_b]]) {
+              const body = bodies[partId], cosine = Math.cos(body.angle), sine = Math.sin(body.angle);
+              const point = [
+                body.position.x + local[0] * cosine - local[1] * sine,
+                body.position.y + local[0] * sine + local[1] * cosine,
+              ];
+              const visible = point[0] >= 9 && point[0] <= model.state.stage.width - 9 && point[1] >= 9 && point[1] <= model.state.stage.height - 9;
+              if (visible && Matter.Query.point(model.bodies, {x: point[0], y: point[1]}).length === 0) return {partId, point};
+            }
+          }
+          return null;
+        }"""
+    )
+    if candidate is None:
+        raise AssertionError("flat-pack fixture has no visible socket outside its Matter polygon")
+    page.mouse.click(*_screen(box, stage, candidate["point"]))
+    selected = page.evaluate("() => [...window.flatPackComplianceModel.selected]")
+    if candidate["partId"] not in selected:
+        raise AssertionError(f"visible socket did not pick up its part: {candidate}")
+    page.mouse.click(*_screen(box, stage, candidate["point"]))
+
+
 def solve(page, state_dir: Path, out_dir: Path, mechanic: str) -> None:
     if mechanic != MECHANIC_ID: raise AssertionError(mechanic)
     truth = _read(state_dir / "ground_truth.json"); interaction = str((truth.get("control_condition") or {}).get("interaction") or "simplified"); stage = truth["stage"]; box = page.locator(".flat-canvas").bounding_box()
     if not box: raise AssertionError("flat-pack Matter canvas missing")
     parts = {part["id"]: part for part in truth["parts"]}
+    if interaction == "full":
+        _assert_visible_socket_is_draggable(page, box, stage)
     for part in truth["parts"]:
         _rotate_to_target(page, part, interaction, box, stage); _drag_to(page, box, stage, part); _rotate_to_target(page, part, interaction, box, stage)
     if interaction == "simplified":
@@ -111,4 +143,10 @@ def solve(page, state_dir: Path, out_dir: Path, mechanic: str) -> None:
     expect(page.locator(".flat-complete[data-visible='true']")).to_be_visible(timeout=5_000); expect(page.locator(".readout")).to_contain_text("SURVIVED")
     finished = page.evaluate("() => ({completed:window.flatPackComplianceModel.completed,ticks:window.flatPackComplianceModel.loadTick,max:window.flatPackComplianceModel.maxStrain,resets:window.flatPackComplianceModel.resets,rejected:window.flatPackComplianceModel.rejected})")
     if not finished["completed"] or finished["ticks"] != len(truth["load_steps"]) or finished["resets"] != 0 or finished["rejected"] != 0: raise AssertionError(f"flat-pack clean physical run incomplete: {finished}")
-    _shot(page, out_dir, mechanic, "solved-pre-submit"); page.locator(".flat-submit").click(); expect(page.locator(".readout")).to_have_text("PASS", timeout=8_000)
+    _shot(page, out_dir, mechanic, "solved-pre-submit")
+    with page.expect_response(lambda response: response.url.endswith("/result")) as response_info:
+        page.locator(".flat-submit").click()
+    outcome = response_info.value.json()
+    if outcome.get("passed") is not True:
+        raise AssertionError(f"flat-pack server rejected solved UI path: {outcome}")
+    expect(page.locator(".readout")).to_have_text("PASS", timeout=8_000)

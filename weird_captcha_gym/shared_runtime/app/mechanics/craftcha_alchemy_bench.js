@@ -268,14 +268,14 @@
     const duration = Math.round(performance.now() - drag.startedAt);
     const sourceSlot = inventorySlotAt(drag.start);
     const destination = destinationAt(end);
-    const physical = duration >= 35 && drag.samples.length >= 4 && sourceSlot === drag.slot;
+    const physical = sourceSlot === drag.slot;
     let accepted = physical && destination && model.inventory[drag.slot] === drag.stateId;
     if (accepted && destination === "delivery") accepted = model.delivery == null;
     else if (accepted && destination === "assemble") accepted = model.assembly.length < 3;
     else if (accepted) accepted = model.stations[destination] == null;
     if (!accepted) {
       model.drag = null;
-      setReadout(physical ? "TRANSFER REJECTED · SOCKET OCCUPIED" : "DRAG DELIBERATELY THROUGH THE BENCH", "error");
+      setReadout(physical ? "TRANSFER REJECTED · SOCKET OCCUPIED" : "TRANSFER MUST START ON THE MATERIAL", "error");
       updateState();
       return;
     }

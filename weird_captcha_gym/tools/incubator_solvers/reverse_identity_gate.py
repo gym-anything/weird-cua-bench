@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import time
 from pathlib import Path
 
 from playwright.sync_api import expect
@@ -30,6 +31,19 @@ def _station_page(context, station: int):
     raise AssertionError(f"real browser tab for station {station} not found")
 
 
+def _focus_task_tab(context, target) -> None:
+    """Mark a task-tab switch for replay as a public Ctrl+number action."""
+    tab_index = context.pages.index(target)
+    target.evaluate(
+        """index => {
+            window.__installWeirdEnvStepInputTrace?.();
+            window.__recordWeirdEnvStepTabFocus?.(index);
+        }""",
+        tab_index,
+    )
+    target.bring_to_front()
+
+
 def fail_once(page, state_dir: Path, out_dir: Path, mechanic: str) -> None:
     if mechanic != MECHANIC_ID:
         raise AssertionError(f"unexpected mechanic {mechanic!r}")
@@ -52,21 +66,29 @@ def solve(page, state_dir: Path, out_dir: Path, mechanic: str) -> None:
     tabs = {}
     for station_meta in truth["stations"]:
         station = int(station_meta["id"])
-        page.bring_to_front()
-        with page.expect_popup() as popup:
-            page.locator(f'[data-deploy="{station}"]').click()
-        child = popup.value
+        if station:
+            _focus_task_tab(context, page)
+        page.locator(f'[data-deploy="{station}"]').click()
+        deadline = time.time() + 8
+        while True:
+            try:
+                child = _station_page(context, station)
+                break
+            except AssertionError:
+                if time.time() >= deadline:
+                    raise
+                page.wait_for_timeout(50)
         child.wait_for_load_state("domcontentloaded")
         expect(child.locator(f'[data-station-page="{station}"]')).to_be_visible()
         tabs[station] = child
-    page.bring_to_front()
+    _focus_task_tab(context, page)
     expect(page.locator("#robot-deployment-count")).to_have_text(f"{len(truth['stations'])}/{len(truth['stations'])}")
     _screenshot(page, out_dir, mechanic, "four-tabs-online")
 
     for index, stage in enumerate(truth["stages"]):
         station = int(stage["station"])
         child = tabs.get(station) or _station_page(context, station)
-        child.bring_to_front()
+        _focus_task_tab(context, child)
         root = child.locator(f'[data-station-page="{station}"]')
         expect(root).to_have_attribute("data-active", "true", timeout=5_000)
         key = "d" if int(stage["pulse_speed_deg_per_tick"]) > 0 else "a"
@@ -89,7 +111,7 @@ def solve(page, state_dir: Path, out_dir: Path, mechanic: str) -> None:
         if index == 0:
             _screenshot(child, out_dir, mechanic, "first-relay-sealed")
 
-    page.bring_to_front()
+    _focus_task_tab(context, page)
     expect(page.locator("#robot-relay-count")).to_have_text(f"{len(truth['stages'])}/{len(truth['stages'])}", timeout=5_000)
     _screenshot(page, out_dir, mechanic, "eight-relays")
     page.locator("#robot-verify").click()

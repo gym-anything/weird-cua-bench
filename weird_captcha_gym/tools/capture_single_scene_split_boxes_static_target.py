@@ -71,6 +71,17 @@ def hold_sync(page: Page, milliseconds: int) -> None:
     page.mouse.up()
 
 
+def pointer_drag(page: Page, source, target) -> None:
+    source_box = source.bounding_box()
+    target_box = target.bounding_box()
+    if source_box is None or target_box is None:
+        raise AssertionError("drag endpoints have no visible geometry")
+    page.mouse.move(source_box["x"] + source_box["width"] / 2, source_box["y"] + source_box["height"] / 2)
+    page.mouse.down()
+    page.mouse.move(target_box["x"] + target_box["width"] / 2, target_box["y"] + target_box["height"] / 2)
+    page.mouse.up()
+
+
 def solve_visible(page: Page, truth: dict[str, Any], interaction: str, evidence_dir: Path) -> None:
     """Use generated truth only to choose normal visible browser inputs."""
 
@@ -97,8 +108,10 @@ def solve_visible(page: Page, truth: dict[str, Any], interaction: str, evidence_
             page.locator(f'.mosaic-tile[data-tile-id="{tile_id}"]').click()
             page.locator(f'[data-swap-slot="{destination}"]').click()
         else:
-            page.locator(f'.mosaic-tile[data-tile-id="{tile_id}"]').drag_to(
-                page.locator(f'.mosaic-tile[data-tile-id="{displaced}"]')
+            pointer_drag(
+                page,
+                page.locator(f'.mosaic-tile[data-tile-id="{tile_id}"]'),
+                page.locator(f'.mosaic-tile[data-tile-id="{displaced}"]'),
             )
         page.wait_for_timeout(24)
         working_slots[origin], working_slots[destination] = working_slots[destination], working_slots[origin]

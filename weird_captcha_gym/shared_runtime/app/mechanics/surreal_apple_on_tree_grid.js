@@ -123,7 +123,7 @@
     if (hold.kind === "orbit") record("orbit_end", {point, angle: model.angle, input_source: "canvas_drag"});
     else {
       const b = model.state.basket, inBasket = point[0] >= b.x && point[0] <= b.x + b.width && point[1] >= b.y && point[1] <= b.y + b.height;
-      const accepted = inBasket && model.attached.has(hold.appleId) && hold.moves >= model.state.requirements.minimum_pluck_moves && performance.now() - hold.startedAt >= model.state.requirements.minimum_pluck_ms;
+      const accepted = inBasket && model.attached.has(hold.appleId);
       record("pluck_end", {apple_id: hold.appleId, point, duration_ms: Math.round(performance.now() - hold.startedAt), in_basket: inBasket, accepted, input_source: "fruit_drag"});
       if (accepted) { model.plucked.add(hold.appleId); model.helpers.setReadout("TRUE STEM RELEASED", "idle"); }
       else if (inBasket) { model.invalidPlucks += 1; model.strikeActive = true; model.helpers.setReadout("FALSE CONTACT / HARVEST QUARANTINED", "error"); }

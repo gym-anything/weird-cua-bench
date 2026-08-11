@@ -161,8 +161,6 @@ def generate(task: dict[str, Any], seed: str) -> tuple[dict[str, Any], dict[str,
     interference_zone_count = int(parameters.get("interference_zone_count", 2))
     interference_layout = str(parameters.get("interference_layout", "legacy_off_lane"))
     compact_layout = bool(parameters.get("compact_layout", False))
-    minimum_insert_moves = int(parameters.get("minimum_insert_moves", 4))
-    minimum_insert_ms = int(parameters.get("minimum_insert_ms", 90))
     minimum_swipe_samples = int(parameters.get("minimum_swipe_samples", 14))
     minimum_coverage_milli = int(parameters.get("minimum_coverage_milli", 920))
     maximum_sample_gap_px = int(parameters.get("maximum_sample_gap_px", 58))
@@ -182,8 +180,6 @@ def generate(task: dict[str, Any], seed: str) -> tuple[dict[str, Any], dict[str,
         raise ValueError("magnetic stripe blocking layout requires at least one static field")
     if compact_layout != (reader_count == 4):
         raise ValueError("magnetic stripe compact_layout is required exactly for four readers")
-    if not 1 <= minimum_insert_moves <= 12 or not 40 <= minimum_insert_ms <= 400:
-        raise ValueError("magnetic stripe insertion controls are outside the supported range")
     if not 6 <= minimum_swipe_samples <= 24 or not 840 <= minimum_coverage_milli <= 970:
         raise ValueError("magnetic stripe swipe density or coverage is outside the supported range")
     if not 32 <= maximum_sample_gap_px <= 100 or not 6 <= maximum_backtrack_px <= 40:
@@ -267,8 +263,6 @@ def generate(task: dict[str, Any], seed: str) -> tuple[dict[str, Any], dict[str,
     public_cards = [{key: copy.deepcopy(card[key]) for key in ("id", "label", "account", "holder", "badge", "initial_rect")} for card in cards]
     requirements = {
         "card_count": reader_count,
-        "minimum_insert_moves": minimum_insert_moves,
-        "minimum_insert_ms": minimum_insert_ms,
         "minimum_swipe_samples": minimum_swipe_samples,
         "attempt_limit": 0,
     }

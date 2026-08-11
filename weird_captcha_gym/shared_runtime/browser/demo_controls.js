@@ -13,7 +13,6 @@
   let captureVideo = null;
   let capturedFrames = [];
   let selectedFrameIndex = 0;
-  let pendingActionPause = null;
 
   const control = document.createElement("aside");
   control.className = "weird-demo-inspector weird-demo-clock";
@@ -127,7 +126,7 @@
       history.replaceState(null, "", url);
     }
     setNote(mode === "paused"
-      ? "The task stops between observations. Task interactions run only while the action is applied."
+      ? "Inputs apply to the frozen state. Motion advances only during the next captured observation."
       : "The task keeps running during observation and while the model would be responding.");
     syncClock();
   }
@@ -296,14 +295,13 @@
         framePromises.push(snapshot(0, taskStartMs));
         firstScheduledIndex = 1;
       }
-      if (selectedMode === "paused" && durationMs > 0) clock.resume();
+      if (selectedMode === "paused" && durationMs > 0) clock.runFor(durationMs);
 
       for (let index = firstScheduledIndex; index < targets.length; index += 1) {
         const targetOffsetMs = targets[index];
         framePromises.push(new Promise((resolve, reject) => {
           const waitMs = Math.max(0, targetOffsetMs - (native.performanceNow() - wallStartMs));
           native.setTimeout(() => {
-            if (selectedMode === "paused" && index === targets.length - 1) clock.pause();
             snapshot(targetOffsetMs, taskStartMs).then(resolve, reject);
           }, waitMs);
         }));
@@ -330,40 +328,6 @@
       syncClock();
     }
   }
-
-  function isInspectorEvent(event) {
-    return event.composedPath().some((item) => item instanceof Element && item.classList.contains("weird-demo-inspector"));
-  }
-
-  function beginPausedAction(event) {
-    if (selectedMode !== "paused" || collecting || isInspectorEvent(event)) return;
-    if (pendingActionPause != null) native.clearTimeout(pendingActionPause);
-    pendingActionPause = null;
-    clock.resume();
-  }
-
-  function endPausedAction(event, delay = 0) {
-    if (selectedMode !== "paused" || collecting || isInspectorEvent(event)) return;
-    if (pendingActionPause != null) native.clearTimeout(pendingActionPause);
-    pendingActionPause = native.setTimeout(() => {
-      pendingActionPause = null;
-      if (selectedMode === "paused" && !collecting) clock.pause();
-    }, delay);
-  }
-
-  window.addEventListener("pointerdown", beginPausedAction, true);
-  window.addEventListener("pointerup", (event) => endPausedAction(event), true);
-  window.addEventListener("pointercancel", (event) => endPausedAction(event), true);
-  window.addEventListener("pointermove", (event) => {
-    beginPausedAction(event);
-    endPausedAction(event, 70);
-  }, true);
-  window.addEventListener("keydown", beginPausedAction, true);
-  window.addEventListener("keyup", (event) => endPausedAction(event), true);
-  window.addEventListener("wheel", (event) => {
-    beginPausedAction(event);
-    endPausedAction(event, 70);
-  }, {capture: true, passive: true});
 
   control.addEventListener("click", (event) => {
     const modeButton = event.target.closest("[data-demo-mode]");

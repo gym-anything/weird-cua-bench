@@ -13,7 +13,7 @@ import time
 from http import HTTPStatus
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
-from urllib.parse import unquote, urlparse
+from urllib.parse import parse_qs, unquote, urlparse
 
 try:
     from . import grillmaster_witness
@@ -29,6 +29,7 @@ class PuzzleServer(BaseHTTPRequestHandler):
 
     server_version = "WeirdCaptchaServer/0.1"
     time_control_lock = threading.Lock()
+    input_control_lock = threading.Lock()
     grillmaster_witness_lock = threading.Lock()
     slot_reel_witness_lock = threading.Lock()
 
@@ -38,7 +39,12 @@ class PuzzleServer(BaseHTTPRequestHandler):
             self._send_json({"ok": True, "ts": time.time()})
             return
         if parsed.path == "/state":
-            state = self._try_regenerate_current_task(reason="refresh")
+            task_tokens = parse_qs(parsed.query).get("task") or []
+            task_token = str(task_tokens[0]) if task_tokens else None
+            state = self._try_regenerate_current_task(
+                reason="refresh",
+                client_task_token=task_token,
+            )
             if state:
                 self._initialize_slot_reel_witness(state)
                 self._send_json(state)
@@ -59,6 +65,13 @@ class PuzzleServer(BaseHTTPRequestHandler):
         if parsed.path == "/time-control/status":
             self._send_json_file(self.state_dir / "time_status.json")
             return
+        if parsed.path == "/input-control":
+            command = self._read_json_file(self.state_dir / "input_command.json")
+            self._send_json(command or {"sequence": 0, "command": "status"})
+            return
+        if parsed.path == "/input-control/status":
+            self._send_json_file(self.state_dir / "input_status.json")
+            return
         self._send_static(parsed.path)
 
     def do_POST(self) -> None:
@@ -68,6 +81,12 @@ class PuzzleServer(BaseHTTPRequestHandler):
             return
         if parsed.path == "/time-control/status":
             self._handle_time_status()
+            return
+        if parsed.path == "/input-control":
+            self._handle_input_control()
+            return
+        if parsed.path == "/input-control/status":
+            self._handle_input_status()
             return
         if parsed.path == "/cheat":
             self._handle_cheat()
@@ -322,6 +341,70 @@ class PuzzleServer(BaseHTTPRequestHandler):
                     command.pop("milliseconds", None)
                     command.pop("start_delay_ms", None)
                     self._write_json(self.state_dir / "time_command.json", command)
+        self._send_json({"ok": True})
+
+    def _handle_input_control(self) -> None:
+        try:
+            payload = self._read_json()
+        except ValueError as exc:
+            self._send_json({"error": str(exc)}, status=HTTPStatus.BAD_REQUEST)
+            return
+        command = str(payload.get("command") or "")
+        if command not in {"arm", "complete", "cancel"}:
+            self._send_json(
+                {"error": "command must be arm, complete, or cancel"},
+                status=HTTPStatus.BAD_REQUEST,
+            )
+            return
+        normalized: dict[str, object] = {"command": command}
+        if command == "arm":
+            category = str(payload.get("category") or "")
+            if category not in {"mouse", "keyboard", "mixed"}:
+                self._send_json(
+                    {"error": "input category must be mouse, keyboard, or mixed"},
+                    status=HTTPStatus.BAD_REQUEST,
+                )
+                return
+            normalized.update(
+                {
+                    "category": category,
+                    "required": bool(payload.get("required", True)),
+                }
+            )
+        else:
+            try:
+                arm_sequence = int(payload.get("arm_sequence"))
+            except (TypeError, ValueError):
+                self._send_json(
+                    {"error": f"{command} requires an integer arm_sequence"},
+                    status=HTTPStatus.BAD_REQUEST,
+                )
+                return
+            if arm_sequence <= 0:
+                self._send_json(
+                    {"error": "arm_sequence must be positive"},
+                    status=HTTPStatus.BAD_REQUEST,
+                )
+                return
+            normalized["arm_sequence"] = arm_sequence
+        with self.input_control_lock:
+            prior = self._read_json_file(self.state_dir / "input_command.json")
+            normalized["sequence"] = int(prior.get("sequence") or 0) + 1
+            if command == "arm":
+                normalized["arm_sequence"] = normalized["sequence"]
+            normalized["issued_at"] = time.time()
+            self._write_json(self.state_dir / "input_command.json", normalized)
+        self._send_json(normalized)
+
+    def _handle_input_status(self) -> None:
+        try:
+            payload = self._read_json()
+        except ValueError as exc:
+            self._send_json({"error": str(exc)}, status=HTTPStatus.BAD_REQUEST)
+            return
+        payload["received_at"] = time.time()
+        with self.input_control_lock:
+            self._write_json(self.state_dir / "input_status.json", payload)
         self._send_json({"ok": True})
 
     def _handle_cheat(self) -> None:
@@ -968,11 +1051,24 @@ class PuzzleServer(BaseHTTPRequestHandler):
         spec.loader.exec_module(module)
         return module
 
-    def _try_regenerate_current_task(self, *, reason: str) -> dict | None:
+    def _try_regenerate_current_task(
+        self,
+        *,
+        reason: str,
+        client_task_token: str | None = None,
+    ) -> dict | None:
         current = self._read_json_file(self.state_dir / "current_task.json")
         task = current.get("task")
         if not isinstance(task, dict):
             return None
+        current_token = str(current.get("client_task_token") or "")
+        if (
+            reason == "refresh"
+            and client_task_token
+            and client_task_token == current_token
+        ):
+            state = self._read_json_file(self.state_dir / "public_state.json")
+            return state or None
         module = self._load_setup_module()
         if module is None:
             return None
@@ -985,13 +1081,21 @@ class PuzzleServer(BaseHTTPRequestHandler):
         public_state, ground_truth = module.generate_task_state(task, seed)
         if public_state.get("status") == "not_benchmark_ready":
             return None
-        self._write_json(self.state_dir / "current_task.json", {
+        next_task_token = (
+            client_task_token
+            if reason == "refresh" and client_task_token
+            else current_token or None
+        )
+        next_current_task = {
             "task": task,
             "seed": seed,
             "challenge_index": challenge_index,
             "last_reason": reason,
             "generated_at": time.time(),
-        })
+        }
+        if next_task_token:
+            next_current_task["client_task_token"] = next_task_token
+        self._write_json(self.state_dir / "current_task.json", next_current_task)
         self._write_json(self.state_dir / "public_state.json", public_state)
         self._write_json(self.state_dir / "ground_truth.json", ground_truth)
         with self.grillmaster_witness_lock:

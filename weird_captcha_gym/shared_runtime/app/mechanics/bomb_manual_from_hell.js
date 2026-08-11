@@ -390,7 +390,10 @@
       pose.y = Math.max(70, Math.min(430, drag.origin.y + point.y - drag.start.y));
       record("drag_end", {plate_id: drag.plateId, point: [round(point.x), round(point.y)], pose: poseClaim(pose), input_source: "plate_drag", cancelled});
       model.drag = null;
-      model.suppressClickUntil = performance.now() + 180;
+      // A completed pointer drag may emit one synthetic click on the canvas.
+      // Consume that event directly instead of imposing a wall/virtual-time
+      // gate that can never expire while a zero-window task is paused.
+      model.suppressNextCanvasClick = !cancelled;
       try { canvas.releasePointerCapture(event.pointerId); } catch (_error) { /* best effort */ }
       if (model.interaction === "full" && !cancelled) seatPlate(transformSource("lock"));
       else {
@@ -408,7 +411,13 @@
       if (event.shiftKey) flipPlate(transformSource("flip"));
       else rotatePlate(1, transformSource("rotate"));
     };
-    const click = (event) => { if (performance.now() >= model.suppressClickUntil) selectWire(canvasPoint(event)); };
+    const click = (event) => {
+      if (model.suppressNextCanvasClick) {
+        model.suppressNextCanvasClick = false;
+        return;
+      }
+      selectWire(canvasPoint(event));
+    };
     canvas.addEventListener("pointerdown", pointerdown);
     canvas.addEventListener("pointermove", pointermove);
     canvas.addEventListener("pointerup", pointerup);
@@ -431,7 +440,7 @@
       state, helpers, interaction, startedAt: performance.now(), events: [],
       poses: Object.fromEntries(state.plates.map((plate) => [plate.id, clonePose(plate.initial_pose)])),
       locked: new Set(), selectedPlateId: state.plates[0]?.id || null, selectedWireId: null,
-      drag: null, suppressClickUntil: 0, misseatCount: 0, cutCount: 0,
+      drag: null, suppressNextCanvasClick: false, misseatCount: 0, cutCount: 0,
       submitting: false, terminal: false, canvas: null, context: null,
     };
     window.bombManualAcetateModel = model;

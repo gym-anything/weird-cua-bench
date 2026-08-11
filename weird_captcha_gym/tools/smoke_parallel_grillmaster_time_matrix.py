@@ -245,6 +245,17 @@ def run_action(
     return after - before
 
 
+def pointer_drag(page, source, target) -> None:
+    source_box = source.bounding_box()
+    target_box = target.bounding_box()
+    if not source_box or not target_box:
+        raise AssertionError("drag endpoints are not visible")
+    page.mouse.move(source_box["x"] + source_box["width"] / 2, source_box["y"] + source_box["height"] / 2)
+    page.mouse.down()
+    page.mouse.move(target_box["x"] + target_box["width"] / 2, target_box["y"] + target_box["height"] / 2)
+    page.mouse.up()
+
+
 def move_food(
     page,
     food_id: str,
@@ -258,8 +269,10 @@ def move_food(
             run_action(
                 page,
                 mode,
-                lambda: food.drag_to(
-                    page.locator(f'.grill-zone[data-drop-zone="{destination}"]')
+                lambda: pointer_drag(
+                    page,
+                    food,
+                    page.locator(f'.grill-zone[data-drop-zone="{destination}"]'),
                 ),
             )
         ]

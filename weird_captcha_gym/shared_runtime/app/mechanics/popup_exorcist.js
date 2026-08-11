@@ -206,7 +206,6 @@
     document.querySelector(".popup-field").classList.add("is-purging");
     liveWindows().forEach((node, index) => setTimeout(() => node.classList.add("is-dead"), index * 75));
     setTimeout(updateCount, 650);
-    await new Promise((resolve) => setTimeout(resolve, 700));
     try {
       const response = await fetch("/result", {
         method: "POST",

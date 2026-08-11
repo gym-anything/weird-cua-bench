@@ -29,10 +29,20 @@
   let commandPhase = running ? "running" : "paused";
   let windowStartedWallMs = null;
   let windowCompletedWallMs = null;
+  let windowStartedTaskMs = null;
+  let windowCompletedTaskMs = null;
+  let runWindowStartedNativeMs = null;
+  let taskTimeCeilingMs = null;
   let runWindowToken = 0;
   let nextTimerId = 1;
   let nextAnimationFrameId = 1;
   let nextActionId = 1;
+  let lastInputCommandSequence = 0;
+  let activeInputArm = null;
+  let inputCompletionToken = 0;
+  let interactionClockTaskMs = null;
+  let interactionClockNativeMs = null;
+  let interactionClockLastArmNativeMs = null;
 
   const timers = new Map();
   const animationFrames = new Map();
@@ -43,7 +53,8 @@
   const controllerPausedAudioContexts = new Set();
 
   function elapsedMs() {
-    return accumulatedMs + (running && runStartedAt != null ? native.performanceNow() - runStartedAt : 0);
+    const elapsed = accumulatedMs + (running && runStartedAt != null ? native.performanceNow() - runStartedAt : 0);
+    return taskTimeCeilingMs == null ? elapsed : Math.min(elapsed, taskTimeCeilingMs);
   }
 
   function virtualPerformanceNow() {
@@ -52,6 +63,18 @@
 
   function virtualDateNow() {
     return Math.round(nativeDateOrigin + elapsedMs());
+  }
+
+  // Interaction transcripts sometimes need the duration between native input
+  // samples even while the task world is paused. During an armed input batch,
+  // preserve that within-action duration on top of the frozen task boundary.
+  // This clock is for input evidence only; timers, animation, physics, Date,
+  // and performance.now continue to use the task clock above.
+  function interactionNow() {
+    if (running || !activeInputArm) return virtualPerformanceNow();
+    const taskBoundaryMs = Number(activeInputArm.startedTaskMs ?? elapsedMs());
+    const nativeBoundaryMs = Number(interactionClockNativeMs ?? activeInputArm.startedNativeMs ?? native.performanceNow());
+    return nativePerformanceOrigin + taskBoundaryMs + Math.max(0, native.performanceNow() - nativeBoundaryMs);
   }
 
   function pauseDocumentAnimations(root = document) {
@@ -130,10 +153,19 @@
   }
 
   function pause() {
-    if (!running) return status();
+    if (!running) {
+      // Input handlers still execute while task time is frozen. They can
+      // create a CSS/Web Animation without inserting a node, so every paused
+      // barrier must re-scan the document instead of treating pause as a
+      // no-op. Timers and requestAnimationFrame callbacks remain queued.
+      pauseDocumentAnimations();
+      pauseAudio();
+      return status();
+    }
     accumulatedMs = elapsedMs();
     runStartedAt = null;
     running = false;
+    taskTimeCeilingMs = null;
     commandPhase = "paused";
     // A canvas-based task normally paints from requestAnimationFrame.  Render
     // the state at the exact pause boundary once, then leave any newly queued
@@ -158,7 +190,8 @@
     return pause();
   }
 
-  function resume() {
+  function resume(maxTaskTimeMs = null) {
+    taskTimeCeilingMs = Number.isFinite(maxTaskTimeMs) ? Number(maxTaskTimeMs) : null;
     if (running) return status();
     runStartedAt = native.performanceNow();
     running = true;
@@ -193,6 +226,8 @@
       native_date_ms: native.dateNow(),
       window_started_wall_ms: windowStartedWallMs,
       window_completed_wall_ms: windowCompletedWallMs,
+      window_started_task_ms: windowStartedTaskMs,
+      window_completed_task_ms: windowCompletedTaskMs,
       pending_action_count: pendingActions.size,
       pending_actions: [...pendingActions.values()].map((action) => ({...action})),
     };
@@ -306,7 +341,195 @@
   const observer = new MutationObserver(() => {
     if (!running) native.setTimeout(() => pauseDocumentAnimations(), 0);
   });
-  observer.observe(document.documentElement, {childList: true, subtree: true});
+  observer.observe(document.documentElement, {
+    attributes: true,
+    childList: true,
+    subtree: true,
+  });
+
+  const inputEventTypes = [
+    "pointermove", "pointerdown", "pointerup", "pointercancel",
+    "mousedown", "mouseup", "click", "dblclick", "contextmenu", "auxclick",
+    "wheel", "dragstart", "dragover", "drop", "dragend",
+    "keydown", "keyup", "beforeinput", "input", "change",
+  ];
+
+  function inputEventCategory(event) {
+    return ["keydown", "keyup", "beforeinput", "input", "change"].includes(event.type)
+      ? "keyboard"
+      : "mouse";
+  }
+
+  function inputCategoryMatches(event, arm) {
+    return arm.category === "mixed" || inputEventCategory(event) === arm.category;
+  }
+
+  function inputStatus(phase, arm = activeInputArm) {
+    const clock = status();
+    return {
+      client_id: clientId,
+      command_sequence: Number(arm?.commandSequence || lastInputCommandSequence),
+      arm_sequence: Number(arm?.armSequence || 0),
+      phase,
+      category: arm?.category || null,
+      required: Boolean(arm?.required),
+      receipt_confirmed: Boolean(arm?.events?.length),
+      observed_event_count: Number(arm?.events?.length || 0),
+      observed_events: [...(arm?.events || [])],
+      task_time_ms: clock.task_time_ms,
+      controller_state: clock.state,
+      native_time_ms: native.performanceNow(),
+      native_date_ms: native.dateNow(),
+    };
+  }
+
+  async function postInputStatus(phase, arm = activeInputArm) {
+    if (!controlEnabled) return;
+    try {
+      await native.fetch("/input-control/status", {
+        method: "POST",
+        headers: {"content-type": "application/json"},
+        body: JSON.stringify(inputStatus(phase, arm)),
+        cache: "no-store",
+      });
+    } catch (_error) {
+      // The command poll retries. Task time remains frozen during the barrier.
+    }
+  }
+
+  function finishInputBarrier(arm) {
+    if (activeInputArm !== arm || !arm.completionRequested) return;
+    if (!running) pause();
+    const phase = arm.events.length ? "completed" : "missing";
+    activeInputArm = null;
+    void postInputStatus(phase, arm);
+  }
+
+  function scheduleInputBarrierCompletion(arm) {
+    if (activeInputArm !== arm || !arm.completionRequested) return;
+    const token = ++inputCompletionToken;
+    const sinceHandler = native.performanceNow() - Number(arm.lastHandlerCompletedNativeMs || 0);
+    const quietDelay = arm.events.length
+      ? Math.max(0, 32 - sinceHandler)
+      : (arm.required ? 500 : 50);
+    native.setTimeout(() => {
+      if (token !== inputCompletionToken || activeInputArm !== arm) return;
+      finishInputBarrier(arm);
+    }, quietDelay);
+  }
+
+  function recordInputEvent(event) {
+    const arm = activeInputArm;
+    if (!arm || !event.isTrusted || !inputCategoryMatches(event, arm)) return;
+    // Operating-system key repeat is a consequence of a previously delivered
+    // key-down, not a new injected action. Letting repeats reset the quiet
+    // boundary makes a deliberate held key impossible to acknowledge.
+    if (event.type === "keydown" && event.repeat) return;
+    const observed = {
+      type: String(event.type),
+      category: inputEventCategory(event),
+      native_time_ms: native.performanceNow(),
+      task_time_ms: Math.round(elapsedMs() * 1000) / 1000,
+      x: Number.isFinite(event.clientX) ? Number(event.clientX) : null,
+      y: Number.isFinite(event.clientY) ? Number(event.clientY) : null,
+      button: Number.isFinite(event.button) ? Number(event.button) : null,
+      key: typeof event.key === "string" ? event.key : null,
+      code: typeof event.code === "string" ? event.code : null,
+    };
+    arm.events.push(observed);
+    if (arm.events.length > 64) arm.events.shift();
+    // A capture listener runs before the task handler. A native zero-delay
+    // task records the barrier only after synchronous dispatch has finished.
+    native.setTimeout(() => {
+      if (activeInputArm !== arm) return;
+      observed.handler_completed_native_time_ms = native.performanceNow();
+      arm.lastHandlerCompletedNativeMs = observed.handler_completed_native_time_ms;
+      scheduleInputBarrierCompletion(arm);
+    }, 0);
+  }
+
+  function installInputListeners(targetWindow = window) {
+    try {
+      if (targetWindow.__weirdCaptchaInputBarrierInstalled) return;
+      targetWindow.__weirdCaptchaInputBarrierInstalled = true;
+      for (const eventType of inputEventTypes) {
+        targetWindow.addEventListener(eventType, recordInputEvent, true);
+      }
+    } catch (_error) {
+      // Cross-origin child windows are outside the task's shared clock.
+    }
+  }
+
+  async function applyInputCommand(command) {
+    const sequence = Number(command.sequence) || 0;
+    if (sequence <= lastInputCommandSequence) return;
+    lastInputCommandSequence = sequence;
+    const kind = String(command.command || "status");
+    if (kind === "arm") {
+      inputCompletionToken += 1;
+      const armedNativeMs = native.performanceNow();
+      const armedTaskMs = elapsedMs();
+      const clockExpired = interactionClockLastArmNativeMs == null
+        || armedNativeMs - interactionClockLastArmNativeMs > 1500;
+      if (interactionClockTaskMs == null || Math.abs(armedTaskMs - interactionClockTaskMs) > .01 || clockExpired) {
+        interactionClockTaskMs = armedTaskMs;
+        interactionClockNativeMs = armedNativeMs;
+      }
+      interactionClockLastArmNativeMs = armedNativeMs;
+      activeInputArm = {
+        armSequence: Number(command.arm_sequence) || sequence,
+        commandSequence: sequence,
+        category: String(command.category || "mixed"),
+        required: command.required !== false,
+        completionRequested: false,
+        startedNativeMs: armedNativeMs,
+        startedTaskMs: armedTaskMs,
+        lastHandlerCompletedNativeMs: 0,
+        events: [],
+      };
+      if (!running) pause();
+      await postInputStatus("armed", activeInputArm);
+      return;
+    }
+    const armSequence = Number(command.arm_sequence) || 0;
+    if (!activeInputArm || activeInputArm.armSequence !== armSequence) {
+      const orphan = {
+        armSequence,
+        commandSequence: sequence,
+        category: null,
+        required: false,
+        events: [],
+      };
+      await postInputStatus(kind === "cancel" ? "cancelled" : "missing", orphan);
+      return;
+    }
+    activeInputArm.commandSequence = sequence;
+    if (kind === "cancel") {
+      inputCompletionToken += 1;
+      const cancelled = activeInputArm;
+      activeInputArm = null;
+      await postInputStatus("cancelled", cancelled);
+      return;
+    }
+    if (kind === "complete") {
+      activeInputArm.completionRequested = true;
+      await postInputStatus("completing", activeInputArm);
+      scheduleInputBarrierCompletion(activeInputArm);
+    }
+  }
+
+  async function pollInputCommands() {
+    if (!controlEnabled) return;
+    try {
+      const response = await native.fetch(
+        `/input-control?after=${lastInputCommandSequence}`,
+        {cache: "no-store"},
+      );
+      if (response.ok) await applyInputCommand(await response.json());
+    } catch (_error) {
+      // Polling continues while task time stays independent of server access.
+    }
+  }
 
   async function postStatus() {
     if (!controlEnabled) return;
@@ -330,21 +553,30 @@
     commandPhase = "scheduled";
     windowStartedWallMs = null;
     windowCompletedWallMs = null;
+    windowStartedTaskMs = null;
+    windowCompletedTaskMs = null;
+    runWindowStartedNativeMs = null;
     postStatus();
-    native.setTimeout(() => {
+    const startWindow = () => {
       if (token !== runWindowToken || sequence !== lastCommandSequence) return;
-      resume();
+      windowStartedTaskMs = elapsedMs();
+      const taskEndMs = windowStartedTaskMs + duration;
+      resume(taskEndMs);
       commandPhase = "running_window";
       windowStartedWallMs = native.dateNow();
+      runWindowStartedNativeMs = native.performanceNow();
       postStatus();
       native.setTimeout(() => {
         if (token !== runWindowToken || sequence !== lastCommandSequence) return;
         pause();
         commandPhase = "completed";
         windowCompletedWallMs = native.dateNow();
+        windowCompletedTaskMs = elapsedMs();
         postStatus();
       }, duration);
-    }, startDelay);
+    };
+    if (startDelay > 0) native.setTimeout(startWindow, startDelay);
+    else startWindow();
   }
 
   async function applyCommand(command) {
@@ -384,7 +616,10 @@
   const childWindows = new Set();
   window.open = (...args) => {
     const child = originalOpen(...args);
-    if (child) childWindows.add(child);
+    if (child) {
+      childWindows.add(child);
+      native.setTimeout(() => installInputListeners(child), 0);
+    }
     return child;
   };
 
@@ -392,18 +627,27 @@
     pause,
     pauseAfterActions,
     resume,
+    runFor: (milliseconds, startDelayMs = 0) => runFor(
+      milliseconds,
+      startDelayMs,
+      lastCommandSequence,
+    ),
     beginAction,
     setMode,
     status,
+    interactionNow,
     markReady,
     childWindows,
     native,
   };
 
   if (!running) native.setTimeout(() => pauseDocumentAnimations(), 0);
+  installInputListeners();
   if (controlEnabled) {
     native.setInterval(pollCommands, 20);
+    native.setInterval(pollInputCommands, 20);
     native.setInterval(postStatus, 250);
     pollCommands();
+    pollInputCommands();
   }
 })();

@@ -74,8 +74,6 @@ def _control_contract(
         required_values = {
             key: int(parameters[key])
             for key in (
-                "minimum_chip_moves",
-                "minimum_chip_drag_ms",
                 "minimum_rail_samples",
                 "minimum_rail_ms",
                 "maximum_rail_step",
@@ -197,7 +195,7 @@ def grade(payload: dict[str, Any], ground_truth: dict[str, Any], public_state: d
                 start = _point(event.get("point"), width, height, "modifier pickup")
                 if not _inside(start, rack):
                     return _fail(f"event {sequence} misses the modifier token")
-                drag = {"token_id": token_id, "moves": 0, "last_elapsed": 0}
+                drag = {"token_id": token_id, "last_elapsed": 0}
             elif kind == "chip_move":
                 if interaction != "full":
                     return _fail(f"event {sequence} uses direct modifier dragging in simplified mode")
@@ -208,7 +206,6 @@ def grade(payload: dict[str, Any], ground_truth: dict[str, Any], public_state: d
                 if elapsed < drag["last_elapsed"] or elapsed > 10_000:
                     return _fail(f"event {sequence} reverses modifier drag time")
                 drag["last_elapsed"] = elapsed
-                drag["moves"] += 1
             elif kind == "chip_up":
                 if interaction != "full":
                     return _fail(f"event {sequence} uses direct modifier dragging in simplified mode")
@@ -216,10 +213,13 @@ def grade(payload: dict[str, Any], ground_truth: dict[str, Any], public_state: d
                     return _fail(f"event {sequence} releases no matching modifier")
                 point = _point(event.get("point"), width, height, "modifier release")
                 duration = int(_number(event.get("duration_ms"), "modifier duration"))
+                if not 0 <= duration <= 10_000:
+                    return _fail(f"event {sequence} has impossible modifier duration")
                 detected = next((int(slot["index"]) for slot in slots if _inside(point, slot)), None)
                 if event.get("slot_index") != detected:
                     return _fail(f"event {sequence} claims a false restoration slot")
-                accepted = detected is not None and detected not in placements and drag["moves"] >= int(requirements["minimum_chip_moves"]) and duration >= int(requirements["minimum_chip_drag_ms"])
+                cancelled = event.get("cancelled") is True
+                accepted = not cancelled and detected is not None and detected not in placements
                 if bool(event.get("accepted")) != accepted:
                     return _fail(f"event {sequence} lies about modifier placement")
                 if accepted:
@@ -298,6 +298,11 @@ def grade(payload: dict[str, Any], ground_truth: dict[str, Any], public_state: d
                 current += 1
                 placements.clear(); inverted.clear(); rail_hold = None
                 phase = "terminal" if current == len(artifacts) else "playback"
+            elif kind == "rail_cancel":
+                if interaction != "full" or rail_hold is None:
+                    return _fail(f"event {sequence} cancels no direct press hold")
+                _point(event.get("point"), width, height, "cancelled rail point")
+                rail_hold = None
             elif kind == "seal":
                 if drag is not None or rail_hold is not None:
                     return _fail(f"event {sequence} seals during a pointer hold")

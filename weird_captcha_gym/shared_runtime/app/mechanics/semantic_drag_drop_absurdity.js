@@ -108,7 +108,7 @@
           .find(Boolean) || null;
         if (under !== target) {
           target = under;
-          enteredAt = performance.now();
+          enteredAt = model.helpers.interactionNow();
           document.querySelectorAll(".causal-specimen").forEach((node) => {
             node.dataset.probeHover = String(node === target);
           });
@@ -120,8 +120,8 @@
         tool.removeAttribute("style");
         tool.dataset.dragging = "false";
         document.querySelectorAll(".causal-specimen").forEach((node) => { node.dataset.probeHover = "false"; });
-        if (target && performance.now() - enteredAt >= Number(model.state.probe_hold_ms)) {
-          recordProbe(target.dataset.objectId, kind, performance.now() - enteredAt, target);
+        if (target && model.helpers.interactionNow() - enteredAt >= Number(model.state.probe_hold_ms)) {
+          recordProbe(target.dataset.objectId, kind, model.helpers.interactionNow() - enteredAt, target);
         }
         target = null;
       };

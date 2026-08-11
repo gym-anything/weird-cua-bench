@@ -22,7 +22,10 @@ Validate the complete environment rather than checking only `controls.json`.
 
 - Run the same task in live and paused modes with the same observation settings.
 - Add an artificial model delay. Confirm that task time advances in live mode and remains frozen in paused mode.
-- Confirm that the environment runs during the complete action in paused mode.
+- Confirm that click, keyboard, drag, held-button, and multi-action input reach browser handlers while paused without advancing task time.
+- Confirm that an animation created by a paused input remains frozen until the observation window begins.
+- Confirm that asynchronous action effects advance only within the fixed observation window; do not wait for environment-specific settlement outside it.
+- Confirm that the final virtual task time equals the configured window endpoint even when the host timer callback is late.
 - Inspect the captured frame sequence in chronological order and confirm that the final frame is also `obs["screen"]`.
 - Exercise the environment through the public observation inspector when dashboard behavior changes.
 

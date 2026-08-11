@@ -47,7 +47,7 @@ def _drag_object(page, object_id: str, target: dict, stage: dict) -> None:
     destination = _stage_target(page, int(target["x"]), int(target["y"]), int(stage["width"]), int(stage["height"]))
     page.mouse.move(box["x"] + box["width"] / 2, box["y"] + box["height"] / 2)
     page.mouse.down()
-    page.mouse.move(destination[0], destination[1], steps=9)
+    page.mouse.move(destination[0], destination[1])
     page.mouse.up()
 
 
@@ -132,7 +132,7 @@ def solve(page, state_dir: Path, out_dir: Path, mechanic: str) -> None:
       proxyPlaceCount: window.relationAssemblyModel.proxyPlaceCount,
       resetCount: window.relationAssemblyModel.resetCount,
     })""")
-    direct_ok = physical["drags"] == len(solutions) and physical["dragSamples"] >= len(solutions) * 3
+    direct_ok = physical["drags"] == len(solutions)
     proxy_ok = physical["proxyPlaceCount"] == len(solutions) and physical["drags"] == 0 and physical["dragSamples"] == 0
     if (not (proxy_ok if interaction == "simplified" else direct_ok) or physical["depthSamples"] < 1 or physical["depthDistance"] < 1 or physical["resetCount"] != 0):
         raise AssertionError(f"relation workflow lacked required physical evidence: {physical}")

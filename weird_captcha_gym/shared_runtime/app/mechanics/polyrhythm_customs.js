@@ -15,6 +15,9 @@
     submitting: false,
     interaction: "full",
     controlled: false,
+    helpers: null,
+    entryNotes: [],
+    entryDrag: null,
   };
   window.polyrhythmCustomsModel = model;
 
@@ -175,7 +178,7 @@
 
   function recordEvent(laneId, type, source) {
     if (model.phase !== "performance" || model.submitting) return;
-    const now = performance.now();
+    const now = model.helpers.interactionNow();
     if (type === "down") {
       if (model.held.has(laneId)) return;
       model.held.set(laneId, source);
@@ -197,9 +200,84 @@
     if (count) count.textContent = String(model.transcript.length).padStart(2, "0");
   }
 
-  function togglePad(laneId) {
-    if (model.phase !== "performance" || model.submitting) return;
-    recordEvent(laneId, model.held.has(laneId) ? "up" : "down", "pointer_toggle");
+  function entryGridMarkup() {
+    const duration = Number(model.state.settings.performance_ms);
+    const seconds = Math.ceil(duration / 1000);
+    return `<div class="rhythm-entry-grid" style="--entry-lanes:${model.state.lanes.length}">
+      <div class="rhythm-entry-ruler"><b>0</b>${Array.from({length: seconds}, (_item, index) => `<i style="left:${Math.min(100, (index + 1) * 1000 * 100 / duration).toFixed(3)}%">${index + 1}s</i>`).join("")}</div>
+      ${(model.state.lanes || []).map((lane, index) => `<div class="rhythm-entry-lane" data-entry-lane="${clean(lane.id)}" data-index="${index}">
+        <header><strong>${clean(lane.key)}</strong><span>${clean(lane.label)}</span></header>
+        <div class="rhythm-entry-track" data-entry-track="${clean(lane.id)}"><div></div></div>
+      </div>`).join("")}
+      <p>BLANK TIMING LEDGER · CLICK FOR A TAP · DRAG HORIZONTALLY FOR A HOLD</p>
+    </div>`;
+  }
+
+  function rebuildEntryTranscript() {
+    const events = model.entryNotes.flatMap((note) => [
+      {lane: note.lane, type: "down", t_ms: note.start_ms},
+      {lane: note.lane, type: "up", t_ms: note.start_ms + note.duration_ms},
+    ]);
+    events.sort((first, second) => (
+      first.t_ms - second.t_ms
+      || (first.type === second.type ? 0 : first.type === "up" ? -1 : 1)
+      || first.lane.localeCompare(second.lane)
+    ));
+    model.transcript = events.map((event, seq) => ({
+      seq,
+      lane: event.lane,
+      type: event.type,
+      t_ms: Number(event.t_ms.toFixed(2)),
+      source: "pointer_toggle",
+    }));
+    const count = document.querySelector(".rhythm-event-count");
+    if (count) count.textContent = String(model.transcript.length).padStart(2, "0");
+  }
+
+  function addEntryNote(laneId, firstX, lastX, track) {
+    const bounds = track.getBoundingClientRect();
+    const duration = Number(model.state.settings.performance_ms);
+    const clampX = (value) => Math.max(bounds.left, Math.min(bounds.right, Number(value)));
+    const leftX = Math.min(clampX(firstX), clampX(lastX));
+    const rightX = Math.max(clampX(firstX), clampX(lastX));
+    const dragged = rightX - leftX >= 12;
+    const startMs = (leftX - bounds.left) / bounds.width * duration;
+    const noteDuration = dragged
+      ? Math.max(25, (rightX - leftX) / bounds.width * duration)
+      : 100;
+    const clippedStart = Math.max(0, Math.min(duration - noteDuration, startMs));
+    const note = {
+      lane: laneId,
+      start_ms: clippedStart,
+      duration_ms: noteDuration,
+      kind: dragged ? "hold" : "tap",
+    };
+    model.entryNotes.push(note);
+    const marker = document.createElement("i");
+    marker.dataset.kind = note.kind;
+    marker.style.left = `${note.start_ms * 100 / duration}%`;
+    marker.style.width = `${Math.max(1.1, note.duration_ms * 100 / duration)}%`;
+    marker.title = `${(note.start_ms / 1000).toFixed(2)}s · ${(note.duration_ms / 1000).toFixed(2)}s`;
+    track.querySelector("div")?.append(marker);
+    rebuildEntryTranscript();
+  }
+
+  function installEntryHandlers() {
+    document.querySelectorAll(".rhythm-entry-track").forEach((track) => {
+      track.addEventListener("pointerdown", (event) => {
+        if (event.button !== 0 || model.phase !== "performance" || model.submitting) return;
+        event.preventDefault();
+        track.setPointerCapture?.(event.pointerId);
+        model.entryDrag = {track, lane: String(track.dataset.entryTrack), startX: event.clientX};
+      });
+      track.addEventListener("pointerup", (event) => {
+        if (!model.entryDrag || model.entryDrag.track !== track) return;
+        event.preventDefault();
+        addEntryNote(model.entryDrag.lane, model.entryDrag.startX, event.clientX, track);
+        model.entryDrag = null;
+      });
+      track.addEventListener("pointercancel", () => { model.entryDrag = null; });
+    });
   }
 
   function drawPerformance(helpers) {
@@ -218,20 +296,37 @@
     clearRun();
     model.phase = "performance";
     model.transcript = [];
+    model.entryNotes = [];
+    model.entryDrag = null;
     model.held.clear();
     model.performanceStartedAt = performance.now();
     const shell = document.querySelector(".polyrhythm-customs-captcha");
     if (shell) shell.dataset.phase = "performance";
     const board = document.querySelector(".rhythm-score-board");
-    if (board) board.innerHTML = '<div class="rhythm-performance-void"><span>MANIFEST HIDDEN</span><strong>PERFORM THE COMBINED SCORE</strong><i>taps · holds · simultaneous stamps</i></div>';
+    if (board) board.innerHTML = model.interaction === "simplified"
+      ? entryGridMarkup()
+      : '<div class="rhythm-performance-void"><span>MANIFEST HIDDEN</span><strong>PERFORM THE COMBINED SCORE</strong><i>taps · holds · simultaneous stamps</i></div>';
     const keys = model.state.lanes.map((lane) => lane.key).join(" / ");
     const inputInstruction = model.interaction === "simplified"
-      ? `${keys} · click once to press and again to release`
+      ? `${keys} · place remembered taps and holds on the blank timing ledger`
       : `${keys} · keydown and release are both recorded`;
-    updatePhase("LIVE COMBINED INSPECTION", inputInstruction);
-    helpers.setReadout(`PERFORM NOW · START WINDOW ±${model.state.rules.start_window_ms}ms`, "idle");
-    drawPerformance(helpers);
-    model.timer = window.setTimeout(() => endPerformance(helpers), Number(model.state.settings.performance_ms) + 260);
+    updatePhase(model.interaction === "simplified" ? "COMBINED TIMING DECLARATION" : "LIVE COMBINED INSPECTION", inputInstruction);
+    helpers.setReadout(
+      model.interaction === "simplified"
+        ? `ENTER FROM MEMORY · START WINDOW ±${model.state.rules.start_window_ms}ms`
+        : `PERFORM NOW · START WINDOW ±${model.state.rules.start_window_ms}ms`,
+      "idle",
+    );
+    if (model.interaction === "simplified") {
+      const meter = document.querySelector(".rhythm-performance-meter i");
+      if (meter) meter.style.transform = "scaleX(1)";
+      const clock = document.querySelector(".rhythm-performance-clock");
+      if (clock) clock.textContent = "LEDGER";
+      installEntryHandlers();
+    } else {
+      drawPerformance(helpers);
+      model.timer = window.setTimeout(() => endPerformance(helpers), Number(model.state.settings.performance_ms) + 260);
+    }
   }
 
   function endPerformance(helpers) {
@@ -288,6 +383,8 @@
     clearRun();
     setupAudio();
     model.transcript = [];
+    model.entryNotes = [];
+    model.entryDrag = null;
     model.held.clear();
     document.querySelector(".rhythm-start-curtain")?.setAttribute("data-open", "true");
     document.querySelector(".polyrhythm-customs-captcha")?.setAttribute("data-phase", "preview");
@@ -300,6 +397,7 @@
     document.body.dataset.mechanic = "polyrhythm-customs";
     document.body.dataset.cheatMode = helpers.isCheatMode() ? "true" : "false";
     model.state = state;
+    model.helpers = helpers;
     model.phase = "ready";
     model.previewIndex = -1;
     model.transcript = [];
@@ -310,7 +408,7 @@
     const simplified = model.interaction === "simplified";
     const holdDurationRequired = state.control_condition?.difficulty_parameters?.require_hold_duration === true;
     const padInstruction = simplified
-      ? "CLICK TO PRESS · CLICK AGAIN TO RELEASE"
+      ? "CLICK FOR TAP · DRAG FOR HOLD"
       : "KEYDOWN + KEYUP RECORDED";
     const holdRule = holdDurationRequired
       ? "Long bars must be held to their displayed duration."
@@ -331,7 +429,7 @@
           </section>
           <aside class="rhythm-rules">
             <div class="rhythm-rule-card"><span>01</span><b>WATCH SEPARATELY</b><p>Only one lane is revealed at a time. ${holdRule}</p></div>
-            <div class="rhythm-rule-card"><span>02</span><b>PERFORM TOGETHER</b><p>When the score vanishes, interleave all ${state.lanes.length} lanes. Shared marks are chords${simplified ? "; click a pad again to release it" : ""}.</p></div>
+            <div class="rhythm-rule-card"><span>02</span><b>PERFORM TOGETHER</b><p>When the score vanishes, interleave all ${state.lanes.length} lanes. Shared marks are chords${simplified ? "; click taps and drag long bars on the blank ledger" : ""}.</p></div>
             <div class="rhythm-tolerance-card"><span>INSPECTION TOLERANCE</span><dl><div><dt>START</dt><dd>±${state.rules.start_window_ms}ms</dd></div><div><dt>${holdToleranceLabel}</dt><dd>±${state.rules.duration_tolerance_ms}ms</dd></div><div><dt>CHORD</dt><dd>${state.rules.chord_window_ms}ms</dd></div></dl></div>
           </aside>
         </main>
@@ -371,13 +469,7 @@
       if (model.phase === "performance") endPerformance(helpers);
     });
     document.querySelectorAll(".rhythm-pad").forEach((pad) => {
-      if (model.interaction === "simplified") {
-        pad.addEventListener("click", (event) => {
-          event.preventDefault();
-          togglePad(String(pad.dataset.lane));
-        });
-        return;
-      }
+      if (model.interaction === "simplified") return;
       const pointerSource = model.controlled ? "pointer_direct" : "pointer";
       pad.addEventListener("pointerdown", (event) => {
         event.preventDefault();

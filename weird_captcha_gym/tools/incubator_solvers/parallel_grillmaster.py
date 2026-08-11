@@ -32,7 +32,15 @@ def _wait_new_challenge(state_dir: Path, old_challenge: str) -> None:
 def _move_food(page, food_id: str, destination: str, interaction: str) -> None:
     food = page.locator(f'.grill-food[data-food-id="{food_id}"]')
     if interaction == "full":
-        food.drag_to(page.locator(f'.grill-zone[data-drop-zone="{destination}"]'))
+        target = page.locator(f'.grill-zone[data-drop-zone="{destination}"]')
+        source_box = food.bounding_box()
+        target_box = target.bounding_box()
+        if source_box is None or target_box is None:
+            raise AssertionError("grill transfer endpoints have no visible bounds")
+        page.mouse.move(source_box["x"] + source_box["width"] / 2, source_box["y"] + source_box["height"] / 2)
+        page.mouse.down()
+        page.mouse.move(target_box["x"] + target_box["width"] / 2, target_box["y"] + target_box["height"] / 2)
+        page.mouse.up()
     else:
         food.click()
         button = "#grill-start-selected" if destination == "grill" else "#grill-serve-selected"

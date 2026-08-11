@@ -39,6 +39,7 @@ logger = logging.getLogger(__name__)
 FRAME_WINDOW_TYPE = "frame_window"
 
 TIME_CONTROL_SCRIPT = "/workspace/shared_scripts/time_control.py"
+INPUT_CONTROL_SCRIPT = "/workspace/shared_scripts/input_control.py"
 CAPTURE_SCRIPT = "/workspace/shared_scripts/capture_observation_window.py"
 GUEST_OBSERVATION_ROOT = "/tmp/weird_cua_observations"
 
@@ -238,10 +239,11 @@ class WeirdCaptchaRunner(BaseRunner):
         self._resolved_time_mode: Optional[str] = None
         self.last_time_status: Dict[str, Any] = {}
         self.last_action_result: Optional[Dict[str, Any]] = None
-        # Ordered (command, result) clock transitions for this episode, so
-        # callers can read e.g. the settle-pause result of the last turn
-        # without an extra guest roundtrip.
+        self.last_input_status: Optional[Dict[str, Any]] = None
+        self._pending_input_statuses: list[Dict[str, Any]] = []
+        # Ordered (command, result) clock transitions for this episode.
         self.clock_log: list = []
+        self.input_log: list = []
 
     # --- class-level facts ------------------------------------------------
 
@@ -362,7 +364,10 @@ class WeirdCaptchaRunner(BaseRunner):
         self._bootstrap_done = False
         self.last_time_status = {}
         self.last_action_result = None
+        self.last_input_status = None
+        self._pending_input_statuses = []
         self.clock_log = []
+        self.input_log = []
 
         options = self.spec.runner_options or {}
         # Precedence: an explicit local run option, then the task's declared
@@ -427,6 +432,54 @@ class WeirdCaptchaRunner(BaseRunner):
             self.time_command("resume")
             self._live_started = True
 
+    def input_command(
+        self,
+        command: str,
+        *,
+        category: Optional[str] = None,
+        arm_sequence: Optional[int] = None,
+        required: bool = True,
+    ) -> Dict[str, Any]:
+        if command not in {"arm", "complete", "cancel", "status"}:
+            raise ValueError(f"unsupported input command: {command}")
+        arguments = ["python3", INPUT_CONTROL_SCRIPT, command, "--timeout", "30"]
+        if category is not None:
+            arguments.extend(["--category", category])
+        if arm_sequence is not None:
+            arguments.extend(["--arm-sequence", str(arm_sequence)])
+        if command == "arm":
+            arguments.append("--required" if required else "--no-required")
+        result = self._guest_json(arguments)
+        self.last_input_status = result
+        self.input_log.append({"command": command, "result": result})
+        return result
+
+    @staticmethod
+    def _input_category(action: Dict[str, Any]) -> Optional[str]:
+        has_mouse = bool(action.get("mouse"))
+        has_keyboard = bool(action.get("keyboard"))
+        if has_mouse and has_keyboard:
+            return "mixed"
+        if has_mouse:
+            return "mouse"
+        if has_keyboard:
+            return "keyboard"
+        return None
+
+    @staticmethod
+    def _input_receipt_required(action: Dict[str, Any]) -> bool:
+        mouse = action.get("mouse") or {}
+        keyboard = action.get("keyboard") or {}
+        # Moving to the position already held is a valid no-op on transports
+        # that cannot guarantee an observable motion event. Every click,
+        # button, wheel, drag, and non-empty keyboard action must be observed
+        # by Chromium before the task clock can advance.
+        if mouse and not keyboard and set(mouse) <= {"move"}:
+            return False
+        if keyboard:
+            return any(bool(value) for value in keyboard.values())
+        return bool(mouse)
+
     # --- actions ----------------------------------------------------------
 
     def inject_action(self, action: Dict[str, Any]):
@@ -443,18 +496,40 @@ class WeirdCaptchaRunner(BaseRunner):
             self._ensure_ready()
             if self.time_mode == "live":
                 self._ensure_live_started()
-            elif not self._clock_running:
-                self.time_command("resume")
+            # In paused mode an explicit wall wait remains frozen; the one
+            # configured observation window is the only task-time advance.
             time.sleep(seconds)
             return
         self._ensure_ready()
         if self.time_mode == "live":
             self._ensure_live_started()
-        elif not self._clock_running:
-            # First real input of this turn: run the clock so the world can
-            # respond. The next observation settles it back to paused.
-            self.time_command("resume")
-        self.inner.inject_action(action)
+            self.inner.inject_action(action)
+            return
+
+        if self._clock_running:
+            self.time_command("pause")
+        category = self._input_category(action)
+        if category is None:
+            self.inner.inject_action(action)
+            return
+        required = self._input_receipt_required(action)
+        armed = self.input_command("arm", category=category, required=required)
+        arm_sequence = int(armed["arm_sequence"])
+        try:
+            self.inner.inject_action(action)
+        except Exception:
+            try:
+                self.input_command("cancel", arm_sequence=arm_sequence)
+            except Exception:
+                logger.warning("Could not cancel failed browser input barrier", exc_info=True)
+            raise
+        delivered = self.input_command("complete", arm_sequence=arm_sequence)
+        if required and not delivered.get("receipt_confirmed"):
+            raise RuntimeError(
+                "native action reached the input transport but Chromium did not "
+                f"confirm a {category} event: {delivered}"
+            )
+        self._pending_input_statuses.append(delivered)
 
     # --- observations -----------------------------------------------------
 
@@ -479,15 +554,11 @@ class WeirdCaptchaRunner(BaseRunner):
             observation["settle_status"] = None
             return observation
 
-        settle_status = None
+        input_statuses = list(self._pending_input_statuses)
         if self.time_mode == "live":
             self._ensure_live_started()
         elif self._clock_running:
-            # A task may have an accepted finite transition (for example, a
-            # room rotation) still in flight. The shared controller pauses
-            # only after such registered actions settle, so the next turn
-            # cannot silently lose its input to a frozen action lock.
-            settle_status = self.time_command("settle-pause")
+            self.time_command("pause")
 
         observation = self._capture_window(
             mode=self.time_mode,
@@ -495,7 +566,12 @@ class WeirdCaptchaRunner(BaseRunner):
             host_dir=episode_dir / "observations" / f"turn-{self._turn:04d}",
         )
         self._turn += 1
-        observation["settle_status"] = settle_status
+        self._pending_input_statuses = []
+        observation["settle_status"] = None
+        observation["action_delivery_statuses"] = input_statuses
+        observation["action_delivery_status"] = (
+            input_statuses[-1] if input_statuses else None
+        )
         return observation
 
     def _capture_window(

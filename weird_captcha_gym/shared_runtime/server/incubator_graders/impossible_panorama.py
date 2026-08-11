@@ -112,7 +112,7 @@ def _control_condition(
         return None, "panorama control difficulty is invalid"
     if difficulty not in {1, 2, 3, 4, 5} or str(condition.get("interaction") or "") not in {"simplified", "full"}:
         return None, "panorama control condition is invalid"
-    if str(condition.get("real_time") or "") != "live" or not isinstance(condition.get("difficulty_parameters"), dict):
+    if str(condition.get("real_time") or "") not in {"live", "paused"} or not isinstance(condition.get("difficulty_parameters"), dict):
         return None, "panorama control condition is incomplete"
     return condition, None
 

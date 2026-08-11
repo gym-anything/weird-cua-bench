@@ -15,7 +15,7 @@ INPUT_SOURCES = {
 }
 EVENT_SURFACES = {
     "simplified": "selection_plus_proxy_button",
-    "full": "html_drag_drop",
+    "full": "pointer_drag",
 }
 WITNESSED_ROUTES = {
     "simplified": "simplified_proxy",
