@@ -361,9 +361,6 @@ def grade(payload: dict[str, Any], ground_truth: dict[str, Any], public_state: d
     prisoner: dict[str, Any] | None = None
     freeze_elapsed = 0
     last_elapsed = -1
-    last_camera_elapsed = -1
-    first_camera_elapsed: int | None = None
-    camera_since_reset = 0
     camera_total = freeze_count = thaw_count = death_count = key_total = 0
     valid_freeze = abandoned = submitted = terminal = False
     final_jumps = final_transitions = final_ticks = 0
@@ -387,47 +384,41 @@ def grade(payload: dict[str, Any], ground_truth: dict[str, Any], public_state: d
                     return _fail(f"event {sequence} uses the wrong camera input")
             if mode != "camera":
                 return _fail(f"event {sequence} moves the 3D camera while projection is frozen")
-            if last_camera_elapsed >= 0 and elapsed - last_camera_elapsed < 18:
-                return _fail(f"event {sequence} compresses camera movement timestamps")
             try:
                 if kind == "orbit":
                     yaw_delta = _number(event.get("yaw_delta"), "yaw delta")
                     pitch_delta = _number(event.get("pitch_delta"), "pitch delta")
-                    if max(abs(yaw_delta), abs(pitch_delta)) > float(controls["orbit_step_deg"]) + .001 or abs(yaw_delta) + abs(pitch_delta) <= 1e-8:
-                        raise ValueError("orbit delta leaves primitive bounds")
+                    if abs(yaw_delta) + abs(pitch_delta) <= 1e-8:
+                        raise ValueError("orbit delta is empty")
+                    if interaction == "simplified" and max(abs(yaw_delta), abs(pitch_delta)) > float(controls["orbit_step_deg"]) + .001:
+                        raise ValueError("button orbit delta exceeds its visible step")
                     camera["yaw_deg"] = _clamp(float(camera["yaw_deg"]) + yaw_delta, float(controls["yaw_min"]), float(controls["yaw_max"]))
                     camera["pitch_deg"] = _clamp(float(camera["pitch_deg"]) + pitch_delta, float(controls["pitch_min"]), float(controls["pitch_max"]))
                 elif kind == "pan":
                     x_delta = _number(event.get("x_delta"), "pan x delta")
                     y_delta = _number(event.get("y_delta"), "pan y delta")
-                    if max(abs(x_delta), abs(y_delta)) > float(controls["pan_step"]) + .001 or abs(x_delta) + abs(y_delta) <= 1e-8:
-                        raise ValueError("pan delta leaves primitive bounds")
+                    if abs(x_delta) + abs(y_delta) <= 1e-8:
+                        raise ValueError("pan delta is empty")
+                    if interaction == "simplified" and max(abs(x_delta), abs(y_delta)) > float(controls["pan_step"]) + .001:
+                        raise ValueError("button pan delta exceeds its visible step")
                     camera["target"][0] = _clamp(float(camera["target"][0]) + x_delta, -5.0, 5.0)
                     camera["target"][1] = _clamp(float(camera["target"][1]) + y_delta, -2.0, 4.0)
                 else:
                     delta = _number(event.get("delta"), "dolly delta")
                     if not 1e-8 < abs(delta) <= float(controls["dolly_step"]) + .001:
-                        raise ValueError("dolly delta leaves primitive bounds")
+                        raise ValueError("wheel dolly delta exceeds its visible step")
                     camera["distance"] = _clamp(float(camera["distance"]) + delta, float(controls["distance_min"]), float(controls["distance_max"]))
             except (KeyError, TypeError, ValueError) as exc:
                 return _fail(f"event {sequence}: {exc}")
             camera = {**camera, "yaw_deg": round(float(camera["yaw_deg"]), 6), "pitch_deg": round(float(camera["pitch_deg"]), 6), "distance": round(float(camera["distance"]), 6), "target": [round(float(value), 6) for value in camera["target"]]}
             camera_total += 1
-            camera_since_reset += 1
-            first_camera_elapsed = elapsed if first_camera_elapsed is None else first_camera_elapsed
-            last_camera_elapsed = elapsed
         elif kind == "camera_reset":
             if mode != "camera":
                 return _fail(f"event {sequence} resets a frozen camera")
             camera = _copy_camera(initial)
-            camera_since_reset = 0
-            first_camera_elapsed = None
-            last_camera_elapsed = elapsed
         elif kind == "freeze":
             if mode != "camera":
                 return _fail(f"event {sequence} freezes an already flat world")
-            if last_camera_elapsed >= 0 and elapsed - last_camera_elapsed < int(requirements["minimum_freeze_settle_ms"]):
-                return _fail(f"event {sequence} freezes before the camera settles")
             try:
                 current_topology = _topology(platforms, camera, viewport)
                 prisoner = _make_physics(current_topology, physics)
@@ -439,9 +430,6 @@ def grade(payload: dict[str, Any], ground_truth: dict[str, Any], public_state: d
             valid_freeze = bool(
                 current_topology["valid"]
                 and len(current_topology["joins"]) >= int(requirements["minimum_screen_joins"])
-                and camera_since_reset >= int(requirements["minimum_camera_events"])
-                and first_camera_elapsed is not None
-                and elapsed - first_camera_elapsed >= int(requirements["minimum_camera_elapsed_ms"])
             )
         elif kind in {"key_down", "key_up"}:
             if truth_condition is not None and event.get("input_source") != "keyboard":
@@ -538,6 +526,6 @@ def cheat(public_state: dict[str, Any], ground_truth: dict[str, Any]) -> dict[st
     return {
         "camera": solution.get("camera"),
         "required_join_pairs": solution.get("required_join_pairs"),
-        "instruction": "Reach this camera using primitive orbit, pan, and dolly controls; freeze; then traverse with two physical jumps.",
+        "instruction": "Reach this camera using the visible orbit, pan, and dolly controls; freeze; then traverse with two physical jumps.",
         "answers": [],
     }

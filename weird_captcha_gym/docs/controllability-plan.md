@@ -273,8 +273,8 @@ In paused mode, the framework should:
 3. Pause the environment.
 4. Send the frames to the model.
 5. Keep the environment paused during model inference.
-6. Resume the environment while applying the action.
-7. Begin the next observation interval.
+6. Keep task time paused while delivering the action and confirm browser event dispatch.
+7. Begin the next fixed observation interval from that input boundary.
 
 The environment may advance for at most `play_time_seconds`. Model inference time does not consume this time in paused mode. It does consume real elapsed time in live mode.
 
@@ -309,7 +309,7 @@ The shared browser clock now controls JavaScript timers, animation frames, `perf
 
 Both conditions use the same observation settings from `real_time.json`. Each observation collects `frames_per_observation` frames across `observation_window_ms`. The latest frame remains available as `obs["screen"]`; the chronological sequence is available as `obs["frames"]`.
 
-Both conditions start with the task paused until agent initialization is complete. Live mode then runs continuously through frame collection, model inference, and action execution. Paused mode runs during frame collection and action execution, then stops during model inference. `play_time_seconds` counts this task-active time, so model response time is excluded only in paused mode.
+Both conditions start with the task paused until agent initialization is complete. Live mode then runs continuously through frame collection, model inference, and action execution. In paused mode, native input is delivered while browser task time stays frozen. The browser confirms that the trusted event and its synchronous handlers ran, re-pauses any CSS or Web Animations created by that action, and then advances exactly one configured observation window. Asynchronous action effects therefore consume that fixed window rather than an environment-specific settlement interval. `play_time_seconds` counts observation-window task time in paused mode; model response and input-transport wall time are excluded.
 
 Static tasks use a zero-length window with one frame. The public browser demo exposes live and paused controls for inspecting the configured model observation. It captures the current tab at 1280 by 720, hides the inspection interface from those frames, and shows the complete frame sequence with the final `obs.screen` frame identified. This does not create another task and does not replace the evaluation command or its timing artifacts.
 

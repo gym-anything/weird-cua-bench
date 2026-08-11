@@ -6,13 +6,22 @@
   const model = {
     state: null, helpers: null, strokes: [], active: null, events: [], attempts: [],
     undoCount: 0, clearCount: 0, abandoned: false, busy: false, terminal: false,
-    sessionStart: 0, canvas: null, context: null, plotClock: 0,
+    sessionStart: 0, canvas: null, context: null, plotClock: 0, pointerClock: 0,
   };
 
   const clean = (value) => String(value == null ? "" : value).replaceAll("&", "&amp;").replaceAll("<", "&lt;").replaceAll(">", "&gt;").replaceAll('"', "&quot;");
   const clamp = (value, minimum, maximum) => Math.max(minimum, Math.min(maximum, value));
   const distance = (a, b) => Math.hypot(b[0] - a[0], b[1] - a[1]);
   const now = () => Math.max(0, Math.round(performance.now() - model.sessionStart));
+  const interactionNow = () => {
+    const raw = Math.max(0, Math.round(model.helpers.interactionNow() - model.sessionStart));
+    // Separate trusted pointer events can be delivered through adjacent input
+    // arms while the task clock remains at one paused boundary. If an arm is
+    // delayed long enough for the shared input clock to rebase, do not let an
+    // in-progress physical stroke move backward or collapse to zero duration.
+    model.pointerClock = Math.max(raw, model.pointerClock + 16);
+    return model.pointerClock;
+  };
 
   function record(kind, details = {}) {
     const event = {sequence: model.events.length + 1, kind, ...details};
@@ -158,9 +167,9 @@
   }
   function startStroke(point,elapsed,pointerId){const id=`stroke-${model.strokes.length+1}`;model.active={id,points:[point],times:[elapsed],start:elapsed,dense:false};record("stroke_down",{stroke_id:id,point,elapsed_ms:elapsed});if(pointerId!==undefined){model.canvas.setPointerCapture?.(pointerId);model.active.pointerId=pointerId;}updatePanels();}
   function finishStroke(elapsed){const active=model.active,duration=elapsed-active.start;record("stroke_up",{stroke_id:active.id,point:active.points.at(-1),elapsed_ms:elapsed,duration_ms:duration,sample_count:active.points.length});active.dense=active.points.length>=model.state.requirements.minimum_points_per_stroke&&duration>=model.state.requirements.minimum_stroke_ms;delete active.pointerId;model.strokes.push(active);model.active=null;redraw();updatePanels();model.helpers.setReadout("STROKE RECORDED · CONTINUE OR ASK THE CRITIC","idle");}
-  function strokeDown(event){if(inputMode()!=="full"||model.busy||model.terminal||model.active||model.strokes.length>=model.state.requirements.stroke_budget)return;clearFreshFailure();event.preventDefault();startStroke(canvasPoint(event),now(),event.pointerId);}
-  function strokeMove(event){if(inputMode()!=="full"||!model.active||event.pointerId!==model.active.pointerId)return;const point=canvasPoint(event),elapsed=now();if(point[0]===model.active.points.at(-1)[0]&&point[1]===model.active.points.at(-1)[1])return;appendInterpolated(point,elapsed);redraw();}
-  function strokeUp(event){if(inputMode()!=="full"||!model.active||event.pointerId!==model.active.pointerId)return;const point=canvasPoint(event),elapsed=now();if(point[0]!==model.active.points.at(-1)[0]||point[1]!==model.active.points.at(-1)[1])appendInterpolated(point,elapsed);finishStroke(elapsed);}
+  function strokeDown(event){if(inputMode()!=="full"||model.busy||model.terminal||model.active||model.strokes.length>=model.state.requirements.stroke_budget)return;clearFreshFailure();event.preventDefault();startStroke(canvasPoint(event),interactionNow(),event.pointerId);}
+  function strokeMove(event){if(inputMode()!=="full"||!model.active||event.pointerId!==model.active.pointerId)return;const point=canvasPoint(event),elapsed=interactionNow();if(point[0]===model.active.points.at(-1)[0]&&point[1]===model.active.points.at(-1)[1])return;appendInterpolated(point,elapsed);redraw();}
+  function strokeUp(event){if(inputMode()!=="full"||!model.active||event.pointerId!==model.active.pointerId)return;const point=canvasPoint(event),elapsed=interactionNow();if(point[0]!==model.active.points.at(-1)[0]||point[1]!==model.active.points.at(-1)[1])appendInterpolated(point,elapsed);finishStroke(elapsed);}
   function plotElapsed(){model.plotClock=Math.max(now(),model.plotClock+48);return model.plotClock;}
   function plotClick(event){if(inputMode()!=="simplified"||model.busy||model.terminal||model.strokes.length>=model.state.requirements.stroke_budget)return;clearFreshFailure();const point=canvasPoint(event),elapsed=plotElapsed();if(!model.active){startStroke(point,elapsed);model.helpers.setReadout("PLOT ACTIVE · CLICK THE NEXT CORNER, THEN COMMIT STROKE","idle");return;}if(point[0]===model.active.points.at(-1)[0]&&point[1]===model.active.points.at(-1)[1])return;appendInterpolated(point,elapsed);redraw();}
   function finishPlot(){if(inputMode()!=="simplified"||model.busy||model.terminal||!model.active)return;finishStroke(plotElapsed());}
@@ -178,7 +187,7 @@
 
   async function render(state,helpers){
     document.body.dataset.mechanic="robot-art-critic";document.body.style.setProperty("--art-wall",state.palette.wall);document.body.style.setProperty("--art-ink",state.palette.ink);document.body.style.setProperty("--art-robot",state.palette.robot);document.body.style.setProperty("--art-signal",state.palette.signal);document.body.style.setProperty("--art-warning",state.palette.warning);document.body.dataset.cheatMode=helpers.isCheatMode()?"true":"false";
-    Object.assign(model,{state,helpers,strokes:[],active:null,events:[],attempts:[],undoCount:0,clearCount:0,abandoned:false,busy:false,terminal:false,sessionStart:performance.now(),plotClock:0});
+    Object.assign(model,{state,helpers,strokes:[],active:null,events:[],attempts:[],undoCount:0,clearCount:0,abandoned:false,busy:false,terminal:false,sessionStart:performance.now(),plotClock:0,pointerClock:0});
     const interaction=inputMode(),plotControl=interaction==="simplified"?'<button type="button" id="finish-plot-stroke">✓ COMMIT PLOT STROKE</button>':"",canvasInstruction=interaction==="simplified"?"CLICK TO PLOT CORNERS · COMMIT EACH STROKE":"DRAW WITH CONTINUOUS POINTER HOLDS";
     helpers.app.innerHTML=`<section class="art-critic-studio" data-challenge-id="${clean(state.challenge_id)}" data-interaction="${clean(interaction)}"><header class="art-head"><div><span>ROBOT SALON / REVIEW BAY 05</span><h1>${clean(state.prompt)}</h1></div><aside><small>BRIEF</small><b>${clean(state.target.display_name)}</b><i>${clean(state.target.style.label)} · ${clean(state.target.pose.label)}</i></aside></header><main class="art-workbench"><section class="art-canvas-wrap"><canvas id="art-canvas" width="${state.canvas.width}" height="${state.canvas.height}" aria-label="limited stroke drawing canvas"></canvas><div class="art-canvas-caption"><span>${clean(canvasInstruction)}</span><i>NO TEMPLATE</i><b>ROUGH LINES ARE WELCOME</b></div></section><aside class="critic-console"><div class="robot-face"><span><i></i><i></i></span><b>R-CRITIC 7</b><small>AWAITING ART</small></div><div class="brief-card"><small>DRAWING BRIEF</small><strong>${clean(state.target.display_name)}</strong><span>${clean(state.target.style.label)} / ${clean(state.target.pose.label)}</span><i>MAKE IT RECOGNIZABLE, NOT PERFECT.</i></div><div class="budget-grid"><div><small>STROKES</small><b id="stroke-used">0 / ${state.requirements.stroke_budget}</b></div><div><small>REVIEWS</small><b id="attempt-used">0 / ${state.requirements.maximum_attempts}</b></div></div><div class="critic-response" id="critic-response" data-status="idle"><small>CRITIQUE 00</small><strong>AWAITING A DRAWING</strong><em>YOU CAN REVISE AFTER A REVIEW</em></div><ol id="critic-tape"><li><b>00</b><span>NO REVIEWS YET</span><i>—</i></li></ol></aside></main><footer class="art-foot"><div><button type="button" id="undo-stroke">↶ UNDO STROKE</button><button type="button" id="clear-art">× CLEAR CANVAS</button>${plotControl}</div><div class="readout" data-status="idle">DRAW THE NAMED SUBJECT · A VALID FIRST ATTEMPT MAY PASS</div><button type="button" id="ask-critic">${clean(state.submit_label)}</button><button type="button" id="abandon-art">ABANDON / NEW BRIEF</button></footer>${helpers.cheatPanelTemplate()}</section>`;
     model.canvas=document.getElementById("art-canvas");model.context=model.canvas.getContext("2d");if(interaction==="full"){model.canvas.addEventListener("pointerdown",strokeDown);model.canvas.addEventListener("pointermove",strokeMove);model.canvas.addEventListener("pointerup",strokeUp);model.canvas.addEventListener("pointercancel",strokeUp);}else model.canvas.addEventListener("click",plotClick);document.getElementById("finish-plot-stroke")?.addEventListener("click",finishPlot);document.getElementById("undo-stroke")?.addEventListener("click",undo);document.getElementById("clear-art")?.addEventListener("click",clearCanvas);document.getElementById("ask-critic")?.addEventListener("click",attempt);document.getElementById("abandon-art")?.addEventListener("click",abandon);helpers.installCheatPanel();window.robotArtCriticModel=model;redraw();updatePanels();

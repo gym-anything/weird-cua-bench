@@ -16,6 +16,17 @@ def _shot(page, out_dir: Path, mechanic: str, label: str) -> None:
     page.screenshot(path=str(out_dir / f"{mechanic}-{label}.png"), full_page=True)
 
 
+def _pointer_drag(page, source, target) -> None:
+    source_box = source.bounding_box()
+    target_box = target.bounding_box()
+    if not source_box or not target_box:
+        raise AssertionError("ghost drag endpoints are not visible")
+    page.mouse.move(source_box["x"] + source_box["width"] / 2, source_box["y"] + source_box["height"] / 2)
+    page.mouse.down()
+    page.mouse.move(target_box["x"] + target_box["width"] / 2, target_box["y"] + target_box["height"] / 2, steps=1)
+    page.mouse.up()
+
+
 def fail_once(page, state_dir: Path, out_dir: Path, mechanic: str) -> None:
     if mechanic != MECHANIC_ID:
         raise AssertionError(f"unexpected mechanic {mechanic!r}")
@@ -38,7 +49,7 @@ def solve(page, state_dir: Path, out_dir: Path, mechanic: str) -> None:
         piece = page.locator(f'.ghost-piece[data-piece-id="{piece_id}"]')
         slot = page.locator(f'.ghost-slot[data-slot-index="{slot_index}"]')
         if interaction == "full":
-            piece.drag_to(slot)
+            _pointer_drag(page, piece, slot)
         else:
             piece.click()
             slot.click()

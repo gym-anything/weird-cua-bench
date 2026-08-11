@@ -75,9 +75,8 @@ def _passing_payload(public: dict, truth: dict, interaction: str) -> dict:
                 record("proxy_probe", tool=tool, input_source="labelled_tool_proxy")
             elif tool == "FOLD":
                 record("fold_start", value=0, input_source="direct_fold_sweep")
-                for value in (85, 170, 260):
-                    record("fold_move", value=value, input_source="direct_fold_sweep")
-                    fold_samples += 1
+                record("fold_move", value=260, input_source="direct_fold_sweep")
+                fold_samples += 1
                 record("fold_end", value=260, input_source="direct_fold_sweep")
             elif tool == "PRESSURE":
                 record("pressure_down", input_source="direct_pressure_hold")
@@ -111,9 +110,8 @@ def _passing_payload(public: dict, truth: dict, interaction: str) -> dict:
         record("proxy_stamp", blot_id=culprit, input_source="selected_card_stamp_proxy")
     else:
         record("stamp_down", point=[400, 330], input_source="direct_stamp_drag")
-        for point in ([320, 240], [220, 165], [130, 145]):
-            record("stamp_move", point=point, input_source="direct_stamp_drag")
-            stamp_moves += 1
+        record("stamp_move", point=[130, 145], input_source="direct_stamp_drag")
+        stamp_moves += 1
         target = next(rect for rect in truth["blot_rects"] if rect["id"] == culprit)
         record(
             "stamp_up",

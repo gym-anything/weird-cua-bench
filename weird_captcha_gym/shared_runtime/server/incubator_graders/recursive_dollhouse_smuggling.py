@@ -106,7 +106,7 @@ def _condition(public: dict[str, Any], truth: dict[str, Any]) -> dict[str, Any] 
         return {}
     if int(truth_condition.get("difficulty") or 0) not in {1, 2, 3, 4, 5}:
         return {}
-    if truth_condition.get("interaction") not in {"simplified", "full"} or truth_condition.get("real_time") != "live":
+    if truth_condition.get("interaction") not in {"simplified", "full"} or truth_condition.get("real_time") not in {"live", "paused"}:
         return {}
     if not isinstance(truth_condition.get("difficulty_parameters"), dict):
         return {}

@@ -24,8 +24,6 @@ BASELINE_PROFILE = {
     "playback_ms": 3150,
     "playback_minimum_ms": 2900,
     "replay_limit": 1,
-    "minimum_chip_moves": 4,
-    "minimum_chip_drag_ms": 80,
     "minimum_rail_samples": 24,
     "minimum_rail_ms": 680,
     "maximum_rail_step": 54,
@@ -52,10 +50,9 @@ def _seed(seed: str) -> int:
 def _profile(task: dict[str, Any]) -> tuple[dict[str, Any] | None, dict[str, Any]]:
     """Load a controlled profile without perturbing the original L3 task.
 
-    The uncontrolled task takes the exact values that existed before controls.
-    The L3 profile supplies those same values, so its seeded random draws and
-    resulting restoration world remain byte-for-byte equivalent after the
-    control identity itself is removed.
+    The uncontrolled task and L3 profile use the same world-shaping values, so
+    their seeded random draws and restoration geometry remain equivalent.
+    Pointer delivery timing is deliberately not a task parameter.
     """
 
     condition = task.get("_control_condition")
@@ -75,8 +72,6 @@ def _profile(task: dict[str, Any]) -> tuple[dict[str, Any] | None, dict[str, Any
                 "playback_ms",
                 "playback_minimum_ms",
                 "replay_limit",
-                "minimum_chip_moves",
-                "minimum_chip_drag_ms",
                 "minimum_rail_samples",
                 "minimum_rail_ms",
                 "maximum_rail_step",
@@ -95,8 +90,6 @@ def _profile(task: dict[str, Any]) -> tuple[dict[str, Any] | None, dict[str, Any
         or not 1 <= profile["replay_limit"] <= 3
         or not 2_000 <= profile["playback_ms"] <= 5_000
         or not 1_800 <= profile["playback_minimum_ms"] <= profile["playback_ms"]
-        or not 1 <= profile["minimum_chip_moves"] <= 8
-        or not 40 <= profile["minimum_chip_drag_ms"] <= 200
         or not 8 <= profile["minimum_rail_samples"] <= 48
         or not 400 <= profile["minimum_rail_ms"] <= 1_200
         or not 24 <= profile["maximum_rail_step"] <= 120
@@ -196,8 +189,6 @@ def generate(task: dict[str, Any], seed: str) -> tuple[dict[str, Any], dict[str,
         "half_height": 34,
     }
     requirements = {
-        "minimum_chip_moves": profile["minimum_chip_moves"],
-        "minimum_chip_drag_ms": profile["minimum_chip_drag_ms"],
         "minimum_rail_samples": profile["minimum_rail_samples"],
         "minimum_rail_ms": profile["minimum_rail_ms"],
         "maximum_rail_step": profile["maximum_rail_step"],

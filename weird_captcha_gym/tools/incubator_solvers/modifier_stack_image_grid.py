@@ -47,9 +47,9 @@ def _place(page, rack: dict, slot: dict) -> None:
     box = _box(page)
     page.mouse.move(*_screen(box, _center(rack)))
     page.mouse.down()
-    page.wait_for_timeout(20)
-    page.mouse.move(*_screen(box, _center(slot)), steps=7)
-    page.wait_for_timeout(95)
+    # One endpoint event is a complete pointer drag. Placement must not depend
+    # on action interpolation or on how long the caller happens to hold it.
+    page.mouse.move(*_screen(box, _center(slot)))
     page.mouse.up()
 
 

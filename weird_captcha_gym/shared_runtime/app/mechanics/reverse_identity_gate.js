@@ -232,6 +232,33 @@
     if (bridge.charge >= Number(bridge.state.physics.hold_ticks)) relay();
   }
 
+  function taskTimeMs() {
+    return performance.now();
+  }
+
+  function drainTaskTicks() {
+    if (!bridge || bridge.submitting || bridge.terminal) return;
+    const tickMs = Number(bridge.state.physics.tick_ms);
+    const now = taskTimeMs();
+    while (bridge.lastTickTaskMs + tickMs <= now) {
+      bridge.lastTickTaskMs += tickMs;
+      tickActive();
+    }
+  }
+
+  function clearTickDrivers(current) {
+    if (!current) return;
+    if (current.timer) {
+      window.clearInterval(current.timer);
+      current.timer = null;
+    }
+    for (const driver of current.tabFrameDrivers?.values() || []) {
+      driver.cancelled = true;
+      try { driver.owner.cancelAnimationFrame(driver.frame); } catch (_error) { /* closed tab */ }
+    }
+    current.tabFrameDrivers?.clear();
+  }
+
   function stationDocument(station) {
     const stylesheet = new URL("mechanics/reverse_identity_gate.css", window.location.href).href;
     const simplified = bridge.interaction === "simplified";
@@ -306,6 +333,24 @@
       contact.addEventListener("pointercancel", release);
       contact.addEventListener("lostpointercapture", release);
     }
+    const existingDriver = bridge.tabFrameDrivers.get(stationId);
+    if (existingDriver) {
+      existingDriver.cancelled = true;
+      try { existingDriver.owner.cancelAnimationFrame(existingDriver.frame); } catch (_error) { /* closed tab */ }
+    }
+    // The master window becomes a background tab while a limb is operated.
+    // Drive the shared task clock from the active child's animation frames;
+    // background-window timers can be throttled until after a fixed window
+    // closes. The shared lastTickTaskMs cursor prevents duplicate ticks when
+    // focus changes between the master and a limb.
+    const driver = {owner: tab, frame: 0, cancelled: false};
+    const pump = () => {
+      if (driver.cancelled || tab.closed || !bridge || bridge.terminal) return;
+      drainTaskTicks();
+      driver.frame = tab.requestAnimationFrame(pump);
+    };
+    driver.frame = tab.requestAnimationFrame(pump);
+    bridge.tabFrameDrivers.set(stationId, driver);
     tabPaint(stationId);
   }
 
@@ -359,7 +404,7 @@
       const outcome = await response.json();
       if (outcome.passed === true) {
         current.terminal = true;
-        window.clearInterval(current.timer);
+        clearTickDrivers(current);
         current.helpers.setReadout("PASS", "passed");
         document.querySelector(".robot-master")?.setAttribute("data-verdict", "pass");
         paintAll();
@@ -405,6 +450,8 @@
       submitting: false,
       terminal: false,
       timer: null,
+      tabFrameDrivers: new Map(),
+      lastTickTaskMs: taskTimeMs(),
     };
     window.robotHandshakeBridge = bridge;
     helpers.app.innerHTML = `<section class="robot-master palette-${esc(state.palette)}" data-interaction="${esc(bridge.interaction)}" data-fresh-failure="${options.freshFailure ? "true" : "false"}" data-verdict="" data-ready="false">
@@ -432,9 +479,9 @@
     </section>`;
     document.querySelectorAll("[data-deploy]").forEach((button) => button.addEventListener("click", () => deploy(Number(button.dataset.deploy))));
     document.getElementById("robot-verify").addEventListener("click", verify);
-    bridge.timer = window.setInterval(tickActive, Number(state.physics.tick_ms));
+    bridge.timer = window.setInterval(drainTaskTicks, 4);
     cleanupActive = () => {
-      if (bridge?.timer) window.clearInterval(bridge.timer);
+      clearTickDrivers(bridge);
       for (const tab of bridge?.tabs?.values() || []) {
         try { if (!tab.closed) tab.close(); } catch (_error) { /* no-op */ }
       }

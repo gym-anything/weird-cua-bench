@@ -502,6 +502,17 @@ def test_popup_mechanic_has_no_task_level_live_or_paused_branch() -> None:
         assert forbidden not in source
 
 
+def test_popup_result_submission_is_not_gated_by_purge_animation_time() -> None:
+    source = (
+        BENCHMARK / "shared_runtime" / "app" / "mechanics" / "popup_exorcist.js"
+    ).read_text(encoding="utf-8")
+    submit_start = source.index("async function submit(containedId)")
+    submit_end = source.index("\n  function tryContain", submit_start)
+    submit_source = source[submit_start:submit_end]
+    fetch_index = submit_source.index('fetch("/result"')
+    assert "await new Promise" not in submit_source[:fetch_index]
+
+
 def test_popup_profiles_remain_deterministic_reachable_and_interaction_invariant_across_seeds() -> None:
     challenge_ids: set[str] = set()
     for seed_index in range(40):

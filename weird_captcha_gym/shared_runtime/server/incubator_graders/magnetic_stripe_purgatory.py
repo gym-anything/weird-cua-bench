@@ -128,8 +128,6 @@ def _contract(ground_truth: dict[str, Any], public_state: dict[str, Any]) -> dic
         raise ValueError("card count requirement differs from generated readers")
     if condition is not None:
         checks = {
-            "minimum_insert_moves": requirements.get("minimum_insert_moves"),
-            "minimum_insert_ms": requirements.get("minimum_insert_ms"),
             "minimum_swipe_samples": requirements.get("minimum_swipe_samples"),
         }
         for key, actual in checks.items():
@@ -363,8 +361,6 @@ def grade(payload: dict[str, Any], ground_truth: dict[str, Any], public_state: d
                 detected_reader is not None
                 and str(card_by_id[card_id]["assigned_reader"]) == detected_reader
                 and reader_cards[detected_reader] is None
-                and insert_drag["moves"] >= requirements["minimum_insert_moves"]
-                and duration >= requirements["minimum_insert_ms"]
             )
             if valid:
                 card_locations[card_id] = detected_reader

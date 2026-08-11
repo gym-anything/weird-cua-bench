@@ -99,3 +99,14 @@ def test_wizard_grader_rejects_a_transcript_bound_to_the_other_surface() -> None
     }
     rejected = GRADER.grade(wrong_mode_payload, truth, public)
     assert rejected == {"graded": True, "passed": False, "score": 0, "feedback": "wrong interaction surface"}
+
+
+def test_wizard_energy_exhaustion_counts_as_the_freeze_release() -> None:
+    browser = (BENCHMARK / "shared_runtime" / "app" / "mechanics" / f"{MECHANIC}.js").read_text(encoding="utf-8")
+    grader = (BENCHMARK / "shared_runtime" / "server" / "incubator_graders" / f"{MECHANIC}.py").read_text(encoding="utf-8")
+    browser_auto_release = browser.index("if (autoRelease) {")
+    browser_tick_record = browser.index('record("tick", {', browser_auto_release)
+    assert "model.freezeReleases += 1;" in browser[browser_auto_release:browser_tick_record]
+    grader_auto_release = grader.index("if auto_release:")
+    grader_expected_fields = grader.index("expected_fields = {", grader_auto_release)
+    assert "freeze_releases += 1" in grader[grader_auto_release:grader_expected_fields]

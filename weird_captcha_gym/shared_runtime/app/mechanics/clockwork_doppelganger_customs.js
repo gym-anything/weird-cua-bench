@@ -16,6 +16,73 @@
     return item;
   }
 
+  function appendRecordingSample(local, position = point(model.cursor), source = "input") {
+    if (!model?.recording) return;
+    const samples = source === "timer" ? model.recording.timerSamples : model.recording.inputSamples;
+    const previous = samples.at(-1);
+    if (previous && local - previous.local_t_ms < 30) return;
+    const sample = {local_t_ms: local, position};
+    samples.push(sample);
+  }
+
+  function normalizeRecordingSamples(take, durationMs) {
+    const interval = Number(model.state.controls.sample_interval_ms);
+    const duration = Math.max(0, Math.round(durationMs));
+    const inputs = take.inputSamples
+      .filter((sample) => sample.local_t_ms >= 0 && sample.local_t_ms <= duration)
+      .sort((left, right) => left.local_t_ms - right.local_t_ms);
+    if (!inputs.length || inputs[0].local_t_ms > 0) {
+      inputs.unshift({local_t_ms: 0, position: point(inputs[0]?.position || model.cursor)});
+    }
+    const timers = take.timerSamples
+      .filter((sample) => sample.local_t_ms >= 0 && sample.local_t_ms <= duration)
+      .sort((left, right) => left.local_t_ms - right.local_t_ms);
+    const inputEnd = inputs.at(-1).local_t_ms;
+    const positionAt = (local) => {
+      if (local <= inputEnd) return point(interpolate({samples: inputs}, local));
+      if (timers.length) return point(interpolate({samples: timers}, local));
+      return point(inputs.at(-1).position);
+    };
+    const samples = [];
+    for (let local = 0; local < duration; local += interval) {
+      samples.push({local_t_ms: local, position: positionAt(local)});
+    }
+    if (!samples.length || duration - samples.at(-1).local_t_ms >= 30) {
+      samples.push({local_t_ms: duration, position: positionAt(duration)});
+    }
+    take.samples = samples;
+  }
+
+  function flushRecordingEvents(take) {
+    const items = [
+      ...take.samples.map((sample) => ({kind: "sample", local_t_ms: sample.local_t_ms, sample})),
+      ...take.actions.map((action) => ({kind: "action", local_t_ms: action.local_t_ms, action})),
+    ];
+    items.sort((left, right) => left.local_t_ms - right.local_t_ms || (left.kind === "sample" ? -1 : 1));
+    items.forEach((item) => {
+      if (item.kind === "sample") {
+        pushEvent({
+          type: "record_sample",
+          slot: take.slot,
+          t_ms: take.startT + item.local_t_ms,
+          ...item.sample,
+        });
+      } else {
+        const action = item.action;
+        const event = {
+          type: "record_action",
+          slot: take.slot,
+          t_ms: take.startT + action.local_t_ms,
+          local_t_ms: action.local_t_ms,
+          position: action.position,
+          action: action.action,
+        };
+        if (action.input_source) event.input_source = action.input_source;
+        pushEvent(event);
+      }
+    });
+  }
+
   function interpolate(recording, local) {
     const samples = recording.samples;
     if (local <= samples[0].local_t_ms) return samples[0].position;
@@ -223,14 +290,13 @@
     if (!model?.active || model.recording || model.cycle || model.submitting || model.completed) return;
     model.recordings[slot] = null;
     model.phases[slot] = 0;
-    model.recording = {slot, startT: nowMs(), performanceStart: performance.now(), samples: [], actions: []};
+    model.recording = {slot, startT: nowMs(), performanceStart: performance.now(), inputSamples: [], timerSamples: [], samples: [], actions: []};
     pushEvent({type: "record_start", slot, pointer: point(model.cursor)});
+    appendRecordingSample(0);
     model.recordTimer = setInterval(() => {
       if (!model?.recording) return;
       const local = Math.round(performance.now() - model.recording.performanceStart);
-      const sample = {local_t_ms: local, position: point(model.cursor)};
-      model.recording.samples.push(sample);
-      pushEvent({type: "record_sample", slot: model.recording.slot, ...sample});
+      appendRecordingSample(local, point(model.cursor), "timer");
       drawScene();
     }, Number(model.state.controls.sample_interval_ms));
     model.recordEndTimer = setTimeout(endRecording, Number(model.state.controls.record_duration_ms));
@@ -244,6 +310,8 @@
     clearTimeout(model.recordEndTimer);
     const take = model.recording;
     const local = Math.round(performance.now() - take.performanceStart);
+    normalizeRecordingSamples(take, local);
+    flushRecordingEvents(take);
     const verdict = recordingValid(take, local);
     pushEvent({type: "record_end", slot: take.slot, local_t_ms: local, accepted: verdict.accepted});
     if (verdict.accepted) {
@@ -263,11 +331,10 @@
   function recordAction(action, inputSource = null) {
     if (!model?.recording) return;
     const local = Math.round(performance.now() - model.recording.performanceStart);
+    appendRecordingSample(local);
     const item = {local_t_ms: local, position: point(model.cursor), action};
+    if (inputSource) item.input_source = inputSource;
     model.recording.actions.push(item);
-    const event = {type: "record_action", slot: model.recording.slot, ...item};
-    if (inputSource) event.input_source = inputSource;
-    pushEvent(event);
     model.helpers.setReadout(`${action.toUpperCase()} PUNCHED INTO LOOP ${model.recording.slot + 1}`, "idle");
     updateInterface();
   }
@@ -475,6 +542,9 @@
     canvas.addEventListener("pointermove", (event) => {
       const rect = canvas.getBoundingClientRect();
       model.cursor = {x: round2(clamp((event.clientX - rect.left) / rect.width * canvas.width, 0, canvas.width)), y: round2(clamp((event.clientY - rect.top) / rect.height * canvas.height, 0, canvas.height))};
+      if (model.recording) {
+        appendRecordingSample(Math.round(performance.now() - model.recording.performanceStart));
+      }
       drawScene();
     });
     canvas.addEventListener("click", directStationAction);

@@ -43,8 +43,7 @@ def _drag_ring(page, axis: str, dx: float) -> None:
     start = (box["x"] + box["width"] / 2 + radius, box["y"] + box["height"] / 2)
     page.mouse.move(*start)
     page.mouse.down()
-    page.mouse.move(start[0] + dx, start[1], steps=max(2, math.ceil(abs(dx) / 20)))
-    page.wait_for_timeout(60)
+    page.mouse.move(start[0] + dx, start[1])
     page.mouse.up()
 
 

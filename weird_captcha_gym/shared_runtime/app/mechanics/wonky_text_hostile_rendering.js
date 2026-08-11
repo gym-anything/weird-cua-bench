@@ -42,11 +42,29 @@
   function installWheel(node) {
     const id = node.dataset.plateId;
     node.addEventListener("pointerdown", event => {
-      if (model.locked.has(id)) return;
-      event.preventDefault(); node.setPointerCapture(event.pointerId); let last = event.clientX, total = 0; node.dataset.dragging = "true";
-      const move = moveEvent => { const dx = Math.max(-28, Math.min(28, moveEvent.clientX - last)); last = moveEvent.clientX; const degrees = dx * Number(model.state.press.degrees_per_pixel); total += degrees; model.angles[id] = wrap(model.angles[id] + degrees); updateWheel(id); draw(); };
-      const up = () => { node.removeEventListener("pointermove", move); node.removeEventListener("pointerup", up); node.dataset.dragging = "false"; const details = {plate_id: id, delta: Number(total.toFixed(4))}; if (model.state.control_condition) details.input_source = "wheel_drag"; record("wheel_drag", details); };
-      node.addEventListener("pointermove", move); node.addEventListener("pointerup", up);
+      if (event.button !== 0 || model.locked.has(id) || node.dataset.dragging === "true") return;
+      event.preventDefault(); node.setPointerCapture(event.pointerId);
+      const pointerId = event.pointerId, initial = model.angles[id]; let last = event.clientX, total = 0;
+      node.dataset.dragging = "true";
+      const move = moveEvent => {
+        if (moveEvent.pointerId !== pointerId) return;
+        moveEvent.preventDefault();
+        const dx = moveEvent.clientX - last;
+        last = moveEvent.clientX;
+        const degrees = dx * Number(model.state.press.degrees_per_pixel);
+        total += degrees; model.angles[id] = wrap(model.angles[id] + degrees); updateWheel(id); draw();
+      };
+      const finish = (finishEvent, cancelled = false) => {
+        if (finishEvent.pointerId !== pointerId) return;
+        node.removeEventListener("pointermove", move); node.removeEventListener("pointerup", up); node.removeEventListener("pointercancel", cancel); node.removeEventListener("lostpointercapture", cancel);
+        node.dataset.dragging = "false";
+        if (cancelled) { model.angles[id] = initial; updateWheel(id); draw(); return; }
+        try { node.releasePointerCapture(pointerId); } catch (_) {}
+        const details = {plate_id: id, delta: Number(total.toFixed(4))}; if (model.state.control_condition) details.input_source = "wheel_drag"; record("wheel_drag", details);
+      };
+      const up = upEvent => finish(upEvent);
+      const cancel = cancelEvent => finish(cancelEvent, true);
+      node.addEventListener("pointermove", move); node.addEventListener("pointerup", up); node.addEventListener("pointercancel", cancel); node.addEventListener("lostpointercapture", cancel);
     });
   }
 
@@ -60,7 +78,7 @@
 
   async function submit() {
     if (model.submitting || model.locked.size !== model.state.press.plates.length) return;
-    model.submitting = true; record("press", {}); document.querySelector(".registration-machine").classList.add("is-pressing"); await new Promise(resolve => setTimeout(resolve, 520));
+    model.submitting = true; record("press", {}); document.querySelector(".registration-machine").classList.add("is-pressing");
     try {
       const response = await fetch("/result", {method: "POST", headers: {"content-type": "application/json"}, body: JSON.stringify({mechanic_id: model.state.mechanic_id, task_id: model.state.task_id, challenge_id: model.state.challenge_id, events: model.events})});
       const outcome = await response.json();

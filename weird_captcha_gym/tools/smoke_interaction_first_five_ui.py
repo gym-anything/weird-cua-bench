@@ -83,6 +83,17 @@ def screenshot(page, out_dir: Path, mechanic: str, name: str) -> None:
     page.screenshot(path=str(out_dir / f"{mechanic}-{name}.png"), full_page=True)
 
 
+def pointer_drag(page, source, target) -> None:
+    source_box = source.bounding_box()
+    target_box = target.bounding_box()
+    if not source_box or not target_box:
+        raise AssertionError("drag endpoints are not visible")
+    page.mouse.move(source_box["x"] + source_box["width"] / 2, source_box["y"] + source_box["height"] / 2)
+    page.mouse.down()
+    page.mouse.move(target_box["x"] + target_box["width"] / 2, target_box["y"] + target_box["height"] / 2, steps=1)
+    page.mouse.up()
+
+
 def fail_once(page, state_dir: Path, out_dir: Path, mechanic: str) -> None:
     before = read_json(state_dir / "ground_truth.json")["challenge_id"]
     button_ids = {
@@ -110,7 +121,11 @@ def fail_once(page, state_dir: Path, out_dir: Path, mechanic: str) -> None:
 def solve_ghost(page, state_dir: Path, out_dir: Path, mechanic: str) -> None:
     expected = read_json(state_dir / "ground_truth.json")["expected_positions"]
     for index, (piece_id, slot_index) in enumerate(expected.items()):
-        page.locator(f'.ghost-piece[data-piece-id="{piece_id}"]').drag_to(page.locator(f'.ghost-slot[data-slot-index="{slot_index}"]'))
+        pointer_drag(
+            page,
+            page.locator(f'.ghost-piece[data-piece-id="{piece_id}"]'),
+            page.locator(f'.ghost-slot[data-slot-index="{slot_index}"]'),
+        )
         if index == 3:
             page.wait_for_timeout(450)
             screenshot(page, out_dir, mechanic, "active")
@@ -159,7 +174,7 @@ def solve_grill(page, state_dir: Path, out_dir: Path, mechanic: str) -> None:
     tray = page.locator('.grill-zone[data-drop-zone="tray"]')
     due: list[tuple[float, str]] = []
     for food_id, target in ground_truth["targets"].items():
-        page.locator(f'.grill-food[data-food-id="{food_id}"]').drag_to(grill)
+        pointer_drag(page, page.locator(f'.grill-food[data-food-id="{food_id}"]'), grill)
         started = page.evaluate("foodId => grillModel.records[foodId].startedAt", food_id)
         due.append((float(started) + float(target["target_ms"]), food_id))
     page.wait_for_timeout(700)
@@ -168,7 +183,7 @@ def solve_grill(page, state_dir: Path, out_dir: Path, mechanic: str) -> None:
         now = float(page.evaluate("performance.now()"))
         if due_at > now:
             page.wait_for_timeout(int(due_at - now))
-        page.locator(f'.grill-food[data-food-id="{food_id}"]').drag_to(tray)
+        pointer_drag(page, page.locator(f'.grill-food[data-food-id="{food_id}"]'), tray)
     screenshot(page, out_dir, mechanic, "solved-state")
     page.locator("#submit-grill").click()
 

@@ -59,8 +59,27 @@ for candidate in "$home_dir/.Xauthority" "/run/user/1000/gdm/Xauthority"; do
   fi
 done
 
-profile_dir="$home_dir/.weird-captcha-profile"
+# Snap-confined Firefox cannot open arbitrary hidden profile directories under
+# $HOME.  A non-hidden path works for both Firefox and Chromium.
+profile_dir="$home_dir/weird-captcha-profile"
 mkdir -p "$profile_dir"
+cat > "$profile_dir/user.js" <<'EOF'
+// The evaluation viewport must contain only the task.  A fresh Firefox
+// profile otherwise displays its data-reporting notice above the page and
+// shifts every screenshot and pointer coordinate by the notice height.
+user_pref("datareporting.policy.dataSubmissionEnabled", false);
+user_pref("datareporting.healthreport.uploadEnabled", false);
+user_pref("datareporting.policy.dataSubmissionPolicyBypassNotification", true);
+user_pref("toolkit.telemetry.reportingpolicy.firstRun", false);
+user_pref("browser.aboutwelcome.enabled", false);
+user_pref("browser.startup.homepage_override.mstone", "ignore");
+user_pref("browser.shell.checkDefaultBrowser", false);
+// Reverse Identity explicitly creates browser tabs.  Firefox may otherwise
+// promote script-opened targets to separate kiosk windows, where Ctrl+number
+// cannot reach the master tab through the standard keyboard action surface.
+user_pref("browser.link.open_newwindow", 3);
+user_pref("browser.link.open_newwindow.restriction", 0);
+EOF
 chown -R "$launch_as_user:$launch_as_user" "$profile_dir" 2>/dev/null || true
 
 if command -v xhost >/dev/null 2>&1; then
@@ -73,9 +92,13 @@ if [ -n "$xauth" ]; then
 fi
 
 if [[ "$browser_cmd" == *firefox ]]; then
-  launch="$env_prefix $browser_cmd --kiosk '$URL'"
+  launch="$env_prefix $browser_cmd --new-instance --kiosk --profile '$profile_dir' '$URL'"
 else
-  launch="$env_prefix $browser_cmd --kiosk '$URL' --force-device-scale-factor=1 --no-first-run --no-default-browser-check --disable-background-networking --disable-sync --disable-infobars --disable-session-crashed-bubble --hide-crash-restore-bubble --no-sandbox --disable-dev-shm-usage --user-data-dir='$profile_dir'"
+  # Multi-tab puzzles retain live task state in their opener. Prevent Chromium
+  # from discarding and later reloading that background tab during a long
+  # interaction; a reload would issue a second /state request and invalidate
+  # the still-open authored child tabs.
+  launch="$env_prefix $browser_cmd --kiosk '$URL' --force-device-scale-factor=1 --no-first-run --no-default-browser-check --disable-background-networking --disable-sync --disable-infobars --disable-session-crashed-bubble --hide-crash-restore-bubble --disable-backgrounding-occluded-windows --disable-renderer-backgrounding --disable-features=AutomaticTabDiscarding,MemorySaverMode --no-sandbox --disable-dev-shm-usage --user-data-dir='$profile_dir'"
 fi
 
 find_puzzle_window() {

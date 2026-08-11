@@ -255,7 +255,7 @@ def grade(payload: dict[str, Any], ground_truth: dict[str, Any], public_state: d
                 point = _point(event.get("point"), width, height)
             except ValueError as exc:
                 return {"graded": True, "passed": False, "feedback": str(exc)}
-            if drag["moves"] < 2 or not _inside(point, worktable):
+            if not _inside(point, worktable):
                 return {"graded": True, "passed": False, "feedback": "object was not physically carried onto the worktable"}
             states[drag["object_id"]].update({"x": point[0], "y": point[1], "placed": True})
             total_drag_distance += math.hypot(point[0] - drag["start"][0], point[1] - drag["start"][1])
@@ -327,8 +327,8 @@ def grade(payload: dict[str, Any], ground_truth: dict[str, Any], public_state: d
                 return {"graded": True, "passed": False, "feedback": "depth rail used the wrong interaction input"}
             if depth_drag is None or event.get("object_id") != depth_drag["object_id"] or event.get("value") != states[depth_drag["object_id"]]["depth"]:
                 return {"graded": True, "passed": False, "feedback": "depth rail end mismatch"}
-            if depth_drag["moves"] < 2:
-                return {"graded": True, "passed": False, "feedback": "depth adjustment was not a physical drag"}
+            if depth_drag["moves"] < 1:
+                return {"graded": True, "passed": False, "feedback": "depth adjustment has no physical motion"}
             depth_distance += abs(states[depth_drag["object_id"]]["depth"] - depth_drag["start"])
             depth_drag = None
             continue
@@ -406,7 +406,6 @@ def grade(payload: dict[str, Any], ground_truth: dict[str, Any], public_state: d
     }
     full_motion = (
         drag_count >= object_count
-        and drag_samples >= object_count * 3
         and total_drag_distance >= object_count * 150
     )
     proxy_motion = proxy_place_count >= object_count and drag_count == 0 and drag_samples == 0

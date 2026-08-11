@@ -50,11 +50,8 @@ def _drag(page, geometry: dict, start: tuple[float, float], end: tuple[float, fl
     end_x, end_y = _client_point(page, end, geometry)
     page.mouse.move(start_x, start_y)
     page.mouse.down()
-    page.wait_for_timeout(55)
-    page.mouse.move(end_x, end_y, steps=12)
-    page.wait_for_timeout(45)
+    page.mouse.move(end_x, end_y)
     page.mouse.up()
-    page.wait_for_timeout(80)
 
 
 def _transfer_slot_to(page, geometry: dict, slot: int, destination: str, interaction: str) -> None:

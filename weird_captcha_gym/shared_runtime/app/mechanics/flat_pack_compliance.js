@@ -15,6 +15,20 @@
   function canvasPoint(event) { const rect = model.canvas.getBoundingClientRect(); return [Math.max(0, Math.min(model.state.stage.width, (event.clientX - rect.left) / rect.width * model.state.stage.width)), Math.max(0, Math.min(model.state.stage.height, (event.clientY - rect.top) / rect.height * model.state.stage.height))]; }
   function partMap() { return Object.fromEntries(model.state.parts.map(part => [part.id, part])); }
   function bodyMap() { return Object.fromEntries(model.bodies.map(body => [body.label, body])); }
+  function bodyAt(point) {
+    const direct = Matter.Query.point(model.bodies, {x: point[0], y: point[1]})[0];
+    if (direct) return direct;
+    const bodies = bodyMap();
+    for (const joint of model.state.joints) {
+      for (const [partId, socket] of [[joint.a, joint.socket_a], [joint.b, joint.socket_b]]) {
+        const body = bodies[partId];
+        if (!body) continue;
+        const visibleSocket = worldPoint(body, socket);
+        if (Math.hypot(point[0] - visibleSocket[0], point[1] - visibleSocket[1]) <= 9) return body;
+      }
+    }
+    return null;
+  }
   function setMessage(message, status = "idle") { model.helpers.setReadout(message, status); const note = document.querySelector(".flat-live-note"); if (note) note.textContent = message; }
   function clearFreshFailure() { document.querySelector(".flat-fresh-stamp")?.remove(); document.querySelector(".flat-pack-captcha")?.removeAttribute("data-fresh-failure"); }
 
@@ -33,7 +47,7 @@
     }
     Composite.add(model.engine.world, model.bodies);
     model.engine.gravity.y = 0;
-    updateRack();
+    updateRack(); draw(false);
   }
 
   function updateRack() {
@@ -61,7 +75,7 @@
     Matter.Body.setAngle(body, body.angle + delta);
     Matter.Body.setAngularVelocity(body, 0);
     record("rotate", {part_id: body.label, delta: round(delta), pose: pose(body), input_source: inputSource});
-    setMessage(`KEYED ROTATION APPLIED TO ${body.label.toUpperCase()} · COLLISIONS REMAIN ACTIVE`);
+    setMessage(`KEYED ROTATION APPLIED TO ${body.label.toUpperCase()} · COLLISIONS REMAIN ACTIVE`); draw(false);
   }
 
   function lockJoint(joint, bodies) {
@@ -89,7 +103,7 @@
     model.selected = [];
     if (accepted) setMessage(`SOCKET ${joint.id.toUpperCase()} LOCKED · LOAD PATH CONNECTED`, "passed");
     else { model.rejected += 1; document.querySelector(".flat-stage")?.classList.add("socket-reject"); setTimeout(() => document.querySelector(".flat-stage")?.classList.remove("socket-reject"), 420); setMessage("KEYS / ORIENTATION DO NOT MATCH · JOINT REJECTED", "error"); }
-    updateRack();
+    updateRack(); draw(false);
   }
 
   function mateDirect(partId) {
@@ -110,13 +124,13 @@
   function rotateDirect(event) {
     event.preventDefault();
     if (!model || model.interaction !== "full" || model.loading || model.completed) return;
-    const point = canvasPoint(event), body = Matter.Query.point(model.bodies, {x: point[0], y: point[1]})[0];
+    const point = canvasPoint(event), body = bodyAt(point);
     if (!body) return;
     model.selected = [body.label];
     const delta = Math.PI / 2;
     Matter.Body.setAngle(body, body.angle + delta); Matter.Body.setAngularVelocity(body, 0);
     record("rotate", {part_id: body.label, delta: round(delta), pose: pose(body), input_source: "part_right_click"});
-    setMessage(`DIRECT ROTATION APPLIED TO ${body.label.toUpperCase()}`); updateRack();
+    setMessage(`DIRECT ROTATION APPLIED TO ${body.label.toUpperCase()}`); updateRack(); draw(false);
   }
 
   function resetAssembly() {
@@ -194,7 +208,7 @@
     } catch (_error) { model.submitting = false; setMessage("FAIL · COMPLIANCE VERIFIER OFFLINE", "error"); }
   }
 
-  function draw() {
+  function draw(scheduleNext = true) {
     if (!model) return; const ctx = model.canvas.getContext("2d"), state = model.state;
     ctx.clearRect(0, 0, state.stage.width, state.stage.height);
     ctx.fillStyle = "#0b1110"; ctx.fillRect(0, 0, state.stage.width, state.stage.height);
@@ -213,24 +227,63 @@
       ctx.fillStyle = "#101413"; ctx.font = "800 15px ui-monospace, monospace"; ctx.textAlign = "center"; ctx.textBaseline = "middle"; ctx.fillText(spec.label, body.position.x, body.position.y); ctx.restore();
     }
     for (const joint of state.joints) { const bodies = bodyMap(), a = worldPoint(bodies[joint.a], joint.socket_a), b = worldPoint(bodies[joint.b], joint.socket_b); ctx.strokeStyle = model.connected.has(joint.id) ? "#b8ff58" : "#ff775f"; ctx.lineWidth = 3; ctx.beginPath(); ctx.arc(a[0], a[1], 6, 0, Math.PI * 2); ctx.stroke(); ctx.beginPath(); ctx.arc(b[0], b[1], 6, 0, Math.PI * 2); ctx.stroke(); if (model.connected.has(joint.id)) { ctx.beginPath(); ctx.moveTo(a[0], a[1]); ctx.lineTo(b[0], b[1]); ctx.stroke(); } }
-    model.raf = requestAnimationFrame(draw);
+    if (scheduleNext !== false) model.raf = requestAnimationFrame(draw);
   }
 
   function bindPointer() {
     const canvas = model.canvas;
+    const placeDrag = (drag, point, forceSample = false) => {
+      const distance = Math.hypot(point[0] - drag.last[0], point[1] - drag.last[1]);
+      const steps = Math.max(1, Math.ceil(distance / 100));
+      if (!forceSample && distance < 6) return;
+      for (let step = 1; step <= steps; step += 1) {
+        const ratio = step / steps;
+        const sample = [
+          drag.last[0] + (point[0] - drag.last[0]) * ratio,
+          drag.last[1] + (point[1] - drag.last[1]) * ratio,
+        ];
+        const left = drag.body.position.x - drag.body.bounds.min.x;
+        const right = drag.body.bounds.max.x - drag.body.position.x;
+        const top = drag.body.position.y - drag.body.bounds.min.y;
+        const bottom = drag.body.bounds.max.y - drag.body.position.y;
+        Matter.Body.setPosition(drag.body, {
+          x: Math.max(left, Math.min(model.state.stage.width - right, sample[0] + drag.offset[0])),
+          y: Math.max(top, Math.min(model.state.stage.height - bottom, sample[1] + drag.offset[1])),
+        });
+        Matter.Body.setVelocity(drag.body, {x: 0, y: 0});
+        Matter.Body.setAngularVelocity(drag.body, 0);
+        record("drag_sample", {point: sample.map(round), pose: pose(drag.body), input_source: "canvas_drag"});
+      }
+      drag.last = point;
+      draw(false);
+    };
     canvas.addEventListener("pointerdown", event => {
-      if (event.button !== 0 || model.loading || model.completed) return; const point = canvasPoint(event); const body = Matter.Query.point(model.bodies, {x: point[0], y: point[1]})[0]; if (!body) return;
-      selectPart(body.label); Matter.Body.setStatic(body, false); const originalInertia = body.inertia; Matter.Body.setInertia(body, Infinity); const local = {x: 0, y: 0};
-      model.drag = {body, last: point, originalInertia, constraint: Matter.Constraint.create({label: "pointer-spring", pointA: {x: point[0], y: point[1]}, bodyB: body, pointB: local, stiffness: 0.78, damping: 0.28})};
-      Matter.Composite.add(model.engine.world, model.drag.constraint); record("drag_start", {part_id: body.label, point: point.map(round), input_source: "canvas_drag"}); canvas.setPointerCapture(event.pointerId);
+      if (event.button !== 0 || model.drag || model.loading || model.completed) return;
+      const point = canvasPoint(event), body = bodyAt(point);
+      if (!body) return;
+      event.preventDefault(); selectPart(body.label);
+      model.drag = {body, pointerId: event.pointerId, last: point, offset: [body.position.x - point[0], body.position.y - point[1]]};
+      record("drag_start", {part_id: body.label, point: point.map(round), input_source: "canvas_drag"});
+      try { canvas.setPointerCapture(event.pointerId); } catch (_) {}
     });
-    canvas.addEventListener("pointermove", event => {
-      if (!model.drag) return; const point = canvasPoint(event); model.drag.constraint.pointA.x = point[0]; model.drag.constraint.pointA.y = point[1];
-      if (Math.hypot(point[0] - model.drag.last[0], point[1] - model.drag.last[1]) >= 6) { model.drag.last = point; record("drag_sample", {point: point.map(round), pose: pose(model.drag.body), input_source: "canvas_drag"}); }
-    });
-    const end = event => { if (!model.drag) return; const drag = model.drag; const point = canvasPoint(event); Matter.Body.setVelocity(drag.body, {x: 0, y: 0}); Matter.Body.setAngularVelocity(drag.body, 0); Matter.Body.setInertia(drag.body, drag.originalInertia); record("drag_sample", {point: point.map(round), pose: pose(drag.body), input_source: "canvas_drag"}); Matter.Composite.remove(model.engine.world, drag.constraint); model.drag = null; record("drag_end", {part_id: drag.body.label, pose: pose(drag.body), input_source: "canvas_drag"}); Matter.Body.setStatic(drag.body, true); if (model.interaction === "full") mateDirect(drag.body.label);
-      try { canvas.releasePointerCapture(event.pointerId); } catch (_) {} };
-    canvas.addEventListener("pointerup", end); canvas.addEventListener("pointercancel", end);
+    const move = event => {
+      if (!model.drag || event.pointerId !== model.drag.pointerId) return;
+      event.preventDefault(); placeDrag(model.drag, canvasPoint(event));
+    };
+    const end = (event, cancelled = false) => {
+      if (!model.drag || event.pointerId !== model.drag.pointerId) return;
+      event.preventDefault(); const drag = model.drag;
+      placeDrag(drag, cancelled ? drag.last : canvasPoint(event), true);
+      model.drag = null;
+      record("drag_end", {part_id: drag.body.label, pose: pose(drag.body), input_source: "canvas_drag", cancelled});
+      if (!cancelled && model.interaction === "full") mateDirect(drag.body.label);
+      draw(false);
+      try { canvas.releasePointerCapture(drag.pointerId); } catch (_) {}
+    };
+    canvas.addEventListener("pointermove", move);
+    canvas.addEventListener("pointerup", event => end(event));
+    canvas.addEventListener("pointercancel", event => end(event, true));
+    canvas.addEventListener("lostpointercapture", event => end(event, true));
     canvas.addEventListener("contextmenu", rotateDirect);
   }
 

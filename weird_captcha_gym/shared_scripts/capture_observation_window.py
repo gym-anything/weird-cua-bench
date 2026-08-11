@@ -152,7 +152,9 @@ def capture(args: argparse.Namespace) -> dict:
         stop_recorder(recorder)
 
     raw_paths = sorted(raw_dir.glob("raw-*.png"))
-    targets = frame_targets(start_ms, max(0, end_ms - start_ms), args.frames)
+    # The configured task-time schedule is binding. Host timer callbacks can
+    # arrive late, but frame selection must not silently stretch the window.
+    targets = frame_targets(start_ms, args.duration_ms, args.frames)
     selected = select_frames(raw_paths, targets)
     frames = []
     for index, (source, target) in enumerate(zip(selected, targets, strict=True)):
@@ -172,6 +174,8 @@ def capture(args: argparse.Namespace) -> dict:
         "frames_per_observation": args.frames,
         "window_started_wall_ms": start_ms,
         "window_completed_wall_ms": end_ms,
+        "scheduled_window_completed_wall_ms": start_ms + args.duration_ms,
+        "actual_window_wall_ms": max(0, end_ms - start_ms),
         "frames": frames,
         "time_status": get_status(port=args.port),
     }

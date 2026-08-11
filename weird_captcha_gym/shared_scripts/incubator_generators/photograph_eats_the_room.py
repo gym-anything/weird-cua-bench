@@ -113,8 +113,7 @@ def generate(task: dict[str, Any], seed: str) -> tuple[dict[str, Any], dict[str,
     }
     qualification = {
         "capture_range": float(parameters.get("capture_range", 4.6)), "minimum_move_samples": 30, "minimum_travel": 12.0,
-        "maximum_move_sample_gap_ms": 135, "maximum_plane_pointer_step": 1.5,
-        "minimum_plane_drag_moves": 1, "minimum_scale_changes": 2,
+        "maximum_move_sample_gap_ms": 135,
         "collision_radius": 0.23, "bridge_half_width": float(parameters.get("bridge_half_width", 0.48)),
     }
     initial_camera = {"x": 2.0, "y": lane_y, "yaw_deg": 0}

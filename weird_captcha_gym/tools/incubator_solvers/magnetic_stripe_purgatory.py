@@ -7,6 +7,7 @@ from pathlib import Path
 
 
 MECHANIC_ID = "magnetic_stripe_purgatory"
+DIRECT_SAMPLE_INTERVAL_MS = 20
 
 
 def _read(path: Path) -> dict:
@@ -49,7 +50,7 @@ def _interaction(page) -> str:
     return str(page.locator(".stripe-purgatory").get_attribute("data-interaction") or "full")
 
 
-def _insert(page, card: dict, reader: dict, *, total_ms: int = 160) -> None:
+def _insert(page, card: dict, reader: dict, *, total_ms: int = 0) -> None:
     if _interaction(page) == "simplified":
         page.locator(f'.mag-card-select[data-card-id="{card["id"]}"]').click()
         page.locator(f'.stripe-insert-proxy[data-reader-id="{reader["id"]}"]').click()
@@ -60,11 +61,7 @@ def _insert(page, card: dict, reader: dict, *, total_ms: int = 160) -> None:
     stage = page.evaluate("() => magneticStripePurgatoryModel.state.stage")
     page.mouse.move(*_screen_point(page, start, box, stage))
     page.mouse.down()
-    steps = 7
-    for index in range(1, steps + 1):
-        point = [start[0] + (end[0] - start[0]) * index / steps, start[1] + (end[1] - start[1]) * index / steps]
-        page.mouse.move(*_screen_point(page, point, box, stage), steps=1)
-        page.wait_for_timeout(max(8, total_ms // steps))
+    page.mouse.move(*_screen_point(page, end, box, stage))
     page.mouse.up()
 
 
@@ -105,7 +102,7 @@ def _dense_polyline(waypoints: list[list[float]], minimum_samples: int, maximum_
     return points
 
 
-def _clearance_points(reader: dict) -> list[list[float]]:
+def _clearance_points(reader: dict, duration_ms: int | None = None) -> list[list[float]]:
     track = reader["track"]
     direction = 1 if track["direction"] == "ltr" else -1
     start_x = float(track["x_start"] if direction > 0 else track["x_end"])
@@ -119,7 +116,13 @@ def _clearance_points(reader: dict) -> list[list[float]]:
         waypoints.extend([[approach_x, clearance_y], [exit_x, clearance_y]])
     waypoints.append([end_x, center_y])
     calibration = reader["calibration"]
-    return _dense_polyline(waypoints, int(calibration["minimum_samples"]), int(calibration["maximum_sample_gap_px"]))
+    duration_ms = int(calibration["solver_ms"] if duration_ms is None else duration_ms)
+    timing_samples = max(1, round(duration_ms / DIRECT_SAMPLE_INTERVAL_MS) - 1)
+    return _dense_polyline(
+        waypoints,
+        max(int(calibration["minimum_samples"]), timing_samples),
+        int(calibration["maximum_sample_gap_px"]),
+    )
 
 
 def _swipe(page, reader: dict, duration_ms: int, *, curve_px: float = 0.0, center_path: bool = False) -> None:
@@ -143,14 +146,17 @@ def _swipe(page, reader: dict, duration_ms: int, *, curve_px: float = 0.0, cente
     page.mouse.move(box["x"] + box["width"] / 2, box["y"] + box["height"] / 2)
     page.mouse.down()
     if center_path or curve_px:
-        steps = int(reader["calibration"]["minimum_samples"])
+        steps = max(
+            int(reader["calibration"]["minimum_samples"]),
+            round(duration_ms / DIRECT_SAMPLE_INTERVAL_MS) - 1,
+        )
         points = []
         for index in range(1, steps + 1):
             amount = index / steps
             y = center_y + curve_px * (1 - abs(2 * amount - 1))
             points.append([x0 + (x1 - x0) * amount, y])
     else:
-        points = _clearance_points(reader)[1:]
+        points = _clearance_points(reader, duration_ms)[1:]
     for index, point in enumerate(points, start=1):
         amount = index / len(points)
         desired_elapsed = duration_ms * amount

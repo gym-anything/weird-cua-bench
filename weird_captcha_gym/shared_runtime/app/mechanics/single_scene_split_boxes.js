@@ -16,6 +16,7 @@
     animationFrame: null,
     lastDrawAt: -1,
     dragged: null,
+    pointerDrag: null,
     dragSucceeded: false,
     phaseDrag: null,
     sync: null,
@@ -134,42 +135,62 @@
   function tileMarkup(tileId, slot) {
     const tile = model.tileById.get(tileId);
     const selected = tileId === model.selected;
-    return `<div class="mosaic-slot" data-slot="${slot}"><article class="mosaic-tile${selected ? " is-selected" : ""}" draggable="${interactionMode() === "full" ? "true" : "false"}" data-tile-id="${clean(tileId)}" data-slot="${slot}" data-rotation="${model.rotations[tileId]}">
+    return `<div class="mosaic-slot" data-slot="${slot}"><article class="mosaic-tile${selected ? " is-selected" : ""}" data-tile-id="${clean(tileId)}" data-slot="${slot}" data-rotation="${model.rotations[tileId]}">
       <canvas width="300" height="200" aria-label="animated scene shard ${slot + 1}"></canvas>
       <span class="tile-corners"><i></i><i></i><i></i><i></i></span>
       <b>${clean(tileId.slice(-4).toUpperCase())}</b><em>${model.rotations[tileId] ? "180°" : ""}</em>
     </article></div>`;
   }
 
+  function moveTilePointer(event) {
+    const drag = model.pointerDrag;
+    if (!drag || drag.pointerId !== event.pointerId) return;
+    event.preventDefault();
+    drag.node.style.setProperty("--mosaic-drag-x", `${event.clientX - drag.startX}px`);
+    drag.node.style.setProperty("--mosaic-drag-y", `${event.clientY - drag.startY}px`);
+  }
+
+  function endTilePointer(event, cancelled = false) {
+    const drag = model.pointerDrag;
+    if (!drag || drag.pointerId !== event.pointerId) return;
+    event.preventDefault();
+    const destination = cancelled ? null : document.elementsFromPoint(event.clientX, event.clientY)
+      .find((node) => node.classList?.contains("mosaic-slot"));
+    model.pointerDrag = null;
+    model.dragged = null;
+    drag.node.classList.remove("is-dragging");
+    drag.node.style.removeProperty("--mosaic-drag-x");
+    drag.node.style.removeProperty("--mosaic-drag-y");
+    try { drag.node.releasePointerCapture(event.pointerId); } catch (_error) { /* capture already released */ }
+    if (destination) swapTiles(drag.tileId, Number(destination.dataset.slot), "tile_drag");
+    else if (!cancelled) model.helpers.setReadout("DROP CANCELED · MOSAIC UNCHANGED", "error");
+  }
+
   function bindTiles() {
     document.querySelectorAll(".mosaic-tile").forEach((tileNode) => {
       tileNode.addEventListener("click", () => selectTile(String(tileNode.dataset.tileId)));
-      tileNode.addEventListener("dragstart", (event) => {
-        if (interactionMode() !== "full" || model.busy || model.terminal || model.sync) {
-          event.preventDefault();
-          return;
-        }
+      tileNode.addEventListener("pointerdown", (event) => {
+        if (interactionMode() !== "full" || event.button !== 0 || model.busy || model.terminal || model.sync || model.pointerDrag) return;
+        event.preventDefault();
         clearFreshFailure();
         model.dragged = String(tileNode.dataset.tileId);
         model.dragSucceeded = false;
         model.selected = model.dragged;
-        event.dataTransfer.setData("text/plain", model.dragged);
-        event.dataTransfer.effectAllowed = "move";
+        model.pointerDrag = {
+          pointerId: event.pointerId,
+          node: tileNode,
+          tileId: model.dragged,
+          startX: event.clientX,
+          startY: event.clientY,
+        };
         tileNode.classList.add("is-dragging");
+        try { tileNode.setPointerCapture(event.pointerId); } catch (_error) { /* no capture support */ }
         updateInspector();
       });
-      tileNode.addEventListener("dragover", (event) => event.preventDefault());
-      tileNode.addEventListener("drop", (event) => {
-        event.preventDefault();
-        const movingId = event.dataTransfer.getData("text/plain") || model.dragged;
-        const destinationSlot = Number(tileNode.dataset.slot);
-        swapTiles(String(movingId || ""), destinationSlot, "tile_drag");
-      });
-      tileNode.addEventListener("dragend", () => {
-        tileNode.classList.remove("is-dragging");
-        if (!model.dragSucceeded) model.helpers.setReadout("DROP CANCELED · MOSAIC UNCHANGED", "error");
-        model.dragged = null;
-      });
+      tileNode.addEventListener("pointermove", moveTilePointer);
+      tileNode.addEventListener("pointerup", (event) => endTilePointer(event));
+      tileNode.addEventListener("pointercancel", (event) => endTilePointer(event, true));
+      tileNode.addEventListener("lostpointercapture", (event) => endTilePointer(event, true));
     });
   }
 
@@ -205,6 +226,7 @@
     record("swap", {tile_id: tileId, from_slot: fromSlot, to_slot: destinationSlot, displaced_id: displacedId, input_source: inputSource});
     model.dragSucceeded = true;
     model.dragged = null;
+    model.pointerDrag = null;
     renderBoard();
     updatePanels("SPATIAL SHARDS EXCHANGED", "idle");
   }
@@ -604,6 +626,7 @@
       animationFrame: null,
       lastDrawAt: -1,
       dragged: null,
+      pointerDrag: null,
       dragSucceeded: false,
       phaseDrag: null,
       sync: null,

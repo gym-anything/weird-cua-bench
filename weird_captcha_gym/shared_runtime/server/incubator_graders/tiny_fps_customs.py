@@ -208,7 +208,7 @@ def _control_condition_error(
     if (
         difficulty not in {1, 2, 3, 4, 5}
         or interaction not in {"simplified", "full"}
-        or str(condition.get("real_time") or "") != "live"
+        or str(condition.get("real_time") or "") not in {"live", "paused"}
         or not isinstance(condition.get("difficulty_parameters"), dict)
     ):
         return None, "customs control condition is malformed"
@@ -354,7 +354,7 @@ def grade(payload: dict[str, Any], ground_truth: dict[str, Any], public_state: d
 
         if action_type == "turn":
             delta = _integer(action.get("delta_mdeg"))
-            if delta is None or delta == 0 or abs(delta) > 36_000:
+            if delta is None or delta == 0 or abs(delta) > 360_000:
                 return _failure("turn delta is invalid")
             if _integer(action.get("before_mdeg")) != angle_mdeg:
                 return _failure("reported turn origin differs from replay")

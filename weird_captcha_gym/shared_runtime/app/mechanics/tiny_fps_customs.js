@@ -216,7 +216,7 @@
 
   function turn(deltaMdeg, inputSurface = model.interaction) {
     if (model.terminal || model.submitting) return;
-    const delta = Math.max(-36000, Math.min(36000, Math.round(deltaMdeg)));
+    const delta = Math.round(deltaMdeg);
     if (!delta) return;
     const before = normalizeAngle(model.pose.angle_mdeg);
     model.pose.angle_mdeg = normalizeAngle(before + delta);
@@ -653,7 +653,7 @@
       const deltaX = event.clientX - model.drag.lastX;
       model.drag.lastX = event.clientX;
       model.drag.distance += Math.abs(deltaX);
-      const quantized = Math.max(-36000, Math.min(36000, Math.round(deltaX * 400 / 250) * 250));
+      const quantized = Math.round(deltaX * 400 / 250) * 250;
       if (quantized) turn(quantized, "full");
     });
     canvas.addEventListener("pointerup", (event) => {

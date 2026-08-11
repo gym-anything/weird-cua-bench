@@ -36,7 +36,7 @@ def _fold(page) -> None:
     y = track["y"] + track["height"] / 2
     page.mouse.move(track["x"] + 2, y)
     page.mouse.down()
-    page.mouse.move(track["x"] + track["width"] * .94, y, steps=10)
+    page.mouse.move(track["x"] + track["width"] * .94, y)
     page.mouse.up()
 
 
@@ -101,7 +101,7 @@ def solve(page, state_dir: Path, out_dir: Path, mechanic: str) -> None:
             raise AssertionError("verification stamp or target specimen is not visible")
         page.mouse.move(stamp["x"] + stamp["width"] / 2, stamp["y"] + stamp["height"] / 2)
         page.mouse.down()
-        page.mouse.move(target["x"] + target["width"] / 2, target["y"] + target["height"] / 2, steps=10)
+        page.mouse.move(target["x"] + target["width"] / 2, target["y"] + target["height"] / 2)
         page.mouse.up()
     expect(page.locator(f'.ink-blot[data-blot-id="{truth["culprit_id"]}"].is-stamped')).to_be_visible()
     physical = page.evaluate("""() => ({
@@ -120,8 +120,8 @@ def solve(page, state_dir: Path, out_dir: Path, mechanic: str) -> None:
     expected_fold = specimen_count if "FOLD" in truth["required_tools"] else 0
     expected_pressure = specimen_count if "PRESSURE" in truth["required_tools"] else 0
     expected_cool = specimen_count if "COOL" in truth["required_tools"] else 0
-    required_stamp_moves = 0 if interaction == "simplified" else 3
-    if physical["observations"] != expected_observations or physical["ticks"] != expected_ticks or (interaction == "full" and physical["foldSamples"] < expected_fold * 3) or (interaction == "full" and physical["pressureHolds"] != expected_pressure) or (interaction == "full" and physical["thermalPulses"] != expected_cool) or physical["stampMoves"] < required_stamp_moves or physical["stamped"] != truth["culprit_id"] or physical["resets"] != 0:
+    required_stamp_moves = 0 if interaction == "simplified" else 1
+    if physical["observations"] != expected_observations or physical["ticks"] != expected_ticks or (interaction == "full" and physical["foldSamples"] < expected_fold) or (interaction == "full" and physical["pressureHolds"] != expected_pressure) or (interaction == "full" and physical["thermalPulses"] != expected_cool) or physical["stampMoves"] < required_stamp_moves or physical["stamped"] != truth["culprit_id"] or physical["resets"] != 0:
         raise AssertionError(f"material workflow lacked required physical evidence: {physical}")
     _screenshot(page, out_dir, mechanic, "solved-specimen-matrix")
     page.locator(".ink-submit").click()

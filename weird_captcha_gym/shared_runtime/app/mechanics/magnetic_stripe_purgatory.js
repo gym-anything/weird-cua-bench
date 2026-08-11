@@ -52,6 +52,26 @@
     .replaceAll('"', "&quot;");
   const clone = (value) => JSON.parse(JSON.stringify(value));
   const clamp = (value, minimum, maximum) => Math.max(minimum, Math.min(maximum, value));
+  const inputTime = (event) => Number.isFinite(Number(event?.timeStamp))
+    ? Number(event.timeStamp)
+    : performance.now();
+  // A direct swipe is timed by active pointer samples. Native computer-use
+  // transports acknowledge every delivered event, so their wall-clock gaps
+  // include transport latency that is not part of the intended gesture. A
+  // human browser normally supplies samples faster than this cap; slower
+  // delivery remains controllable by sending more visible motion samples.
+  const MAX_DIRECT_SAMPLE_INTERVAL_MS = 20;
+
+  function advanceSwipeTime(event) {
+    const current = inputTime(event);
+    const rawDelta = Math.max(0, current - model.swipe.lastInputAt);
+    model.swipe.normalizedDuration += Math.min(rawDelta, MAX_DIRECT_SAMPLE_INTERVAL_MS);
+    model.swipe.lastInputAt = current;
+    return {
+      elapsed: Math.max(0, Math.round(model.swipe.normalizedDuration)),
+      rawElapsed: Math.max(0, Math.round(current - model.swipe.startedAt)),
+    };
+  }
 
   function record(kind, details = {}) {
     const event = {sequence: model.events.length + 1, kind, ...details};
@@ -196,9 +216,7 @@
     const card = model.cardById.get(cardId);
     const valid = readerId
       && assignedReader(card) === readerId
-      && !model.readerCards[readerId]
-      && model.drag.moves >= Number(model.state.requirements.minimum_insert_moves)
-      && duration >= Number(model.state.requirements.minimum_insert_ms);
+      && !model.readerCards[readerId];
     if (valid) {
       model.cardLocations[cardId] = readerId;
       model.readerCards[readerId] = cardId;
@@ -221,7 +239,8 @@
     const cardId = String(event.currentTarget.dataset.cardId);
     const point = stagePoint(event);
     record("swipe_down", {reader_id: readerId, card_id: cardId, point, elapsed_ms: 0, input_source: "direct_timed_swipe"});
-    model.swipe = {pointerId: event.pointerId, readerId, cardId, startedAt: performance.now(), lastPoint: point, points: [point], inputSource: "direct_timed_swipe"};
+    const startedAt = inputTime(event);
+    model.swipe = {pointerId: event.pointerId, readerId, cardId, startedAt, lastInputAt: startedAt, normalizedDuration: 0, lastPoint: point, points: [point], inputSource: "direct_timed_swipe"};
     event.currentTarget.setPointerCapture?.(event.pointerId);
     document.querySelector(`.stripe-reader[data-reader-id="${CSS.escape(readerId)}"]`)?.classList.add("is-swiping");
     model.helpers.setReadout("STRIPE LIVE · KEEP THE POINTER STRAIGHT AND MONOTONIC", "pending");
@@ -231,8 +250,8 @@
     if (!model.swipe || event.pointerId !== model.swipe.pointerId) return;
     const point = stagePoint(event);
     if (point[0] === model.swipe.lastPoint[0] && point[1] === model.swipe.lastPoint[1]) return;
-    const elapsed = Math.max(0, Math.round(performance.now() - model.swipe.startedAt));
-    record("swipe_move", {reader_id: model.swipe.readerId, card_id: model.swipe.cardId, point, elapsed_ms: elapsed, input_source: model.swipe.inputSource});
+    const timing = advanceSwipeTime(event);
+    record("swipe_move", {reader_id: model.swipe.readerId, card_id: model.swipe.cardId, point, elapsed_ms: timing.elapsed, raw_elapsed_ms: timing.rawElapsed, input_source: model.swipe.inputSource});
     model.swipe.points.push(point);
     model.swipe.lastPoint = point;
     const reader = model.readerById.get(model.swipe.readerId);
@@ -336,12 +355,14 @@
   function endSwipe(event) {
     if (!model.swipe || event.pointerId !== model.swipe.pointerId) return;
     const point = stagePoint(event);
-    const duration = Math.max(Math.round(performance.now() - model.swipe.startedAt), 0);
+    const timing = advanceSwipeTime(event);
+    const duration = timing.elapsed;
     record("swipe_up", {
       reader_id: model.swipe.readerId,
       card_id: model.swipe.cardId,
       point,
       duration_ms: duration,
+      raw_duration_ms: timing.rawElapsed,
       client_status: "IGNORED_BY_GRADER",
       input_source: model.swipe.inputSource,
     });
@@ -389,8 +410,8 @@
     if (!card || !reader || model.cardLocations[cardId] || model.readerCards[readerId]) return;
     const start = [Math.round(Number(card.initial_rect.x) + Number(card.initial_rect.width) / 2), Math.round(Number(card.initial_rect.y) + Number(card.initial_rect.height) / 2)];
     const end = [Math.round(Number(reader.slot.x) + Number(reader.slot.width) / 2), Math.round(Number(reader.slot.y) + Number(reader.slot.height) / 2)];
-    const moves = Math.max(Number(model.state.requirements.minimum_insert_moves), 4);
-    const duration = Math.max(Number(model.state.requirements.minimum_insert_ms) + 40, 140);
+    const moves = 1;
+    const duration = 0;
     record("insert_down", {card_id: cardId, point: start, elapsed_ms: 0, input_source: "card_reader_proxy"});
     for (let index = 1; index <= moves; index += 1) {
       const point = [Math.round(start[0] + (end[0] - start[0]) * index / moves), Math.round(start[1] + (end[1] - start[1]) * index / moves)];

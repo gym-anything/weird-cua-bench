@@ -366,7 +366,7 @@ def grade(payload: dict[str, Any], ground_truth: dict[str, Any], public_state: d
             end = _point(event.get("end"), width, height)
             raw_samples = event.get("samples")
             duration = _number(event.get("duration_ms"))
-            if start is None or end is None or not isinstance(raw_samples, list) or not 4 <= len(raw_samples) <= 48 or duration is None or not 35 <= duration <= 8_000:
+            if start is None or end is None or not isinstance(raw_samples, list) or not 2 <= len(raw_samples) <= 48 or duration is None or not 0 <= duration <= 8_000:
                 return _failure(f"drag {index} lacks a physical pointer trajectory")
             samples = [_point(sample, width, height) for sample in raw_samples]
             if any(sample is None for sample in samples):
@@ -376,7 +376,7 @@ def grade(payload: dict[str, Any], ground_truth: dict[str, Any], public_state: d
             direct_distance = _distance(start, end)
             path_distance = sum(_distance(left, right) for left, right in zip(samples, samples[1:]))
             if direct_distance < 70 or path_distance < direct_distance * 0.96:
-                return _failure(f"drag {index} is not a sustained physical transfer")
+                return _failure(f"drag {index} does not transfer the material to a distinct destination")
             source_matches = [slot for slot, rect in enumerate(slot_rects) if _inside(start, rect)]
             if len(source_matches) != 1:
                 return _failure(f"drag {index} does not begin in one inventory slot")

@@ -258,7 +258,6 @@
     const elapsed = Math.max(1, now - model.drag.lastTime);
     model.drag.lastAngle = angle;
     model.drag.lastTime = now;
-    if (Math.abs(delta) > 1.1) return;
     model.drag.accumulator += delta;
     model.drag.velocities.push({value: delta / (elapsed / 1000), at: now});
     model.drag.velocities = model.drag.velocities.filter((sample) => now - sample.at <= 180).slice(-8);

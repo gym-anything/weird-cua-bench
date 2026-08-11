@@ -100,19 +100,6 @@ def generate(task: dict[str, Any], seed: str) -> tuple[dict[str, Any], dict[str,
             }
         )
 
-    hold_lanes = rng.sample(range(len(active_lanes)), hold_count)
-    hold_slots: dict[int, int] = {}
-    for lane_index in hold_lanes:
-        ordered = sorted(slots_by_lane[lane_index])
-        candidates = [
-            slot
-            for slot, following in zip(ordered, ordered[1:])
-            if following - slot >= 2 and (lane_index, slot) not in chord_by_lane_slot
-        ]
-        if not candidates:
-            candidates = [slot for slot in ordered[:-1] if (lane_index, slot) not in chord_by_lane_slot]
-        hold_slots[lane_index] = rng.choice(candidates)
-
     tap_jitter_min = int(parameters.get("tap_jitter_min_ms", -24))
     tap_jitter_max = int(parameters.get("tap_jitter_max_ms", 24))
     tap_jitter_step = int(parameters.get("tap_jitter_step_ms", 4))
@@ -133,6 +120,30 @@ def generate(task: dict[str, Any], seed: str) -> tuple[dict[str, Any], dict[str,
         or hold_duration_min > hold_duration_max
     ):
         raise ValueError("polyrhythm timing profile is malformed")
+
+    # A physical lane cannot be pressed again until its held note is released.
+    # Reserve enough empty score slots for the longest generated hold under the
+    # worst opposing pair of start jitters, plus a small visible release gap.
+    minimum_hold_gap_ms = hold_duration_max + (tap_jitter_max - tap_jitter_min) + 25
+    minimum_hold_slot_gap = (
+        minimum_hold_gap_ms + min(beat_values) - 1
+    ) // min(beat_values)
+    hold_lanes = rng.sample(range(len(active_lanes)), hold_count)
+    hold_slots: dict[int, int] = {}
+    for lane_index in hold_lanes:
+        ordered = sorted(slots_by_lane[lane_index])
+        candidates = [
+            slot
+            for slot, following in zip(ordered, ordered[1:])
+            if following - slot >= minimum_hold_slot_gap
+            and (lane_index, slot) not in chord_by_lane_slot
+        ]
+        if not candidates:
+            raise ValueError(
+                f"polyrhythm lane {lane_index} has no non-overlapping hold slot"
+            )
+        hold_slots[lane_index] = rng.choice(candidates)
+
     notes: list[dict[str, Any]] = []
     for lane_index, lane in enumerate(active_lanes):
         for note_index, slot in enumerate(sorted(slots_by_lane[lane_index])):
@@ -164,7 +175,7 @@ def generate(task: dict[str, Any], seed: str) -> tuple[dict[str, Any], dict[str,
     condition_token = ""
     if condition and int(condition["difficulty"]) != 4:
         condition_token = f"|d{int(condition['difficulty'])}"
-    challenge_id = hashlib.sha256(f"{seed}|{MECHANIC_ID}|v2{condition_token}".encode("utf-8")).hexdigest()[:12]
+    challenge_id = hashlib.sha256(f"{seed}|{MECHANIC_ID}|v3{condition_token}".encode("utf-8")).hexdigest()[:12]
     task_id = str(task.get("id") or "")
     settings = {
         "performance_ms": performance_ms,
@@ -193,7 +204,7 @@ def generate(task: dict[str, Any], seed: str) -> tuple[dict[str, Any], dict[str,
         "challenge_id": challenge_id,
         "prompt": task.get("natural_language") or "Inspect four lanes separately. Then perform their combined clearance on A, S, D, and F.",
         "asset_manifest": "shared_runtime/assets/provenance/incubator_puzzles_v1.json",
-        "generator": {"name": "polyrhythm_customs_v2", "variant_count": 12_000_000_000},
+        "generator": {"name": "polyrhythm_customs_v3", "variant_count": 12_000_000_000},
         "lanes": active_lanes,
         "score": notes,
         "preview_order": preview_order,
@@ -224,4 +235,13 @@ def generate(task: dict[str, Any], seed: str) -> tuple[dict[str, Any], dict[str,
     assert sum(note["kind"] == "hold" for note in notes) == hold_count
     assert len(chord_specs) == chord_count
     assert all(sum(note.get("chord_id") == chord["id"] for note in notes) == 2 for chord in chord_specs)
+    for lane in active_lanes:
+        lane_notes = sorted(
+            (note for note in notes if note["lane"] == lane["id"]),
+            key=lambda note: int(note["start_ms"]),
+        )
+        assert all(
+            int(first["start_ms"]) + int(first["duration_ms"]) < int(second["start_ms"])
+            for first, second in zip(lane_notes, lane_notes[1:])
+        )
     return public_state, ground_truth

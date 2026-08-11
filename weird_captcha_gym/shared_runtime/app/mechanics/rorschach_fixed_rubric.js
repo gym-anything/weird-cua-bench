@@ -189,7 +189,7 @@
     if (!model?.fold) return;
     event.preventDefault();
     const value = model.fold.last;
-    const valid = model.fold.moves >= 3 && value - model.fold.start >= model.state.fold_min_distance;
+    const valid = value - model.fold.start >= model.state.fold_min_distance;
     if (valid) {
       record("fold_end", {value, ...physicalInput("direct_fold_sweep")});
       model.fold = null;

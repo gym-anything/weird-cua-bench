@@ -707,24 +707,24 @@ def run(args: argparse.Namespace) -> int:
                 actual_actions = group["actions"]
                 task_time_before_action_ms = clock.now_ms()
                 action_started = time.perf_counter()
-                # The runner owns the turn discipline: in paused mode it
-                # resumes the clock for the first injected action and
-                # settle-pauses inside the observation capture, so an
-                # accepted in-flight transition (for example, a room
-                # rotation) finishes before the clock freezes.
+                # The runner owns the turn discipline. In paused mode it
+                # delivers native input while task time stays frozen, waits
+                # for Chromium to finish synchronous event dispatch, then
+                # advances exactly one configured observation window.
                 obs, _reward, done, info = env.step(
                     actual_actions,
                     wait_between_actions=0.0,
+                    settle_after_actions=False,
                 )
                 action_ms = (time.perf_counter() - action_started) * 1000
                 _require_frames(obs, where=f"turn {turn + 1}")
                 obs = _localize_observation(env, obs)
                 clock.observe(obs)
-                # Paused mode: the settle-pause result the runner recorded
-                # while capturing this observation. Live mode: the raw clock
-                # status the capture reported.
+                # Paused mode: the last browser input-delivery boundary,
+                # before the fixed observation window. Live mode: the raw
+                # clock status the capture reported.
                 clock_after_action = (
-                    obs.get("settle_status") or obs["time_status"]
+                    obs.get("action_delivery_status") or obs["time_status"]
                 )
                 task_time_after_execution_ms = float(
                     clock_after_action.get("task_time_ms") or 0
@@ -746,6 +746,9 @@ def run(args: argparse.Namespace) -> int:
                         - task_time_before_action_ms
                     ),
                     "clock_after_action": clock_after_action,
+                    "action_delivery_statuses": obs.get(
+                        "action_delivery_statuses", []
+                    ),
                     "task_time_ms": obs["time"]["task_time_ms"],
                     "following_observation_manifest": obs[
                         "capture_manifest"

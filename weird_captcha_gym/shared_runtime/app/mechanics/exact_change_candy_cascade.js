@@ -14,6 +14,7 @@
     swaps: [],
     receipt: [],
     selected: null,
+    pointerDrag: null,
     busy: false,
     terminal: false,
     ready: false,
@@ -22,7 +23,6 @@
     helpers: null,
   };
 
-  const sleep = (milliseconds) => new Promise((resolve) => window.setTimeout(resolve, milliseconds));
   const cloneBoard = (board) => (board || []).map((row) => [...row]);
   const coordKey = (coord) => `${coord[0]},${coord[1]}`;
   const sameCoord = (a, b) => a && b && a[0] === b[0] && a[1] === b[1];
@@ -104,7 +104,7 @@
   function boardMarkup() {
     return model.board.map((row, rowIndex) => row.map((candy, columnIndex) => {
       const selected = sameCoord(model.selected, [rowIndex, columnIndex]);
-      return `<button type="button" draggable="${model.interaction === "full"}" class="candy-cell${selected ? " is-selected" : ""}" data-row="${rowIndex}" data-column="${columnIndex}" aria-label="${clean(candy)} row ${rowIndex + 1} column ${columnIndex + 1}">${candyMarkup(candy)}</button>`;
+      return `<button type="button" class="candy-cell${selected ? " is-selected" : ""}" data-row="${rowIndex}" data-column="${columnIndex}" aria-label="${clean(candy)} row ${rowIndex + 1} column ${columnIndex + 1}">${candyMarkup(candy)}</button>`;
     }).join("")).join("");
   }
 
@@ -143,27 +143,54 @@
     return [Number(button.dataset.row), Number(button.dataset.column)];
   }
 
+  function moveCandyPointer(event) {
+    const drag = model.pointerDrag;
+    if (!drag || drag.pointerId !== event.pointerId) return;
+    event.preventDefault();
+    drag.node.style.setProperty("--candy-drag-x", `${event.clientX - drag.startX}px`);
+    drag.node.style.setProperty("--candy-drag-y", `${event.clientY - drag.startY}px`);
+  }
+
+  function endCandyPointer(event, cancelled = false) {
+    const drag = model.pointerDrag;
+    if (!drag || drag.pointerId !== event.pointerId) return;
+    event.preventDefault();
+    const target = cancelled ? null : document.elementsFromPoint(event.clientX, event.clientY)
+      .find((node) => node.classList?.contains("candy-cell"));
+    model.pointerDrag = null;
+    drag.node.classList.remove("is-dragging");
+    drag.node.style.removeProperty("--candy-drag-x");
+    drag.node.style.removeProperty("--candy-drag-y");
+    try { drag.node.releasePointerCapture(event.pointerId); } catch (_error) { /* capture already released */ }
+    if (!target) {
+      if (!cancelled) flashMessage("DROP CANCELED", "error");
+      return;
+    }
+    const destination = cellCoord(target);
+    if (adjacent(drag.origin, destination)) attemptSwap(drag.origin, destination, "candy_drag");
+    else flashMessage("ADJACENT TILES ONLY", "error");
+  }
+
   function bindCells() {
     document.querySelectorAll(".candy-cell").forEach((button) => {
       if (model.interaction === "simplified") button.addEventListener("click", () => selectCell(cellCoord(button)));
-      button.addEventListener("dragstart", (event) => {
-        if (model.interaction !== "full" || model.busy || model.terminal) {
-          event.preventDefault();
-          return;
-        }
-        event.dataTransfer.setData("text/plain", coordKey(cellCoord(button)));
-        event.dataTransfer.effectAllowed = "move";
-        button.classList.add("is-dragging");
-      });
-      button.addEventListener("dragend", () => button.classList.remove("is-dragging"));
-      button.addEventListener("dragover", (event) => event.preventDefault());
-      button.addEventListener("drop", (event) => {
+      button.addEventListener("pointerdown", (event) => {
+        if (model.interaction !== "full" || event.button !== 0 || model.busy || model.terminal || model.pointerDrag) return;
         event.preventDefault();
-        const raw = event.dataTransfer.getData("text/plain").split(",").map(Number);
-        const destination = cellCoord(button);
-        if (model.interaction === "full" && raw.length === 2 && adjacent(raw, destination)) attemptSwap(raw, destination, "candy_drag");
-        else flashMessage("ADJACENT TILES ONLY", "error");
+        model.pointerDrag = {
+          pointerId: event.pointerId,
+          node: button,
+          origin: cellCoord(button),
+          startX: event.clientX,
+          startY: event.clientY,
+        };
+        button.classList.add("is-dragging");
+        try { button.setPointerCapture(event.pointerId); } catch (_error) { /* no capture support */ }
       });
+      button.addEventListener("pointermove", moveCandyPointer);
+      button.addEventListener("pointerup", (event) => endCandyPointer(event));
+      button.addEventListener("pointercancel", (event) => endCandyPointer(event, true));
+      button.addEventListener("lostpointercapture", (event) => endCandyPointer(event, true));
     });
   }
 
@@ -239,7 +266,7 @@
     }
   }
 
-  async function forbiddenFailure(first, second, inputSource) {
+  function forbiddenFailure(first, second, inputSource) {
     model.forbiddenActivated = true;
     model.terminal = true;
     model.swaps.push({
@@ -255,20 +282,20 @@
     shell?.classList.add("is-licorice-fail");
     shell?.insertAdjacentHTML("beforeend", '<div class="candy-verdict candy-verdict-fail"><small>BLACK LICORICE DISTURBED</small><strong>VOID</strong></div>');
     flashMessage("LICORICE ALARM · RECEIPT VOID", "error");
-    await sleep(650);
-    await submit(false);
+    submit(false);
   }
 
-  async function attemptSwap(first, second, inputSource) {
+  function attemptSwap(first, second, inputSource) {
     if (model.busy || model.terminal || !adjacent(first, second)) return;
     clearFreshFailure();
     model.busy = true;
     model.selected = null;
+    model.pointerDrag = null;
     const firstCandy = model.board[first[0]][first[1]];
     const secondCandy = model.board[second[0]][second[1]];
     if (firstCandy === FORBIDDEN || secondCandy === FORBIDDEN) {
       model.busy = false;
-      await forbiddenFailure(first, second, inputSource);
+      forbiddenFailure(first, second, inputSource);
       return;
     }
 
@@ -290,7 +317,6 @@
       });
       document.getElementById("candy-board")?.classList.add("is-invalid");
       flashMessage("NO MATCH · SWAP RETURNED", "error");
-      await sleep(230);
       model.board = before;
       renderBoard();
       document.getElementById("candy-board")?.classList.remove("is-invalid");
@@ -313,11 +339,9 @@
       currentMatches.forEach((key) => document.querySelector(`.candy-cell[data-row="${key.split(",")[0]}"][data-column="${key.split(",")[1]}"]`)?.classList.add("is-matched"));
       updatePanels();
       flashMessage(`CASCADE ${wave}× · +${points}`, "idle");
-      await sleep(210);
       model.board = collapse(model.board, currentMatches);
       renderBoard();
       updatePanels();
-      await sleep(205);
       if (wave > 20) throw new Error("cascade exceeded safety limit");
     }
     model.swaps.push({
@@ -342,8 +366,7 @@
       const reason = model.score > Number(model.state.target_score) ? "OVERPAID" : "SHORT CHANGE";
       document.querySelector(".candy-cascade-captcha")?.insertAdjacentHTML("beforeend", `<div class="candy-verdict candy-verdict-fail"><small>${reason}</small><strong>VOID</strong></div>`);
       flashMessage(`${reason} · RECEIPT VOID`, "error");
-      await sleep(700);
-      await submit(false);
+      submit(false);
     } else {
       const remaining = Number(model.state.move_budget) - model.validMoves;
       flashMessage(`MOVE ${model.validMoves} PAID +${moveScore} · ${remaining} VALID SWAP${remaining === 1 ? "" : "S"} LEFT`, "idle");
@@ -410,6 +433,7 @@
       swaps: [],
       receipt: [],
       selected: null,
+      pointerDrag: null,
       busy: false,
       terminal: false,
       ready: false,

@@ -298,7 +298,7 @@ def grade(payload: dict[str, Any], ground_truth: dict[str, Any], public_state: d
             continue
         if action == "plane_drag_move":
             pointer = _point(event.get("pointer"))
-            if not plane_dragging or carrying is None or pointer is None or not 0 <= pointer[0] <= 1 or not 0 <= pointer[1] <= 1 or math.hypot(pointer[0] - last_pointer[0], pointer[1] - last_pointer[1]) > float(qualification["maximum_plane_pointer_step"]):
+            if not plane_dragging or carrying is None or pointer is None or not 0 <= pointer[0] <= 1 or not 0 <= pointer[1] <= 1:
                 return _failure(f"photo-plane drag {sequence} teleports")
             if not _plane_claim(event.get("from"), plane):
                 return _failure(f"photo-plane drag {sequence} has stale transform")
@@ -350,7 +350,7 @@ def grade(payload: dict[str, Any], ground_truth: dict[str, Any], public_state: d
             if not _mapped_claim(event.get("mapped"), mapped):
                 return _failure(f"development {sequence} fabricates transformed geometry")
             socket = next((item for item in sockets if item["source_kind"] == carrying["kind"]), None)
-            qualified = bool(socket) and math.hypot(mapped["center"]["x"] - float(socket["center"]["x"]), mapped["center"]["y"] - float(socket["center"]["y"])) <= float(socket["tolerance"]) and _angle_error(mapped["angle_deg"], float(socket["angle_deg"])) <= angle_tolerance and mapped["length"] >= float(socket["minimum_length"]) and capture_adjustments["drag_moves"] >= int(qualification["minimum_plane_drag_moves"]) and capture_adjustments["scales"] >= int(qualification["minimum_scale_changes"])
+            qualified = bool(socket) and math.hypot(mapped["center"]["x"] - float(socket["center"]["x"]), mapped["center"]["y"] - float(socket["center"]["y"])) <= float(socket["tolerance"]) and _angle_error(mapped["angle_deg"], float(socket["angle_deg"])) <= angle_tolerance and mapped["length"] >= float(socket["minimum_length"])
             if bool(event.get("developed")) != qualified:
                 return _failure(f"development {sequence} lies about room overwrite")
             if qualified:

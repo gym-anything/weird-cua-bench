@@ -202,7 +202,16 @@ def solve_funeral(page, state_dir: Path, out_dir: Path, mechanic: str) -> None:
     for flower in state["flowers"]:
         page.locator(f'.ritual-flower[data-flower-id="{flower["id"]}"]').click()
     screenshot(page, out_dir, mechanic, "bouquet-ready")
-    page.locator(".ritual-bouquet").drag_to(page.locator(".grave-bed"))
+    bouquet = page.locator(".ritual-bouquet")
+    grave = page.locator(".grave-bed")
+    bouquet_box = bouquet.bounding_box()
+    grave_box = grave.bounding_box()
+    if bouquet_box is None or grave_box is None:
+        raise AssertionError("funeral bouquet transfer endpoints have no visible bounds")
+    page.mouse.move(bouquet_box["x"] + bouquet_box["width"] / 2, bouquet_box["y"] + bouquet_box["height"] / 2)
+    page.mouse.down()
+    page.mouse.move(grave_box["x"] + grave_box["width"] / 2, grave_box["y"] + grave_box["height"] / 2)
+    page.mouse.up()
     page.wait_for_timeout(850)
 
 

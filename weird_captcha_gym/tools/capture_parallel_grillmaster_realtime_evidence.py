@@ -62,6 +62,17 @@ def task_screenshot(page, path: Path | None = None) -> bytes:
         page.evaluate("document.documentElement.removeAttribute('data-agent-capture')")
 
 
+def pointer_drag(page, source, target) -> None:
+    source_box = source.bounding_box()
+    target_box = target.bounding_box()
+    if not source_box or not target_box:
+        raise AssertionError("drag endpoints are not visible")
+    page.mouse.move(source_box["x"] + source_box["width"] / 2, source_box["y"] + source_box["height"] / 2)
+    page.mouse.down()
+    page.mouse.move(target_box["x"] + target_box["width"] / 2, target_box["y"] + target_box["height"] / 2)
+    page.mouse.up()
+
+
 def capture_observation(page, output: Path, mode: str) -> dict:
     output.mkdir(parents=True, exist_ok=True)
     if mode == "paused":
@@ -98,7 +109,7 @@ def begin_all_foods(page) -> list[str]:
     while page.locator('.grill-zone[data-drop-zone="prep"] .grill-food').count():
         food = page.locator('.grill-zone[data-drop-zone="prep"] .grill-food').first
         food_id = str(food.get_attribute("data-food-id") or "")
-        food.drag_to(page.locator('.grill-zone[data-drop-zone="grill"]'))
+        pointer_drag(page, food, page.locator('.grill-zone[data-drop-zone="grill"]'))
         expect(
             page.locator(
                 '.grill-zone[data-drop-zone="grill"] '
@@ -149,7 +160,7 @@ def run_mode(context, base: str, out_dir: Path, mode: str) -> dict:
         if ready_food.count() != 1:
             raise AssertionError("paused observation did not leave a visibly ready food")
         food_id = str(ready_food.get_attribute("data-food-id") or "")
-        ready_food.drag_to(page.locator('.grill-zone[data-drop-zone="tray"]'))
+        pointer_drag(page, ready_food, page.locator('.grill-zone[data-drop-zone="tray"]'))
         expect(
             page.locator(
                 '.grill-zone[data-drop-zone="tray"] '

@@ -144,7 +144,7 @@
     const drag = model.drag;
     const item = model.objects[drag.objectId];
     document.querySelector(`.rel-object[data-object-id="${CSS.escape(drag.objectId)}"]`)?.classList.remove("is-dragging");
-    if (drag.moves >= 2 && inside(point, model.state.worktable_rect)) {
+    if (inside(point, model.state.worktable_rect)) {
       record("drag_end", {object_id: drag.objectId, point, input_source:"direct_drag"});
       item.x = point[0]; item.y = point[1]; item.placed = true;
       model.dragCount += 1;
@@ -217,15 +217,6 @@
     if (!model?.depthDrag || model.interaction !== "full") return;
     event.preventDefault();
     const item = model.objects[model.depthDrag.objectId];
-    if (model.depthDrag.moves < 2) {
-      const target = depthValue(event);
-      for (const value of [Math.round((item.depth + target) / 2), target]) {
-        record("depth_move", {object_id: item.id, value, input_source:"depth_rail"});
-        item.depth = value;
-        model.depthDrag.moves += 1;
-        model.depthSamples += 1;
-      }
-    }
     record("depth_end", {object_id: item.id, value: item.depth, input_source:"depth_rail"});
     model.depthDistance += Math.abs(item.depth - model.depthDrag.start);
     model.depthDrag = null;

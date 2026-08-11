@@ -431,6 +431,7 @@ def grade(payload: dict[str, Any], ground_truth: dict[str, Any], public_state: d
                     projectile = None
             if auto_release:
                 freeze_active = False
+                freeze_releases += 1
             expected_fields = {
                 "frozen": frozen_this_tick,
                 "freeze_energy_after": freeze_energy,

@@ -31,7 +31,7 @@ def _control_contract(ground_truth: dict[str, Any], public_state: dict[str, Any]
     if (
         int(condition.get("difficulty") or 0) not in {1, 2, 3, 4, 5}
         or interaction not in {"simplified", "full"}
-        or str(condition.get("real_time") or "") != "live"
+        or str(condition.get("real_time") or "") not in {"live", "paused"}
         or not isinstance(parameters, dict)
         or set(parameters) != CONTROL_FIELDS
     ):

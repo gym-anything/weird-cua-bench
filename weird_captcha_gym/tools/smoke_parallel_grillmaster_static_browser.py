@@ -36,12 +36,23 @@ def parse_args() -> argparse.Namespace:
     return parser.parse_args()
 
 
+def pointer_drag(page, source, target) -> None:
+    source_box = source.bounding_box()
+    target_box = target.bounding_box()
+    if not source_box or not target_box:
+        raise AssertionError("drag endpoints are not visible")
+    page.mouse.move(source_box["x"] + source_box["width"] / 2, source_box["y"] + source_box["height"] / 2)
+    page.mouse.down()
+    page.mouse.move(target_box["x"] + target_box["width"] / 2, target_box["y"] + target_box["height"] / 2)
+    page.mouse.up()
+
+
 def solve(page, truth: dict) -> None:
     grill = page.locator('.grill-zone[data-drop-zone="grill"]')
     tray = page.locator('.grill-zone[data-drop-zone="tray"]')
     due = []
     for food_id, target in truth["targets"].items():
-        page.locator(f'.grill-food[data-food-id="{food_id}"]').drag_to(grill)
+        pointer_drag(page, page.locator(f'.grill-food[data-food-id="{food_id}"]'), grill)
         expect(
             grill.locator(f'.grill-food[data-food-id="{food_id}"]')
         ).to_be_visible()
@@ -53,7 +64,7 @@ def solve(page, truth: dict) -> None:
         now = float(page.evaluate("performance.now()"))
         if due_at > now:
             page.wait_for_timeout(int(due_at - now))
-        page.locator(f'.grill-food[data-food-id="{food_id}"]').drag_to(tray)
+        pointer_drag(page, page.locator(f'.grill-food[data-food-id="{food_id}"]'), tray)
         expect(
             tray.locator(f'.grill-food[data-food-id="{food_id}"]')
         ).to_be_visible()

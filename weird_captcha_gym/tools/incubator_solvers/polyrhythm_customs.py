@@ -68,20 +68,36 @@ def _perform(page, truth: dict, *, shorten_holds: bool = False) -> list[tuple[fl
         "() => document.querySelector('.polyrhythm-customs-captcha')?.dataset.phase === 'performance'",
         timeout=28_000,
     )
+    if interaction == "simplified":
+        duration = float(truth["settings"]["performance_ms"])
+        for note in truth["expected_notes"]:
+            lane = str(note["lane"])
+            bounds = page.locator(f'.rhythm-entry-track[data-entry-track="{lane}"]').bounding_box()
+            if not bounds:
+                raise AssertionError(f"rhythm timing ledger {lane} has no visible bounds")
+            start_x = bounds["x"] + float(note["start_ms"]) / duration * bounds["width"]
+            y = bounds["y"] + bounds["height"] / 2
+            note_duration = 100.0 if shorten_holds and note["kind"] == "hold" else float(note["duration_ms"])
+            if note["kind"] == "hold":
+                end_x = start_x + note_duration / duration * bounds["width"]
+                page.mouse.move(start_x, y)
+                page.mouse.down()
+                page.mouse.move(end_x, y)
+                page.mouse.up()
+            else:
+                page.mouse.click(start_x, y)
+        return events
     for target_ms, _order, lane, event_type in events:
         remaining = target_ms - _elapsed(page)
         if remaining > 4:
             page.wait_for_timeout(max(1, int(remaining - 3)))
         while _elapsed(page) < target_ms - 1:
             page.wait_for_timeout(1)
-        if interaction == "simplified":
-            page.locator(f'.rhythm-pad[data-lane="{lane}"]').click()
+        key = key_by_lane[lane]
+        if event_type == "down":
+            page.keyboard.down(key)
         else:
-            key = key_by_lane[lane]
-            if event_type == "down":
-                page.keyboard.down(key)
-            else:
-                page.keyboard.up(key)
+            page.keyboard.up(key)
     return events
 
 
@@ -131,6 +147,8 @@ def solve(page, state_dir: Path, out_dir: Path, mechanic: str) -> None:
     truth = _read(state_dir / "ground_truth.json")
     interaction = str((truth.get("control_condition") or {}).get("interaction") or "full")
     events = _perform(page, truth)
+    if interaction == "simplified":
+        page.locator(".rhythm-certify-now").click()
     page.wait_for_function("() => document.querySelector('.readout')?.textContent.startsWith('PASS')", timeout=8_000)
     _screenshot(page, out_dir, mechanic, "pass-combined-performance")
     result = _read(state_dir / "result.json")

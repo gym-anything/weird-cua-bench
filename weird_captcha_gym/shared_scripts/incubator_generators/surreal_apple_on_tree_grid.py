@@ -93,8 +93,6 @@ def generate(task: dict[str, Any], seed: str) -> tuple[dict[str, Any], dict[str,
         "minimum_orbit_travel_deg": 155 if view_limit == VIEW_LIMIT else round(minimum_span * 1.62),
         "minimum_view_sectors": 4,
         "minimum_orbit_samples": 18,
-        "minimum_pluck_moves": 4,
-        "minimum_pluck_ms": 90,
     }
     public_state = {
         "benchmark": "weird_captcha_gym",

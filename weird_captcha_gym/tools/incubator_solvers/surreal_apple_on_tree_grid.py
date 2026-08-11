@@ -79,9 +79,7 @@ def _pluck(page, apple: dict, angle: float, basket: dict) -> None:
     end = [basket["x"] + basket["width"] / 2, basket["y"] + basket["height"] / 2]
     page.mouse.move(*_screen(box, start))
     page.mouse.down()
-    page.wait_for_timeout(30)
-    page.mouse.move(*_screen(box, end), steps=8)
-    page.wait_for_timeout(110)
+    page.mouse.move(*_screen(box, end))
     page.mouse.up()
 
 

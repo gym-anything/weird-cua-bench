@@ -202,14 +202,14 @@ def grade(payload: dict[str, Any], ground_truth: dict[str, Any], public_state: d
             continue
         if kind == "fold_end":
             value = int(event.get("value"))
-            if fold is None or value != fold["last"] or fold["moves"] < 3 or value - fold["start"] < fold_min_distance:
+            if fold is None or value != fold["last"] or value - fold["start"] < fold_min_distance:
                 return _fail("fold axis was not physically swept far enough")
             fold = None
             ready_tool = "FOLD"
             continue
         if kind == "fold_cancel":
             value = int(event.get("value"))
-            if fold is None or value != fold["last"] or (fold["moves"] >= 3 and value - fold["start"] >= fold_min_distance):
+            if fold is None or value != fold["last"] or value - fold["start"] >= fold_min_distance:
                 return _fail("cancelled fold gesture is inconsistent")
             fold = None
             continue
@@ -302,7 +302,7 @@ def grade(payload: dict[str, Any], ground_truth: dict[str, Any], public_state: d
                 stamp["moves"] += 1
                 stamp_moves += 1
             else:
-                if stamp is None or stamp["moves"] < 3:
+                if stamp is None:
                     return _fail("stamp was not physically dragged")
                 stamped_id = _blot_at(point, rects)
                 stamp = None

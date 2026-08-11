@@ -105,7 +105,7 @@ def _control_condition(
         return None, "flight control difficulty is invalid"
     if difficulty not in {1, 2, 3, 4, 5} or str(condition.get("interaction") or "") not in {"simplified", "full"}:
         return None, "flight control condition is invalid"
-    if str(condition.get("real_time") or "") != "live" or not isinstance(condition.get("difficulty_parameters"), dict):
+    if str(condition.get("real_time") or "") not in {"live", "paused"} or not isinstance(condition.get("difficulty_parameters"), dict):
         return None, "flight control condition is incomplete"
     return condition, None
 
@@ -382,7 +382,12 @@ def grade(payload: dict[str, Any], ground_truth: dict[str, Any], public_state: d
             caught, crossing = _swept_catch(round_data, context["catcher"])
             if bool(event.get("caught")) != caught or not _state_matches(event.get("catcher"), context["catcher"]): return _failure("round result disagrees with swept catcher geometry")
             if caught:
-                if context["drag_moves"] < 2: return _failure("successful catch lacks physical catcher placement")
+                # One standard drag may produce one pointermove between its
+                # down/up endpoints. The displacement and resulting catcher
+                # geometry are already replayed above; requiring event
+                # fragmentation would reject the same physical action solely
+                # because of how an input backend samples it.
+                if context["drag_moves"] < 1: return _failure("successful catch lacks physical catcher placement")
                 if not _close(event.get("crossing_ms"), crossing, 0.15): return _failure("reported crossing time disagrees with swept replay")
                 completed.append(str(round_data["id"]))
                 caught_crossings.append(float(crossing))

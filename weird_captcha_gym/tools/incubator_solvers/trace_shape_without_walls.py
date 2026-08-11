@@ -151,7 +151,11 @@ def solve(page, state_dir: Path, out_dir: Path, mechanic: str) -> None:
       rearms: window.blindCorridorModel.rearmCount,
       finalProbe: window.blindCorridorModel.finalProbe,
     })""")
-    if not physical["completed"] or physical["samples"] < requirement["min_trace_samples"] or physical["distance"] < requirement["min_trace_distance"] or physical["collisions"] != 0 or physical["rearms"] != 0 or physical["finalProbe"] != truth["exit"]:
+    final_error = math.hypot(
+        physical["finalProbe"][0] - truth["exit"][0],
+        physical["finalProbe"][1] - truth["exit"][1],
+    ) if physical["finalProbe"] else math.inf
+    if not physical["completed"] or physical["samples"] < requirement["min_trace_samples"] or physical["distance"] < requirement["min_trace_distance"] or physical["collisions"] != 0 or physical["rearms"] != 0 or final_error > max(24, truth["corridor_radius"] - 8):
         raise AssertionError(f"blind-corridor physical workflow ended unexpectedly: {physical}")
     _screenshot(page, out_dir, mechanic, "solved-exit-lock")
     page.locator(".trace-submit").click()

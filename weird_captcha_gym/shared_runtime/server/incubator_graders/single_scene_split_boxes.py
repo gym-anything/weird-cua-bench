@@ -173,7 +173,7 @@ def _control_condition(ground_truth: dict[str, Any], public_state: dict[str, Any
     if (
         difficulty not in {1, 2, 3, 4, 5}
         or str(condition.get("interaction") or "") not in {"simplified", "full"}
-        or str(condition.get("real_time") or "") != "live"
+        or str(condition.get("real_time") or "") not in {"live", "paused"}
         or not isinstance(condition.get("difficulty_parameters"), dict)
     ):
         return None, "synchronizer control condition is invalid"

@@ -94,7 +94,7 @@
   registry.specular_lighthouse_relay = async (state, helpers) => {
     document.body.dataset.mechanic = "specular-lighthouse-relay";
     const interaction = state.control_condition?.interaction || "simplified";
-    const model = {state, helpers, interaction, events: [], roundIndex: 0, angles: state.rounds[0].mirrors.map((item) => Number(item.angle_deg)), charge: 0, tick: 0, shutterOpen: false, terminal: false, submitting: false, timer: null, mirrorDrag: null};
+    const model = {state, helpers, interaction, events: [], roundIndex: 0, angles: state.rounds[0].mirrors.map((item) => Number(item.angle_deg)), charge: 0, tick: 0, shutterOpen: false, chargedPending: false, terminal: false, submitting: false, timer: null, mirrorDrag: null};
     window.specularLighthouseRelayModel = model;
     helpers.app.innerHTML = shell(state, "COASTAL OPTICS AUTHORITY", "SPECULAR LIGHTHOUSE RELAY", `Build the ${state.rounds[0].mirrors.length}-mirror path, open the shutter, then keep steering the live receiver while charge leaks on every miss.`, `<canvas id="specular-canvas" width="900" height="480"></canvas>`, `
       <h2>GIMBAL BANK</h2><div id="specular-controls"></div>
@@ -108,12 +108,15 @@
       model.angles[index] = (before + Number(delta) + 180) % 180;
       event(model, "mirror_adjust", {round_id: current().id, tick: model.tick, mirror_id: current().mirrors[index].id, before: round(before, 2), after: round(model.angles[index], 2), input_source: inputSource});
     };
+    const updateAngleDisplays = () => document.querySelectorAll("[data-specular-angle]").forEach((node) => {
+      node.textContent = `${model.angles[Number(node.dataset.specularAngle)].toFixed(0)}°`;
+    });
     const renderControls = () => {
-      const step = Number(current().angle_step_deg || 1); document.getElementById("specular-controls").innerHTML = interaction === "simplified" ? current().mirrors.map((mirror, index) => `<div class="ivv-control-row"><b>${esc(mirror.id.toUpperCase())}</b><button data-mirror="${index}" data-delta="${-step}">−${step}°</button><span>${model.angles[index].toFixed(0)}°</span><button data-mirror="${index}" data-delta="${step}">+${step}°</button></div>`).join("") : `<p class="specular-drag-note">DRAG EACH MIRROR LEFT OR RIGHT ON THE OPTICAL BENCH.</p>${current().mirrors.map((mirror, index) => `<div class="specular-angle-row"><b>${esc(mirror.id.toUpperCase())}</b><span>${model.angles[index].toFixed(0)}°</span></div>`).join("")}`;
+      const step = Number(current().angle_step_deg || 1); document.getElementById("specular-controls").innerHTML = interaction === "simplified" ? current().mirrors.map((mirror, index) => `<div class="ivv-control-row"><b>${esc(mirror.id.toUpperCase())}</b><button data-mirror="${index}" data-delta="${-step}">−${step}°</button><span data-specular-angle="${index}">${model.angles[index].toFixed(0)}°</span><button data-mirror="${index}" data-delta="${step}">+${step}°</button></div>`).join("") : `<p class="specular-drag-note">DRAG EACH MIRROR LEFT OR RIGHT ON THE OPTICAL BENCH.</p>${current().mirrors.map((mirror, index) => `<div class="specular-angle-row"><b>${esc(mirror.id.toUpperCase())}</b><span data-specular-angle="${index}">${model.angles[index].toFixed(0)}°</span></div>`).join("")}`;
       document.querySelectorAll("[data-mirror]").forEach((button) => button.addEventListener("click", () => {
         const index = Number(button.dataset.mirror);
         adjustMirror(index, Number(button.dataset.delta), "gimbal_buttons");
-        renderControls(); draw();
+        updateAngleDisplays(); draw();
       }));
     };
     const draw = () => {
@@ -128,7 +131,13 @@
       ctx.fillStyle = "#b8c7c6"; ctx.font = "700 12px Courier New"; ctx.fillText(`SHUTTER ${model.roundIndex + 1} / ${state.round_count} · TRACK ${model.tick}`, 18, 26);
       model.beamHit = beam.hit;
     };
-    const closeShutter = (reason = "operator") => { if (!model.shutterOpen) return; model.shutterOpen = false; clearInterval(model.timer); model.timer = null; const button = document.getElementById("specular-charge"); button?.classList.remove("is-live"); if (button) button.textContent = "OPEN TRACKING SHUTTER"; event(model, "shutter", {round_id: current().id, tick: model.tick, open: false, reason}); };
+    async function advanceChargedReceiver() {
+      event(model, "receiver_charged", {round_id: current().id, tick: model.tick, angles: model.angles.map((value) => round(value, 2)), charge_ticks: model.charge});
+      model.charge = 0; model.chargedPending = false;
+      if (model.roundIndex + 1 < state.round_count) { model.roundIndex += 1; model.tick = 0; model.angles = current().mirrors.map((item) => Number(item.angle_deg)); document.getElementById("specular-meter").style.width = "0%"; renderControls(); setMessage(model, `SHUTTER ${model.roundIndex} CHARGED · NEXT MOVING RECEIVER`, "passed"); draw(); }
+      else await submit(model, {mechanic_id: state.mechanic_id, task_id: state.task_id, challenge_id: state.challenge_id, events: model.events, completed: true}, "LIGHTHOUSE RELAY AUTHENTICATED", "LIVE RECEIVER TRACKING · LEAKING CHARGE · ANALYTIC REFLECTION REPLAY");
+    }
+    const closeShutter = (reason = "operator") => { if (!model.shutterOpen) return; model.shutterOpen = false; clearInterval(model.timer); model.timer = null; const button = document.getElementById("specular-charge"); button?.classList.remove("is-live"); if (button) button.textContent = "OPEN TRACKING SHUTTER"; event(model, "shutter", {round_id: current().id, tick: model.tick, open: false, reason}); if (model.chargedPending) void advanceChargedReceiver(); };
     const openShutter = () => {
       if (model.shutterOpen || model.terminal) return; model.shutterOpen = true; const button = document.getElementById("specular-charge"); button.classList.add("is-live"); button.textContent = "CLOSE TRACKING SHUTTER";
       event(model, "shutter", {round_id: current().id, tick: model.tick, open: true});
@@ -137,9 +146,8 @@
         event(model, "charge_sample", {round_id: current().id, tick: model.tick, hit: Boolean(model.beamHit), angles: model.angles.map((value) => round(value, 2)), charge_after: model.charge});
         document.getElementById("specular-meter").style.width = `${Math.min(100, model.charge / current().required_charge_ticks * 100)}%`;
         if (model.charge < current().required_charge_ticks) return;
-        closeShutter("charged"); event(model, "receiver_charged", {round_id: current().id, tick: model.tick, angles: model.angles.map((value) => round(value, 2)), charge_ticks: model.charge}); model.charge = 0;
-        if (model.roundIndex + 1 < state.round_count) { model.roundIndex += 1; model.tick = 0; model.angles = current().mirrors.map((item) => Number(item.angle_deg)); document.getElementById("specular-meter").style.width = "0%"; renderControls(); setMessage(model, `SHUTTER ${model.roundIndex} CHARGED · NEXT MOVING RECEIVER`, "passed"); draw(); }
-        else await submit(model, {mechanic_id: state.mechanic_id, task_id: state.task_id, challenge_id: state.challenge_id, events: model.events, completed: true}, "LIGHTHOUSE RELAY AUTHENTICATED", "LIVE RECEIVER TRACKING · LEAKING CHARGE · ANALYTIC REFLECTION REPLAY");
+        model.chargedPending = true; clearInterval(model.timer); model.timer = null;
+        setMessage(model, "RECEIVER CHARGED · CLOSE SHUTTER TO SEAL", "passed");
       }, 80);
     };
     document.getElementById("specular-charge").addEventListener("click", () => model.shutterOpen ? closeShutter() : openShutter());
@@ -166,7 +174,7 @@
         adjustMirror(model.mirrorDrag.index, direction * step, "mirror_drag");
         model.mirrorDrag.accumulator -= direction * 8;
       }
-      renderControls(); draw();
+      updateAngleDisplays(); draw();
     });
     const endMirrorDrag = () => { model.mirrorDrag = null; };
     opticalCanvas.addEventListener("pointerup", endMirrorDrag);

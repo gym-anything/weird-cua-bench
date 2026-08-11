@@ -101,7 +101,7 @@ def _place_plane(page, state: dict, socket: dict) -> None:
     end_y = box["y"] + box["height"] * max(.01, min(.99, v))
     page.mouse.move(start_x, start_y)
     page.mouse.down()
-    page.mouse.move(end_x, end_y, steps=7)
+    page.mouse.move(end_x, end_y)
     page.mouse.up()
 
 
@@ -123,7 +123,7 @@ def _scale_to(page, target: float) -> None:
     raise AssertionError(f"could not scale photograph to {target}")
 
 
-def _rotate_plane_to(page, target: int) -> None:
+def _rotate_plane_to(page, target: int, state: dict) -> None:
     for _ in range(30):
         current = int(page.locator("#photo-rotation").inner_text().replace("°", "")) % 360
         if current == target % 360:
@@ -139,7 +139,9 @@ def _rotate_plane_to(page, target: int) -> None:
             page.keyboard.down("Shift")
             page.mouse.move(start_x, start_y)
             page.mouse.down()
-            page.mouse.move(start_x + (18 if positive else -18), start_y)
+            rotation_step = int(state["controls"]["plane_rotation_step_deg"])
+            step_count = round(min(delta, 360 - delta) / rotation_step)
+            page.mouse.move(start_x + (1 if positive else -1) * (step_count * 12 + 1), start_y)
             page.mouse.up()
             page.keyboard.up("Shift")
         else:
@@ -205,7 +207,7 @@ def solve(page, state_dir: Path, out_dir: Path, mechanic: str) -> None:
     _turn_to(page, float(first_placement["camera"]["yaw_deg"]))
     _place_plane(page, truth, truth["sockets"][0])
     _scale_to(page, float(first_placement["scale"]))
-    _rotate_plane_to(page, int(first_placement["rotation_deg"]))
+    _rotate_plane_to(page, int(first_placement["rotation_deg"]), truth)
     _shot(page, out_dir, mechanic, "photo-plane-aligned")
     page.locator("#photo-develop").click()
     expect(page.locator(".photo-room")).to_have_attribute("data-operation-count", "1")
@@ -222,7 +224,7 @@ def solve(page, state_dir: Path, out_dir: Path, mechanic: str) -> None:
         _move_to(page, second_placement["camera"])
         _turn_to(page, float(second_placement["camera"]["yaw_deg"]))
         _place_plane(page, truth, truth["sockets"][1])
-        _rotate_plane_to(page, int(second_placement["rotation_deg"]))
+        _rotate_plane_to(page, int(second_placement["rotation_deg"]), truth)
         _scale_to(page, float(second_placement["scale"]))
         page.locator("#photo-develop").click()
         expect(page.locator(".photo-room")).to_have_attribute("data-operation-count", "2")

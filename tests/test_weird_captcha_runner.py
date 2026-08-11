@@ -36,6 +36,9 @@ class FakeVMRunner(BaseRunner):
         self.clock_running = False
         self.ready_waits = 0
         self.task_time_ms = 0.0
+        self.input_sequence = 0
+        self.input_events = 0
+        self.confirm_input = True
         self.capture_resolution = [1920, 1080]
         self.guest_files = {
             "/tmp/weird_captcha_gym/public_state.json": b'{"public": true}',
@@ -62,6 +65,8 @@ class FakeVMRunner(BaseRunner):
     # actions and observations
     def inject_action(self, action):
         self.calls.append(("inject", action))
+        if action.get("mouse") or action.get("keyboard"):
+            self.input_events += 1
         if self.clock_running:
             self.task_time_ms += 50
 
@@ -92,6 +97,35 @@ class FakeVMRunner(BaseRunner):
                 self.clock_running = False
             self.calls.append(("time", command))
             return json.dumps(self._time_status())
+        if "input_control.py" in cmd:
+            command = parts[2]
+            self.input_sequence += 1
+            self.calls.append(("input_control", command))
+            if command == "arm":
+                self.active_arm = self.input_sequence
+                self.arm_input_events = self.input_events
+                return json.dumps({
+                    "command_sequence": self.input_sequence,
+                    "arm_sequence": self.active_arm,
+                    "phase": "armed",
+                    "receipt_confirmed": False,
+                    "task_time_ms": self.task_time_ms,
+                    "controller_state": "paused",
+                })
+            arm_sequence = int(parts[parts.index("--arm-sequence") + 1])
+            confirmed = (
+                self.confirm_input
+                and self.input_events > getattr(self, "arm_input_events", -1)
+            )
+            return json.dumps({
+                "command_sequence": self.input_sequence,
+                "arm_sequence": arm_sequence,
+                "phase": "completed" if confirmed else "missing",
+                "receipt_confirmed": confirmed,
+                "observed_event_count": 1 if confirmed else 0,
+                "task_time_ms": self.task_time_ms,
+                "controller_state": "paused",
+            })
         if "capture_observation_window.py" in cmd:
             duration = int(parts[parts.index("--duration-ms") + 1])
             frames = int(parts[parts.index("--frames") + 1])
@@ -328,22 +362,27 @@ class StateMachineTest(WeirdCaptchaRunnerTestCase):
         self.assertEqual(fake.task_time_ms, 800.0)
         self.assertFalse(fake.clock_running)
 
+        before_action_ms = fake.task_time_ms
         runner.inject_action({"mouse": {"left_click": [5, 5]}})
         runner.inject_action({"mouse": {"left_click": [6, 6]}})
         events = self._time_events(fake)
-        # One resume for the whole action group, before the first injection.
-        self.assertEqual(events, ["wait-ready", "resume"])
+        self.assertEqual(events, ["wait-ready"])
         injects = [c for c in fake.calls if c[0] == "inject"]
         self.assertEqual(len(injects), 2)
-        self.assertTrue(fake.clock_running)
+        self.assertFalse(fake.clock_running)
+        self.assertEqual(fake.task_time_ms, before_action_ms)
+        self.assertEqual(
+            [c[1] for c in fake.calls if c[0] == "input_control"],
+            ["arm", "complete", "arm", "complete"],
+        )
 
         obs = runner.capture_observation()
-        self.assertEqual(
-            self._time_events(fake), ["wait-ready", "resume", "settle-pause"]
-        )
+        self.assertEqual(self._time_events(fake), ["wait-ready"])
         self.assertFalse(fake.clock_running)
         self.assertIn("turn-0001", obs["screen"]["path"])
-        self.assertEqual(obs["settle_status"]["state"], "paused")
+        self.assertIsNone(obs["settle_status"])
+        self.assertEqual(len(obs["action_delivery_statuses"]), 2)
+        self.assertTrue(obs["action_delivery_status"]["receipt_confirmed"])
 
     def test_live_mode_resumes_once(self):
         runner = self._runner(time_mode="live")
@@ -366,12 +405,18 @@ class StateMachineTest(WeirdCaptchaRunnerTestCase):
         with self.assertRaises(ValueError):
             runner.inject_action({"action": "time", "command": "nuke"})
 
-    def test_wait_action_runs_clock_in_paused_mode(self):
+    def test_wait_action_keeps_clock_frozen_in_paused_mode(self):
         runner = self._runner()
         fake = runner.inner
         runner.inject_action({"action": "wait", "time": 0})
-        self.assertEqual(self._time_events(fake), ["wait-ready", "resume"])
-        self.assertTrue(fake.clock_running)
+        self.assertEqual(self._time_events(fake), ["wait-ready"])
+        self.assertFalse(fake.clock_running)
+
+    def test_paused_input_requires_browser_receipt(self):
+        runner = self._runner()
+        runner.inner.confirm_input = False
+        with self.assertRaisesRegex(RuntimeError, "Chromium did not confirm"):
+            runner.inject_action({"keyboard": {"text": "A"}})
 
     def test_resolution_mismatch_raises(self):
         runner = self._runner()
@@ -455,9 +500,8 @@ class FullEpisodeTest(WeirdCaptchaRunnerTestCase):
         self.assertFalse(done)
         self.assertIn("turn-0000", obs["screen"]["path"])
         time_events = [c[1] for c in fake.calls if c[0] == "time"]
-        self.assertEqual(
-            time_events, ["wait-ready", "resume", "settle-pause"]
-        )
+        self.assertEqual(time_events, ["wait-ready"])
+        self.assertTrue(obs["action_delivery_status"]["receipt_confirmed"])
 
         obs, _reward, done, _info = env.step(
             [{"action": "time", "command": "status"}],
