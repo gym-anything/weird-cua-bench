@@ -1,0 +1,50 @@
+{
+  "public_environment_name": "Live Control-Flow Wiring Lab",
+  "environment_id": "code_to_diagram_captcha_env",
+  "difficulty": "D1",
+  "interaction_mode": "full",
+  "label": "no",
+  "controls_available": [
+    "Select either of two probe buttons.",
+    "Click STEP DEBUGGER exactly five times for each selected probe.",
+    "Drag each output port directly to a destination node input to install six directed wires.",
+    "Optionally remove installed wires from the patch ledger.",
+    "Click VALIDATE HARNESS to submit."
+  ],
+  "autonomous_processes": [
+    "After each debugger step, the prior tape rows are immediately rewritten as STATE ERASED; after 1400 ms, the active-node highlight and current transient details are erased without another action.",
+    "The TRANSIENT DEBUG BUS status dot blinks continuously via a 1.1-second CSS animation; this is unrelated idle animation.",
+    "During the erase period, STEP remains enabled, probe_runs remain retained in the page model, and wire ports and hit testing remain unchanged."
+  ],
+  "grouped_control_modes": ["Probe selection", "Debugger stepping", "Full-mode output-port drag to node-input connection", "Wire removal", "Harness validation"],
+  "delta_ms": null,
+  "window_ms": null,
+  "clause_i": {"holds": false, "reason": "Debugger stepping admits an observation-free action-clock policy: choose probes in a fixed order and click STEP five times per probe. Wire destinations vary by generated controller, but the erased trace does not provide a single observation-free policy for that mode."},
+  "clause_ii": {"holds": false, "reason": "Recent screenshots can show transient debugger evidence, but after prior rows and the active state are erased the bounded recent window no longer identifies earlier transitions needed for arbitrary wire choices. The fixed-step mode does not require observation at all."},
+  "clause_iii": {"holds": false, "reason": "The autonomous 1400 ms process changes only presentation. It does not disable STEP, alter the retained probe_runs, change node geometry, modify wire hit testing, or reduce the terminal value of a correctly chosen drag. The grader validates retained probe runs and the physical wire transcript, not transient DOM visibility."},
+  "common_visible_process": "The visible transient-register erase is the only task-related autonomous process, but it is presentation-only and does not make an outcome-affecting action unavailable or less effective.",
+  "files_read_completely": [
+    "AGENTS.md",
+    "weird_captcha_gym/docs/controllability/real-time.md",
+    "weird_captcha_gym/environments/code_to_diagram_captcha_env/controls.json",
+    "weird_captcha_gym/environments/code_to_diagram_captcha_env/env.json",
+    "weird_captcha_gym/shared_scripts/incubator_generators/code_to_diagram_captcha.py",
+    "weird_captcha_gym/shared_runtime/app/mechanics/code_to_diagram_captcha.js",
+    "weird_captcha_gym/shared_runtime/app/mechanics/code_to_diagram_captcha.css",
+    "weird_captcha_gym/shared_runtime/server/incubator_graders/code_to_diagram_captcha.py",
+    "weird_captcha_gym/environments/code_to_diagram_captcha_env/tasks/code_to_diagram_captcha_seed_0001/verifier.py",
+    "weird_captcha_gym/tools/incubator_solvers/code_to_diagram_captcha.py"
+  ],
+  "source_evidence": [
+    {"path": "weird_captcha_gym/environments/code_to_diagram_captcha_env/controls.json", "lines": "5-15", "claim": "Difficulty 1 uses six nodes, one decision, two probes, five trace steps, six edges, and a 1400 ms transient erase duration."},
+    {"path": "weird_captcha_gym/environments/code_to_diagram_captcha_env/controls.json", "lines": "77-95", "claim": "Full interaction is port dragging; observation settings are a 500 ms window with four frames."},
+    {"path": "weird_captcha_gym/shared_runtime/app/mechanics/code_to_diagram_captcha.js", "lines": "207-248", "claim": "Each step records the trace, immediately erases older visible rows, and schedules visible state erasure after transientEraseMs."},
+    {"path": "weird_captcha_gym/shared_runtime/app/mechanics/code_to_diagram_captcha.js", "lines": "250-260", "claim": "At HALT, the complete run is retained in model.probeRuns and coverage is retained despite visible erasure."},
+    {"path": "weird_captcha_gym/shared_runtime/app/mechanics/code_to_diagram_captcha.js", "lines": "328-345", "claim": "The model stores probe runs, wires, interaction mode, and transientEraseMs; full mode maps to port_drag."},
+    {"path": "weird_captcha_gym/shared_runtime/server/incubator_graders/code_to_diagram_captcha.py", "lines": "149-174", "claim": "The grader validates submitted probe_runs against private replay and checks node coverage."},
+    {"path": "weird_captcha_gym/shared_runtime/server/incubator_graders/code_to_diagram_captcha.py", "lines": "176-220", "claim": "The grader validates the wire transcript and final physical wire inventory without any transient-state timing condition."},
+    {"path": "weird_captcha_gym/shared_runtime/app/mechanics/code_to_diagram_captcha.css", "lines": "90-92, 252-253", "claim": "The status dot has an unrelated 1.1-second blink animation; failure flash is also presentation-only."},
+    {"path": "weird_captcha_gym/tools/incubator_solvers/code_to_diagram_captcha.py", "lines": "73-105", "claim": "The scripted solver clicks each debugger step, waits briefly, then performs the full-mode drags and submits; it does not depend on the erase timer for action availability."}
+  ],
+  "uncertainties": []
+}

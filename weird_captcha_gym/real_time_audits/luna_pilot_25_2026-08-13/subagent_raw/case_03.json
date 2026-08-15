@@ -1,0 +1,47 @@
+{
+  "public_environment_name": "Ribbon Switchboard",
+  "environment_id": "ribbon_switchboard_env",
+  "difficulty": "D2",
+  "interaction_mode": "simplified",
+  "label": "no",
+  "controls_available": ["X/Y coordinate inputs", "ILLUMINATE COORDINATE", "START SIGNAL HOLD", "RECORD TRACE SAMPLE", "RELEASE SIGNAL", "RE-ARM CANCELLED SIGNAL", "CERTIFY ROUTED SIGNAL"],
+  "autonomous_processes": [
+    "requestAnimationFrame continuously redraws the static ribbons and current visual overlays",
+    "CSS animation spins source and terminal markers and pulses the armed source",
+    "The local lens and hover illumination visually fade or pulse; hover coverage and route state persist",
+    "No autonomous process changes the ribbon geometry, target, trace validity, or grading state"
+  ],
+  "grouped_control_modes": ["coordinate_hover", "coordinate_trace", "rearm_button", "certify routed signal"],
+  "delta_ms": null,
+  "window_ms": 500,
+  "clause_i": {"holds": true, "reason": "Across generated layouts and target ribbons, the useful coordinate probe and trace actions cannot be selected from the agent's prior action history alone; the visible board and marked target are needed."},
+  "clause_ii": {"holds": true, "reason": "The visible static weave, marked target, and local depth overlays provide sufficient bounded visual information for choosing coordinate probes and ordered trace samples; the configured observation bound is 500 ms."},
+  "clause_iii": {"holds": false, "reason": "During every no-action period, only presentation animation or hover fade occurs. The outcome-affecting state remains unchanged, and hover coverage persists. The minimum trace duration merely enables release after the agent's own elapsed-action clock and is not an expiring opportunity."},
+  "common_visible_process": "None. The only autonomous changes are requestAnimationFrame/CSS presentation effects and temporary hover fading; they do not make any outcome-affecting action unavailable or strictly less effective.",
+  "files_read_completely": [
+    "AGENTS.md",
+    "weird_captcha_gym/docs/controllability/real-time.md",
+    "weird_captcha_gym/real_time_audits/luna_pilot_25_2026-08-13/prompt.md",
+    "weird_captcha_gym/environments/ribbon_switchboard_env/controls.json",
+    "weird_captcha_gym/environments/ribbon_switchboard_env/env.json",
+    "weird_captcha_gym/environments/ribbon_switchboard_env/tasks/ribbon_switchboard_seed_0001/task.json",
+    "weird_captcha_gym/shared_scripts/incubator_generators/ribbon_switchboard.py",
+    "weird_captcha_gym/shared_runtime/app/mechanics/ribbon_switchboard.js",
+    "weird_captcha_gym/shared_runtime/app/mechanics/ribbon_switchboard.css",
+    "weird_captcha_gym/shared_runtime/server/incubator_graders/ribbon_switchboard.py",
+    "weird_captcha_gym/tools/incubator_solvers/ribbon_switchboard.py",
+    "weird_captcha_gym/environments/ribbon_switchboard_env/tasks/ribbon_switchboard_seed_0001/verifier.py"
+  ],
+  "source_evidence": [
+    {"path": "weird_captcha_gym/environments/ribbon_switchboard_env/controls.json", "lines": "44-76,181-195", "claim": "D2 uses a static four-ribbon/five-column route with simplified coordinate-console controls; observation_window_ms is 500 and frames_per_observation is 4."},
+    {"path": "weird_captcha_gym/shared_scripts/incubator_generators/ribbon_switchboard.py", "lines": "310-406", "claim": "Generation creates a fixed ribbon layout, target path, crossings, and requirements; no autonomous temporal mechanic is generated."},
+    {"path": "weird_captcha_gym/shared_runtime/app/mechanics/ribbon_switchboard.js", "lines": "54-64", "claim": "The animation loop redraws fixed ribbons and only renders a hover overlay until hoverExpiry; hover probes persist coverage state."},
+    {"path": "weird_captcha_gym/shared_runtime/app/mechanics/ribbon_switchboard.js", "lines": "66-85", "claim": "Trace and rearm state change only in response to explicit controls; trace timing uses performance.now and no autonomous movement or expiry affects the route."},
+    {"path": "weird_captcha_gym/shared_runtime/app/mechanics/ribbon_switchboard.js", "lines": "89-93", "claim": "Simplified mode exposes coordinate inputs and synchronous illuminate/start/sample/release buttons."},
+    {"path": "weird_captcha_gym/shared_runtime/app/mechanics/ribbon_switchboard.css", "lines": "6-8,14", "claim": "Marker rotation, source pulse, lens pulse, breach animation, and simplified coordinate-console styling are presentation effects."},
+    {"path": "weird_captcha_gym/shared_runtime/server/incubator_graders/ribbon_switchboard.py", "lines": "127-141,179-299", "claim": "The grader replays static coordinates, ordered path parameters, crossings, corridor distance, sample counts, and minimum elapsed trace time; it has no autonomous-time state."},
+    {"path": "weird_captcha_gym/tools/incubator_solvers/ribbon_switchboard.py", "lines": "98-155", "claim": "The solver reads the fixed target path, probes coordinates, records the route, waits only to accumulate minimum trace duration, and then releases at the terminal."},
+    {"path": "weird_captcha_gym/environments/ribbon_switchboard_env/tasks/ribbon_switchboard_seed_0001/verifier.py", "lines": "21-37", "claim": "Authoritative verification grades the submitted UI transcript through the static replay grader."}
+  ],
+  "uncertainties": []
+}

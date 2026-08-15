@@ -4,6 +4,18 @@ from copy import deepcopy
 from typing import Any
 
 
+# The `temporal` values in ANNOTATIONS are the original environment-level
+# classifications. They are intentionally preserved for reproducibility and
+# are not the current difficulty-by-interaction classification. See the dated
+# snapshot and the replacement definition linked below.
+LEGACY_TEMPORAL_ANNOTATION_STATUS: dict[str, str] = {
+    "status": "legacy_environment_level",
+    "marked_old": "2026-08-13",
+    "snapshot": "weird_captcha_gym/temporal_audits/legacy_environment_annotations_2026-08-13.json",
+    "current_definition": "weird_captcha_gym/docs/controllability/temporal.md",
+}
+
+
 CAPABILITY_DEFINITIONS: tuple[dict[str, str], ...] = (
     {
         "id": "visual_understanding",
@@ -796,6 +808,7 @@ def build_capability_annotations() -> dict[str, dict[str, Any]]:
 __all__ = [
     "ANNOTATIONS",
     "CAPABILITY_DEFINITIONS",
+    "LEGACY_TEMPORAL_ANNOTATION_STATUS",
     "build_capability_annotations",
     "capability_definitions",
 ]
