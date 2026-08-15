@@ -13,6 +13,10 @@ from pathlib import Path
 from unittest import mock
 
 from weird_captcha_gym.dashboard.catalog import BENCHMARK_ROOT, REPO_ROOT, build_catalog
+from weird_captcha_gym.dashboard.capability_annotations import (
+    ANNOTATIONS,
+    LEGACY_TEMPORAL_ANNOTATION_STATUS,
+)
 from weird_captcha_gym.dashboard.atlas import (
     AtlasCurationStore, COLLECTION_ROOT, artifact_page, build_atlas, instance_detail, instance_page,
     source_detail, specimen_detail,
@@ -357,6 +361,22 @@ class WeirdCaptchaDashboardTests(unittest.TestCase):
         self.assertEqual(sum(annotation["temporal"] for annotation in annotations), 45)
         self.assertEqual(sum(annotation["reasoning_planning"] for annotation in annotations), 54)
         self.assertEqual(sum(annotation["exploration_interface"] for annotation in annotations), 28)
+
+    def test_legacy_temporal_annotations_are_preserved_as_a_dated_snapshot(self) -> None:
+        snapshot_path = REPO_ROOT / LEGACY_TEMPORAL_ANNOTATION_STATUS["snapshot"]
+        snapshot = json.loads(snapshot_path.read_text(encoding="utf-8"))
+        self.assertEqual(LEGACY_TEMPORAL_ANNOTATION_STATUS["status"], "legacy_environment_level")
+        self.assertEqual(snapshot["status"], "legacy_environment_level")
+        self.assertEqual(snapshot["marked_old"], LEGACY_TEMPORAL_ANNOTATION_STATUS["marked_old"])
+        self.assertEqual(snapshot["annotation_count"], 75)
+        preserved = {
+            item["mechanic_id"]: item["temporal"]
+            for item in snapshot["annotations"]
+        }
+        self.assertEqual(preserved, {
+            mechanic_id: annotation["temporal"]
+            for mechanic_id, annotation in ANNOTATIONS.items()
+        })
 
     def test_controlled_environment_cards_use_the_current_profile_label(self) -> None:
         controlled = [

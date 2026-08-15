@@ -24,7 +24,15 @@ Classify this as 2D or 3D. Spatial understanding is included here.
 
 ### Temporal understanding and memory
 
-Count this when solving requires change across frames, motion, duration, hidden past state, or another nontrivial temporal relationship. A simple visible sequence does not count.
+Apply the configuration-aware definition in
+`weird_captcha_gym/docs/controllability/temporal.md`. Count this when every
+general screenshot-only solution requires change across frames, motion,
+duration, relevant hidden past state, time-extended control, or another
+nontrivial temporal relationship. A simple visible sequence does not count.
+
+The existing environment-level temporal Booleans are a legacy snapshot. Do
+not copy them into difficulty and interaction configurations without reviewing
+the implementation.
 
 ### Reasoning and planning
 
@@ -36,7 +44,7 @@ Count this when the agent must interact to reveal relevant information or learn 
 
 ## Review procedure
 
-Use the exact public environment name. Read the generator, visible browser implementation, grader, verifier, and solver where present. Classify what a normal screenshot-only UI solution requires rather than what a private-state test solver can do. Record continuous observation separately when the scene must move across frames but the action itself is untimed.
+Use the exact public environment name. Read the generator, visible browser implementation, grader, verifier, and solver where present. Classify what a normal screenshot-only UI solution requires rather than what a private-state test solver can do. Classify temporal understanding and memory separately for every difficulty and interaction configuration. Record continuous observation separately when the scene must move across frames but the action itself is untimed.
 
 ## Seed examples
 

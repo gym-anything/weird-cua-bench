@@ -25,6 +25,8 @@ Before adding difficulty, interaction, or real-time variants, read `weird_captch
 
 Environment-by-environment implementation work must also follow every file in `weird_captcha_gym/docs/controllability/`. That directory contains the reusable assignment prompt and the practical decision and validation rules distilled from the completed fifteen-environment implementation.
 
+Before classifying whether an environment has a real-time component, read the settled definition and interpretation in `weird_captcha_gym/docs/controllability/real-time.md`. Do not equate real time with any task whose outcome can be affected by a clock, deadline, idle animation, fixed timed schedule, randomness, or long-term memory. The diagnostic asks whether a bounded sequence of recent frames is necessary and sufficient to choose an action for the post-delay state, and whether the correct action expires within the action delay.
+
 ## Capability annotation guidelines
 
 - Use the exact public environment name shown by the dashboard.
