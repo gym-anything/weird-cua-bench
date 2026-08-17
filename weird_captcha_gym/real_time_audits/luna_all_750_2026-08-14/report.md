@@ -1,5 +1,11 @@
 # GPT-5.6 Luna real-time classification: all 750 configurations
 
+Status: historical first-pass audit. Its recorded labels and comparison matrix
+have not been rewritten. The authoritative matrix was updated on 2026-08-17
+using a 50% pre-run-solution threshold: Wind-Tunnel Seed Courier D1-D2 and all
+Dual-Projection Sculpture Rig configurations are now Not real-time. See
+`../all_750.md`.
+
 ## Protocol
 
 - Population: 750 configurations (75 environments x 5 difficulties x 2 interaction modes).

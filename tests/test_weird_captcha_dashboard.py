@@ -353,8 +353,8 @@ class WeirdCaptchaDashboardTests(unittest.TestCase):
                 self.assertIs(type(annotation[field]), bool, f"{environment['mechanic_id']}:{field}")
         annotations = [environment["capability_annotation"] for environment in built]
         self.assertEqual(Counter(annotation["real_time"] for annotation in annotations), {
-            "yes": 37,
-            "no": 33,
+            "yes": 36,
+            "no": 34,
             "observation_only": 5,
         })
         self.assertEqual(Counter(annotation["visual"] for annotation in annotations), {"2D": 55, "3D": 20})

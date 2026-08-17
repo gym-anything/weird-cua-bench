@@ -67,6 +67,14 @@ The evidence may appear across consecutive frames or as an accumulated visible t
 
 `Delta` is a reported witness horizon on the scale of the mechanic, not the current provider's response latency. It must begin inside a nontrivial active control opportunity and may extend across the point at which that opportunity gets worse or closes. The benchmark's configured `observation_window_ms` and `frames_per_observation` bound `w`; they do not force every environment to need every captured frame.
 
+### Pre-run threshold
+
+For the configuration-level catalog label, a configuration is Not real-time when
+at least 50% of its generated instances admit a successful pre-run solution:
+after preparation, the solution starts the autonomous outcome phase and sends
+no more outcome-affecting actions until that phase ends. Final submission or
+certification is administrative and does not count as an action during the run.
+
 ### Required interpretation
 
 The conjunction isolates a specific property:
