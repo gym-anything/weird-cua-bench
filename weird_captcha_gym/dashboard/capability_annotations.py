@@ -736,7 +736,7 @@ ANNOTATIONS: dict[str, dict[str, Any]] = {
     },
     "relation_prompt_grounding": {
         "public_name": "Dual-Projection Sculpture Rig",
-        "real_time": "yes",
+        "real_time": "no",
         "interaction": "Drag five objects from a moving carousel, position them on a worktable, select each object, adjust its depth, run the force inspection, reset if needed, and certify.",
         "difficulty": "Object count, carousel speed, target projections, depth ordering, placement tolerance, settle vectors, settle duration, object overlap, and number of reconstruction cycles.",
         "visual": "3D",
