@@ -117,6 +117,14 @@ def capture(args: argparse.Namespace) -> dict:
                 if abs(float(get_status(port=args.port).get("task_time_ms") or 0) - float(status.get("task_time_ms") or 0)) > 5:
                     raise RuntimeError("paused hold advanced the task clock")
             elif args.duration_ms > 0:
+                # Identify OUR window by a completion newer than any seen
+                # before the command. Equality on the controller's command
+                # sequence races: input-delivery receipts share the counter,
+                # so any command landing between polls moves the sequence
+                # past ours and the wait times out on a window that in fact
+                # completed.
+                before = get_status(port=args.port)
+                prior_done = float(before.get("window_completed_wall_ms") or 0)
                 command = send_command(
                     "run_for",
                     port=args.port,
@@ -125,8 +133,9 @@ def capture(args: argparse.Namespace) -> dict:
                 )
                 sequence = int(command["sequence"])
                 completed = wait_for_status(
-                    lambda item: int(item.get("sequence") or -1) == sequence
-                    and item.get("phase") == "completed",
+                    lambda item: int(item.get("sequence") or -1) >= sequence
+                    and item.get("phase") == "completed"
+                    and float(item.get("window_completed_wall_ms") or 0) > prior_done,
                     port=args.port,
                     timeout=args.timeout + args.duration_ms / 1000,
                 )

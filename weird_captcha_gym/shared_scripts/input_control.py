@@ -71,7 +71,7 @@ def arm(
     command_sequence = int(accepted["sequence"])
     arm_sequence = int(accepted["arm_sequence"])
     return wait_for_status(
-        lambda item: int(item.get("command_sequence") or -1) == command_sequence
+        lambda item: int(item.get("command_sequence") or -1) >= command_sequence
         and int(item.get("arm_sequence") or -1) == arm_sequence
         and item.get("phase") == "armed",
         port=port,
@@ -92,7 +92,7 @@ def complete(
     )
     command_sequence = int(accepted["sequence"])
     return wait_for_status(
-        lambda item: int(item.get("command_sequence") or -1) == command_sequence
+        lambda item: int(item.get("command_sequence") or -1) >= command_sequence
         and int(item.get("arm_sequence") or -1) == arm_sequence
         and item.get("phase") in {"completed", "missing"},
         port=port,
@@ -113,7 +113,7 @@ def cancel(
     )
     command_sequence = int(accepted["sequence"])
     return wait_for_status(
-        lambda item: int(item.get("command_sequence") or -1) == command_sequence
+        lambda item: int(item.get("command_sequence") or -1) >= command_sequence
         and int(item.get("arm_sequence") or -1) == arm_sequence
         and item.get("phase") == "cancelled",
         port=port,
