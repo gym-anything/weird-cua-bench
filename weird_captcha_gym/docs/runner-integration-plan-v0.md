@@ -8,22 +8,15 @@ This note records how Weird CUA Bench integrates with Gym-Anything. Weird CUA is
 
 Gym-Anything's modularity redesign (its `docs/design/modularity.md`) made runners the official third-party "world" door: the runner registry accepts entry points and locators, per-runner facts live on the runner class, `EnvSpec.runner_options` carries world configuration opaquely, unknown observation modalities are delegated to the runner, and worlds that own time receive wait and custom actions.
 
-Under that premise, the v0 rule "do not write a custom Weird CAPTCHA runner" is inverted: the clock, the frame-window observation schedule, guest configuration, and artifact collection are exactly the world-owned behaviors the runner door exists for. They now live in `weird_captcha_gym/runner.py` (`WeirdCaptchaRunner`, registry key `weird_captcha`), which composes the inner VM runner and replaces the former evaluation control layer, the `weird-cua-worker` route extension, and the `WeirdRemoteGymEnv` subclass. `weird-cua-evaluate` remains a thin turn scheduler over `env.reset`/`env.step`. Everything else in v0 stands: no second CLI, no per-mechanic action spaces, no normalized action executor, no bypassing Gym-Anything artifacts or verifier dispatch.
+Under that premise, the v0 rule "do not write a custom Weird CAPTCHA runner" is inverted: the clock, the frame-window observation schedule, guest configuration, and artifact collection are exactly the world-owned behaviors the runner door exists for. They now live in `weird_captcha_gym/runner.py` (`WeirdCaptchaRunner`, registry key `weird_captcha`), which composes the inner VM runner and replaces the former evaluation control layer, the `weird-cua-worker` route extension, and the `WeirdRemoteGymEnv` subclass. `weird-cua-evaluate` schedules turn-based agents over `env.reset`/`env.step` and delegates autonomous CLI agents to Gym-Anything's action gateway. Everything else in v0 stands: no second CLI, no per-mechanic action spaces, no normalized action executor, no bypassing Gym-Anything artifacts or verifier dispatch.
 
 ## Ownership boundary
 
 Gym-Anything owns environment loading, runner selection, reset, actions, episode limits, trajectories, verification, artifacts, and remote scheduling. Weird CUA supplies environment and task files plus its live-versus-paused observation schedule.
 
-The `weird-cua-evaluate` entry point exists because the Weird CUA protocol sends a chronological frame window and can stop task time during model inference. It creates local environments with `gym_anything.from_config` and remote environments with `RemoteGymEnv.from_config`. It does not define another runner or action API.
+The `weird-cua-evaluate` entry point exists because the Weird CUA protocol can send a chronological paused frame window and can stop task time during model inference. All live modes instead expose one instantaneous frame per observation request. It creates local environments with `gym_anything.from_config` and remote environments by benchmark name with `RemoteGymEnv.from_benchmark`, forwarding the same runner-option overrides through either path. It does not define another runner or action API.
 
-Remote runs use the normal Gym-Anything master. `weird-cua-worker` imports the normal Gym-Anything worker application and adds four fixed environment routes:
-
-- configure the allowed Weird CUA time and seed values before reset;
-- issue one of the supported clock commands;
-- capture one configured frame window;
-- collect a fixed list of benchmark evidence files.
-
-The Gym-Anything master's existing environment proxy forwards these routes to the worker that owns the environment. The Weird client subclasses `RemoteGymEnv` only to call those fixed routes. It inherits environment creation, reset, actions, observation capture, verification, retries, and cleanup. No second master, worker registry, scheduler, or remote transport is introduced.
+Remote runs use the normal Gym-Anything master and worker. The client creates an environment by benchmark and environment name, supplies a task-content digest, and sends `EnvSpec.runner_options` through Gym-Anything's runtime override field. Actions, observation capture, artifacts, verification, retries, and cleanup use the standard remote routes. No benchmark-specific worker, client subclass, route, scheduler, or transport is introduced.
 
 ## Runner Facts From Code Reading
 
@@ -40,7 +33,7 @@ The Gym-Anything master's existing environment proxy forwards these routes to th
 
 ## Consequences
 
-- Do not write a custom Weird CAPTCHA runner.
+- Keep Weird-specific world behavior in `WeirdCaptchaRunner`; do not duplicate the VM runner or remote stack.
 - Do not write a separate normalized action executor inside the benchmark.
 - Do not create a second benchmark CLI that copies `gym-anything benchmark`.
 - Keep `weird-cua-evaluate` limited to the Weird CUA observation schedule.
