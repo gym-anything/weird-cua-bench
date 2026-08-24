@@ -47,11 +47,11 @@ The launcher starts the authenticated loopback companion and opens an automatica
 
 The public browser runtime is an exploration surface, not a secure evaluation endpoint: because it has no server, its finite challenge pool and grading truth are inspectable in developer tools. Use the local/VNC benchmark path for authoritative agent runs.
 
-## Live and paused evaluation
+## Temporal evaluation modes
 
-Every environment has a task-time limit, observation-window duration, and frame count in `weird_captcha_gym/real_time.json`. Live and paused runs use the same frame schedule. Live mode keeps the task running while the model responds. Paused mode freezes task time during both the model response and native input delivery, then advances exactly one configured observation window after the browser confirms the input event.
+Every environment has a task-time limit, observation-window duration, and frame count in `weird_captcha_gym/real_time.json`. All four modes use the same frame schedule. `paused` freezes task time during both the model response and native input delivery, then advances exactly one configured observation window after the browser confirms the input event. The other three modes keep the task running continuously. `live_timestamped` adds frame timestamps and measured action-latency metadata. `live_timestamped_execution` adds the same metadata and lets the model request an absolute `execute_at_s` on that clock. Plain `live` provides neither timestamps nor scheduled execution.
 
-Install the evaluation dependencies, then choose the condition with `--time-mode`:
+Install the evaluation dependencies, then choose the condition with the single `--temporal-mode` flag:
 
 ```bash
 python -m pip install -e ".[evaluation]"
@@ -60,12 +60,12 @@ weird-cua-evaluate \
   --task rotating_keyboard_seed_0001 \
   --agent GeminiComputerUseAgent \
   --agent-args '{"model":"gemini-3.5-flash"}' \
-  --time-mode live
+  --temporal-mode live_timestamped_execution
 ```
 
 Public browser play includes an observation inspector. Choose live or paused mode inside the puzzle tab, then capture one configured observation window to inspect the same frame count used by evaluation. Authoritative evaluation preserves the environment's native desktop resolution so screenshot coordinates and action coordinates share one space. In paused browser play, mouse and keyboard handlers run against the frozen state; timers, physics, and animations advance only when the next observation window is captured. The browser will ask you to share the current tab before its first pixel capture; the inspector is hidden from the captured frames.
 
-This browser control is for inspection. Authoritative evaluation still uses `--time-mode` and records its frames and timing manifest in the episode artifacts.
+This browser control is for inspection. Authoritative evaluation uses `--temporal-mode` and records its frames and timing manifest in the episode artifacts.
 
 The benchmark's world behavior lives in `WeirdCaptchaRunner`, registered with Gym-Anything's runner registry under the key `weird_captcha` and declared by every environment's `env.json`. It composes the inner VM runner and owns the puzzle clock, frame-window observation capture, guest configuration, and benchmark artifact collection. The evaluator is a thin turn scheduler over the standard `env.reset`/`env.step` doors. Gym-Anything creates the environment, applies actions, records the trajectory, runs the verifier, and owns remote scheduling. `Qwen35VLAgent` automatically uses the Weird CUA adapter so all chronological frames reach the model while retaining the latest Gym-Anything implementation.
 
@@ -79,7 +79,7 @@ weird-cua-evaluate \
   --task rotating_keyboard_seed_0001 \
   --agent Qwen35VLAgent \
   --agent-args '{"model":"Qwen/Qwen3.5-397B-A17B"}' \
-  --time-mode paused \
+  --temporal-mode paused \
   --remote-url http://master:5000
 ```
 

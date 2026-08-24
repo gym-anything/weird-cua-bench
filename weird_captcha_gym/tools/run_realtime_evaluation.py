@@ -15,6 +15,7 @@ import argparse
 import importlib
 import json
 import logging
+import math
 import shutil
 import signal
 import sys
@@ -36,6 +37,12 @@ from weird_captcha_gym.runner import (
     guest_json,
 )
 from weird_captcha_gym.evaluation.qwen35vl import WeirdQwen35VLAgent
+from weird_captcha_gym.evaluation.temporal_modes import (
+    TEMPORAL_MODES,
+    scheduled_execution_enabled,
+    timestamps_enabled,
+    world_time_mode,
+)
 from weird_captcha_gym.realtime import (
     RealTimeSettings,
     load_real_time_settings,
@@ -60,12 +67,18 @@ VISIBLE_UI_ONLY_RULE = (
 
 
 def build_parser() -> argparse.ArgumentParser:
-    parser = argparse.ArgumentParser(description="Evaluate Weird CUA Bench in live or paused time.")
+    parser = argparse.ArgumentParser(description="Evaluate Weird CUA Bench temporal modes.")
     parser.add_argument("--env-dir", "--env_dir", required=True)
     parser.add_argument("--task", required=True)
     parser.add_argument("--agent", required=True)
     parser.add_argument("--agent-args", "--agent_args", required=True)
-    parser.add_argument("--time-mode", choices=("live", "paused"), required=True)
+    parser.add_argument(
+        "--temporal-mode",
+        "--time-mode",
+        dest="temporal_mode",
+        choices=TEMPORAL_MODES,
+        required=True,
+    )
     parser.add_argument("--seed", type=int, default=42)
     parser.add_argument("--steps", type=int)
     parser.add_argument("--use-cache", "--use_cache", action="store_true")
@@ -119,11 +132,15 @@ def _settings(args: argparse.Namespace) -> tuple[str, RealTimeSettings]:
     })
 
 
+def _temporal_mode(args: argparse.Namespace) -> str:
+    return getattr(args, "temporal_mode", getattr(args, "time_mode", None))
+
+
 def _runner_options(args: argparse.Namespace, settings: RealTimeSettings) -> dict[str, Any]:
     """The complete runner_options for this run: the environment's declared
     observation schedule with the invocation's run condition merged in."""
     return {
-        "time_mode": args.time_mode,
+        "time_mode": world_time_mode(_temporal_mode(args)),
         "start_paused": True,
         "observation_window_ms": settings.observation_window_ms,
         "frames_per_observation": settings.frames_per_observation,
@@ -140,6 +157,30 @@ def _play_time_limit_seconds(
 
 def _play_time_exhausted(task_time_ms: float, limit_seconds: int | None) -> bool:
     return limit_seconds is not None and task_time_ms >= limit_seconds * 1000
+
+
+def _actions_with_schedule(
+    group: dict[str, Any],
+    *,
+    temporal_mode: str,
+) -> list[dict[str, Any]]:
+    actions = list(group["actions"])
+    metadata = group.get("metadata") or {}
+    target_wall_ms = metadata.get("execute_at_wall_ms")
+    if target_wall_ms is None or not actions:
+        return actions
+    if not scheduled_execution_enabled(temporal_mode):
+        raise ValueError(
+            "scheduled actions are supported only in "
+            "live_timestamped_execution mode"
+        )
+    target_wall_ms = float(target_wall_ms)
+    if not math.isfinite(target_wall_ms) or target_wall_ms < 0:
+        raise ValueError("scheduled action wall time must be finite and non-negative")
+    return [
+        {"action": "wait_until", "wall_time_ms": target_wall_ms},
+        *actions,
+    ]
 
 
 def _time_command(env, command: str) -> dict:
@@ -383,11 +424,23 @@ def _mark_done(env, *, reason: str) -> tuple[dict, float, bool, dict]:
     return obs, reward, done, info
 
 
-def _resolve_agent_class(name: str):
+def _resolve_agent_class(name: str, temporal_mode: str = "live"):
     if name == "AuthoritativeObservationProbeAgent":
         return AuthoritativeObservationProbeAgent
     if name in {"Qwen35VLAgent", "WeirdQwen35VLAgent"}:
+        if timestamps_enabled(temporal_mode):
+            from weird_captcha_gym.evaluation.qwen_timestamped import (
+                TimestampedWeirdQwen35VLAgent,
+            )
+
+            return TimestampedWeirdQwen35VLAgent
         return WeirdQwen35VLAgent
+    if name == "GeminiComputerUseAgent" and timestamps_enabled(temporal_mode):
+        from weird_captcha_gym.evaluation.gemini_timestamped import (
+            TimestampedGeminiComputerUseAgent,
+        )
+
+        return TimestampedGeminiComputerUseAgent
     if ":" in name:
         module_name, _, class_name = name.partition(":")
         return getattr(importlib.import_module(module_name), class_name)
@@ -571,10 +624,13 @@ def _create_and_reset(args, runner_options):
 
 
 def run(args: argparse.Namespace) -> int:
+    temporal_mode = _temporal_mode(args)
+    base_time_mode = world_time_mode(temporal_mode)
     mechanic_id, settings = _settings(args)
     play_time_limit_seconds = _play_time_limit_seconds(args, settings)
     runner_options = _runner_options(args, settings)
     agent_args = json.loads(args.agent_args)
+    agent_args["temporal_mode"] = temporal_mode
     agent_args.setdefault("request_timeout_seconds", args.request_timeout_seconds)
     agent_args.setdefault("request_attempts", args.request_attempts)
 
@@ -582,13 +638,13 @@ def run(args: argparse.Namespace) -> int:
         # The run condition must be task identity for a by-name remote
         # create; resolve (and if needed materialize) the condition task.
         effective_task = _ensure_condition_task(
-            Path(args.env_dir), args.task, args.time_mode
+            Path(args.env_dir), args.task, base_time_mode
         )
         if effective_task != args.task:
             logger.info(
-                "Using condition task %s for time_mode=%s",
+                "Using condition task %s for temporal_mode=%s",
                 effective_task,
-                args.time_mode,
+                temporal_mode,
             )
             args.task = effective_task
 
@@ -599,7 +655,7 @@ def run(args: argparse.Namespace) -> int:
     try:
         _require_frames(obs, where="initial")
         obs = _localize_observation(env, obs)
-        clock = _TaskClock(args.time_mode)
+        clock = _TaskClock(base_time_mode)
         clock.observe(obs)
         max_steps = args.steps or env.max_steps or 50
         # Clock queries ride env.step now, so the environment-level step
@@ -608,7 +664,7 @@ def run(args: argparse.Namespace) -> int:
         episode_dir = _client_episode_dir(env)
         timing_path = episode_dir / "realtime_timing.jsonl"
 
-        agent_cls = _resolve_agent_class(args.agent)
+        agent_cls = _resolve_agent_class(args.agent, temporal_mode)
         agent = agent_cls(agent_args=agent_args, verbose=args.verbose, debug=args.debug)
         if getattr(agent, "autonomous", False):
             raise ValueError("the real-time evaluator requires turn-based agent.step observations")
@@ -629,12 +685,13 @@ def run(args: argparse.Namespace) -> int:
         _write_record(timing_path, {
             "event": "setup",
             "mechanic_id": mechanic_id,
-            "time_mode": args.time_mode,
+            "temporal_mode": temporal_mode,
+            "time_mode": base_time_mode,
             "settings": settings.__dict__,
             "task_play_time_limit_seconds": play_time_limit_seconds,
             "task_play_time_limit_enabled": play_time_limit_seconds is not None,
             "clock": obs.get("time_status"),
-            "task_time_live_estimated": args.time_mode == "live",
+            "task_time_live_estimated": base_time_mode == "live",
             "request_timeout_seconds": args.request_timeout_seconds,
             "request_attempts": args.request_attempts,
             "fast_io": args.fast_io,
@@ -686,7 +743,7 @@ def run(args: argparse.Namespace) -> int:
             action_outputs = []
             action_records = []
 
-            if args.time_mode == "live" and _play_time_exhausted(
+            if base_time_mode == "live" and _play_time_exhausted(
                 after_model_ms,
                 play_time_limit_seconds,
             ):
@@ -704,7 +761,9 @@ def run(args: argparse.Namespace) -> int:
                 break
 
             for group in actions:
-                actual_actions = group["actions"]
+                actual_actions = _actions_with_schedule(
+                    group, temporal_mode=temporal_mode
+                )
                 task_time_before_action_ms = clock.now_ms()
                 action_started = time.perf_counter()
                 # The runner owns the turn discipline. In paused mode it
@@ -738,6 +797,9 @@ def run(args: argparse.Namespace) -> int:
                 action_records.append({
                     "tool_id": group.get("tool_id"),
                     "action_count": len(actual_actions),
+                    "requested_execute_at_s": (
+                        (group.get("metadata") or {}).get("execute_at_s")
+                    ),
                     "action_ms": action_ms,
                     "task_time_before_action_ms": task_time_before_action_ms,
                     "task_time_after_execution_ms": task_time_after_execution_ms,
@@ -806,7 +868,8 @@ def run(args: argparse.Namespace) -> int:
                         "mechanic_id": mechanic_id,
                         "task": args.task,
                         "seed": args.seed,
-                        "time_mode": args.time_mode,
+                        "temporal_mode": temporal_mode,
+                        "time_mode": base_time_mode,
                         "attempts": attempts,
                         "info": info,
                     },

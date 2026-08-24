@@ -398,6 +398,27 @@ class StateMachineTest(WeirdCaptchaRunnerTestCase):
         self.assertEqual(events, ["wait-ready", "resume"])
         self.assertTrue(fake.clock_running)
 
+    def test_live_wait_until_runs_in_guest_before_input(self):
+        runner = self._runner(time_mode="live")
+        fake = runner.inner
+        runner.inject_action({"action": "wait_until", "wall_time_ms": 12345.0})
+        runner.inject_action({"mouse": {"left_click": [5, 5]}})
+
+        calls = [call for call in fake.calls if call[0] in {"exec_capture", "inject"}]
+        wait_index = next(
+            index for index, call in enumerate(calls) if "wait-until" in str(call[1])
+        )
+        inject_index = next(index for index, call in enumerate(calls) if call[0] == "inject")
+        self.assertLess(wait_index, inject_index)
+        self.assertEqual(
+            self._time_events(fake), ["wait-ready", "resume", "wait-until"]
+        )
+
+    def test_wait_until_is_rejected_in_paused_mode(self):
+        runner = self._runner()
+        with self.assertRaisesRegex(ValueError, "live mode"):
+            runner.inject_action({"action": "wait_until", "wall_time_ms": 12345.0})
+
     def test_time_action_reports_result(self):
         runner = self._runner()
         runner.inject_action({"action": "time", "command": "status"})

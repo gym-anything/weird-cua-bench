@@ -456,6 +456,7 @@ select { background: #2d333b; color: #fff; border: 0; padding: 7px; border-radiu
   <h2>Runs <span id="count"></span></h2>
   <input id="filter" placeholder="search: terms AND-ed, -word excludes">
   <div class="filters">
+    <select id="f_exp"><option value="">any experiment</option></select>
     <select id="f_model"><option value="">any model</option></select>
     <select id="f_verdict"><option value="">any result</option><option value="pass">PASS only</option><option value="fail">FAIL only</option></select>
     <select id="f_mech"><option value="">any env</option></select>
@@ -497,9 +498,10 @@ fetch('/api/runs').then(r => r.json()).then(d => {
     });
   };
   fill('f_model', runs.map(r => r.model));
+  fill('f_exp', runs.map(r => r.exp));
   fill('f_mech', runs.map(r => r.mech));
   fill('f_diff', runs.map(r => r.diff));
-  ['model','verdict','mech','diff','inter','tmode','sort'].forEach(k => {
+  ['exp','model','verdict','mech','diff','inter','tmode','sort'].forEach(k => {
     $('f_' + k).onchange = e => { F[k] = e.target.value; renderRuns(); };
   });
   renderRuns();
@@ -508,6 +510,7 @@ function matches(r) {
   if (F.model && r.model !== F.model) return false;
   if (F.verdict === 'pass' && r.verdict !== true) return false;
   if (F.verdict === 'fail' && r.verdict !== false) return false;
+  if (F.exp && r.exp !== F.exp) return false;
   if (F.mech && r.mech !== F.mech) return false;
   if (F.diff && r.diff !== F.diff) return false;
   if (F.inter && r.inter !== F.inter) return false;
@@ -522,7 +525,7 @@ function matches(r) {
   }
   return true;
 }
-const F = {model: '', verdict: '', mech: '', diff: '', inter: '', tmode: '', sort: 'task'};
+const F = {exp: '', model: '', verdict: '', mech: '', diff: '', inter: '', tmode: '', sort: 'task'};
 function sortRuns(list) {
   const s = F.sort;
   if (s === 'steps_desc') return list.sort((a, b) => b.steps - a.steps);

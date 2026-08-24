@@ -51,6 +51,69 @@ def test_evaluator_parser_accepts_gym_remote_and_fast_io_options() -> None:
     assert args.fast_io is True
     assert args.remote_url == "http://master:5000"
     assert args.remote_worker_reset_policy == "baseline_setup"
+    assert args.temporal_mode == "paused"
+
+
+def test_evaluator_parser_accepts_four_temporal_modes() -> None:
+    parser = evaluator.build_parser()
+    for mode in (
+        "paused",
+        "live",
+        "live_timestamped",
+        "live_timestamped_execution",
+    ):
+        args = parser.parse_args(
+            [
+                "--env-dir",
+                "environment",
+                "--task",
+                "task",
+                "--agent",
+                "Qwen35VLAgent",
+                "--agent-args",
+                "{}",
+                "--temporal-mode",
+                mode,
+            ]
+        )
+        assert args.temporal_mode == mode
+
+
+def test_temporal_modes_map_to_two_runner_clock_modes() -> None:
+    settings = SimpleNamespace(
+        observation_window_ms=800,
+        frames_per_observation=6,
+        play_time_seconds=90,
+    )
+    for temporal_mode, expected in (
+        ("paused", "paused"),
+        ("live", "live"),
+        ("live_timestamped", "live"),
+        ("live_timestamped_execution", "live"),
+    ):
+        args = SimpleNamespace(temporal_mode=temporal_mode)
+        assert evaluator._runner_options(args, settings)["time_mode"] == expected
+
+
+def test_timestamped_modes_select_timestamped_reference_agents() -> None:
+    from weird_captcha_gym.evaluation.gemini_timestamped import (
+        TimestampedGeminiComputerUseAgent,
+    )
+    from weird_captcha_gym.evaluation.qwen_timestamped import (
+        TimestampedWeirdQwen35VLAgent,
+    )
+
+    assert evaluator._resolve_agent_class("Qwen35VLAgent", "live") is WeirdQwen35VLAgent
+    assert (
+        evaluator._resolve_agent_class("Qwen35VLAgent", "live_timestamped")
+        is TimestampedWeirdQwen35VLAgent
+    )
+    assert (
+        evaluator._resolve_agent_class(
+            "GeminiComputerUseAgent", "live_timestamped_execution"
+        )
+        is TimestampedGeminiComputerUseAgent
+    )
 
 
 def test_evaluator_can_disable_the_task_clock_limit() -> None:

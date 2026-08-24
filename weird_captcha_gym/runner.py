@@ -25,6 +25,7 @@ from __future__ import annotations
 import copy
 import json
 import logging
+import math
 import shlex
 import time
 from pathlib import Path
@@ -412,7 +413,7 @@ class WeirdCaptchaRunner(BaseRunner):
         if command not in TIME_COMMANDS:
             raise ValueError(f"unsupported time command: {command}")
         result = self._guest_json(
-            ["python3", TIME_CONTROL_SCRIPT, command, "--timeout", "30"]
+            ["python3", TIME_CONTROL_SCRIPT, command, "--timeout", "120"]
         )
         if command == "resume":
             self._clock_running = True
@@ -500,6 +501,25 @@ class WeirdCaptchaRunner(BaseRunner):
             # configured observation window is the only task-time advance.
             time.sleep(seconds)
             return
+        if kind == "wait_until":
+            if self.time_mode != "live":
+                raise ValueError("wait_until is supported only in live mode")
+            target_wall_ms = float(action["wall_time_ms"])
+            if not math.isfinite(target_wall_ms) or target_wall_ms < 0:
+                raise ValueError("wait_until wall_time_ms must be finite and non-negative")
+            self._ensure_ready()
+            self._ensure_live_started()
+            result = self._guest_json(
+                [
+                    "python3",
+                    TIME_CONTROL_SCRIPT,
+                    "wait-until",
+                    "--wall-time-ms",
+                    repr(target_wall_ms),
+                ]
+            )
+            self.last_action_result = result
+            return result
         self._ensure_ready()
         if self.time_mode == "live":
             self._ensure_live_started()

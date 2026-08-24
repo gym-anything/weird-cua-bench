@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import math
 import time
 import urllib.error
 import urllib.request
@@ -73,15 +74,40 @@ def wait_until_ready(*, port: int = 8787, timeout: float = 30.0) -> dict:
     return wait_for_status(lambda item: item.get("ready") is True, port=port, timeout=timeout)
 
 
+def wait_until_wall_time(target_wall_ms: float) -> dict:
+    """Wait against the guest wall clock used by capture manifests."""
+    target_wall_ms = float(target_wall_ms)
+    if not math.isfinite(target_wall_ms) or target_wall_ms < 0:
+        raise ValueError("target wall time must be a finite non-negative number")
+    remaining_s = (target_wall_ms - time.time_ns() / 1_000_000) / 1000
+    if remaining_s > 0:
+        time.sleep(remaining_s)
+    completed_wall_ms = time.time_ns() / 1_000_000
+    return {
+        "requested_wall_time_ms": target_wall_ms,
+        "wait_completed_wall_ms": completed_wall_ms,
+        "wait_lateness_ms": max(0.0, completed_wall_ms - target_wall_ms),
+    }
+
+
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="Control the Weird CUA Bench browser clock.")
     parser.add_argument(
         "command",
-        choices=("status", "wait-ready", "pause", "settle-pause", "resume", "run-for"),
+        choices=(
+            "status",
+            "wait-ready",
+            "wait-until",
+            "pause",
+            "settle-pause",
+            "resume",
+            "run-for",
+        ),
     )
     parser.add_argument("--port", type=int, default=8787)
     parser.add_argument("--milliseconds", type=float)
     parser.add_argument("--start-delay-ms", type=float, default=0)
+    parser.add_argument("--wall-time-ms", type=float)
     parser.add_argument("--timeout", type=float, default=30)
     return parser.parse_args()
 
@@ -92,6 +118,10 @@ def main() -> None:
         result = get_status(port=args.port)
     elif args.command == "wait-ready":
         result = wait_until_ready(port=args.port, timeout=args.timeout)
+    elif args.command == "wait-until":
+        if args.wall_time_ms is None:
+            raise ValueError("wait-until requires --wall-time-ms")
+        result = wait_until_wall_time(args.wall_time_ms)
     else:
         command = args.command.replace("-", "_")
         accepted = send_command(
