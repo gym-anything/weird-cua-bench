@@ -68,4 +68,7 @@ For the 2026-08-24 recovery, the authoritative clean checkout is
 `/data/user_data/pranjala/weird_cua_restore/repo-modularity` tree is runtime
 input only: do not edit, delete, or replace it while the old master reports
 active environments. Cut over the master and workers to the clean checkout
-only after active environments reach zero, then archive the legacy tree.
+only after active environments reach zero, then archive the legacy tree. Do
+not point the clean client at legacy workers during that transition: the task
+digest contract changed to exclude runtime bytecode caches, so the master,
+workers, and clients must move to the pinned Gym commit together.
