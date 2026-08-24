@@ -1,11 +1,14 @@
 from __future__ import annotations
 
+import json
 from dataclasses import replace
+from pathlib import Path
 
 from weird_captcha_gym.real_time_annotations import (
     AUDIT_CASES,
     DIFFICULTIES,
     INTERACTIONS,
+    build_real_time_audit_skeleton,
 )
 
 
@@ -37,6 +40,37 @@ def test_real_time_audit_skeleton_uses_public_task_names() -> None:
 
     assert all(len(names) == 1 for names in public_names_by_environment.values())
     assert all(next(iter(names)).strip() for names in public_names_by_environment.values())
+
+
+def test_real_time_audit_skeleton_uses_canonical_name_with_generated_tasks(
+    tmp_path: Path,
+) -> None:
+    environment_dir = tmp_path / "demo_env"
+    controls = {
+        "mechanic_id": "demo",
+        "difficulty": {str(level): {} for level in DIFFICULTIES},
+        "interaction": {
+            interaction: {"implemented": True} for interaction in INTERACTIONS
+        },
+    }
+    environment_dir.mkdir()
+    (environment_dir / "controls.json").write_text(json.dumps(controls), encoding="utf-8")
+    canonical = environment_dir / "tasks" / "demo_seed_0001"
+    generated = environment_dir / "tasks" / "demo_d1_full_seed_0001"
+    canonical.mkdir(parents=True)
+    generated.mkdir(parents=True)
+    (canonical / "task.json").write_text(
+        json.dumps({"name": "Demo"}), encoding="utf-8"
+    )
+    (generated / "task.json").write_text(
+        json.dumps({"name": "Demo · Difficulty 1 · Full Interaction"}),
+        encoding="utf-8",
+    )
+
+    cases = build_real_time_audit_skeleton(tmp_path)
+
+    assert len(cases) == len(INTERACTIONS) * len(DIFFICULTIES)
+    assert {case.public_name for case in cases} == {"Demo"}
 
 
 def test_real_time_audit_skeleton_starts_unclassified() -> None:

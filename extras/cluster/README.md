@@ -44,3 +44,28 @@ extras/cluster/run_qemu_worker.sh 8 worker-p9-28-a http://babel-p9-28:5900
 Set `SOURCE_QEMU_CACHE` and `LOCAL_QEMU_CACHE` when the defaults do not match
 the host. The worker advertises both `weird_captcha` and `qemu` and restarts
 after a process-level failure.
+
+## Repository and runtime ownership
+
+The benchmark, controlled-task definitions, evaluator, and cluster launchers
+belong to `gym-anything/weird-cua-bench`. The reusable runtime, remote client,
+runner contracts, and Codex CLI harness belong to `cmu-l3/gym-anything`.
+`pyproject.toml` pins the exact Gym commit that the benchmark expects; update
+that pin and `uv.lock` together whenever a required Gym change is published.
+
+Generated controlled-task directories are ignored build products. Recreate
+them from the tracked `controls.json` files with:
+
+```bash
+.venv/bin/python weird_captcha_gym/tools/materialize_controlled_tasks.py \
+  --all-controlled \
+  --output-root weird_captcha_gym/environments
+```
+
+For the 2026-08-24 recovery, the authoritative clean checkout is
+`/data/user_data/pranjala/weird-cua-bench` on branch
+`recovery/timed-codex-20260824`. The legacy
+`/data/user_data/pranjala/weird_cua_restore/repo-modularity` tree is runtime
+input only: do not edit, delete, or replace it while the old master reports
+active environments. Cut over the master and workers to the clean checkout
+only after active environments reach zero, then archive the legacy tree.
