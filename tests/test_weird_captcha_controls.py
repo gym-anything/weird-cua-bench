@@ -360,6 +360,50 @@ def test_materializer_writes_every_implemented_interaction_deterministically(tmp
                 assert task["natural_language"] == expected_instruction
 
 
+def test_materializer_preserves_recovered_action_contracts() -> None:
+    expected_parameters = {
+        "flat_prisoner_env": {
+            1: {"minimum_camera_events": 6, "minimum_camera_elapsed_ms": 180},
+            2: {"minimum_camera_events": 10, "minimum_camera_elapsed_ms": 300},
+            3: {"minimum_camera_events": 14, "minimum_camera_elapsed_ms": 400},
+            4: {"minimum_camera_events": 18, "minimum_camera_elapsed_ms": 520},
+            5: {"minimum_camera_events": 24, "minimum_camera_elapsed_ms": 700},
+        },
+        "magnetic_stripe_purgatory_env": {
+            1: {"minimum_insert_moves": 2, "minimum_insert_ms": 60},
+            2: {"minimum_insert_moves": 3, "minimum_insert_ms": 75},
+            3: {"minimum_insert_moves": 4, "minimum_insert_ms": 90},
+            4: {"minimum_insert_moves": 4, "minimum_insert_ms": 90},
+            5: {"minimum_insert_moves": 5, "minimum_insert_ms": 105},
+        },
+        "modifier_stack_image_grid_env": {
+            1: {"minimum_chip_moves": 2, "minimum_chip_drag_ms": 50},
+            2: {"minimum_chip_moves": 2, "minimum_chip_drag_ms": 60},
+            3: {"minimum_chip_moves": 4, "minimum_chip_drag_ms": 80},
+            4: {"minimum_chip_moves": 4, "minimum_chip_drag_ms": 80},
+            5: {"minimum_chip_moves": 5, "minimum_chip_drag_ms": 90},
+        },
+    }
+    for env_name, levels in expected_parameters.items():
+        for level, expected in levels.items():
+            parameters = task_for_level(env_name, level, "full")["metadata"][
+                "control_condition"
+            ]["difficulty_parameters"]
+            assert {key: parameters[key] for key in expected} == expected
+
+    simplified_instructions = {
+        1: "Inspect two lanes separately. Click a lane pad to press it and click it again to release it during the combined clearance.",
+        2: "Inspect three lanes separately. Click a lane pad to press it and click it again to release it; reproduce the shared chord by toggling both marked lanes together.",
+        3: "Inspect three lanes separately. Click a lane pad to press it and click it again to release it; toggle both lanes near a shared mark for the chord.",
+        4: "Inspect four lanes separately. Click a lane pad to press it and click it again to release it; reproduce the combined clearance on A, S, D, and F.",
+        5: "Inspect four dense lanes separately. Click a lane pad to press it and click it again to release it; toggle each shared pair together during the combined clearance.",
+    }
+    for level, expected in simplified_instructions.items():
+        assert task_for_level(
+            "polyrhythm_customs_env", level, "simplified"
+        )["natural_language"] == expected
+
+
 def test_original_tasks_match_their_independently_assigned_baselines() -> None:
     seed = "baseline-preservation"
     for env_name in CONTROLLED_ENVIRONMENTS:

@@ -23,6 +23,16 @@ if [ ! -x "$PYTHON" ]; then
   exit 1
 fi
 
+if [ ! -f "$ENV_DIR/tasks/$TASK/task.json" ] && [ -f "$ENV_DIR/controls.json" ]; then
+  "$PYTHON" "$REPO_ROOT/weird_captcha_gym/tools/materialize_controlled_tasks.py" \
+    --environment "$(basename "$ENV_DIR")" \
+    --output-root "$REPO_ROOT/weird_captcha_gym/environments"
+fi
+[ -f "$ENV_DIR/tasks/$TASK/task.json" ] || {
+  echo "task not found: $ENV_DIR/tasks/$TASK/task.json" >&2
+  exit 1
+}
+
 mkdir -p "$OUTPUT_ROOT/logs" "$OUTPUT_ROOT/summaries"
 
 run_mode() {

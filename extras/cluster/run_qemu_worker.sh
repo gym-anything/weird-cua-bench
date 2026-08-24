@@ -17,6 +17,10 @@ RESTART_DELAY_SECONDS=${RESTART_DELAY_SECONDS:-120}
 
 [ -x "$WORKER" ] || { echo "worker executable not found at $WORKER" >&2; exit 1; }
 [ -w /dev/kvm ] || { echo "writable /dev/kvm is required" >&2; exit 1; }
+"$REPO_ROOT/.venv/bin/python" \
+  "$REPO_ROOT/weird_captcha_gym/tools/materialize_controlled_tasks.py" \
+  --all-controlled \
+  --output-root "$REPO_ROOT/weird_captcha_gym/environments"
 mkdir -p "$LOCAL_QEMU_CACHE"
 
 (

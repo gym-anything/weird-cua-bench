@@ -19,6 +19,10 @@ command -v jq >/dev/null || { echo "jq is required" >&2; exit 1; }
 [ -x "$PYTHON" ] || { echo "Python environment not found at $PYTHON" >&2; exit 1; }
 jq -e 'type == "object"' <<<"$AGENT_ARGS" >/dev/null
 
+"$PYTHON" "$REPO_ROOT/weird_captcha_gym/tools/materialize_controlled_tasks.py" \
+  --all-controlled \
+  --output-root "$REPO_ROOT/weird_captcha_gym/environments"
+
 mkdir -p "$OUTPUT_ROOT/summaries" "$OUTPUT_ROOT/logs" "$OUTPUT_ROOT/locks"
 LIST=$OUTPUT_ROOT/episodes.txt
 

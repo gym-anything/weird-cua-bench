@@ -4,7 +4,9 @@ These scripts are the tracked, path-independent replacements for the launch
 scripts recovered from `/data/user_data/pranjala/weird_cua_restore`. They assume
 the current checkout has been installed into `.venv`; outputs and node-local
 cache locations are supplied explicitly instead of pointing back at the
-recovered orphan checkout.
+recovered orphan checkout. The launchers materialize the repository's ignored,
+generated controlled-task matrix from each environment's tracked
+`controls.json` before creating environments.
 
 Run the four Codex temporal conditions together:
 
