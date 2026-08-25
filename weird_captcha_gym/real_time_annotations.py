@@ -56,20 +56,14 @@ def _read_json(path: Path) -> dict:
     return json.loads(path.read_text(encoding="utf-8"))
 
 
-def _public_name(environment_dir: Path) -> str:
-    task_paths = sorted(environment_dir.glob("tasks/*/task.json"))
-    if not task_paths:
-        raise ValueError(f"{environment_dir.name} has no task contract")
-    names = {
-        str(_read_json(task_path).get("name") or "").strip()
-        for task_path in task_paths
-    }
-    names.discard("")
-    if len(names) != 1:
-        raise ValueError(
-            f"{environment_dir.name} must have one exact public name; found {sorted(names)!r}"
-        )
-    return names.pop()
+def _public_name(environment_dir: Path, mechanic_id: str) -> str:
+    task_path = environment_dir / "tasks" / f"{mechanic_id}_seed_0001" / "task.json"
+    if not task_path.is_file():
+        raise ValueError(f"{environment_dir.name} has no canonical task contract at {task_path}")
+    name = str(_read_json(task_path).get("name") or "").strip()
+    if not name:
+        raise ValueError(f"{task_path} has no public name")
+    return name
 
 
 def build_real_time_audit_skeleton(
@@ -105,7 +99,7 @@ def build_real_time_audit_skeleton(
                 f"{missing_interactions!r}"
             )
 
-        public_name = _public_name(environment_dir)
+        public_name = _public_name(environment_dir, mechanic_id)
         for interaction in INTERACTIONS:
             for difficulty in DIFFICULTIES:
                 cases.append(

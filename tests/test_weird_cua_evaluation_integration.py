@@ -51,6 +51,81 @@ def test_evaluator_parser_accepts_gym_remote_and_fast_io_options() -> None:
     assert args.fast_io is True
     assert args.remote_url == "http://master:5000"
     assert args.remote_worker_reset_policy == "baseline_setup"
+    assert args.temporal_mode == "paused"
+
+
+def test_evaluator_parser_accepts_four_temporal_modes() -> None:
+    parser = evaluator.build_parser()
+    for mode in (
+        "paused",
+        "live",
+        "live_timestamped",
+        "live_timestamped_execution",
+    ):
+        args = parser.parse_args(
+            [
+                "--env-dir",
+                "environment",
+                "--task",
+                "task",
+                "--agent",
+                "Qwen35VLAgent",
+                "--agent-args",
+                "{}",
+                "--temporal-mode",
+                mode,
+            ]
+        )
+        assert args.temporal_mode == mode
+
+
+def test_temporal_modes_map_to_two_runner_clock_modes() -> None:
+    settings = SimpleNamespace(
+        observation_window_ms=800,
+        frames_per_observation=6,
+        play_time_seconds=90,
+    )
+    for temporal_mode, expected in (
+        ("paused", "paused"),
+        ("live", "live"),
+        ("live_timestamped", "live"),
+        ("live_timestamped_execution", "live"),
+    ):
+        args = SimpleNamespace(temporal_mode=temporal_mode)
+        options = evaluator._runner_options(args, settings)
+        assert options["time_mode"] == expected
+        assert options["observation_window_ms"] == (
+            800 if temporal_mode == "paused" else 0
+        )
+        assert options["frames_per_observation"] == (
+            6 if temporal_mode == "paused" else 1
+        )
+
+
+def test_timestamped_modes_select_timestamped_reference_agents() -> None:
+    from weird_captcha_gym.evaluation.codex_cli import WeirdCodexCliAgent
+    from weird_captcha_gym.evaluation.gemini_timestamped import (
+        TimestampedGeminiComputerUseAgent,
+    )
+    from weird_captcha_gym.evaluation.qwen_timestamped import (
+        TimestampedWeirdQwen35VLAgent,
+    )
+
+    assert evaluator._resolve_agent_class("Qwen35VLAgent", "live") is WeirdQwen35VLAgent
+    assert (
+        evaluator._resolve_agent_class("Qwen35VLAgent", "live_timestamped")
+        is TimestampedWeirdQwen35VLAgent
+    )
+    assert (
+        evaluator._resolve_agent_class(
+            "GeminiComputerUseAgent", "live_timestamped_execution"
+        )
+        is TimestampedGeminiComputerUseAgent
+    )
+    assert (
+        evaluator._resolve_agent_class("CodexCliAgent", "live_timestamped")
+        is WeirdCodexCliAgent
+    )
 
 
 def test_evaluator_can_disable_the_task_clock_limit() -> None:
@@ -121,6 +196,27 @@ def test_evaluator_falls_back_to_task_description() -> None:
     )
 
 
+def test_autonomous_instruction_allows_programs_only_through_gateway() -> None:
+    env = SimpleNamespace(
+        task_spec=SimpleNamespace(
+            natural_language="Solve the task.",
+            description="Fallback.",
+        )
+    )
+    args = SimpleNamespace(env_dir="unused", task="unused")
+
+    description = evaluator._task_description(
+        env,
+        args,
+        gateway_programs_allowed=True,
+    )
+
+    assert "write programs inside the isolated agent sandbox" in description
+    assert "screenshots returned by the action gateway" in description
+    assert "Do not connect to the task VM" in description
+    assert evaluator.VISIBLE_UI_ONLY_RULE not in description
+
+
 def test_make_env_merges_runner_options_locally(monkeypatch) -> None:
     sentinel = object()
     received = {}
@@ -150,7 +246,7 @@ def test_make_env_merges_runner_options_locally(monkeypatch) -> None:
     }
 
 
-def test_make_env_creates_remote_by_benchmark_name_without_overrides(monkeypatch) -> None:
+def test_make_env_creates_remote_by_benchmark_name_with_overrides(monkeypatch) -> None:
     sentinel = object()
     received = {}
 
@@ -164,73 +260,29 @@ def test_make_env_creates_remote_by_benchmark_name_without_overrides(monkeypatch
     args = SimpleNamespace(
         remote_url="http://master:5000",
         env_dir="weird_captcha_gym/environments/rotating_keyboard_env",
-        task="rotating_keyboard_seed_0001_tlive",
+        task="rotating_keyboard_seed_0001",
         remote_timeout=123,
         remote_worker_reset_policy="baseline_setup",
         fast_io=True,
         observation_window_ms=None,
         frames_per_observation=None,
     )
-    options = {"time_mode": "live", "observation_window_ms": 800}
+    options = {
+        "time_mode": "live",
+        "observation_window_ms": 0,
+        "frames_per_observation": 1,
+    }
     assert evaluator._make_env(args, options) is sentinel
-    # The run condition is task identity; nothing rides the create call.
     assert received == {
         "remote_url": "http://master:5000",
         "benchmark": "weird_captcha_gym",
         "env_name": "rotating_keyboard_env",
-        "task_id": "rotating_keyboard_seed_0001_tlive",
+        "task_id": "rotating_keyboard_seed_0001",
         "timeout": 123,
         "worker_reset_policy": "baseline_setup",
         "fast_io": True,
+        "overrides": {"runner_options": options},
     }
-
-
-def test_make_env_rejects_remote_observation_schedule_flags() -> None:
-    args = SimpleNamespace(
-        remote_url="http://master:5000",
-        env_dir="unused",
-        task="unused",
-        remote_timeout=300,
-        remote_worker_reset_policy="core",
-        fast_io=False,
-        observation_window_ms=500,
-        frames_per_observation=None,
-    )
-    with pytest.raises(ValueError):
-        evaluator._make_env(args, {"time_mode": "paused"})
-
-
-def test_condition_task_materializes_the_requested_mode(tmp_path: Path) -> None:
-    env_dir = tmp_path / "rotating_keyboard_env"
-    source = env_dir / "tasks" / "rotating_keyboard_seed_0001"
-    source.mkdir(parents=True)
-    (source / "task.json").write_text(json.dumps({
-        "id": "rotating_keyboard_seed_0001@0.1",
-        "description": "Type the code.",
-        "hooks": {
-            "pre_task": "/workspace/tasks/rotating_keyboard_seed_0001/setup_task.sh",
-            "post_task": "/workspace/tasks/rotating_keyboard_seed_0001/export_result.sh",
-        },
-        "success": {"mode": "program", "spec": {"program": "verifier.py::verify_task"}},
-        "metadata": {"mechanic_id": "rotating_keyboard"},
-    }))
-    (source / "setup_task.sh").write_text("#!/bin/sh\n")
-    (source / "verifier.py").write_text("def verify_task(*a): ...\n")
-
-    effective = evaluator._ensure_condition_task(
-        env_dir, "rotating_keyboard_seed_0001", "live"
-    )
-    assert effective == "rotating_keyboard_seed_0001_tlive"
-    variant = json.loads((env_dir / "tasks" / effective / "task.json").read_text())
-    assert variant["id"] == "rotating_keyboard_seed_0001_tlive@0.1"
-    assert variant["metadata"]["control_condition"]["real_time"] == "live"
-    assert variant["hooks"]["pre_task"] == (
-        "/workspace/tasks/rotating_keyboard_seed_0001_tlive/setup_task.sh"
-    )
-    assert (env_dir / "tasks" / effective / "verifier.py").exists()
-
-    # A task already declaring the condition is used as is.
-    assert evaluator._ensure_condition_task(env_dir, effective, "live") == effective
 
 
 def test_task_clock_paused_reads_observations_and_live_extrapolates() -> None:
@@ -639,6 +691,96 @@ def test_summary_written_only_with_decided_verdict(tmp_path, monkeypatch) -> Non
         evaluator.run(args)
     assert fake.closed
     assert not summary.exists()
+
+
+def test_evaluator_delegates_autonomous_agent_episode(tmp_path, monkeypatch) -> None:
+    calls = {}
+
+    class AutonomousAgent:
+        autonomous = True
+
+        def __init__(self, agent_args, verbose, debug):
+            calls["agent_args"] = agent_args
+
+        def init(self, task_description, display_resolution, save_path):
+            calls["description"] = task_description
+            calls["resolution"] = display_resolution
+            calls["save_path"] = save_path
+
+        def run_episode(self, env, task_description):
+            calls["run_episode"] = (env, task_description)
+
+        def finish(self, info):
+            calls["finish"] = info
+
+    class FakeEnv:
+        max_steps = 12
+        episode_dir = tmp_path
+        task_spec = SimpleNamespace(
+            natural_language="Solve the moving task.",
+            description="Fallback.",
+        )
+        env_spec = SimpleNamespace(
+            observation=[
+                SimpleNamespace(type="frame_window", resolution=(1920, 1080))
+            ]
+        )
+
+        def set_episode_limits(self, max_steps, timeout_sec):
+            calls["limits"] = (max_steps, timeout_sec)
+
+        def step(self, actions, **kwargs):
+            calls["mark_done"] = (actions, kwargs)
+            return {}, 1.0, True, {
+                "verifier": {"decided": True, "passed": True, "score": 100}
+            }
+
+        def close(self):
+            calls["closed"] = True
+
+    env = FakeEnv()
+    initial = {
+        "screen": {"path": str(tmp_path / "frame.png")},
+        "frames": [{"path": str(tmp_path / "frame.png")}],
+        "time": {"task_time_ms": 0},
+    }
+    (tmp_path / "frame.png").write_bytes(b"frame")
+    monkeypatch.setattr(
+        evaluator,
+        "_create_and_reset",
+        lambda args, runner_options: (
+            calls.setdefault("runner_options", runner_options) and env,
+            initial,
+        ),
+    )
+    monkeypatch.setattr(evaluator, "_resolve_agent_class", lambda *args: AutonomousAgent)
+
+    args = evaluator.build_parser().parse_args([
+        "--env-dir", "weird_captcha_gym/environments/rotating_keyboard_env",
+        "--task", "rotating_keyboard_seed_0001",
+        "--agent", "CodexCliAgent",
+        "--agent-args", '{"model": "gpt-5.6-luna"}',
+        "--temporal-mode", "live_timestamped_execution",
+        "--steps", "9",
+    ])
+
+    assert evaluator.run(args) == 0
+    assert calls["runner_options"]["observation_window_ms"] == 0
+    assert calls["runner_options"]["frames_per_observation"] == 1
+    assert calls["agent_args"]["temporal_mode"] == "live_timestamped_execution"
+    assert calls["agent_args"]["max_steps"] == 9
+    assert "write programs inside the isolated agent sandbox" in calls["description"]
+    assert calls["run_episode"] == (env, calls["description"])
+    assert calls["mark_done"] == (
+        [],
+        {
+            "mark_done": True,
+            "capture_observation": False,
+            "settle_after_actions": False,
+        },
+    )
+    assert calls["finish"]["verifier"]["passed"] is True
+    assert calls["closed"] is True
 
 
 def test_admission_waits_out_capacity_refusals(tmp_path, monkeypatch) -> None:

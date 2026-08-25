@@ -15,7 +15,7 @@ import argparse
 import importlib
 import json
 import logging
-import shutil
+import math
 import signal
 import sys
 import tempfile
@@ -36,6 +36,12 @@ from weird_captcha_gym.runner import (
     guest_json,
 )
 from weird_captcha_gym.evaluation.qwen35vl import WeirdQwen35VLAgent
+from weird_captcha_gym.evaluation.temporal_modes import (
+    TEMPORAL_MODES,
+    scheduled_execution_enabled,
+    timestamps_enabled,
+    world_time_mode,
+)
 from weird_captcha_gym.realtime import (
     RealTimeSettings,
     load_real_time_settings,
@@ -60,12 +66,18 @@ VISIBLE_UI_ONLY_RULE = (
 
 
 def build_parser() -> argparse.ArgumentParser:
-    parser = argparse.ArgumentParser(description="Evaluate Weird CUA Bench in live or paused time.")
+    parser = argparse.ArgumentParser(description="Evaluate Weird CUA Bench temporal modes.")
     parser.add_argument("--env-dir", "--env_dir", required=True)
     parser.add_argument("--task", required=True)
     parser.add_argument("--agent", required=True)
     parser.add_argument("--agent-args", "--agent_args", required=True)
-    parser.add_argument("--time-mode", choices=("live", "paused"), required=True)
+    parser.add_argument(
+        "--temporal-mode",
+        "--time-mode",
+        dest="temporal_mode",
+        choices=TEMPORAL_MODES,
+        required=True,
+    )
     parser.add_argument("--seed", type=int, default=42)
     parser.add_argument("--steps", type=int)
     parser.add_argument("--use-cache", "--use_cache", action="store_true")
@@ -119,14 +131,23 @@ def _settings(args: argparse.Namespace) -> tuple[str, RealTimeSettings]:
     })
 
 
+def _temporal_mode(args: argparse.Namespace) -> str:
+    return getattr(args, "temporal_mode", getattr(args, "time_mode", None))
+
+
 def _runner_options(args: argparse.Namespace, settings: RealTimeSettings) -> dict[str, Any]:
     """The complete runner_options for this run: the environment's declared
     observation schedule with the invocation's run condition merged in."""
+    temporal_mode = _temporal_mode(args)
+    live = world_time_mode(temporal_mode) == "live"
     return {
-        "time_mode": args.time_mode,
+        "time_mode": "live" if live else "paused",
         "start_paused": True,
-        "observation_window_ms": settings.observation_window_ms,
-        "frames_per_observation": settings.frames_per_observation,
+        # A live agent can request another observation at any time. Each
+        # response is therefore one instantaneous frame; only paused mode
+        # advances through the benchmark's configured frame window.
+        "observation_window_ms": 0 if live else settings.observation_window_ms,
+        "frames_per_observation": 1 if live else settings.frames_per_observation,
         "play_time_seconds": settings.play_time_seconds,
     }
 
@@ -140,6 +161,30 @@ def _play_time_limit_seconds(
 
 def _play_time_exhausted(task_time_ms: float, limit_seconds: int | None) -> bool:
     return limit_seconds is not None and task_time_ms >= limit_seconds * 1000
+
+
+def _actions_with_schedule(
+    group: dict[str, Any],
+    *,
+    temporal_mode: str,
+) -> list[dict[str, Any]]:
+    actions = list(group["actions"])
+    metadata = group.get("metadata") or {}
+    target_wall_ms = metadata.get("execute_at_wall_ms")
+    if target_wall_ms is None or not actions:
+        return actions
+    if not scheduled_execution_enabled(temporal_mode):
+        raise ValueError(
+            "scheduled actions are supported only in "
+            "live_timestamped_execution mode"
+        )
+    target_wall_ms = float(target_wall_ms)
+    if not math.isfinite(target_wall_ms) or target_wall_ms < 0:
+        raise ValueError("scheduled action wall time must be finite and non-negative")
+    return [
+        {"action": "wait_until", "wall_time_ms": target_wall_ms},
+        *actions,
+    ]
 
 
 def _time_command(env, command: str) -> dict:
@@ -330,7 +375,12 @@ def _call_agent_with_retry(
     raise AssertionError("request loop ended without returning or raising")
 
 
-def _task_description(env, args: argparse.Namespace) -> str:
+def _task_description(
+    env,
+    args: argparse.Namespace,
+    *,
+    gateway_programs_allowed: bool = False,
+) -> str:
     task_spec = env.task_spec
     description = task_spec.natural_language if task_spec else ""
     if not isinstance(description, str) or not description.strip():
@@ -339,12 +389,24 @@ def _task_description(env, args: argparse.Namespace) -> str:
         task_path = Path(args.env_dir) / "tasks" / args.task / "task.json"
         task = json.loads(task_path.read_text(encoding="utf-8"))
         description = task.get("natural_language") or task.get("description", "")
+    interaction_rule = VISIBLE_UI_ONLY_RULE
+    if gateway_programs_allowed:
+        interaction_rule = (
+            "Solve only from screenshots returned by the action gateway and visible "
+            "controls in the task webpage. You may write programs inside the isolated "
+            "agent sandbox to call that gateway and process its screenshots. Do not "
+            "connect to the task VM, use SSH or VNC, inspect its filesystem, call its "
+            "services, or use Developer Tools, the console, debugger, inspector, "
+            "network panel, source, DOM, page-state, address-bar, URL, query, reload, "
+            "navigation, browser extensions, external applications, or hidden state. "
+            "Do not switch to unrelated tabs."
+        )
     submit_rule = (
         "Your answer only counts once it is submitted: after completing the "
         "task, press the visible submit/confirm/verify control and check the "
         "UI acknowledges it before you declare the task finished."
     )
-    return f"{description}\n\n{VISIBLE_UI_ONLY_RULE}\n\n{submit_rule}"
+    return f"{description}\n\n{interaction_rule}\n\n{submit_rule}"
 
 
 def _submission_counts(env, *, passed: bool) -> dict:
@@ -383,56 +445,31 @@ def _mark_done(env, *, reason: str) -> tuple[dict, float, bool, dict]:
     return obs, reward, done, info
 
 
-def _resolve_agent_class(name: str):
+def _resolve_agent_class(name: str, temporal_mode: str = "live"):
     if name == "AuthoritativeObservationProbeAgent":
         return AuthoritativeObservationProbeAgent
+    if name == "CodexCliAgent":
+        from weird_captcha_gym.evaluation.codex_cli import WeirdCodexCliAgent
+
+        return WeirdCodexCliAgent
     if name in {"Qwen35VLAgent", "WeirdQwen35VLAgent"}:
+        if timestamps_enabled(temporal_mode):
+            from weird_captcha_gym.evaluation.qwen_timestamped import (
+                TimestampedWeirdQwen35VLAgent,
+            )
+
+            return TimestampedWeirdQwen35VLAgent
         return WeirdQwen35VLAgent
+    if name == "GeminiComputerUseAgent" and timestamps_enabled(temporal_mode):
+        from weird_captcha_gym.evaluation.gemini_timestamped import (
+            TimestampedGeminiComputerUseAgent,
+        )
+
+        return TimestampedGeminiComputerUseAgent
     if ":" in name:
         module_name, _, class_name = name.partition(":")
         return getattr(importlib.import_module(module_name), class_name)
     return getattr(agent_registry, name)
-
-
-def _ensure_condition_task(env_dir: Path, task_id: str, mode: str) -> str:
-    """The effective task for a remote run: one whose declared real_time
-    condition equals the requested mode.
-
-    Remote workers resolve tasks by name, so a run condition must be task
-    identity. A task that already declares the condition is used as is;
-    otherwise a sibling task dir `<task>_t<mode>` is written (deterministic
-    content, safe to rewrite) with control_condition.real_time set. On the
-    cluster's shared filesystem the worker sees it immediately, and the
-    create digest covers it."""
-    source = env_dir / "tasks" / task_id
-    task = json.loads((source / "task.json").read_text(encoding="utf-8"))
-    condition = (task.get("metadata") or {}).get("control_condition") or {}
-    if condition.get("real_time") == mode:
-        return task_id
-
-    variant_id = f"{task_id}_t{mode}"
-    target = env_dir / "tasks" / variant_id
-    raw_id = str(task.get("id") or task_id)
-    name, sep, version = raw_id.partition("@")
-    task["id"] = f"{name}_t{mode}{sep}{version}" if sep else f"{raw_id}_t{mode}"
-    hooks = dict(task.get("hooks") or {})
-    for key, value in hooks.items():
-        hooks[key] = str(value).replace(f"/{task_id}/", f"/{variant_id}/")
-    task["hooks"] = hooks
-    metadata = dict(task.get("metadata") or {})
-    metadata["control_condition"] = {**condition, "real_time": mode}
-    task["metadata"] = metadata
-
-    target.mkdir(parents=True, exist_ok=True)
-    for item in source.iterdir():
-        if item.name in {"task.json", "__pycache__"}:
-            continue
-        if item.is_file():
-            shutil.copy2(item, target / item.name)
-    (target / "task.json").write_text(
-        json.dumps(task, indent=2) + "\n", encoding="utf-8"
-    )
-    return variant_id
 
 
 def _make_env(args: argparse.Namespace, runner_options: dict[str, Any] | None = None):
@@ -448,19 +485,11 @@ def _make_env(args: argparse.Namespace, runner_options: dict[str, Any] | None = 
             overrides={"runner_options": runner_options},
             fast_io=args.fast_io,
         )
-    if args.observation_window_ms is not None or args.frames_per_observation is not None:
-        raise ValueError(
-            "remote runs take the observation schedule from the environment's "
-            "committed env.json; adjust it there (or run locally) instead of "
-            "passing --observation-window-ms/--frames-per-observation"
-        )
     from gym_anything.remote import RemoteGymEnv
 
-    # By-name create: the worker resolves the benchmark against its own
-    # installation and verifies the task content digest. The run condition is
-    # task identity (metadata.control_condition.real_time), which the runner
-    # reads on the worker; args.task was resolved to a condition task before
-    # this call.
+    # By-name create keeps code resolution worker-local and verifies the task
+    # digest. Runtime runner options cross the normal remote override door;
+    # an evaluation never creates or edits benchmark task directories.
     return RemoteGymEnv.from_benchmark(
         remote_url=args.remote_url,
         benchmark="weird_captcha_gym",
@@ -469,6 +498,7 @@ def _make_env(args: argparse.Namespace, runner_options: dict[str, Any] | None = 
         timeout=args.remote_timeout,
         worker_reset_policy=args.remote_worker_reset_policy,
         fast_io=args.fast_io,
+        overrides={"runner_options": runner_options},
     )
 
 
@@ -571,26 +601,15 @@ def _create_and_reset(args, runner_options):
 
 
 def run(args: argparse.Namespace) -> int:
+    temporal_mode = _temporal_mode(args)
+    base_time_mode = world_time_mode(temporal_mode)
     mechanic_id, settings = _settings(args)
     play_time_limit_seconds = _play_time_limit_seconds(args, settings)
     runner_options = _runner_options(args, settings)
     agent_args = json.loads(args.agent_args)
+    agent_args["temporal_mode"] = temporal_mode
     agent_args.setdefault("request_timeout_seconds", args.request_timeout_seconds)
     agent_args.setdefault("request_attempts", args.request_attempts)
-
-    if args.remote_url:
-        # The run condition must be task identity for a by-name remote
-        # create; resolve (and if needed materialize) the condition task.
-        effective_task = _ensure_condition_task(
-            Path(args.env_dir), args.task, args.time_mode
-        )
-        if effective_task != args.task:
-            logger.info(
-                "Using condition task %s for time_mode=%s",
-                effective_task,
-                args.time_mode,
-            )
-            args.task = effective_task
 
     env, obs = _create_and_reset(args, runner_options)
     info: dict[str, Any] = {}
@@ -599,7 +618,7 @@ def run(args: argparse.Namespace) -> int:
     try:
         _require_frames(obs, where="initial")
         obs = _localize_observation(env, obs)
-        clock = _TaskClock(args.time_mode)
+        clock = _TaskClock(base_time_mode)
         clock.observe(obs)
         max_steps = args.steps or env.max_steps or 50
         # Clock queries ride env.step now, so the environment-level step
@@ -608,11 +627,15 @@ def run(args: argparse.Namespace) -> int:
         episode_dir = _client_episode_dir(env)
         timing_path = episode_dir / "realtime_timing.jsonl"
 
-        agent_cls = _resolve_agent_class(args.agent)
+        agent_cls = _resolve_agent_class(args.agent, temporal_mode)
+        agent_args.setdefault("max_steps", max_steps)
         agent = agent_cls(agent_args=agent_args, verbose=args.verbose, debug=args.debug)
-        if getattr(agent, "autonomous", False):
-            raise ValueError("the real-time evaluator requires turn-based agent.step observations")
-        description = _task_description(env, args)
+        autonomous = bool(getattr(agent, "autonomous", False))
+        description = _task_description(
+            env,
+            args,
+            gateway_programs_allowed=autonomous,
+        )
         # Select the frame_window entry by TYPE, as the worker-side runner
         # does. Base-preset composition prepends the preset's rgb_screen
         # (1920x1080) at observation[0], which mis-sized the agent for the
@@ -629,12 +652,14 @@ def run(args: argparse.Namespace) -> int:
         _write_record(timing_path, {
             "event": "setup",
             "mechanic_id": mechanic_id,
-            "time_mode": args.time_mode,
+            "temporal_mode": temporal_mode,
+            "time_mode": base_time_mode,
             "settings": settings.__dict__,
+            "effective_runner_options": runner_options,
             "task_play_time_limit_seconds": play_time_limit_seconds,
             "task_play_time_limit_enabled": play_time_limit_seconds is not None,
             "clock": obs.get("time_status"),
-            "task_time_live_estimated": args.time_mode == "live",
+            "task_time_live_estimated": base_time_mode == "live",
             "request_timeout_seconds": args.request_timeout_seconds,
             "request_attempts": args.request_attempts,
             "fast_io": args.fast_io,
@@ -665,7 +690,20 @@ def run(args: argparse.Namespace) -> int:
         reason = "step_limit"
         done = False
 
-        while turn < max_steps and model_turn < max_steps and not done:
+        if autonomous:
+            model_started = time.perf_counter()
+            agent.run_episode(env=env, task_description=description)
+            model_ms = (time.perf_counter() - model_started) * 1000
+            reason = "agent_completed"
+            _, _reward, done, info = _mark_done(env, reason=reason)
+            _write_record(timing_path, {
+                "event": "autonomous_episode",
+                "model_ms": model_ms,
+                "task_time_ms": clock.now_ms(),
+                "reason": reason,
+            })
+
+        while not autonomous and turn < max_steps and model_turn < max_steps and not done:
             before_model_ms = clock.now_ms()
             if _play_time_exhausted(before_model_ms, play_time_limit_seconds):
                 reason = "play_time_limit"
@@ -686,7 +724,7 @@ def run(args: argparse.Namespace) -> int:
             action_outputs = []
             action_records = []
 
-            if args.time_mode == "live" and _play_time_exhausted(
+            if base_time_mode == "live" and _play_time_exhausted(
                 after_model_ms,
                 play_time_limit_seconds,
             ):
@@ -704,7 +742,9 @@ def run(args: argparse.Namespace) -> int:
                 break
 
             for group in actions:
-                actual_actions = group["actions"]
+                actual_actions = _actions_with_schedule(
+                    group, temporal_mode=temporal_mode
+                )
                 task_time_before_action_ms = clock.now_ms()
                 action_started = time.perf_counter()
                 # The runner owns the turn discipline. In paused mode it
@@ -738,6 +778,9 @@ def run(args: argparse.Namespace) -> int:
                 action_records.append({
                     "tool_id": group.get("tool_id"),
                     "action_count": len(actual_actions),
+                    "requested_execute_at_s": (
+                        (group.get("metadata") or {}).get("execute_at_s")
+                    ),
                     "action_ms": action_ms,
                     "task_time_before_action_ms": task_time_before_action_ms,
                     "task_time_after_execution_ms": task_time_after_execution_ms,
@@ -778,7 +821,8 @@ def run(args: argparse.Namespace) -> int:
                 reason = "agent_completed"
                 break
 
-        _, _reward, done, info = _mark_done(env, reason=reason)
+        if not autonomous:
+            _, _reward, done, info = _mark_done(env, reason=reason)
         logger.info("Episode finished: %s", info)
     finally:
         if episode_dir is None and env.episode_dir:
@@ -806,7 +850,8 @@ def run(args: argparse.Namespace) -> int:
                         "mechanic_id": mechanic_id,
                         "task": args.task,
                         "seed": args.seed,
-                        "time_mode": args.time_mode,
+                        "temporal_mode": temporal_mode,
+                        "time_mode": base_time_mode,
                         "attempts": attempts,
                         "info": info,
                     },

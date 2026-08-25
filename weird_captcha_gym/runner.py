@@ -25,6 +25,7 @@ from __future__ import annotations
 import copy
 import json
 import logging
+import math
 import shlex
 import time
 from pathlib import Path
@@ -234,6 +235,7 @@ class WeirdCaptchaRunner(BaseRunner):
         self._turn = 0
         self._ready = False
         self._live_started = False
+        self._episode_started_wall_ms: Optional[float] = None
         self._clock_running = False
         self._bootstrap_done = False
         self._resolved_time_mode: Optional[str] = None
@@ -360,6 +362,7 @@ class WeirdCaptchaRunner(BaseRunner):
         self._turn = 0
         self._ready = False
         self._live_started = False
+        self._episode_started_wall_ms = None
         self._clock_running = False
         self._bootstrap_done = False
         self.last_time_status = {}
@@ -412,7 +415,7 @@ class WeirdCaptchaRunner(BaseRunner):
         if command not in TIME_COMMANDS:
             raise ValueError(f"unsupported time command: {command}")
         result = self._guest_json(
-            ["python3", TIME_CONTROL_SCRIPT, command, "--timeout", "30"]
+            ["python3", TIME_CONTROL_SCRIPT, command, "--timeout", "120"]
         )
         if command == "resume":
             self._clock_running = True
@@ -429,7 +432,19 @@ class WeirdCaptchaRunner(BaseRunner):
 
     def _ensure_live_started(self) -> None:
         if self.time_mode == "live" and not self._live_started:
-            self.time_command("resume")
+            status = self.time_command("resume")
+            native_date_ms = status.get("native_date_ms")
+            task_time_ms = status.get("task_time_ms")
+            if native_date_ms is None or task_time_ms is None:
+                raise RuntimeError(
+                    "live clock start did not report native_date_ms and task_time_ms"
+                )
+            # This is the wall-clock instant at which the browser's task clock
+            # read zero. It is fixed once per episode and precedes every live
+            # frame and action; observations consume this origin, never define it.
+            self._episode_started_wall_ms = (
+                float(native_date_ms) - float(task_time_ms)
+            )
             self._live_started = True
 
     def input_command(
@@ -500,6 +515,25 @@ class WeirdCaptchaRunner(BaseRunner):
             # configured observation window is the only task-time advance.
             time.sleep(seconds)
             return
+        if kind == "wait_until":
+            if self.time_mode != "live":
+                raise ValueError("wait_until is supported only in live mode")
+            target_wall_ms = float(action["wall_time_ms"])
+            if not math.isfinite(target_wall_ms) or target_wall_ms < 0:
+                raise ValueError("wait_until wall_time_ms must be finite and non-negative")
+            self._ensure_ready()
+            self._ensure_live_started()
+            result = self._guest_json(
+                [
+                    "python3",
+                    TIME_CONTROL_SCRIPT,
+                    "wait-until",
+                    "--wall-time-ms",
+                    repr(target_wall_ms),
+                ]
+            )
+            self.last_action_result = result
+            return result
         self._ensure_ready()
         if self.time_mode == "live":
             self._ensure_live_started()
@@ -643,6 +677,7 @@ class WeirdCaptchaRunner(BaseRunner):
             "time": {
                 "mode": mode,
                 "task_time_ms": time_status.get("task_time_ms"),
+                "episode_started_wall_ms": self._episode_started_wall_ms,
                 "observation_window_ms": self.observation_window_ms,
                 "frames_per_observation": self.frames_per_observation,
             },

@@ -82,6 +82,7 @@ class FakeVMRunner(BaseRunner):
         return {
             "state": "running" if self.clock_running else "paused",
             "task_time_ms": self.task_time_ms,
+            "native_date_ms": 10_000.0 + self.task_time_ms,
         }
 
     def exec_capture(self, cmd: str) -> str:
@@ -391,12 +392,35 @@ class StateMachineTest(WeirdCaptchaRunnerTestCase):
         # The frozen bootstrap does not start the live clock.
         self.assertEqual(self._time_events(fake), ["wait-ready"])
         self.assertFalse(fake.clock_running)
-        runner.capture_observation()
+        first_live = runner.capture_observation()
+        self.assertEqual(first_live["time"]["episode_started_wall_ms"], 10_000.0)
         runner.inject_action({"mouse": {"left_click": [5, 5]}})
-        runner.capture_observation()
+        later_live = runner.capture_observation()
+        self.assertEqual(later_live["time"]["episode_started_wall_ms"], 10_000.0)
         events = self._time_events(fake)
         self.assertEqual(events, ["wait-ready", "resume"])
         self.assertTrue(fake.clock_running)
+
+    def test_live_wait_until_runs_in_guest_before_input(self):
+        runner = self._runner(time_mode="live")
+        fake = runner.inner
+        runner.inject_action({"action": "wait_until", "wall_time_ms": 12345.0})
+        runner.inject_action({"mouse": {"left_click": [5, 5]}})
+
+        calls = [call for call in fake.calls if call[0] in {"exec_capture", "inject"}]
+        wait_index = next(
+            index for index, call in enumerate(calls) if "wait-until" in str(call[1])
+        )
+        inject_index = next(index for index, call in enumerate(calls) if call[0] == "inject")
+        self.assertLess(wait_index, inject_index)
+        self.assertEqual(
+            self._time_events(fake), ["wait-ready", "resume", "wait-until"]
+        )
+
+    def test_wait_until_is_rejected_in_paused_mode(self):
+        runner = self._runner()
+        with self.assertRaisesRegex(ValueError, "live mode"):
+            runner.inject_action({"action": "wait_until", "wall_time_ms": 12345.0})
 
     def test_time_action_reports_result(self):
         runner = self._runner()
