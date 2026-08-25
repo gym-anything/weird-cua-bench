@@ -82,6 +82,7 @@ class FakeVMRunner(BaseRunner):
         return {
             "state": "running" if self.clock_running else "paused",
             "task_time_ms": self.task_time_ms,
+            "native_date_ms": 10_000.0 + self.task_time_ms,
         }
 
     def exec_capture(self, cmd: str) -> str:
@@ -391,9 +392,11 @@ class StateMachineTest(WeirdCaptchaRunnerTestCase):
         # The frozen bootstrap does not start the live clock.
         self.assertEqual(self._time_events(fake), ["wait-ready"])
         self.assertFalse(fake.clock_running)
-        runner.capture_observation()
+        first_live = runner.capture_observation()
+        self.assertEqual(first_live["time"]["episode_started_wall_ms"], 10_000.0)
         runner.inject_action({"mouse": {"left_click": [5, 5]}})
-        runner.capture_observation()
+        later_live = runner.capture_observation()
+        self.assertEqual(later_live["time"]["episode_started_wall_ms"], 10_000.0)
         events = self._time_events(fake)
         self.assertEqual(events, ["wait-ready", "resume"])
         self.assertTrue(fake.clock_running)

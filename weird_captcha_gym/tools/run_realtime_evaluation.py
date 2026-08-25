@@ -448,6 +448,10 @@ def _mark_done(env, *, reason: str) -> tuple[dict, float, bool, dict]:
 def _resolve_agent_class(name: str, temporal_mode: str = "live"):
     if name == "AuthoritativeObservationProbeAgent":
         return AuthoritativeObservationProbeAgent
+    if name == "CodexCliAgent":
+        from weird_captcha_gym.evaluation.codex_cli import WeirdCodexCliAgent
+
+        return WeirdCodexCliAgent
     if name in {"Qwen35VLAgent", "WeirdQwen35VLAgent"}:
         if timestamps_enabled(temporal_mode):
             from weird_captcha_gym.evaluation.qwen_timestamped import (

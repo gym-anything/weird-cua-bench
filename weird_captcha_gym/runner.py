@@ -235,6 +235,7 @@ class WeirdCaptchaRunner(BaseRunner):
         self._turn = 0
         self._ready = False
         self._live_started = False
+        self._episode_started_wall_ms: Optional[float] = None
         self._clock_running = False
         self._bootstrap_done = False
         self._resolved_time_mode: Optional[str] = None
@@ -361,6 +362,7 @@ class WeirdCaptchaRunner(BaseRunner):
         self._turn = 0
         self._ready = False
         self._live_started = False
+        self._episode_started_wall_ms = None
         self._clock_running = False
         self._bootstrap_done = False
         self.last_time_status = {}
@@ -430,7 +432,19 @@ class WeirdCaptchaRunner(BaseRunner):
 
     def _ensure_live_started(self) -> None:
         if self.time_mode == "live" and not self._live_started:
-            self.time_command("resume")
+            status = self.time_command("resume")
+            native_date_ms = status.get("native_date_ms")
+            task_time_ms = status.get("task_time_ms")
+            if native_date_ms is None or task_time_ms is None:
+                raise RuntimeError(
+                    "live clock start did not report native_date_ms and task_time_ms"
+                )
+            # This is the wall-clock instant at which the browser's task clock
+            # read zero. It is fixed once per episode and precedes every live
+            # frame and action; observations consume this origin, never define it.
+            self._episode_started_wall_ms = (
+                float(native_date_ms) - float(task_time_ms)
+            )
             self._live_started = True
 
     def input_command(
@@ -663,6 +677,7 @@ class WeirdCaptchaRunner(BaseRunner):
             "time": {
                 "mode": mode,
                 "task_time_ms": time_status.get("task_time_ms"),
+                "episode_started_wall_ms": self._episode_started_wall_ms,
                 "observation_window_ms": self.observation_window_ms,
                 "frames_per_observation": self.frames_per_observation,
             },

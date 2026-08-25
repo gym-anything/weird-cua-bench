@@ -17,7 +17,13 @@ from weird_captcha_gym.shared_scripts.time_control import wait_until_wall_time
 from weird_captcha_gym.tools.run_realtime_evaluation import _actions_with_schedule
 
 
-def _manifest(path: Path, *, start_ms: float, offsets: list[float]) -> dict:
+def _manifest(
+    path: Path,
+    *,
+    start_ms: float,
+    offsets: list[float],
+    episode_started_wall_ms: float = 9_000,
+) -> dict:
     path.write_text(
         json.dumps(
             {
@@ -26,7 +32,10 @@ def _manifest(path: Path, *, start_ms: float, offsets: list[float]) -> dict:
             }
         )
     )
-    return {"capture_manifest": str(path)}
+    return {
+        "capture_manifest": str(path),
+        "time": {"episode_started_wall_ms": episode_started_wall_ms},
+    }
 
 
 def _bare_timestamped_qwen(
@@ -70,13 +79,13 @@ def test_existing_timing_fields_survive_scheduled_action(tmp_path: Path) -> None
     second = _manifest(tmp_path / "second.json", start_ms=13_000, offsets=[0, 400, 800])
 
     assert agent._timing_payload(first) == {
-        "screenshot_captured_at_s": [0.0, 0.4, 0.8],
-        "current_time_s": 0.8,
+        "screenshot_captured_at_s": [1.0, 1.4, 1.8],
+        "current_time_s": 1.8,
     }
     agent._previous_requested_execute_at_s = 2.5
     payload = agent._timing_payload(second)
 
-    assert payload["previous_action_finished_executing_by_s"] == 3.0
+    assert payload["previous_action_finished_executing_by_s"] == 4.0
     assert payload["seconds_between_your_last_screenshot_and_that_action_landing"] == 2.2
     assert payload["previous_action_requested_execute_at_s"] == 2.5
     assert agent._latency_log == [2.2]

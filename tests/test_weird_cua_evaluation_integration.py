@@ -103,6 +103,7 @@ def test_temporal_modes_map_to_two_runner_clock_modes() -> None:
 
 
 def test_timestamped_modes_select_timestamped_reference_agents() -> None:
+    from weird_captcha_gym.evaluation.codex_cli import WeirdCodexCliAgent
     from weird_captcha_gym.evaluation.gemini_timestamped import (
         TimestampedGeminiComputerUseAgent,
     )
@@ -120,6 +121,10 @@ def test_timestamped_modes_select_timestamped_reference_agents() -> None:
             "GeminiComputerUseAgent", "live_timestamped_execution"
         )
         is TimestampedGeminiComputerUseAgent
+    )
+    assert (
+        evaluator._resolve_agent_class("CodexCliAgent", "live_timestamped")
+        is WeirdCodexCliAgent
     )
 
 

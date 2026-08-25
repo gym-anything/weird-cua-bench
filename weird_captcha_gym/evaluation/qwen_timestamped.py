@@ -26,6 +26,7 @@ from weird_captcha_gym.evaluation.qwen35vl import (
     observation_frames,
 )
 from weird_captcha_gym.evaluation.temporal_modes import (
+    episode_clock_origin_ms,
     scheduled_execution_enabled,
     timestamps_enabled,
     validate_temporal_mode,
@@ -79,7 +80,7 @@ class TimestampedWeirdQwen35VLAgent(WeirdQwen35VLAgent):
         if start is None or not frames:
             return None
         if self._t0_ms is None:
-            self._t0_ms = float(start)
+            self._t0_ms = episode_clock_origin_ms(obs)
         rel = [
             round((float(start) + float(f.get("offset_ms") or 0) - self._t0_ms) / 1000.0, 2)
             for f in frames
