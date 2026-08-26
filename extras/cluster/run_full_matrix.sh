@@ -14,10 +14,19 @@ SEED=${SEED:-42}
 STEPS=${STEPS:-100}
 REQUEST_TIMEOUT_SECONDS=${REQUEST_TIMEOUT_SECONDS:-900}
 REMOTE_TIMEOUT=${REMOTE_TIMEOUT:-900}
+TEMPORAL_MODES=${TEMPORAL_MODES:-"live paused"}
+CLIENT_EPISODE_ROOT=${CLIENT_EPISODE_ROOT:-}
 
 command -v jq >/dev/null || { echo "jq is required" >&2; exit 1; }
 [ -x "$PYTHON" ] || { echo "Python environment not found at $PYTHON" >&2; exit 1; }
 jq -e 'type == "object"' <<<"$AGENT_ARGS" >/dev/null
+for temporal_mode in $TEMPORAL_MODES; do
+  case "$temporal_mode" in
+    paused|live|live_timestamped|live_timestamped_execution) ;;
+    *) echo "unsupported temporal mode: $temporal_mode" >&2; exit 1 ;;
+  esac
+done
+[ -z "$CLIENT_EPISODE_ROOT" ] || mkdir -p "$CLIENT_EPISODE_ROOT"
 
 "$PYTHON" "$REPO_ROOT/weird_captcha_gym/tools/materialize_controlled_tasks.py" \
   --all-controlled \
@@ -32,7 +41,7 @@ if [ ! -f "$LIST" ]; then
     env_name=$(basename "$env_dir" _env)
     for difficulty in 1 2 3 4 5; do
       for interaction in simplified full; do
-        for temporal_mode in live paused; do
+        for temporal_mode in $TEMPORAL_MODES; do
           task=${env_name}_d${difficulty}_${interaction}_seed_0001
           if [ ! -d "$env_dir/tasks/$task" ]; then
             echo "missing task: $env_dir/tasks/$task" >&2
@@ -58,7 +67,11 @@ run_one() {
   [ -f "$summary" ] && return 0
 
   local args
+  local episode_root_args=()
   args=$(jq -c --arg task_name "$name" '. + {task_name: $task_name}' <<<"$AGENT_ARGS")
+  if [ -n "$CLIENT_EPISODE_ROOT" ]; then
+    episode_root_args=(--client-episode-root "$CLIENT_EPISODE_ROOT")
+  fi
   VLM_BASE_URL=$VLM_BASE_URL "$PYTHON" \
     -m weird_captcha_gym.tools.run_realtime_evaluation \
     --env-dir "$env_dir" \
@@ -76,12 +89,14 @@ run_one() {
     --fast-io \
     --remote-url "$REMOTE_URL" \
     --remote-timeout "$REMOTE_TIMEOUT" \
+    "${episode_root_args[@]}" \
     --episode-summary-path "$summary" \
     >"$log" 2>&1
 }
 export -f run_one
 export OUTPUT_ROOT VLM_BASE_URL REMOTE_URL AGENT AGENT_ARGS PYTHON
 export SEED STEPS REQUEST_TIMEOUT_SECONDS REMOTE_TIMEOUT
+export TEMPORAL_MODES CLIENT_EPISODE_ROOT
 
 shuf "$LIST" | xargs -P "$PARALLEL" -L 1 bash -c 'run_one "$@"' _
 complete=$(find "$OUTPUT_ROOT/summaries" -maxdepth 1 -type f -name '*.json' | wc -l)

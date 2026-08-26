@@ -105,6 +105,14 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--debug", action="store_true")
     parser.add_argument("--request-timeout-seconds", type=float, default=120)
     parser.add_argument("--request-attempts", type=int, default=3)
+    parser.add_argument(
+        "--client-episode-root",
+        type=Path,
+        help=(
+            "Local root for remote episode mirrors. Defaults to "
+            "~/.captcha-bench/remote-episodes."
+        ),
+    )
     parser.add_argument("--episode-summary-path", type=Path)
     return parser
 
@@ -512,7 +520,16 @@ def _require_frames(obs: dict[str, Any], *, where: str) -> None:
         )
 
 
-def _client_episode_dir(env) -> Path:
+def _remote_episode_root(client_episode_root: Path | None = None) -> Path:
+    if client_episode_root is not None:
+        return client_episode_root
+    return Path.home() / ".captcha-bench" / "remote-episodes"
+
+
+def _client_episode_dir(
+    env,
+    client_episode_root: Path | None = None,
+) -> Path:
     """Where this harness writes its own records.
 
     Local runs write into the episode directory. Remote runs write into a
@@ -522,12 +539,16 @@ def _client_episode_dir(env) -> Path:
     worker_dir = Path(str(env.episode_dir))
     if not hasattr(env, "fetch_path"):
         return worker_dir
-    mirror = Path.home() / ".captcha-bench" / "remote-episodes" / worker_dir.name
+    mirror = _remote_episode_root(client_episode_root) / worker_dir.name
     mirror.mkdir(parents=True, exist_ok=True)
     return mirror
 
 
-def _localize_observation(env, obs: dict[str, Any]) -> dict[str, Any]:
+def _localize_observation(
+    env,
+    obs: dict[str, Any],
+    client_episode_root: Path | None = None,
+) -> dict[str, Any]:
     """Fetch a remote observation's frame files to this host.
 
     Local environments return host paths already. Remote observations carry
@@ -540,9 +561,7 @@ def _localize_observation(env, obs: dict[str, Any]) -> dict[str, Any]:
         return obs
     turn_name = Path(obs["frames"][0]["path"]).parent.name
     episode_name = Path(str(env.episode_dir)).name if env.episode_dir else "episode"
-    mirror = (
-        Path.home() / ".captcha-bench" / "remote-episodes" / episode_name / turn_name
-    )
+    mirror = _remote_episode_root(client_episode_root) / episode_name / turn_name
     mirror.mkdir(parents=True, exist_ok=True)
     frames = []
     for index, frame in enumerate(obs["frames"]):
@@ -617,14 +636,14 @@ def run(args: argparse.Namespace) -> int:
     episode_dir = None
     try:
         _require_frames(obs, where="initial")
-        obs = _localize_observation(env, obs)
+        obs = _localize_observation(env, obs, args.client_episode_root)
         clock = _TaskClock(base_time_mode)
         clock.observe(obs)
         max_steps = args.steps or env.max_steps or 50
         # Clock queries ride env.step now, so the environment-level step
         # counter includes them; the loop below owns the real turn budget.
         env.set_episode_limits(max_steps=1_000_000, timeout_sec=86400)
-        episode_dir = _client_episode_dir(env)
+        episode_dir = _client_episode_dir(env, args.client_episode_root)
         timing_path = episode_dir / "realtime_timing.jsonl"
 
         agent_cls = _resolve_agent_class(args.agent, temporal_mode)
@@ -758,7 +777,7 @@ def run(args: argparse.Namespace) -> int:
                 )
                 action_ms = (time.perf_counter() - action_started) * 1000
                 _require_frames(obs, where=f"turn {turn + 1}")
-                obs = _localize_observation(env, obs)
+                obs = _localize_observation(env, obs, args.client_episode_root)
                 clock.observe(obs)
                 # Paused mode: the last browser input-delivery boundary,
                 # before the fixed observation window. Live mode: the raw
@@ -826,7 +845,7 @@ def run(args: argparse.Namespace) -> int:
         logger.info("Episode finished: %s", info)
     finally:
         if episode_dir is None and env.episode_dir:
-            episode_dir = _client_episode_dir(env)
+            episode_dir = _client_episode_dir(env, args.client_episode_root)
         # The summary is written only when the episode produced a verifier
         # verdict: a crashed episode leaves no summary and a nonzero exit,
         # so orchestrators can trust summary existence as completion.

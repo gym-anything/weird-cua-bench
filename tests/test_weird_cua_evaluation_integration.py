@@ -452,6 +452,40 @@ def test_localize_observation_fetches_remote_frames(tmp_path: Path, monkeypatch)
     assert evaluator._localize_observation(plain, remote_observation) is remote_observation
 
 
+def test_remote_episode_mirror_accepts_explicit_root(tmp_path: Path) -> None:
+    remote_observation = {
+        "screen": {"path": "/worker/episode/turn-0003/frame-000.png"},
+        "frames": [
+            {
+                "path": "/worker/episode/turn-0003/frame-000.png",
+                "offset_ms": 0,
+            }
+        ],
+        "capture_manifest": "/worker/episode/turn-0003/manifest.json",
+    }
+
+    class FakeRemoteEnv:
+        episode_dir = Path("/worker/episode_x")
+
+        @staticmethod
+        def fetch_path(remote_path, local_path):
+            path = Path(local_path)
+            path.parent.mkdir(parents=True, exist_ok=True)
+            path.write_bytes(remote_path.encode())
+            return local_path
+
+    mirror_root = tmp_path / "remote-episodes"
+    env = FakeRemoteEnv()
+    observation = evaluator._localize_observation(
+        env,
+        remote_observation,
+        mirror_root,
+    )
+
+    assert Path(observation["screen"]["path"]).is_relative_to(mirror_root)
+    assert evaluator._client_episode_dir(env, mirror_root) == mirror_root / "episode_x"
+
+
 def test_qwen_screen_loader_accepts_path_image_and_remote_base64(tmp_path: Path) -> None:
     path = tmp_path / "screen.png"
     Image.new("RGB", (20, 10), "red").save(path)
