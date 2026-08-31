@@ -127,7 +127,7 @@ def main() -> None:
                 page = browser.new_page(viewport={"width": 1600, "height": 1000}, device_scale_factor=1)
                 page.on("pageerror", lambda exc: errors.append(str(exc)))
                 page.goto(static_url, wait_until="networkidle")
-                expect(page.locator("#nav-environment-count")).to_have_text("75")
+                expect(page.locator("#nav-environment-count")).to_have_text("76")
                 expect(page.locator('[data-nav="atlas"]')).to_have_count(0)
                 expect(page.locator(".companion-status")).to_have_attribute("data-connection", "optional")
 

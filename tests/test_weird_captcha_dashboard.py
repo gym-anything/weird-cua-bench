@@ -141,11 +141,11 @@ class WeirdCaptchaDashboardTests(unittest.TestCase):
             path = Path(temporary) / "environment-reviews.json"
             store = EnvironmentReviewStore(path)
             self.assertEqual(store.snapshot()["stats"], {
-                "total": 75,
+                "total": 76,
                 "reviewed": 0,
                 "decided": 0,
-                "pending": 75,
-                "hands_on_pending": 75,
+                "pending": 76,
+                "hands_on_pending": 76,
                 "looks_good": 0,
                 "approved": 0,
                 "revision_requested": 0,
@@ -158,7 +158,7 @@ class WeirdCaptchaDashboardTests(unittest.TestCase):
             self.assertEqual(len(revised["history"]), 2)
             reloaded = EnvironmentReviewStore(path).snapshot()
             self.assertEqual(reloaded["stats"]["revision_requested"], 1)
-            self.assertEqual(reloaded["stats"]["pending"], 74)
+            self.assertEqual(reloaded["stats"]["pending"], 75)
             self.assertEqual(reloaded["items"]["domino_autopsy_env"]["note"], "Make the bell strike more legible.")
             screened = store.update("domino_autopsy_env", {"status": "looks_good", "note": "Film looks good; VNC still pending."})
             self.assertEqual(screened["status"], "looks_good")
@@ -167,7 +167,7 @@ class WeirdCaptchaDashboardTests(unittest.TestCase):
             self.assertEqual(screened_snapshot["stats"]["looks_good"], 1)
             self.assertEqual(screened_snapshot["stats"]["decided"], 0)
             self.assertEqual(screened_snapshot["stats"]["reviewed"], 1)
-            self.assertEqual(screened_snapshot["stats"]["hands_on_pending"], 75)
+            self.assertEqual(screened_snapshot["stats"]["hands_on_pending"], 76)
             with self.assertRaisesRegex(ValueError, "require a note"):
                 store.update("domino_autopsy_env", {"status": "revision_requested", "note": ""})
             with self.assertRaisesRegex(ValueError, "non-reviewable"):
@@ -258,23 +258,23 @@ class WeirdCaptchaDashboardTests(unittest.TestCase):
     def test_catalog_reports_the_final_environment_inventory(self) -> None:
         catalog = build_catalog()
         controlled_count = len(list((BENCHMARK_ROOT / "environments").glob("*_env/controls.json")))
-        self.assertEqual(catalog["stats"]["total"], 75)
-        self.assertEqual(catalog["stats"]["built"], 75)
-        self.assertEqual(catalog["stats"]["browser_verified"], 75)
+        self.assertEqual(catalog["stats"]["total"], 76)
+        self.assertEqual(catalog["stats"]["built"], 76)
+        self.assertEqual(catalog["stats"]["browser_verified"], 76)
         self.assertEqual(catalog["stats"]["scaffolds"], 0)
         self.assertEqual(catalog["stats"]["concepts"], 0)
         self.assertEqual(catalog["stats"]["incubator_candidates"], 0)
         self.assertEqual(catalog["stats"]["human_touched"], 6)
-        self.assertEqual(catalog["stats"]["solution_videos"], 75)
+        self.assertEqual(catalog["stats"]["solution_videos"], 76)
         self.assertEqual(catalog["stats"]["difficulty_controlled"], controlled_count)
-        self.assertEqual(sum(group["count"] for group in catalog["groups"]), 75)
+        self.assertEqual(sum(group["count"] for group in catalog["groups"]), 76)
         recordings = [environment for environment in catalog["environments"] if environment["solution_video"]]
-        self.assertEqual(len(recordings), 75)
+        self.assertEqual(len(recordings), 76)
         for environment in recordings:
             video = environment["solution_video"]
             self.assertTrue(video["verified"], environment["mechanic_id"])
             self.assertEqual((video["width"], video["height"]), (1280, 720))
-        current_recordings = [environment for environment in recordings if environment["mechanic_id"] != "semantic_drag_drop_absurdity"]
+        current_recordings = [environment for environment in recordings if environment["mechanic_id"] not in {"semantic_drag_drop_absurdity", "cockpit_preflight_checklist"}]
         self.assertEqual(len(current_recordings), 74)
         for environment in current_recordings:
             expected_set = (
@@ -301,6 +301,9 @@ class WeirdCaptchaDashboardTests(unittest.TestCase):
         self.assertTrue(semantic["solution_video"]["webm_url"].endswith("/reviewed_overhaul_v1/semantic_drag_drop_absurdity-walkthrough.webm"))
         self.assertEqual(semantic["solution_video"]["duration_seconds"], 60.2)
         self.assertFalse(semantic["solution_video"]["frozen_contract_verified"])
+        cockpit = next(environment for environment in recordings if environment["mechanic_id"] == "cockpit_preflight_checklist")
+        self.assertTrue(cockpit["solution_video"]["verified"])
+        self.assertTrue(cockpit["solution_video"]["mp4_url"].endswith("/environments/cockpit_preflight_checklist_env/evidence_docs/solution_videos/cockpit_preflight_checklist-solution.mp4"))
         critic = next(environment for environment in catalog["environments"] if environment["mechanic_id"] == "robot_art_critic")
         self.assertIn("fixed prototype family", critic["known_limitations"][0])
         revived = {
@@ -329,7 +332,7 @@ class WeirdCaptchaDashboardTests(unittest.TestCase):
             },
         )
         built = [environment for environment in catalog["environments"] if environment["stage"] == "built"]
-        self.assertEqual(len(built), 75)
+        self.assertEqual(len(built), 76)
         expected_fields = {
             "public_name",
             "real_time",
@@ -354,13 +357,13 @@ class WeirdCaptchaDashboardTests(unittest.TestCase):
         annotations = [environment["capability_annotation"] for environment in built]
         self.assertEqual(Counter(annotation["real_time"] for annotation in annotations), {
             "yes": 36,
-            "no": 34,
+            "no": 35,
             "observation_only": 5,
         })
-        self.assertEqual(Counter(annotation["visual"] for annotation in annotations), {"2D": 55, "3D": 20})
+        self.assertEqual(Counter(annotation["visual"] for annotation in annotations), {"2D": 56, "3D": 20})
         self.assertEqual(sum(annotation["temporal"] for annotation in annotations), 45)
-        self.assertEqual(sum(annotation["reasoning_planning"] for annotation in annotations), 54)
-        self.assertEqual(sum(annotation["exploration_interface"] for annotation in annotations), 28)
+        self.assertEqual(sum(annotation["reasoning_planning"] for annotation in annotations), 55)
+        self.assertEqual(sum(annotation["exploration_interface"] for annotation in annotations), 29)
 
     def test_legacy_temporal_annotations_are_preserved_as_a_dated_snapshot(self) -> None:
         snapshot_path = REPO_ROOT / LEGACY_TEMPORAL_ANNOTATION_STATUS["snapshot"]
@@ -374,9 +377,10 @@ class WeirdCaptchaDashboardTests(unittest.TestCase):
             for item in snapshot["annotations"]
         }
         self.assertEqual(preserved, {
-            mechanic_id: annotation["temporal"]
-            for mechanic_id, annotation in ANNOTATIONS.items()
+            mechanic_id: ANNOTATIONS[mechanic_id]["temporal"]
+            for mechanic_id in preserved
         })
+        self.assertNotIn("cockpit_preflight_checklist", preserved)
 
     def test_controlled_environment_cards_use_the_current_profile_label(self) -> None:
         controlled = [
@@ -774,7 +778,7 @@ class WeirdCaptchaDashboardTests(unittest.TestCase):
 
     def test_every_built_environment_exposes_real_non_cheat_evidence(self) -> None:
         built = [environment for environment in build_catalog()["environments"] if environment["stage"] == "built"]
-        self.assertEqual(len(built), 75)
+        self.assertEqual(len(built), 76)
         for environment in built:
             self.assertTrue(environment["cover"], environment["mechanic_id"])
             self.assertTrue(environment["screenshots"], environment["mechanic_id"])
@@ -811,18 +815,18 @@ class WeirdCaptchaDashboardTests(unittest.TestCase):
             output = Path(temporary) / "site"
             manifest = export_dashboard(output, companion_url="http://127.0.0.1:9123", copy_media=False)
             self.assertFalse(manifest["survey_included"])
-            self.assertEqual(manifest["catalog"], {"total": 75, "built": 75, "solution_videos": 75})
+            self.assertEqual(manifest["catalog"], {"total": 76, "built": 76, "solution_videos": 76})
             self.assertEqual(manifest["companion_url"], "http://127.0.0.1:9123")
             controlled_count = len(list((BENCHMARK_ROOT / "environments").glob("*_env/controls.json")))
             self.assertEqual(manifest["browser_play"], {
                 "enabled": True,
-                "environments": 75,
-                "challenges": 300 + 40 * controlled_count,
+                "environments": 76,
+                "challenges": 304 + 40 * controlled_count,
                 "challenges_per_environment": 4,
                 "controlled_environments": controlled_count,
                 "difficulty_profiles": 5 * controlled_count,
                 "interaction_profiles": 10 * controlled_count,
-                "grader_files": 71,
+                "grader_files": 72,
                 "python_runtime": "pyodide@314.0.2",
                 "observation_inspector": True,
             })
@@ -852,7 +856,7 @@ class WeirdCaptchaDashboardTests(unittest.TestCase):
             self.assertIn("What this environment measures", app)
             self.assertIn('\"mode\":\"shared\"', config)
             self.assertIn('\"browserPlayUrl\":\"play/\"', config)
-            self.assertEqual(catalog["stats"]["built"], 75)
+            self.assertEqual(catalog["stats"]["built"], 76)
             self.assertEqual(len(catalog["capability_definitions"]), 4)
             self.assertTrue(all(
                 environment["capability_annotation"] is not None
@@ -874,7 +878,7 @@ class WeirdCaptchaDashboardTests(unittest.TestCase):
             self.assertIn("getDisplayMedia", demo_controls)
             self.assertIn("Capture model observation", demo_controls)
             challenge_files = sorted((output / "play" / "challenges").glob("*.json"))
-            self.assertEqual(len(challenge_files), 75)
+            self.assertEqual(len(challenge_files), 76)
             for challenge_file in challenge_files:
                 bundle = json.loads(challenge_file.read_text(encoding="utf-8"))
                 self.assertEqual(bundle["version"], 4)
@@ -1280,7 +1284,7 @@ class WeirdCaptchaDashboardTests(unittest.TestCase):
         try:
             with urllib.request.urlopen(f"{base}/api/catalog", timeout=3) as response:
                 payload = json.loads(response.read())
-                self.assertEqual(payload["stats"]["built"], 75)
+                self.assertEqual(payload["stats"]["built"], 76)
                 photograph = next(
                     environment
                     for environment in payload["environments"]
@@ -1290,8 +1294,8 @@ class WeirdCaptchaDashboardTests(unittest.TestCase):
                 self.assertTrue(photograph["launchable"])
             with urllib.request.urlopen(f"{base}/api/reviews", timeout=3) as response:
                 reviews = json.loads(response.read())
-                self.assertEqual(reviews["stats"]["total"], 75)
-                self.assertEqual(reviews["stats"]["pending"], 75)
+                self.assertEqual(reviews["stats"]["total"], 76)
+                self.assertEqual(reviews["stats"]["pending"], 76)
             review_request = urllib.request.Request(
                 f"{base}/api/reviews/domino_autopsy_env",
                 data=json.dumps({"status": "approved", "note": "Hand-tested in TigerVNC."}).encode("utf-8"),
@@ -1312,7 +1316,7 @@ class WeirdCaptchaDashboardTests(unittest.TestCase):
                 review = json.loads(response.read())
                 self.assertEqual(review["review"]["status"], "looks_good")
                 self.assertEqual(review["stats"]["looks_good"], 1)
-                self.assertEqual(review["stats"]["hands_on_pending"], 74)
+                self.assertEqual(review["stats"]["hands_on_pending"], 75)
             self.assertTrue(review_path.is_file())
             invalid_review = urllib.request.Request(
                 f"{base}/api/reviews/domino_autopsy_env",

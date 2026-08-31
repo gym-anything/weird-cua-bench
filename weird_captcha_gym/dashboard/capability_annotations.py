@@ -41,6 +41,16 @@ CAPABILITY_DEFINITIONS: tuple[dict[str, str], ...] = (
 
 
 ANNOTATIONS: dict[str, dict[str, Any]] = {
+    "cockpit_preflight_checklist": {
+        "public_name": "Cockpit Preflight Checklist",
+        "real_time": "no",
+        "interaction": "Start on each range thumb or rotary indicator and move it through a direct pointer gesture, disclose treegrid branches, set circuit cells, and certify; simplified mode provides labelled step and cycle controls with the same linked effects.",
+        "difficulty": "Calibration-chain length, sealed downstream targets, persistent readout availability, real parent-child disclosure, and circuit structure; the exact original panel configuration is assigned to L2.",
+        "visual": "2D",
+        "temporal": False,
+        "reasoning_planning": True,
+        "exploration_interface": True,
+    },
     # Seed examples reviewed with the benchmark author.
     "board_game_captcha": {
         "public_name": "Gyroscopic Tilt Board",

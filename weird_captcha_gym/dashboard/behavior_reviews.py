@@ -181,6 +181,7 @@ REVIEWED_MECHANICS: tuple[str, ...] = (
     "top_face_dice_arithmetic",
     "trace_shape_without_walls",
     "wizard_critter_capture",
+    "cockpit_preflight_checklist",
 )
 
 
@@ -260,6 +261,7 @@ CAPABILITY_ASSIGNMENTS: dict[str, tuple[tuple[str, ...], str]] = {
     "top_face_dice_arithmetic": (("visual_understanding_grounding", "temporal_understanding_memory", "reasoning", "planning", "interaction_control", "adaptation_feedback"), "none"),
     "trace_shape_without_walls": (("visual_understanding_grounding", "spatial_reasoning", "temporal_understanding_memory", "interaction_control", "adaptation_feedback"), "timed_input"),
     "wizard_critter_capture": (("visual_understanding_grounding", "spatial_reasoning", "temporal_understanding_memory", "reasoning", "planning", "interaction_control", "adaptation_feedback"), "moving_target"),
+    "cockpit_preflight_checklist": (("visual_understanding_grounding", "reasoning", "planning", "interaction_control", "adaptation_feedback"), "none"),
 }
 
 

@@ -239,6 +239,16 @@ PROFILES: dict[str, dict[str, Any]] = {
         "human": "next-ten-audit-pending-human",
         "order": 44,
     },
+    "cockpit_preflight_checklist": {
+        "title": "Cockpit Preflight Checklist",
+        "group": "Source-Grounded",
+        "summary": "Trace a causal calibration bus whose visible source movements alter and release later targets, then reconcile the circuit treegrid.",
+        "axes": ["causal probing", "dependent analog control", "hierarchical disclosure"],
+        "difficulty": "easy",
+        "accent": "#9de7c4",
+        "human": "local-browser-verified-pending-human",
+        "order": 125,
+    },
 }
 
 
@@ -1068,6 +1078,9 @@ def _evidence_paths(mechanic_id: str, environment_dir: Path) -> list[Path]:
         for batch_dir in sorted(EVIDENCE_ROOT.glob("incubator_batch_*_v1")):
             paths.extend(batch_dir.glob(f"{mechanic_id}-*.png"))
 
+    if not paths and environment_dir.joinpath("evidence_docs").is_dir():
+        paths = list(environment_dir.glob("evidence_docs/**/*.png"))
+
     if not paths and mechanic_id in {
         "semantic_drag_drop_absurdity",
         "reload_interruption",
@@ -1157,7 +1170,11 @@ def _solution_videos() -> dict[str, dict[str, Any]]:
     folder name—selects the current recording while preserving that history.
     """
     candidates: dict[str, tuple[tuple[str, int], dict[str, Any]]] = {}
-    for manifest_path in EVIDENCE_ROOT.glob("**/solution_videos/manifest.json"):
+    manifest_paths = [
+        *EVIDENCE_ROOT.glob("**/solution_videos/manifest.json"),
+        *ENVIRONMENTS_ROOT.glob("*_env/evidence_docs/**/solution_videos/manifest.json"),
+    ]
+    for manifest_path in manifest_paths:
         payload = _read_json(manifest_path)
         videos = payload.get("videos")
         if not isinstance(videos, dict):
@@ -1180,6 +1197,10 @@ def _solution_videos() -> dict[str, dict[str, Any]]:
                 bool((raw_record.get(key) or {}).get("passed"))
                 for key in ("server_grade", "direct_grade", "verifier")
             )
+            try:
+                evidence_set = manifest_path.relative_to(EVIDENCE_ROOT).parts[0]
+            except ValueError:
+                evidence_set = str(manifest_path.parent.relative_to(BENCHMARK_ROOT))
             record = {
                 "title": str(raw_record.get("title") or _title(str(mechanic_id))),
                 "approach": str(raw_record.get("approach") or "Verified solution replay."),
@@ -1190,7 +1211,7 @@ def _solution_videos() -> dict[str, dict[str, Any]]:
                 "height": media.get("height"),
                 "codec": media.get("codec"),
                 "generated_at": generated_at,
-                "evidence_set": manifest_path.relative_to(EVIDENCE_ROOT).parts[0],
+                "evidence_set": evidence_set,
                 "manifest_url": _media_url(manifest_path),
                 "verified": bool(payload.get("ok") and replay_passed),
                 "frozen_contract_verified": bool(payload.get("frozen_contract_verified")),

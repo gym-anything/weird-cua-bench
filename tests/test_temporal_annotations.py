@@ -12,12 +12,20 @@ AUDIT_ROOT = BENCHMARK_ROOT / "temporal_audits"
 
 def test_temporal_pilot_sample_is_reproducible() -> None:
     pilot = json.loads((AUDIT_ROOT / "pilot_25.json").read_text(encoding="utf-8"))
+    frozen_real_time = json.loads(
+        (BENCHMARK_ROOT / "real_time_audits/all_750.json").read_text(encoding="utf-8")
+    )
+    frozen_environment_ids = {
+        item["environment_id"] for item in frozen_real_time["classifications"]
+    }
     population: list[tuple[str, str, str, int]] = []
     controls = sorted(
         (BENCHMARK_ROOT / "environments").glob("*_env/controls.json"),
         key=lambda path: path.parent.name,
     )
     for path in controls:
+        if path.parent.name not in frozen_environment_ids:
+            continue
         contract = json.loads(path.read_text(encoding="utf-8"))
         for interaction in ("simplified", "full"):
             for difficulty in range(1, 6):
