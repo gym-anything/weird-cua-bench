@@ -39,6 +39,17 @@ def corpus_snapshot_for_tasks(tasks: list) -> tuple[list, str]:
     """
     population, digest = corpus_snapshot()
     if any(str(t.get("environment_path", "")).startswith("benchmarks/") for t in tasks):
+        # Pre-package-rename manifests are immutable 75-environment experiment
+        # records. New tasks may explicitly exclude themselves from that
+        # historical population without changing the current corpus snapshot.
+        population = [
+            entry
+            for entry in population
+            if json.loads((REPO_ROOT / entry["task_json"]).read_text(encoding="utf-8"))
+            .get("metadata", {})
+            .get("legacy_agent_sample_population", True)
+            is not False
+        ]
         population = [
             {
                 **entry,
