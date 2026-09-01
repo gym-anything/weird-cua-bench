@@ -1,6 +1,6 @@
 # CAPTCHA Bench Dashboard
 
-The dashboard is the visual control plane for Weird CAPTCHA Gym. It presents 76 evidence-backed built environment folders with screenshots, solution reels, task contracts, human reviews, local launches, VNC sessions, and evaluation controls tied to the same environment identities.
+The dashboard is the visual control plane for Weird CAPTCHA Gym. It presents 80 evidence-backed built environment folders with screenshots, solution reels, task contracts, human reviews, local launches, VNC sessions, and evaluation controls tied to the same environment identities.
 
 The shared dashboard is zero-setup for ordinary exploration. Every built puzzle opens as a static browser app; its existing Python grader runs in a dedicated Pyodide/WebAssembly worker. No repository checkout, terminal command, pairing key, localhost helper, or VNC is required. The optional authenticated companion on `127.0.0.1` remains responsible for persistent review writes, fresh authoritative generation, VNC guests, evaluations, paths, and process control.
 
@@ -34,7 +34,7 @@ The Environment collection exposes the benchmark annotations as composable filte
 
 Seventy-five environments expose difficulty levels 1 through 5 plus simplified and full interaction modes on their environment dossiers. Choose both values in the runtime console before selecting **Play in browser**. The selected task summary, agent instruction, task identity, generated challenge, and grader all use the same condition.
 
-Public browser play bundles four deterministic challenges for every difficulty and interaction pair. A connected local dashboard generates a fresh controlled challenge in the session's temporary directory. Frozen 75-task evaluation cohorts remain unchanged while the current corpus contains 76 tasks.
+Public browser play bundles four deterministic challenges for every difficulty and interaction pair. A connected local dashboard generates a fresh controlled challenge in the session's temporary directory. Frozen 75-task evaluation cohorts remain unchanged while the current corpus contains 80 tasks.
 
 ## Run the complete dashboard locally
 
@@ -57,10 +57,10 @@ python weird_captcha_gym/dashboard/export_static.py \
 
 The export contains:
 
-- the full 76-environment catalog;
-- every catalog screenshot and all 76 solution reels;
+- the full 80-environment catalog;
+- every catalog screenshot and all 80 solution reels;
 - Observatory, Environments, Review queue, Live sessions, and Evaluations;
-- four deterministic generated challenges for each of the 76 built environments;
+- four deterministic generated challenges for each of the 80 built environments;
 - the shared puzzle runtime, Matter.js mechanics, and the exact Python graders executed by pinned Pyodide;
 - a shared-mode configuration pointing at `http://127.0.0.1:8767`;
 - no Survey APIs, records, artifacts, or navigation.
@@ -134,7 +134,7 @@ The Live sessions page manages both kinds together. It keeps the existing two-ac
 ## Product surfaces
 
 - **Observatory** — screenshot-first overview of the interaction-first benchmark principles and all six packs.
-- **Environments** — searchable and filterable collection of all 76 built candidates, including two complete replacements whose rejected-pilot history remains documented.
+- **Environments** — searchable and filterable collection of all 80 built candidates, including two complete replacements whose rejected-pilot history remains documented.
 - **Review queue** — pending, looks-good, approved, and revision-requested lanes with notes and decision history.
 - **Environment dossier** — evidence filmstrip, solution reel when available, task instruction, verifier state, launch controls, and review desk.
 - **Live sessions** — local-browser and VNC process lifecycle, addresses, passwords, logs, reconnect, and teardown.
@@ -158,7 +158,7 @@ python weird_captcha_gym/tools/smoke_dashboard_ui.py \
   --exercise-reviews
 ```
 
-Exercise all 76 static browser apps plus a real failure/fresh-challenge/WebAssembly-pass cycle:
+Exercise all 80 static browser apps plus a real failure/fresh-challenge/WebAssembly-pass cycle:
 
 ```bash
 python weird_captcha_gym/tools/smoke_static_browser_play.py
@@ -180,7 +180,7 @@ python weird_captcha_gym/tools/smoke_dashboard_live_vnc.py \
 ## Architecture
 
 ```text
-76 built folders + task.json + evidence media ──► catalog.py ──► static export
+80 built folders + task.json + evidence media ──► catalog.py ──► static export
             │                                          │             ├─► browser challenge pools
             │                                          │             └─► UI + Python graders / WASM
             │                                          └─► shared dashboard host ─► zero-setup play

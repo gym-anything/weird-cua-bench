@@ -378,6 +378,8 @@
       observed_events: [...(arm?.events || [])],
       task_time_ms: clock.task_time_ms,
       controller_state: clock.state,
+      pending_action_count: clock.pending_action_count,
+      pending_actions: clock.pending_actions,
       native_time_ms: native.performanceNow(),
       native_date_ms: native.dateNow(),
     };

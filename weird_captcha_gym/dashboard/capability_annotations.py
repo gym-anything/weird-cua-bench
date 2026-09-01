@@ -41,6 +41,46 @@ CAPABILITY_DEFINITIONS: tuple[dict[str, str], ...] = (
 
 
 ANNOTATIONS: dict[str, dict[str, Any]] = {
+    "fence_the_fox": {
+        "public_name": "Fence the Fox",
+        "real_time": "no",
+        "interaction": "Click an open hex to place a stake; full mode instead requires dragging a physical stake from the field crate onto the same open hex while preserving the generated field, fox policy, action effects, and success condition.",
+        "difficulty": "Field radius, initial fence topology, interacting escape branches, stake budget, and solver-audited winning-plan depth; the built seven-cell-diameter field with a three-to-five-placement cut is L3.",
+        "visual": "2D",
+        "temporal": False,
+        "reasoning_planning": True,
+        "exploration_interface": False,
+    },
+    "five_second_rule": {
+        "public_name": "Five-Second Rule",
+        "real_time": "yes",
+        "interaction": "Tag moving tokens, hold and release a token on visual cues, flick it in an instructed direction, tap relational pairs, and drag cargo into an open shutter; simplified mode replaces direct gestures with stationary token, direction, and bay controls while preserving the generated world, timing, information, and action effects.",
+        "difficulty": "Object count, capture width, motion speed, synchronization tolerance, flick aperture, relay-relation depth, shutter aperture, and target size; the built six-object mixed-gesture dispatch deck is L4.",
+        "visual": "2D",
+        "temporal": True,
+        "reasoning_planning": True,
+        "exploration_interface": False,
+    },
+    "turtle_forger": {
+        "public_name": "Turtle Forger",
+        "real_time": "no",
+        "interaction": "Drag reusable punch cards into and along the program tape, remove cards, replay the transient reference, run a proof, and certify; simplified mode replaces direct card placement and reordering with click-to-append and move buttons while preserving program effects.",
+        "difficulty": "Persistent versus transient reference support, loop structure, ink count, disconnected subpaths, registration cues, decoy commands, and nested dependencies; the built two-ink compound seal is L3.",
+        "visual": "2D",
+        "temporal": True,
+        "reasoning_planning": True,
+        "exploration_interface": True,
+    },
+    "consent_gauntlet": {
+        "public_name": "Consent Gauntlet",
+        "real_time": "yes",
+        "interaction": "Click moving consent choices and drag NO/YES switches directly; simplified mode provides fixed option proxies, drawer navigation, and explicit answer buttons with identical effects.",
+        "difficulty": "Gateway ambiguity and motion, semantic polarity, drawer disclosure, provider-reset traps, and directed switch dependencies; the built baseline is L3.",
+        "visual": "2D",
+        "temporal": True,
+        "reasoning_planning": True,
+        "exploration_interface": True,
+    },
     "cockpit_preflight_checklist": {
         "public_name": "Cockpit Preflight Checklist",
         "real_time": "no",

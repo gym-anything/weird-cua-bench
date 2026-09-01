@@ -795,3 +795,39 @@ For every environment the review reads the task contract, challenge generator, v
 **What must be done.** Operate the currently visible source target, inspect the induced downstream state and newly released target, and continue in dependency order. Full mode requires a pointerdown on the current thumb or dial indicator plus sampled pointer movement to a different endpoint; a stationary click cannot create an analog event. Simplified mode uses labelled step controls that apply the same bus effects. Disclose the circuit hierarchy, set its state cells, and certify only after the state vector matches.
 
 **What is actually enforced.** The server and exported verifier independently replay every range, dial, calibration-bus effect, target release, branch, and circuit transition from the generated initial state. Direct analog events must include a start matching the current handle, at least two movement samples, at least eight pixels of travel, and endpoint geometry consistent with the resulting detent. They reject stationary-click labels, forged bus effects, stale challenges, false final state, invalid detents, crossed thumbs, premature child-branch access, and transcripts from the wrong interaction surface. The exact original two-range, two-dial, three-branch configuration is assigned to L2 rather than L3. No state changes with wall-clock time, so live and paused observation schedules expose the same decision state. Script verification establishes implementation agreement only; direct human and VNC calibration remain pending.
+
+## Environment 78
+
+### 78. Turtle Forger
+
+**Passing behavior.** Replay the ultraviolet master, recover its complete coloured geometry, compose a structured turtle punch-card program, run the proof press, and certify a raster match of at least 98.5 percent.
+
+**What must be observed.** The reference plate shows a start pose and registration support, but each target stroke appears alone and disappears before the next one. The reusable card drawer exposes movement, turn, ink, pen, and loop operations plus generated decoys. The proof plate persistently shows only the output of the current program and its raster similarity.
+
+**What must be done.** Trigger the reference scan as often as needed, integrate the transient strokes into one coloured shape, infer a compact program including invisible pen-up relocations and loop structure, and order the cards on the tape. Full mode requires sampled drags for placement and reordering; simplified mode uses click-to-append and explicit move buttons. After editing, run the proof and certify it.
+
+**What is actually enforced.** The server and exported verifier replay every card edit through the selected interaction contract, independently parse nested loops, execute turtle motion from the generated start pose, compare submitted proof segments with that replay, and rasterize both output and target to check similarity, precision, and coverage. They reject weak drag labels, wrong-mode transcripts, stale challenges, malformed loops, capacity overflow, forged geometry, and forged similarity. The scan follows a fixed replayable schedule and no correct action expires, so it needs temporal observation and memory but is not classified as real time. Live and paused schedules preserve the same program decision problem. Script verification establishes implementation agreement only; direct human and VNC calibration remain pending.
+
+## Environment 79
+
+### 79. Five-Second Rule
+
+**Passing behavior.** Complete a shuffled deck of five original dispatches. Every round exposes exactly two instruction lines and a five-second task clock. The deck contains one moving-gate tag, one synchronized hold and release, one orientation-gated flick, one relational two-token relay, and one shutter-timed cargo drop.
+
+**What must be observed.** The current instruction and only the current dispatch field are visible. The moving-gate round exposes several continuously moving labelled tokens and a fixed white capture gate. The hold round shows two needles entering a notch and its amber release cue. The flick round rotates a pointer over every token. The relay round exposes the spatial and mark relations named by the order. The cargo round shows each receiving shutter opening and closing. The five-second clock remains visible throughout.
+
+**What must be done.** Identify the object or relation named by each fresh order, observe the relevant moving or cue state, and execute its action before the opportunity closes. Full mode uses direct clicks, a physical hold, a directional flick drag, two field taps, and a cargo drag. Simplified mode uses stationary token, direction, and bay controls that preserve the same generated world, information, timing, and action effects.
+
+**What is actually enforced.** The server and exported verifier independently replay exactly five ordered round records and six total visible events. They bind the challenge, task, world fingerprint, interaction mode, event source, token identity, pointer geometry, motion equation, cue interval, orientation sector, relational order, shutter phase, and five-second boundary. Wrong-mode transcripts, stale identities, forged worlds, expired actions, incomplete decks, missed geometry, and incorrect timing are rejected. The built L4 profile uses six objects, a 35-unit gate half-width, 132-unit motion, a 150-millisecond hold tolerance, a 21-degree flick sector, a depth-three relation, and an 840-millisecond shutter aperture. A 600-millisecond frame sequence is necessary to establish target motion, and the visible gate tag that is valid in the final observation frame expires during a 420-millisecond live action delay while remaining valid when paused. Script verification establishes implementation agreement only; direct human and VNC calibration remain pending.
+
+## Environment 80
+
+### 80. Fence the Fox
+
+**Passing behavior.** Place no more than the visible stake allowance on open axial hexes so the fox has no path to any glowing rim cell, then check the enclosure.
+
+**What must be observed.** The screenshot shows the complete hex graph, current fox cell, old bramble barriers, player stakes, escape rim, remaining stake supply, and the public deterministic route rule. The fox chooses a shortest route after each placement, breaks shortest-path ties by the number of shortest onward steps, and uses the posted wind order only for the remaining tie.
+
+**What must be done.** Re-evaluate the changing graph after every fox reply and place a stake at a cut location that preserves a winning enclosure within budget. The simplified baseline places a stake by clicking an open hex. Full interaction requires a sampled drag from the physical stake crate to that same open hex. Checking an incomplete enclosure fails and creates a fresh field.
+
+**What is actually enforced.** The server and exported verifier independently rebuild the generated hex graph, replay every stake, reproduce every fox origin, destination, distance, and terminal outcome, enforce the selected input surface and full-drag geometry, and bind final fox and fence state to the current task and challenge. The five profiles change field radius, initial topology, branch interaction, stake budget, and audited plan depth rather than only repeating turns. The board changes only in direct response to an action; waiting loses no opportunity, so the environment is not real time and does not require temporal understanding. Script verification establishes implementation agreement only; direct human/VNC calibration remains pending.

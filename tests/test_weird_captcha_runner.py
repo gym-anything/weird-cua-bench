@@ -127,6 +127,45 @@ class FakeVMRunner(BaseRunner):
                 "task_time_ms": self.task_time_ms,
                 "controller_state": "paused",
             })
+        if "inject_input_batch.py" in cmd:
+            actions = json.loads(parts[parts.index("--actions-json") + 1])
+            category = (
+                parts[parts.index("--input-category") + 1]
+                if "--input-category" in parts
+                else None
+            )
+            self.calls.append(("input_batch", actions))
+            if category is not None:
+                self.input_sequence += 1
+                arm_sequence = self.input_sequence
+                self.calls.append(("input_control", "arm"))
+            self.input_events += sum(
+                1
+                for action in actions
+                if action.get("mouse") or action.get("keyboard")
+            )
+            if self.clock_running:
+                self.task_time_ms += 50
+            result = {
+                "ok": True,
+                "action_count": len(actions),
+                "operation_count": len(actions),
+                "wall_ms": 1.0,
+                "returncode": 0,
+            }
+            if category is not None:
+                self.input_sequence += 1
+                self.calls.append(("input_control", "complete"))
+                result["input_status"] = {
+                    "command_sequence": self.input_sequence,
+                    "arm_sequence": arm_sequence,
+                    "phase": "completed",
+                    "receipt_confirmed": self.confirm_input,
+                    "observed_event_count": 1 if self.confirm_input else 0,
+                    "task_time_ms": self.task_time_ms,
+                    "controller_state": "running" if self.clock_running else "paused",
+                }
+            return json.dumps(result)
         if "capture_observation_window.py" in cmd:
             duration = int(parts[parts.index("--duration-ms") + 1])
             frames = int(parts[parts.index("--frames") + 1])
@@ -240,13 +279,17 @@ class CorpusMigrationTest(unittest.TestCase):
         env_dirs = sorted(
             d for d in (root / "environments").iterdir() if d.name.endswith("_env")
         )
-        self.assertEqual(len(env_dirs), 76)
+        self.assertEqual(len(env_dirs), 80)
         for env_dir in env_dirs:
             spec = json.loads((env_dir / "env.json").read_text())
             settings = real_time[mechanic_id_from_env_dir(str(env_dir))]
             self.assertEqual(spec.get("runner"), "weird_captcha", env_dir.name)
+            runner_options = dict(spec.get("runner_options") or {})
+            live_observation_window = runner_options.pop(
+                "live_observation_window", False
+            )
             self.assertEqual(
-                spec.get("runner_options"),
+                runner_options,
                 {
                     "observation_window_ms": settings["observation_window_ms"],
                     "frames_per_observation": settings["frames_per_observation"],
@@ -254,6 +297,9 @@ class CorpusMigrationTest(unittest.TestCase):
                 },
                 env_dir.name,
             )
+            if live_observation_window:
+                self.assertGreater(settings["observation_window_ms"], 0)
+                self.assertGreater(settings["frames_per_observation"], 1)
             errors = WeirdCaptchaRunner.validate_options(
                 EnvSpec.from_dict(spec)
             )
@@ -385,7 +431,7 @@ class StateMachineTest(WeirdCaptchaRunnerTestCase):
         self.assertEqual(len(obs["action_delivery_statuses"]), 2)
         self.assertTrue(obs["action_delivery_status"]["receipt_confirmed"])
 
-    def test_live_mode_resumes_once(self):
+    def test_live_bounded_windows_resume_after_each_capture(self):
         runner = self._runner(time_mode="live")
         fake = runner.inner
         runner.capture_observation()
@@ -398,8 +444,57 @@ class StateMachineTest(WeirdCaptchaRunnerTestCase):
         later_live = runner.capture_observation()
         self.assertEqual(later_live["time"]["episode_started_wall_ms"], 10_000.0)
         events = self._time_events(fake)
-        self.assertEqual(events, ["wait-ready", "resume"])
+        self.assertEqual(events, ["wait-ready", "resume", "resume"])
         self.assertTrue(fake.clock_running)
+
+    def test_live_instantaneous_frame_avoids_guest_capture_transport(self):
+        runner = self._runner(
+            time_mode="live", observation_window_ms=0, frames_per_observation=1
+        )
+        fake = runner.inner
+        runner.capture_observation()  # frozen reset/bootstrap evidence
+        before = len(
+            [call for call in fake.calls if call[0] == "capture_window"]
+        )
+
+        observation = runner.capture_observation()
+
+        after = len([call for call in fake.calls if call[0] == "capture_window"])
+        self.assertEqual(after, before)
+        self.assertTrue(Path(observation["screen"]["path"]).exists())
+        self.assertTrue(
+            observation["time_status"]["task_time_estimated_from_live_origin"]
+        )
+
+    def test_live_input_batch_uses_one_transport_and_keeps_native_receipt(self):
+        runner = self._runner(time_mode="live")
+        fake = runner.inner
+        batch = {
+            "action": "input_batch",
+            "actions": [
+                {"mouse": {"move": [10, 20]}},
+                {"mouse": {"buttons": {"left_down": True}}},
+                {"action": "wait", "time": 0.05},
+                {"mouse": {"move": [30, 40]}},
+                {"mouse": {"buttons": {"left_up": True}}},
+            ],
+        }
+
+        runner.capture_observation()  # frozen reset/bootstrap evidence
+        runner.capture_observation()  # initial live model observation
+        runner.inject_action(batch)
+        transports = [call for call in fake.calls if call[0] == "input_batch"]
+        self.assertEqual(transports, [("input_batch", batch["actions"])])
+        self.assertEqual(
+            [call[1] for call in fake.calls if call[0] == "input_control"],
+            ["arm", "complete"],
+        )
+        self.assertEqual(runner.last_action_result["action_count"], 5)
+        observation = runner.capture_observation()
+        self.assertEqual(len(observation["action_delivery_statuses"]), 1)
+        self.assertTrue(
+            observation["action_delivery_statuses"][0]["receipt_confirmed"]
+        )
 
     def test_live_wait_until_runs_in_guest_before_input(self):
         runner = self._runner(time_mode="live")

@@ -41,6 +41,7 @@ FRAME_WINDOW_TYPE = "frame_window"
 
 TIME_CONTROL_SCRIPT = "/workspace/shared_scripts/time_control.py"
 INPUT_CONTROL_SCRIPT = "/workspace/shared_scripts/input_control.py"
+INPUT_BATCH_SCRIPT = "/workspace/shared_scripts/inject_input_batch.py"
 CAPTURE_SCRIPT = "/workspace/shared_scripts/capture_observation_window.py"
 GUEST_OBSERVATION_ROOT = "/tmp/weird_cua_observations"
 
@@ -48,6 +49,8 @@ TIME_COMMANDS = {"status", "wait-ready", "pause", "settle-pause", "resume"}
 TIME_MODES = {"live", "paused"}
 
 COLLECTABLE_ARTIFACTS = {
+    "task_result.json": "/tmp/task_result.json",
+    "attempts.jsonl": "/tmp/weird_captcha_gym/attempts.jsonl",
     "current_task.json": "/tmp/weird_captcha_gym/current_task.json",
     "public_state.json": "/tmp/weird_captcha_gym/public_state.json",
     "parallel_grillmaster_witness_ledger.json": (
@@ -72,6 +75,7 @@ _ALLOWED_OPTIONS = {
     "observation_window_ms",
     "frames_per_observation",
     "play_time_seconds",
+    "live_observation_window",
 }
 
 
@@ -471,6 +475,17 @@ class WeirdCaptchaRunner(BaseRunner):
 
     @staticmethod
     def _input_category(action: Dict[str, Any]) -> Optional[str]:
+        if action.get("action") == "input_batch":
+            categories = {
+                category
+                for item in action.get("actions") or []
+                if isinstance(item, dict)
+                for category in [WeirdCaptchaRunner._input_category(item)]
+                if category is not None
+            }
+            if len(categories) > 1 or "mixed" in categories:
+                return "mixed"
+            return next(iter(categories), None)
         has_mouse = bool(action.get("mouse"))
         has_keyboard = bool(action.get("keyboard"))
         if has_mouse and has_keyboard:
@@ -483,6 +498,12 @@ class WeirdCaptchaRunner(BaseRunner):
 
     @staticmethod
     def _input_receipt_required(action: Dict[str, Any]) -> bool:
+        if action.get("action") == "input_batch":
+            return any(
+                WeirdCaptchaRunner._input_receipt_required(item)
+                for item in action.get("actions") or []
+                if isinstance(item, dict)
+            )
         mouse = action.get("mouse") or {}
         keyboard = action.get("keyboard") or {}
         # Moving to the position already held is a valid no-op on transports
@@ -496,6 +517,37 @@ class WeirdCaptchaRunner(BaseRunner):
         return bool(mouse)
 
     # --- actions ----------------------------------------------------------
+
+    def _inject_native_action(
+        self,
+        action: Dict[str, Any],
+        *,
+        category: Optional[str] = None,
+        receipt_required: bool = True,
+    ) -> Optional[Dict[str, Any]]:
+        if action.get("action") != "input_batch":
+            self.inner.inject_action(action)
+            return None
+        actions = action.get("actions")
+        if not isinstance(actions, list) or not actions:
+            raise ValueError("input_batch requires a non-empty actions list")
+        arguments = [
+            "python3",
+            INPUT_BATCH_SCRIPT,
+            "--actions-json",
+            json.dumps(actions, separators=(",", ":")),
+        ]
+        if category is not None:
+            arguments.extend(["--input-category", category])
+            arguments.append(
+                "--receipt-required" if receipt_required else "--no-receipt-required"
+            )
+        result = self._guest_json(arguments)
+        if result.get("ok") is not True:
+            raise RuntimeError(f"native input batch failed: {result}")
+        self.last_action_result = result
+        input_status = result.get("input_status")
+        return input_status if isinstance(input_status, dict) else None
 
     def inject_action(self, action: Dict[str, Any]):
         kind = action.get("action") if isinstance(action, dict) else None
@@ -535,22 +587,39 @@ class WeirdCaptchaRunner(BaseRunner):
             self.last_action_result = result
             return result
         self._ensure_ready()
-        if self.time_mode == "live":
+        bounded_live_window = (
+            self.time_mode == "live"
+            and self.observation_window_ms > 0
+            and self.frames_per_observation > 1
+        )
+        if self.time_mode == "live" and not bounded_live_window:
             self._ensure_live_started()
-            self.inner.inject_action(action)
-            return
-
-        if self._clock_running:
+        elif self.time_mode != "live" and self._clock_running:
             self.time_command("pause")
         category = self._input_category(action)
         if category is None:
-            self.inner.inject_action(action)
+            self._inject_native_action(action)
             return
         required = self._input_receipt_required(action)
+        if kind == "input_batch":
+            delivered = self._inject_native_action(
+                action,
+                category=category,
+                receipt_required=required,
+            )
+            if delivered is None:
+                raise RuntimeError("native input batch returned no browser receipt")
+            if required and not delivered.get("receipt_confirmed"):
+                raise RuntimeError(
+                    "native action reached the input transport but Chromium did not "
+                    f"confirm a {category} event: {delivered}"
+                )
+            self._pending_input_statuses.append(delivered)
+            return
         armed = self.input_command("arm", category=category, required=required)
         arm_sequence = int(armed["arm_sequence"])
         try:
-            self.inner.inject_action(action)
+            self._inject_native_action(action)
         except Exception:
             try:
                 self.input_command("cancel", arm_sequence=arm_sequence)
@@ -589,9 +658,14 @@ class WeirdCaptchaRunner(BaseRunner):
             return observation
 
         input_statuses = list(self._pending_input_statuses)
-        if self.time_mode == "live":
+        bounded_live_window = (
+            self.time_mode == "live"
+            and self.observation_window_ms > 0
+            and self.frames_per_observation > 1
+        )
+        if self.time_mode == "live" and not bounded_live_window:
             self._ensure_live_started()
-        elif self._clock_running:
+        elif self.time_mode != "live" and self._clock_running:
             self.time_command("pause")
 
         observation = self._capture_window(
@@ -599,6 +673,17 @@ class WeirdCaptchaRunner(BaseRunner):
             hold_paused=False,
             host_dir=episode_dir / "observations" / f"turn-{self._turn:04d}",
         )
+        if bounded_live_window:
+            # The guest recorder ends at a frozen sample boundary so frame
+            # encoding and copying cannot consume puzzle time. Resume only
+            # after the complete observation is local and ready for delivery.
+            if self._live_started:
+                self.time_command("resume")
+            else:
+                self._ensure_live_started()
+            observation["time"]["episode_started_wall_ms"] = (
+                self._episode_started_wall_ms
+            )
         self._turn += 1
         self._pending_input_statuses = []
         observation["settle_status"] = None
@@ -611,6 +696,13 @@ class WeirdCaptchaRunner(BaseRunner):
     def _capture_window(
         self, *, mode: str, hold_paused: bool, host_dir: Path
     ) -> Dict[str, Any]:
+        if (
+            mode == "live"
+            and not hold_paused
+            and self.observation_window_ms == 0
+            and self.frames_per_observation == 1
+        ):
+            return self._capture_instantaneous_live_frame(host_dir)
         guest_dir = f"{GUEST_OBSERVATION_ROOT}/{host_dir.name}"
         command = [
             "python3",
@@ -666,6 +758,7 @@ class WeirdCaptchaRunner(BaseRunner):
 
         time_status = manifest["time_status"]
         self.last_time_status = time_status
+        self._clock_running = time_status.get("state") == "running"
         return {
             "screen": {
                 "path": frames[-1]["path"],
@@ -683,6 +776,117 @@ class WeirdCaptchaRunner(BaseRunner):
             },
             # Raw clock report for callers that need it without another
             # guest roundtrip; it also crosses the remote wire this way.
+            "time_status": time_status,
+        }
+
+    def _capture_instantaneous_live_frame(self, host_dir: Path) -> Dict[str, Any]:
+        """Capture the Live evaluator's one frame without an SSH round trip.
+
+        The former path started a guest Python process, took a screenshot, and
+        copied it back over SSH.  On AVF that consumed almost the complete
+        five-second dispatch before the model received its first frame.  The
+        inner runner already owns a background screenshot channel; using it
+        keeps the world running while removing transport setup from the
+        observation itself.  Task time is extrapolated from the browser's
+        authoritative resume origin, exactly as the evaluator's live clock.
+        """
+        if self._episode_started_wall_ms is None:
+            raise RuntimeError("live screenshot requested before the clock origin exists")
+        host_dir.mkdir(parents=True, exist_ok=True)
+        host_path = host_dir / "frame-000.png"
+        # A trusted input receipt means Chromium's synchronous handlers are
+        # finished; the compositor can still need one display refresh before
+        # the new DOM state reaches the background framebuffer. Successful
+        # dispatches intentionally retain a 180 ms clear flash before the next
+        # order, so a post-input frame waits through that transition. Initial
+        # and observation-only frames need just one display refresh.
+        has_delivered_input = bool(self._pending_input_statuses)
+        presentation_delay_seconds = 0.22 if has_delivered_input else 0.05
+        time.sleep(presentation_delay_seconds)
+        # AVF's long-lived x11vnc client can continue returning the last
+        # damaged framebuffer after an input-triggered DOM replacement.  A
+        # new RFB client receives a non-incremental framebuffer immediately,
+        # which is the frame actually present on the isolated guest display.
+        # Keep this narrowly capability-based: other inner runners do not
+        # expose a pooled display connection and need no special handling.
+        refreshed_display_connection = False
+        display_pool = getattr(self.inner, "_vnc_pool", None)
+        if has_delivered_input and display_pool is not None:
+            close_display_pool = getattr(display_pool, "close", None)
+            if callable(close_display_pool):
+                close_display_pool()
+                refreshed_display_connection = True
+        capture_started_wall_ms = time.time() * 1000
+        if not self.inner.capture_screenshot(host_path):
+            raise RuntimeError("inner runner could not capture the live screen")
+        capture_completed_wall_ms = time.time() * 1000
+        task_time_ms = max(
+            0.0, capture_completed_wall_ms - self._episode_started_wall_ms
+        )
+        configured = next(
+            (
+                list(entry.resolution)
+                for entry in self.spec.observation
+                if entry.type == FRAME_WINDOW_TYPE and entry.resolution
+            ),
+            None,
+        )
+        if configured is None:
+            raise RuntimeError("live frame capture requires a configured resolution")
+        time_status = {
+            "mode": "live",
+            "state": "running",
+            "phase": "running",
+            "task_time_ms": round(task_time_ms, 3),
+            "native_date_ms": round(capture_completed_wall_ms, 3),
+            "episode_started_wall_ms": self._episode_started_wall_ms,
+            "task_time_estimated_from_live_origin": True,
+        }
+        manifest = {
+            "frames": [
+                {
+                    "path": str(host_path),
+                    "offset_ms": round(
+                        capture_started_wall_ms - capture_completed_wall_ms, 3
+                    ),
+                    "target_offset_ms": 0.0,
+                }
+            ],
+            "time_status": time_status,
+            "resolution": configured,
+            "capture_method": "inner_runner_direct_background_screenshot",
+            "refreshed_display_connection": refreshed_display_connection,
+            "presentation_delay_ms": round(
+                presentation_delay_seconds * 1000, 3
+            ),
+        }
+        manifest_path = host_dir / "guest-capture-manifest.json"
+        manifest_path.write_text(
+            json.dumps(manifest, indent=2, sort_keys=True) + "\n",
+            encoding="utf-8",
+        )
+        self.last_time_status = time_status
+        return {
+            "screen": {
+                "path": str(host_path),
+                "format": "png",
+                "resolution": configured,
+            },
+            "frames": [
+                {
+                    "path": str(host_path),
+                    "offset_ms": manifest["frames"][0]["offset_ms"],
+                    "target_offset_ms": 0.0,
+                }
+            ],
+            "capture_manifest": str(manifest_path),
+            "time": {
+                "mode": "live",
+                "task_time_ms": time_status["task_time_ms"],
+                "episode_started_wall_ms": self._episode_started_wall_ms,
+                "observation_window_ms": 0,
+                "frames_per_observation": 1,
+            },
             "time_status": time_status,
         }
 

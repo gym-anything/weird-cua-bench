@@ -148,14 +148,34 @@ def _runner_options(args: argparse.Namespace, settings: RealTimeSettings) -> dic
     observation schedule with the invocation's run condition merged in."""
     temporal_mode = _temporal_mode(args)
     live = world_time_mode(temporal_mode) == "live"
+    env_dir = getattr(args, "env_dir", None)
+    env_config_path = Path(env_dir) / "env.json" if env_dir else None
+    env_config = (
+        json.loads(env_config_path.read_text(encoding="utf-8"))
+        if env_config_path is not None and env_config_path.is_file()
+        else {}
+    )
+    declared_runner_options = env_config.get("runner_options") or {}
+    live_frame_window = bool(
+        declared_runner_options.get("live_observation_window", False)
+    )
     return {
         "time_mode": "live" if live else "paused",
         "start_paused": True,
-        # A live agent can request another observation at any time. Each
-        # response is therefore one instantaneous frame; only paused mode
-        # advances through the benchmark's configured frame window.
-        "observation_window_ms": 0 if live else settings.observation_window_ms,
-        "frames_per_observation": 1 if live else settings.frames_per_observation,
+        # Environments whose Live decision needs motion phase can explicitly
+        # retain their declared recent-frame window. Other environments keep
+        # the established instantaneous Live observation contract. Paused
+        # always receives the declared window.
+        "observation_window_ms": (
+            settings.observation_window_ms
+            if not live or live_frame_window
+            else 0
+        ),
+        "frames_per_observation": (
+            settings.frames_per_observation
+            if not live or live_frame_window
+            else 1
+        ),
         "play_time_seconds": settings.play_time_seconds,
     }
 
@@ -193,6 +213,36 @@ def _actions_with_schedule(
         {"action": "wait_until", "wall_time_ms": target_wall_ms},
         *actions,
     ]
+
+
+def _atomic_input_transport(actions: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    """Collapse one model gesture to one VM transport round trip.
+
+    The nested values remain the ordinary Gym-Anything action dictionaries
+    emitted by the agent.  The Weird clock runner validates and executes them
+    in order, including requested waits, while Chromium records one trusted
+    native-input receipt for the complete gesture.  A scheduled live action
+    keeps its absolute wait as a separate world-clock command.
+    """
+    if not actions:
+        return actions
+    prefix = []
+    remaining = list(actions)
+    if remaining and remaining[0].get("action") == "wait_until":
+        prefix.append(remaining.pop(0))
+    if not remaining:
+        return prefix
+    if not all(
+        isinstance(action, dict)
+        and (
+            bool(action.get("mouse"))
+            or bool(action.get("keyboard"))
+            or (action.get("action") or action.get("type")) == "wait"
+        )
+        for action in remaining
+    ):
+        return actions
+    return [*prefix, {"action": "input_batch", "actions": remaining}]
 
 
 def _time_command(env, command: str) -> dict:
@@ -427,11 +477,17 @@ def _submission_counts(env, *, passed: bool) -> dict:
     handle = tempfile.NamedTemporaryFile(delete=False, suffix=".json")
     handle.close()
     try:
-        # Two hops for a remote env: copy_from_env lands the file on the worker
-        # (its host_dst is remote), then fetch_path brings it back here.
-        staged = f"/tmp/task_result_attempts_{uuid.uuid4().hex}.json"
-        env.copy_from_env("/tmp/task_result.json", staged)
-        env.fetch_path(staged, handle.name)
+        fetch = getattr(env, "fetch_path", None)
+        if fetch is None:
+            # Local GymAnythingEnv copies directly from the guest into the
+            # caller's host path.
+            env.copy_from_env("/tmp/task_result.json", handle.name)
+        else:
+            # Two hops for a remote env: copy_from_env lands the file on the
+            # worker (its host_dst is remote), then fetch_path brings it here.
+            staged = f"/tmp/task_result_attempts_{uuid.uuid4().hex}.json"
+            env.copy_from_env("/tmp/task_result.json", staged)
+            fetch(staged, handle.name)
         exported = json.loads(Path(handle.name).read_text(encoding="utf-8"))
     except Exception as exc:
         return {"error": str(exc)}
@@ -761,9 +817,10 @@ def run(args: argparse.Namespace) -> int:
                 break
 
             for group in actions:
-                actual_actions = _actions_with_schedule(
+                requested_actions = _actions_with_schedule(
                     group, temporal_mode=temporal_mode
                 )
+                actual_actions = _atomic_input_transport(requested_actions)
                 task_time_before_action_ms = clock.now_ms()
                 action_started = time.perf_counter()
                 # The runner owns the turn discipline. In paused mode it
@@ -796,7 +853,10 @@ def run(args: argparse.Namespace) -> int:
                 action_outputs.append({**action_result, "tool_id": group.get("tool_id"), "obs": obs})
                 action_records.append({
                     "tool_id": group.get("tool_id"),
-                    "action_count": len(actual_actions),
+                    "action_count": len(requested_actions),
+                    "transport_action_count": len(actual_actions),
+                    "requested_actions": requested_actions,
+                    "transport_actions": actual_actions,
                     "requested_execute_at_s": (
                         (group.get("metadata") or {}).get("execute_at_s")
                     ),

@@ -91,6 +91,18 @@ def capture(args: argparse.Namespace) -> dict:
     wait_until_ready(port=args.port, timeout=args.timeout)
     fps = max(30, math.ceil(args.frames * 1000 / max(1, args.duration_ms)) * 2)
     width, height = (args.width, args.height) if args.width and args.height else display_size(args.display)
+    # Acquisition and file transport are evaluator plumbing, not part of the
+    # visual world's clock.  Enter a frozen boundary before recorder startup;
+    # the requested observation window below is the only task-time interval
+    # spent collecting frames in either temporal mode.
+    paused = send_command("pause", port=args.port)
+    pause_sequence = int(paused["sequence"])
+    wait_for_status(
+        lambda item: int(item.get("sequence") or -1) >= pause_sequence
+        and item.get("state") == "paused",
+        port=args.port,
+        timeout=args.timeout,
+    )
     recorder = start_recorder(
         raw_dir,
         display=args.display,
@@ -100,62 +112,43 @@ def capture(args: argparse.Namespace) -> dict:
     )
     try:
         wait_for_recording(raw_dir, recorder, timeout=args.timeout)
-        if args.mode == "paused":
-            if args.hold_paused:
-                paused = send_command("pause", port=args.port)
-                sequence = int(paused["sequence"])
-                status = wait_for_status(
-                    lambda item: int(item.get("sequence") or -1) == sequence
-                    and item.get("state") == "paused",
-                    port=args.port,
-                    timeout=args.timeout,
-                )
-                start_ms = time.time_ns() / 1_000_000
-                if args.duration_ms > 0:
-                    time.sleep(args.duration_ms / 1000)
-                end_ms = time.time_ns() / 1_000_000
-                if abs(float(get_status(port=args.port).get("task_time_ms") or 0) - float(status.get("task_time_ms") or 0)) > 5:
-                    raise RuntimeError("paused hold advanced the task clock")
-            elif args.duration_ms > 0:
-                # Identify OUR window by a completion newer than any seen
-                # before the command. Equality on the controller's command
-                # sequence races: input-delivery receipts share the counter,
-                # so any command landing between polls moves the sequence
-                # past ours and the wait times out on a window that in fact
-                # completed.
-                before = get_status(port=args.port)
-                prior_done = float(before.get("window_completed_wall_ms") or 0)
-                command = send_command(
-                    "run_for",
-                    port=args.port,
-                    milliseconds=args.duration_ms,
-                    start_delay_ms=args.start_delay_ms,
-                )
-                sequence = int(command["sequence"])
-                completed = wait_for_status(
-                    lambda item: int(item.get("sequence") or -1) >= sequence
-                    and item.get("phase") == "completed"
-                    and float(item.get("window_completed_wall_ms") or 0) > prior_done,
-                    port=args.port,
-                    timeout=args.timeout + args.duration_ms / 1000,
-                )
-                start_ms = float(completed["window_started_wall_ms"])
-                end_ms = float(completed["window_completed_wall_ms"])
-            else:
-                paused = send_command("pause", port=args.port)
-                sequence = int(paused["sequence"])
-                status = wait_for_status(
-                    lambda item: int(item.get("sequence") or -1) == sequence
-                    and item.get("state") == "paused",
-                    port=args.port,
-                    timeout=args.timeout,
-                )
-                start_ms = end_ms = float(status["native_date_ms"])
-        else:
+        if args.mode == "paused" and args.hold_paused:
+            status = get_status(port=args.port)
             start_ms = time.time_ns() / 1_000_000
             if args.duration_ms > 0:
                 time.sleep(args.duration_ms / 1000)
             end_ms = time.time_ns() / 1_000_000
+            if abs(
+                float(get_status(port=args.port).get("task_time_ms") or 0)
+                - float(status.get("task_time_ms") or 0)
+            ) > 5:
+                raise RuntimeError("paused hold advanced the task clock")
+        elif args.duration_ms > 0:
+            # Identify OUR window by a completion newer than any seen before
+            # the command. Equality on the controller command sequence races:
+            # input-delivery receipts share the counter, so any command
+            # landing between polls moves the sequence past ours.
+            before = get_status(port=args.port)
+            prior_done = float(before.get("window_completed_wall_ms") or 0)
+            command = send_command(
+                "run_for",
+                port=args.port,
+                milliseconds=args.duration_ms,
+                start_delay_ms=args.start_delay_ms,
+            )
+            sequence = int(command["sequence"])
+            completed = wait_for_status(
+                lambda item: int(item.get("sequence") or -1) >= sequence
+                and item.get("phase") == "completed"
+                and float(item.get("window_completed_wall_ms") or 0) > prior_done,
+                port=args.port,
+                timeout=args.timeout + args.duration_ms / 1000,
+            )
+            start_ms = float(completed["window_started_wall_ms"])
+            end_ms = float(completed["window_completed_wall_ms"])
+        else:
+            status = get_status(port=args.port)
+            start_ms = end_ms = float(status["native_date_ms"])
         time.sleep(max(0.08, 2 / fps))
     finally:
         stop_recorder(recorder)
@@ -185,6 +178,7 @@ def capture(args: argparse.Namespace) -> dict:
         "window_completed_wall_ms": end_ms,
         "scheduled_window_completed_wall_ms": start_ms + args.duration_ms,
         "actual_window_wall_ms": max(0, end_ms - start_ms),
+        "capture_transport_clock_state": "paused",
         "frames": frames,
         "time_status": get_status(port=args.port),
     }
