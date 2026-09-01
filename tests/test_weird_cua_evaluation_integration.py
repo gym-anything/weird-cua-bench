@@ -688,8 +688,8 @@ def test_qwen_context_backoff_folds_complete_old_observations() -> None:
 
 def test_weird_corpus_is_enumerated_by_gym_anything_registry() -> None:
     pairs = evaluation_pairs(split="all")
-    assert len(pairs) == 76
-    assert len({task_id for _environment, task_id in pairs}) == 76
+    assert len(pairs) == 80
+    assert len({task_id for _environment, task_id in pairs}) == 80
     assert all(environment.name.endswith("_env") for environment, _task in pairs)
 
 
