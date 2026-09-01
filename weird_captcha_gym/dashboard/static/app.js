@@ -14,7 +14,7 @@ function parseStarIds(value) {
     String(value || "")
       .split(",")
       .map((item) => item.trim())
-      .filter((item, index) => index < 80 && /^[A-Za-z0-9_-]{1,96}$/.test(item)),
+      .filter((item, index) => index < 76 && /^[A-Za-z0-9_-]{1,96}$/.test(item)),
   );
 }
 

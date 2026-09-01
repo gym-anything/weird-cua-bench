@@ -182,10 +182,6 @@ REVIEWED_MECHANICS: tuple[str, ...] = (
     "trace_shape_without_walls",
     "wizard_critter_capture",
     "cockpit_preflight_checklist",
-    "consent_gauntlet",
-    "turtle_forger",
-    "five_second_rule",
-    "fence_the_fox",
 )
 
 
@@ -266,10 +262,6 @@ CAPABILITY_ASSIGNMENTS: dict[str, tuple[tuple[str, ...], str]] = {
     "trace_shape_without_walls": (("visual_understanding_grounding", "spatial_reasoning", "temporal_understanding_memory", "interaction_control", "adaptation_feedback"), "timed_input"),
     "wizard_critter_capture": (("visual_understanding_grounding", "spatial_reasoning", "temporal_understanding_memory", "reasoning", "planning", "interaction_control", "adaptation_feedback"), "moving_target"),
     "cockpit_preflight_checklist": (("visual_understanding_grounding", "reasoning", "planning", "interaction_control", "adaptation_feedback"), "none"),
-    "consent_gauntlet": (("visual_understanding_grounding", "temporal_understanding_memory", "reasoning", "planning", "interaction_control", "adaptation_feedback"), "moving_target"),
-    "turtle_forger": (("visual_understanding_grounding", "temporal_understanding_memory", "reasoning", "planning", "interaction_control", "adaptation_feedback"), "transient_response"),
-    "five_second_rule": (("visual_understanding_grounding", "temporal_understanding_memory", "reasoning", "planning", "interaction_control", "adaptation_feedback"), "moving_target"),
-    "fence_the_fox": (("visual_understanding_grounding", "spatial_reasoning", "reasoning", "planning", "interaction_control", "adaptation_feedback"), "none"),
 }
 
 

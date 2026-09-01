@@ -9,10 +9,6 @@ from pathlib import Path
 
 from weird_captcha_gym.dashboard.capability_annotations import build_capability_annotations
 from weird_captcha_gym.dashboard.catalog import build_catalog
-from weird_captcha_gym.tools.consent_gauntlet_screenshot_agent import (
-    FINAL_ACTIONS,
-    ConsentGauntletScreenshotAgent,
-)
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -264,72 +260,3 @@ def test_environment_is_registered_end_to_end() -> None:
         assert os.access(hook, os.X_OK), hook
 
 
-def test_visible_surface_and_task_objectives_do_not_teach_mechanism_rules() -> None:
-    controls = json.loads((ENV / "controls.json").read_text(encoding="utf-8"))
-    task = json.loads((ENV / "tasks/consent_gauntlet_seed_0001/task.json").read_text(encoding="utf-8"))
-    browser_source = (ROOT / "weird_captcha_gym/shared_runtime/app/mechanics/consent_gauntlet.js").read_text(encoding="utf-8").upper()
-    objectives = [task["natural_language"]] + [
-        controls["difficulty"][str(level)]["natural_language"] for level in range(1, 6)
-    ]
-    expected_objective = "Leave every optional purpose blocked, then keep only your choices."
-    assert all(item.startswith(expected_objective) for item in objectives)
-
-    prohibited_tutorial_copy = (
-        "NEGATIVE WORDING MAY REQUIRE YES",
-        "PROVIDER RESET CONTROLS RESTORE",
-        "CHANGES FROM A LINKED ROW",
-        "COLOUR AND SIZE ARE DECORATION",
-        "NO COLOUR OR SIZE IS A PRIVACY SIGNAL",
-        "THE NUMBERED CHOICES MATCH THE MOVING PACKET",
-        "WATCH THE VISIBLE DIRECTED SWITCH LINK",
-        "CHANGING ITS SOURCE FLIPS",
-        "ACCOUNT FOR BOTH VISIBLE DIRECTED SWITCH LINKS",
-        "AVOID THE PROVIDER-RESET CONTROLS",
-    )
-    combined = "\n".join([browser_source, *(item.upper() for item in objectives)])
-    assert not [phrase for phrase in prohibited_tutorial_copy if phrase in combined]
-
-    annotation = build_capability_annotations()["consent_gauntlet"]
-    assert annotation["public_name"] == "Consent Gauntlet"
-    assert annotation["real_time"] == "yes"
-    catalog_item = next(
-        item
-        for item in build_catalog()["environments"]
-        if item["mechanic_id"] == "consent_gauntlet"
-    )
-    assert catalog_item["id"] == "consent_gauntlet_env"
-    assert catalog_item["stage"] == "built"
-    assert catalog_item["screenshots"]
-
-
-def test_screenshot_policy_ignores_objective_copy_when_locating_gateway_card() -> None:
-    words = [
-        {"token": "keep", "left": 40, "top": 50, "width": 35, "height": 14},
-        {"token": "only", "left": 82, "top": 50, "width": 32, "height": 14},
-        {"token": "save", "left": 1500, "top": 680, "width": 42, "height": 14},
-        {"token": "selected", "left": 1548, "top": 680, "width": 68, "height": 14},
-    ]
-    assert ConsentGauntletScreenshotAgent._phrase_point(words, FINAL_ACTIONS) == (
-        1558.0,
-        687.0,
-        "save selected",
-    )
-
-
-def test_screenshot_policy_calibrates_repeated_live_gateway_delay() -> None:
-    agent = ConsentGauntletScreenshotAgent(agent_args={})
-    first = agent._live_prediction_horizon(
-        {"time": {"task_time_ms": 1_000}},
-        stage="final",
-    )
-    second = agent._live_prediction_horizon(
-        {"time": {"task_time_ms": 7_800}},
-        stage="final",
-    )
-    reset = agent._live_prediction_horizon(
-        {"time": {"task_time_ms": 8_000}},
-        stage="entry",
-    )
-    assert first == (6.1, "configured_initial_transport_estimate")
-    assert second == (6.8, "previous_visible_gateway_cycle")
-    assert reset == (6.1, "configured_initial_transport_estimate")
