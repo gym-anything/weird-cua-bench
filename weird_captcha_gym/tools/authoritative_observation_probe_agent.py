@@ -119,16 +119,6 @@ class AuthoritativeObservationProbeAgent:
             "screen_is_last_frame": True,
             "time": obs.get("time"),
             "capture_manifest": obs.get("capture_manifest"),
-            "task_description": self.task_description,
-            "task_description_sha256": hashlib.sha256(
-                self.task_description.encode("utf-8")
-            ).hexdigest(),
-            "visible_task_ui_only_rule_present": (
-                "Solve only from screenshots" in self.task_description
-                and "visible controls in the task webpage" in self.task_description
-                and "Developer Tools" in self.task_description
-                and "unrelated tabs" in self.task_description
-            ),
         }
         try:
             visible_text = self._infer_visible_text(
@@ -152,9 +142,7 @@ class AuthoritativeObservationProbeAgent:
                 "ocr_sha256": hashlib.sha256(
                     visible_text.encode("utf-8")
                 ).hexdigest(),
-                # Preserve enough of the model-visible text to audit status
-                # feedback near the bottom edge of a 1920x1080 puzzle frame.
-                "ocr_excerpt": normalized_text[:2000],
+                "ocr_excerpt": normalized_text[:240],
             }
         )
         expected_markers = [
@@ -170,73 +158,6 @@ class AuthoritativeObservationProbeAgent:
             self.done = True
             self._record(record)
             return []
-
-        configured_groups = self.agent_args.get("action_groups")
-        if configured_groups is not None:
-            if not isinstance(configured_groups, list) or not configured_groups:
-                raise ValueError("configured probe action_groups must be a non-empty list")
-            if self.successful_turn >= len(configured_groups):
-                record["decision"] = "complete_configured_transport_probe"
-                self.successful_turn += 1
-                self.done = True
-                self._record(record)
-                return []
-            configured_group = configured_groups[self.successful_turn]
-            if isinstance(configured_group, dict):
-                actions = configured_group.get("actions")
-                label = configured_group.get("decision_label")
-                group_markers = [
-                    str(marker).upper()
-                    for marker in configured_group.get("expected_text_markers", [])
-                ]
-            else:
-                actions = configured_group
-                label = None
-                group_markers = []
-            if not isinstance(actions, list) or not actions:
-                raise ValueError("each configured probe action group must contain actions")
-            if group_markers and not any(
-                marker in normalized_text for marker in group_markers
-            ):
-                if configured_group.get("refresh_on_marker_miss") is True:
-                    record.update(
-                        {
-                            "decision": "request_fresh_visible_dispatch_frame",
-                            "expected_group_text_markers": group_markers,
-                        }
-                    )
-                    self._record(record)
-                    return [
-                        {
-                            "tool_id": f"authoritative-probe-refresh-{self.request_index}",
-                            "actions": [{"action": "screenshot"}],
-                        }
-                    ]
-                record.update(
-                    {
-                        "decision": "stop_unexpected_visible_dispatch",
-                        "expected_group_text_markers": group_markers,
-                    }
-                )
-                self.done = True
-                self._record(record)
-                return []
-            record.update(
-                {
-                    "decision": str(label or f"apply_configured_action_group_{self.successful_turn + 1}"),
-                    "configured_actions": actions,
-                    "expected_group_text_markers": group_markers,
-                    "visible_group_marker_confirmed": bool(group_markers),
-                }
-            )
-            self.successful_turn += 1
-            self._record(record)
-            return [
-                {
-                    "tool_id": f"authoritative-probe-{self.successful_turn}",
-                    "actions": actions,
-                }
-            ]
 
         if self.successful_turn == 0:
             configured_actions = self.agent_args.get("actions")

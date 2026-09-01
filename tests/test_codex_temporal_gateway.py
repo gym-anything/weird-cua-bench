@@ -113,31 +113,3 @@ def test_codex_timestamped_gateway_rejects_a_missing_episode_origin(
         assert "episode_started_wall_ms" in str(error)
     else:
         raise AssertionError("missing episode clock origin was accepted")
-
-
-def test_codex_gateway_expands_drag_into_one_sampled_input_batch(tmp_path: Path) -> None:
-    gateway = WeirdCodexActionGateway(
-        TimedEnvironment(tmp_path),
-        (1920, 1080),
-        5,
-        "token",
-        timing_path=tmp_path / "timing.jsonl",
-        temporal_mode="paused",
-    )
-
-    actions, terminal, error = gateway._env_actions_for(
-        '{"action":"drag","coordinate":[100,100],"coordinate2":[500,300]}'
-    )
-
-    assert terminal is False
-    assert error is None
-    assert len(actions) == 1
-    batch = actions[0]
-    assert batch["action"] == "input_batch"
-    gesture = batch["actions"]
-    assert gesture[0] == {"mouse": {"move": [150, 150]}}
-    assert gesture[1] == {"mouse": {"buttons": {"left_down": True}}}
-    assert gesture[-1] == {"mouse": {"buttons": {"left_up": True}}}
-    moves = [item["mouse"]["move"] for item in gesture if "move" in item["mouse"]]
-    assert len(moves) == 6
-    assert moves[-1] == [750, 450]

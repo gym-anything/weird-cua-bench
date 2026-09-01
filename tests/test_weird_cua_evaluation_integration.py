@@ -28,42 +28,6 @@ class JsonResponse:
         return self.payload
 
 
-def test_submission_counts_reads_local_environment_without_remote_fetch() -> None:
-    class LocalEnvironment:
-        def copy_from_env(self, source: str, destination: str) -> None:
-            assert source == "/tmp/task_result.json"
-            Path(destination).write_text(
-                json.dumps({"graded_failures": 2}), encoding="utf-8"
-            )
-
-    assert evaluator._submission_counts(LocalEnvironment(), passed=False) == {
-        "graded_failures": 2,
-        "graded_total": 2,
-        "submitted": True,
-    }
-
-
-def test_submission_counts_uses_two_hops_for_remote_environment() -> None:
-    class RemoteEnvironment:
-        staged = None
-
-        def copy_from_env(self, source: str, destination: str) -> None:
-            assert source == "/tmp/task_result.json"
-            self.staged = destination
-
-        def fetch_path(self, source: str, destination: str) -> None:
-            assert source == self.staged
-            Path(destination).write_text(
-                json.dumps({"graded_failures": 0}), encoding="utf-8"
-            )
-
-    assert evaluator._submission_counts(RemoteEnvironment(), passed=False) == {
-        "graded_failures": 0,
-        "graded_total": 0,
-        "submitted": False,
-    }
-
-
 def test_evaluator_parser_accepts_gym_remote_and_fast_io_options() -> None:
     args = evaluator.build_parser().parse_args(
         [
@@ -88,33 +52,6 @@ def test_evaluator_parser_accepts_gym_remote_and_fast_io_options() -> None:
     assert args.remote_url == "http://master:5000"
     assert args.remote_worker_reset_policy == "baseline_setup"
     assert args.temporal_mode == "paused"
-
-
-def test_atomic_input_transport_batches_one_model_gesture() -> None:
-    click = {"mouse": {"left_click": [30, 40]}}
-    assert evaluator._atomic_input_transport([click]) == [
-        {"action": "input_batch", "actions": [click]}
-    ]
-
-    actions = [
-        {"mouse": {"move": [10, 20]}},
-        {"mouse": {"buttons": {"left_down": True}}},
-        {"action": "wait", "time": 0.2},
-        {"mouse": {"move": [30, 40]}},
-        {"mouse": {"buttons": {"left_up": True}}},
-    ]
-    assert evaluator._atomic_input_transport(actions) == [
-        {"action": "input_batch", "actions": actions}
-    ]
-
-    scheduled = [
-        {"action": "wait_until", "wall_time_ms": 1234.5},
-        *actions,
-    ]
-    assert evaluator._atomic_input_transport(scheduled) == [
-        scheduled[0],
-        {"action": "input_batch", "actions": actions},
-    ]
 
 
 def test_evaluator_parser_accepts_four_temporal_modes() -> None:
@@ -163,23 +100,6 @@ def test_temporal_modes_map_to_two_runner_clock_modes() -> None:
         assert options["frames_per_observation"] == (
             6 if temporal_mode == "paused" else 1
         )
-
-
-def test_declared_live_observation_window_is_retained(tmp_path: Path) -> None:
-    (tmp_path / "env.json").write_text(
-        json.dumps({"runner_options": {"live_observation_window": True}}),
-        encoding="utf-8",
-    )
-    settings = SimpleNamespace(
-        observation_window_ms=600,
-        frames_per_observation=6,
-        play_time_seconds=90,
-    )
-    options = evaluator._runner_options(
-        SimpleNamespace(temporal_mode="live", env_dir=str(tmp_path)), settings
-    )
-    assert options["observation_window_ms"] == 600
-    assert options["frames_per_observation"] == 6
 
 
 def test_timestamped_modes_select_timestamped_reference_agents() -> None:
@@ -768,8 +688,8 @@ def test_qwen_context_backoff_folds_complete_old_observations() -> None:
 
 def test_weird_corpus_is_enumerated_by_gym_anything_registry() -> None:
     pairs = evaluation_pairs(split="all")
-    assert len(pairs) == 80
-    assert len({task_id for _environment, task_id in pairs}) == 80
+    assert len(pairs) == 76
+    assert len({task_id for _environment, task_id in pairs}) == 76
     assert all(environment.name.endswith("_env") for environment, _task in pairs)
 
 

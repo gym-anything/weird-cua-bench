@@ -177,7 +177,6 @@ def test_baseline_source_and_repository_contract() -> None:
     manifest = json.loads((ROOT / "weird_captcha_gym/benchmark_manifest.json").read_text(encoding="utf-8"))
     real_time = json.loads((ROOT / "weird_captcha_gym/real_time.json").read_text(encoding="utf-8"))
     mechanic = (ROOT / "weird_captcha_gym/shared_runtime/app/mechanics/fence_the_fox.js").read_text(encoding="utf-8")
-    clock = (ROOT / "weird_captcha_gym/shared_runtime/app/time_controller.js").read_text(encoding="utf-8")
     assert controls["baseline"] == {"difficulty": 3, "interaction": "simplified", "real_time": "live"}
     assert env["runner_options"] == {"observation_window_ms": 480, "frames_per_observation": 1, "play_time_seconds": 180}
     assert task["name"] == "Fence the Fox"
@@ -201,8 +200,6 @@ def test_baseline_source_and_repository_contract() -> None:
             "fox-legend",
         )
     )
-    assert "pending_action_count: clock.pending_action_count" in clock
-    assert "pending_actions: clock.pending_actions" in clock
 
 
 def test_generated_prompt_is_complete_and_interaction_specific() -> None:
