@@ -12,11 +12,11 @@ from weird_captcha_gym.real_time_annotations import (
 )
 
 
-def test_real_time_audit_skeleton_covers_all_760_cases() -> None:
-    assert len(AUDIT_CASES) == 76 * 2 * 5 == 760
-    assert len({case.key for case in AUDIT_CASES}) == 760
-    assert len({case.environment_id for case in AUDIT_CASES}) == 76
-    assert len({case.mechanic_id for case in AUDIT_CASES}) == 76
+def test_real_time_audit_skeleton_covers_all_800_cases() -> None:
+    assert len(AUDIT_CASES) == 80 * 2 * 5 == 800
+    assert len({case.key for case in AUDIT_CASES}) == 800
+    assert len({case.environment_id for case in AUDIT_CASES}) == 80
+    assert len({case.mechanic_id for case in AUDIT_CASES}) == 80
 
     for environment_id in {case.environment_id for case in AUDIT_CASES}:
         environment_cases = [

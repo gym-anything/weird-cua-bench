@@ -1,0 +1,28 @@
+{
+  "id": "fence_the_fox_seed_0001@0.1",
+  "version": "0.1",
+  "env_id": "weird_captcha_gym.fence_the_fox_env@0.1",
+  "name": "Fence the Fox",
+  "description": "Place fences on a procedural hex field, observe the newly revealed route-priority wind after each fox move, and adapt until every escape route is closed.",
+  "difficulty": "medium",
+  "natural_language": "Cut every escape route before the fox reaches the glowing rim. You have five stakes. After each placement the fox takes a shortest path, following the current visible wind order for route ties, then favoring more shortest onward options and more open neighbors. Observe the newly revealed order before placing again.",
+  "tags": ["weird-captcha", "fence-the-fox", "hex-grid", "pursuit-evasion", "adversarial-planning"],
+  "init": {"timeout_sec": 900, "max_steps": 700, "reward_type": "sparse"},
+  "hooks": {
+    "pre_task": "/workspace/tasks/fence_the_fox_seed_0001/setup_task.sh",
+    "post_task": "/workspace/tasks/fence_the_fox_seed_0001/export_result.sh"
+  },
+  "success": {"mode": "program", "spec": {"program": "verifier.py::verify_task"}},
+  "metadata": {
+    "benchmark": "weird_captcha_gym",
+    "mechanic_id": "fence_the_fox",
+    "source_anchors": ["SOC-181"],
+    "source_notes": "Original axial-hex pursuit-evasion implementation grounded in gamedesign.jp's Chat Noir record and the surveyed BFS/minimax solver family. No source code, art, layout, or assets are copied.",
+    "asset_manifest": "shared_runtime/assets/provenance/fence_the_fox_v0.json",
+    "status": "prototype_visual_candidate",
+    "shared_action_surface": ["mouse", "keyboard"],
+    "notes": "The generator searches each seeded board against a per-turn route-priority sequence and exhaustively certifies shortest depth on radius-three fields. At least one post-initial canonical response on multi-turn boards depends on a wind order revealed only after earlier interaction, so one initial screenshot does not contain the complete future decision state. Full input uses a generated held stake-driver path rather than a one-shot drag. Radius-four profiles retain bounded-search wins without claiming global minimality. The browser, server grader, and exported verifier independently replay the same graph, revealed wind, placement, and gesture contract.",
+    "design_status": "local_verification_pending_vnc_human_evidence",
+    "legacy_agent_sample_population": false
+  }
+}

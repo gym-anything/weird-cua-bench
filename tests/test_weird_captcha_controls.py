@@ -23,6 +23,10 @@ CONTROLLED_ENVIRONMENTS = (
     "bureaucratic_signature_trap_env",
     "clockwork_clutch_safe_env",
     "cockpit_preflight_checklist_env",
+    "consent_gauntlet_env",
+    "five_second_rule_env",
+    "fence_the_fox_env",
+    "turtle_forger_env",
     "clockwork_doppelganger_customs_env",
     "code_to_diagram_captcha_env",
     "craftcha_alchemy_bench_env",
@@ -102,6 +106,10 @@ APPROVED_BASELINE_LEVELS = {
     "bureaucratic_signature_trap_env": 4,
     "clockwork_clutch_safe_env": 3,
     "cockpit_preflight_checklist_env": 2,
+    "consent_gauntlet_env": 3,
+    "five_second_rule_env": 4,
+    "fence_the_fox_env": 3,
+    "turtle_forger_env": 3,
     "clockwork_doppelganger_customs_env": 4,
     "code_to_diagram_captcha_env": 4,
     "craftcha_alchemy_bench_env": 4,
@@ -1477,6 +1485,7 @@ def test_implemented_interaction_pairs_share_generated_worlds_and_goals() -> Non
                 first_normalized.pop("prompt")
                 normalized.pop("prompt")
             if env_name in {
+                "fence_the_fox_env",
                 "robot_art_critic_env",
                 "rotating_keyboard_env",
                 "wizard_critter_capture_env",
