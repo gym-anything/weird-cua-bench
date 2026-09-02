@@ -18,7 +18,7 @@ e.) End-to-end behavior: Is there sufficient browser evidence that all difficult
 
 f.) Ignore comments and written claims in the code, `controls.json`, or evidence summary when they are not supported by the running environment. Use screenshots, recordings, frame sequences, exported results, and browser behavior as evidence. If the evidence is misleading, state that clearly.
 
-Also verify file scope: run `git status` and treat any created or modified file outside the environment directory, the per-mechanic module files (mechanic JS/CSS, grader, generator, provenance, solver), the split file, the two registry entries, and `tests/` as a blocking finding, regardless of justification.
+Also verify file scope: run `git status` and treat any created or modified file outside the environment directory, the per-mechanic module files (mechanic JS/CSS, grader, generator, provenance, solver), the split file, the two registry entries, and `tests/` as a blocking finding, regardless of justification. Exception: other environments may be under construction by parallel runs in this same working tree. Files that clearly belong to a different mechanic's environment family are outside this audit's jurisdiction; note them for the record but do not count them as this creator's violation and do not ask for their removal.
 
 IMPORTANT: Missing visual evidence for the claimed difficulty, interaction, or real-time behavior is a severe issue. Report the issues you find. Do not fix them.
 
