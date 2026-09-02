@@ -19,9 +19,9 @@ class WeirdCaptchaBenchmarkTests(unittest.TestCase):
         self.assertTrue((root / "environments").is_dir())
         self.assertTrue((root / "splits").is_dir())
 
-    def test_all_80_current_envs_are_discoverable(self) -> None:
+    def test_all_85_current_envs_are_discoverable(self) -> None:
         envs = list_environments("weird_captcha_gym", split="all")
-        self.assertEqual(len(envs), 80)
+        self.assertEqual(len(envs), 85)
         self.assertIn("reverse_identity_gate_env", envs)
         self.assertIn("temporal_memory_first_change_env", envs)
         self.assertIn("motion_only_ghost_jigsaw_env", envs)
@@ -74,6 +74,7 @@ class WeirdCaptchaBenchmarkTests(unittest.TestCase):
         self.assertIn("pheromone_dispatch_env", envs)
         self.assertIn("clockwork_clutch_safe_env", envs)
         self.assertIn("marionette_checkpoint_env", envs)
+        self.assertIn("reveal_to_identify_env", envs)
 
     def test_all_environments_use_the_standard_full_hd_desktop(self) -> None:
         benchmark_root = resolve_benchmark_root("weird_captcha_gym")
@@ -151,7 +152,7 @@ class WeirdCaptchaBenchmarkTests(unittest.TestCase):
             env_root = benchmark_root / "environments" / env_name
             hooks.extend(env_root.glob("scripts/*.sh"))
             hooks.extend(env_root.glob("tasks/*/*.sh"))
-        self.assertEqual(len(hooks), 80 * 4)
+        self.assertEqual(len(hooks), 85 * 4)
         for hook in hooks:
             self.assertTrue(os.access(hook, os.X_OK), f"hook is not executable: {hook.relative_to(benchmark_root)}")
 
