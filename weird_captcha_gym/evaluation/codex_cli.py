@@ -95,6 +95,10 @@ class WeirdCodexActionGateway(ActionGateway):
 class WeirdCodexCliAgent(CodexCliAgent):
     """Codex CLI using Weird's episode-clock and timing-artifact contract."""
 
+    # Keep the benchmark sandbox new enough for the Codex models used by the
+    # evaluation protocol without changing Gym-Anything's upstream default.
+    sandbox_install = "npm install -g @openai/codex@0.153.3"
+
     def run_episode(self, env: Any, task_description: str | None = None) -> None:
         task = task_description or self.task_description
         resolution = self.display_resolution
