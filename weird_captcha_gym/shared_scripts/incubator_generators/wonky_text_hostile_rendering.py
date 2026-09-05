@@ -95,7 +95,6 @@ def generate(task: dict[str, Any], seed: str) -> tuple[dict[str, Any], dict[str,
         "plates": plates,
         "tolerance": profile["tolerance"],
         "degrees_per_pixel": profile["degrees_per_pixel"],
-        "max_drag_delta": 180,
     }
     difficulty = int((condition or {}).get("difficulty") or 3)
     difficulty_identity = "" if difficulty == 3 else f"|difficulty-{difficulty}"

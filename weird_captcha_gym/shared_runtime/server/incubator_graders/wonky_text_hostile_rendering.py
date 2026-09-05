@@ -90,7 +90,7 @@ def grade(payload: dict[str, Any], ground_truth: dict[str, Any], public_state: d
                 drag = float(event.get("delta"))
             except (TypeError, ValueError):
                 return {"graded": True, "passed": False, "feedback": "plate drag is invalid"}
-            if plate_id not in plates or plate_id in locked or not math.isfinite(drag) or abs(drag) > float(contract["max_drag_delta"]):
+            if plate_id not in plates or plate_id in locked or not math.isfinite(drag):
                 return {"graded": True, "passed": False, "feedback": "plate moved outside the optical wheel contract"}
             if expected_source is not None and event.get("input_source") != expected_source:
                 return {"graded": True, "passed": False, "feedback": "plate rotation uses the wrong interaction input"}
@@ -103,9 +103,13 @@ def grade(payload: dict[str, Any], ground_truth: dict[str, Any], public_state: d
             angles[plate_id] = _wrap(angles[plate_id] + drag)
             continue
         if kind == "lock":
-            if plate_id not in plates or pressed or event.get("locked") is not True:
+            next_locked = event.get("locked")
+            if plate_id not in plates or pressed or not isinstance(next_locked, bool) or next_locked == (plate_id in locked):
                 return {"graded": True, "passed": False, "feedback": "plate lock is invalid"}
-            locked.add(plate_id)
+            if next_locked:
+                locked.add(plate_id)
+            else:
+                locked.remove(plate_id)
             continue
         if kind == "press":
             if pressed or locked != set(plates):

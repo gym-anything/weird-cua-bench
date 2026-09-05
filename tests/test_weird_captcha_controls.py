@@ -1201,7 +1201,7 @@ def test_wonky_registration_profiles_preserve_l3_and_bind_both_input_surfaces() 
             event["sequence"] = sequence
         rejected_unlock = grader.grade(unlocked_payload, truth, public)
         assert rejected_unlock["passed"] is False
-        assert rejected_unlock["feedback"] == "plate lock is invalid"
+        assert rejected_unlock["feedback"] == "press descended before all physical locks engaged"
 
     # The L3 simplified surface retains 5-degree precision but adds a visible
     # 10-degree coarse step.  Its largest possible three-plate replay is 58
@@ -1220,6 +1220,56 @@ def test_wonky_registration_profiles_preserve_l3_and_bind_both_input_surfaces() 
     assert "WeirdCaptchaTime" not in renderer
     assert "requestAnimationFrame" not in renderer
     assert "EXPOSURE SWEEP" not in renderer
+
+
+@pytest.mark.parametrize("level", range(1, 6))
+@pytest.mark.parametrize("interaction", ["simplified", "full"])
+def test_wonky_registration_allows_adjustment_after_unlock(level: int, interaction: str) -> None:
+    mechanic = "wonky_text_hostile_rendering"
+    public, truth = SETUP.generate_task_state(
+        task_for_level(f"{mechanic}_env", level, interaction), "wonky-unlock-recovery"
+    )
+    grader = load_module(
+        "wonky_recovery_grader",
+        BENCHMARK / "shared_runtime" / "server" / "incubator_graders" / f"{mechanic}.py",
+    )
+    verifier = load_module("wonky_recovery_verifier", BENCHMARK / "shared_runtime" / "verifier_helpers.py")
+    payload = _wonky_payload(public, truth, interaction)
+    plate_id = truth["press"]["plates"][0]["id"]
+    payload["events"][:0] = [
+        {"kind": "lock", "plate_id": plate_id, "locked": True},
+        {"kind": "lock", "plate_id": plate_id, "locked": False},
+    ]
+    for sequence, event in enumerate(payload["events"], start=1):
+        event["sequence"] = sequence
+
+    assert grader.grade(payload, truth, public)["passed"] is True
+    assert verifier.verify_wonky_text_hostile_rendering(
+        {"result": payload, "ground_truth": truth, "public_state": public}
+    )["passed"] is True
+
+    # A continuous wheel can make extra turns; a proxy button still only moves
+    # by its visible step size. Both must retain the final alignment check.
+    for extra_turn in (-360, 360):
+        rotated = copy.deepcopy(payload)
+        rotated["events"][2]["delta"] += extra_turn
+        expected = interaction == "full"
+        assert grader.grade(rotated, truth, public)["passed"] is expected
+        assert verifier.verify_wonky_text_hostile_rendering(
+            {"result": rotated, "ground_truth": truth, "public_state": public}
+        )["passed"] is expected
+
+    for invalid_lock in (None, 0, 1, "false", True):
+        malformed = copy.deepcopy(payload)
+        malformed["events"][1]["locked"] = invalid_lock
+        assert grader.grade(malformed, truth, public)["passed"] is False
+
+    if interaction == "full":
+        misaligned = copy.deepcopy(payload)
+        misaligned["events"][2]["delta"] += 30
+        rejected = grader.grade(misaligned, truth, public)
+        assert rejected["passed"] is False
+        assert rejected["feedback"].startswith("plate registration")
 
 
 def test_scroll_cage_profiles_preserve_l4_and_bind_scroll_surfaces() -> None:
