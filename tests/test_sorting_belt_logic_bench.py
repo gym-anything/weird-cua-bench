@@ -105,6 +105,7 @@ def test_new_sorter_is_outside_immutable_historical_sample():
 @pytest.mark.parametrize('mode',['full','simplified'])
 def test_normal_ui_does_not_grade_or_explain_a_trial(mode):
     """Native construction with a virtual test clock, separate from clock evidence."""
+    pytest.importorskip("playwright.sync_api")
     from playwright.sync_api import sync_playwright, expect
     solver=load(B/'tools/incubator_solvers'/f'{M}.py')
     public,truth=generated(4,mode,'normal-surface')
