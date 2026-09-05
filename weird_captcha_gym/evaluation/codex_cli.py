@@ -13,10 +13,13 @@ from typing import Any
 
 from agents.agents.codex_cli import CodexCliAgent
 from agents.shared.agent_sandbox import select_sandbox
-from agents.shared.cli_harness import ActionGateway, build_harness_prompt
+from agents.shared.cli_harness import ActionGateway
 
+from weird_captcha_gym.evaluation.codex_actions import parse_command
+from weird_captcha_gym.evaluation.codex_prompt import build_codex_prompt
 from weird_captcha_gym.evaluation.temporal_modes import (
     episode_clock_origin_ms,
+    scheduled_execution_enabled,
     timestamps_enabled,
 )
 
@@ -32,6 +35,26 @@ class WeirdCodexActionGateway(ActionGateway):
         self._timing_path.parent.mkdir(parents=True, exist_ok=True)
         self._timing_write_lock = threading.Lock()
         self._next_request_index = 0
+        self._finished = False
+
+    def _env_actions_for(
+        self, command: str,
+    ) -> tuple[list[dict[str, Any]], bool, bool, float | None, str | None]:
+        try:
+            actions, terminal, observation, execute_at_s = parse_command(
+                command, (self.ratio_x, self.ratio_y)
+            )
+            if execute_at_s is not None:
+                if not scheduled_execution_enabled(self.temporal_mode):
+                    raise ValueError(
+                        "execute_at_s is available only in live_timestamped_execution mode"
+                    )
+                with self._state_lock:
+                    if self._t0_ms is None:
+                        raise ValueError("request a screenshot before using execute_at_s")
+            return actions, terminal, observation, execute_at_s, None
+        except (ValueError, TypeError, KeyError) as error:
+            return [], False, False, None, f"invalid action request: {error}"
 
     def _timing_payload(
         self,
@@ -49,10 +72,31 @@ class WeirdCodexActionGateway(ActionGateway):
         )
 
     def step_from_command(self, command: str) -> dict[str, Any]:
+        # The upstream error response captures a new observation. In paused
+        # mode that advances task time, so validate here before entering it.
+        error = self._env_actions_for(command)[-1]
         with self._state_lock:
+            if self._finished or error is not None:
+                if self._finished:
+                    error = "episode is finished"
+                self.transcript.append(
+                    {"step": self.steps_taken, "command": command, "error": error}
+                )
+                return {
+                    "step": self.steps_taken,
+                    "budget_remaining": max(
+                        0, self.max_steps - self.steps_taken - self._actions_reserved
+                    ),
+                    "done": self._finished,
+                    "error": error,
+                    "screenshots_b64": [],
+                    "screenshot_b64": None,
+                }
             request_index = self._next_request_index
             self._next_request_index += 1
         response = super().step_from_command(command)
+        with self._state_lock:
+            self._finished = self._finished or bool(response.get("done"))
         timing = response.get("timing")
         if isinstance(timing, dict):
             common = {
@@ -133,7 +177,7 @@ class WeirdCodexCliAgent(CodexCliAgent):
             )
             sandbox_started = True
             self.prepare_sandbox(sandbox)
-            prompt = build_harness_prompt(
+            prompt = build_codex_prompt(
                 task,
                 (gateway.display_w, gateway.display_h),
                 max_steps,
