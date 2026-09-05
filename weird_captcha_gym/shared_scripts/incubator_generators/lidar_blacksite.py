@@ -354,7 +354,6 @@ def generate(task: dict[str, Any], seed: str) -> tuple[dict[str, Any], dict[str,
         "minimum_travel_distance": float(parameters.get("minimum_travel_distance", 12.0)),
         "minimum_key_transitions": int(parameters.get("minimum_key_transitions", 14)),
         "minimum_session_ticks": 320,
-        "maximum_session_ticks": 5000,
         "maximum_event_gap_ticks": 1100,
     }
     if not 8 <= controls["scan_rays"] <= 181 or controls["scan_rays"] % 2 != 1:

@@ -420,7 +420,6 @@ def grade(payload: dict[str, Any], ground_truth: dict[str, Any], public_state: d
         and float(player["distance"]) >= float(requirements["minimum_travel_distance"])
         and key_transitions >= int(requirements["minimum_key_transitions"])
         and int(player["tick"]) >= int(requirements["minimum_session_ticks"])
-        and int(player["tick"]) <= int(requirements["maximum_session_ticks"])
     )
     return {
         "graded": True,

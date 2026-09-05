@@ -9,6 +9,8 @@ import subprocess
 import types
 from pathlib import Path
 
+import pytest
+
 from weird_captcha_gym.shared_runtime.verifier_helpers import (
     verify_rotating_keyboard,
 )
@@ -2583,7 +2585,8 @@ def test_lidar_interaction_modes_share_every_difficulty_world_across_seeds() -> 
             assert without_control_identity(simplified_truth) == without_control_identity(full_truth)
 
 
-def test_lidar_grader_replays_every_difficulty_and_interaction_condition() -> None:
+@pytest.mark.parametrize("initial_idle_ticks", [0, 6000])
+def test_lidar_grader_replays_every_difficulty_and_interaction_condition(initial_idle_ticks: int) -> None:
     grader = load_module(
         "controlled_lidar_profile_grader",
         BENCHMARK / "shared_runtime" / "server" / "incubator_graders" / "lidar_blacksite.py",
@@ -2697,6 +2700,20 @@ def test_lidar_grader_replays_every_difficulty_and_interaction_condition() -> No
                     stations.append(origin)
                 target_seen = target_seen or any(hit["kind"] == "beacon" for hit in hits)
 
+            # Keep observing while stationary before following the same valid route.
+            # Six thousand 20 ms ticks exceed the former 100-second grading limit.
+            while int(player["tick"]) < initial_idle_ticks:
+                scan()
+                grader._advance(
+                    player,
+                    min(initial_idle_ticks, int(player["tick"]) + 1000),
+                    int(requirements["maximum_event_gap_ticks"]),
+                    controls,
+                    world,
+                    walls,
+                    occluders,
+                )
+
             route = truth["solution"]["route_points"]
             scan_indices = set(truth["solution"]["scan_route_indices"])
             beacon_index = int(truth["solution"]["beacon_route_index"])
@@ -2732,6 +2749,15 @@ def test_lidar_grader_replays_every_difficulty_and_interaction_condition() -> No
             }
             decision = grader.grade(payload, truth, public)
             assert decision["passed"] is True, (level, interaction, decision["feedback"])
+
+            if initial_idle_ticks:
+                assert events[-1]["tick"] > 5000
+                assert events[-1]["elapsed_ms"] > 100_000
+                legacy_public, legacy_truth = copy.deepcopy((public, truth))
+                for state in (legacy_public, legacy_truth):
+                    state["requirements"]["maximum_session_ticks"] = 5000
+                legacy_decision = grader.grade(payload, legacy_truth, legacy_public)
+                assert legacy_decision["passed"] is True, legacy_decision["feedback"]
 
 
 def test_forklift_profiles_match_board_route_and_delay_contracts() -> None:
