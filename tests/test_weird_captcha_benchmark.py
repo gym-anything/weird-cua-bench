@@ -19,9 +19,20 @@ class WeirdCaptchaBenchmarkTests(unittest.TestCase):
         self.assertTrue((root / "environments").is_dir())
         self.assertTrue((root / "splits").is_dir())
 
-    def test_all_85_current_envs_are_discoverable(self) -> None:
+    def test_all_current_envs_are_discoverable(self) -> None:
         envs = list_environments("weird_captcha_gym", split="all")
-        self.assertEqual(len(envs), 85)
+        manifest = json.loads((resolve_benchmark_root("weird_captcha_gym") / "benchmark_manifest.json").read_text())
+        self.assertEqual(set(envs), set(manifest["environments"]))
+        self.assertEqual(len(envs), manifest["environment_count"])
+        self.assertIn("compass_vault_env", envs)
+        self.assertIn("two_season_strand_env", envs)
+        self.assertIn("circle_limit_twist_env", envs)
+        self.assertIn("flip_gate_cascade_env", envs)
+        self.assertIn("bandaged_rose_window_env", envs)
+        self.assertIn("ballast_lantern_env", envs)
+        self.assertIn("after_hours_at_the_reliquary_env", envs)
+        self.assertIn("leaning_tower_of_panels_env", envs)
+        self.assertIn("four_pane_pilgrimage_env", envs)
         self.assertIn("reverse_identity_gate_env", envs)
         self.assertIn("temporal_memory_first_change_env", envs)
         self.assertIn("motion_only_ghost_jigsaw_env", envs)
@@ -75,6 +86,9 @@ class WeirdCaptchaBenchmarkTests(unittest.TestCase):
         self.assertIn("clockwork_clutch_safe_env", envs)
         self.assertIn("marionette_checkpoint_env", envs)
         self.assertIn("reveal_to_identify_env", envs)
+        self.assertIn("letter_rapids_env", envs)
+        self.assertIn("one_stroke_atelier_env", envs)
+        self.assertIn("residual_telescope_env", envs)
 
     def test_all_environments_use_the_standard_full_hd_desktop(self) -> None:
         benchmark_root = resolve_benchmark_root("weird_captcha_gym")
@@ -152,7 +166,7 @@ class WeirdCaptchaBenchmarkTests(unittest.TestCase):
             env_root = benchmark_root / "environments" / env_name
             hooks.extend(env_root.glob("scripts/*.sh"))
             hooks.extend(env_root.glob("tasks/*/*.sh"))
-        self.assertEqual(len(hooks), 85 * 4)
+        self.assertEqual(len(hooks), len(list_environments("weird_captcha_gym", split="all")) * 4)
         for hook in hooks:
             self.assertTrue(os.access(hook, os.X_OK), f"hook is not executable: {hook.relative_to(benchmark_root)}")
 

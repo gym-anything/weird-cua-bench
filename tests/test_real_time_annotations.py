@@ -12,11 +12,14 @@ from weird_captcha_gym.real_time_annotations import (
 )
 
 
-def test_real_time_audit_skeleton_covers_all_850_cases() -> None:
-    assert len(AUDIT_CASES) == 85 * 2 * 5 == 850
-    assert len({case.key for case in AUDIT_CASES}) == 850
-    assert len({case.environment_id for case in AUDIT_CASES}) == 85
-    assert len({case.mechanic_id for case in AUDIT_CASES}) == 85
+def test_real_time_audit_skeleton_covers_all_registered_cases() -> None:
+    manifest = json.loads((Path(__file__).resolve().parents[1] / "weird_captcha_gym/benchmark_manifest.json").read_text())
+    expected_environments = set(manifest["environments"])
+    expected_cases = len(expected_environments) * len(INTERACTIONS) * len(DIFFICULTIES)
+    assert len(AUDIT_CASES) == expected_cases
+    assert len({case.key for case in AUDIT_CASES}) == expected_cases
+    assert {case.environment_id for case in AUDIT_CASES} == expected_environments
+    assert len({case.mechanic_id for case in AUDIT_CASES}) == len(expected_environments)
 
     for environment_id in {case.environment_id for case in AUDIT_CASES}:
         environment_cases = [

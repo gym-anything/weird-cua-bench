@@ -17,10 +17,32 @@ from weird_captcha_gym.shared_runtime.verifier_helpers import (
 ROOT = Path(__file__).resolve().parents[1]
 BENCHMARK = ROOT / "weird_captcha_gym"
 CONTROLLED_ENVIRONMENTS = (
+    "waggle_dispatch_env",
+    "threshold_grapevine_env",
+    "museum_of_lost_gestures_env",
+    "load_bearing_idol_env",
+    "confectioners_ink_env",
+    "coordinates_by_another_name_env",
+    "punchcutters_bench_env",
+    "comparator_engine_env",
+    "sorting_belt_logic_bench_env",
+    "compass_vault_env",
+    "fluke_census_env",
+    "after_hours_at_the_reliquary_env",
+    "apothecary_dead_reckoning_env",
+    "anthill_front_env",
+    "ballast_lantern_env",
+    "bandaged_rose_window_env",
+    "flip_gate_cascade_env",
     "parallel_grillmaster_env",
+    "passphrase_under_siege_env",
     "blind_dice_courier_env",
     "bomb_manual_from_hell_env",
     "bureaucratic_signature_trap_env",
+    "charter_of_the_nine_cantons_env",
+    "chain_of_appetite_env",
+    "circle_limit_twist_env",
+    "crackglaze_crossing_env",
     "clockwork_clutch_safe_env",
     "cockpit_preflight_checklist_env",
     "consent_gauntlet_env",
@@ -42,6 +64,8 @@ CONTROLLED_ENVIRONMENTS = (
     "impossible_ecology_env",
     "impossible_panorama_env",
     "jigsaw_slider_alignment_env",
+    "leaning_tower_of_panels_env",
+    "four_pane_pilgrimage_env",
     "magnetic_stripe_purgatory_env",
     "consequences_boss_env",
     "crash_deadline_hovercar_env",
@@ -81,6 +105,7 @@ CONTROLLED_ENVIRONMENTS = (
     "cursor_constellation_hunt_env",
     "cursor_lens_reveal_env",
     "exact_change_candy_cascade_env",
+    "einstein_loop_env",
     "floodgate_archive_rescue_env",
     "gravity_room_freight_env",
     "minecraft_block_grid_env",
@@ -98,17 +123,49 @@ CONTROLLED_ENVIRONMENTS = (
     "trace_shape_without_walls_env",
     "trajectory_catcher_env",
     "unlabeled_drawer_env",
+    "unmarked_landfall_env",
+    "unwatched_wing_env",
     "wonky_text_hostile_rendering_env",
     "wizard_critter_capture_env",
     "wrong_number_env",
     "zero_g_cable_autopsy_env",
+    "silent_colleague_env",
+    "reflow_vitrine_env",
+    "statute_yard_env",
+    "two_lamp_dyeworks_env",
+    "two_season_strand_env",
+    "letter_rapids_env",
+    "one_stroke_atelier_env",
+    "residual_telescope_env",
 )
 
-APPROVED_BASELINE_LEVELS = {
+BASELINE_LEVELS = {
+    "waggle_dispatch_env": 4,
+    "threshold_grapevine_env": 4,
+    "museum_of_lost_gestures_env": 1,
+    "load_bearing_idol_env": 3,
+    "confectioners_ink_env": 4,
+    "coordinates_by_another_name_env": 2,
+    "punchcutters_bench_env": 4,
+    "comparator_engine_env": 1,
+    "sorting_belt_logic_bench_env": 4,
+    "compass_vault_env": 3,
+    "fluke_census_env": 4,
+    "after_hours_at_the_reliquary_env": 3,
+    "apothecary_dead_reckoning_env": 2,
+    "anthill_front_env": 3,
+    "ballast_lantern_env": 4,
+    "bandaged_rose_window_env": 4,
+    "flip_gate_cascade_env": 4,
     "parallel_grillmaster_env": 2,
+    "passphrase_under_siege_env": 4,
     "blind_dice_courier_env": 4,
     "bomb_manual_from_hell_env": 4,
     "bureaucratic_signature_trap_env": 4,
+    "charter_of_the_nine_cantons_env": 3,
+    "chain_of_appetite_env": 4,
+    "circle_limit_twist_env": 3,
+    "crackglaze_crossing_env": 3,
     "clockwork_clutch_safe_env": 3,
     "cockpit_preflight_checklist_env": 2,
     "consent_gauntlet_env": 3,
@@ -130,6 +187,8 @@ APPROVED_BASELINE_LEVELS = {
     "impossible_ecology_env": 4,
     "impossible_panorama_env": 4,
     "jigsaw_slider_alignment_env": 4,
+    "leaning_tower_of_panels_env": 4,
+    "four_pane_pilgrimage_env": 4,
     "magnetic_stripe_purgatory_env": 4,
     "consequences_boss_env": 1,
     "crash_deadline_hovercar_env": 4,
@@ -137,6 +196,7 @@ APPROVED_BASELINE_LEVELS = {
     "cursor_constellation_hunt_env": 2,
     "cursor_lens_reveal_env": 3,
     "exact_change_candy_cascade_env": 5,
+    "einstein_loop_env": 3,
     "floodgate_archive_rescue_env": 4,
     "gravity_room_freight_env": 4,
     "flat_pack_compliance_env": 4,
@@ -186,10 +246,20 @@ APPROVED_BASELINE_LEVELS = {
     "trace_shape_without_walls_env": 4,
     "trajectory_catcher_env": 4,
     "unlabeled_drawer_env": 4,
+    "unmarked_landfall_env": 4,
+    "unwatched_wing_env": 4,
     "wonky_text_hostile_rendering_env": 3,
     "wizard_critter_capture_env": 4,
     "wrong_number_env": 4,
     "zero_g_cable_autopsy_env": 4,
+    "silent_colleague_env": 4,
+    "reflow_vitrine_env": 4,
+    "statute_yard_env": 3,
+    "two_lamp_dyeworks_env": 4,
+    "two_season_strand_env": 4,
+    "letter_rapids_env": 4,
+        "one_stroke_atelier_env": 3,
+    "residual_telescope_env": 4,
 }
 
 DIFFICULTY_NAMES = {
@@ -204,6 +274,7 @@ DIFFICULTY_NAMES = {
 # controllability audit assigns the implemented configuration to another
 # level.
 HISTORICAL_TASK_DIFFICULTY_OVERRIDES = {
+    "museum_of_lost_gestures_env": "medium",  # Preserve the original task file when reassigning L1.
     "parallel_grillmaster_env": "hard",
     "consequences_boss_env": "hard",
     "clockwork_doppelganger_customs_env": "extreme",
@@ -330,9 +401,9 @@ def test_control_files_have_one_baseline_and_five_profiles() -> None:
         assert controls["interaction"][controls["baseline"]["interaction"]]["implemented"] is True
 
 
-def test_approved_baselines_match_control_files_and_original_tasks() -> None:
-    assert set(APPROVED_BASELINE_LEVELS) == set(CONTROLLED_ENVIRONMENTS)
-    for env_name, level in APPROVED_BASELINE_LEVELS.items():
+def test_baselines_match_control_files_and_original_tasks() -> None:
+    assert set(BASELINE_LEVELS) == set(CONTROLLED_ENVIRONMENTS)
+    for env_name, level in BASELINE_LEVELS.items():
         controls = controls_for(env_name)
         assert controls["baseline"]["difficulty"] == level
         task = base_task_for(env_name, controls["mechanic_id"])
@@ -1495,6 +1566,8 @@ def test_implemented_interaction_pairs_share_generated_worlds_and_goals() -> Non
                 first_normalized.pop("prompt")
                 normalized.pop("prompt")
             if env_name in {
+                "apothecary_dead_reckoning_env",
+                "ballast_lantern_env",
                 "fence_the_fox_env",
                 "robot_art_critic_env",
                 "rotating_keyboard_env",

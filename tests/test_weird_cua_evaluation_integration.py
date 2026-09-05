@@ -688,8 +688,10 @@ def test_qwen_context_backoff_folds_complete_old_observations() -> None:
 
 def test_weird_corpus_is_enumerated_by_gym_anything_registry() -> None:
     pairs = evaluation_pairs(split="all")
-    assert len(pairs) == 85
-    assert len({task_id for _environment, task_id in pairs}) == 85
+    manifest = json.loads((Path(__file__).resolve().parents[1] / "weird_captcha_gym/benchmark_manifest.json").read_text())
+    assert len(pairs) == manifest["environment_count"]
+    assert len({task_id for _environment, task_id in pairs}) == len(pairs)
+    assert {environment.name for environment, _task in pairs} == set(manifest["environments"])
     assert all(environment.name.endswith("_env") for environment, _task in pairs)
 
 
