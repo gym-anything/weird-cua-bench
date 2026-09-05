@@ -7,6 +7,7 @@ from pathlib import Path
 
 from weird_captcha_gym.realtime import load_real_time_settings
 from weird_captcha_gym.shared_scripts.setup_task import generate_task_state
+import pytest
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -26,6 +27,10 @@ def _load(name: str, path: Path):
 
 MATERIALIZER = _load("atelier_materializer", BENCHMARK / "tools" / "materialize_controlled_tasks.py")
 GRADER = _load("atelier_grader", BENCHMARK / "shared_runtime" / "server" / "incubator_graders" / "one_stroke_atelier.py")
+# The solver drives a real browser, so it imports playwright at module scope.
+# playwright is not a test dependency, so skip this module rather than fail
+# collection where it is absent.
+pytest.importorskip("playwright.sync_api")
 SOLVER = _load("atelier_solver", BENCHMARK / "tools" / "incubator_solvers" / "one_stroke_atelier.py")
 
 

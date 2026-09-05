@@ -5,6 +5,8 @@ import importlib.util
 import json
 from pathlib import Path
 
+import pytest
+
 from weird_captcha_gym.tools.materialize_controlled_tasks import controlled_task, materialize_environment
 
 
@@ -30,6 +32,10 @@ def _load(name: str, path: Path):
 
 GENERATOR = _load("ballast_generator_test", GENERATOR_PATH)
 GRADER = _load("ballast_grader_test", GRADER_PATH)
+# The solver drives a real browser, so it imports playwright at module scope.
+# playwright is not a test dependency, so skip this module rather than fail
+# collection where it is absent.
+pytest.importorskip("playwright.sync_api")
 SOLVER = _load("ballast_solver_test", SOLVER_PATH)
 VERIFIER = _load("ballast_verifier_test", VERIFIER_PATH)
 

@@ -10,6 +10,10 @@ from pathlib import Path
 import pytest
 from weird_captcha_gym.shared_scripts.incubator_generators import threshold_grapevine as generator
 from weird_captcha_gym.shared_runtime.server.incubator_graders import threshold_grapevine as grader
+# The solver drives a real browser, so it imports playwright at module scope.
+# playwright is not a test dependency, so skip this module rather than fail
+# collection where it is absent.
+pytest.importorskip("playwright.sync_api")
 from weird_captcha_gym.tools.incubator_solvers.threshold_grapevine import scratch_path
 
 ENV=Path(__file__).resolve().parents[1]/'weird_captcha_gym/environments/threshold_grapevine_env'

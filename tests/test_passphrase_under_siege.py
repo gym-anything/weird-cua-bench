@@ -7,6 +7,7 @@ import json
 import math
 import os
 from pathlib import Path
+import pytest
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -28,6 +29,10 @@ def _module(name: str, path: Path):
 
 generator = _module("passphrase_under_siege_generator_test", GENERATOR_PATH)
 grader = _module("passphrase_under_siege_grader_test", GRADER_PATH)
+# The solver drives a real browser, so it imports playwright at module scope.
+# playwright is not a test dependency, so skip this module rather than fail
+# collection where it is absent.
+pytest.importorskip("playwright.sync_api")
 solver = _module("passphrase_under_siege_solver_test", SOLVER_PATH)
 
 
