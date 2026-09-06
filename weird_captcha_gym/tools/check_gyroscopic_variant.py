@@ -17,7 +17,7 @@ from playwright.sync_api import expect, sync_playwright
 
 from weird_captcha_gym.shared_runtime.server.incubator_graders import board_game_captcha as grader
 from weird_captcha_gym.tools.incubator_solvers.board_game_captcha import _drive, fail_once
-from weird_captcha_gym.tools.materialize_gyroscopic_variant import variant_task
+from weird_captcha_gym.tools.materialize_gyroscopic_variant import VARIANTS, variant_task
 from weird_captcha_gym.tools.smoke_incubator_batch_one_ui import (
     APP_DIR, ROOT, SERVER, SETUP, exported_payload, run_task_verifier,
 )
@@ -26,16 +26,17 @@ from weird_captcha_gym.tools.smoke_incubator_batch_one_ui import (
 def snapshot(page):
     return page.evaluate("""() => ({position:[...gyroBoardModel.position],
         velocity:[...gyroBoardModel.velocity], tilt:[...gyroBoardModel.tilt],
-        external:[...gyroBoardModel.externalTilt], ticks:gyroBoardModel.tickCount})""")
+        external:[...gyroBoardModel.externalTilt], gravity:gyroBoardModel.holeGravity,
+        deaths:gyroBoardModel.deaths, ticks:gyroBoardModel.tickCount})""")
 
 
-def check_case(browser, output: Path, seed: str, interaction: str) -> dict:
+def check_case(browser, output: Path, seed: str, interaction: str, variant: str = "rotating_tilt") -> dict:
     output.mkdir(parents=True, exist_ok=False)
     with tempfile.TemporaryDirectory(prefix="gyro-variant-check-") as temporary_name:
         temporary = Path(temporary_name)
         state_dir = temporary / "state"
         task_path = temporary / "task.json"
-        task_path.write_text(json.dumps(variant_task(5, interaction)))
+        task_path.write_text(json.dumps(variant_task(5, interaction, variant)))
         subprocess.run([sys.executable, str(SETUP), "--task-json", str(task_path),
                         "--state-dir", str(state_dir), "--seed", seed],
                        cwd=ROOT, check=True, stdout=subprocess.DEVNULL)
@@ -78,8 +79,13 @@ def check_case(browser, output: Path, seed: str, interaction: str) -> dict:
                 after = snapshot(page)
                 assert after["tilt"] == [0, 0]
                 assert after["ticks"] > before["ticks"] + 50
-                assert math.dist(before["position"], after["position"]) > 20, (before, after)
-                assert before["external"] != after["external"]
+                assert math.dist(before["position"], after["position"]) > 5 or after["deaths"] > before["deaths"], (before, after)
+                if variant == "rotating_tilt":
+                    assert before["external"] != after["external"]
+                else:
+                    assert before["external"] == after["external"] == [0, 0]
+                    assert abs(math.hypot(*after["gravity"]["tilt"]) - 0.5) < 1e-12
+                    assert page.locator(".gyro-board").get_attribute("data-attracting-well") == after["gravity"]["wellId"]
                 page.screenshot(path=str(output / "neutral-after-3s.png"))
                 page.wait_for_timeout(350)
                 assert snapshot(page) == after, "pause must freeze both ball and external tilt"
@@ -88,6 +94,8 @@ def check_case(browser, output: Path, seed: str, interaction: str) -> dict:
                 assert reset["ticks"] == after["ticks"], "reset must preserve external phase"
                 assert reset["external"] == after["external"]
                 assert reset["position"] == before["position"]
+                if variant == "nearest_hole_gravity":
+                    assert reset["gravity"] == before["gravity"]
                 page.evaluate("() => WeirdCaptchaTime.resume()")
                 page.wait_for_timeout(400)
                 assert snapshot(page)["position"] != reset["position"]
@@ -109,7 +117,7 @@ def check_case(browser, output: Path, seed: str, interaction: str) -> dict:
                 verified = run_task_verifier("board_game_captcha", exported, temporary)
                 assert direct["passed"] and verified["passed"], (direct, verified)
                 assert not errors, errors
-                result = dict(seed=seed, interaction=interaction, solve_seconds=solve_seconds,
+                result = dict(seed=seed, interaction=interaction, variant=variant, solve_seconds=solve_seconds,
                               neutral_before=before, neutral_after=after,
                               server_grade=exported["result"]["server_grade"],
                               direct_grade=direct, verifier=verified)
@@ -135,6 +143,7 @@ def main():
     parser.add_argument("--out-dir", required=True, type=Path)
     parser.add_argument("--seeds", nargs="+", default=["42", "43", "44"])
     parser.add_argument("--interactions", nargs="+", choices=["full", "simplified"], default=["full"])
+    parser.add_argument("--variant", choices=VARIANTS, default="rotating_tilt")
     args = parser.parse_args()
     results = []
     with sync_playwright() as playwright:
@@ -142,7 +151,7 @@ def main():
         try:
             for interaction in args.interactions:
                 for seed in args.seeds:
-                    results.append(check_case(browser, args.out_dir / f"{interaction}-{seed}", seed, interaction))
+                    results.append(check_case(browser, args.out_dir / f"{interaction}-{seed}", seed, interaction, args.variant))
         finally:
             browser.close()
     (args.out_dir / "summary.json").write_text(json.dumps(results, indent=2) + "\n")

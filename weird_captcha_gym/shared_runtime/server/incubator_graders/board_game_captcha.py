@@ -51,10 +51,23 @@ def _external_tilt(contract: dict[str, Any], tick_index: int) -> list[float]:
             _round(disturbance["amplitude"] * math.sin(phase))]
 
 
+def _hole_gravity(contract: dict[str, Any], position: list[float]) -> tuple[list[float], str | None]:
+    strength = contract["physics"].get("hole_gravity")
+    if strength is None:
+        return [0.0, 0.0], None
+    # Stable list order breaks exact distance ties, matching the browser.
+    nearest = min(contract["hazards"], key=lambda well: math.dist(position, well["position"]))
+    dx, dy = nearest["position"][0] - position[0], nearest["position"][1] - position[1]
+    distance = math.hypot(dx, dy)
+    vector = [strength * dx / distance, strength * dy / distance] if distance else [0.0, 0.0]
+    return vector, nearest["id"]
+
+
 def _tick(state: dict[str, Any], tilt: list[float], contract: dict[str, Any], *, tick_index: int = 0) -> dict[str, Any]:
     physics = contract["physics"]
     external = _external_tilt(contract, tick_index)
-    tilt = [tilt[0] + external[0], tilt[1] + external[1]]
+    gravity, _ = _hole_gravity(contract, state["position"])
+    tilt = [tilt[0] + external[0] + gravity[0], tilt[1] + external[1] + gravity[1]]
     dt = float(physics["tick_ms"]) / 1000.0
     velocity = state["velocity"][:]
     position = state["position"][:]
@@ -193,6 +206,10 @@ def grade(payload: dict[str, Any], ground_truth: dict[str, Any], public_state: d
                     return _fail(f"event {sequence} begins from fabricated ball state")
                 if "external_tilt" in contract["physics"] and not _same_pair(event.get("external_tilt"), _external_tilt(contract, ticks)):
                     return _fail(f"event {sequence} misreports external tilt")
+                if "hole_gravity" in contract["physics"]:
+                    gravity, well_id = _hole_gravity(contract, state["position"])
+                    if event.get("gravity_well_id") != well_id or not _same_pair(event.get("gravity_tilt"), gravity):
+                        return _fail(f"event {sequence} misreports hole gravity")
                 outcome = _tick(state, tilt, contract, tick_index=ticks)
                 after = event.get("after") or {}
                 if not _same_pair(after.get("position"), state["position"]) or not _same_pair(after.get("velocity"), state["velocity"]):

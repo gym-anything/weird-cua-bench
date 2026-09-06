@@ -31,6 +31,13 @@ def generate(task: dict[str, Any], seed: str) -> tuple[dict[str, Any], dict[str,
     condition = task.get("_control_condition")
     parameters = dict((condition or {}).get("difficulty_parameters") or {})
     disturbance = parameters.get("external_tilt")
+    gravity = parameters.get("hole_gravity")
+    if gravity is not None:
+        if (isinstance(gravity, bool) or not isinstance(gravity, (int, float))
+                or not math.isfinite(gravity) or not 0 < gravity < 1):
+            raise ValueError("hole_gravity must be a fraction of player acceleration in (0, 1)")
+        if disturbance is not None:
+            raise ValueError("choose hole gravity or rotating tilt, not both")
     if disturbance is not None:
         if not isinstance(disturbance, dict) or set(disturbance) != {"amplitude", "period_ms"}:
             raise ValueError("external_tilt requires amplitude and period_ms")
@@ -44,10 +51,14 @@ def generate(task: dict[str, Any], seed: str) -> tuple[dict[str, Any], dict[str,
     hazard_count = int(parameters.get("hazard_count", 3))
     if not 1 <= lamp_count <= 5 or not 0 <= wall_count <= 5 or not 0 <= hazard_count <= 5:
         raise ValueError("tilt board counts are outside supported limits")
+    if gravity is not None and hazard_count == 0:
+        raise ValueError("hole gravity requires at least one well")
     task_id = str(task.get("id") or "board_game_captcha_seed_0001@0.1")
     condition_token = f"|d{condition['difficulty']}|{task.get('id')}" if condition else ""
     if disturbance is not None:
         condition_token += f"|external-tilt:{amplitude}:{period}"
+    if gravity is not None:
+        condition_token += f"|hole-gravity:{float(gravity)}"
     challenge_id = hashlib.sha256(f"{seed}|{MECHANIC_ID}{condition_token}".encode()).hexdigest()[:13]
     mirror = rng.choice((False, True))
     start = _mirror_point([88, 438], mirror)
@@ -103,6 +114,8 @@ def generate(task: dict[str, Any], seed: str) -> tuple[dict[str, Any], dict[str,
             "phase_radians": drift_rng.uniform(0, 2 * math.pi),
             "direction": drift_rng.choice((-1, 1)),
         }
+    if gravity is not None:
+        physics["hole_gravity"] = float(gravity)
     requirements = {
         "minimum_ticks": int(parameters.get("minimum_ticks", 72)),
         "minimum_control_changes": int(parameters.get("minimum_control_changes", 8)),
