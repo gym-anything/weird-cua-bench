@@ -1,0 +1,401 @@
+:root {
+  --landfall-ink: #173239;
+  --landfall-deep: #0c252c;
+  --landfall-paper: #eee1bd;
+  --landfall-paper-bright: #f7eccd;
+  --landfall-rust: #b64f38;
+  --landfall-teal: #3f7d73;
+  --landfall-gold: #d49a3b;
+  --landfall-shadow: rgba(4, 24, 29, .34);
+}
+
+body[data-mechanic="unmarked-landfall"] {
+  margin: 0;
+  overflow: hidden;
+  color: var(--landfall-ink);
+  background:
+    radial-gradient(circle at 12% 18%, rgba(224, 194, 125, .13), transparent 28%),
+    radial-gradient(circle at 84% 72%, rgba(82, 137, 125, .18), transparent 35%),
+    #092127;
+  font-family: Georgia, "Times New Roman", serif;
+}
+
+body[data-mechanic="unmarked-landfall"] #app {
+  display: block;
+  width: 100vw;
+  height: 100vh;
+  min-height: 0;
+  padding: 0;
+  overflow: hidden;
+}
+
+.unmarked-landfall,
+.unmarked-landfall * {
+  box-sizing: border-box;
+}
+
+.unmarked-landfall {
+  position: relative;
+  display: grid;
+  grid-template-rows: minmax(86px, 12vh) 1fr minmax(66px, 9vh);
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  background:
+    linear-gradient(90deg, transparent 0 49.9%, rgba(247, 236, 205, .05) 50%, transparent 50.1%),
+    var(--landfall-deep);
+}
+
+.landfall-head {
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  min-width: 0;
+  padding: 15px clamp(22px, 2.8vw, 54px) 13px;
+  color: var(--landfall-paper-bright);
+  border-bottom: 1px solid rgba(239, 223, 183, .25);
+  background:
+    repeating-linear-gradient(135deg, transparent 0 22px, rgba(255,255,255,.018) 22px 23px),
+    #102e35;
+  box-shadow: 0 12px 32px rgba(0, 0, 0, .25);
+}
+
+.landfall-head > div { min-width: 0; }
+.landfall-head span,
+.landfall-head dt,
+.landfall-foot span,
+.landfall-map-meta,
+.landfall-guide-index,
+.landfall-guide-card header span,
+.landfall-deposition-surface header span,
+.landfall-deposition-surface legend {
+  font-family: "Courier New", monospace;
+  font-weight: 800;
+  letter-spacing: .13em;
+  text-transform: uppercase;
+}
+
+.landfall-head > div > span {
+  display: block;
+  margin-bottom: 3px;
+  color: #d6ae62;
+  font-size: clamp(9px, .72vw, 12px);
+}
+
+.landfall-head h1 {
+  margin: 0;
+  font-family: Baskerville, Georgia, serif;
+  font-size: clamp(24px, 2.1vw, 40px);
+  font-weight: 700;
+  letter-spacing: .085em;
+  line-height: .95;
+}
+
+.landfall-head p {
+  max-width: 860px;
+  margin: 6px 0 0;
+  overflow: hidden;
+  color: rgba(247, 236, 205, .72);
+  font-size: clamp(10px, .78vw, 14px);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.landfall-head dl {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(96px, 1fr));
+  min-width: min(23vw, 300px);
+  margin: 0 0 0 24px;
+  overflow: hidden;
+  border: 1px solid rgba(238, 225, 189, .26);
+}
+
+.landfall-head dl > div {
+  padding: 8px 12px;
+  border-left: 1px solid rgba(238, 225, 189, .2);
+}
+
+.landfall-head dl > div:first-child { border-left: 0; }
+.landfall-head dt { color: #9bbab2; font-size: 9px; }
+.landfall-head dd { margin: 3px 0 0; font-size: clamp(14px, 1.1vw, 20px); }
+
+.landfall-workspace {
+  display: grid;
+  grid-template-columns: minmax(0, 1.34fr) minmax(430px, .96fr);
+  gap: clamp(12px, 1.15vw, 22px);
+  min-height: 0;
+  padding: clamp(12px, 1.25vw, 24px) clamp(16px, 2.1vw, 40px);
+}
+
+.landfall-panorama-shell,
+.landfall-atlas {
+  min-width: 0;
+  min-height: 0;
+  overflow: hidden;
+  border: 1px solid rgba(240, 226, 191, .3);
+  box-shadow: 0 18px 42px var(--landfall-shadow);
+}
+
+.landfall-panorama-shell {
+  position: relative;
+  display: grid;
+  place-items: stretch;
+  background: #314a43;
+}
+
+#landfall-panorama {
+  display: block;
+  width: 100%;
+  height: 100%;
+  min-height: 0;
+  cursor: grab;
+  touch-action: none;
+}
+
+#landfall-panorama:active { cursor: grabbing; }
+.unmarked-landfall[data-interaction="simplified"] #landfall-panorama { cursor: default; }
+
+.landfall-pan-controls {
+  position: absolute;
+  right: 12px;
+  bottom: 12px;
+  left: 12px;
+  display: grid;
+  grid-template-columns: 126px 1fr 126px;
+  gap: 8px;
+  align-items: stretch;
+  padding: 8px;
+  background: rgba(9, 31, 37, .88);
+  border: 1px solid rgba(239, 225, 189, .34);
+}
+
+.landfall-pan-controls button,
+.landfall-map-controls button,
+.landfall-atlas nav button,
+.landfall-guide-surface footer button,
+.landfall-deposition-surface button,
+#landfall-submit {
+  min-height: 42px;
+  color: var(--landfall-paper-bright);
+  background: #244951;
+  border: 1px solid rgba(238, 225, 188, .35);
+  font-family: "Courier New", monospace;
+  font-size: 10px;
+  font-weight: 900;
+  letter-spacing: .065em;
+  cursor: pointer;
+}
+
+.landfall-pan-controls button:hover,
+.landfall-map-controls button:hover,
+.landfall-atlas nav button:hover,
+.landfall-guide-surface footer button:hover,
+.landfall-deposition-surface button:hover { background: #35636a; }
+
+#landfall-road-buttons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  align-items: stretch;
+  justify-content: center;
+}
+
+#landfall-road-buttons button { flex: 1 1 120px; background: #9f4937; }
+.landfall-atlas {
+  position: relative;
+  display: grid;
+  grid-template-rows: 48px 1fr;
+  background: var(--landfall-paper);
+}
+
+.landfall-atlas::after {
+  position: absolute;
+  inset: 0;
+  content: "";
+  background: repeating-linear-gradient(0deg, transparent 0 8px, rgba(34, 53, 48, .025) 8px 9px);
+  pointer-events: none;
+}
+
+.landfall-atlas nav {
+  z-index: 2;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  padding: 0 8px;
+  background: #19373d;
+}
+
+.landfall-atlas nav button {
+  border-width: 0 0 1px 1px;
+  background: transparent;
+}
+
+.landfall-atlas nav button:first-child { border-left: 0; }
+.landfall-atlas nav button[data-active="true"] { color: #183139; background: var(--landfall-paper); border-bottom-color: var(--landfall-paper); }
+
+.landfall-surface {
+  z-index: 1;
+  position: relative;
+  display: none;
+  min-width: 0;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.landfall-surface[data-active="true"] { display: grid; }
+
+.landfall-map-surface {
+  grid-template-rows: 36px 1fr;
+  padding: 10px;
+}
+
+.landfall-map-meta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  color: #52665e;
+  font-size: 9px;
+}
+
+#landfall-map {
+  width: 100%;
+  height: 100%;
+  min-height: 0;
+  background:
+    radial-gradient(circle at 70% 28%, rgba(255,255,255,.34), transparent 32%),
+    #ddcfaa;
+  border: 1px solid rgba(25, 52, 58, .32);
+  cursor: crosshair;
+  touch-action: none;
+}
+
+.landfall-province { stroke: #314c4d; stroke-width: 1.5; vector-effect: non-scaling-stroke; }
+.landfall-province.wash-0 { fill: #d8c58e; }
+.landfall-province.wash-1 { fill: #b7c29a; }
+.landfall-province.wash-2 { fill: #c7aa7e; }
+.landfall-province.wash-3 { fill: #9fb8a9; }
+.landfall-province.wash-4 { fill: #c5b49a; }
+.landfall-map-road { stroke: #6d5e45; stroke-width: 2.2; stroke-linecap: round; vector-effect: non-scaling-stroke; }
+.landfall-map-node { fill: #efe2bd; stroke: #314c4d; stroke-width: 1.2; vector-effect: non-scaling-stroke; }
+.landfall-map-label { fill: #183139; font: 700 9px Georgia, serif; text-anchor: middle; }
+.landfall-map-landmark circle { fill: #ead9a7; stroke: #a64d39; stroke-width: 2; vector-effect: non-scaling-stroke; }
+.landfall-map-landmark path { fill: #a64d39; }
+.landfall-pin path { fill: #bc4936; stroke: #f7e9c4; stroke-width: 2; vector-effect: non-scaling-stroke; }
+.landfall-pin circle { fill: #f7e9c4; }
+
+.landfall-map-controls {
+  position: absolute;
+  right: 18px;
+  bottom: 18px;
+  display: grid;
+  grid-template-columns: repeat(3, 42px);
+  gap: 4px;
+  padding: 5px;
+  background: rgba(18, 48, 53, .92);
+}
+
+.landfall-map-controls button { min-height: 38px; font-size: 18px; }
+
+.landfall-guide-surface {
+  grid-template-rows: 32px 1fr 46px;
+  padding: 10px 12px;
+}
+
+.landfall-guide-index { align-self: center; color: #63736a; font-size: 8px; }
+#landfall-guide-cards { display: grid; grid-auto-rows: minmax(0, 1fr); gap: 8px; min-height: 0; }
+
+.landfall-guide-card {
+  display: grid;
+  grid-template-columns: minmax(130px, .72fr) 1.7fr;
+  min-height: 0;
+  overflow: hidden;
+  background: rgba(249, 238, 205, .74);
+  border: 1px solid rgba(35, 54, 51, .25);
+  box-shadow: 0 5px 10px rgba(43, 50, 39, .08);
+}
+
+.landfall-guide-card header { display: flex; flex-direction: column; justify-content: center; padding: 9px 11px; border-right: 1px solid rgba(35, 54, 51, .18); }
+.landfall-guide-card h3 { margin: 0; font-size: clamp(15px, 1.25vw, 23px); line-height: 1; }
+.landfall-guide-features { display: grid; grid-template-columns: repeat(3, 1fr); min-height: 0; }
+.landfall-guide-features > div { display: grid; grid-template-rows: 13px 1fr; place-items: center; min-width: 0; padding: 3px; border-left: 1px solid rgba(35,54,51,.12); border-top: 1px solid rgba(35,54,51,.12); }
+.landfall-guide-features span { overflow: hidden; color: #5b6d66; font: 800 6px/1 "Courier New", monospace; letter-spacing: .06em; text-overflow: ellipsis; white-space: nowrap; }
+
+.landfall-feature-icon { display: block; width: 78px; max-width: 100%; height: 54px; }
+.landfall-feature-icon.is-compact { width: 62px; height: 42px; }
+
+.landfall-guide-surface footer { display: grid; grid-template-columns: 1fr auto 1fr; gap: 8px; align-items: end; }
+.landfall-guide-surface footer b { align-self: center; font: 900 9px "Courier New", monospace; letter-spacing: .1em; }
+.landfall-guide-surface footer button:disabled { opacity: .3; cursor: default; }
+
+.landfall-deposition-surface { grid-template-rows: auto 1fr; padding: 14px 16px; overflow: auto; }
+.landfall-deposition-surface header { padding: 0 0 10px; border-bottom: 2px solid rgba(24,49,57,.35); }
+.landfall-deposition-surface header span { color: var(--landfall-rust); font-size: 8px; }
+.landfall-deposition-surface h2 { margin: 3px 0 2px; font-size: clamp(18px, 1.5vw, 27px); letter-spacing: .05em; }
+#landfall-deposition-fields { display: grid; gap: 6px; align-content: start; padding-top: 8px; }
+.landfall-deposition-surface fieldset { display: grid; grid-template-columns: 118px 1fr; align-items: center; min-width: 0; margin: 0; padding: 5px 7px; border: 1px solid rgba(28, 52, 55, .2); }
+.landfall-deposition-surface legend { float: left; width: 110px; color: #576a63; font-size: 7px; }
+.landfall-deposition-surface fieldset > div { display: grid; grid-template-columns: repeat(4, 1fr); gap: 4px; }
+.landfall-deposition-surface button { display: grid; place-items: center; min-height: 48px; padding: 0; background: rgba(27, 65, 69, .11); border-color: rgba(26, 55, 59, .25); }
+.landfall-deposition-surface button[data-selected="true"] { background: #d49b3c; border: 2px solid #173239; box-shadow: inset 0 0 0 2px #f5e6bd; }
+
+.landfall-foot {
+  z-index: 3;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+  padding: 9px clamp(20px, 2.8vw, 54px);
+  color: var(--landfall-paper-bright);
+  background: #102e35;
+  border-top: 1px solid rgba(239, 223, 183, .25);
+}
+
+.landfall-foot > div { min-width: 0; }
+.landfall-foot span { display: block; margin-bottom: 3px; color: #9cb7af; font-size: 8px; }
+.landfall-foot .readout { overflow: hidden; font-size: clamp(12px, 1vw, 17px); font-weight: 700; letter-spacing: .04em; text-overflow: ellipsis; white-space: nowrap; }
+.landfall-foot .readout[data-status="error"] { color: #ff9b83; }
+.landfall-foot .readout[data-status="passed"] { color: #d7cf7d; }
+#landfall-submit { min-width: clamp(180px, 16vw, 280px); min-height: 46px; padding: 0 20px; background: #6d5040; box-shadow: 0 7px 18px rgba(0,0,0,.23); }
+#landfall-submit[data-ready="true"] { color: #fff3cb; background: var(--landfall-rust); border-color: #f4d799; }
+
+.landfall-verdict {
+  z-index: 20;
+  position: absolute;
+  top: 13%;
+  left: 50%;
+  display: none;
+  min-width: min(540px, 72vw);
+  padding: 18px 28px;
+  color: var(--landfall-paper-bright);
+  background: rgba(111, 40, 31, .96);
+  border: 4px double #f0d695;
+  box-shadow: 0 24px 70px rgba(0,0,0,.48);
+  text-align: center;
+  transform: translateX(-50%) rotate(-1deg);
+  pointer-events: none;
+}
+
+.landfall-verdict b { display: block; font-size: clamp(28px, 3vw, 48px); letter-spacing: .09em; }
+.unmarked-landfall[data-fresh-failure="true"] .landfall-verdict,
+.unmarked-landfall[data-verdict="pass"] .landfall-verdict { display: block; }
+.unmarked-landfall[data-verdict="pass"] .landfall-verdict { background: rgba(32, 91, 75, .97); transform: translateX(-50%) rotate(.7deg); }
+
+@media (max-width: 1420px), (max-height: 820px) {
+  .unmarked-landfall { grid-template-rows: 82px 1fr 64px; }
+  .landfall-workspace { grid-template-columns: minmax(0, 1.24fr) minmax(420px, .96fr); padding: 10px 14px; gap: 10px; }
+  .landfall-head { padding: 10px 22px; }
+  .landfall-head p { max-width: 650px; }
+  .landfall-head dl { min-width: 330px; }
+  .landfall-guide-card { grid-template-columns: 122px 1fr; }
+  .landfall-feature-icon.is-compact { width: 52px; height: 35px; }
+  .landfall-guide-features > div { grid-template-rows: 10px 1fr; }
+  .landfall-deposition-surface { padding: 9px 11px; }
+  .landfall-deposition-surface fieldset { padding: 2px 5px; }
+  .landfall-deposition-surface button { min-height: 39px; }
+  .landfall-pan-controls { grid-template-columns: 108px 1fr 108px; }
+}
+
+@media (max-width: 1050px) {
+  .landfall-head dl { display: none; }
+  .landfall-workspace { grid-template-columns: 1fr minmax(390px, .95fr); }
+}
