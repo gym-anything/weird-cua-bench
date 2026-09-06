@@ -1,0 +1,29 @@
+{
+  "id": "crackglaze_crossing_seed_0001@0.1",
+  "version": "0.1",
+  "env_id": "weird_captcha_gym.crackglaze_crossing_env@0.1",
+  "name": "Crackglaze Crossing",
+  "description": "Gather every lantern and reach the door. Each move ages every tile already left behind; returning after its colour-specific lifetime fails. Learn the shuffled colour lifetimes from the forced opening walk, then plan through the generated floor. Solve only from screenshots and visible controls in the task webpage. Programs in an isolated agent sandbox may process screenshots and issue mouse and keyboard actions through the provided gateway. Do not access the task environment through Developer Tools, console, debugger, inspector, network or source inspection, DOM or page-state inspection, the task terminal or shell, address-bar or URL/query edits, reload/navigation, browser extensions, external applications, hidden state, or unrelated tabs.",
+  "difficulty": "medium",
+  "natural_language": "Gather every lantern and reach the door. Move only to an orthogonally adjacent tile. Leaving a tile lights its colour's fuse; every later move advances all lit fuses, and returning to a fallen tile fails. Watch the opening run crack behind you to learn the shuffled colour lifetimes. Darkened tiles still age, but their crack stages cannot be seen. Solve only from screenshots and visible controls in the task webpage. Programs in an isolated agent sandbox may process screenshots and issue mouse and keyboard actions through the provided gateway. Do not access the task environment through Developer Tools, console, debugger, inspector, network or source inspection, DOM or page-state inspection, the task terminal or shell, address-bar or URL/query edits, reload/navigation, browser extensions, external applications, hidden state, or unrelated tabs.",
+  "tags": ["weird-captcha", "turn-driven", "route-planning", "hidden-countdown-memory", "direct-tile-click"],
+  "init": {"timeout_sec": 720, "max_steps": 160, "reward_type": "sparse"},
+  "hooks": {
+    "pre_task": "/workspace/tasks/crackglaze_crossing_seed_0001/setup_task.sh",
+    "post_task": "/workspace/tasks/crackglaze_crossing_seed_0001/export_result.sh"
+  },
+  "success": {"mode": "program", "spec": {"program": "verifier.py::verify_task"}},
+  "metadata": {
+    "benchmark": "weird_captcha_gym",
+    "mechanic_id": "crackglaze_crossing",
+    "capabilities": ["visual understanding: 2D", "temporal understanding and memory", "reasoning and planning"],
+    "source_anchors": ["IND-021", "VGE-250", "VGE-489"],
+    "source_notes": "IND-021 grounds collect-all then exit on collapsing floor, VGE-250 grounds glaze-colour delayed collapse after leaving, and VGE-489 grounds a dark region whose state must be remembered. The generated ceramic crossing, lantern layout, interaction pair, artwork, fuse replay, and verifier are original.",
+    "asset_manifest": "shared_runtime/assets/provenance/crackglaze_crossing_v0.json",
+    "status": "prototype_visual_candidate",
+    "shared_action_surface": ["mouse", "keyboard"],
+    "notes": "There was no pre-control task to preserve. The first failed prototype used a fixed three-branch graph whose glazes were safe by construction; it has been replaced rather than relabelled. The L3 baseline uses a generated cyclic core, shuffled observable fuse mapping, and hidden revisited states. State changes only on accepted movement actions; wall-clock delay never advances a fuse.",
+    "design_status": "scripted_browser_verified_pending_vnc_human_and_agent_evidence",
+    "legacy_agent_sample_population": false
+  }
+}

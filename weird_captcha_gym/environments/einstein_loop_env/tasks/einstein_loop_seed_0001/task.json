@@ -1,0 +1,41 @@
+{
+  "id": "einstein_loop_seed_0001@0.1",
+  "version": "0.1",
+  "env_id": "weird_captcha_gym.einstein_loop_env@0.1",
+  "name": "Einstein Loop",
+  "description": "Ground one exact loop on the visible edges of an aperiodic hat-monotile patch. Use only the visible task webpage and its controls; implementation and hidden-state access are forbidden.",
+  "difficulty": "medium",
+  "natural_language": "Draw one closed loop along the visible edges of the thirteen congruent hat tiles. Each number is the exact count of that tile's visible edge segments used by the loop; the loop may not branch or cross. In direct mode, drag from dot to dot and right-click an edge to rule it out. In simplified mode, select an edge and use the mark controls. Certify the finished loop. Solve only from screenshots and visible controls in the task webpage. Programs in an isolated agent sandbox may process screenshots and issue mouse and keyboard actions through the provided gateway. Do not access the task environment through Developer Tools, console, debugger, inspector, network or source inspection, DOM or page-state inspection, the task terminal or shell, address-bar or URL/query edits, reload/navigation, browser extensions, external applications, hidden state, or unrelated tabs.",
+  "tags": [
+    "weird-captcha",
+    "slitherlink",
+    "aperiodic-tiling",
+    "visual-grounding",
+    "reasoning-planning"
+  ],
+  "init": {
+    "timeout_sec": 900,
+    "max_steps": 500,
+    "reward_type": "sparse"
+  },
+  "hooks": {
+    "pre_task": "/workspace/tasks/einstein_loop_seed_0001/setup_task.sh",
+    "post_task": "/workspace/tasks/einstein_loop_seed_0001/export_result.sh"
+  },
+  "success": {
+    "mode": "program",
+    "spec": {"program": "verifier.py::verify_task"}
+  },
+  "metadata": {
+    "benchmark": "weird_captcha_gym",
+    "mechanic_id": "einstein_loop",
+    "source_anchors": ["PLOG-014", "PLOG-200", "PLOG-201"],
+    "source_notes": "The exact one-loop and per-face clue contract comes from Slitherlink/Loopy. Simon Tatham's irregular Hats mode and Craig Kaplan's hatviz substitution geometry ground the aperiodic monotile graph. The visual design, generated instances, clue removal, uniqueness proof, interaction transcripts, and verifier are original to this repository.",
+    "asset_manifest": "shared_runtime/assets/provenance/einstein_loop_v0.json",
+    "status": "prototype_visual_candidate",
+    "shared_action_surface": ["mouse", "keyboard"],
+    "notes": "Every face has the congruent hat silhouette; its one double-length side is split at the tiling junction into two atomic puzzle edges. The generator takes a connected crop from a substitution tiling, builds one nontrivial simple loop, and removes clues only while an exact search still finds one solution.",
+    "design_status": "local_verification_pending_vnc_human_evidence",
+    "legacy_agent_sample_population": false
+  }
+}

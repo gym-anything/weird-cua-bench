@@ -240,7 +240,7 @@ class CorpusMigrationTest(unittest.TestCase):
         env_dirs = sorted(
             d for d in (root / "environments").iterdir() if d.name.endswith("_env")
         )
-        self.assertEqual(len(env_dirs), 85)
+        self.assertEqual(len(env_dirs), json.loads((root / "benchmark_manifest.json").read_text())["environment_count"])
         for env_dir in env_dirs:
             spec = json.loads((env_dir / "env.json").read_text())
             settings = real_time[mechanic_id_from_env_dir(str(env_dir))]

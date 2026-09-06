@@ -1,0 +1,679 @@
+body[data-mechanic="four-pane-pilgrimage"] {
+  margin: 0;
+  overflow: hidden;
+  color: #172a2b;
+  background: #151b1b;
+  font-family: Palatino, "Book Antiqua", Georgia, serif;
+}
+
+body[data-mechanic="four-pane-pilgrimage"] #app.app-shell {
+  width: 100vw;
+  height: 100vh;
+  min-height: 0;
+  padding: 0;
+  display: block;
+  overflow: hidden;
+}
+
+.four-pane-pilgrimage {
+  --paper: #e8dfc7;
+  --paper-deep: #d7c79d;
+  --ink: #172a2b;
+  --path: #b8523d;
+  --wash: #658e82;
+  --gold: #c69a4b;
+  position: relative;
+  width: 100%;
+  height: 100%;
+  box-sizing: border-box;
+  display: grid;
+  grid-template-rows: 70px minmax(0, 1fr) 58px;
+  background:
+    radial-gradient(circle at 19% 13%, #33423e 0 1px, transparent 2px),
+    radial-gradient(circle at 83% 72%, #465449 0 1px, transparent 2px),
+    linear-gradient(135deg, #17201f, #27302b 49%, #121817);
+  background-size: 29px 29px, 41px 41px, auto;
+  overflow: hidden;
+  user-select: none;
+}
+
+.four-pane-pilgrimage::before {
+  content: "";
+  position: absolute;
+  inset: 9px;
+  border: 1px solid #c69a4b55;
+  box-shadow: inset 0 0 55px #0007;
+  pointer-events: none;
+  z-index: 12;
+}
+
+.fpp-head,
+.fpp-foot {
+  position: relative;
+  z-index: 4;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 18px;
+  padding: 9px 24px;
+  color: var(--paper);
+  border-bottom: 1px solid #c69a4b66;
+  background: #111817e8;
+  box-shadow: 0 7px 22px #0005;
+}
+
+.fpp-head > div:first-child {
+  min-width: 0;
+}
+
+.fpp-head span,
+.fpp-foot span,
+.fpp-tray-heading span,
+.fpp-empty-tray small,
+.fpp-transform-mark,
+.fpp-proxy-controls button {
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  text-transform: uppercase;
+  letter-spacing: .13em;
+}
+
+.fpp-head span {
+  display: block;
+  margin-bottom: 3px;
+  color: var(--gold);
+  font-size: 8px;
+}
+
+.fpp-head h1 {
+  max-width: 860px;
+  margin: 0;
+  overflow: hidden;
+  color: #f0e8d4;
+  font: 600 14px/1.22 Palatino, "Book Antiqua", Georgia, serif;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.fpp-stage {
+  min-height: 0;
+  padding: 12px 18px;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 264px;
+  gap: 13px;
+}
+
+.fpp-board {
+  min-width: 0;
+  min-height: 0;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-template-rows: repeat(2, minmax(0, 1fr));
+  gap: 5px;
+  padding: 6px;
+  border: 1px solid #c69a4b88;
+  background: #0c1211;
+  box-shadow: 0 18px 38px #0008, inset 0 0 0 5px #27302b;
+}
+
+.fpp-slot {
+  position: relative;
+  min-width: 0;
+  min-height: 0;
+  display: grid;
+  grid-template-rows: 25px minmax(0, 1fr);
+  overflow: hidden;
+  border: 1px solid #524c3e;
+  background: var(--paper);
+  box-shadow: inset 0 0 28px #675a3f44;
+}
+
+.fpp-pane-grip {
+  position: relative;
+  z-index: 8;
+  display: grid;
+  grid-template-columns: 23px 1fr auto;
+  align-items: center;
+  padding: 0 8px;
+  color: #d9cdaa;
+  border-bottom: 1px solid #7b704f;
+  background: #1b2928;
+  cursor: grab;
+  touch-action: none;
+}
+
+.four-pane-pilgrimage[data-interaction="simplified"] .fpp-pane-grip {
+  cursor: default;
+}
+
+.fpp-pane-grip:active {
+  cursor: grabbing;
+}
+
+.fpp-pane-grip i {
+  height: 1px;
+  background: repeating-linear-gradient(90deg, #c69a4b88 0 5px, transparent 5px 9px);
+}
+
+.fpp-pane-grip b {
+  margin-left: 9px;
+  font: 700 7px ui-monospace, monospace;
+  letter-spacing: .12em;
+}
+
+.fpp-pane-sigil {
+  color: var(--gold);
+  font-size: 13px;
+}
+
+.fpp-canvas-wrap {
+  position: relative;
+  min-height: 0;
+  overflow: hidden;
+  background:
+    linear-gradient(90deg, transparent 49.7%, #775f3133 50%, transparent 50.3%),
+    var(--paper);
+}
+
+.fpp-canvas {
+  display: block;
+  width: 100%;
+  height: 100%;
+  cursor: move;
+  touch-action: none;
+}
+
+.four-pane-pilgrimage[data-interaction="simplified"] .fpp-canvas {
+  cursor: default;
+}
+
+.fpp-paper {
+  fill: var(--paper);
+}
+
+.fpp-scene-art {
+  fill: none;
+  stroke: var(--ink);
+  stroke-width: 2.1;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  opacity: .78;
+}
+
+.fpp-scene-art circle {
+  fill: #263b4b18;
+}
+
+.fpp-scene-art .fpp-wash {
+  fill: var(--wash);
+  fill-opacity: .19;
+  stroke: none;
+}
+
+.fpp-hatch {
+  stroke-width: .85;
+  opacity: .32;
+}
+
+.fpp-hatch.hatch-1 {
+  stroke: var(--wash);
+}
+
+.fpp-hatch.hatch-2 {
+  stroke-dasharray: 2 4;
+}
+
+.fpp-route-accent,
+.fpp-route-line {
+  fill: none;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.fpp-route-accent {
+  stroke: var(--route-accent);
+  stroke-width: calc(var(--route-width) + 2.4px);
+  opacity: .24;
+}
+
+.fpp-route-line {
+  stroke: var(--route-ink);
+  stroke-width: var(--route-width);
+  opacity: .88;
+}
+
+.fpp-scene-route.feature-terrace_edge .fpp-route-line {
+  stroke-dasharray: 13 2 3 2;
+}
+
+.fpp-scene-route.feature-awning_seam .fpp-route-line {
+  stroke-dasharray: 2 2;
+}
+
+.fpp-scene-route.feature-water_channel .fpp-route-line {
+  stroke-linecap: square;
+  stroke-dasharray: 16 3;
+}
+
+.fpp-scene-route.feature-ridge_contour .fpp-route-line {
+  stroke-dasharray: 8 1 2 1;
+}
+
+.fpp-pilgrim {
+  fill: var(--paper);
+  stroke: var(--path);
+  stroke-width: 2.8;
+  stroke-linecap: round;
+  filter: drop-shadow(0 2px 1px #0005);
+  transition: transform .5s cubic-bezier(.2, .85, .35, 1);
+}
+
+.fpp-pilgrim.is-walking {
+  animation: fpp-footfall .19s ease-in-out infinite alternate;
+}
+
+.fpp-shrine {
+  fill: #e8dfc7cc;
+  stroke: var(--gold);
+  stroke-width: 2.4;
+  filter: drop-shadow(0 3px 2px #0004);
+}
+
+.fpp-shrine.is-reached {
+  animation: fpp-shrine-glow 1s ease-in-out infinite alternate;
+}
+
+.fpp-transform-mark {
+  position: absolute;
+  z-index: 5;
+  right: 7px;
+  bottom: 6px;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  padding: 3px 5px;
+  color: #172a2b99;
+  border: 1px solid #172a2b2e;
+  background: #e8dfc7aa;
+  font-size: 6px;
+  pointer-events: none;
+}
+
+.fpp-transform-mark span::after {
+  content: "%";
+}
+
+.fpp-transform-mark i {
+  width: 13px;
+  height: 9px;
+  display: block;
+  border: 1px solid currentColor;
+}
+
+.fpp-bound-plate,
+.fpp-loose-plate,
+.fpp-stacked-plate,
+.fpp-aperture-target {
+  color: var(--gold);
+}
+
+.fpp-aperture-target {
+  position: absolute;
+  z-index: 8;
+  left: var(--aperture-x);
+  top: var(--aperture-y);
+  width: 76px;
+  height: 76px;
+  display: grid;
+  place-items: center;
+  transform: translate(-50%, -50%);
+  color: var(--ink);
+  border-radius: 46% 52% 49% 44%;
+  cursor: crosshair;
+}
+
+.fpp-bound-plate {
+  position: absolute;
+  z-index: 10;
+  left: var(--plate-x);
+  top: var(--plate-y);
+  width: 70px;
+  height: 70px;
+  display: grid;
+  place-items: center;
+  padding: 0;
+  transform: translate(-50%, -50%);
+  border: 0;
+  color: var(--ink);
+  background: transparent;
+  filter: drop-shadow(0 3px 3px #251e1666);
+  cursor: grab;
+}
+
+.fpp-stacked-plate {
+  position: absolute;
+  z-index: 9;
+  left: var(--aperture-x);
+  top: var(--aperture-y);
+  width: 78px;
+  height: 78px;
+  display: grid;
+  place-items: center;
+  transform: translate(-50%, -50%) rotate(calc(var(--plate-index) * .7deg));
+  filter: drop-shadow(0 2px 2px #251e1655);
+  pointer-events: none;
+  mix-blend-mode: multiply;
+}
+
+.fpp-fragment-art {
+  overflow: visible;
+  color: var(--ink);
+}
+
+.fpp-fragment-paper {
+  fill: color-mix(in srgb, var(--paper) 80%, transparent);
+  stroke: var(--gold);
+  stroke-width: 1.1;
+  stroke-dasharray: 3 2;
+}
+
+.fpp-fragment-lines,
+.fpp-target-lines {
+  fill: none;
+  stroke: var(--wash);
+  stroke-width: 3;
+  stroke-linecap: round;
+}
+
+.fpp-fragment-silhouette {
+  opacity: .42;
+}
+
+.fpp-torn-edge {
+  fill: #e8dfc744;
+  stroke: var(--ink);
+  stroke-width: 1.2;
+  stroke-dasharray: 4 3;
+  opacity: .62;
+}
+
+.fpp-target-lines {
+  stroke: var(--ink);
+  opacity: .78;
+}
+
+.fpp-workbench {
+  min-height: 0;
+  display: grid;
+  grid-template-rows: auto minmax(94px, 1fr) auto;
+  gap: 8px;
+  padding: 11px;
+  color: #e8dfc7;
+  border: 1px solid #c69a4b66;
+  background: #111817e8;
+  box-shadow: 0 18px 38px #0008;
+  overflow: hidden;
+}
+
+.fpp-tray-heading {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  color: var(--gold);
+  font-size: 8px;
+}
+
+.fpp-tray-heading i {
+  width: 20px;
+  height: 20px;
+  display: grid;
+  place-items: center;
+  border: 1px solid #c69a4b77;
+  border-radius: 50%;
+  font-style: normal;
+  font-size: 9px;
+}
+
+.fpp-layer-tray {
+  min-height: 88px;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  align-content: start;
+  gap: 7px;
+  padding: 8px;
+  border: 1px dashed #c69a4b66;
+  background:
+    repeating-linear-gradient(135deg, #c69a4b0a 0 8px, transparent 8px 16px),
+    #0c1211;
+  overflow: auto;
+}
+
+.fpp-empty-tray {
+  grid-column: 1 / -1;
+  height: 72px;
+  display: grid;
+  place-items: center;
+  align-content: center;
+  gap: 5px;
+  color: #c69a4b66;
+}
+
+.fpp-empty-tray span {
+  font-size: 28px;
+}
+
+.fpp-empty-tray small {
+  font-size: 6px;
+}
+
+.fpp-loose-plate {
+  min-height: 74px;
+  display: grid;
+  place-items: center;
+  padding: 6px;
+  border: 1px solid #c69a4b77;
+  background: #202a2699;
+  cursor: grab;
+}
+
+.fpp-proxy-controls {
+  min-height: 0;
+  display: grid;
+  grid-template-columns: 68px 86px 1fr;
+  grid-template-areas: "panes grid slots" "plates plates plates";
+  gap: 7px;
+  padding: 7px;
+  border: 1px solid #c69a4b44;
+  background: #0c1211;
+  overflow: auto;
+}
+
+.fpp-proxy-controls button {
+  min-width: 26px;
+  min-height: 26px;
+  padding: 4px;
+  color: #d9cda6;
+  border: 1px solid #c69a4b66;
+  background: #1b2928;
+  font-size: 7px;
+  cursor: pointer;
+}
+
+.fpp-proxy-controls button:hover,
+.fpp-proxy-controls button[aria-pressed="true"] {
+  color: #111817;
+  background: var(--gold);
+}
+
+.fpp-proxy-panes {
+  grid-area: panes;
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 4px;
+}
+
+.fpp-proxy-grid {
+  grid-area: grid;
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 4px;
+}
+
+.fpp-proxy-slots {
+  grid-area: slots;
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 4px;
+}
+
+.fpp-proxy-plates {
+  grid-area: plates;
+  display: grid;
+  gap: 4px;
+}
+
+.fpp-proxy-plate {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  color: var(--gold);
+}
+
+.fpp-foot {
+  border-top: 1px solid #c69a4b66;
+  border-bottom: 0;
+  box-shadow: 0 -7px 22px #0005;
+}
+
+.fpp-foot > div:first-child {
+  min-width: 0;
+  flex: 1;
+}
+
+.fpp-foot span {
+  display: block;
+  margin-bottom: 3px;
+  color: #c69a4b99;
+  font-size: 6px;
+}
+
+.fpp-foot .readout {
+  display: block;
+  overflow: hidden;
+  color: #d8d0bd;
+  font: 700 8px/1.2 ui-monospace, monospace;
+  letter-spacing: .08em;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.fpp-foot .readout[data-status="passed"] {
+  color: #9ec2a6;
+}
+
+.fpp-foot .readout[data-status="error"] {
+  color: #e07b64;
+}
+
+.fpp-reset,
+.fpp-submit {
+  flex: none;
+  min-width: 126px;
+  padding: 10px 13px;
+  color: #d9cda6;
+  border: 1px solid #c69a4b77;
+  background: transparent;
+  font: 800 8px ui-monospace, monospace;
+  letter-spacing: .1em;
+  cursor: pointer;
+}
+
+.fpp-submit {
+  min-width: 182px;
+  color: #111817;
+  background: var(--gold);
+  transition: filter .2s, box-shadow .2s;
+}
+
+.fpp-drag-ghost {
+  position: fixed;
+  z-index: 50;
+  transform: translate(-50%, -50%);
+  display: none;
+  place-items: center;
+  width: 68px;
+  height: 68px;
+  color: var(--gold);
+  border: 1px solid #c69a4baa;
+  border-radius: 50%;
+  background: #e8dfc7d9;
+  box-shadow: 0 12px 25px #0008;
+  pointer-events: none;
+}
+
+.fpp-drag-ghost[data-visible="true"] {
+  display: grid;
+}
+
+.fpp-ghost-pane {
+  color: var(--ink);
+  font-size: 28px;
+}
+
+.fpp-fresh-stamp {
+  position: absolute;
+  z-index: 30;
+  top: 84px;
+  left: 50%;
+  transform: translateX(-50%) rotate(-1deg);
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 18px;
+  color: #ef8068;
+  border: 3px double #ef8068;
+  background: #1a1110f2;
+  box-shadow: 0 14px 40px #000a;
+}
+
+.fpp-fresh-stamp b {
+  font: 900 25px ui-monospace, monospace;
+}
+
+.fpp-verdict {
+  position: fixed;
+  z-index: 60;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  color: #e8dfc7;
+  background:
+    radial-gradient(circle, #31483eeb 0, #101715f5 58%, #090d0cfb 100%);
+}
+
+.fpp-verdict::before {
+  content: "⌂";
+  color: var(--gold);
+  font-size: 52px;
+}
+
+.fpp-verdict strong {
+  margin: 13px 0;
+  color: #dfe9d6;
+  font: 900 min(20vw, 160px)/.78 Palatino, "Book Antiqua", Georgia, serif;
+  text-shadow: 0 0 38px #91b79d88;
+}
+
+@keyframes fpp-footfall {
+  to { translate: 0 -3px; }
+}
+
+@keyframes fpp-shrine-glow {
+  to { filter: drop-shadow(0 0 12px #c69a4b); }
+}
+
+@media (max-width: 1050px) {
+  .fpp-stage { grid-template-columns: minmax(0, 1fr) 232px; padding-inline: 12px; }
+  .fpp-proxy-controls { grid-template-columns: 58px 74px 1fr; }
+}

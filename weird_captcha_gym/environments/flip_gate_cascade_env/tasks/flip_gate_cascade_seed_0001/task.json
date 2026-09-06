@@ -1,0 +1,29 @@
+{
+  "id": "flip_gate_cascade_seed_0001@0.1",
+  "version": "0.1",
+  "env_id": "weird_captcha_gym.flip_gate_cascade_env@0.1",
+  "name": "Flip-Gate Cascade",
+  "description": "Inspect the chute mouths, then match every vane to the target card before the marble tray is empty. Solve only from screenshots and visible controls in this task webpage. Programs in an isolated agent sandbox may process screenshots and issue mouse and keyboard actions through the provided gateway. Do not access the task environment through Developer Tools, console, debugger, inspector, network or source inspection, DOM or page-state inspection, the task terminal or shell, address-bar or URL/query edits, reload/navigation, browser extensions, external applications, hidden state, or unrelated tabs.",
+  "difficulty": "hard",
+  "natural_language": "Inspect the chute mouths, then match every vane to the target card before the marble tray is empty. Solve only from screenshots and visible controls in the task webpage. Programs in an isolated agent sandbox may process screenshots and issue mouse and keyboard actions through the provided gateway. Do not access the task environment through Developer Tools, console, debugger, inspector, network or source inspection, DOM or page-state inspection, the task terminal or shell, address-bar or URL/query edits, reload/navigation, browser extensions, external applications, hidden state, or unrelated tabs.",
+  "tags": ["weird-captcha", "finite-state-machine", "active-cursor-inspection", "transient-path", "closed-loop-planning", "mouse"],
+  "init": {"timeout_sec": 600, "max_steps": 160, "reward_type": "sparse"},
+  "hooks": {
+    "pre_task": "/workspace/tasks/flip_gate_cascade_seed_0001/setup_task.sh",
+    "post_task": "/workspace/tasks/flip_gate_cascade_seed_0001/export_result.sh"
+  },
+  "success": {"mode": "program", "spec": {"program": "verifier.py::verify_task"}},
+  "metadata": {
+    "benchmark": "weird_captcha_gym",
+    "mechanic_id": "flip_gate_cascade",
+    "source_anchors": ["TRP-033", "PHY-137"],
+    "capabilities": ["visual understanding: 2D", "temporal understanding and memory", "reasoning and planning", "exploration and interface understanding"],
+    "source_notes": "The interaction thesis comes from Think-a-Dot: a marble follows the current direction of each two-state gate and flips that gate behind it. The expanding four-chute, fifteen-vane baseline, seeded concealed inlet manifold, generated target depths, glass-fronted cabinet, input surfaces, and replay implementations are original.",
+    "asset_manifest": "shared_runtime/assets/provenance/flip_gate_cascade_v0.json",
+    "status": "prototype_visual_candidate",
+    "shared_action_surface": ["mouse"],
+    "notes": "The baseline has four top chutes, a seeded non-identity inlet manifold, and three expanding rows containing fifteen vanes. Hover or keyboard focus reveals one inlet route at a time; the route disappears on leave and completed marble paths are not persisted, so a screenshot-only solver must explore and retain earlier visible information. The target is sampled at exact shortest-path depth seven and the ten-marble budget is visible. The classic rotor network's final action effects commute even though each individual marble takes a state-dependent route; difficulty claims therefore use state-space depth, lattice size, memory load, and observation load rather than claiming non-commutative move order. Continuous frames are needed to observe a marble path, but the correct action does not expire during provider delay, so this is not a real-time diagnostic.",
+    "design_status": "scripted_browser_verified_pending_vnc_human_and_agent_evidence",
+    "legacy_agent_sample_population": false
+  }
+}
