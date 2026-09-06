@@ -13,8 +13,8 @@ from pathlib import Path
 from typing import Sequence
 
 
-DEFAULT_MODEL = "gpt-5.6-sol"
-DEFAULT_REASONING_EFFORT = "xhigh"
+DEFAULT_MODEL = "gpt-6-astra"
+DEFAULT_REASONING_EFFORT = "low"
 DEFAULT_TIMEOUT_SECONDS = 7200
 DEFAULT_BLIND_NUDGES = 1
 DEFAULT_AUDIT_ROUNDS = 3
@@ -82,6 +82,38 @@ def _initial_prompt(
         f"Write the required evidence to @{evidence_dir}. "
         "Do not ask for input. Do not stop after writing a plan. "
         f"{DESKTOP_ISOLATION_RULE}"
+    )
+
+
+def _selection_context(
+    environment: str, selection_file: Path | None, survey_root: Path | None
+) -> str:
+    if selection_file is None and survey_root is None:
+        return ""
+    if selection_file is None or survey_root is None:
+        raise ValueError("--selection-file and --survey-root must be supplied together")
+    if not survey_root.is_dir():
+        raise FileNotFoundError(f"Survey directory not found: {survey_root}")
+    selection = json.loads(selection_file.read_text(encoding="utf-8"))
+    picks = selection.get("picks") if isinstance(selection, dict) else None
+    if not isinstance(picks, list):
+        raise ValueError("Selection JSON must contain a picks list")
+    matches = [
+        pick
+        for pick in picks
+        if isinstance(pick, dict) and pick.get("env_dir") == environment
+    ]
+    if len(matches) != 1:
+        raise ValueError(
+            f"Expected exactly one selection entry for {environment}, found {len(matches)}"
+        )
+    return (
+        f"\n\nTask selection: @{selection_file}. Read the complete picks entry "
+        f"whose env_dir is {environment}. Survey root: @{survey_root}. "
+        "Read the selection criteria under selection/SELECTION_CRITERIA.md and "
+        "look up the cited survey_ids in dashboard/data/entries/ under that root. "
+        "Use these supplied paths, not paths from a previous batch or machine. "
+        "Treat the selection and survey as read-only source material."
     )
 
 
@@ -294,6 +326,8 @@ def run_creation_audit(
     audit_rounds: int,
     start_idx: int,
     session_id: str | None,
+    selection_file: Path | None = None,
+    survey_root: Path | None = None,
 ) -> int:
     target = workspace / ENVIRONMENTS_ROOT / environment
     if not target.is_dir():
@@ -314,6 +348,7 @@ def run_creation_audit(
         if not prompt_path.is_file():
             raise FileNotFoundError(f"Missing prompt: {prompt_path}")
 
+    source_context = _selection_context(environment, selection_file, survey_root)
     evidence_dir = target / "evidence_docs"
     audits_dir.mkdir(parents=True, exist_ok=True)
     logs_dir.mkdir(parents=True, exist_ok=True)
@@ -334,6 +369,8 @@ def run_creation_audit(
                     "audit_rounds": audit_rounds,
                     "start_idx": start_idx,
                     "creator_session": creator_session,
+                    "selection_file": str(selection_file) if selection_file else None,
+                    "survey_root": str(survey_root) if survey_root else None,
                     "run_id": str(uuid.uuid4()),
                 },
                 sort_keys=True,
@@ -345,7 +382,7 @@ def run_creation_audit(
         print("\n=== Initial creation ===")
         creator_session = _invoke_codex(
             codex_bin,
-            _initial_prompt(environment, creation_prompt, evidence_dir),
+            _initial_prompt(environment, creation_prompt, evidence_dir) + source_context,
             workspace=workspace,
             model=model,
             reasoning_effort=reasoning_effort,
@@ -363,7 +400,7 @@ def run_creation_audit(
         print(f"\n=== Blind recheck {index + 1} ===")
         _invoke_codex(
             codex_bin,
-            _nudge_prompt(creation_prompt, evidence_dir),
+            _nudge_prompt(creation_prompt, evidence_dir) + source_context,
             workspace=workspace,
             model=model,
             reasoning_effort=reasoning_effort,
@@ -386,7 +423,7 @@ def run_creation_audit(
         audit_last_message_path.unlink(missing_ok=True)
         auditor_session = _invoke_codex(
             codex_bin,
-            _audit_explore_prompt(),
+            _audit_explore_prompt() + source_context,
             workspace=workspace,
             model=model,
             reasoning_effort=reasoning_effort,
@@ -396,7 +433,8 @@ def run_creation_audit(
         )
         _invoke_codex(
             codex_bin,
-            _audit_run_prompt(environment, audit_prompt, evidence_dir, audit_path),
+            _audit_run_prompt(environment, audit_prompt, evidence_dir, audit_path)
+            + source_context,
             workspace=workspace,
             model=model,
             reasoning_effort=reasoning_effort,
@@ -434,7 +472,7 @@ def run_creation_audit(
         print(f"\n=== Creator response to audit {index + 1} ===")
         _invoke_codex(
             codex_bin,
-            _audit_feedback_prompt(audit_text, evidence_dir),
+            _audit_feedback_prompt(audit_text, evidence_dir) + source_context,
             workspace=workspace,
             model=model,
             reasoning_effort=reasoning_effort,
@@ -464,6 +502,16 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--timeout-seconds", type=int, default=DEFAULT_TIMEOUT_SECONDS)
     parser.add_argument("--workspace", type=Path)
     parser.add_argument("--memory-dir", type=Path)
+    parser.add_argument(
+        "--selection-file",
+        type=Path,
+        help="Task selection JSON with picks[].env_dir; use with --survey-root.",
+    )
+    parser.add_argument(
+        "--survey-root",
+        type=Path,
+        help="Survey directory containing selection/ and dashboard/data/entries/.",
+    )
     parser.add_argument("--audits-dir", type=Path)
     parser.add_argument("--logs-dir", type=Path)
     parser.add_argument("--codex-bin")
@@ -492,6 +540,10 @@ def main(argv: Sequence[str] | None = None) -> int:
         audit_rounds=args.audit_rounds,
         start_idx=args.start_idx,
         session_id=args.session_id,
+        selection_file=(
+            args.selection_file.expanduser().resolve() if args.selection_file else None
+        ),
+        survey_root=args.survey_root.expanduser().resolve() if args.survey_root else None,
     )
 
 
