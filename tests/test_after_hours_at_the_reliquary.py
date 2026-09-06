@@ -466,9 +466,9 @@ def test_public_metadata_source_anchors_boundary_and_registration() -> None:
         "exploration and interface understanding",
     ]
     required_boundary_terms = (
-        "code", "scripts", "automation", "developer tools", "console", "debugger",
+        "isolated agent sandbox", "provided gateway", "developer tools", "console", "debugger",
         "inspector", "network", "source", "dom", "page-state inspection", "terminal",
-        "shell", "python", "address-bar", "url edits", "reload", "navigation",
+        "shell", "address-bar", "url/query edits", "reload", "navigation",
         "extensions", "external applications", "unrelated tabs",
     )
     assert "every active door ward" in task["description"].lower()

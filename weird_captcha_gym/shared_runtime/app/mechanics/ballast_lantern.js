@@ -67,6 +67,7 @@
   }
 
   function recordWinch(model, engaged, inputSource, phase) {
+    tick(model);
     if (model.sim.status !== "active" || model.submitting || model.engaged === engaged) return;
     const action = model.helpers.beginAction?.("ballast-winch-transition");
     model.engaged = engaged;
@@ -153,7 +154,7 @@
   function terminal(model) {
     if (model.terminal) return;
     model.terminal = true;
-    if (model.interval) window.clearInterval(model.interval);
+    if (model.interval) window.cancelAnimationFrame(model.interval);
     model.interval = null;
     const title = model.sim.status === "secured" ? "PASS" : "FAIL";
     setVerdict(model, model.sim.status === "secured" ? "pass" : "fail", title);
@@ -200,8 +201,6 @@
     if (trend) trend.dataset.direction = sim.specimen_velocity >= 0 ? "up" : "down";
     const reel = document.querySelector(".ballast-reel");
     reel.style.transform = `rotate(${(sim.tick * (model.engaged ? 9 : -5)) % 360}deg)`;
-    model.trail.unshift(sim.specimen_y);
-    model.trail = model.trail.slice(0, p.trail_samples);
     document.querySelectorAll(".ballast-wake-dot").forEach((dot, index) => {
       dot.style.bottom = pct(model.trail[index] ?? sim.specimen_y);
       dot.style.opacity = String(Math.max(.08, .5 - index * .08));
@@ -211,14 +210,19 @@
 
   function tick(model) {
     if (model.terminal || model.submitting) return;
-    advance(model);
+    const target = Math.floor((performance.now() - model.started) / Number(model.state.parameters.tick_ms) + 1e-7);
+    while (model.sim.tick < target && model.sim.status === "active") {
+      advance(model);
+      model.trail.unshift(model.sim.specimen_y);
+      model.trail = model.trail.slice(0, model.state.parameters.trail_samples);
+    }
     draw(model);
     if (model.sim.status !== "active") terminal(model);
   }
 
   async function abandon(model) {
     if (model.submitting || model.completed) return;
-    if (model.interval) window.clearInterval(model.interval);
+    if (model.interval) window.cancelAnimationFrame(model.interval);
     model.interval = null;
     model.terminal = true;
     model.helpers.setReadout("…", "pending");
@@ -251,6 +255,7 @@
       submitting: false,
       pendingPayload: null,
       interval: null,
+      started: performance.now(),
       trail: Array.from({length: trailCount}, () => state.initial_state.specimen_y),
       keydown: null,
       keyup: null,
@@ -315,12 +320,16 @@
     });
     if (helpers.isCheatMode()) helpers.installCheatPanel?.();
     draw(model);
-    model.interval = window.setInterval(() => tick(model), Number(state.parameters.tick_ms));
+    const frame = () => {
+      tick(model);
+      if (!model.terminal) model.interval = window.requestAnimationFrame(frame);
+    };
+    model.interval = window.requestAnimationFrame(frame);
     if (options.freshFailure) {
       window.setTimeout(() => document.querySelector(".ballast-lantern")?.classList.remove("is-failed"), 1450);
     }
     activeCleanup = () => {
-      if (model.interval) window.clearInterval(model.interval);
+      if (model.interval) window.cancelAnimationFrame(model.interval);
       document.removeEventListener("keydown", model.keydown);
       document.removeEventListener("keyup", model.keyup);
       window.removeEventListener("blur", model.blur);

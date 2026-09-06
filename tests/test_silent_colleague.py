@@ -277,7 +277,8 @@ def test_registration_metadata_files_and_browser_surfaces() -> None:
     source = (BENCH / "shared_runtime/app/mechanics/silent_colleague.js").read_text(encoding="utf-8")
     assert "keyboard_move" in source and "proxy_step" in source
     assert "keyboard_action" in source and "proxy_action" in source
-    assert "setInterval(advance" in source
+    assert "requestAnimationFrame(frame)" in source
+    assert "performance.now() - model.started" in source
     assert "event.repeat" in source
     assert "runtime_ticket_sequence" in source
     assert "is-current" not in source

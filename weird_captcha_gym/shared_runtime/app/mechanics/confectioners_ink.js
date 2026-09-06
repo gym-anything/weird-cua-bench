@@ -57,7 +57,11 @@
     m.grains=alive;
     m.done=w.jars.every((j,i)=>(m.tallies[i][j.colour]||0)>=j.required && Object.entries(m.tallies[i]).every(([c,n])=>c===j.colour || n===0));
     m.lost=m.waste>w.max_waste || m.tick>=w.max_ticks;
-    draw(m);
+  }
+  function advance(m) {
+    if(current!==m || m.submitting)return;
+    const target=Math.floor((performance.now()-m.started)/m.state.world.tick_ms+1e-7);
+    while(m.tick<target && !m.done && !m.lost)step(m);
   }
   function draw(m){
     if(current!==m)return;
@@ -99,26 +103,28 @@
     }
   }
   async function submit(m,abandon=false){
+    advance(m);
     if(m.submitting)return;m.submitting=true;
     const payload={mechanic_id:m.state.mechanic_id,task_id:m.state.task_id,challenge_id:m.state.challenge_id,events:m.events,tick:m.tick,tallies:m.tallies,waste:m.waste,ink:m.ink,completed:m.done&&!abandon};
     try{
       const response=await fetch('/result',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify(payload)});
       const outcome=await response.json();
-      if(outcome.passed){clearInterval(m.timer);m.helpers.setReadout('PASS','passed');document.getElementById('ink-verdict').innerHTML='<b>PASS</b><span>Confectionery sealed</span>';}
-      else if(outcome.state){clearInterval(m.timer);await render(outcome.state,m.helpers);current.helpers.setReadout('FRESH CABINET','idle');}
+      if(outcome.passed){cancelAnimationFrame(m.timer);m.helpers.setReadout('PASS','passed');document.getElementById('ink-verdict').innerHTML='<b>PASS</b><span>Confectionery sealed</span>';}
+      else if(outcome.state){cancelAnimationFrame(m.timer);await render(outcome.state,m.helpers);current.helpers.setReadout('FRESH CABINET','idle');}
       else {m.submitting=false;m.helpers.setReadout('FAIL','error');}
     }catch(e){m.submitting=false;m.helpers.setReadout('CONNECTION LOST · RETRY SEAL','error');}
   }
   async function render(state,helpers){
-    if(current)clearInterval(current.timer);
+    if(current)cancelAnimationFrame(current.timer);
     document.body.dataset.mechanic='confectioners-ink';
     const mode=state.control_condition?.interaction||'full';
     helpers.app.innerHTML=`<section class="confectioners-ink"><header><div><small>THE SUGAR CABINET · No. 07</small><h1>Confectioner's Ink</h1></div><p>Draw the way down.<br>Fill every jar with its own colour.</p></header><main><div class="ink-glass"><canvas id="ink-canvas" width="900" height="530" aria-label="Sugar cabinet drawing surface"></canvas><div id="ink-verdict" hidden></div></div><aside><span class="ink-label">PERMANENT INK</span><strong id="ink-stock"></strong><span class="ink-unit">pixels remaining</span><hr><span class="ink-label">SUGAR STOCK</span><div class="ink-meter"><i id="ink-material"></i></div><dl><dt>Batch</dt><dd id="ink-batch"></dd><dt>Wasted</dt><dd id="ink-waste"></dd></dl><p class="ink-instructions">${mode==='full'?'Press · draw · release':'Click successive corners'}<br>Each line becomes a solid chute.<br><br>Coloured gates let only matching sugar fall through. ${state.world.plate?'The hot plate recolours on contact.':''}</p>${mode==='simplified'?'<button id="ink-finish">Finish stroke</button>':''}<button id="ink-retry">Fresh cabinet ↻</button></aside></main><footer><div class="readout" data-status="idle">HOPPER POURING</div><span>INK CANNOT BE ERASED</span><button id="ink-submit" disabled>Seal the jars →</button></footer></section>`;
     const m={state,helpers,mode,tick:0,spawned:0,grains:[],lines:[],ink:0,waste:0,tallies:state.world.jars.map(()=>({})),events:[],last:null,holding:false,done:false,lost:false,submitting:false,canvas:document.getElementById('ink-canvas')};
-    current=m;window.confectionersInkModel=m;
+    m.started=performance.now();current=m;window.confectionersInkModel=m;
     const point=e=>{const r=m.canvas.getBoundingClientRect();return [Math.round(Math.max(0,Math.min(900,(e.clientX-r.left)*900/r.width))*100)/100,Math.round(Math.max(70,Math.min(435,(e.clientY-r.top)*530/r.height))*100)/100];};
     const event=(type,p)=>{m.events.push({type,tick:m.tick,source:mode==='full'?'freehand':'vertices',...(p?{point:p}:{})});};
     const add=p=>{
+      advance(m);
       if(m.done||m.lost||m.submitting)return;
       if(!m.last){m.last=p;event('begin',p);}
       else if(Math.hypot(p[0]-m.last[0],p[1]-m.last[1])>=.5){
@@ -128,7 +134,7 @@
       }
       draw(m);
     };
-    const end=()=>{if(m.last&&!m.done&&!m.lost){event('end');m.last=null;}m.holding=false;draw(m);};
+    const end=()=>{advance(m);if(m.last&&!m.done&&!m.lost){event('end');m.last=null;}m.holding=false;draw(m);};
     m.canvas.addEventListener('pointerdown',e=>{if(e.button!==0)return;e.preventDefault();if(mode==='full'){m.holding=true;m.canvas.setPointerCapture(e.pointerId);add(point(e));}});
     m.canvas.addEventListener('pointermove',e=>{if(mode==='full'&&m.holding)add(point(e));});
     m.canvas.addEventListener('pointerup',e=>{if(mode==='full'&&m.holding){add(point(e));end();}});
@@ -136,7 +142,8 @@
     if(mode==='simplified'){m.canvas.addEventListener('click',e=>add(point(e)));document.getElementById('ink-finish').onclick=end;}
     document.getElementById('ink-retry').onclick=()=>submit(m,true);
     document.getElementById('ink-submit').onclick=()=>submit(m);
-    draw(m);m.timer=setInterval(()=>{if(current===m)step(m);},state.world.tick_ms);
+    const frame=()=>{if(current!==m)return;advance(m);if(!m.submitting)draw(m);m.timer=requestAnimationFrame(frame);};
+    draw(m);m.timer=requestAnimationFrame(frame);
   }
   window.WeirdCaptchaMechanics=window.WeirdCaptchaMechanics||{};
   window.WeirdCaptchaMechanics.confectioners_ink={rootSelector:'.confectioners-ink',render};

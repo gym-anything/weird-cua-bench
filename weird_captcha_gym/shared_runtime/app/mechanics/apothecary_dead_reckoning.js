@@ -385,7 +385,8 @@
 
   function stopGrinding() {
     if (!model?.grinding) return;
-    clearInterval(model.grindTimer);
+    advanceGrinding();
+    cancelAnimationFrame(model.grindTimer);
     model.grindTimer = null;
     model.grinding = false;
     record("grind_release", {grind_step: model.grindStep, input_source: "pestle_hold"});
@@ -395,19 +396,31 @@
   function startGrinding(event) {
     if (!model || model.interaction !== "full" || !model.activeId || model.path || model.grinding || model.terminal) return;
     model.grinding = true;
+    model.grindStarted = performance.now();
+    model.grindInitialStep = model.grindStep;
     record("grind_start", {grind_step: model.grindStep, input_source: "pestle_hold"});
     event.currentTarget.setPointerCapture?.(event.pointerId);
-    model.grindTimer = setInterval(() => {
-      if (!model?.grinding) return;
-      const maximum = Number(model.state.parameters.grind_notches) - 1;
-      if (model.grindStep < maximum) {
-        model.grindStep += 1;
-        record("grind_tick", {grind_step: model.grindStep, input_source: "pestle_hold"});
-        updateInterface(selectionReadout(), "pending");
-      }
-    }, Number(model.state.mechanics.grind_tick_ms));
+    const current = model;
+    const frame = () => {
+      if (model !== current || !current.grinding) return;
+      advanceGrinding();
+      current.grindTimer = requestAnimationFrame(frame);
+    };
+    model.grindTimer = requestAnimationFrame(frame);
     updateInterface(selectionReadout(), "pending");
     event.preventDefault();
+  }
+
+  function advanceGrinding() {
+    if (!model?.grinding) return;
+    const elapsed = Math.floor((performance.now() - model.grindStarted) / Number(model.state.mechanics.grind_tick_ms) + 1e-7);
+    const target = Math.min(Number(model.state.parameters.grind_notches) - 1, model.grindInitialStep + elapsed);
+    const before = model.grindStep;
+    while (model.grindStep < target) {
+      model.grindStep += 1;
+      record("grind_tick", {grind_step: model.grindStep, input_source: "pestle_hold"});
+    }
+    if (model.grindStep !== before) updateInterface(selectionReadout(), "pending");
   }
 
   function stir() {
@@ -593,7 +606,7 @@
   }
 
   async function render(state, helpers, options = {}) {
-    if (model?.grindTimer) clearInterval(model.grindTimer);
+    if (model?.grindTimer) cancelAnimationFrame(model.grindTimer);
     document.body.dataset.mechanic = "apothecary-dead-reckoning";
     document.body.dataset.cheatMode = helpers.isCheatMode() ? "true" : "false";
     const interaction = state.control_condition?.interaction || "full";

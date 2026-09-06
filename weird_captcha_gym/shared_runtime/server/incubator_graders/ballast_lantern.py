@@ -187,7 +187,7 @@ def grade(payload: dict[str, Any], truth: dict[str, Any], public: dict[str, Any]
     if payload.get("interaction_mode") != interaction:
         return _fail("submitted interaction mode differs from task condition")
     events = payload.get("events")
-    if not isinstance(events, list) or not events or len(events) > 240:
+    if not isinstance(events, list) or not events or len(events) > 10_000:
         return _fail("winch transcript is missing or oversized")
     terminal_tick = payload.get("terminal_tick")
     try:

@@ -170,7 +170,9 @@ def test_exact_original_uncontrolled_worlds_golden_digest():
     from weird_captcha_gym.shared_scripts.incubator_generators.comparator_engine import generate
     worlds={str(i):generate(BASE,f'baseline-preservation-{i}') for i in range(100)}
     digest=hashlib.sha256(json.dumps(worlds,sort_keys=True).encode()).hexdigest()
-    assert digest=='77dc1e03674ecaf1fe41ac7808b3d02e22e99419fc790b50928950a37690c791'
+    # The public prompt permits sandbox gateway programs; the generated
+    # slides, weights, limits, witness and all private truth are unchanged.
+    assert digest=='fa92309ca6b04f93ccc327ffa31963afa147f917c54508e65191a536d390db9b'
 
 
 def test_introductory_metered_profile_has_no_fixed_rank_slot():

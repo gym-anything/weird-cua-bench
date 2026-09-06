@@ -139,6 +139,7 @@
   }
 
   function applyAction(action, unitIds, target, inputSource) {
+    advanceToNow();
     if (!model || model.sim.terminal || model.submitting) return false;
     const sim = model.sim;
     const world = model.world;
@@ -477,6 +478,7 @@
     const canvas=document.getElementById("anthill-world"), box=document.getElementById("anthill-selection-box"); if(!canvas) return;
     let start=null;
     canvas.addEventListener("pointerdown",(event)=>{
+      advanceToNow();
       if(model.interaction!=="full"||model.sim.terminal) return;
       const rect=canvas.getBoundingClientRect(), x=event.clientX-rect.left,y=event.clientY-rect.top;
       if(model.pendingAction){
@@ -489,6 +491,7 @@
     });
     canvas.addEventListener("pointermove",(event)=>{ if(!start||!box) return; const rect=canvas.getBoundingClientRect(),x=event.clientX-rect.left,y=event.clientY-rect.top; box.style.display="block"; box.style.left=`${Math.min(x,start.x)}px`;box.style.top=`${Math.min(y,start.y)}px`;box.style.width=`${Math.abs(x-start.x)}px`;box.style.height=`${Math.abs(y-start.y)}px`; });
     canvas.addEventListener("pointerup",(event)=>{
+      advanceToNow();
       if(!start) return; const rect=canvas.getBoundingClientRect(),x=event.clientX-rect.left,y=event.clientY-rect.top; const moved=Math.hypot(x-start.x,y-start.y)>5;
       if(!start.shift) model.selected.clear();
       if(moved){ const left=Math.min(x,start.x),right=Math.max(x,start.x),top=Math.min(y,start.y),bottom=Math.max(y,start.y); livingIds().forEach((id)=>{ const [wx,wy]=unitWorldPosition(id),[sx,sy]=worldToScreen(wx,wy,rect); if(sx>=left&&sx<=right&&sy>=top&&sy<=bottom) model.selected.add(id); }); }
@@ -499,6 +502,7 @@
   }
 
   async function certify() {
+    advanceToNow();
     if(!model||model.submitting||model.passed) return; model.submitting=true; const button=document.getElementById("anthill-certify"); if(button)button.disabled=true; setReadout("REPLAYING COMMAND LEDGER…","idle");
     const payload={mechanic_id:model.state.mechanic_id,task_id:model.state.task_id,challenge_id:model.state.challenge_id,events:model.events,final_tick:model.sim.tick,final_state:finalSummary()};
     try { const response=await fetch("/result",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify(payload)}); const outcome=await response.json();
@@ -515,7 +519,7 @@
     if(animationFrame)cancelAnimationFrame(animationFrame);if(keyHandler)window.removeEventListener("keydown",keyHandler);
     document.body.dataset.mechanic="anthill-front";document.body.dataset.anthillPalette=state.palette||"amber";
     const interaction=state.control_condition?.interaction||"full"; const world=clone(state.world);
-    model={state,world,interaction,sim:initialSimulation(world),events:[],selected:new Set(),pendingAction:null,cameraX:0,lastFrame:null,accumulator:0,submitting:false,passed:false,rosterSignature:null};window.anthillFrontModel=model;
+    model={state,world,interaction,sim:initialSimulation(world),events:[],selected:new Set(),pendingAction:null,cameraX:0,started:performance.now(),submitting:false,passed:false,rosterSignature:null};window.anthillFrontModel=model;
     const rosterTools=interaction==="simplified"?`<div class="anthill-roster-tools"><button data-select-role="workers">WORKERS</button><button data-select-role="soldiers">SOLDIERS</button><button data-select-role="clear">CLEAR</button></div>`:"";
     const actionControls=interaction==="simplified"?`<div class="anthill-order-grid">
       <button data-simple="gather"><b>GATHER</b>SELECTED → SEEDS</button>${world.hidden_opening ? `<button data-simple="scout"><b>SCOUT</b>SELECTED → FRONT</button>` : ""}
@@ -543,7 +547,13 @@
     document.getElementById("anthill-certify")?.addEventListener("click",certify);
     keyHandler=(event)=>{if(event.repeat||model.interaction!=="full"||model.submitting)return;const key=event.key.toLowerCase();if({g:1,s:1,d:1,m:1,r:1}[key]){event.preventDefault();arm({g:"GATHER",s:"SCOUT",d:"DIG",m:"MARCH",r:"RAISE"}[key]);}else if(key==="arrowleft"||key==="arrowright"){event.preventDefault();const view=Math.min(world.viewport_cells,world.width);model.cameraX=clamp(model.cameraX+(key==="arrowleft"?-1:1)*view*.5,0,world.width-view);draw();}else if(key==="escape"){model.pendingAction=null;updateHud();draw();}};window.addEventListener("keydown",keyHandler);
     updateHud();draw();document.querySelector(".anthill-console")?.focus();
-    const loop=(timestamp)=>{if(model.lastFrame===null)model.lastFrame=timestamp;model.accumulator+=Math.min(250,timestamp-model.lastFrame);model.lastFrame=timestamp;while(model.accumulator>=Number(world.tick_ms)&&!model.sim.terminal){model.accumulator-=Number(world.tick_ms);stepSimulation();}updateHud();draw();animationFrame=requestAnimationFrame(loop);}; animationFrame=requestAnimationFrame(loop);
+    const loop=()=>{advanceToNow();updateHud();draw();animationFrame=requestAnimationFrame(loop);}; animationFrame=requestAnimationFrame(loop);
+  }
+
+  function advanceToNow() {
+    if (!model || model.submitting || model.passed) return;
+    const target = Math.floor((performance.now() - model.started) / Number(model.world.tick_ms) + 1e-7);
+    while (model.sim.tick < target && !model.sim.terminal) stepSimulation();
   }
 
   window.WeirdCaptchaMechanics=window.WeirdCaptchaMechanics||{};window.WeirdCaptchaMechanics.anthill_front={rootSelector:".anthill-console",render};
