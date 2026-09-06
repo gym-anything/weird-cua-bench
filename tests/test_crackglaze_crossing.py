@@ -301,9 +301,9 @@ def test_materialization_registration_capabilities_and_terse_ui_boundary(tmp_pat
     task = _base_task()
     controls = _controls()
     required = (
-        "code", "scripts", "automation", "developer tools", "console", "debugger", "inspector",
-        "network", "source", "dom", "page-state inspection", "terminal", "shell", "python",
-        "address-bar", "url edits", "reload", "navigation", "extensions", "external applications", "unrelated tabs",
+        "isolated agent sandbox", "provided gateway", "developer tools", "console", "debugger", "inspector",
+        "network", "source", "dom", "page-state inspection", "terminal", "shell",
+        "address-bar", "url/query edits", "reload", "navigation", "extensions", "external applications", "unrelated tabs",
     )
     assert task["metadata"]["source_anchors"] == ["IND-021", "VGE-250", "VGE-489"]
     assert task["metadata"]["capabilities"] == [

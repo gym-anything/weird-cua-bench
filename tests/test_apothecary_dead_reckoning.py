@@ -384,10 +384,12 @@ def test_visible_surface_has_no_tutorial_or_partial_correctness_copy() -> None:
 
     policy = (
         "Brew the ordered sigil. Solve only from screenshots and visible controls "
-        "in the task webpage. Do not use code, scripts, automation, Developer Tools, "
-        "console, debugger, inspector, network, source, DOM or page-state inspection, "
-        "terminal, shell, Python, address-bar or URL edits, reload, navigation, extensions, "
-        "external applications, or unrelated tabs."
+        "in the task webpage. Programs in an isolated agent sandbox may process screenshots "
+        "and issue mouse and keyboard actions through the provided gateway. Do not access "
+        "the task environment through Developer Tools, console, debugger, inspector, network "
+        "or source inspection, DOM or page-state inspection, the task terminal or shell, "
+        "address-bar or URL/query edits, reload/navigation, browser extensions, external "
+        "applications, hidden state, or unrelated tabs."
     )
     assert TASK["description"] == policy
     assert TASK["natural_language"] == policy

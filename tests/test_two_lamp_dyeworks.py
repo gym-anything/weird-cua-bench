@@ -382,7 +382,9 @@ def test_every_task_instruction_has_the_complete_visible_ui_only_boundary() -> N
     required = (
         "Solve only from screenshots and visible controls in the task webpage",
         "Developer Tools",
-        "terminal/shell/Python",
+        "isolated agent sandbox",
+        "provided gateway",
+        "the task terminal or shell",
         "address-bar or URL/query edits",
         "pre-existing, unrelated, blank, browser-settings, or non-task tab",
         "A tab opened by a visible task control is allowed only when it is part of the task",

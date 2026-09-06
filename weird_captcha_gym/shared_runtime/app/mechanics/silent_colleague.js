@@ -113,7 +113,12 @@
     model.sigh = false;
     npcStep();
     if (!ticket() && !model.terminalFailure) model.ready = true;
-    renderSurface();
+  }
+
+  function advanceToNow() {
+    if (!model || model.submitting || model.completed) return;
+    const target = Math.floor((performance.now() - model.started) / Number(model.parameters.tick_ms) + 1e-7);
+    while (model.tick < target) advance();
   }
 
   function stationFruit() {
@@ -167,6 +172,7 @@
   }
 
   function act(action, inputSource) {
+    advanceToNow();
     if (!model || model.submitting || model.completed || model.terminalFailure) return;
     const claim = applyAction(action);
     model.events.push({sequence: model.events.length + 1, tick: model.tick, input_source: inputSource, ...claim});
@@ -262,6 +268,7 @@
   }
 
   async function submit() {
+    advanceToNow();
     if (!model || model.submitting || model.completed) return;
     const current = model;
     current.submitting = true;
@@ -312,7 +319,7 @@
     document.body.dataset.mechanic = "silent-colleague";
     model = {
       state, helpers, workshop: JSON.parse(JSON.stringify(state.workshop)), parameters: JSON.parse(JSON.stringify(state.parameters)),
-      tick: 0, playerPos: state.workshop.player_start, npcPos: state.workshop.colleague_start,
+      tick: 0, started: performance.now(), playerPos: state.workshop.player_start, npcPos: state.workshop.colleague_start,
       playerCarrying: null, shelf: null, ticketIndex: 0, npcPhase: "signal", npcWait: 0, primeUntil: null,
       delivered: [], spoils: 0, jams: 0, terminalFailure: false, ready: false, completed: false, submitting: false,
       bump: null, sigh: false, events: [], message: options.freshFailure ? "FAIL · FRESH SHIFT LOADED · LEDGER CLEARED" : "SHIFT OPEN",
@@ -328,8 +335,15 @@
     bindControls();
     helpers.installCheatPanel();
     window.addEventListener("keydown", onKey);
-    const timer = setInterval(advance, Number(state.parameters.tick_ms));
-    cleanup = () => { clearInterval(timer); window.removeEventListener("keydown", onKey); };
+    let timer;
+    const frame = () => {
+      const before = model.tick;
+      advanceToNow();
+      if (model.tick !== before) renderSurface();
+      timer = requestAnimationFrame(frame);
+    };
+    timer = requestAnimationFrame(frame);
+    cleanup = () => { cancelAnimationFrame(timer); window.removeEventListener("keydown", onKey); };
   }
 
   window.WeirdCaptchaMechanics = window.WeirdCaptchaMechanics || {};

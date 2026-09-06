@@ -101,6 +101,27 @@ def _failure_payload(public: dict, truth: dict, interaction: str) -> dict:
     }
 
 
+@pytest.mark.parametrize("interaction", ["full", "simplified"])
+def test_live_input_transcripts_are_not_limited_to_240_transitions(interaction):
+    public, truth = GENERATOR.generate(_task(5, interaction), "frequent-input")
+    payload = _payload(public, truth, interaction)
+    # Each pair returns to the same winch state before the first physics tick.
+    # These are legal input events, not extra simulation advancement.
+    source = "keyboard_hold" if interaction == "full" else "winch_button"
+    prefix = [{"type": "winch", "tick": 0, "engaged": engaged,
+               "input_source": source,
+               "phase": ("keydown" if engaged else "keyup") if interaction == "full" else ("haul" if engaged else "coast")}
+              for _ in range(121) for engaged in (True, False)]
+    payload["events"] = prefix + payload["events"]
+    for sequence, event in enumerate(payload["events"], 1):
+        event["sequence"] = sequence
+    assert GRADER.grade(payload, truth, public)["passed"] is True
+    payload["final_state"]["cage_y"] += 1
+    assert GRADER.grade(payload, truth, public)["passed"] is False
+    payload["events"] = [{}] * 10_001
+    assert "oversized" in GRADER.grade(payload, truth, public)["feedback"]
+
+
 def _trunc_div(numerator: int, denominator: int) -> int:
     return numerator // denominator if numerator >= 0 else -((-numerator) // denominator)
 
@@ -271,9 +292,9 @@ def test_materialization_registration_capabilities_and_visible_only_boundary(tmp
     assert len(written) == 10
     task, controls = _base_task(), _controls()
     required = (
-        "code", "scripts", "automation", "developer tools", "console", "debugger", "inspector",
-        "network", "source", "dom", "page-state inspection", "terminal", "shell", "python",
-        "address-bar", "url edits", "reload", "navigation", "extensions", "external applications", "unrelated tabs",
+        "isolated agent sandbox", "provided gateway", "developer tools", "console", "debugger", "inspector",
+        "network", "source", "dom", "page-state inspection", "terminal", "shell",
+        "address-bar", "url/query edits", "reload", "navigation", "extensions", "external applications", "unrelated tabs",
     )
     assert task["metadata"]["source_anchors"] == ["VGE-601", "VGE-602"]
     assert task["metadata"]["capabilities"] == [
@@ -302,7 +323,8 @@ def test_materialization_registration_capabilities_and_visible_only_boundary(tmp
 def test_frontend_uses_real_geometry_timer_and_bound_input_surfaces() -> None:
     frontend = FRONTEND_PATH.read_text(encoding="utf-8")
     styles = STYLES_PATH.read_text(encoding="utf-8")
-    assert "window.setInterval(() => tick(model)" in frontend
+    assert "window.requestAnimationFrame(frame)" in frontend
+    assert "performance.now() - model.started" in frontend
     assert "sim.cage_y = position" in frontend
     assert "sim.specimen_y = position" in frontend
     assert '"keyboard_hold"' in frontend and '"winch_button"' in frontend

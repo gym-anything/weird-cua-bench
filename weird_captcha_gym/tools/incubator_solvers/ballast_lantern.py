@@ -1,9 +1,12 @@
 from __future__ import annotations
 
 import json
+import time
 from pathlib import Path
 
 from playwright.sync_api import expect
+
+from weird_captcha_gym.shared_scripts.incubator_generators.ballast_lantern import _control_for_target
 
 
 MECHANIC_ID = "ballast_lantern"
@@ -15,13 +18,7 @@ def _read(path: Path) -> dict:
 
 def _screenshot(page, out_dir: Path, mechanic: str, name: str) -> None:
     out_dir.mkdir(parents=True, exist_ok=True)
-    was_running = page.evaluate("() => window.WeirdCaptchaTime?.status().state === 'running'")
-    if was_running:
-        page.evaluate("() => window.WeirdCaptchaTime.pause()")
-        page.wait_for_timeout(40)
     page.screenshot(path=str(out_dir / f"{mechanic}-{name}.png"), full_page=True)
-    if was_running:
-        page.evaluate("() => window.WeirdCaptchaTime.resume()")
 
 
 def fail_once(page, state_dir: Path, out_dir: Path, mechanic: str) -> None:
@@ -36,38 +33,63 @@ def fail_once(page, state_dir: Path, out_dir: Path, mechanic: str) -> None:
 
 def solve(page, state_dir: Path, out_dir: Path, mechanic: str) -> None:
     truth = _read(state_dir / "ground_truth.json")
-    schedule = list(truth["reference_schedule"])
+    parameters = truth["parameters"]
+    crate = truth["crate"]
     interaction = str((truth.get("control_condition") or {}).get("interaction") or "full")
-    captured = False
-    capture_tick = int(truth["crate"]["spawn_tick"]) + 45
     paused_mode = page.evaluate("() => new URLSearchParams(location.search).get('time_mode') === 'paused'")
-    for event in schedule:
-        tick = int(event["tick"])
-        if paused_mode and page.evaluate("() => window.ballastLanternModel.sim.tick") < tick:
-            page.evaluate("() => window.WeirdCaptchaTime.resume()")
-        page.wait_for_function(
-            "target => window.ballastLanternModel && window.ballastLanternModel.sim.tick >= target",
-            arg=tick,
-            timeout=70000,
-            polling=2,
-        )
-        if paused_mode:
-            page.evaluate("() => window.WeirdCaptchaTime.pause()")
-        if interaction == "full":
-            if event["engaged"]:
-                page.keyboard.down("Space")
+    decision_interval = max(1, 600 // parameters["tick_ms"]) if paused_mode else 1
+    next_decision = 0
+    crate_mode = False
+    low_reserve = max(1200, parameters["capture_initial"] * 2 // 5)
+    high_reserve = min(parameters["capture_max"] - 1600, parameters["capture_initial"] + 1100)
+    deadline = time.monotonic() + parameters["max_ticks"] * parameters["tick_ms"] / 1000 + 30
+    try:
+        while time.monotonic() < deadline:
+            observed = page.evaluate("""() => ({
+                challenge: ballastLanternModel.state.challenge_id,
+                sim: ballastLanternModel.sim, engaged: ballastLanternModel.engaged,
+                completed: ballastLanternModel.completed,
+            })""")
+            if observed["challenge"] != truth["challenge_id"]:
+                raise AssertionError("Ballast Lantern failed and regenerated during the reference solve")
+            sim = observed["sim"]
+            if sim["status"] != "active":
+                if sim["status"] != "secured":
+                    raise AssertionError(f"Ballast Lantern ended with {sim['status']}: {sim}")
+                if observed["completed"]:
+                    break
+                time.sleep(.01)
+                continue
+            if sim["tick"] < next_decision:
+                time.sleep(.005)
+                continue
+            # Reuse the generator's feedback policy, not its tick-zero replay.
+            # Host observation/capture latency may have changed the cage state.
+            if sim["tick"] >= crate["spawn_tick"] and sim["crate_meter"] < parameters["crate_meter_max"]:
+                if sim["capture_meter"] <= low_reserve:
+                    crate_mode = False
+                elif sim["capture_meter"] >= high_reserve:
+                    crate_mode = True
             else:
-                page.keyboard.up("Space")
+                crate_mode = False
+            desired = (_control_for_target(sim, crate["y"]) if crate_mode else
+                       _control_for_target(sim, sim["specimen_y"], sim["specimen_velocity"]))
+            if desired != observed["engaged"]:
+                if interaction == "full":
+                    (page.keyboard.down if desired else page.keyboard.up)("Space")
+                else:
+                    page.locator(".ballast-haul" if desired else ".ballast-coast").click()
+            next_decision = (sim["tick"] // decision_interval + 1) * decision_interval
+            if paused_mode:
+                page.evaluate("ms => WeirdCaptchaTime.runFor(ms)", (next_decision - sim["tick"]) * parameters["tick_ms"])
+                while page.evaluate("WeirdCaptchaTime.status().phase") != "completed":
+                    if time.monotonic() >= deadline:
+                        raise AssertionError("Ballast Lantern observation window did not complete")
+                    time.sleep(.005)
         else:
-            page.locator(".ballast-haul" if event["engaged"] else ".ballast-coast").click()
-        if not captured and tick >= capture_tick:
-            _screenshot(page, out_dir, mechanic, "active-dual-target")
-            captured = True
-    if paused_mode:
-        page.evaluate("() => window.WeirdCaptchaTime.resume()")
-    expect(page.locator(".ballast-foot .readout")).to_contain_text("PASS", timeout=70000)
-    if paused_mode:
-        page.evaluate("() => window.WeirdCaptchaTime.pause()")
-    if interaction == "full":
-        page.keyboard.up("Space")
+            raise AssertionError("Ballast Lantern reference solve exceeded its deadline")
+    finally:
+        if interaction == "full":
+            page.keyboard.up("Space")
+    expect(page.locator(".ballast-foot .readout")).to_have_attribute("data-status", "passed")
     _screenshot(page, out_dir, mechanic, "pass")
