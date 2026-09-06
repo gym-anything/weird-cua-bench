@@ -66,7 +66,7 @@ def _drive(page, waypoints: list[list[float]], switch_targets: list[int], intera
         expected_switches = {waypoint: sequence + 1 for sequence, waypoint in enumerate(switch_targets)}
         for index, target in enumerate(waypoints):
             while time.time() < deadline:
-                state = page.evaluate("() => ({position:gyroBoardModel.position,velocity:gyroBoardModel.velocity,switchIndex:gyroBoardModel.switchIndex,completed:gyroBoardModel.completed,deaths:gyroBoardModel.deaths})")
+                state = page.evaluate("() => ({position:gyroBoardModel.position,velocity:gyroBoardModel.velocity,switchIndex:gyroBoardModel.switchIndex,completed:gyroBoardModel.completed,deaths:gyroBoardModel.deaths,externalTilt:gyroBoardModel.externalTilt})")
                 if state["completed"]:
                     return
                 if index in expected_switches:
@@ -77,7 +77,8 @@ def _drive(page, waypoints: list[list[float]], switch_targets: list[int], intera
                     break
                 dx, dy = target[0] - state["position"][0], target[1] - state["position"][1]
                 vx, vy = state["velocity"]
-                command = (dx * 0.018 - vx * 0.0105, dy * 0.018 - vy * 0.0105)
+                external = state.get("externalTilt") or [0, 0]
+                command = (dx * 0.018 - vx * 0.0105 - external[0], dy * 0.018 - vy * 0.0105 - external[1])
                 if analog:
                     _move_pad(page, cx, cy, radius, command)
                 else:
@@ -86,9 +87,10 @@ def _drive(page, waypoints: list[list[float]], switch_targets: list[int], intera
             else:
                 raise AssertionError(f"gyro controller timed out at waypoint {index}: {target}")
         while time.time() < deadline and not page.evaluate("() => gyroBoardModel.completed"):
-            state = page.evaluate("() => ({position:gyroBoardModel.position,velocity:gyroBoardModel.velocity})")
+            state = page.evaluate("() => ({position:gyroBoardModel.position,velocity:gyroBoardModel.velocity,externalTilt:gyroBoardModel.externalTilt})")
             target = waypoints[-1]
-            command = ((target[0] - state["position"][0]) * 0.018 - state["velocity"][0] * 0.011, (target[1] - state["position"][1]) * 0.018 - state["velocity"][1] * 0.011)
+            external = state.get("externalTilt") or [0, 0]
+            command = ((target[0] - state["position"][0]) * 0.018 - state["velocity"][0] * 0.011 - external[0], (target[1] - state["position"][1]) * 0.018 - state["velocity"][1] * 0.011 - external[1])
             if analog:
                 _move_pad(page, cx, cy, radius, command)
             else:

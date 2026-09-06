@@ -40,8 +40,21 @@ def _same_pair(value: Any, expected: list[float]) -> bool:
     return all(abs(a - b) <= 0.011 for a, b in zip(actual, expected))
 
 
-def _tick(state: dict[str, Any], tilt: list[float], contract: dict[str, Any]) -> dict[str, Any]:
+def _external_tilt(contract: dict[str, Any], tick_index: int) -> list[float]:
+    disturbance = contract["physics"].get("external_tilt")
+    if disturbance is None:
+        return [0.0, 0.0]
+    phase = disturbance["phase_radians"] + disturbance["direction"] * math.tau * (
+        tick_index * contract["physics"]["tick_ms"] % disturbance["period_ms"]
+    ) / disturbance["period_ms"]
+    return [_round(disturbance["amplitude"] * math.cos(phase)),
+            _round(disturbance["amplitude"] * math.sin(phase))]
+
+
+def _tick(state: dict[str, Any], tilt: list[float], contract: dict[str, Any], *, tick_index: int = 0) -> dict[str, Any]:
     physics = contract["physics"]
+    external = _external_tilt(contract, tick_index)
+    tilt = [tilt[0] + external[0], tilt[1] + external[1]]
     dt = float(physics["tick_ms"]) / 1000.0
     velocity = state["velocity"][:]
     position = state["position"][:]
@@ -178,7 +191,9 @@ def grade(payload: dict[str, Any], ground_truth: dict[str, Any], public_state: d
                 before = event.get("before") or {}
                 if not _same_pair(before.get("position"), state["position"]) or not _same_pair(before.get("velocity"), state["velocity"]):
                     return _fail(f"event {sequence} begins from fabricated ball state")
-                outcome = _tick(state, tilt, contract)
+                if "external_tilt" in contract["physics"] and not _same_pair(event.get("external_tilt"), _external_tilt(contract, ticks)):
+                    return _fail(f"event {sequence} misreports external tilt")
+                outcome = _tick(state, tilt, contract, tick_index=ticks)
                 after = event.get("after") or {}
                 if not _same_pair(after.get("position"), state["position"]) or not _same_pair(after.get("velocity"), state["velocity"]):
                     return _fail(f"event {sequence} disagrees with deterministic collision physics")

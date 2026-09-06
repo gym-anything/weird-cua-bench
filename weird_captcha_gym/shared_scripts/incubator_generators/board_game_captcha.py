@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import copy
 import hashlib
+import math
 import random
 from typing import Any
 
@@ -29,6 +30,15 @@ def generate(task: dict[str, Any], seed: str) -> tuple[dict[str, Any], dict[str,
     rng = random.Random(_seed(seed))
     condition = task.get("_control_condition")
     parameters = dict((condition or {}).get("difficulty_parameters") or {})
+    disturbance = parameters.get("external_tilt")
+    if disturbance is not None:
+        if not isinstance(disturbance, dict) or set(disturbance) != {"amplitude", "period_ms"}:
+            raise ValueError("external_tilt requires amplitude and period_ms")
+        amplitude, period = disturbance["amplitude"], disturbance["period_ms"]
+        if (isinstance(amplitude, bool) or not isinstance(amplitude, (int, float))
+                or not math.isfinite(amplitude) or not 0 < amplitude <= 0.5
+                or isinstance(period, bool) or not isinstance(period, int) or not 2000 <= period <= 60000):
+            raise ValueError("external tilt requires amplitude in (0, 0.5] and period_ms in [2000, 60000]")
     lamp_count = int(parameters.get("lamp_count", 3))
     wall_count = int(parameters.get("wall_count", 3))
     hazard_count = int(parameters.get("hazard_count", 3))
@@ -36,6 +46,8 @@ def generate(task: dict[str, Any], seed: str) -> tuple[dict[str, Any], dict[str,
         raise ValueError("tilt board counts are outside supported limits")
     task_id = str(task.get("id") or "board_game_captcha_seed_0001@0.1")
     condition_token = f"|d{condition['difficulty']}|{task.get('id')}" if condition else ""
+    if disturbance is not None:
+        condition_token += f"|external-tilt:{amplitude}:{period}"
     challenge_id = hashlib.sha256(f"{seed}|{MECHANIC_ID}{condition_token}".encode()).hexdigest()[:13]
     mirror = rng.choice((False, True))
     start = _mirror_point([88, 438], mirror)
@@ -84,6 +96,13 @@ def generate(task: dict[str, Any], seed: str) -> tuple[dict[str, Any], dict[str,
         "bounce": float(parameters.get("bounce", 0.42)),
         "ball_radius": float(parameters.get("ball_radius", 13.0)),
     }
+    if disturbance is not None:
+        drift_rng = random.Random(_seed(seed + "|external-tilt"))
+        physics["external_tilt"] = {
+            "amplitude": float(amplitude), "period_ms": period,
+            "phase_radians": drift_rng.uniform(0, 2 * math.pi),
+            "direction": drift_rng.choice((-1, 1)),
+        }
     requirements = {
         "minimum_ticks": int(parameters.get("minimum_ticks", 72)),
         "minimum_control_changes": int(parameters.get("minimum_control_changes", 8)),
