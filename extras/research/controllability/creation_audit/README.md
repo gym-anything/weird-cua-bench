@@ -21,7 +21,7 @@ weird-cua-creation-audit --env-dir rotating_keyboard_env
 
 The default agent is `gpt-5.6-luna` with `max` reasoning, for both the creator and every auditor. The default workflow has one blind recheck and up to three audit rounds, stopping on a passing audit. Generated evidence, audit reports, and run logs are ignored by Git.
 
-The existing round-four batch of 35 environments remains on `gpt-6-astra` with `low` reasoning for consistency, including its remaining creation and audit phases. Preserve `--model gpt-6-astra --reasoning-effort low` when resuming that batch. Future batches use the Luna defaults.
+All remaining work in the existing round-four batch of 35 environments also uses `gpt-5.6-luna` with `max` reasoning, including unfinished creation, rechecks, fixes, and independent audits. The Astra run was paused at the user's request on 2026-09-07. Preserve its saved sessions and evidence, but do not reuse the historical Astra-pinned launch settings when resuming. This supersedes the earlier instruction to finish round four on Astra for consistency.
 
 For a new environment, use the construction prompts and supply the selection and survey paths. The selection JSON must contain exactly one `picks` entry whose `env_dir` matches the target. Both agents receive these paths, including on resumed runs. For example, from this checkout's repository root:
 
@@ -32,7 +32,7 @@ mkdir -p weird_captcha_gym/environments/long_way_home_env
   --memory-dir extras/research/controllability/creation_audit/memory_construction \
   --selection-file outputs/selection_round4_20260906/ROUND4_SELECTION.json \
   --survey-root outputs/selection_round4_20260906/inputs \
-  --model gpt-6-astra --reasoning-effort low \
+  --model gpt-5.6-luna --reasoning-effort max \
   --audits-dir audits/construction_round4 \
   --logs-dir creation_audit_logs/construction_round4
 ```
