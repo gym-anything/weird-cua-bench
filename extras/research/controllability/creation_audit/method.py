@@ -13,8 +13,8 @@ from pathlib import Path
 from typing import Sequence
 
 
-DEFAULT_MODEL = "gpt-6-astra"
-DEFAULT_REASONING_EFFORT = "low"
+DEFAULT_MODEL = "gpt-5.6-luna"
+DEFAULT_REASONING_EFFORT = "max"
 DEFAULT_TIMEOUT_SECONDS = 7200
 DEFAULT_BLIND_NUDGES = 1
 DEFAULT_AUDIT_ROUNDS = 3

@@ -11,8 +11,8 @@ from extras.research.controllability.creation_audit import method
 def test_defaults_and_packaged_prompts_exist() -> None:
     args = method.build_parser().parse_args(["--env-dir", "rotating_keyboard_env"])
 
-    assert args.model == "gpt-6-astra"
-    assert args.reasoning_effort == "low"
+    assert args.model == "gpt-5.6-luna"
+    assert args.reasoning_effort == "max"
     assert args.blind_nudges == 1
     assert args.audit_rounds == 3
     assert (method._memory_dir() / "creation_prompt.md").is_file()
@@ -32,7 +32,8 @@ def test_audit_prompt_names_the_three_axes_and_forbids_edits() -> None:
 
 
 @pytest.mark.parametrize(
-    ("model", "effort"), [("gpt-6-astra", "low"), ("gpt-5.6-sol", "xhigh")]
+    ("model", "effort"),
+    [("gpt-6-astra", "low"), ("gpt-5.6-sol", "xhigh"), ("gpt-5.6-luna", "max")],
 )
 def test_codex_commands_start_and_resume_named_sessions(
     tmp_path: Path, model: str, effort: str
@@ -108,8 +109,8 @@ def test_loop_keeps_creator_and_uses_fresh_auditors(
         output_last_message: Path | None = None,
         **_kwargs: object,
     ) -> str:
-        assert _kwargs["model"] == "gpt-6-astra"
-        assert _kwargs["reasoning_effort"] == "low"
+        assert _kwargs["model"] == "gpt-5.6-luna"
+        assert _kwargs["reasoning_effort"] == "max"
         result = session_id or next(new_sessions)
         calls.append(
             {
@@ -167,8 +168,8 @@ def test_loop_keeps_creator_and_uses_fresh_auditors(
             assert str(survey_root) in call["prompt"]
             assert "read-only source material" in call["prompt"]
     metadata = json.loads((logs / f"{environment}.jsonl").read_text().splitlines()[0])
-    assert metadata["model"] == "gpt-6-astra"
-    assert metadata["reasoning_effort"] == "low"
+    assert metadata["model"] == "gpt-5.6-luna"
+    assert metadata["reasoning_effort"] == "max"
     assert metadata["selection_file"] == (
         str(selection_file) if with_selection else None
     )
@@ -334,8 +335,8 @@ def test_main_passes_defaults_and_source_paths(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
     def fake_run(**kwargs: object) -> int:
-        assert kwargs["model"] == "gpt-6-astra"
-        assert kwargs["reasoning_effort"] == "low"
+        assert kwargs["model"] == "gpt-5.6-luna"
+        assert kwargs["reasoning_effort"] == "max"
         assert kwargs["selection_file"] == tmp_path / "selection.json"
         assert kwargs["survey_root"] == tmp_path / "survey"
         return 2

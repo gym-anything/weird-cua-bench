@@ -19,7 +19,9 @@ The installed command is:
 weird-cua-creation-audit --env-dir rotating_keyboard_env
 ```
 
-The default agent is `gpt-6-astra` with `low` reasoning, for both the creator and every auditor. The default workflow has one blind recheck and up to three audit rounds, stopping on a passing audit. Generated evidence, audit reports, and run logs are ignored by Git.
+The default agent is `gpt-5.6-luna` with `max` reasoning, for both the creator and every auditor. The default workflow has one blind recheck and up to three audit rounds, stopping on a passing audit. Generated evidence, audit reports, and run logs are ignored by Git.
+
+The existing round-four batch of 35 environments remains on `gpt-6-astra` with `low` reasoning for consistency, including its remaining creation and audit phases. Preserve `--model gpt-6-astra --reasoning-effort low` when resuming that batch. Future batches use the Luna defaults.
 
 For a new environment, use the construction prompts and supply the selection and survey paths. The selection JSON must contain exactly one `picks` entry whose `env_dir` matches the target. Both agents receive these paths, including on resumed runs. For example, from this checkout's repository root:
 
