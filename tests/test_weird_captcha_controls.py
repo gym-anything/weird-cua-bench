@@ -19,6 +19,38 @@ from weird_captcha_gym.shared_runtime.verifier_helpers import (
 ROOT = Path(__file__).resolve().parents[1]
 BENCHMARK = ROOT / "weird_captcha_gym"
 CONTROLLED_ENVIRONMENTS = (
+    "pendulum_post_env",
+    "clockwork_courier_works_env",
+    "ember_anvil_env",
+    "rayglass_vault_env",
+    "twin_groove_seal_env",
+    "firewatch_fold_env",
+    "last_seats_in_the_lagoon_env",
+    "quiet_transfer_env",
+    "pocket_locksmith_env",
+    "branch_repair_env",
+    "ribbon_consensus_env",
+    "pocket_animation_studio_env",
+    "cell_gatekeeper_env",
+    "restless_piston_env",
+    "loopmakers_trial_env",
+    "polarity_run_env",
+    "reflected_rival_env",
+    "tomorrows_marble_env",
+    "collision_chimes_env",
+    "last_carbon_isles_env",
+    "lantern_lane_env",
+    "living_scaffold_env",
+    "clockbeat_catacomb_env",
+    "switchline_heist_env",
+    "valence_caravan_env",
+    "tin_duelist_env",
+    "maskmakers_dispatch_env",
+    "prismfall_kiln_env",
+    "courtesy_junction_env",
+    "elbow_engine_env",
+    "concertina_courier_env",
+    "long_way_home_env",
     "waggle_dispatch_env",
     "threshold_grapevine_env",
     "museum_of_lost_gestures_env",
@@ -139,9 +171,44 @@ CONTROLLED_ENVIRONMENTS = (
     "letter_rapids_env",
     "one_stroke_atelier_env",
     "residual_telescope_env",
+    "knotless_starmap_env",
+    "teach_the_stencil_env",
+    "ember_mosaic_env",
 )
 
 BASELINE_LEVELS = {
+    "pendulum_post_env": 4,
+    "clockwork_courier_works_env": 2,
+    "ember_anvil_env": 3,
+    "rayglass_vault_env": 4,
+    "twin_groove_seal_env": 3,
+    "firewatch_fold_env": 4,
+    "last_seats_in_the_lagoon_env": 4,
+    "quiet_transfer_env": 3,
+    "pocket_locksmith_env": 4,
+    "branch_repair_env": 4,
+    "ribbon_consensus_env": 4,
+    "pocket_animation_studio_env": 4,
+    "cell_gatekeeper_env": 3,
+    "restless_piston_env": 3,
+    "loopmakers_trial_env": 3,
+    "polarity_run_env": 3,
+    "reflected_rival_env": 4,
+    "tomorrows_marble_env": 2,
+    "collision_chimes_env": 4,
+    "last_carbon_isles_env": 2,
+    "lantern_lane_env": 4,
+    "living_scaffold_env": 2,
+    "clockbeat_catacomb_env": 4,
+    "switchline_heist_env": 3,
+    "valence_caravan_env": 4,
+    "tin_duelist_env": 4,
+    "maskmakers_dispatch_env": 2,
+    "prismfall_kiln_env": 3,
+    "courtesy_junction_env": 4,
+    "elbow_engine_env": 4,
+    "concertina_courier_env": 3,
+    "long_way_home_env": 3,
     "waggle_dispatch_env": 4,
     "threshold_grapevine_env": 4,
     "museum_of_lost_gestures_env": 1,
@@ -262,6 +329,9 @@ BASELINE_LEVELS = {
     "letter_rapids_env": 4,
         "one_stroke_atelier_env": 3,
     "residual_telescope_env": 4,
+    "knotless_starmap_env": 3,
+    "teach_the_stencil_env": 2,
+    "ember_mosaic_env": 4,
 }
 
 DIFFICULTY_NAMES = {
@@ -523,6 +593,12 @@ def test_original_tasks_match_their_independently_assigned_baselines() -> None:
         elif mechanic == "insider_trading_captcha":
             assert without_control_identity(baseline_public, extra=("visible_chart_ticks",)) == without_control_identity(original_public)
             assert without_control_identity(baseline_truth, extra=("visible_chart_ticks",)) == without_control_identity(original_truth)
+        elif mechanic == "restless_piston":
+            # The base names its input mode directly; controlled tasks carry
+            # the same value in control_condition instead.
+            assert original_public["interaction_mode"] == baseline_public["control_condition"]["interaction"]
+            assert without_control_identity(baseline_public) == without_control_identity(original_public, extra=("interaction_mode",))
+            assert without_control_identity(baseline_truth) == without_control_identity(original_truth)
         elif mechanic in {
             "consequences_boss",
             "cursor_lens_reveal",
@@ -1587,6 +1663,14 @@ def test_hovercar_browser_binds_keyboard_only_for_full_interaction() -> None:
 
 def test_implemented_interaction_pairs_share_generated_worlds_and_goals() -> None:
     seed = "interaction-pair-equivalence"
+    mode_fields = {
+        "firewatch_fold_env": "interaction",
+        "branch_repair_env": "interaction",
+        "quiet_transfer_env": "interaction_mode",
+        "restless_piston_env": "interaction_mode",
+        "loopmakers_trial_env": "interaction_mode",
+        "tomorrows_marble_env": "interaction_mode",
+    }
     paired = 0
     for env_name in CONTROLLED_ENVIRONMENTS:
         controls = controls_for(env_name)
@@ -1614,6 +1698,11 @@ def test_implemented_interaction_pairs_share_generated_worlds_and_goals() -> Non
                 "ribbon_switchboard_env",
                 "polyrhythm_customs_env",
                 "tomographic_baggage_surgery_env",
+                "knotless_starmap_env",
+                "firewatch_fold_env",
+                "pocket_animation_studio_env",
+                "polarity_run_env",
+                "last_carbon_isles_env",
             }:
                 first_normalized.pop("prompt")
                 normalized.pop("prompt")
@@ -1630,15 +1719,25 @@ def test_implemented_interaction_pairs_share_generated_worlds_and_goals() -> Non
                 for key in ("prompt", "rules"):
                     first_normalized.pop(key, None)
                     normalized.pop(key, None)
-            assert normalized == first_normalized
+            mode_field = mode_fields.get(env_name)
+            if mode_field and mode_field in first_normalized:
+                assert first_normalized.pop(mode_field) == interactions[0]
+                assert normalized.pop(mode_field) == interaction
+            assert normalized == first_normalized, env_name
             first_truth_normalized = without_control_identity(first_truth)
             truth_normalized = without_control_identity(truth)
-            if env_name == "tomographic_baggage_surgery_env":
+            if env_name in {"tomographic_baggage_surgery_env", "knotless_starmap_env"}:
                 # Mode-specific visible instructions travel in the truth bundle
                 # too, but do not change the generated volume or goal.
                 first_truth_normalized.pop("prompt")
                 truth_normalized.pop("prompt")
-            assert truth_normalized == first_truth_normalized
+            if mode_field and mode_field in first_truth_normalized:
+                assert first_truth_normalized.pop(mode_field) == interactions[0]
+                assert truth_normalized.pop(mode_field) == interaction
+            if env_name == "ember_mosaic_env":
+                assert first_truth_normalized["world"]["control_condition"].pop("interaction") == interactions[0]
+                assert truth_normalized["world"]["control_condition"].pop("interaction") == interaction
+            assert truth_normalized == first_truth_normalized, env_name
     assert paired >= 1
 
 

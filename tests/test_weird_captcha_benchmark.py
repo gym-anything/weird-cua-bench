@@ -164,9 +164,26 @@ class WeirdCaptchaBenchmarkTests(unittest.TestCase):
         hooks = []
         for env_name in list_environments("weird_captcha_gym", split="all"):
             env_root = benchmark_root / "environments" / env_name
-            hooks.extend(env_root.glob("scripts/*.sh"))
-            hooks.extend(env_root.glob("tasks/*/*.sh"))
-        self.assertEqual(len(hooks), len(list_environments("weird_captcha_gym", split="all")) * 4)
+            environment_hooks = list(env_root.glob("scripts/*.sh"))
+            self.assertEqual(
+                {hook.name for hook in environment_hooks},
+                {"install_puzzle_runtime.sh", "setup_puzzle_runtime.sh"},
+                env_name,
+            )
+            task_hooks = [
+                hook
+                for task_dir in env_root.glob("tasks/*")
+                if task_dir.is_dir()
+                for hook in task_dir.glob("*.sh")
+            ]
+            for task_dir in sorted(path for path in (env_root / "tasks").glob("*") if path.is_dir()):
+                self.assertEqual(
+                    {hook.name for hook in task_dir.glob("*.sh")},
+                    {"setup_task.sh", "export_result.sh"},
+                    f"{env_name}/{task_dir.name}",
+                )
+            hooks.extend(environment_hooks)
+            hooks.extend(task_hooks)
         for hook in hooks:
             self.assertTrue(os.access(hook, os.X_OK), f"hook is not executable: {hook.relative_to(benchmark_root)}")
 
