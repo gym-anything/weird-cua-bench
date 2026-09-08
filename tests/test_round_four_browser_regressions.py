@@ -126,11 +126,13 @@ def test_marble_removal_invalidates_a_successful_run(page, tmp_path):
     page.locator("#tm-run").click()
     page.clock.run_for(state["run_duration_ms"] + 100)
     assert page.evaluate("tomorrowsMarbleModel.runSummary.passed") is True
+    assert page.locator("#tm-run-clock").inner_text() == "LOOP CLOSED"
     assert page.locator("#tm-certify").is_enabled()
     page.locator(".tm-arrival").first.click()
     assert page.evaluate("tomorrowsMarbleModel.runSummary") is None
     assert page.locator("#tm-certify").is_disabled()
     assert page.locator("#tm-ledger-box").get_attribute("data-state") == "waiting"
+    assert page.locator("#tm-run-clock").inner_text() == "IDLE"
     page.screenshot(path=str(tmp_path / "marble-removal-invalidates-run.png"))
 
 

@@ -13,7 +13,8 @@ paused round-five environments are not part of this release.
 - Twin-Groove Seal starts with its declared 400-unit link length. Tests check
   generated reference paths across all five difficulties and multiple seeds.
 - Tomorrow's Marble settles each drag action once, including cancelled and
-  rejected drops. Removing a piece invalidates the previous simulation result.
+  rejected drops. Removing a piece invalidates the previous simulation result
+  and clears its visible completion label.
 - Collision Chimes shows multiple wall hits on the same rail during one beat.
 - Last Carbon Isles displays rejected-action feedback in its visible footer.
 

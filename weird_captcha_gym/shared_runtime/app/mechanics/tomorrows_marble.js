@@ -339,6 +339,7 @@
     function paint() {
       paintTimeline();
       paintLedger();
+      if (!model.running && !model.runSummary) root.querySelector("#tm-run-clock").textContent = "IDLE";
       root.querySelector("#tm-run").disabled = model.running || model.terminal || model.schedule.length === 0;
       root.querySelector("#tm-clear").disabled = model.running || model.terminal || model.schedule.length === 0;
       root.querySelector("#tm-certify").disabled = model.running || model.terminal || !model.runSummary;
