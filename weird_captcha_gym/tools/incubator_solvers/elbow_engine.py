@@ -7,7 +7,6 @@ from __future__ import annotations
 import importlib.util
 import json
 from pathlib import Path
-from playwright.sync_api import expect
 
 ROOT=Path(__file__).resolve().parents[2]
 _spec=importlib.util.spec_from_file_location('elbow_solver_physics',ROOT/'shared_runtime/server/incubator_graders/elbow_engine.py')
@@ -42,6 +41,7 @@ def set_torque(page,u,full,current):
 
 
 def fail_once(page,state_dir,out_dir,mechanic='elbow_engine'):
+    from playwright.sync_api import expect
     old=page.locator('.elbow-engine').get_attribute('data-challenge-id')
     page.locator('#ee-submit').click()
     expect(page.locator('.elbow-engine')).not_to_have_attribute('data-challenge-id',old)
@@ -50,6 +50,7 @@ def fail_once(page,state_dir,out_dir,mechanic='elbow_engine'):
 
 
 def solve(page,state_dir,out_dir,mechanic='elbow_engine',advance=None):
+    from playwright.sync_api import expect
     state=json.loads((state_dir/'public_state.json').read_text())
     p=state['physics'];full=(state.get('control_condition') or {}).get('interaction','full')=='full'
     page.locator('#ee-start').click(force=True);current=0;shot=False

@@ -5,8 +5,6 @@ import math
 import time
 from pathlib import Path
 
-from playwright.sync_api import expect
-
 
 MECHANIC_ID = "teach_the_stencil"
 MIN_FULL_PATH_LENGTH = 4.0
@@ -218,6 +216,7 @@ def fail_once(page, state_dir: Path, out_dir: Path, mechanic: str) -> None:
 
 
 def solve(page, state_dir: Path, out_dir: Path, mechanic: str) -> None:
+    from playwright.sync_api import expect
     del out_dir
     if mechanic != MECHANIC_ID:
         raise AssertionError(f"unexpected mechanic {mechanic!r}")
