@@ -406,7 +406,8 @@ def test_materialized_capabilities_are_interaction_specific() -> None:
     temporal = "temporal understanding and memory"
     assert temporal in mapping["full"]
     assert temporal not in mapping["simplified"]
-    assert temporal not in TASK["metadata"]["capabilities"]
+    assert TASK["metadata"]["capability_configuration"] == {"difficulty": 2, "interaction": "full"}
+    assert TASK["metadata"]["capabilities"] == mapping["full"]
     assert CONTROLS["interaction"]["full"]["capabilities"] == mapping["full"]
     assert CONTROLS["interaction"]["simplified"]["capabilities"] == mapping["simplified"]
 
@@ -421,6 +422,7 @@ def test_materialized_capabilities_are_interaction_specific() -> None:
         )
         selected = materialized["metadata"]["control_condition"]["interaction"]
         assert materialized["metadata"]["capabilities_by_interaction"][selected] == mapping[interaction]
+        assert materialized["metadata"]["capabilities"] == mapping[interaction]
         assert (temporal in mapping[interaction]) is (interaction == "full")
 
 

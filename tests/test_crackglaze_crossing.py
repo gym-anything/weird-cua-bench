@@ -307,7 +307,8 @@ def test_materialization_registration_capabilities_and_terse_ui_boundary(tmp_pat
     )
     assert task["metadata"]["source_anchors"] == ["IND-021", "VGE-250", "VGE-489"]
     assert task["metadata"]["capabilities"] == [
-        "visual understanding: 2D", "temporal understanding and memory", "reasoning and planning"
+        "visual understanding: 2D", "temporal understanding and memory", "reasoning and planning",
+        "exploration and interface understanding",
     ]
     for field in (task["description"], task["natural_language"]):
         for term in required:

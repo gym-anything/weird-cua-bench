@@ -158,9 +158,9 @@ def test_registration_and_source_contract() -> None:
     assert task["name"] == "Polarity Run"
     assert task["metadata"]["source_anchors"] == ["XUIF-263"]
     assert task["metadata"]["capabilities"] == [
-        "visual_understanding_2d",
-        "temporal_understanding_and_memory",
-        "reasoning_and_planning",
+        "visual understanding: 2D",
+        "temporal understanding and memory",
+        "reasoning and planning",
     ]
     assert len(split["variations_tasks"]) == 20
     assert set(split["variations_tasks"]) == {

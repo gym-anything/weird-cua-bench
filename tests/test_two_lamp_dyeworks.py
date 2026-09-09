@@ -391,7 +391,7 @@ def test_every_task_instruction_has_the_complete_visible_ui_only_boundary() -> N
     )
     assert all(all(fragment in instruction for fragment in required) for instruction in instructions)
     assert task["metadata"]["capabilities"] == [
-        "visual_understanding_2d",
-        "reasoning_and_planning",
-        "exploration_and_interface_understanding",
+        "visual understanding: 2D",
+        "reasoning and planning",
+        "exploration and interface understanding",
     ]

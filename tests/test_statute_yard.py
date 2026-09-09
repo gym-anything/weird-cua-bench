@@ -211,7 +211,7 @@ def test_registration_sources_static_clock_and_split_contract() -> None:
     assert task["name"] == "Statute Yard"
     assert task["difficulty"] == "medium"
     assert task["metadata"]["source_anchors"] == ["RLE-203", "TRR-022", "XAGT-363"]
-    assert task["metadata"]["capabilities"] == ["visual_understanding_2d", "reasoning_and_planning"]
+    assert task["metadata"]["capabilities"] == ["visual understanding: 2D", "reasoning and planning"]
     assert len(split["variations_tasks"]) == 20
     assert manifest["environment_count"] == len(manifest["environments"])
     assert manifest["environments"].count("statute_yard_env") == 1

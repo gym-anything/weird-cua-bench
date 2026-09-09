@@ -3,6 +3,8 @@ from __future__ import annotations
 
 import argparse
 import copy
+import importlib
+import importlib.util
 import json
 import shutil
 from pathlib import Path
@@ -19,6 +21,34 @@ DIFFICULTY_NAMES = {
     4: "hard",
     5: "very_hard",
 }
+CAPABILITY_AUDIT_RELATIVE_PATH = "weird_captcha_gym/capability_audits/new_environments_2026-09-08.json"
+CAPABILITY_AUDIT_PATH = BENCHMARK_ROOT / "capability_audits" / "new_environments_2026-09-08.json"
+
+
+def _capability_labels(mechanic_id: str, level: int, interaction: str) -> list[str] | None:
+    """Return registry labels for an audited condition, if the registry exists.
+
+    The materializer is also imported by older standalone scripts and tests.  Keep
+    the audit dependency optional for those callers, and load the dashboard module
+    from its file when this file is executed directly outside the package path.
+    """
+    if not CAPABILITY_AUDIT_PATH.is_file():
+        return None
+    try:
+        module = importlib.import_module("weird_captcha_gym.dashboard.capability_annotations")
+    except (ImportError, ModuleNotFoundError):
+        module_path = BENCHMARK_ROOT / "dashboard" / "capability_annotations.py"
+        spec = importlib.util.spec_from_file_location("weird_cua_capability_annotations", module_path)
+        if spec is None or spec.loader is None:
+            return None
+        module = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(module)
+    get_labels = getattr(module, "get_capability_labels", None)
+    names = getattr(module, "capability_names", None)
+    if not callable(get_labels) or not callable(names):
+        return None
+    labels = get_labels(mechanic_id, level, interaction)
+    return None if labels is None else list(names(labels))
 
 
 def _read_json(path: Path) -> dict[str, Any]:
@@ -133,6 +163,14 @@ def controlled_task(
     }
     metadata["controlled_task_version"] = 1
     metadata["mechanic_id"] = mechanic_id
+    capabilities = _capability_labels(mechanic_id, level, interaction)
+    if capabilities is not None:
+        metadata["capabilities"] = capabilities
+        metadata["capability_audit"] = CAPABILITY_AUDIT_RELATIVE_PATH
+        metadata["capability_configuration"] = {
+            "difficulty": level,
+            "interaction": interaction,
+        }
     task["metadata"] = metadata
     return task
 

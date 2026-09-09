@@ -170,7 +170,12 @@ def test_baseline_profiles_and_source_contract_are_fixed() -> None:
     assert env["runner_options"] == {"observation_window_ms": 0, "frames_per_observation": 1, "play_time_seconds": 180}
     assert task["name"] == "Two-Season Strand"
     assert task["metadata"]["source_anchors"] == ["GWP-013", "GWP-014", "XCOG-244", "XCOG-247", "XCOG-248"]
-    assert task["metadata"]["capabilities"] == ["visual_understanding_2d", "reasoning_and_planning"]
+    assert task["metadata"]["capabilities"] == [
+        "visual understanding: 2D",
+        "temporal understanding and memory",
+        "reasoning and planning",
+        "exploration and interface understanding",
+    ]
     assert task["metadata"]["status"] == "prototype_visual_candidate"
     assert len(split["variations_tasks"]) == 20
 

@@ -5,9 +5,17 @@ from pathlib import Path
 from typing import Any
 
 try:  # Package import in tests; local import when the dashboard is executed directly.
-    from .capability_annotations import build_capability_annotations, capability_definitions
+    from .capability_annotations import (
+        build_capability_annotations,
+        build_capability_profiles,
+        capability_definitions,
+    )
 except ImportError:  # pragma: no cover - exercised by the script entrypoint.
-    from capability_annotations import build_capability_annotations, capability_definitions  # type: ignore[no-redef]
+    from capability_annotations import (  # type: ignore[no-redef]
+        build_capability_annotations,
+        build_capability_profiles,
+        capability_definitions,
+    )
 
 
 DASHBOARD_ROOT = Path(__file__).resolve().parent
@@ -1226,6 +1234,7 @@ def build_catalog() -> dict[str, Any]:
     validation = _validation_summaries()
     solution_videos = _solution_videos()
     capability_annotations = build_capability_annotations()
+    capability_profiles = build_capability_profiles()
     environments: list[dict[str, Any]] = []
     for environment_dir in sorted(ENVIRONMENTS_ROOT.glob("*_env")):
         env_data = _read_json(environment_dir / "env.json")
@@ -1304,6 +1313,7 @@ def build_catalog() -> dict[str, Any]:
             "launchable": bool(tasks),
             "environment_path": str(environment_dir.relative_to(REPO_ROOT)),
             "capability_annotation": capability_annotation,
+            "capability_profile_annotations": capability_profiles.get(mechanic_id),
             "difficulty_control": difficulty_control,
         })
 
@@ -1341,6 +1351,7 @@ def build_catalog() -> dict[str, Any]:
             "launchable": False,
             "environment_path": None,
             "capability_annotation": None,
+            "capability_profile_annotations": capability_profiles.get(mechanic_id),
             "difficulty_control": None,
             "concept_index": concept["concept_index"],
             "motif": concept["motif"],

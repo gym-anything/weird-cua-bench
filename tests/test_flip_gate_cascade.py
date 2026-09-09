@@ -340,7 +340,6 @@ def test_task_metadata_provenance_and_registries_are_complete() -> None:
     assert metadata["source_anchors"] == ["TRP-033", "PHY-137"]
     assert metadata["capabilities"] == [
         "visual understanding: 2D",
-        "temporal understanding and memory",
         "reasoning and planning",
         "exploration and interface understanding",
     ]
