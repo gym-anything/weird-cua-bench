@@ -19,6 +19,21 @@ from weird_captcha_gym.shared_runtime.verifier_helpers import (
 ROOT = Path(__file__).resolve().parents[1]
 BENCHMARK = ROOT / "weird_captcha_gym"
 CONTROLLED_ENVIRONMENTS = (
+    "downsky_causeway_env",
+    "lanternfin_dive_env",
+    "crater_walker_env",
+    "facet_lantern_env",
+    "cloudstep_caddie_env",
+    "hearthlift_courier_env",
+    "rising_causeway_env",
+    "polycube_parcel_env",
+    "lantern_loft_env",
+    "surveyors_toybox_env",
+    "lampwrights_program_env",
+    "pearl_lattice_env",
+    "cloudpost_circuit_env",
+    "horizon_relay_env",
+    "lanternwing_roundup_env",
     "pendulum_post_env",
     "clockwork_courier_works_env",
     "ember_anvil_env",
@@ -177,6 +192,21 @@ CONTROLLED_ENVIRONMENTS = (
 )
 
 BASELINE_LEVELS = {
+    "downsky_causeway_env": 4,
+    "lanternfin_dive_env": 4,
+    "crater_walker_env": 4,
+    "facet_lantern_env": 3,
+    "cloudstep_caddie_env": 4,
+    "hearthlift_courier_env": 4,
+    "rising_causeway_env": 4,
+    "polycube_parcel_env": 4,
+    "lantern_loft_env": 4,
+    "surveyors_toybox_env": 4,
+    "lampwrights_program_env": 4,
+    "pearl_lattice_env": 3,
+    "cloudpost_circuit_env": 4,
+    "horizon_relay_env": 3,
+    "lanternwing_roundup_env": 4,
     "pendulum_post_env": 4,
     "clockwork_courier_works_env": 2,
     "ember_anvil_env": 3,
