@@ -17,6 +17,9 @@ included. These tasks extend the 155-environment base to 170 environments.
   collection, rather than waiting for its approximate flight estimate to agree.
 - Materialize test fixtures in temporary directories so tests also work in a
   fresh checkout without ignored generated tasks.
+- Extend the world-equivalence tests to recognize these tasks' input-mode fields
+  and instructions. Hearthlift's reference input-source labels are checked for
+  each mode while its complete state-transition records remain compared.
 
 No core runner, gateway, VM code, shared runtime logic, task physics or grading
 thresholds were changed for this integration. The Pages workflow changes only
@@ -51,6 +54,12 @@ All fifteen dashboard videos played, all 150 difficulty/interaction interfaces
 loaded with the requested settings, and all fifteen exported reference solutions
 passed the browser's WebAssembly grader. No page errors were recorded.
 `browser-validation.json` retains those results.
+
+The complete control-contract test file also passed: 110 tests. The all-environment
+static browser sweep rendered all 170 environments, exercised all 170 WebAssembly
+graders and passed its dashboard launch, retry, timing and observation checks.
+Two existing Marionette tests depend on missing ignored evidence scripts and fail
+on the unmodified base branch as well; they are outside this batch's changes.
 
 The strict metadata audit still reports the deferred human/VNC validation status
 for each task. It does not certify these as human-reviewed environments.

@@ -629,6 +629,11 @@ def test_original_tasks_match_their_independently_assigned_baselines() -> None:
             assert original_public["interaction_mode"] == baseline_public["control_condition"]["interaction"]
             assert without_control_identity(baseline_public) == without_control_identity(original_public, extra=("interaction_mode",))
             assert without_control_identity(baseline_truth) == without_control_identity(original_truth)
+        elif mechanic == "crater_walker":
+            # The difficulty profile rephrases the support-transfer instructions;
+            # all generated geometry, goals and reference data must still match.
+            assert without_control_identity(baseline_public, extra=("prompt",)) == without_control_identity(original_public, extra=("prompt",))
+            assert without_control_identity(baseline_truth) == without_control_identity(original_truth)
         elif mechanic in {
             "consequences_boss",
             "cursor_lens_reveal",
@@ -1694,6 +1699,11 @@ def test_hovercar_browser_binds_keyboard_only_for_full_interaction() -> None:
 def test_implemented_interaction_pairs_share_generated_worlds_and_goals() -> None:
     seed = "interaction-pair-equivalence"
     mode_fields = {
+        "facet_lantern_env": "interaction",
+        "polycube_parcel_env": "interaction",
+        "pearl_lattice_env": "interaction",
+        "surveyors_toybox_env": "interaction_mode",
+        "horizon_relay_env": "interaction_mode",
         "firewatch_fold_env": "interaction",
         "branch_repair_env": "interaction",
         "quiet_transfer_env": "interaction_mode",
@@ -1723,6 +1733,10 @@ def test_implemented_interaction_pairs_share_generated_worlds_and_goals() -> Non
             first_normalized = without_control_identity(first_public)
             normalized = without_control_identity(public)
             if env_name in {
+                "facet_lantern_env",
+                "hearthlift_courier_env",
+                "polycube_parcel_env",
+                "pearl_lattice_env",
                 "shadow_crime_lab_env",
                 "slot_reel_capture_env",
                 "ribbon_switchboard_env",
@@ -1767,6 +1781,18 @@ def test_implemented_interaction_pairs_share_generated_worlds_and_goals() -> Non
             if env_name == "ember_mosaic_env":
                 assert first_truth_normalized["world"]["control_condition"].pop("interaction") == interactions[0]
                 assert truth_normalized["world"]["control_condition"].pop("interaction") == interaction
+            if env_name == "hearthlift_courier_env":
+                # Reference actions have identical state transitions but name
+                # the selected keyboard/drag or button input surface.
+                for bundle, mode in ((first_truth_normalized, interactions[0]), (truth_normalized, interaction)):
+                    sources = {
+                        "camera": "camera_drag" if mode == "full" else "camera_button",
+                        "move": "keyboard_move" if mode == "full" else "proxy_move",
+                        "certify": "certify_button",
+                    }
+                    default = "keyboard_action" if mode == "full" else "proxy_action"
+                    for event in bundle["solution_events"]:
+                        assert event.pop("input_source") == sources.get(event["type"], default)
             assert truth_normalized == first_truth_normalized, env_name
     assert paired >= 1
 
