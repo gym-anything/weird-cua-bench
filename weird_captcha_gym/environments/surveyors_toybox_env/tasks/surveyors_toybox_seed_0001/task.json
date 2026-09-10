@@ -1,0 +1,49 @@
+{
+  "id": "surveyors_toybox_seed_0001@0.1",
+  "version": "0.1",
+  "env_id": "weird_captcha_gym.surveyors_toybox_env@0.1",
+  "name": "Surveyor's Toybox",
+  "description": "Fit oriented 3D survey cuboids to a sparse toy-depot scan and connect synchronized camera marks to the same physical objects.",
+  "difficulty": "hard",
+  "natural_language": "Survey the miniature depot. Orbit, pan, or zoom the sparse point cloud as needed, fit a 3D cuboid around each requested object, correct its position, dimensions and heading until the synchronized camera projections agree, then link every camera mark to its matching cuboid.",
+  "tags": [
+    "weird-captcha",
+    "surveyors_toybox",
+    "3d-cuboid",
+    "point-cloud",
+    "cross-view-linking"
+  ],
+  "init": {
+    "timeout_sec": 600,
+    "max_steps": 1000,
+    "reward_type": "sparse"
+  },
+  "hooks": {
+    "pre_task": "/workspace/tasks/surveyors_toybox_seed_0001/setup_task.sh",
+    "post_task": "/workspace/tasks/surveyors_toybox_seed_0001/export_result.sh"
+  },
+  "success": {
+    "mode": "program",
+    "spec": {
+      "program": "verifier.py::verify_task"
+    }
+  },
+  "metadata": {
+    "benchmark": "weird_captcha_gym",
+    "mechanic_id": "surveyors_toybox",
+    "source_anchors": [
+      "TRG-088"
+    ],
+    "variant_count": 5400000,
+    "variant_count_kind": "10 seeded object arrangements \u00d7 six headings \u00d7 three palettes \u00d7 three frame counts \u00d7 bounded point perturbations",
+    "status": "prototype_visual_candidate",
+    "shared_action_surface": [
+      "mouse",
+      "keyboard"
+    ],
+    "asset_manifest": "shared_runtime/assets/provenance/surveyors_toybox_v0.json",
+    "design_status": "local_verification_pending_vnc_human_evidence",
+    "notes": "The scan points and camera marks are rendered evidence from one original oriented-box world. The server replays box edits and exact per-frame, per-view mark links; no browser completion flag is trusted.",
+    "legacy_agent_sample_population": false
+  }
+}
