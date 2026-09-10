@@ -115,6 +115,8 @@ These implementation checks do not include a real VM/VNC run, paused Gym-Anythin
 
 The fresh PR test environment exposed import-time Playwright dependencies in tests of browser-independent helpers. Playwright and browser-smoke imports now load only inside the browser entry points in the Facet Lantern, Letter Rapids and Ballast Lantern solvers and the single-task UI verifier. All 52 affected tests pass, including a new subprocess regression with Playwright unavailable; the full suite also collects successfully without Playwright. No tests were skipped to resolve the collection errors. AST comparisons against the pre-change files confirm that all four files are identical after excluding only the relocated imports. The archived browser records and source hashes still identify the earlier, pre-import-refactor sources; they have not been rewritten as new runs.
 
+The next CI run completed with 1,993 passing tests, 28 failures and 49 skips. Every failure was a missing-Playwright import during test execution, including actual browser regressions; collection alone had not covered that dependency boundary. The test extra now declares Playwright 1.49.1, matching the local verification environment, and CI installs its Chromium binary and Linux dependencies before running the unchanged full test command. Browser tests retain their fresh, headless contexts. No assertions or tests were removed to resolve these failures.
+
 ## Reproducing a UI check
 
 Use the existing project test dependencies, including its pinned Gym-Anything revision. To run an independent native-input attempt, choose a new output directory:

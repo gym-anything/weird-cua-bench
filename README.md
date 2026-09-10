@@ -91,6 +91,7 @@ Add `--fast-io` when the selected Gym-Anything runner reports FastIO support. AV
 
 ```bash
 python -m pip install -e ".[test]"
+python -m playwright install --with-deps chromium
 python -m pytest tests -q
 python weird_captcha_gym/tools/smoke_realtime_control.py
 python weird_captcha_gym/tools/smoke_realtime_environments.py
