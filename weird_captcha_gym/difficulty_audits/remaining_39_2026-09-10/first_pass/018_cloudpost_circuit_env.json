@@ -1,0 +1,1199 @@
+{
+  "schema_version": 1,
+  "case_index": 18,
+  "environment_id": "cloudpost_circuit_env",
+  "public_name": "Cloudpost Circuit",
+  "current_baseline": {
+    "difficulty": 4,
+    "interaction": "full",
+    "real_time": "live"
+  },
+  "source_coverage": [
+    {
+      "path": "AGENTS.md",
+      "coverage": "complete"
+    },
+    {
+      "path": "weird_captcha_gym/docs/controllability-plan.md",
+      "coverage": "complete"
+    },
+    {
+      "path": "weird_captcha_gym/docs/controllability/README.md",
+      "coverage": "complete"
+    },
+    {
+      "path": "weird_captcha_gym/docs/controllability/agent-prompt.md",
+      "coverage": "complete"
+    },
+    {
+      "path": "weird_captcha_gym/docs/controllability/difficulty.md",
+      "coverage": "complete"
+    },
+    {
+      "path": "weird_captcha_gym/docs/controllability/interaction.md",
+      "coverage": "complete"
+    },
+    {
+      "path": "weird_captcha_gym/docs/controllability/real-time.md",
+      "coverage": "complete"
+    },
+    {
+      "path": "weird_captcha_gym/docs/controllability/temporal.md",
+      "coverage": "complete"
+    },
+    {
+      "path": "weird_captcha_gym/docs/controllability/validation.md",
+      "coverage": "complete"
+    },
+    {
+      "path": "weird_captcha_gym/environments/cloudpost_circuit_env/controls.json",
+      "coverage": "complete"
+    },
+    {
+      "path": "weird_captcha_gym/environments/cloudpost_circuit_env/env.json",
+      "coverage": "complete"
+    },
+    {
+      "path": "weird_captcha_gym/environments/cloudpost_circuit_env/tasks/cloudpost_circuit_seed_0001/task.json",
+      "coverage": "complete"
+    },
+    {
+      "path": "weird_captcha_gym/environments/cloudpost_circuit_env/tasks/cloudpost_circuit_seed_0001/verifier.py",
+      "coverage": "complete"
+    },
+    {
+      "path": "weird_captcha_gym/environments/cloudpost_circuit_env/tasks/cloudpost_circuit_seed_0001/setup_task.sh",
+      "coverage": "complete"
+    },
+    {
+      "path": "weird_captcha_gym/environments/cloudpost_circuit_env/tasks/cloudpost_circuit_seed_0001/export_result.sh",
+      "coverage": "complete"
+    },
+    {
+      "path": "weird_captcha_gym/environments/cloudpost_circuit_env/scripts/setup_puzzle_runtime.sh",
+      "coverage": "complete"
+    },
+    {
+      "path": "weird_captcha_gym/environments/cloudpost_circuit_env/scripts/install_puzzle_runtime.sh",
+      "coverage": "complete"
+    },
+    {
+      "path": "weird_captcha_gym/shared_scripts/incubator_generators/cloudpost_circuit.py",
+      "coverage": "complete"
+    },
+    {
+      "path": "weird_captcha_gym/shared_runtime/app/mechanics/cloudpost_circuit.js",
+      "coverage": "complete"
+    },
+    {
+      "path": "weird_captcha_gym/shared_runtime/app/mechanics/cloudpost_circuit.css",
+      "coverage": "complete"
+    },
+    {
+      "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/cloudpost_circuit.py",
+      "coverage": "complete"
+    },
+    {
+      "path": "weird_captcha_gym/tools/incubator_solvers/cloudpost_circuit.py",
+      "coverage": "complete"
+    },
+    {
+      "path": "tests/test_cloudpost_circuit.py",
+      "coverage": "complete"
+    },
+    {
+      "path": "weird_captcha_gym/tools/materialize_controlled_tasks.py",
+      "coverage": "complete"
+    },
+    {
+      "path": "weird_captcha_gym/shared_scripts/setup_task.py",
+      "coverage": "partial",
+      "reason": "Read the generator loading, control-condition validation, and candidate-generation paths used here; unrelated legacy generator paths were not needed."
+    },
+    {
+      "path": "weird_captcha_gym/shared_runtime/verifier_helpers.py",
+      "coverage": "partial",
+      "reason": "Read the exported-result loading path used by the assigned verifier; unrelated helper APIs were not called by it."
+    },
+    {
+      "path": "weird_captcha_gym/shared_runtime/server/weird_captcha_server.py",
+      "coverage": "partial",
+      "reason": "Read the result route, incubator-grader dispatch, and regeneration paths relevant to this verifier; unrelated server routes were not needed."
+    }
+  ],
+  "anchor_comparisons": [
+    {
+      "public_name": "Isometric Voxel Extraction Mine",
+      "approved_level": 1,
+      "files_read": [
+        "weird_captcha_gym/environments/minecraft_block_grid_env/controls.json",
+        "weird_captcha_gym/environments/minecraft_block_grid_env/env.json",
+        "weird_captcha_gym/environments/minecraft_block_grid_env/tasks/minecraft_block_grid_seed_0001/task.json",
+        "weird_captcha_gym/environments/minecraft_block_grid_env/tasks/minecraft_block_grid_seed_0001/verifier.py",
+        "weird_captcha_gym/shared_scripts/incubator_generators/minecraft_block_grid.py",
+        "weird_captcha_gym/shared_runtime/app/mechanics/minecraft_block_grid.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/minecraft_block_grid.css",
+        "weird_captcha_gym/shared_runtime/server/incubator_graders/minecraft_block_grid.py",
+        "weird_captcha_gym/tools/incubator_solvers/minecraft_block_grid.py"
+      ],
+      "concrete_comparison": "The approved L1 task is a static 5x5x3 isometric pile: the agent rotates among four views, ray-clicks exposed faces, removes blockers, extracts four directly exposed diamonds, avoids visible lava and fragile support, and explicitly exits. Its changes are discrete voxel removals and its grader replays rotations and clicks. Cloudpost d4 instead advances a plane every 40 ms through five procedural seals, requiring persistent two-axis heading correction, perspective/frustum search, and world-space contact within radius 12. Cloudpost has fewer explicit hazards and no voxel occlusion, but its continuing 3D control and contact timing are a materially broader control problem than the static L1 mine.",
+      "evidence": [
+        {
+          "path": "weird_captcha_gym/environments/minecraft_block_grid_env/controls.json",
+          "start_line": 4,
+          "end_line": 13,
+          "explanation": "The approved baseline is L1/simplified and includes four targets, visible lava/support, and a limited-durability tool."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/minecraft_block_grid.js",
+          "start_line": 200,
+          "end_line": 243,
+          "explanation": "The visible mine uses discrete rotation events and canvas ray-mine events whose material outcome changes the pile, durability, inventory, and collapse state."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/minecraft_block_grid.py",
+          "start_line": 120,
+          "end_line": 224,
+          "explanation": "The approved grader independently replays the camera, click-ray occlusion, material, durability, and extraction state."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/cloudpost_circuit.js",
+          "start_line": 127,
+          "end_line": 159,
+          "explanation": "Cloudpost advances and contacts targets from a continuously moving 3D plane, with corridor failure when the plane leaves bounds."
+        }
+      ]
+    },
+    {
+      "public_name": "Gyroscopic Tilt Board",
+      "approved_level": 3,
+      "files_read": [
+        "weird_captcha_gym/environments/board_game_captcha_env/controls.json",
+        "weird_captcha_gym/environments/board_game_captcha_env/env.json",
+        "weird_captcha_gym/environments/board_game_captcha_env/tasks/board_game_captcha_seed_0001/task.json",
+        "weird_captcha_gym/environments/board_game_captcha_env/tasks/board_game_captcha_seed_0001/verifier.py",
+        "weird_captcha_gym/shared_scripts/incubator_generators/board_game_captcha.py",
+        "weird_captcha_gym/shared_runtime/app/mechanics/board_game_captcha.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/board_game_captcha.css",
+        "weird_captcha_gym/shared_runtime/server/incubator_graders/board_game_captcha.py",
+        "weird_captcha_gym/tools/incubator_solvers/board_game_captcha.py"
+      ],
+      "concrete_comparison": "The approved L3 board has three ordered lamps, three walls, three wells, a momentum-bearing ball, and full analog tilt control with collision and hazard reset. Cloudpost d3 is comparable in having moderate closed-loop physical control and multiple milestones, while adding depth, perspective, and two angular axes. Cloudpost lacks the board's walls, wells, velocity momentum, and explicit recovery, so d3 is not automatically above L3; d4's tighter radius, faster flight, five seals, and longer ongoing correction burden provide the source-supported step toward L4.",
+      "evidence": [
+        {
+          "path": "weird_captcha_gym/environments/board_game_captcha_env/controls.json",
+          "start_line": 4,
+          "end_line": 16,
+          "explanation": "The approved L3 baseline is full/live with three lamps, three walls, three hazards, and 50-ms board physics."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/board_game_captcha.py",
+          "start_line": 49,
+          "end_line": 124,
+          "explanation": "The approved generator activates ordered switches, walls, wells, and acceleration/friction/maximum-speed/bounce/ball-radius parameters."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/board_game_captcha.js",
+          "start_line": 35,
+          "end_line": 48,
+          "explanation": "The visible board runs deterministic physics with velocity, collisions, well reset, ordered lamp activation, and a goal cup."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/board_game_captcha.py",
+          "start_line": 155,
+          "end_line": 241,
+          "explanation": "The approved grader binds the interaction source and replays each tilt, physics tick, collision, hazard reset, ordered lamp, and completion state."
+        }
+      ]
+    },
+    {
+      "public_name": "Exact-Change Candy Cascade",
+      "approved_level": 5,
+      "files_read": [
+        "weird_captcha_gym/environments/exact_change_candy_cascade_env/controls.json",
+        "weird_captcha_gym/environments/exact_change_candy_cascade_env/env.json",
+        "weird_captcha_gym/environments/exact_change_candy_cascade_env/tasks/exact_change_candy_cascade_seed_0001/task.json",
+        "weird_captcha_gym/environments/exact_change_candy_cascade_env/tasks/exact_change_candy_cascade_seed_0001/verifier.py",
+        "weird_captcha_gym/shared_scripts/incubator_generators/exact_change_candy_cascade.py",
+        "weird_captcha_gym/shared_runtime/app/mechanics/exact_change_candy_cascade.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/exact_change_candy_cascade.css",
+        "weird_captcha_gym/shared_runtime/server/incubator_graders/exact_change_candy_cascade.py",
+        "weird_captcha_gym/tools/incubator_solvers/exact_change_candy_cascade.py"
+      ],
+      "concrete_comparison": "The approved L5 candy task is a 5x5 changing-board search: four valid adjacent swaps must reach an exact score, each accepted swap changes the board and refill cursor through cascades, only five future candies are previewed, and black licorice voids the receipt. Cloudpost d5 has a higher continuous motor-control burden than d4, but collecting a seal only marks it collected and does not change future route physics or available actions. Cloudpost d5 can occupy the L5 band for precision and sustained control while remaining below this L5 anchor in state-dependent combinatorial planning.",
+      "evidence": [
+        {
+          "path": "weird_captcha_gym/environments/exact_change_candy_cascade_env/controls.json",
+          "start_line": 4,
+          "end_line": 16,
+          "explanation": "The approved baseline is L5/simplified with a four-valid-swap exact-score requirement, at least seven waves, one forbidden candy, and a five-item preview."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/exact_change_candy_cascade.py",
+          "start_line": 101,
+          "end_line": 132,
+          "explanation": "The approved generator enumerates routes over successive boards and refill cursors, so each valid swap supplies a different later decision state."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/exact_change_candy_cascade.js",
+          "start_line": 288,
+          "end_line": 369,
+          "explanation": "The visible UI swaps candies, resolves repeated waves and refills, updates exact score, and terminates on exact change, overpayment, or move-budget exhaustion."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/exact_change_candy_cascade.py",
+          "start_line": 183,
+          "end_line": 243,
+          "explanation": "The approved grader replays each swap and cascade and requires exact score, move budget, wave threshold, and untouched licorice."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/cloudpost_circuit.js",
+          "start_line": 140,
+          "end_line": 158,
+          "explanation": "Cloudpost contact only adds an ID to the collected set; the plane physics and corridor checks remain the same."
+        }
+      ]
+    }
+  ],
+  "visible_baseline_solution": "At d4/full, the screenshot-only agent sees the prompt, a 0/5 seal counter, a flight tick, the 3D canvas with a fixed plane/cockpit marker, projected seals only when in the camera-frustum window, decorative scenery, a pointer crosshair, and HUD text stating that contact is world-space rather than screen overlap. It moves the pointer over the flight field to set a normalized yaw/pitch vector; that command persists until corrected and the plane advances on 40-ms ticks. The agent must use recent frames to find seals that may be outside view, steer toward their changing projected position and depth, keep the plane in the corridor, and bring the plane within 12 world units of all five seals. There is no manual submit: contacts auto-submit a replay ledger; corridor exit fails and issues a fresh route. Coordinates used by the private solver are implementation evidence, not information available to a policy-compliant screenshot-only solution.",
+  "baseline_judgment": {
+    "current_level": 4,
+    "proposed_level": null,
+    "decision": "keep",
+    "rationale": "Keep d4 as a provisional L4 assignment. It is above the static discrete L1 Isometric Voxel Extraction Mine because the plane continuously advances in 3D and requires repeated two-axis visual correction. It is above the approved L3 Gyroscopic Tilt Board in depth/frustum reasoning and two-axis flight control, while lacking that anchor's walls, wells, momentum, and hazard resets. It is close to an L4 burden in milestone count and closed-loop correction, and below Exact-Change Candy Cascade L5 in state-dependent planning. The assignment is source-based rather than empirical calibration.",
+    "evidence": [
+      {
+        "path": "weird_captcha_gym/environments/cloudpost_circuit_env/controls.json",
+        "start_line": 4,
+        "end_line": 10,
+        "explanation": "The active baseline is d4/full/live and d4 activates five seals, broad spans, speed 2.30, turn step .24, radius 12, and 22 scenery objects."
+      },
+      {
+        "path": "weird_captcha_gym/shared_scripts/incubator_generators/cloudpost_circuit.py",
+        "start_line": 122,
+        "end_line": 172,
+        "explanation": "The d4 values generate multiple 3D targets and scenery and feed speed, turn response, corridor, and contact radius."
+      },
+      {
+        "path": "weird_captcha_gym/shared_runtime/app/mechanics/cloudpost_circuit.js",
+        "start_line": 127,
+        "end_line": 159,
+        "explanation": "The browser performs ongoing heading interpolation, forward motion, world-space contact, automatic completion, and corridor failure."
+      },
+      {
+        "path": "weird_captcha_gym/shared_runtime/app/mechanics/cloudpost_circuit.js",
+        "start_line": 227,
+        "end_line": 255,
+        "explanation": "Targets are drawn only when projected into the camera window while the animation loop continues advancing physics."
+      },
+      {
+        "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/cloudpost_circuit.py",
+        "start_line": 121,
+        "end_line": 175,
+        "explanation": "The independent grader replays the plane and checks every world-space contact and successful terminal ledger."
+      }
+    ],
+    "uncertainties": "No permitted runtime generation, browser, grader, verifier, human, or agent calibration was run. The generator comments assert a steerable cone and route envelope, but multi-seed reachability and the completion-rate effect of simplified control resolution remain unmeasured."
+  },
+  "profiles": [
+    {
+      "difficulty": 1,
+      "interaction": "simplified",
+      "active_parameters": {
+        "target_count": 2,
+        "spacing": 126,
+        "lateral_span": 30,
+        "vertical_span": 22,
+        "flight_speed": 1.55,
+        "turn_step": 0.34,
+        "contact_radius": 19,
+        "scenery_count": 8,
+        "shared_physics": {
+          "tick_ms": 40,
+          "max_yaw": 1.06,
+          "max_pitch": 0.68,
+          "world_x": 265,
+          "world_y": 188,
+          "world_z": "last_target_z + 130.0"
+        }
+      },
+      "visible_problem": "Two widely separated seals, slow flight, responsive turning, a broad contact radius, and eight non-colliding scenery objects make this the lowest Cloudpost control problem. It is comparable to the approved L1 mine in objective scale and below the L3 tilt-board burden, while still requiring a small amount of live 3D observation. The visible trim console changes persistent yaw by +/-0.12 or pitch by +/-0.10, or sets LEVEL; corrections are coarse and must be watched in later frames.",
+      "success_condition": "The plane must contact all 2 seals in 3D within radius 19 while staying inside the x/y/z corridor; completion auto-submits and corridor exit fails.",
+      "suspected_level": 1,
+      "rationale": "Two widely separated seals, slow flight, responsive turning, a broad contact radius, and eight non-colliding scenery objects make this the lowest Cloudpost control problem. It is comparable to the approved L1 mine in objective scale and below the L3 tilt-board burden, while still requiring a small amount of live 3D observation. The level assignment is provisional and based on the actual generated world and control rule, not the profile label alone.",
+      "evidence": [
+        {
+          "path": "weird_captcha_gym/environments/cloudpost_circuit_env/controls.json",
+          "start_line": 6,
+          "end_line": 6,
+          "explanation": "The d1 profile activates the listed target, route, speed, response, radius, and scenery values."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/cloudpost_circuit.py",
+          "start_line": 122,
+          "end_line": 172,
+          "explanation": "These values feed generated targets, scenery, and the active flight physics contract."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/cloudpost_circuit.js",
+          "start_line": 127,
+          "end_line": 159,
+          "explanation": "The common physics loop applies heading interpolation, forward motion, world-space contact, and corridor failure."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/cloudpost_circuit.js",
+          "start_line": 313,
+          "end_line": 321,
+          "explanation": "The selected simplified UI binds only the fixed trim actions."
+        }
+      ]
+    },
+    {
+      "difficulty": 1,
+      "interaction": "full",
+      "active_parameters": {
+        "target_count": 2,
+        "spacing": 126,
+        "lateral_span": 30,
+        "vertical_span": 22,
+        "flight_speed": 1.55,
+        "turn_step": 0.34,
+        "contact_radius": 19,
+        "scenery_count": 8,
+        "shared_physics": {
+          "tick_ms": 40,
+          "max_yaw": 1.06,
+          "max_pitch": 0.68,
+          "world_x": 265,
+          "world_y": 188,
+          "world_z": "last_target_z + 130.0"
+        }
+      },
+      "visible_problem": "Two widely separated seals, slow flight, responsive turning, a broad contact radius, and eight non-colliding scenery objects make this the lowest Cloudpost control problem. It is comparable to the approved L1 mine in objective scale and below the L3 tilt-board burden, while still requiring a small amount of live 3D observation. The full canvas maps pointer position to a continuous normalized yaw/pitch vector; the last vector persists until corrected.",
+      "success_condition": "The plane must contact all 2 seals in 3D within radius 19 while staying inside the x/y/z corridor; completion auto-submits and corridor exit fails.",
+      "suspected_level": 1,
+      "rationale": "Two widely separated seals, slow flight, responsive turning, a broad contact radius, and eight non-colliding scenery objects make this the lowest Cloudpost control problem. It is comparable to the approved L1 mine in objective scale and below the L3 tilt-board burden, while still requiring a small amount of live 3D observation. The level assignment is provisional and based on the actual generated world and control rule, not the profile label alone.",
+      "evidence": [
+        {
+          "path": "weird_captcha_gym/environments/cloudpost_circuit_env/controls.json",
+          "start_line": 6,
+          "end_line": 6,
+          "explanation": "The d1 profile activates the listed target, route, speed, response, radius, and scenery values."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/cloudpost_circuit.py",
+          "start_line": 122,
+          "end_line": 172,
+          "explanation": "These values feed generated targets, scenery, and the active flight physics contract."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/cloudpost_circuit.js",
+          "start_line": 127,
+          "end_line": 159,
+          "explanation": "The common physics loop applies heading interpolation, forward motion, world-space contact, and corridor failure."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/cloudpost_circuit.js",
+          "start_line": 97,
+          "end_line": 114,
+          "explanation": "The selected full UI maps pointer position to a continuous normalized vector."
+        }
+      ]
+    },
+    {
+      "difficulty": 2,
+      "interaction": "simplified",
+      "active_parameters": {
+        "target_count": 3,
+        "spacing": 112,
+        "lateral_span": 46,
+        "vertical_span": 34,
+        "flight_speed": 1.78,
+        "turn_step": 0.3,
+        "contact_radius": 16,
+        "scenery_count": 12,
+        "shared_physics": {
+          "tick_ms": 40,
+          "max_yaw": 1.06,
+          "max_pitch": 0.68,
+          "world_x": 265,
+          "world_y": 188,
+          "world_z": "last_target_z + 130.0"
+        }
+      },
+      "visible_problem": "This is above d1 because route span, speed, response, contact radius, and visual clutter all tighten together; the extra seal is not credited alone. It remains below the L3 tilt board's walls, wells, momentum, and recovery burden, while ongoing 3D search keeps it above a static task. The visible trim console changes persistent yaw by +/-0.12 or pitch by +/-0.10, or sets LEVEL; corrections are coarse and must be watched in later frames.",
+      "success_condition": "The plane must contact all 3 seals in 3D within radius 16 while staying inside the x/y/z corridor; completion auto-submits and corridor exit fails.",
+      "suspected_level": 2,
+      "rationale": "This is above d1 because route span, speed, response, contact radius, and visual clutter all tighten together; the extra seal is not credited alone. It remains below the L3 tilt board's walls, wells, momentum, and recovery burden, while ongoing 3D search keeps it above a static task. The level assignment is provisional and based on the actual generated world and control rule, not the profile label alone.",
+      "evidence": [
+        {
+          "path": "weird_captcha_gym/environments/cloudpost_circuit_env/controls.json",
+          "start_line": 7,
+          "end_line": 7,
+          "explanation": "The d2 profile activates the listed target, route, speed, response, radius, and scenery values."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/cloudpost_circuit.py",
+          "start_line": 122,
+          "end_line": 172,
+          "explanation": "These values feed generated targets, scenery, and the active flight physics contract."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/cloudpost_circuit.js",
+          "start_line": 127,
+          "end_line": 159,
+          "explanation": "The common physics loop applies heading interpolation, forward motion, world-space contact, and corridor failure."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/cloudpost_circuit.js",
+          "start_line": 313,
+          "end_line": 321,
+          "explanation": "The selected simplified UI binds only the fixed trim actions."
+        }
+      ]
+    },
+    {
+      "difficulty": 2,
+      "interaction": "full",
+      "active_parameters": {
+        "target_count": 3,
+        "spacing": 112,
+        "lateral_span": 46,
+        "vertical_span": 34,
+        "flight_speed": 1.78,
+        "turn_step": 0.3,
+        "contact_radius": 16,
+        "scenery_count": 12,
+        "shared_physics": {
+          "tick_ms": 40,
+          "max_yaw": 1.06,
+          "max_pitch": 0.68,
+          "world_x": 265,
+          "world_y": 188,
+          "world_z": "last_target_z + 130.0"
+        }
+      },
+      "visible_problem": "This is above d1 because route span, speed, response, contact radius, and visual clutter all tighten together; the extra seal is not credited alone. It remains below the L3 tilt board's walls, wells, momentum, and recovery burden, while ongoing 3D search keeps it above a static task. The full canvas maps pointer position to a continuous normalized yaw/pitch vector; the last vector persists until corrected.",
+      "success_condition": "The plane must contact all 3 seals in 3D within radius 16 while staying inside the x/y/z corridor; completion auto-submits and corridor exit fails.",
+      "suspected_level": 2,
+      "rationale": "This is above d1 because route span, speed, response, contact radius, and visual clutter all tighten together; the extra seal is not credited alone. It remains below the L3 tilt board's walls, wells, momentum, and recovery burden, while ongoing 3D search keeps it above a static task. The level assignment is provisional and based on the actual generated world and control rule, not the profile label alone.",
+      "evidence": [
+        {
+          "path": "weird_captcha_gym/environments/cloudpost_circuit_env/controls.json",
+          "start_line": 7,
+          "end_line": 7,
+          "explanation": "The d2 profile activates the listed target, route, speed, response, radius, and scenery values."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/cloudpost_circuit.py",
+          "start_line": 122,
+          "end_line": 172,
+          "explanation": "These values feed generated targets, scenery, and the active flight physics contract."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/cloudpost_circuit.js",
+          "start_line": 127,
+          "end_line": 159,
+          "explanation": "The common physics loop applies heading interpolation, forward motion, world-space contact, and corridor failure."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/cloudpost_circuit.js",
+          "start_line": 97,
+          "end_line": 114,
+          "explanation": "The selected full UI maps pointer position to a continuous normalized vector."
+        }
+      ]
+    },
+    {
+      "difficulty": 3,
+      "interaction": "simplified",
+      "active_parameters": {
+        "target_count": 4,
+        "spacing": 101,
+        "lateral_span": 63,
+        "vertical_span": 47,
+        "flight_speed": 2.05,
+        "turn_step": 0.27,
+        "contact_radius": 14,
+        "scenery_count": 17,
+        "shared_physics": {
+          "tick_ms": 40,
+          "max_yaw": 1.06,
+          "max_pitch": 0.68,
+          "world_x": 265,
+          "world_y": 188,
+          "world_z": "last_target_z + 130.0"
+        }
+      },
+      "visible_problem": "This reaches a moderate-control band comparable to Gyroscopic Tilt Board L3: several milestones and ongoing feedback matter, not just repeated clicks. Cloudpost adds perspective/depth and two angular axes but has no walls, wells, or momentum, so L3 is more defensible than an automatic L4 claim. The visible trim console changes persistent yaw by +/-0.12 or pitch by +/-0.10, or sets LEVEL; corrections are coarse and must be watched in later frames.",
+      "success_condition": "The plane must contact all 4 seals in 3D within radius 14 while staying inside the x/y/z corridor; completion auto-submits and corridor exit fails.",
+      "suspected_level": 3,
+      "rationale": "This reaches a moderate-control band comparable to Gyroscopic Tilt Board L3: several milestones and ongoing feedback matter, not just repeated clicks. Cloudpost adds perspective/depth and two angular axes but has no walls, wells, or momentum, so L3 is more defensible than an automatic L4 claim. The level assignment is provisional and based on the actual generated world and control rule, not the profile label alone.",
+      "evidence": [
+        {
+          "path": "weird_captcha_gym/environments/cloudpost_circuit_env/controls.json",
+          "start_line": 8,
+          "end_line": 8,
+          "explanation": "The d3 profile activates the listed target, route, speed, response, radius, and scenery values."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/cloudpost_circuit.py",
+          "start_line": 122,
+          "end_line": 172,
+          "explanation": "These values feed generated targets, scenery, and the active flight physics contract."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/cloudpost_circuit.js",
+          "start_line": 127,
+          "end_line": 159,
+          "explanation": "The common physics loop applies heading interpolation, forward motion, world-space contact, and corridor failure."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/cloudpost_circuit.js",
+          "start_line": 313,
+          "end_line": 321,
+          "explanation": "The selected simplified UI binds only the fixed trim actions."
+        }
+      ]
+    },
+    {
+      "difficulty": 3,
+      "interaction": "full",
+      "active_parameters": {
+        "target_count": 4,
+        "spacing": 101,
+        "lateral_span": 63,
+        "vertical_span": 47,
+        "flight_speed": 2.05,
+        "turn_step": 0.27,
+        "contact_radius": 14,
+        "scenery_count": 17,
+        "shared_physics": {
+          "tick_ms": 40,
+          "max_yaw": 1.06,
+          "max_pitch": 0.68,
+          "world_x": 265,
+          "world_y": 188,
+          "world_z": "last_target_z + 130.0"
+        }
+      },
+      "visible_problem": "This reaches a moderate-control band comparable to Gyroscopic Tilt Board L3: several milestones and ongoing feedback matter, not just repeated clicks. Cloudpost adds perspective/depth and two angular axes but has no walls, wells, or momentum, so L3 is more defensible than an automatic L4 claim. The full canvas maps pointer position to a continuous normalized yaw/pitch vector; the last vector persists until corrected.",
+      "success_condition": "The plane must contact all 4 seals in 3D within radius 14 while staying inside the x/y/z corridor; completion auto-submits and corridor exit fails.",
+      "suspected_level": 3,
+      "rationale": "This reaches a moderate-control band comparable to Gyroscopic Tilt Board L3: several milestones and ongoing feedback matter, not just repeated clicks. Cloudpost adds perspective/depth and two angular axes but has no walls, wells, or momentum, so L3 is more defensible than an automatic L4 claim. The level assignment is provisional and based on the actual generated world and control rule, not the profile label alone.",
+      "evidence": [
+        {
+          "path": "weird_captcha_gym/environments/cloudpost_circuit_env/controls.json",
+          "start_line": 8,
+          "end_line": 8,
+          "explanation": "The d3 profile activates the listed target, route, speed, response, radius, and scenery values."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/cloudpost_circuit.py",
+          "start_line": 122,
+          "end_line": 172,
+          "explanation": "These values feed generated targets, scenery, and the active flight physics contract."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/cloudpost_circuit.js",
+          "start_line": 127,
+          "end_line": 159,
+          "explanation": "The common physics loop applies heading interpolation, forward motion, world-space contact, and corridor failure."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/cloudpost_circuit.js",
+          "start_line": 97,
+          "end_line": 114,
+          "explanation": "The selected full UI maps pointer position to a continuous normalized vector."
+        }
+      ]
+    },
+    {
+      "difficulty": 4,
+      "interaction": "simplified",
+      "active_parameters": {
+        "target_count": 5,
+        "spacing": 92,
+        "lateral_span": 78,
+        "vertical_span": 59,
+        "flight_speed": 2.3,
+        "turn_step": 0.24,
+        "contact_radius": 12,
+        "scenery_count": 22,
+        "shared_physics": {
+          "tick_ms": 40,
+          "max_yaw": 1.06,
+          "max_pitch": 0.68,
+          "world_x": 265,
+          "world_y": 188,
+          "world_z": "last_target_z + 130.0"
+        }
+      },
+      "visible_problem": "This is the strongest source-supported L4 case: five changing-view contacts, sustained movement, 3D perspective search, and moderate precision. It is above the L3 tilt board in perspective/control, comparable in overall burden to an L4 discrete-memory task, and less state-dependent than Exact-Change Candy Cascade L5. The visible trim console changes persistent yaw by +/-0.12 or pitch by +/-0.10, or sets LEVEL; corrections are coarse and must be watched in later frames.",
+      "success_condition": "The plane must contact all 5 seals in 3D within radius 12 while staying inside the x/y/z corridor; completion auto-submits and corridor exit fails.",
+      "suspected_level": 4,
+      "rationale": "This is the strongest source-supported L4 case: five changing-view contacts, sustained movement, 3D perspective search, and moderate precision. It is above the L3 tilt board in perspective/control, comparable in overall burden to an L4 discrete-memory task, and less state-dependent than Exact-Change Candy Cascade L5. The level assignment is provisional and based on the actual generated world and control rule, not the profile label alone.",
+      "evidence": [
+        {
+          "path": "weird_captcha_gym/environments/cloudpost_circuit_env/controls.json",
+          "start_line": 9,
+          "end_line": 9,
+          "explanation": "The d4 profile activates the listed target, route, speed, response, radius, and scenery values."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/cloudpost_circuit.py",
+          "start_line": 122,
+          "end_line": 172,
+          "explanation": "These values feed generated targets, scenery, and the active flight physics contract."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/cloudpost_circuit.js",
+          "start_line": 127,
+          "end_line": 159,
+          "explanation": "The common physics loop applies heading interpolation, forward motion, world-space contact, and corridor failure."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/cloudpost_circuit.js",
+          "start_line": 313,
+          "end_line": 321,
+          "explanation": "The selected simplified UI binds only the fixed trim actions."
+        }
+      ]
+    },
+    {
+      "difficulty": 4,
+      "interaction": "full",
+      "active_parameters": {
+        "target_count": 5,
+        "spacing": 92,
+        "lateral_span": 78,
+        "vertical_span": 59,
+        "flight_speed": 2.3,
+        "turn_step": 0.24,
+        "contact_radius": 12,
+        "scenery_count": 22,
+        "shared_physics": {
+          "tick_ms": 40,
+          "max_yaw": 1.06,
+          "max_pitch": 0.68,
+          "world_x": 265,
+          "world_y": 188,
+          "world_z": "last_target_z + 130.0"
+        }
+      },
+      "visible_problem": "This is the strongest source-supported L4 case: five changing-view contacts, sustained movement, 3D perspective search, and moderate precision. It is above the L3 tilt board in perspective/control, comparable in overall burden to an L4 discrete-memory task, and less state-dependent than Exact-Change Candy Cascade L5. The full canvas maps pointer position to a continuous normalized yaw/pitch vector; the last vector persists until corrected.",
+      "success_condition": "The plane must contact all 5 seals in 3D within radius 12 while staying inside the x/y/z corridor; completion auto-submits and corridor exit fails.",
+      "suspected_level": 4,
+      "rationale": "This is the strongest source-supported L4 case: five changing-view contacts, sustained movement, 3D perspective search, and moderate precision. It is above the L3 tilt board in perspective/control, comparable in overall burden to an L4 discrete-memory task, and less state-dependent than Exact-Change Candy Cascade L5. The level assignment is provisional and based on the actual generated world and control rule, not the profile label alone.",
+      "evidence": [
+        {
+          "path": "weird_captcha_gym/environments/cloudpost_circuit_env/controls.json",
+          "start_line": 9,
+          "end_line": 9,
+          "explanation": "The d4 profile activates the listed target, route, speed, response, radius, and scenery values."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/cloudpost_circuit.py",
+          "start_line": 122,
+          "end_line": 172,
+          "explanation": "These values feed generated targets, scenery, and the active flight physics contract."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/cloudpost_circuit.js",
+          "start_line": 127,
+          "end_line": 159,
+          "explanation": "The common physics loop applies heading interpolation, forward motion, world-space contact, and corridor failure."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/cloudpost_circuit.js",
+          "start_line": 97,
+          "end_line": 114,
+          "explanation": "The selected full UI maps pointer position to a continuous normalized vector."
+        }
+      ]
+    },
+    {
+      "difficulty": 5,
+      "interaction": "simplified",
+      "active_parameters": {
+        "target_count": 7,
+        "spacing": 80,
+        "lateral_span": 96,
+        "vertical_span": 72,
+        "flight_speed": 2.65,
+        "turn_step": 0.21,
+        "contact_radius": 10,
+        "scenery_count": 30,
+        "shared_physics": {
+          "tick_ms": 40,
+          "max_yaw": 1.06,
+          "max_pitch": 0.68,
+          "world_x": 265,
+          "world_y": 188,
+          "world_z": "last_target_z + 130.0"
+        }
+      },
+      "visible_problem": "This is a plausible L5 control profile: shorter correction intervals, faster advance, slower response, narrower contact, wider route, and more clutter create a tight sustained-control problem. It is less planning-dependent than the approved L5 candy task, but L5 is not reserved for that one planning pattern. The visible trim console changes persistent yaw by +/-0.12 or pitch by +/-0.10, or sets LEVEL; corrections are coarse and must be watched in later frames.",
+      "success_condition": "The plane must contact all 7 seals in 3D within radius 10 while staying inside the x/y/z corridor; completion auto-submits and corridor exit fails.",
+      "suspected_level": 5,
+      "rationale": "This is a plausible L5 control profile: shorter correction intervals, faster advance, slower response, narrower contact, wider route, and more clutter create a tight sustained-control problem. It is less planning-dependent than the approved L5 candy task, but L5 is not reserved for that one planning pattern. The level assignment is provisional and based on the actual generated world and control rule, not the profile label alone.",
+      "evidence": [
+        {
+          "path": "weird_captcha_gym/environments/cloudpost_circuit_env/controls.json",
+          "start_line": 10,
+          "end_line": 10,
+          "explanation": "The d5 profile activates the listed target, route, speed, response, radius, and scenery values."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/cloudpost_circuit.py",
+          "start_line": 122,
+          "end_line": 172,
+          "explanation": "These values feed generated targets, scenery, and the active flight physics contract."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/cloudpost_circuit.js",
+          "start_line": 127,
+          "end_line": 159,
+          "explanation": "The common physics loop applies heading interpolation, forward motion, world-space contact, and corridor failure."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/cloudpost_circuit.js",
+          "start_line": 313,
+          "end_line": 321,
+          "explanation": "The selected simplified UI binds only the fixed trim actions."
+        }
+      ]
+    },
+    {
+      "difficulty": 5,
+      "interaction": "full",
+      "active_parameters": {
+        "target_count": 7,
+        "spacing": 80,
+        "lateral_span": 96,
+        "vertical_span": 72,
+        "flight_speed": 2.65,
+        "turn_step": 0.21,
+        "contact_radius": 10,
+        "scenery_count": 30,
+        "shared_physics": {
+          "tick_ms": 40,
+          "max_yaw": 1.06,
+          "max_pitch": 0.68,
+          "world_x": 265,
+          "world_y": 188,
+          "world_z": "last_target_z + 130.0"
+        }
+      },
+      "visible_problem": "This is a plausible L5 control profile: shorter correction intervals, faster advance, slower response, narrower contact, wider route, and more clutter create a tight sustained-control problem. It is less planning-dependent than the approved L5 candy task, but L5 is not reserved for that one planning pattern. The full canvas maps pointer position to a continuous normalized yaw/pitch vector; the last vector persists until corrected.",
+      "success_condition": "The plane must contact all 7 seals in 3D within radius 10 while staying inside the x/y/z corridor; completion auto-submits and corridor exit fails.",
+      "suspected_level": 5,
+      "rationale": "This is a plausible L5 control profile: shorter correction intervals, faster advance, slower response, narrower contact, wider route, and more clutter create a tight sustained-control problem. It is less planning-dependent than the approved L5 candy task, but L5 is not reserved for that one planning pattern. The level assignment is provisional and based on the actual generated world and control rule, not the profile label alone.",
+      "evidence": [
+        {
+          "path": "weird_captcha_gym/environments/cloudpost_circuit_env/controls.json",
+          "start_line": 10,
+          "end_line": 10,
+          "explanation": "The d5 profile activates the listed target, route, speed, response, radius, and scenery values."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/cloudpost_circuit.py",
+          "start_line": 122,
+          "end_line": 172,
+          "explanation": "These values feed generated targets, scenery, and the active flight physics contract."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/cloudpost_circuit.js",
+          "start_line": 127,
+          "end_line": 159,
+          "explanation": "The common physics loop applies heading interpolation, forward motion, world-space contact, and corridor failure."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/cloudpost_circuit.js",
+          "start_line": 97,
+          "end_line": 114,
+          "explanation": "The selected full UI maps pointer position to a continuous normalized vector."
+        }
+      ]
+    }
+  ],
+  "adjacent_pairs": [
+    {
+      "from_difficulty": 1,
+      "to_difficulty": 2,
+      "simplified_change": "The same trim surface now controls 3 rather than 2 targets; spacing 126->112, spans 30/22->46/34, speed 1.55->1.78, turn step .34->.30, radius 19->16, and scenery 8->12.",
+      "full_change": "The same continuous pointer surface receives the identical d1-to-d2 world and physics changes: one additional target, shorter spacing, broader route, faster motion, slower response, smaller contact, and more clutter.",
+      "ordering_assessment": "Distinguished for both modes. The extra target is paired with shorter correction intervals, broader heading changes, faster motion, reduced response/tolerance, and more clutter; realized-seed feasibility remains unmeasured.",
+      "evidence": [
+        {
+          "path": "weird_captcha_gym/environments/cloudpost_circuit_env/controls.json",
+          "start_line": 6,
+          "end_line": 7,
+          "explanation": "The d1 and d2 records show every active parameter change."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/cloudpost_circuit.py",
+          "start_line": 104,
+          "end_line": 172,
+          "explanation": "Spacing, spans, scenery, speed, turn response, and radius directly affect generated geometry and physics."
+        }
+      ],
+      "distinguished": true
+    },
+    {
+      "from_difficulty": 2,
+      "to_difficulty": 3,
+      "simplified_change": "The trim route increases from 3 to 4 targets; spacing 112->101, spans 46/34->63/47, speed 1.78->2.05, turn step .30->.27, radius 16->14, and scenery 12->17.",
+      "full_change": "The continuous-pointer route receives the same d2-to-d3 geometry, timing, response, contact, and scenery changes without changing its input surface.",
+      "ordering_assessment": "Distinguished for both modes. The profile moves from modest to moderate 3D correction through route extent, speed, response, tolerance, and a fourth milestone, not a fourth repetition alone.",
+      "evidence": [
+        {
+          "path": "weird_captcha_gym/environments/cloudpost_circuit_env/controls.json",
+          "start_line": 7,
+          "end_line": 8,
+          "explanation": "The d2-to-d3 parameter changes are explicit."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/cloudpost_circuit.js",
+          "start_line": 127,
+          "end_line": 159,
+          "explanation": "Speed, turn response, radius, and corridor behavior are active in the shared step function."
+        }
+      ],
+      "distinguished": true
+    },
+    {
+      "from_difficulty": 3,
+      "to_difficulty": 4,
+      "simplified_change": "The trim route increases from 4 to 5 targets; spacing 101->92, spans 63/47->78/59, speed 2.05->2.30, turn step .27->.24, radius 14->12, and scenery 17->22.",
+      "full_change": "The continuous-pointer route receives the same d3-to-d4 changes: another milestone, larger 3D heading envelope, less distance between seals, faster travel, slower response, narrower contact, and more clutter.",
+      "ordering_assessment": "Distinguished for both modes. The combined changes move beyond the moderate-control case into sustained L4 precision across five frustum-limited contacts.",
+      "evidence": [
+        {
+          "path": "weird_captcha_gym/environments/cloudpost_circuit_env/controls.json",
+          "start_line": 8,
+          "end_line": 9,
+          "explanation": "The d3-to-d4 changes affect count, route spread, spacing, speed, response, radius, and scenery."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/cloudpost_circuit.js",
+          "start_line": 186,
+          "end_line": 255,
+          "explanation": "Frustum-limited target visibility and the continuously advancing loop make those changes active control demands."
+        }
+      ],
+      "distinguished": true
+    },
+    {
+      "from_difficulty": 4,
+      "to_difficulty": 5,
+      "simplified_change": "The trim route jumps from 5 to 7 targets; spacing 92->80, spans 78/59->96/72, speed 2.30->2.65, turn step .24->.21, radius 12->10, and scenery 22->30.",
+      "full_change": "The continuous-pointer route receives the same d4-to-d5 changes, tightening response and contact while adding two milestones and a wider/taller, shorter-spaced route.",
+      "ordering_assessment": "Distinguished for both modes. This is not credited as two repetitions alone: speed, spacing, response, radius, route spread, and clutter jointly narrow the steering window. D5 is plausible L5 control, though its future-state planning is shallower than the approved L5 candy task.",
+      "evidence": [
+        {
+          "path": "weird_captcha_gym/environments/cloudpost_circuit_env/controls.json",
+          "start_line": 9,
+          "end_line": 10,
+          "explanation": "The d4-to-d5 values show the combined tightening of route, speed, response, contact, and clutter."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/cloudpost_circuit.py",
+          "start_line": 131,
+          "end_line": 172,
+          "explanation": "The increased target count and changed values feed the actual target list and physics contract."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/cloudpost_circuit.py",
+          "start_line": 121,
+          "end_line": 145,
+          "explanation": "Every added target creates another required world-space replay contact."
+        }
+      ],
+      "distinguished": true
+    }
+  ],
+  "baseline_preservation": {
+    "current_default_equivalence": {
+      "status": "supported",
+      "explanation": "For an unconditioned task, _profile returns PROFILES[4]. A controlled d4 task merges the same d4 values, and the condition does not change the RNG seed or target-generation sequence. The source test asserts equal targets and physics at a fixed seed; task/challenge identity and condition metadata intentionally differ."
+    },
+    "historical_preservation": {
+      "status": "not_evidenced",
+      "explanation": "The supplied source contains the current unconditioned and controlled implementations but no actual pre-controls generator, runtime, or grader artifact."
+    },
+    "evidence": [
+      {
+        "path": "weird_captcha_gym/shared_scripts/incubator_generators/cloudpost_circuit.py",
+        "start_line": 73,
+        "end_line": 93,
+        "explanation": "The no-condition default is exactly PROFILES[4], while controlled conditions select a profile and merge its parameters."
+      },
+      {
+        "path": "weird_captcha_gym/shared_scripts/incubator_generators/cloudpost_circuit.py",
+        "start_line": 122,
+        "end_line": 172,
+        "explanation": "Targets, scenery, and physics are generated from selected values; interaction does not alter world-generation inputs."
+      },
+      {
+        "path": "tests/test_cloudpost_circuit.py",
+        "start_line": 137,
+        "end_line": 146,
+        "explanation": "The source test specifies a fixed-seed comparison asserting baseline and explicit d4/full targets and physics match; this audit did not execute it."
+      },
+      {
+        "path": "weird_captcha_gym/tools/materialize_controlled_tasks.py",
+        "start_line": 127,
+        "end_line": 136,
+        "explanation": "Controlled materialization copies the base task and adds condition metadata and parameters."
+      }
+    ],
+    "missing_evidence": "A frozen pre-controls source or artifact, plus parent-performed multi-seed/runtime checks, would be needed to establish historical preservation and realized-seed equivalence beyond this source/test contract."
+  },
+  "interaction_equivalence": [
+    {
+      "difficulty": 1,
+      "world": "Preserved in source: interaction is not an input to seeded target, scenery, or physics generation.",
+      "information": "Task-world information is preserved: the same targets, scenery, counter, HUD, frustum visibility, and world-contact warning are used; the full crosshair and simplified trim affordance differ as controls.",
+      "goal": "Preserved: contact every generated d1 seal and stay in the corridor.",
+      "action_effects": "Qualified: full pointer commands are continuous, while simplified buttons emit fixed yaw/pitch increments and LEVEL.",
+      "physics": "Preserved: the same 40-ms step, heading interpolation, forward motion, corridor, and contact test run in both modes.",
+      "timing": "Preserved: both modes feed the same next physics tick and automatic terminal submission.",
+      "tolerances": "Preserved: the same profile contact radius and replay tolerances are used.",
+      "success": "Preserved: all seal contacts are required and the same terminal ledger is graded.",
+      "input_binding": "Browser and grader bind the mode: simplified buttons record trim_button and full pointer events record pointer_steer; the opposite source is rejected, but simplified numeric reachability is not checked.",
+      "status": "qualified",
+      "evidence": [
+        {
+          "path": "weird_captcha_gym/environments/cloudpost_circuit_env/controls.json",
+          "start_line": 6,
+          "end_line": 6,
+          "explanation": "The d1 world parameters are independent of interaction."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/cloudpost_circuit.js",
+          "start_line": 89,
+          "end_line": 114,
+          "explanation": "The handlers share a persistent control concept but use different command domains."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/cloudpost_circuit.js",
+          "start_line": 127,
+          "end_line": 159,
+          "explanation": "The physics, contact, and corridor rules do not branch on interaction."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/cloudpost_circuit.py",
+          "start_line": 60,
+          "end_line": 99,
+          "explanation": "The grader binds the source name and clamps finite controls, but does not enforce the simplified lattice."
+        }
+      ]
+    },
+    {
+      "difficulty": 2,
+      "world": "Preserved in source: interaction is not an input to seeded target, scenery, or physics generation.",
+      "information": "Task-world information is preserved: the same targets, scenery, counter, HUD, frustum visibility, and world-contact warning are used; the full crosshair and simplified trim affordance differ as controls.",
+      "goal": "Preserved: contact every generated d2 seal and stay in the corridor.",
+      "action_effects": "Qualified: full pointer commands are continuous, while simplified buttons emit fixed yaw/pitch increments and LEVEL.",
+      "physics": "Preserved: the same 40-ms step, heading interpolation, forward motion, corridor, and contact test run in both modes.",
+      "timing": "Preserved: both modes feed the same next physics tick and automatic terminal submission.",
+      "tolerances": "Preserved: the same profile contact radius and replay tolerances are used.",
+      "success": "Preserved: all seal contacts are required and the same terminal ledger is graded.",
+      "input_binding": "Browser and grader bind the mode: simplified buttons record trim_button and full pointer events record pointer_steer; the opposite source is rejected, but simplified numeric reachability is not checked.",
+      "status": "qualified",
+      "evidence": [
+        {
+          "path": "weird_captcha_gym/environments/cloudpost_circuit_env/controls.json",
+          "start_line": 7,
+          "end_line": 7,
+          "explanation": "The d2 world parameters are independent of interaction."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/cloudpost_circuit.js",
+          "start_line": 89,
+          "end_line": 114,
+          "explanation": "The handlers share a persistent control concept but use different command domains."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/cloudpost_circuit.js",
+          "start_line": 127,
+          "end_line": 159,
+          "explanation": "The physics, contact, and corridor rules do not branch on interaction."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/cloudpost_circuit.py",
+          "start_line": 60,
+          "end_line": 99,
+          "explanation": "The grader binds the source name and clamps finite controls, but does not enforce the simplified lattice."
+        }
+      ]
+    },
+    {
+      "difficulty": 3,
+      "world": "Preserved in source: interaction is not an input to seeded target, scenery, or physics generation.",
+      "information": "Task-world information is preserved: the same targets, scenery, counter, HUD, frustum visibility, and world-contact warning are used; the full crosshair and simplified trim affordance differ as controls.",
+      "goal": "Preserved: contact every generated d3 seal and stay in the corridor.",
+      "action_effects": "Qualified: full pointer commands are continuous, while simplified buttons emit fixed yaw/pitch increments and LEVEL.",
+      "physics": "Preserved: the same 40-ms step, heading interpolation, forward motion, corridor, and contact test run in both modes.",
+      "timing": "Preserved: both modes feed the same next physics tick and automatic terminal submission.",
+      "tolerances": "Preserved: the same profile contact radius and replay tolerances are used.",
+      "success": "Preserved: all seal contacts are required and the same terminal ledger is graded.",
+      "input_binding": "Browser and grader bind the mode: simplified buttons record trim_button and full pointer events record pointer_steer; the opposite source is rejected, but simplified numeric reachability is not checked.",
+      "status": "qualified",
+      "evidence": [
+        {
+          "path": "weird_captcha_gym/environments/cloudpost_circuit_env/controls.json",
+          "start_line": 8,
+          "end_line": 8,
+          "explanation": "The d3 world parameters are independent of interaction."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/cloudpost_circuit.js",
+          "start_line": 89,
+          "end_line": 114,
+          "explanation": "The handlers share a persistent control concept but use different command domains."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/cloudpost_circuit.js",
+          "start_line": 127,
+          "end_line": 159,
+          "explanation": "The physics, contact, and corridor rules do not branch on interaction."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/cloudpost_circuit.py",
+          "start_line": 60,
+          "end_line": 99,
+          "explanation": "The grader binds the source name and clamps finite controls, but does not enforce the simplified lattice."
+        }
+      ]
+    },
+    {
+      "difficulty": 4,
+      "world": "Preserved in source: interaction is not an input to seeded target, scenery, or physics generation.",
+      "information": "Task-world information is preserved: the same targets, scenery, counter, HUD, frustum visibility, and world-contact warning are used; the full crosshair and simplified trim affordance differ as controls.",
+      "goal": "Preserved: contact every generated d4 seal and stay in the corridor.",
+      "action_effects": "Qualified: full pointer commands are continuous, while simplified buttons emit fixed yaw/pitch increments and LEVEL.",
+      "physics": "Preserved: the same 40-ms step, heading interpolation, forward motion, corridor, and contact test run in both modes.",
+      "timing": "Preserved: both modes feed the same next physics tick and automatic terminal submission.",
+      "tolerances": "Preserved: the same profile contact radius and replay tolerances are used.",
+      "success": "Preserved: all seal contacts are required and the same terminal ledger is graded.",
+      "input_binding": "Browser and grader bind the mode: simplified buttons record trim_button and full pointer events record pointer_steer; the opposite source is rejected, but simplified numeric reachability is not checked.",
+      "status": "qualified",
+      "evidence": [
+        {
+          "path": "weird_captcha_gym/environments/cloudpost_circuit_env/controls.json",
+          "start_line": 9,
+          "end_line": 9,
+          "explanation": "The d4 world parameters are independent of interaction."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/cloudpost_circuit.js",
+          "start_line": 89,
+          "end_line": 114,
+          "explanation": "The handlers share a persistent control concept but use different command domains."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/cloudpost_circuit.js",
+          "start_line": 127,
+          "end_line": 159,
+          "explanation": "The physics, contact, and corridor rules do not branch on interaction."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/cloudpost_circuit.py",
+          "start_line": 60,
+          "end_line": 99,
+          "explanation": "The grader binds the source name and clamps finite controls, but does not enforce the simplified lattice."
+        }
+      ]
+    },
+    {
+      "difficulty": 5,
+      "world": "Preserved in source: interaction is not an input to seeded target, scenery, or physics generation.",
+      "information": "Task-world information is preserved: the same targets, scenery, counter, HUD, frustum visibility, and world-contact warning are used; the full crosshair and simplified trim affordance differ as controls.",
+      "goal": "Preserved: contact every generated d5 seal and stay in the corridor.",
+      "action_effects": "Qualified: full pointer commands are continuous, while simplified buttons emit fixed yaw/pitch increments and LEVEL.",
+      "physics": "Preserved: the same 40-ms step, heading interpolation, forward motion, corridor, and contact test run in both modes.",
+      "timing": "Preserved: both modes feed the same next physics tick and automatic terminal submission.",
+      "tolerances": "Preserved: the same profile contact radius and replay tolerances are used.",
+      "success": "Preserved: all seal contacts are required and the same terminal ledger is graded.",
+      "input_binding": "Browser and grader bind the mode: simplified buttons record trim_button and full pointer events record pointer_steer; the opposite source is rejected, but simplified numeric reachability is not checked.",
+      "status": "qualified",
+      "evidence": [
+        {
+          "path": "weird_captcha_gym/environments/cloudpost_circuit_env/controls.json",
+          "start_line": 10,
+          "end_line": 10,
+          "explanation": "The d5 world parameters are independent of interaction."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/cloudpost_circuit.js",
+          "start_line": 89,
+          "end_line": 114,
+          "explanation": "The handlers share a persistent control concept but use different command domains."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/cloudpost_circuit.js",
+          "start_line": 127,
+          "end_line": 159,
+          "explanation": "The physics, contact, and corridor rules do not branch on interaction."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/cloudpost_circuit.py",
+          "start_line": 60,
+          "end_line": 99,
+          "explanation": "The grader binds the source name and clamps finite controls, but does not enforce the simplified lattice."
+        }
+      ]
+    }
+  ],
+  "findings": [
+    {
+      "id": "CLOUDPOST-INT-001",
+      "affected_configurations": [
+        "difficulty 1 simplified",
+        "difficulty 2 simplified",
+        "difficulty 3 simplified",
+        "difficulty 4 simplified",
+        "difficulty 5 simplified",
+        "all simplified/full comparisons"
+      ],
+      "category": "interaction_equivalence_and_grading",
+      "severity": "medium",
+      "claim": "The simplified visible surface exposes only a coarse button-reachable control lattice, but the independent grader accepts arbitrary finite normalized vectors when a steer event is labeled trim_button.",
+      "causal_explanation": "The simplified handlers change yaw by fixed +/-0.12 increments, pitch by fixed +/-0.10 increments, or reset to zero; the full handler maps any pointer position to a continuous normalized pair. The grader checks the expected input_source and clamps the submitted pair to [-1, 1], but does not validate the simplified value set or transition sequence. A direct result payload with hidden implementation access could therefore label continuous controls as trim_button. The opposite full/simplified source transcript is rejected, and this does not prove that a policy-compliant screenshot-only agent can exploit it, but it weakens the selected-surface contract and leaves the material completion-rate effect uncertain.",
+      "evidence": [
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/cloudpost_circuit.js",
+          "start_line": 89,
+          "end_line": 95,
+          "explanation": "The simplified control function changes the persistent vector by fixed deltas and records trim_button."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/cloudpost_circuit.js",
+          "start_line": 313,
+          "end_line": 325,
+          "explanation": "The visible simplified UI binds fixed trim actions, while full interaction binds canvas pointermove."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/cloudpost_circuit.py",
+          "start_line": 60,
+          "end_line": 99,
+          "explanation": "The grader selects the expected source and clamps arbitrary submitted values without checking button-reachable values or transitions."
+        },
+        {
+          "path": "tests/test_cloudpost_circuit.py",
+          "start_line": 149,
+          "end_line": 166,
+          "explanation": "The source test covers opposite-source rejection but not the simplified numeric lattice; it was not run here."
+        }
+      ],
+      "runtime_check_needed": false,
+      "recommended_action": "If strict input-surface binding is required, enforce the simplified handler's reachable values and transitions in the independent grader. A separate permitted multi-seed/runtime check should measure whether coarse control materially changes route feasibility before changing difficulty labels."
+    }
+  ],
+  "verdict": "keep",
+  "concise_summary": "Keep Cloudpost Circuit at the provisional L4/full baseline. Its active d1-d5 profiles form an ordered 3D control ladder; d4 is above the approved L3 Gyroscopic Tilt Board in perspective and sustained flight control but below the approved L5 Exact-Change Candy Cascade in changing-state planning. The simplified interaction has a source-proven grader/input-domain qualification.",
+  "limitations": "This was source-only analysis. No generator, browser, grader, exported verifier, human, or computer-use-agent run was performed. Multi-seed route reachability, completion/timing distributions, and the effect of simplified command quantization remain uncalibrated. No historical pre-controls implementation was supplied.",
+  "runtime_checks_performed": []
+}

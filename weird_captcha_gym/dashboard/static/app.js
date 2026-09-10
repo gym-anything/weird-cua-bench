@@ -555,7 +555,7 @@ function capabilityFilterMarkup() {
   return `<section class="capability-filter-console" aria-labelledby="capability-filter-title">
     <header class="capability-filter-console-head">
       <div><p class="eyebrow">Benchmark framework</p><h2 id="capability-filter-title">Filter by capability</h2></div>
-      <span>Selections combine</span>
+      <span>Baseline configurations · selections combine</span>
     </header>
     <div class="capability-filter-groups">
       <fieldset>
@@ -880,8 +880,19 @@ function capabilityValue(value) {
 }
 
 function capabilityAssessmentMarkup(environment) {
-  const annotation = environment.capability_annotation;
-  if (!annotation) return "";
+  const baselineAnnotation = environment.capability_annotation;
+  if (!baselineAnnotation) return "";
+  const audit = environment.capability_profile_annotations;
+  const selectedDifficulty = selectedDifficultyProfile(environment);
+  const selectedInteraction = selectedInteractionMode(environment);
+  const selectedLabels = audit?.configurations?.[selectedInteraction]?.[String(selectedDifficulty?.level)];
+  const annotation = {...baselineAnnotation, ...selectedLabels};
+  const capabilityScope = selectedLabels
+    ? `Selected L${selectedDifficulty.level} · ${titleCase(selectedInteraction)} · source review`
+    : "Core capabilities";
+  const knobScope = audit
+    ? `Baseline knobs · L${audit.baseline.difficulty} · ${titleCase(audit.baseline.interaction)}`
+    : "Controllable knobs";
   return `<section class="capability-assessment" aria-labelledby="capability-assessment-title">
     <header class="capability-assessment-head">
       <div><p class="eyebrow">Benchmark framework</p><h2 id="capability-assessment-title">What this environment measures</h2></div>
@@ -889,15 +900,15 @@ function capabilityAssessmentMarkup(environment) {
     </header>
     <div class="capability-groups">
       <section class="capability-group">
-        <header><small>Controllable knobs</small><b>3</b></header>
+        <header><small>${escapeHtml(knobScope)}</small><b>3</b></header>
         <dl class="capability-list capability-knob-list">
-          <div><dt>Real time</dt><dd class="capability-value">${escapeHtml(capabilityValue(annotation.real_time))}</dd></div>
+          <div><dt>Real time</dt><dd class="capability-value">${escapeHtml(audit && annotation.real_time == null ? "Not reviewed" : capabilityValue(annotation.real_time))}</dd></div>
           <div><dt>Interaction</dt><dd>${escapeHtml(annotation.interaction)}</dd></div>
           <div><dt>Difficulty / complexity</dt><dd>${escapeHtml(annotation.difficulty)}</dd></div>
         </dl>
       </section>
       <section class="capability-group">
-        <header><small>Core capabilities</small><b>4</b></header>
+        <header><small>${escapeHtml(capabilityScope)}</small><b>4</b></header>
         <dl class="capability-list capability-core-list">
           <div><dt><i>V</i>Visual understanding</dt><dd class="capability-value">${escapeHtml(capabilityValue(annotation.visual))}</dd></div>
           <div><dt><i>T</i>Temporal understanding and memory</dt><dd class="capability-value">${escapeHtml(capabilityValue(annotation.temporal))}</dd></div>

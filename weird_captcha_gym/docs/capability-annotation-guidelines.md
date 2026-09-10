@@ -46,7 +46,17 @@ Count this when the agent must interact to reveal relevant information or learn 
 
 Use the exact public environment name. Read the generator, visible browser implementation, grader, verifier, and solver where present. Classify what a normal screenshot-only UI solution requires rather than what a private-state test solver can do. Classify temporal understanding and memory separately for every difficulty and interaction configuration. Record continuous observation separately when the scene must move across frames but the action itself is untimed.
 
-## Seed examples
+## Current source-reviewed annotations
+
+The [80-new-environment audit](new-environments-capability-audit.md) records
+decided core capability labels with source evidence and configuration-specific
+exceptions. Its portable JSON feeds dashboard baseline filters, the selected
+difficulty/interaction detail panel, and controlled-task metadata. Limitations
+remain evidence notes rather than an unresolved capability value. It does not
+replace the original 75 environments' historical temporal snapshot or claim a
+new real-time or difficulty audit.
+
+## Historical seed examples
 
 | Environment | Real time | Visual | Temporal | Reasoning and planning | Exploration and interface understanding |
 |---|---|---|---|---|---|

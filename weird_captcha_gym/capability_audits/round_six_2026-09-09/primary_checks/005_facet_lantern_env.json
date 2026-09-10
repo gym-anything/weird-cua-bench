@@ -1,0 +1,78 @@
+{
+  "case_index": 5,
+  "environment_id": "facet_lantern_env",
+  "public_name": "Facet Lantern",
+  "first_pass_sha256": "2133b3fe9633e21b6667680dbe3715a4ea4d50bc8cc0a01b4d6a4d25bc464032",
+  "status": "decided",
+  "labels": {
+    "visual": "3D",
+    "temporal": "no",
+    "reasoning_planning": "yes",
+    "exploration_interface": "yes"
+  },
+  "label_changes": {
+    "temporal": {
+      "from": "yes",
+      "to": "no"
+    },
+    "exploration_interface": {
+      "from": "no",
+      "to": "yes"
+    }
+  },
+  "review_scope": "Primary read the complete first-pass report and independently read the complete env.json, task.json, controls.json, generator, browser JavaScript, CSS, grader, verifier and solver. Shared verifier helper already read in full.",
+  "decision": "Change temporal to No and exploration/interface understanding to Yes at baseline. The full-mode camera is position-controlled by pointer displacement, not elapsed time, and can be manipulated in untimed increments followed by a static screenshot. Holding a still pointer has no continuing effect; the path witness and rotation quota do not establish a temporal relationship. Conversely, relevant stud locations and existing connection geometry are hidden behind the object until it is turned. Knowing their letters and being told how to rotate does not make those locations visible. Keep 3D for depth-dependent visibility and occlusion of the solid, and reasoning/planning for constructing the missing cyclic edges without extra or duplicate connections.",
+  "configuration_exceptions_action": "replace",
+  "configuration_exceptions": [
+    {
+      "difficulties": [
+        1
+      ],
+      "interaction_modes": [
+        "full",
+        "simplified"
+      ],
+      "capability": "exploration_interface",
+      "label": "no",
+      "reason": "L1 uses ring size 4, target stride 1, two top faces, initial yaw 0 and occlusion band .45. Their required studs A/B/C/D have depths 0/0/1/0 and are all initially visible. A small instructed turn can meet the grader's rotation quota without a required hidden-information reveal. This is an explicit geometry exception, not an inference from fewer facets.",
+      "source_evidence": [
+        {
+          "capability": "exploration_interface",
+          "path": "weird_captcha_gym/environments/facet_lantern_env/controls.json",
+          "lines": "6-12",
+          "claim": "L1 parameters fix the two adjacent top faces and initial view."
+        },
+        {
+          "capability": "exploration_interface",
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/facet_lantern.py",
+          "lines": "66-110",
+          "claim": "Vertex positions and face indices determine the initially visible required studs."
+        },
+        {
+          "capability": "exploration_interface",
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/facet_lantern.js",
+          "lines": "10-21,157-169",
+          "claim": "Stud visibility is determined by rotated depth against the occlusion band."
+        }
+      ]
+    }
+  ],
+  "additional_source_evidence": [
+    {
+      "capability": "temporal",
+      "path": "weird_captcha_gym/shared_runtime/app/mechanics/facet_lantern.js",
+      "lines": "204-230",
+      "claim": "Yaw depends on drag displacement; no elapsed time, dwell duration or autonomous movement participates."
+    },
+    {
+      "capability": "exploration_interface",
+      "path": "weird_captcha_gym/shared_runtime/app/mechanics/facet_lantern.js",
+      "lines": "157-180",
+      "claim": "Depth-hidden studs are display:none until rotation exposes them."
+    }
+  ],
+  "uncertainties": [
+    "Source review only; temporal classification remains provisional pending the separately deferred temporal audit. No screenshot-only gameplay or all-seed visual usability claim."
+  ],
+  "runtime_checks": []
+}

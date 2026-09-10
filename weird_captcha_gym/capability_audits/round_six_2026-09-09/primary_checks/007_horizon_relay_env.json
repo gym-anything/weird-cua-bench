@@ -1,0 +1,56 @@
+{
+  "case_index": 7,
+  "environment_id": "horizon_relay_env",
+  "public_name": "Horizon Relay",
+  "first_pass_sha256": "a7f1ea6febfd0f939426905a939df4ed5841f7159c37849ebac3c2e4a498114f",
+  "status": "decided",
+  "labels": {
+    "visual": "2D",
+    "temporal": "yes",
+    "reasoning_planning": "no",
+    "exploration_interface": "no"
+  },
+  "label_changes": {
+    "visual": {
+      "from": "3D",
+      "to": "2D"
+    },
+    "reasoning_planning": {
+      "from": "yes",
+      "to": "no"
+    }
+  },
+  "configuration_exceptions_action": "preserve",
+  "review_scope": "Primary independently read all complete required core files: env.json, task.json, controls.json, generator, browser JavaScript, CSS, grader, verifier and solver, as well as the first-pass report. The shared verifier helper had already been read in full.",
+  "decision": "Change visual to 2D and reasoning/planning to No. Every station card automatically lists the currently reachable spacecraft. Matching a listed craft to its screen marker is sufficient; on release or target-button click the browser computes the exact 3D aim vector itself. The solver need not infer the sphere-normal relation. Progress is accumulated independently for each craft and survives link breaks, so a general UI policy is to use any currently listed unfinished craft, let the link run, and repeat after a break. This requires no future handoff plan or tradeoff between deliveries. Keep temporal Yes provisionally for changing station coordinates in full mode and the limited validity of an aim before activation/refresh, and exploration No because availability and progress are automatically displayed.",
+  "rationale_clarifications": {
+    "visual": "3D is implemented by the simulator but is not required of the visible-UI solver: the automatically updated station cards explicitly enumerate the correct station-to-craft relation and UI handlers compute aim vectors.",
+    "reasoning_planning": "No route, scarce resource, progress penalty or downstream dependency requires planning: each request's units survive link breaks, and the visible lookup supplies the next eligible pair. Re-aiming or retrying after routine feedback does not by itself establish reasoning/planning.",
+    "temporal": "Do not describe HOLD LINK as a minimum-duration physical hold. It is a latched button. Full-mode station markers move; in simplified mode a selected aim can become stale before the separate HOLD LINK action, so the current temporal Yes is provisional action-validity/timing evidence, not autonomous animation alone.",
+    "exploration_interface": "All station-to-craft availability is computed and displayed before any selection, and is refreshed automatically."
+  },
+  "additional_source_evidence": [
+    {
+      "capability": "visual",
+      "path": "weird_captcha_gym/shared_runtime/app/mechanics/horizon_relay.js",
+      "lines": "128-137,146-151,169",
+      "claim": "Station cards list all reachable craft; both input handlers compute exact 3D aiming automatically from the selected IDs."
+    },
+    {
+      "capability": "reasoning_planning",
+      "path": "weird_captcha_gym/shared_runtime/app/mechanics/horizon_relay.js",
+      "lines": "178-186",
+      "claim": "Progress only increments, and a link break clears the active link without erasing delivered units."
+    },
+    {
+      "capability": "temporal",
+      "path": "weird_captcha_gym/shared_runtime/app/mechanics/horizon_relay.js",
+      "lines": "146-158,178-186",
+      "claim": "Simplified aiming snapshots a vector before a separate hold action; later sampling can reject its changing angular error."
+    }
+  ],
+  "uncertainties": [
+    "Source-only classification. Temporal labels, especially the latched simplified interface, remain provisional pending the separately deferred configuration-wide temporal audit. No real-time label assigned."
+  ],
+  "runtime_checks": []
+}

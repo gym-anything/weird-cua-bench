@@ -1,6 +1,8 @@
 from __future__ import annotations
 
 from copy import deepcopy
+import json
+from pathlib import Path
 from typing import Any
 
 
@@ -807,12 +809,362 @@ ANNOTATIONS: dict[str, dict[str, Any]] = {
 }
 
 
+# The source-reviewed configuration matrix is deliberately kept separate from
+# the legacy environment-level annotation table above.  The latter is used by
+# older dashboard consumers and must remain a stable compatibility surface.
+CAPABILITY_AUDIT_PATH = (
+    Path(__file__).resolve().parents[1]
+    / "capability_audits"
+    / "new_environments_2026-09-08.json"
+)
+_AUDIT_STATUS = "adjudicated_source_review"
+_AUDIT_ROOT_REQUIRED_KEYS = {"schema_version", "source_revision", "status", "environments"}
+_AUDIT_ROOT_METADATA_KEYS = {
+    "initial_review_date",
+    "adjudicated_at",
+    "scope",
+    "method",
+    "temporal_scope",
+    "historical_preservation",
+}
+_AUDIT_ENTRY_REQUIRED_KEYS = {
+    "environment_id",
+    "public_name",
+    "baseline",
+    "baseline_description",
+    "labels",
+    "rationale",
+    "configuration_exceptions",
+    "source_evidence",
+    "limitations",
+}
+_AUDIT_ENTRY_METADATA_KEYS = {"first_pass_sha256", "review_scope"}
+_AUDIT_CACHE: tuple[int, int, dict[str, Any]] | None = None
+_LABEL_KEYS = ("visual", "temporal", "reasoning_planning", "exploration_interface")
+_RATIONALE_METADATA_KEYS = {"configuration_review"}
+_INTERACTION_MODES = ("full", "simplified")
+_CAPABILITY_NAMES = {
+    "temporal": "temporal understanding and memory",
+    "reasoning_planning": "reasoning and planning",
+    "exploration_interface": "exploration and interface understanding",
+}
+
+
+def _is_strict_int(value: Any) -> bool:
+    return type(value) is int
+
+
+def _require_nonempty_string(value: Any, field: str) -> str:
+    if not isinstance(value, str) or not value.strip():
+        raise ValueError(f"capability audit {field} must be a non-empty string")
+    return value
+
+
+def _validate_labels(labels: Any, field: str = "labels") -> dict[str, bool | str]:
+    if not isinstance(labels, dict) or set(labels) != set(_LABEL_KEYS):
+        raise ValueError(f"capability audit {field} must contain exactly {_LABEL_KEYS!r}")
+    visual = labels["visual"]
+    if visual not in {"2D", "3D"}:
+        raise ValueError(f"capability audit {field}.visual must be '2D' or '3D'")
+    output: dict[str, bool | str] = {"visual": visual}
+    for key in _LABEL_KEYS[1:]:
+        value = labels[key]
+        if type(value) is not bool:
+            raise ValueError(f"capability audit {field}.{key} must be boolean")
+        output[key] = value
+    return output
+
+
+def _validate_exception(
+    exception: Any,
+    index: int,
+    seen: dict[tuple[int, str, str], bool | str],
+) -> dict[str, Any]:
+    if not isinstance(exception, dict):
+        raise ValueError(f"capability audit configuration exception {index} must be an object")
+    expected = {
+        "difficulties",
+        "interaction_modes",
+        "capability",
+        "label",
+        "reason",
+        "source_evidence",
+    }
+    if set(exception) != expected:
+        raise ValueError(
+            f"capability audit configuration exception {index} has an invalid shape"
+        )
+    difficulties = exception["difficulties"]
+    if (
+        not isinstance(difficulties, list)
+        or not difficulties
+        or any(not _is_strict_int(level) or level not in range(1, 6) for level in difficulties)
+        or len(set(difficulties)) != len(difficulties)
+    ):
+        raise ValueError(
+            f"capability audit configuration exception {index}.difficulties is invalid"
+        )
+    interaction_modes = exception["interaction_modes"]
+    if (
+        not isinstance(interaction_modes, list)
+        or not interaction_modes
+        or any(mode not in _INTERACTION_MODES for mode in interaction_modes)
+        or len(set(interaction_modes)) != len(interaction_modes)
+    ):
+        raise ValueError(
+            f"capability audit configuration exception {index}.interaction_modes is invalid"
+        )
+    capability = exception["capability"]
+    if capability not in _LABEL_KEYS:
+        raise ValueError(
+            f"capability audit configuration exception {index}.capability is invalid"
+        )
+    label = exception["label"]
+    if capability == "visual":
+        if label not in {"2D", "3D"}:
+            raise ValueError(
+                f"capability audit configuration exception {index}.visual label is invalid"
+            )
+    elif type(label) is not bool:
+        raise ValueError(
+            f"capability audit configuration exception {index}.{capability} label must be boolean"
+        )
+    _require_nonempty_string(exception["reason"], f"configuration_exceptions[{index}].reason")
+    if not isinstance(exception["source_evidence"], list):
+        raise ValueError(
+            f"capability audit configuration exception {index}.source_evidence must be a list"
+        )
+
+    for difficulty in difficulties:
+        for mode in interaction_modes:
+            key = (difficulty, mode, capability)
+            previous = seen.get(key)
+            if previous is not None and previous != label:
+                raise ValueError(
+                    "capability audit contains conflicting configuration overrides "
+                    f"for difficulty {difficulty}, interaction {mode}, capability {capability}"
+                )
+            seen[key] = label
+    return deepcopy(exception)
+
+
+def _validate_audit_payload(payload: Any) -> dict[str, Any]:
+    if (
+        not isinstance(payload, dict)
+        or not _AUDIT_ROOT_REQUIRED_KEYS.issubset(payload)
+        or set(payload) - _AUDIT_ROOT_REQUIRED_KEYS - _AUDIT_ROOT_METADATA_KEYS
+    ):
+        raise ValueError("capability audit root has an invalid schema")
+    if payload["schema_version"] != 1:
+        raise ValueError("capability audit schema_version must be 1")
+    _require_nonempty_string(payload["source_revision"], "source_revision")
+    if payload["status"] != _AUDIT_STATUS:
+        raise ValueError(f"capability audit status must be {_AUDIT_STATUS!r}")
+    for key in _AUDIT_ROOT_METADATA_KEYS & set(payload):
+        _require_nonempty_string(payload[key], key)
+    environments = payload["environments"]
+    if not isinstance(environments, dict) or len(environments) != 80:
+        raise ValueError("capability audit must contain exactly 80 environments")
+
+    for mechanic_id, entry in environments.items():
+        if not isinstance(mechanic_id, str) or not mechanic_id.strip():
+            raise ValueError("capability audit environment keys must be non-empty strings")
+        if (
+            not isinstance(entry, dict)
+            or not _AUDIT_ENTRY_REQUIRED_KEYS.issubset(entry)
+            or set(entry) - _AUDIT_ENTRY_REQUIRED_KEYS - _AUDIT_ENTRY_METADATA_KEYS
+        ):
+            raise ValueError(f"capability audit entry {mechanic_id!r} has an invalid schema")
+        if entry["environment_id"] != f"{mechanic_id}_env":
+            raise ValueError(
+                f"capability audit {mechanic_id!r} environment_id does not match its key"
+            )
+        _require_nonempty_string(entry["public_name"], f"{mechanic_id}.public_name")
+
+        baseline = entry["baseline"]
+        if (
+            not isinstance(baseline, dict)
+            or set(baseline) != {"difficulty", "interaction"}
+            or not _is_strict_int(baseline["difficulty"])
+            or baseline["difficulty"] not in range(1, 6)
+            or baseline["interaction"] not in _INTERACTION_MODES
+        ):
+            raise ValueError(f"capability audit {mechanic_id!r} baseline is invalid")
+
+        baseline_description = entry["baseline_description"]
+        if (
+            not isinstance(baseline_description, dict)
+            or set(baseline_description) != {"interaction", "difficulty"}
+        ):
+            raise ValueError(
+                f"capability audit {mechanic_id!r} baseline_description is invalid"
+            )
+        _require_nonempty_string(
+            baseline_description["interaction"],
+            f"{mechanic_id}.baseline_description.interaction",
+        )
+        _require_nonempty_string(
+            baseline_description["difficulty"],
+            f"{mechanic_id}.baseline_description.difficulty",
+        )
+
+        _validate_labels(entry["labels"], f"{mechanic_id}.labels")
+        rationale = entry["rationale"]
+        if (
+            not isinstance(rationale, dict)
+            or not set(_LABEL_KEYS).issubset(rationale)
+            or set(rationale) - set(_LABEL_KEYS) - _RATIONALE_METADATA_KEYS
+        ):
+            raise ValueError(f"capability audit {mechanic_id!r} rationale is invalid")
+        for key in set(_LABEL_KEYS) | (_RATIONALE_METADATA_KEYS & set(rationale)):
+            _require_nonempty_string(rationale[key], f"{mechanic_id}.rationale.{key}")
+
+        exceptions = entry["configuration_exceptions"]
+        if not isinstance(exceptions, list):
+            raise ValueError(
+                f"capability audit {mechanic_id!r} configuration_exceptions must be a list"
+            )
+        seen: dict[tuple[int, str, str], bool | str] = {}
+        for index, exception in enumerate(exceptions):
+            _validate_exception(exception, index, seen)
+
+        if not isinstance(entry["source_evidence"], list):
+            raise ValueError(f"capability audit {mechanic_id!r} source_evidence must be a list")
+        limitations = entry["limitations"]
+        if not isinstance(limitations, list) or any(not isinstance(item, str) for item in limitations):
+            raise ValueError(f"capability audit {mechanic_id!r} limitations must be strings")
+        if "first_pass_sha256" in entry:
+            _require_nonempty_string(entry["first_pass_sha256"], f"{mechanic_id}.first_pass_sha256")
+        if "review_scope" in entry:
+            _require_nonempty_string(entry["review_scope"], f"{mechanic_id}.review_scope")
+    return deepcopy(payload)
+
+
+def load_capability_audit(path: str | Path | None = None) -> dict[str, Any]:
+    """Load and validate the source-reviewed configuration audit.
+
+    Missing data is left to the builders to handle as a compatibility fallback;
+    a present but malformed file always raises ``ValueError``.
+    """
+    audit_path = Path(path) if path is not None else CAPABILITY_AUDIT_PATH
+    try:
+        payload = json.loads(audit_path.read_text(encoding="utf-8"))
+    except json.JSONDecodeError as exc:
+        raise ValueError(f"capability audit is not valid JSON: {audit_path}") from exc
+    return _validate_audit_payload(payload)
+
+
+def _optional_capability_audit() -> dict[str, Any] | None:
+    global _AUDIT_CACHE
+    try:
+        stat = CAPABILITY_AUDIT_PATH.stat()
+    except FileNotFoundError:
+        return None
+    cache_key = (stat.st_mtime_ns, stat.st_size)
+    if _AUDIT_CACHE is not None and _AUDIT_CACHE[:2] == cache_key:
+        return _AUDIT_CACHE[2]
+    try:
+        payload = load_capability_audit()
+    except FileNotFoundError:
+        return None
+    _AUDIT_CACHE = (*cache_key, payload)
+    return payload
+
+
+def _labels_for_entry(entry: dict[str, Any], difficulty: int, interaction: str) -> dict[str, bool | str]:
+    labels = _validate_labels(entry["labels"])
+    for exception in entry["configuration_exceptions"]:
+        if difficulty in exception["difficulties"] and interaction in exception["interaction_modes"]:
+            labels[exception["capability"]] = exception["label"]
+    return labels
+
+
 def capability_definitions() -> list[dict[str, str]]:
     return deepcopy(list(CAPABILITY_DEFINITIONS))
 
 
 def build_capability_annotations() -> dict[str, dict[str, Any]]:
-    return deepcopy(ANNOTATIONS)
+    annotations = deepcopy(ANNOTATIONS)
+    audit = _optional_capability_audit()
+    if audit is None:
+        return annotations
+
+    for mechanic_id, entry in audit["environments"].items():
+        existing = annotations.get(mechanic_id)
+        if existing is None:
+            # Keep the legacy annotation contract for newly audited mechanics.  In
+            # particular, real_time is intentionally unknown rather than inferred
+            # from the new capability review.
+            annotations[mechanic_id] = {
+                "public_name": entry["public_name"],
+                "real_time": None,
+                "interaction": entry["baseline_description"]["interaction"],
+                "difficulty": entry["baseline_description"]["difficulty"],
+                **deepcopy(entry["labels"]),
+            }
+            continue
+
+        # Existing annotations carry historical real-time and control descriptions;
+        # only the audited public name and four core capability labels are replaced.
+        existing["public_name"] = entry["public_name"]
+        existing.update(deepcopy(entry["labels"]))
+    return annotations
+
+
+def build_capability_profiles() -> dict[str, dict[str, Any]]:
+    """Build the difficulty-by-interaction capability profiles from the audit."""
+    audit = _optional_capability_audit()
+    if audit is None:
+        return {}
+
+    profiles: dict[str, dict[str, Any]] = {}
+    for mechanic_id, entry in audit["environments"].items():
+        profiles[mechanic_id] = {
+            "source_revision": audit["source_revision"],
+            "status": audit["status"],
+            "baseline": deepcopy(entry["baseline"]),
+            "configurations": {
+                mode: {
+                    str(difficulty): _labels_for_entry(entry, difficulty, mode)
+                    for difficulty in range(1, 6)
+                }
+                for mode in _INTERACTION_MODES
+            },
+            "rationale": deepcopy(entry["rationale"]),
+            "configuration_exceptions": deepcopy(entry["configuration_exceptions"]),
+        }
+    return profiles
+
+
+def get_capability_labels(
+    mechanic_id: str,
+    difficulty: int,
+    interaction: str,
+) -> dict[str, bool | str] | None:
+    """Return labels for one audited mechanic configuration, if available."""
+    if not isinstance(mechanic_id, str) or not isinstance(interaction, str):
+        return None
+    if not _is_strict_int(difficulty) or difficulty not in range(1, 6):
+        return None
+    if interaction not in _INTERACTION_MODES:
+        return None
+    audit = _optional_capability_audit()
+    if audit is None:
+        return None
+    entry = audit["environments"].get(mechanic_id)
+    if entry is None:
+        return None
+    return _labels_for_entry(entry, difficulty, interaction)
+
+
+def capability_names(labels: dict[str, bool | str]) -> list[str]:
+    """Return enabled capability names in the dashboard's stable display order."""
+    normalized = _validate_labels(labels)
+    names = [f"visual understanding: {normalized['visual']}"]
+    for key in _LABEL_KEYS[1:]:
+        if normalized[key]:
+            names.append(_CAPABILITY_NAMES[key])
+    return names
 
 
 __all__ = [
@@ -820,5 +1172,9 @@ __all__ = [
     "CAPABILITY_DEFINITIONS",
     "LEGACY_TEMPORAL_ANNOTATION_STATUS",
     "build_capability_annotations",
+    "build_capability_profiles",
+    "capability_names",
     "capability_definitions",
+    "get_capability_labels",
+    "load_capability_audit",
 ]

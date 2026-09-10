@@ -269,6 +269,7 @@ def _contract(truth: dict[str, Any], public: dict[str, Any]) -> dict[str, Any]:
             not gate_id
             or gate_id in gate_ids
             or not 8 <= radius <= 22
+            or radius != parameters.get("gate_radius")
             or not (0 <= center[0] <= 820 and 0 <= center[1] <= 510)
         ):
             raise ValueError("route-ring geometry is malformed")
@@ -305,8 +306,8 @@ def _contract(truth: dict[str, Any], public: dict[str, Any]) -> dict[str, Any]:
         or mechanics.get("stir_stride") != 6
         or mechanics.get("grind_tick_ms") != 240
         or mechanics.get("gate_reveal_factor") != 0.92
-        or mechanics.get("gate_center_tolerance") != 2.25
-        or mechanics.get("gate_heading_tolerance_degrees") != 2.0
+        or mechanics.get("gate_center_tolerance") != float(parameters["gate_radius"]) * 3 / 16
+        or mechanics.get("gate_heading_tolerance_degrees") != float(parameters["gate_radius"]) / 6
         or mechanics.get("route_feedback") != "post_commit_only"
     ):
         raise ValueError("movement mechanics are malformed")

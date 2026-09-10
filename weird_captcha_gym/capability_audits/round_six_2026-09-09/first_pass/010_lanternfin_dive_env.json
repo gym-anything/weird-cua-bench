@@ -1,0 +1,93 @@
+{
+  "case_index": 10,
+  "environment_id": "lanternfin_dive_env",
+  "public_name": "Lanternfin Dive",
+  "revision": "48e86f5950c056bfa0f2822fa430f9762c5fc29c",
+  "baseline": {"difficulty": 4, "interaction": "full"},
+  "labels": {
+    "visual": "3D",
+    "temporal": "yes",
+    "reasoning_planning": "yes",
+    "exploration_interface": "yes"
+  },
+  "temporal_status": "provisional_baseline_audit",
+  "visible_solution": "Read the visible prompt and full-interaction key legend, then inspect the 3D tank and orbit the canvas to expose the pearl's depth. Use A/D for tail thrust, J/L for yaw, K/I for pitch, and Q/E for roll; apply short strokes while watching successive screenshots, the fish's projected attitude, position, pearl range, and upright-hold readout. Reverse or release inputs to brake and settle inside the pearl, keep the fish upright and nearly still until the 12-tick upright hold is reached, and click CERTIFY PEARL ARRIVAL.",
+  "reasoning": {
+    "visual": "The target is generated with x, y, and z coordinates in a tank, and the browser renders both fish and pearl through a perspective projection. Success therefore requires spatially locating a 3D destination and reading body orientation and depth cues.",
+    "temporal": "Torque inputs continue to affect the fish on repeated physics ticks, while arrival requires distance, speed, pitch, and roll conditions to remain satisfied for the configured hold interval. The agent must use changing observations to time propulsion, corrections, braking, release, and certification.",
+    "reasoning_planning": "The agent must choose signed values for four coupled channels. Tail thrust follows the current yaw and pitch, fin torques change future attitude and velocity, and the final action sequence must trade off reaching the pearl, braking, leveling, and preserving the arrival state for the hold.",
+    "exploration_interface": "The relevant target depth is not supplied as a target-coordinate readout; the visible UI provides an orbiting canvas and explicitly tells the agent to drag it to inspect the pearl's depth. The agent must use that inspection affordance before selecting a reliable 3D steering sequence; the key mappings, persistent/release behavior, telemetry, and certification control are then visible in the task UI."
+  },
+  "source_evidence": [
+    {
+      "capability": "visual",
+      "path": "weird_captcha_gym/shared_scripts/incubator_generators/lanternfin_dive.py",
+      "lines": "63-70, 93-97",
+      "claim": "Each challenge places the pearl at generated x/y/z coordinates and exposes a 3D tank, target, fish, and physics state."
+    },
+    {
+      "capability": "visual",
+      "path": "weird_captcha_gym/shared_runtime/app/mechanics/lanternfin_dive.js",
+      "lines": "57-68, 154-161",
+      "claim": "The browser uses perspective projection for the tank objects and visibly renders the destination pearl, fish, position, attitude, and range."
+    },
+    {
+      "capability": "temporal",
+      "path": "weird_captcha_gym/shared_runtime/app/mechanics/lanternfin_dive.js",
+      "lines": "165-180, 220-222",
+      "claim": "Controls persist while a timer advances the fish each tick; the visible hold counter is updated from the evolving arrival state."
+    },
+    {
+      "capability": "temporal",
+      "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/lanternfin_dive.py",
+      "lines": "120-123, 145-153",
+      "claim": "The authoritative replay advances state between event ticks and requires the arrival condition and hold count to agree at certification."
+    },
+    {
+      "capability": "reasoning_planning",
+      "path": "weird_captcha_gym/shared_runtime/app/mechanics/lanternfin_dive.js",
+      "lines": "16-43, 50-55",
+      "claim": "Four signed controls alter angular rates, orientation, forward direction, lift, velocity, and position; arrival couples position, speed, pitch, and roll."
+    },
+    {
+      "capability": "reasoning_planning",
+      "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/lanternfin_dive.py",
+      "lines": "31-60, 63-71",
+      "claim": "The independent grader replays the coupled fluid dynamics and checks all spatial, speed, and upright constraints."
+    },
+    {
+      "capability": "exploration_interface",
+      "path": "weird_captcha_gym/shared_runtime/app/mechanics/lanternfin_dive.js",
+      "lines": "121-123, 210-212",
+      "claim": "The visible help directs the agent to drag the canvas to inspect pearl depth, and pointer dragging changes the camera view without changing the fish state."
+    },
+    {
+      "capability": "exploration_interface",
+      "path": "weird_captcha_gym/shared_runtime/app/mechanics/lanternfin_dive.js",
+      "lines": "137-162, 197-208",
+      "claim": "The task UI visibly supplies the canvas, telemetry, control surface, and the distinct simplified/full input bindings."
+    }
+  ],
+  "configuration_exceptions": [],
+  "observation_only_temporal": false,
+  "files_read_completely": [
+    "AGENTS.md",
+    "weird_captcha_gym/docs/capability-annotation-guidelines.md",
+    "weird_captcha_gym/docs/controllability/temporal.md",
+    "weird_captcha_gym/environments/lanternfin_dive_env/env.json",
+    "weird_captcha_gym/environments/lanternfin_dive_env/controls.json",
+    "weird_captcha_gym/environments/lanternfin_dive_env/tasks/lanternfin_dive_seed_0001/task.json",
+    "weird_captcha_gym/environments/lanternfin_dive_env/tasks/lanternfin_dive_seed_0001/verifier.py",
+    "weird_captcha_gym/shared_scripts/incubator_generators/lanternfin_dive.py",
+    "weird_captcha_gym/shared_runtime/app/mechanics/lanternfin_dive.js",
+    "weird_captcha_gym/shared_runtime/app/mechanics/lanternfin_dive.css",
+    "weird_captcha_gym/shared_runtime/server/incubator_graders/lanternfin_dive.py",
+    "weird_captcha_gym/tools/incubator_solvers/lanternfin_dive.py",
+    "weird_captcha_gym/environments/lanternfin_dive_env/tasks/lanternfin_dive_seed_0001/export_result.sh",
+    "weird_captcha_gym/environments/lanternfin_dive_env/tasks/lanternfin_dive_seed_0001/setup_task.sh",
+    "weird_captcha_gym/environments/lanternfin_dive_env/scripts/setup_puzzle_runtime.sh",
+    "weird_captcha_gym/environments/lanternfin_dive_env/scripts/install_puzzle_runtime.sh"
+  ],
+  "runtime_checks": [],
+  "uncertainties": []
+}

@@ -66,7 +66,7 @@
         const growTotal = grows.reduce((sum, value) => sum + value, 0);
         let mainCursor = 0;
         if (growTotal) mainSizes = mainSizes.map((value, index) => value + extra * grows[index] / growTotal);
-        else if (props.main === "space" && line.length > 1) mainGap = gap + extra / (line.length - 1);
+        else if (props.main === "space" && line.length > 1) mainGap += extra / (line.length - 1);
         else mainCursor = ["start", "space"].includes(props.main) ? 0 : props.main === "center" ? extra / 2 : extra;
         line.forEach((child, index) => {
           const base = bases[index]; const naturalCross = row ? base[1] : base[0];

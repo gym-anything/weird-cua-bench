@@ -128,6 +128,14 @@ def test_timestamped_modes_select_timestamped_reference_agents() -> None:
     )
 
 
+def test_weird_codex_sandbox_uses_astra_compatible_cli() -> None:
+    from weird_captcha_gym.evaluation.codex_cli import WeirdCodexCliAgent
+
+    assert WeirdCodexCliAgent.sandbox_install == (
+        "npm install -g @openai/codex@0.153.3"
+    )
+
+
 def test_evaluator_can_disable_the_task_clock_limit() -> None:
     args = evaluator.build_parser().parse_args(
         [

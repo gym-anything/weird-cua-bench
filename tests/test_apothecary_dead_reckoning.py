@@ -406,7 +406,8 @@ def test_materialized_capabilities_are_interaction_specific() -> None:
     temporal = "temporal understanding and memory"
     assert temporal in mapping["full"]
     assert temporal not in mapping["simplified"]
-    assert temporal not in TASK["metadata"]["capabilities"]
+    assert TASK["metadata"]["capability_configuration"] == {"difficulty": 2, "interaction": "full"}
+    assert TASK["metadata"]["capabilities"] == mapping["full"]
     assert CONTROLS["interaction"]["full"]["capabilities"] == mapping["full"]
     assert CONTROLS["interaction"]["simplified"]["capabilities"] == mapping["simplified"]
 
@@ -421,6 +422,7 @@ def test_materialized_capabilities_are_interaction_specific() -> None:
         )
         selected = materialized["metadata"]["control_condition"]["interaction"]
         assert materialized["metadata"]["capabilities_by_interaction"][selected] == mapping[interaction]
+        assert materialized["metadata"]["capabilities"] == mapping[interaction]
         assert (temporal in mapping[interaction]) is (interaction == "full")
 
 
@@ -437,3 +439,22 @@ def test_reported_l5_failures_and_additional_stress_seeds_generate() -> None:
         assert len(public["effects"]) == task["_control_condition"]["difficulty_parameters"]["effect_count"]
         assert len(public["bones"]) == task["_control_condition"]["difficulty_parameters"]["bone_count"]
         assert len(truth["solution"]) == task["_control_condition"]["difficulty_parameters"]["route_commits"]
+
+
+def test_visible_gate_aperture_controls_position_and_heading_acceptance() -> None:
+    ingredient = {"angle_deg": 0, "curve_degrees": 60, "turn": 1, "length": 120}
+    for level in range(1, 6):
+        radius = CONTROLS["difficulty"][str(level)]["parameters"]["gate_radius"]
+        center_tolerance = radius * 3 / 16
+        heading_tolerance = radius / 6
+        for center_scale, heading_scale, expected in ((.99, .99, True), (1.01, 0, False), (0, 1.01, False)):
+            gate = {"radius": radius, "center": [60, center_tolerance * center_scale],
+                    "heading_deg": heading_tolerance * heading_scale}
+            result = GENERATOR.gate_alignment([0, 0], ingredient, 0, 9, gate)
+            assert result["aligned"] is expected, (level, center_scale, heading_scale, result)
+            assert GRADER._gate_alignment([0, 0], ingredient, 0, 9, 24, gate,
+                                          center_tolerance, heading_tolerance) is expected
+        public, truth = GENERATOR.generate(_task(level, "full"), "visible-aperture")
+        assert public["mechanics"]["gate_center_tolerance"] == center_tolerance
+        assert truth["mechanics"]["gate_heading_tolerance_degrees"] == heading_tolerance
+        assert GRADER.grade(_payload(public, truth), truth, public)["passed"] is True

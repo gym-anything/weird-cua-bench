@@ -62,7 +62,7 @@ def test_existing_env_runner_options_match_canonical_real_time_settings() -> Non
         ).__dict__
 
 
-def test_lidar_real_time_settings_cover_motion_before_the_replay_ceiling() -> None:
+def test_lidar_real_time_settings_do_not_require_a_grader_replay_ceiling() -> None:
     settings = load_real_time_settings("lidar_blacksite")
     assert settings == RealTimeSettings(
         play_time_seconds=90,
@@ -90,9 +90,8 @@ def test_lidar_real_time_settings_cover_motion_before_the_replay_ceiling() -> No
         "lidar-real-time-contract",
     )
     tick_ms = int(public_state["controls"]["tick_ms"])
-    maximum_replay_ms = int(public_state["requirements"]["maximum_session_ticks"]) * tick_ms
     assert settings.observation_window_ms == 25 * tick_ms
-    assert settings.play_time_seconds * 1000 < maximum_replay_ms
+    assert "maximum_session_ticks" not in public_state["requirements"]
 
     mechanic_source = (
         BENCHMARK / "shared_runtime" / "app" / "mechanics" / "lidar_blacksite.js"

@@ -18,10 +18,18 @@ def _direction(cells: dict[str, dict[str, Any]], origin: str, destination: str) 
     return {(-1, 0): "up", (1, 0): "down", (0, -1): "left", (0, 1): "right"}[delta]
 
 
-def _step(page, state: dict[str, Any], origin: str, destination: str) -> None:
+def _step(page, state: dict[str, Any], origin: str, destination: str, *, edge_index: int | None = None) -> None:
     interaction = str((state.get("control_condition") or {}).get("interaction") or "full")
     if interaction == "full":
-        page.locator(f'[data-cell-id="{destination}"]').click()
+        tile = page.locator(f'[data-cell-id="{destination}"]')
+        if edge_index is None:
+            tile.click()
+        else:
+            box = tile.bounding_box()
+            if box is None:
+                raise AssertionError(f"missing visible floor {destination}")
+            fx, fy = ((.003, .5), (.997, .5), (.5, .003), (.5, .997))[edge_index % 4]
+            page.mouse.click(box["x"] + fx * box["width"], box["y"] + fy * box["height"])
     else:
         cells = {cell["id"]: cell for cell in state["cells"]}
         page.locator(f'[data-direction="{_direction(cells, origin, destination)}"]').click()
@@ -67,6 +75,7 @@ def solve(
     certify: bool = True,
     start_index: int = 0,
     capture_initial: bool = True,
+    edge_clicks: bool = False,
 ) -> None:
     del certify
     if mechanic != MECHANIC_ID:
@@ -89,7 +98,7 @@ def solve(
         if not decision_captured and index == divergence:
             page.screenshot(path=str(out_dir / "decision-point.png"))
             decision_captured = True
-        _step(page, state, origin, destination)
+        _step(page, state, origin, destination, edge_index=index if edge_clicks else None)
         if not crack_captured and index >= 5:
             page.screenshot(path=str(out_dir / "crack-progression.png"))
             crack_captured = True
@@ -102,3 +111,8 @@ def solve(
     page.locator('.readout[data-status="passed"]').wait_for(state="visible")
     page.locator('.crackglaze-crossing[data-terminal="passed"]').wait_for(state="visible")
     page.screenshot(path=str(out_dir / "passed.png"))
+
+
+def solve_edges(page, state_dir: Path, out_dir: Path, mechanic: str) -> None:
+    """Use the same route with trusted clicks just inside each tile edge."""
+    solve(page, state_dir, out_dir, mechanic, edge_clicks=True)

@@ -164,9 +164,28 @@ class WeirdCaptchaBenchmarkTests(unittest.TestCase):
         hooks = []
         for env_name in list_environments("weird_captcha_gym", split="all"):
             env_root = benchmark_root / "environments" / env_name
-            hooks.extend(env_root.glob("scripts/*.sh"))
-            hooks.extend(env_root.glob("tasks/*/*.sh"))
-        self.assertEqual(len(hooks), len(list_environments("weird_captcha_gym", split="all")) * 4)
+            environment_hooks = list(env_root.glob("scripts/*.sh"))
+            self.assertEqual(
+                {hook.name for hook in environment_hooks},
+                {"install_puzzle_runtime.sh", "setup_puzzle_runtime.sh"},
+                env_name,
+            )
+            # Removed generated variants can leave cache-only directories.
+            # Validate every actual task, not inert __pycache__ parents.
+            task_dirs = sorted(path.parent for path in env_root.glob("tasks/*/task.json"))
+            task_hooks = [
+                hook
+                for task_dir in task_dirs
+                for hook in task_dir.glob("*.sh")
+            ]
+            for task_dir in task_dirs:
+                self.assertEqual(
+                    {hook.name for hook in task_dir.glob("*.sh")},
+                    {"setup_task.sh", "export_result.sh"},
+                    f"{env_name}/{task_dir.name}",
+                )
+            hooks.extend(environment_hooks)
+            hooks.extend(task_hooks)
         for hook in hooks:
             self.assertTrue(os.access(hook, os.X_OK), f"hook is not executable: {hook.relative_to(benchmark_root)}")
 

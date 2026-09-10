@@ -196,14 +196,14 @@ def baseline_preservation_record(baseline_task: Path, grader: ModuleType) -> dic
         for sequence, event in enumerate(payload["events"], start=1):
             event["sequence"] = sequence
         result = grader.grade(payload, truth, public)
-        if result.get("passed") is not False or result.get("feedback") != "plate lock is invalid":
-            raise AssertionError("controlled L3 does not preserve the historical unlock rejection")
+        if result.get("passed") is not False or result.get("feedback") != "press descended before all physical locks engaged":
+            raise AssertionError("registration allowed a press with an unlocked plate")
         unlock_rejection[label] = result
     return {
         "fixed_seed": seed,
         "historical_user_text": "Register the plate.",
         "corrected_user_text": "Register all three color plates, lock them, then press.",
-        "repair_scope": "Text only: the historical generator and grader already required three aligned locks followed by one press.",
+        "repair_scope": "Preserve the generated puzzle and final alignment requirement while allowing unlock/relock recovery and continuous wheel turns.",
         "challenge_id_matches": original_public["challenge_id"] == baseline_public["challenge_id"],
         "press_contract_matches": original_public["press"] == baseline_public["press"],
         "normalized_public_matches": public_equal,
@@ -211,7 +211,7 @@ def baseline_preservation_record(baseline_task: Path, grader: ModuleType) -> dic
         "normalized_public_sha256": hashlib.sha256(json.dumps(normalized(original_public), sort_keys=True, separators=(",", ":")).encode()).hexdigest(),
         "normalized_truth_sha256": hashlib.sha256(json.dumps(normalized(original_truth), sort_keys=True, separators=(",", ":")).encode()).hexdigest(),
         "event_limit_boundary": event_limit,
-        "unlock_event_rejection": unlock_rejection,
+        "unlocked_press_rejection": unlock_rejection,
     }
 
 
@@ -282,6 +282,13 @@ def record_observation(page, time_mode: str, screenshots: Path, label: str) -> d
 def solve_visible_ui(page, truth: dict[str, Any], interaction: str, time_mode: str) -> None:
     page.evaluate("WeirdCaptchaTime.resume()")
     press = truth["press"]
+    first_plate = press["plates"][0]
+    lock = page.locator(f'.plate-lock[data-plate-id="{first_plate["id"]}"]')
+    lock.click()
+    lock.click()
+    if interaction == "full":
+        wheel = page.locator(f'.registration-wheel[data-plate-id="{first_plate["id"]}"]')
+        drag_delta(page, wheel, 360 / float(press["degrees_per_pixel"]), 0, maximum_step=20)
     if interaction == "full":
         for plate in press["plates"]:
             degrees = short_delta(float(plate["target"]), float(plate["initial"]))

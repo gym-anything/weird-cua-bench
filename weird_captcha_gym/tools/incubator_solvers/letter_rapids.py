@@ -4,9 +4,6 @@ import json
 import time
 from pathlib import Path
 
-from playwright.sync_api import expect
-
-
 MECHANIC_ID = "letter_rapids"
 
 
@@ -77,7 +74,12 @@ def _set_proxy_flow(page, x_milli: int) -> None:
 
 
 def _wait_output(page, output: str, timeout: int = 8_000) -> None:
-    expect(page.locator(".rapids-output-value")).to_have_attribute("data-output", output, timeout=timeout)
+    # Stop flow promptly on the committed symbol. Assertion backoff can leave
+    # flow engaged long enough to commit an unintended second symbol.
+    page.wait_for_function(
+        "output => document.querySelector('.rapids-output-value')?.dataset.output === output",
+        arg=output, polling=5, timeout=timeout,
+    )
 
 
 def _enter_symbol(page, truth: dict, output: str, symbol: str) -> str:
@@ -108,6 +110,8 @@ def _wait_new(state_dir: Path, previous: str) -> None:
 
 
 def fail_once(page, state_dir: Path, out_dir: Path, mechanic: str) -> None:
+    from playwright.sync_api import expect
+
     if mechanic != MECHANIC_ID:
         raise AssertionError(mechanic)
     truth = _read(state_dir / "ground_truth.json")
@@ -131,6 +135,8 @@ def fail_once(page, state_dir: Path, out_dir: Path, mechanic: str) -> None:
 
 
 def solve(page, state_dir: Path, out_dir: Path, mechanic: str) -> None:
+    from playwright.sync_api import expect
+
     if mechanic != MECHANIC_ID:
         raise AssertionError(mechanic)
     truth = _read(state_dir / "ground_truth.json")

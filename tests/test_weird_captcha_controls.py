@@ -9,6 +9,8 @@ import subprocess
 import types
 from pathlib import Path
 
+import pytest
+
 from weird_captcha_gym.shared_runtime.verifier_helpers import (
     verify_rotating_keyboard,
 )
@@ -17,6 +19,53 @@ from weird_captcha_gym.shared_runtime.verifier_helpers import (
 ROOT = Path(__file__).resolve().parents[1]
 BENCHMARK = ROOT / "weird_captcha_gym"
 CONTROLLED_ENVIRONMENTS = (
+    "downsky_causeway_env",
+    "lanternfin_dive_env",
+    "crater_walker_env",
+    "facet_lantern_env",
+    "cloudstep_caddie_env",
+    "hearthlift_courier_env",
+    "rising_causeway_env",
+    "polycube_parcel_env",
+    "lantern_loft_env",
+    "surveyors_toybox_env",
+    "lampwrights_program_env",
+    "pearl_lattice_env",
+    "cloudpost_circuit_env",
+    "horizon_relay_env",
+    "lanternwing_roundup_env",
+    "pendulum_post_env",
+    "clockwork_courier_works_env",
+    "ember_anvil_env",
+    "rayglass_vault_env",
+    "twin_groove_seal_env",
+    "firewatch_fold_env",
+    "last_seats_in_the_lagoon_env",
+    "quiet_transfer_env",
+    "pocket_locksmith_env",
+    "branch_repair_env",
+    "ribbon_consensus_env",
+    "pocket_animation_studio_env",
+    "cell_gatekeeper_env",
+    "restless_piston_env",
+    "loopmakers_trial_env",
+    "polarity_run_env",
+    "reflected_rival_env",
+    "tomorrows_marble_env",
+    "collision_chimes_env",
+    "last_carbon_isles_env",
+    "lantern_lane_env",
+    "living_scaffold_env",
+    "clockbeat_catacomb_env",
+    "switchline_heist_env",
+    "valence_caravan_env",
+    "tin_duelist_env",
+    "maskmakers_dispatch_env",
+    "prismfall_kiln_env",
+    "courtesy_junction_env",
+    "elbow_engine_env",
+    "concertina_courier_env",
+    "long_way_home_env",
     "waggle_dispatch_env",
     "threshold_grapevine_env",
     "museum_of_lost_gestures_env",
@@ -137,9 +186,59 @@ CONTROLLED_ENVIRONMENTS = (
     "letter_rapids_env",
     "one_stroke_atelier_env",
     "residual_telescope_env",
+    "knotless_starmap_env",
+    "teach_the_stencil_env",
+    "ember_mosaic_env",
 )
 
 BASELINE_LEVELS = {
+    "downsky_causeway_env": 4,
+    "lanternfin_dive_env": 4,
+    "crater_walker_env": 4,
+    "facet_lantern_env": 3,
+    "cloudstep_caddie_env": 4,
+    "hearthlift_courier_env": 4,
+    "rising_causeway_env": 4,
+    "polycube_parcel_env": 4,
+    "lantern_loft_env": 4,
+    "surveyors_toybox_env": 4,
+    "lampwrights_program_env": 4,
+    "pearl_lattice_env": 3,
+    "cloudpost_circuit_env": 4,
+    "horizon_relay_env": 3,
+    "lanternwing_roundup_env": 4,
+    "pendulum_post_env": 4,
+    "clockwork_courier_works_env": 2,
+    "ember_anvil_env": 3,
+    "rayglass_vault_env": 4,
+    "twin_groove_seal_env": 3,
+    "firewatch_fold_env": 4,
+    "last_seats_in_the_lagoon_env": 4,
+    "quiet_transfer_env": 3,
+    "pocket_locksmith_env": 4,
+    "branch_repair_env": 4,
+    "ribbon_consensus_env": 4,
+    "pocket_animation_studio_env": 4,
+    "cell_gatekeeper_env": 3,
+    "restless_piston_env": 3,
+    "loopmakers_trial_env": 3,
+    "polarity_run_env": 3,
+    "reflected_rival_env": 4,
+    "tomorrows_marble_env": 2,
+    "collision_chimes_env": 4,
+    "last_carbon_isles_env": 2,
+    "lantern_lane_env": 4,
+    "living_scaffold_env": 2,
+    "clockbeat_catacomb_env": 4,
+    "switchline_heist_env": 3,
+    "valence_caravan_env": 4,
+    "tin_duelist_env": 4,
+    "maskmakers_dispatch_env": 2,
+    "prismfall_kiln_env": 3,
+    "courtesy_junction_env": 4,
+    "elbow_engine_env": 4,
+    "concertina_courier_env": 3,
+    "long_way_home_env": 3,
     "waggle_dispatch_env": 4,
     "threshold_grapevine_env": 4,
     "museum_of_lost_gestures_env": 1,
@@ -260,6 +359,9 @@ BASELINE_LEVELS = {
     "letter_rapids_env": 4,
         "one_stroke_atelier_env": 3,
     "residual_telescope_env": 4,
+    "knotless_starmap_env": 3,
+    "teach_the_stencil_env": 2,
+    "ember_mosaic_env": 4,
 }
 
 DIFFICULTY_NAMES = {
@@ -521,6 +623,17 @@ def test_original_tasks_match_their_independently_assigned_baselines() -> None:
         elif mechanic == "insider_trading_captcha":
             assert without_control_identity(baseline_public, extra=("visible_chart_ticks",)) == without_control_identity(original_public)
             assert without_control_identity(baseline_truth, extra=("visible_chart_ticks",)) == without_control_identity(original_truth)
+        elif mechanic == "restless_piston":
+            # The base names its input mode directly; controlled tasks carry
+            # the same value in control_condition instead.
+            assert original_public["interaction_mode"] == baseline_public["control_condition"]["interaction"]
+            assert without_control_identity(baseline_public) == without_control_identity(original_public, extra=("interaction_mode",))
+            assert without_control_identity(baseline_truth) == without_control_identity(original_truth)
+        elif mechanic == "crater_walker":
+            # The difficulty profile rephrases the support-transfer instructions;
+            # all generated geometry, goals and reference data must still match.
+            assert without_control_identity(baseline_public, extra=("prompt",)) == without_control_identity(original_public, extra=("prompt",))
+            assert without_control_identity(baseline_truth) == without_control_identity(original_truth)
         elif mechanic in {
             "consequences_boss",
             "cursor_lens_reveal",
@@ -1270,7 +1383,7 @@ def test_wonky_registration_profiles_preserve_l3_and_bind_both_input_surfaces() 
             event["sequence"] = sequence
         rejected_unlock = grader.grade(unlocked_payload, truth, public)
         assert rejected_unlock["passed"] is False
-        assert rejected_unlock["feedback"] == "plate lock is invalid"
+        assert rejected_unlock["feedback"] == "press descended before all physical locks engaged"
 
     # The L3 simplified surface retains 5-degree precision but adds a visible
     # 10-degree coarse step.  Its largest possible three-plate replay is 58
@@ -1289,6 +1402,56 @@ def test_wonky_registration_profiles_preserve_l3_and_bind_both_input_surfaces() 
     assert "WeirdCaptchaTime" not in renderer
     assert "requestAnimationFrame" not in renderer
     assert "EXPOSURE SWEEP" not in renderer
+
+
+@pytest.mark.parametrize("level", range(1, 6))
+@pytest.mark.parametrize("interaction", ["simplified", "full"])
+def test_wonky_registration_allows_adjustment_after_unlock(level: int, interaction: str) -> None:
+    mechanic = "wonky_text_hostile_rendering"
+    public, truth = SETUP.generate_task_state(
+        task_for_level(f"{mechanic}_env", level, interaction), "wonky-unlock-recovery"
+    )
+    grader = load_module(
+        "wonky_recovery_grader",
+        BENCHMARK / "shared_runtime" / "server" / "incubator_graders" / f"{mechanic}.py",
+    )
+    verifier = load_module("wonky_recovery_verifier", BENCHMARK / "shared_runtime" / "verifier_helpers.py")
+    payload = _wonky_payload(public, truth, interaction)
+    plate_id = truth["press"]["plates"][0]["id"]
+    payload["events"][:0] = [
+        {"kind": "lock", "plate_id": plate_id, "locked": True},
+        {"kind": "lock", "plate_id": plate_id, "locked": False},
+    ]
+    for sequence, event in enumerate(payload["events"], start=1):
+        event["sequence"] = sequence
+
+    assert grader.grade(payload, truth, public)["passed"] is True
+    assert verifier.verify_wonky_text_hostile_rendering(
+        {"result": payload, "ground_truth": truth, "public_state": public}
+    )["passed"] is True
+
+    # A continuous wheel can make extra turns; a proxy button still only moves
+    # by its visible step size. Both must retain the final alignment check.
+    for extra_turn in (-360, 360):
+        rotated = copy.deepcopy(payload)
+        rotated["events"][2]["delta"] += extra_turn
+        expected = interaction == "full"
+        assert grader.grade(rotated, truth, public)["passed"] is expected
+        assert verifier.verify_wonky_text_hostile_rendering(
+            {"result": rotated, "ground_truth": truth, "public_state": public}
+        )["passed"] is expected
+
+    for invalid_lock in (None, 0, 1, "false", True):
+        malformed = copy.deepcopy(payload)
+        malformed["events"][1]["locked"] = invalid_lock
+        assert grader.grade(malformed, truth, public)["passed"] is False
+
+    if interaction == "full":
+        misaligned = copy.deepcopy(payload)
+        misaligned["events"][2]["delta"] += 30
+        rejected = grader.grade(misaligned, truth, public)
+        assert rejected["passed"] is False
+        assert rejected["feedback"].startswith("plate registration")
 
 
 def test_scroll_cage_profiles_preserve_l4_and_bind_scroll_surfaces() -> None:
@@ -1535,6 +1698,19 @@ def test_hovercar_browser_binds_keyboard_only_for_full_interaction() -> None:
 
 def test_implemented_interaction_pairs_share_generated_worlds_and_goals() -> None:
     seed = "interaction-pair-equivalence"
+    mode_fields = {
+        "facet_lantern_env": "interaction",
+        "polycube_parcel_env": "interaction",
+        "pearl_lattice_env": "interaction",
+        "surveyors_toybox_env": "interaction_mode",
+        "horizon_relay_env": "interaction_mode",
+        "firewatch_fold_env": "interaction",
+        "branch_repair_env": "interaction",
+        "quiet_transfer_env": "interaction_mode",
+        "restless_piston_env": "interaction_mode",
+        "loopmakers_trial_env": "interaction_mode",
+        "tomorrows_marble_env": "interaction_mode",
+    }
     paired = 0
     for env_name in CONTROLLED_ENVIRONMENTS:
         controls = controls_for(env_name)
@@ -1557,11 +1733,20 @@ def test_implemented_interaction_pairs_share_generated_worlds_and_goals() -> Non
             first_normalized = without_control_identity(first_public)
             normalized = without_control_identity(public)
             if env_name in {
+                "facet_lantern_env",
+                "hearthlift_courier_env",
+                "polycube_parcel_env",
+                "pearl_lattice_env",
                 "shadow_crime_lab_env",
                 "slot_reel_capture_env",
                 "ribbon_switchboard_env",
                 "polyrhythm_customs_env",
                 "tomographic_baggage_surgery_env",
+                "knotless_starmap_env",
+                "firewatch_fold_env",
+                "pocket_animation_studio_env",
+                "polarity_run_env",
+                "last_carbon_isles_env",
             }:
                 first_normalized.pop("prompt")
                 normalized.pop("prompt")
@@ -1578,15 +1763,37 @@ def test_implemented_interaction_pairs_share_generated_worlds_and_goals() -> Non
                 for key in ("prompt", "rules"):
                     first_normalized.pop(key, None)
                     normalized.pop(key, None)
-            assert normalized == first_normalized
+            mode_field = mode_fields.get(env_name)
+            if mode_field and mode_field in first_normalized:
+                assert first_normalized.pop(mode_field) == interactions[0]
+                assert normalized.pop(mode_field) == interaction
+            assert normalized == first_normalized, env_name
             first_truth_normalized = without_control_identity(first_truth)
             truth_normalized = without_control_identity(truth)
-            if env_name == "tomographic_baggage_surgery_env":
+            if env_name in {"tomographic_baggage_surgery_env", "knotless_starmap_env"}:
                 # Mode-specific visible instructions travel in the truth bundle
                 # too, but do not change the generated volume or goal.
                 first_truth_normalized.pop("prompt")
                 truth_normalized.pop("prompt")
-            assert truth_normalized == first_truth_normalized
+            if mode_field and mode_field in first_truth_normalized:
+                assert first_truth_normalized.pop(mode_field) == interactions[0]
+                assert truth_normalized.pop(mode_field) == interaction
+            if env_name == "ember_mosaic_env":
+                assert first_truth_normalized["world"]["control_condition"].pop("interaction") == interactions[0]
+                assert truth_normalized["world"]["control_condition"].pop("interaction") == interaction
+            if env_name == "hearthlift_courier_env":
+                # Reference actions have identical state transitions but name
+                # the selected keyboard/drag or button input surface.
+                for bundle, mode in ((first_truth_normalized, interactions[0]), (truth_normalized, interaction)):
+                    sources = {
+                        "camera": "camera_drag" if mode == "full" else "camera_button",
+                        "move": "keyboard_move" if mode == "full" else "proxy_move",
+                        "certify": "certify_button",
+                    }
+                    default = "keyboard_action" if mode == "full" else "proxy_action"
+                    for event in bundle["solution_events"]:
+                        assert event.pop("input_source") == sources.get(event["type"], default)
+            assert truth_normalized == first_truth_normalized, env_name
     assert paired >= 1
 
 
@@ -2656,7 +2863,8 @@ def test_lidar_interaction_modes_share_every_difficulty_world_across_seeds() -> 
             assert without_control_identity(simplified_truth) == without_control_identity(full_truth)
 
 
-def test_lidar_grader_replays_every_difficulty_and_interaction_condition() -> None:
+@pytest.mark.parametrize("initial_idle_ticks", [0, 6000])
+def test_lidar_grader_replays_every_difficulty_and_interaction_condition(initial_idle_ticks: int) -> None:
     grader = load_module(
         "controlled_lidar_profile_grader",
         BENCHMARK / "shared_runtime" / "server" / "incubator_graders" / "lidar_blacksite.py",
@@ -2770,6 +2978,20 @@ def test_lidar_grader_replays_every_difficulty_and_interaction_condition() -> No
                     stations.append(origin)
                 target_seen = target_seen or any(hit["kind"] == "beacon" for hit in hits)
 
+            # Keep observing while stationary before following the same valid route.
+            # Six thousand 20 ms ticks exceed the former 100-second grading limit.
+            while int(player["tick"]) < initial_idle_ticks:
+                scan()
+                grader._advance(
+                    player,
+                    min(initial_idle_ticks, int(player["tick"]) + 1000),
+                    int(requirements["maximum_event_gap_ticks"]),
+                    controls,
+                    world,
+                    walls,
+                    occluders,
+                )
+
             route = truth["solution"]["route_points"]
             scan_indices = set(truth["solution"]["scan_route_indices"])
             beacon_index = int(truth["solution"]["beacon_route_index"])
@@ -2805,6 +3027,15 @@ def test_lidar_grader_replays_every_difficulty_and_interaction_condition() -> No
             }
             decision = grader.grade(payload, truth, public)
             assert decision["passed"] is True, (level, interaction, decision["feedback"])
+
+            if initial_idle_ticks:
+                assert events[-1]["tick"] > 5000
+                assert events[-1]["elapsed_ms"] > 100_000
+                legacy_public, legacy_truth = copy.deepcopy((public, truth))
+                for state in (legacy_public, legacy_truth):
+                    state["requirements"]["maximum_session_ticks"] = 5000
+                legacy_decision = grader.grade(payload, legacy_truth, legacy_public)
+                assert legacy_decision["passed"] is True, legacy_decision["feedback"]
 
 
 def test_forklift_profiles_match_board_route_and_delay_contracts() -> None:

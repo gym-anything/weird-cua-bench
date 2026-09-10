@@ -1,0 +1,119 @@
+{
+  "case_index": 3,
+  "environment_id": "crater_walker_env",
+  "public_name": "Crater Walker",
+  "revision": "48e86f5950c056bfa0f2822fa430f9762c5fc29c",
+  "baseline": {
+    "difficulty": 4,
+    "interaction": "simplified"
+  },
+  "labels": {
+    "visual": "3D",
+    "temporal": "no",
+    "reasoning_planning": "yes",
+    "exploration_interface": "yes"
+  },
+  "temporal_status": "provisional_baseline_audit",
+  "visible_solution": "Use the screenshot-visible TRANSFER LEG banner and highlighted leg card to identify the support being moved. Inspect the 3D canvas; at the baseline, use the orbit buttons or drag the viewport when near and far pads overlap. In the simplified interface, raise that leg's LIFT to the raised value with the visible plus buttons and press SETTLE while the other three feet remain supported. Use the visible foot and pad geometry to adjust YAW and EXTEND, then lower LIFT to put the foot on the next terrace's real raised pad and press SETTLE. Press SETTLE through the finite body-transit steps until the terrace readout advances, then repeat for each newly indicated leg. When the body reaches the outside ledge with four contacts and an upright posture, click CERTIFY ESCAPE.",
+  "reasoning": {
+    "visual": "3D is necessary: each leg's YAW, LIFT, and EXTEND values place its foot in world x/y/z, contact is against finite raised support surfaces, and the canvas uses a yaw/pitch projection in which near and far pads can overlap. The task therefore requires spatial interpretation of nonplanar terrain and support height, not merely decorative perspective.",
+    "temporal": "No, provisionally. A successful foot placement starts a finite body path, but the path is advanced by repeated SETTLE button actions and ends in a visible static terrace state. The required action does not expire, no held action or elapsed duration is needed, and the next transfer leg is visible after progression; a screenshot-only solution can use the current stage/readout without interpreting motion or remembering hidden earlier state.",
+    "reasoning_planning": "Yes. The agent must infer actuator settings that place the indicated leg on the next terrace's specific support pad while preserving the other three current contacts. Raising the leg first, then choosing YAW/EXTEND and lowering LIFT, has later consequences: an unsafe support count, wrong pad, excessive posture, or terrain collision fails the attempt or prevents the next terrace from starting.",
+    "exploration_interface": "Yes at the baseline. The relevant pad relationship can be ambiguous in the initial projection, and the visible orbit buttons/drag surface are needed to resolve near/far geometry before committing a transfer. The transfer banner, highlighted card, canvas legend, actuator controls, and SETTLE/CERTIFY buttons provide the interface surface; difficulties 1 and 2 are exceptions because their broad, low-decoy routes are readable without an information-revealing view interaction."
+  },
+  "source_evidence": [
+    {
+      "capability": "visual",
+      "path": "weird_captcha_gym/shared_scripts/incubator_generators/crater_walker.py",
+      "lines": "53-67",
+      "claim": "The three actuator channels map a leg to world x, y, and z coordinates, and the inverse mapping is used to derive visible transfer settings."
+    },
+    {
+      "capability": "visual",
+      "path": "weird_captcha_gym/shared_scripts/incubator_generators/crater_walker.py",
+      "lines": "114-135",
+      "claim": "Generated footholds are finite raised support-surface terrain quads, so contact depends on 3D support geometry rather than marker appearance alone."
+    },
+    {
+      "capability": "visual",
+      "path": "weird_captcha_gym/shared_runtime/app/mechanics/crater_walker.js",
+      "lines": "99-106",
+      "claim": "The browser projects world x/y/z points using camera yaw and pitch, with depth affecting the screenshot position."
+    },
+    {
+      "capability": "temporal",
+      "path": "weird_captcha_gym/shared_runtime/app/mechanics/crater_walker.js",
+      "lines": "250-314",
+      "claim": "SETTLE advances a finite body path one step at a time and then exposes the next terrace; there is no action-duration or expiry condition in this transition."
+    },
+    {
+      "capability": "reasoning_planning",
+      "path": "weird_captcha_gym/shared_runtime/app/mechanics/crater_walker.js",
+      "lines": "66-82",
+      "claim": "Contacts are selected by 3D distance to visible pads, with one pad per leg and raised lift releasing a foot."
+    },
+    {
+      "capability": "reasoning_planning",
+      "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/crater_walker.py",
+      "lines": "185-218",
+      "claim": "The replay requires at least three contacts, safe non-transfer legs, release of the indicated leg, landing on the next stage's specified pad, and sequential body transit to completion."
+    },
+    {
+      "capability": "exploration_interface",
+      "path": "weird_captcha_gym/shared_runtime/app/mechanics/crater_walker.js",
+      "lines": "352-372",
+      "claim": "The visible UI exposes a transfer banner, highlighted leg cards, mode-specific actuator controls, orbit buttons, and canvas drag orbiting."
+    },
+    {
+      "capability": "exploration_interface",
+      "path": "weird_captcha_gym/shared_runtime/app/mechanics/crater_walker.js",
+      "lines": "185-207",
+      "claim": "The screenshot renders all terrain and pads with a legend distinguishing contacts, available pads, and decoys, while the canvas help warns that near/far feet may overlap in projection."
+    }
+  ],
+  "configuration_exceptions": [
+    {
+      "difficulties": [1, 2],
+      "interaction_modes": ["simplified", "full"],
+      "capability": "exploration_interface",
+      "label": "no",
+      "reason": "These profiles generate broad, easy-to-read routes (d1 has no decoys; d2 has only one false foothold and wide contacts), and the canvas visibly marks decoys in grey. The initial screenshot therefore supplies the route information without requiring orbit interaction. From d3 onward, increasing lateral variation and depth ambiguity make orbiting the visible way to resolve the support relationship. The interaction mode changes nudge buttons to direct rails and view buttons to canvas dragging but does not change this capability distinction.",
+      "source_evidence": [
+        {
+          "capability": "exploration_interface",
+          "path": "weird_captcha_gym/environments/crater_walker_env/controls.json",
+          "lines": "10-49",
+          "claim": "Difficulty 1 and 2 use no/one decoy with broad contacts, while difficulty 3 and above increase lateral variation and require depth-sensitive route reading."
+        },
+        {
+          "capability": "exploration_interface",
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/crater_walker.js",
+          "lines": "185-207",
+          "claim": "The same initial canvas renders the full pad set and explicitly distinguishes grey decoys, so d1-d2 do not require a reveal interaction to identify the relevant route."
+        }
+      ]
+    }
+  ],
+  "observation_only_temporal": false,
+  "files_read_completely": [
+    "AGENTS.md",
+    "weird_captcha_gym/docs/capability-annotation-guidelines.md",
+    "weird_captcha_gym/docs/controllability/temporal.md",
+    "weird_captcha_gym/environments/crater_walker_env/env.json",
+    "weird_captcha_gym/environments/crater_walker_env/controls.json",
+    "weird_captcha_gym/environments/crater_walker_env/scripts/install_puzzle_runtime.sh",
+    "weird_captcha_gym/environments/crater_walker_env/scripts/setup_puzzle_runtime.sh",
+    "weird_captcha_gym/environments/crater_walker_env/tasks/crater_walker_seed_0001/task.json",
+    "weird_captcha_gym/environments/crater_walker_env/tasks/crater_walker_seed_0001/setup_task.sh",
+    "weird_captcha_gym/environments/crater_walker_env/tasks/crater_walker_seed_0001/export_result.sh",
+    "weird_captcha_gym/environments/crater_walker_env/tasks/crater_walker_seed_0001/verifier.py",
+    "weird_captcha_gym/shared_scripts/incubator_generators/crater_walker.py",
+    "weird_captcha_gym/shared_runtime/app/index.html",
+    "weird_captcha_gym/shared_runtime/app/mechanics/crater_walker.js",
+    "weird_captcha_gym/shared_runtime/app/mechanics/crater_walker.css",
+    "weird_captcha_gym/shared_runtime/server/incubator_graders/crater_walker.py",
+    "weird_captcha_gym/tools/incubator_solvers/crater_walker.py"
+  ],
+  "runtime_checks": [],
+  "uncertainties": []
+}

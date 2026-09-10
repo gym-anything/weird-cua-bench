@@ -1,0 +1,99 @@
+{
+  "case_index": 13,
+  "environment_id": "polycube_parcel_env",
+  "public_name": "Polycube Parcel",
+  "revision": "48e86f5950c056bfa0f2822fa430f9762c5fc29c",
+  "baseline": {"difficulty": 4, "interaction": "full"},
+  "labels": {
+    "visual": "3D",
+    "temporal": "no",
+    "reasoning_planning": "yes",
+    "exploration_interface": "yes"
+  },
+  "temporal_status": "provisional_baseline_audit",
+  "visible_solution": "Read the visible instructions and piece ledger, orbit the parcel by dragging an empty part of the scene to inspect rear and interior cells, then repeat for each loose piece: select its visible ledger row, use the visible X/Y/Z 90-degree buttons to match its rigid shape to a remaining cavity, drag it from a visible face to the target lattice area, release, and clear the selection. Use the updated occupied-cell count and the changed visible cavities to place all seven pieces without overlap, then press CERTIFY PARCEL.",
+  "reasoning": {
+    "visual": "The task requires interpreting a projected 3D volume: each piece consists of integer (x, y, z) cells, the parcel is a 3x3x3 lattice, and the browser projects cube corners and depth-sorts their faces. The agent must use multiple views to understand spatial occupancy.",
+    "temporal": "No temporal capability is required in the provisional baseline. The parcel is static; camera orbit, piece rotation, and piece placement update state only in response to direct input, and successful action does not depend on duration, motion of the world, or an evolving timed state.",
+    "reasoning_planning": "The agent must infer a collision-free exact-cover arrangement from piece shapes and currently occupied cells. Each placement changes the remaining cavities, while the browser and grader require every piece to occupy integer in-bounds cells with no overlap and the final occupancy to equal all 27 parcel cells.",
+    "exploration_interface": "The initial view does not expose the whole relevant volume clearly; the visible UI specifically requires orbiting the camera to inspect the parcel's back, and that orbit changes the 3D projection used to see rear/interior cells. The grader also requires a camera-orbit event before acceptance. The controls are visibly labeled, so this label is driven by revealing relevant spatial information rather than by needing to discover undocumented control semantics."
+  },
+  "source_evidence": [
+    {
+      "capability": "visual",
+      "path": "weird_captcha_gym/shared_scripts/incubator_generators/polycube_parcel.py",
+      "lines": "20-30, 112-118, 186-193",
+      "claim": "The generated pieces are defined as three-coordinate cell sets and the world is a 3x3x3 parcel with camera, piece, and parcel presentation parameters."
+    },
+    {
+      "capability": "visual",
+      "path": "weird_captcha_gym/shared_runtime/app/mechanics/polycube_parcel.js",
+      "lines": "24-56, 144-158",
+      "claim": "The browser transforms cells in 3D, projects x/y/z points using yaw and pitch, depth-sorts cube faces, and renders the parcel and pieces as projected cube geometry."
+    },
+    {
+      "capability": "temporal",
+      "path": "weird_captcha_gym/shared_runtime/app/mechanics/polycube_parcel.js",
+      "lines": "59-67, 175-232",
+      "claim": "The mechanic keeps a static interaction model and applies camera, rotation, and placement changes directly from pointer/button events; it contains no timed world update or duration-sensitive mechanic."
+    },
+    {
+      "capability": "temporal",
+      "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/polycube_parcel.py",
+      "lines": "119-155, 167-226",
+      "claim": "The independent grader replays an ordered event transcript and validates transforms, paths, and occupancy, but uses no timestamps or evolving-world state that would make action timing relevant."
+    },
+    {
+      "capability": "reasoning_planning",
+      "path": "weird_captcha_gym/shared_scripts/incubator_generators/polycube_parcel.py",
+      "lines": "32-42, 112-118, 158-180, 213-228",
+      "claim": "The task supplies seven pieces totaling an exact 3x3x3 cover, varies which pieces are preplaced, and leaves loose pieces to be oriented and placed into the remaining volume."
+    },
+    {
+      "capability": "reasoning_planning",
+      "path": "weird_captcha_gym/shared_runtime/app/mechanics/polycube_parcel.js",
+      "lines": "95-109, 175-192",
+      "claim": "A placement is accepted only if the transformed piece remains in the 3x3x3 bounds, has unique cells, and avoids already placed cells; rotations and placements change the current state."
+    },
+    {
+      "capability": "reasoning_planning",
+      "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/polycube_parcel.py",
+      "lines": "200-226",
+      "claim": "The grader replays each placement against prior occupancy and finally requires all seven pieces and exactly the 27 parcel cells with no overlap."
+    },
+    {
+      "capability": "exploration_interface",
+      "path": "weird_captcha_gym/shared_runtime/app/mechanics/polycube_parcel.js",
+      "lines": "75-80, 216-243",
+      "claim": "The visible UI says to rotate the view to inspect the back and implements camera orbit through either direct scene dragging or visible proxy buttons; the baseline full mode uses direct dragging."
+    },
+    {
+      "capability": "exploration_interface",
+      "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/polycube_parcel.py",
+      "lines": "141-155, 218-226",
+      "claim": "The accepted transcript must contain a camera_orbit event before the final exact-cover check, making the information-revealing camera interaction part of the visible solution loop."
+    }
+  ],
+  "configuration_exceptions": [],
+  "observation_only_temporal": false,
+  "files_read_completely": [
+    "AGENTS.md",
+    "weird_captcha_gym/docs/capability-annotation-guidelines.md",
+    "weird_captcha_gym/docs/controllability/temporal.md",
+    "weird_captcha_gym/environments/polycube_parcel_env/env.json",
+    "weird_captcha_gym/environments/polycube_parcel_env/controls.json",
+    "weird_captcha_gym/environments/polycube_parcel_env/tasks/polycube_parcel_seed_0001/task.json",
+    "weird_captcha_gym/shared_scripts/incubator_generators/polycube_parcel.py",
+    "weird_captcha_gym/shared_runtime/app/mechanics/polycube_parcel.js",
+    "weird_captcha_gym/shared_runtime/app/mechanics/polycube_parcel.css",
+    "weird_captcha_gym/shared_runtime/server/incubator_graders/polycube_parcel.py",
+    "weird_captcha_gym/environments/polycube_parcel_env/tasks/polycube_parcel_seed_0001/verifier.py",
+    "weird_captcha_gym/tools/incubator_solvers/polycube_parcel.py",
+    "weird_captcha_gym/environments/polycube_parcel_env/scripts/install_puzzle_runtime.sh",
+    "weird_captcha_gym/environments/polycube_parcel_env/scripts/setup_puzzle_runtime.sh",
+    "weird_captcha_gym/environments/polycube_parcel_env/tasks/polycube_parcel_seed_0001/setup_task.sh",
+    "weird_captcha_gym/environments/polycube_parcel_env/tasks/polycube_parcel_seed_0001/export_result.sh"
+  ],
+  "runtime_checks": [],
+  "uncertainties": []
+}

@@ -1,0 +1,13 @@
+# Pocket Locksmith — primary assessment
+
+Decision: revise the inactive-parameter description; retain L4/Full provisionally without a numerical relabel. The parent read the complete controls, generator, browser JavaScript/CSS, grader, task verifier, solver and task/environment specifications. The active ladder adds articulated degrees of freedom, contact regions, collision obstacles and tighter spatial margins. These affect the actual fitting problem, unlike a quota of repeated independent actions. No comparison establishes empirical L1–L5 thresholds.
+
+The reviewer is correct that `torsion_tolerance_deg` does not affect acceptance. The target angles are a construction witness; browser and grader both accept any pose covering the marked contact regions while remaining in bounds and clash-free. Do not turn the unused field into a hidden exact-angle requirement: that would change the visible goal. Remove or clarify the inactive parameter in a separately authorized implementation pass. See generator lines 332–358, browser lines 151–165, and grader lines 125–191.
+
+The reviewer correctly records that Simplified buttons can invoke a joint while its on-object handle is occluded, whereas Full must expose and drag a handle. However, the interaction definition explicitly permits side-panel rotation proxies versus direct manipulation. Both interfaces show the same world, contacts and readiness feedback, and each torsion command has the same discrete effect. Hidden-handle access alone is therefore not a demonstrated information/physics mismatch. Continuous Full camera positioning versus fixed-step Simplified orbit is a real reachability difference worth documenting, but this audit has not shown a task-relevant view or fit unreachable in Simplified. Do not adopt the report's unconditional interaction-failure classification.
+
+The missing generator assertions identify a coverage limitation, not an observed broken seed. Independent world checks across seeds 1, 17 and 101 at all five levels and both modes found zero initially passing poses and 30/30 passing construction targets (`pocket_pose_checks.json`). The original ten seed-1 browser solves passed. These finite checks do not prove the invariants for all seeds.
+
+The comparison with Exact-Change Candy Cascade should not imply that a fixed goal makes articulated fitting stateless: upstream torsions move downstream atoms, and subsequent choices depend on the altered geometry. It is reasonable to leave the baseline unchanged pending measurements; it is not established that this mechanic must be below L5 merely because it lacks candy cascades.
+
+All source references are under `weird_captcha_gym/` in the frozen revision. No puzzle sources or labels were changed.

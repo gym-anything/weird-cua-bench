@@ -1,0 +1,110 @@
+{
+  "case_index": 6,
+  "environment_id": "hearthlift_courier_env",
+  "public_name": "Hearthlift Courier",
+  "revision": "48e86f5950c056bfa0f2822fa430f9762c5fc29c",
+  "baseline": {
+    "difficulty": 4,
+    "interaction": "full"
+  },
+  "labels": {
+    "visual": "3D",
+    "temporal": "no",
+    "reasoning_planning": "yes",
+    "exploration_interface": "yes"
+  },
+  "temporal_status": "provisional_baseline_audit",
+  "visible_solution": "From the initial screenshot, orbit the garden once to inspect the near and far cells (drag the voxel scene in full mode or use an orbit button in simplified mode). Read the visible voxel heights, helper STEP crates, DECOY crates, marked CARGO, and glowing HEARTH, then infer the traversable route and its visible lane turns. For each elevation transition, move to the helper at the current level, push it into the empty same-height cell, climb its top, and cross the next higher ledge. At the high end, retrace the route without disturbing the supports, pick up the adjacent marked cargo at the start approach, then carry it forward over the preserved helper tops and drop it on the hearth before certifying.",
+  "reasoning": {
+    "visual": "The task requires 3D spatial understanding: the browser renders cells, crates, the courier, and the hearth as isometric voxels using x/y depth and z height. Legal movement depends on same-height cells, one-voxel ledges, and crate tops, while side shelves and lane turns change the depth relationships.",
+    "temporal": "No. Camera orbit changes only the projection, and move, climb, pickup, and drop are discrete state transitions. The resulting avatar, crate, cargo, and delivery state remains visible after each action; waiting, action duration, and hidden earlier state are not needed. The cargo breathing animation is presentation only and does not change the puzzle state.",
+    "reasoning_planning": "Yes. The agent must infer which visible helper crates form the route and push each into an empty same-height cell because that placement creates the support needed for the later climb and higher crossing. It must plan a return to the cargo and preserve those supports for the subsequent carried-cargo traversal, while ignoring decoys.",
+    "exploration_interface": "Yes. The visible task requires an orbit to inspect the depth-staggered shelves and hearth approach before committing; the public state omits the construction route and stage table, so the agent must obtain and reconcile the relevant spatial information from the rendered scene. Both interaction modes expose the orbit operation, with full mode using a scene drag and simplified mode using visible orbit buttons."
+  },
+  "source_evidence": [
+    {
+      "capability": "visual",
+      "path": "weird_captcha_gym/shared_scripts/incubator_generators/hearthlift_courier.py",
+      "lines": "228-314",
+      "claim": "The generator creates route cells at multiple heights, helper and decoy boxes, a higher hearth, depth turns, and a camera whose stated purpose is inspecting depth-staggered shelves and the hearth approach."
+    },
+    {
+      "capability": "visual",
+      "path": "weird_captcha_gym/shared_runtime/app/mechanics/hearthlift_courier.js",
+      "lines": "98-200",
+      "claim": "The browser projects x/y/z coordinates and renders cells, crate cubes, the courier, and hearth as an isometric voxel scene, with depth-dependent ordering and opacity."
+    },
+    {
+      "capability": "temporal",
+      "path": "weird_captcha_gym/shared_scripts/incubator_generators/hearthlift_courier.py",
+      "lines": "73-144",
+      "claim": "The replay contract applies camera yaw and the movement, climb, pickup, and drop operations as discrete state updates without elapsed-time or duration conditions."
+    },
+    {
+      "capability": "temporal",
+      "path": "weird_captcha_gym/shared_runtime/app/mechanics/hearthlift_courier.js",
+      "lines": "217-245,282-352",
+      "claim": "Actions are applied, snapshotted, recorded, and rendered immediately; camera dragging changes the view and is not coupled to a changing world state or timed target."
+    },
+    {
+      "capability": "temporal",
+      "path": "weird_captcha_gym/shared_runtime/app/mechanics/hearthlift_courier.css",
+      "lines": "38-47",
+      "claim": "The only CSS animation is the cargo's idle breathing presentation, with no gameplay state or action condition tied to waiting."
+    },
+    {
+      "capability": "reasoning_planning",
+      "path": "weird_captcha_gym/shared_runtime/app/mechanics/hearthlift_courier.js",
+      "lines": "34-95",
+      "claim": "A push requires an empty same-height destination, climb requires an adjacent same-level box, pickup requires adjacent same-height cargo, and drop requires the hearth, making support placement and later action order consequential."
+    },
+    {
+      "capability": "reasoning_planning",
+      "path": "weird_captcha_gym/shared_scripts/incubator_generators/hearthlift_courier.py",
+      "lines": "325-355",
+      "claim": "The construction witness explicitly builds the route with push and climb actions, reverses the route to pick up cargo, and traverses the raised route again before dropping it."
+    },
+    {
+      "capability": "exploration_interface",
+      "path": "weird_captcha_gym/shared_scripts/incubator_generators/hearthlift_courier.py",
+      "lines": "285-324",
+      "claim": "Decoy crates are real side-shelf cells, while the public world removes the cell map, route, and stage table; the browser therefore must use the visible scene and camera rather than a serialized solution map."
+    },
+    {
+      "capability": "exploration_interface",
+      "path": "weird_captcha_gym/shared_runtime/app/mechanics/hearthlift_courier.js",
+      "lines": "238-245,292,305-349",
+      "claim": "The visible UI instructs the agent to rotate the garden to inspect depth and implements orbit through a full-mode scene drag or simplified-mode orbit buttons, while exposing the movement, climb, cargo, and visible rules controls."
+    },
+    {
+      "capability": "configuration",
+      "path": "weird_captcha_gym/environments/hearthlift_courier_env/controls.json",
+      "lines": "4-46",
+      "claim": "The baseline is difficulty 4/full; all five profiles and both interaction modes are implemented, with scaling parameters changing route/support/decoy/depth complexity and the two modes retaining the same discrete action effects."
+    }
+  ],
+  "configuration_exceptions": [],
+  "observation_only_temporal": false,
+  "files_read_completely": [
+    "AGENTS.md",
+    "weird_captcha_gym/docs/capability-annotation-guidelines.md",
+    "weird_captcha_gym/docs/controllability/temporal.md",
+    "weird_captcha_gym/environments/hearthlift_courier_env/env.json",
+    "weird_captcha_gym/environments/hearthlift_courier_env/controls.json",
+    "weird_captcha_gym/environments/hearthlift_courier_env/tasks/hearthlift_courier_seed_0001/task.json",
+    "weird_captcha_gym/environments/hearthlift_courier_env/tasks/hearthlift_courier_seed_0001/verifier.py",
+    "weird_captcha_gym/environments/hearthlift_courier_env/tasks/hearthlift_courier_seed_0001/setup_task.sh",
+    "weird_captcha_gym/environments/hearthlift_courier_env/tasks/hearthlift_courier_seed_0001/export_result.sh",
+    "weird_captcha_gym/environments/hearthlift_courier_env/scripts/setup_puzzle_runtime.sh",
+    "weird_captcha_gym/environments/hearthlift_courier_env/scripts/install_puzzle_runtime.sh",
+    "weird_captcha_gym/shared_scripts/incubator_generators/hearthlift_courier.py",
+    "weird_captcha_gym/shared_runtime/app/mechanics/hearthlift_courier.js",
+    "weird_captcha_gym/shared_runtime/app/mechanics/hearthlift_courier.css",
+    "weird_captcha_gym/shared_runtime/server/incubator_graders/hearthlift_courier.py",
+    "weird_captcha_gym/tools/incubator_solvers/hearthlift_courier.py",
+    "weird_captcha_gym/shared_runtime/app/index.html",
+    "weird_captcha_gym/shared_scripts/export_result.sh"
+  ],
+  "runtime_checks": [],
+  "uncertainties": []
+}

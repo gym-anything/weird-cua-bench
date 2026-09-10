@@ -1,0 +1,101 @@
+{
+  "case_index": 7,
+  "environment_id": "horizon_relay_env",
+  "public_name": "Horizon Relay",
+  "revision": "48e86f5950c056bfa0f2822fa430f9762c5fc29c",
+  "baseline": {"difficulty": 3, "interaction": "full"},
+  "labels": {
+    "visual": "3D",
+    "temporal": "yes",
+    "reasoning_planning": "yes",
+    "exploration_interface": "no"
+  },
+  "temporal_status": "provisional_baseline_audit",
+  "visible_solution": "At the initial screen, read the prompt and the station cards, then choose a station whose visible card lists the requested spacecraft above its horizon. In the full baseline, drag that station's bright dish marker to the spacecraft marker to start the relay. Watch the visible progress and changing globe; if rotation makes the current line of sight or aim invalid, drag the same or another currently visible station dish to the spacecraft to refresh or hand off before continuing. Repeat for all three requests until every progress bar reaches 20/20, then click CERTIFY ALL RELAYS.",
+  "reasoning": {
+    "visual": "The necessary spatial relation is three-dimensional: stations are points on a sphere, spacecraft have inertial x/y/z positions outside it, and reachability is determined by the station's outward-hemisphere sightline rather than by a flat map. The projected globe, front/far-side styling, horizon cue, and visible station-to-spacecraft availability expose this relation.",
+    "temporal": "The station positions advance every 100 ms. An active relay earns one sample only on each consecutive tick while the current 3D visibility and aim remain valid, and the link breaks when either condition fails. The agent must keep the link active for the required 20 ticks per spacecraft and respond to any loss by re-aiming or handing off.",
+    "reasoning_planning": "The agent must map each request to a station that is currently above that station's horizon and choose when to continue, refresh the aim, hand off, or recover from a link break. A stale aim or invalid station affects later transfer progress, so this is more than recognizing a marker and clicking it.",
+    "exploration_interface": "No exploratory probing is required. The prompt, globe legend, station horizon lists, request rows, progress, and full drag instruction are rendered before interaction. The station click/drag and certification actions follow the stated interface and do not reveal an otherwise hidden rule."
+  },
+  "source_evidence": [
+    {
+      "capability": "visual",
+      "path": "weird_captcha_gym/shared_scripts/incubator_generators/horizon_relay.py",
+      "lines": "19-26, 79-94, 117-129",
+      "claim": "Spacecraft are generated as 3D Cartesian positions; their positions remain inertial while stations rotate, and the public contract identifies visibility as a 3D sphere-normal rule."
+    },
+    {
+      "capability": "visual",
+      "path": "weird_captcha_gym/shared_runtime/app/mechanics/horizon_relay.js",
+      "lines": "43-49, 60-82, 100-117",
+      "claim": "The visible UI presents a rotating 3D globe, front/far-side markers, a local horizon cue, and projected stations and spacecraft; visibility and aim error are computed from 3D vectors."
+    },
+    {
+      "capability": "temporal",
+      "path": "weird_captcha_gym/shared_runtime/app/mechanics/horizon_relay.js",
+      "lines": "178-188, 204-207",
+      "claim": "A 100 ms timer advances the tick; an active link produces a sample only while visibility and aim tolerance hold, otherwise it records a link break, and the relay timer continues until completion."
+    },
+    {
+      "capability": "temporal",
+      "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/horizon_relay.py",
+      "lines": "148-181, 191-196",
+      "claim": "The authoritative replay requires consecutive task ticks with valid visibility and aim, rejects invalid samples, and requires every spacecraft to reach its required sample count before submission passes."
+    },
+    {
+      "capability": "reasoning_planning",
+      "path": "weird_captcha_gym/environments/horizon_relay_env/controls.json",
+      "lines": "18-34",
+      "claim": "The baseline difficulty has three requests, 20 required ticks, changing station horizons, and tighter aiming than easier profiles, making relay selection and continuation decisions part of the active task."
+    },
+    {
+      "capability": "reasoning_planning",
+      "path": "weird_captcha_gym/shared_runtime/app/mechanics/horizon_relay.js",
+      "lines": "128-161, 178-186",
+      "claim": "The UI exposes the currently reachable spacecraft per station, but the agent must select a station, aim it, hold or activate the relay, and decide when to re-aim or recover as the active link succeeds or breaks."
+    },
+    {
+      "capability": "exploration_interface",
+      "path": "weird_captcha_gym/shared_runtime/app/mechanics/horizon_relay.js",
+      "lines": "34-53, 120-138",
+      "claim": "Instructions, the 3D legend, station horizon information, request rows, controls, and progress are rendered in the initial scene and refreshed as state changes; no interaction is needed to discover them."
+    },
+    {
+      "capability": "exploration_interface",
+      "path": "weird_captcha_gym/shared_runtime/app/mechanics/horizon_relay.js",
+      "lines": "141-161",
+      "claim": "The click, target, hold/stop, and certify handlers implement the explicitly described action sequence rather than an information-revealing exploration mechanic."
+    },
+    {
+      "capability": "configuration_profiles",
+      "path": "weird_captcha_gym/environments/horizon_relay_env/controls.json",
+      "lines": "4-41",
+      "claim": "All five difficulty profiles retain the same relay, horizon, and aiming rules while scaling counts, required ticks, rotation speed, tolerance, latitude spread, and craft radius; simplified and full profiles change the input surface only. No supported profile changes a core capability label."
+    }
+  ],
+  "configuration_exceptions": [],
+  "observation_only_temporal": false,
+  "files_read_completely": [
+    "AGENTS.md",
+    "weird_captcha_gym/docs/capability-annotation-guidelines.md",
+    "weird_captcha_gym/docs/controllability/temporal.md",
+    "weird_captcha_gym/docs/controllability-plan.md",
+    "weird_captcha_gym/environments/horizon_relay_env/env.json",
+    "weird_captcha_gym/environments/horizon_relay_env/tasks/horizon_relay_seed_0001/task.json",
+    "weird_captcha_gym/environments/horizon_relay_env/controls.json",
+    "weird_captcha_gym/environments/horizon_relay_env/tasks/horizon_relay_seed_0001/setup_task.sh",
+    "weird_captcha_gym/environments/horizon_relay_env/tasks/horizon_relay_seed_0001/export_result.sh",
+    "weird_captcha_gym/environments/horizon_relay_env/scripts/install_puzzle_runtime.sh",
+    "weird_captcha_gym/environments/horizon_relay_env/scripts/setup_puzzle_runtime.sh",
+    "weird_captcha_gym/shared_scripts/incubator_generators/horizon_relay.py",
+    "weird_captcha_gym/shared_runtime/app/mechanics/horizon_relay.js",
+    "weird_captcha_gym/shared_runtime/app/mechanics/horizon_relay.css",
+    "weird_captcha_gym/shared_runtime/server/incubator_graders/horizon_relay.py",
+    "weird_captcha_gym/environments/horizon_relay_env/tasks/horizon_relay_seed_0001/verifier.py",
+    "weird_captcha_gym/tools/incubator_solvers/horizon_relay.py",
+    "weird_captcha_gym/shared_runtime/app/time_controller.js"
+  ],
+  "runtime_checks": [],
+  "uncertainties": []
+}

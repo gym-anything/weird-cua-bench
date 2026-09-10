@@ -43,6 +43,12 @@ def generate(task, seed):
         candidates[length] = [[(r+dr*k,c+dc*k) for k in range(length)]
             for r,c in sorted(valid) for dr,dc in [(0,1),(1,0)]
             if all((r+dr*k,c+dc*k) in valid for k in range(length))]
+    def effective_runs(target_ids):
+        return [run for run in runs if any(
+            c['id'] in target_ids and c['band'] == run['band'] and c['block'] == run['block']
+            and c['column'] - run['start'] + 1 != run['start'] + run['width'] - c['column']
+            for c in cells)]
+
     fleet = None
     for _ in range(1000):
         ships, occupied = [], set()
@@ -56,10 +62,30 @@ def generate(task, seed):
                           'orientation':'H' if chosen[0][0]==chosen[-1][0] else 'V'})
             occupied.update(chosen)
         if len(ships)==len(p['fleet_lengths']):
+            # A reversed width-one run (or just its middle cell) changes no
+            # address. Require an occupied cell whose designation can change.
+            if p['reverse_counts'] and not effective_runs({c for ship in ships for c in ship['cells']}):
+                continue
             fleet=ships;break
     if fleet is None: raise ValueError('could not place a separated reachable fleet')
     # Exact omniscient lower bound, NOT an information-theoretic search minimum.
     target = {c for ship in fleet for c in ship['cells']}
+    if p['reverse_counts']:
+        eligible = effective_runs(target)
+        reversed_run = next((run for run in eligible if run['reverse']), None)
+        if reversed_run is None:
+            reversed_run = rng.choice(eligible)
+            reversed_run['reverse'] = True
+        # Preserve a real mixture, so direction must be read locally rather
+        # than adopting one global convention for the whole chart.
+        forward_options = [run for run in effective_runs({c['id'] for c in cells}) if run is not reversed_run]
+        if not any(not run['reverse'] for run in forward_options):
+            rng.choice(forward_options)['reverse'] = False
+        for run in runs:
+            for cell in cells:
+                if cell['band'] == run['band'] and cell['block'] == run['block']:
+                    cell['count'] = (run['start'] + run['width'] - cell['column'] if run['reverse']
+                                     else cell['column'] - run['start'] + 1)
     cover = [{c['id'] for c in cells if c['band']==run['band'] and c['block']==run['block']} & target for run in runs]
     minimum = len(target)
     for k in range(1,p['sweeps']+1):

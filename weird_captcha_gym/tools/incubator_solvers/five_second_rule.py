@@ -132,9 +132,14 @@ def _solve_flick(page, spec: dict, mode: str) -> None:
         vectors = {"NORTH": (0, -1), "EAST": (1, 0), "SOUTH": (0, 1), "WEST": (-1, 0)}
         dx, dy = vectors[direction]
         distance = float(spec["flick"]["min_travel_px"]) + 24
+        stage = page.locator('.fsr-stage').bounding_box()
+        if not stage:
+            raise AssertionError("flick field is not visible")
         x, y = _center(page.locator(f'[data-token-id="{target_id}"]'))
         page.mouse.move(x, y)
-        drag = (x, y, dx, dy, distance)
+        # Travel is graded in the 820×390 field, not viewport pixels. The
+        # rendered field can stretch independently along its two axes.
+        drag = (x, y, dx * stage['width'] / 820, dy * stage['height'] / 390, distance)
     page.wait_for_function(
         "([face, tolerance]) => { const raw = getComputedStyle(document.querySelector('[data-pointer-for]')).getPropertyValue('--angle'); const angle = Number.parseFloat(raw); const diff = Math.abs(((angle - face + 540) % 360) - 180); return diff <= tolerance * .35; }",
         arg=[spec["flick"]["face_angle_deg"], spec["flick"]["angle_tolerance_deg"]],

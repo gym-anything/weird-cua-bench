@@ -1,0 +1,11 @@
+# Letter Rapids — primary assessment
+
+Decision: keep L4/Full and the relative ladder provisionally, with a weak-band-width qualification. The parent read the complete controls, generator, browser JavaScript/CSS, grader, task verifier, solver and task/environment specifications. Absolute placement remains unmeasured; the reviewer's cross-task superiority claims are not established by source comparison alone.
+
+The visible target phrase eliminates hidden-string recall. Each commit changes the context-dependent channel widths, so the next action must use the new displayed geometry. Alphabet size, forward/brake regions, current-dependent speed and the combined travel/rewind budget affect control. A longer target alone is not additional planning depth, and a faster maximum speed can be moderated by selecting a smaller horizontal advance displacement.
+
+Accept the limited minimum-band finding, not a claim that L4 and L5 collapse. Both 27-symbol profiles redistribute through the same 340-unit display floor. Across seeds 1, 17 and 101, the smallest displayed bands are 349/349/349 units at L4 and 345/346/346 at L5: only 3–4 units out of 10,000, or about 0.16–0.22 pixels on the captured 538px-tall field. Other probability weights and control settings also change. The parent opened the actual L5 Full active-reflow screenshot and inspected the channels, explicit target, output and brake region; this was not a user study or visual QA of every profile.
+
+Eight original L1–L4 browser solves passed. Both original L5 solves exhausted the 145,000-unit travel budget before completing `quartz box`; the archived browser/server replay agrees on failure. The existing solver waits for each output change with assertion polling while forward motion continues, spending travel after a commit before braking.
+
+Separate `letter_fast_poll_diagnostic` runs change only that displayed-output wait to 16ms polling. Both L5 modes then pass browser, server, direct grader and exported verification, using about 101,500 travel units with no rewinds. The target, input procedure, live clock, budgets, physics and grader are unchanged. The original failed records remain failures. These are DOM-observation/private-target wiring diagnostics, not screenshot-only computer-use measurements.

@@ -1,0 +1,123 @@
+{
+  "case_index": 1,
+  "environment_id": "cloudpost_circuit_env",
+  "public_name": "Cloudpost Circuit",
+  "revision": "48e86f5950c056bfa0f2822fa430f9762c5fc29c",
+  "baseline": {"difficulty": 4, "interaction": "full"},
+  "labels": {
+    "visual": "3D",
+    "temporal": "yes",
+    "reasoning_planning": "yes",
+    "exploration_interface": "yes"
+  },
+  "temporal_status": "provisional_baseline_audit",
+  "visible_solution": "Use the visible flight field, plane marker, projected delivery seals, counter, and HUD. In the baseline full interface, move the pointer over the canvas to set the yaw/pitch flight vector, watch successive observations as the plane advances, and repeatedly correct the vector so the moving plane reaches each seal in world space rather than merely overlapping its screen projection. If a seal is outside the current camera frustum, steer to bring it into view before lining up the contact. Continue until the counter shows every seal contacted; the browser then submits the flight ledger and displays the result. In a simplified configuration, use the visible TURN, CLIMB, DIVE, and LEVEL trim buttons for the same persistent vector and make the same observation-driven corrections.",
+  "reasoning": {
+    "visual": "The task requires spatial interpretation of x/y/z target positions through a yaw/pitch camera: projected screen position and apparent size depend on depth, while success is a three-dimensional plane-to-seal distance. The plane marker is fixed in the cockpit view, so the agent must use the changing projected scene and depth cues to infer the needed world-space alignment.",
+    "temporal": "Temporal understanding is required because the browser advances physics on repeated ticks while the agent waits: yaw and pitch turn toward persistent controls, the plane moves forward, contacts occur at particular poses, and pointer or trim changes affect the following tick. A successful solution must sustain and redirect control as the route evolves; it cannot ignore the changing pose and contact opportunities.",
+    "reasoning_planning": "The agent must infer a yaw/pitch correction from each seal's relative 3D position and choose controls whose consequences affect later contacts. Turn-rate limits, flight speed, a finite contact radius, and corridor bounds require anticipating the plane's trajectory and correcting before or while reaching a seal; screen overlap alone is explicitly insufficient.",
+    "exploration_interface": "At baseline difficulty, the generator permits the first seal to begin outside the initial camera frustum, and the browser draws a seal only when its 3D projection lies within the camera view. The agent therefore may need to actively steer/scan to reveal a relevant seal before solving its contact. The control mapping and the distinction between world contact and screen overlap are visible in the UI, so no separate interface-learning probe is needed beyond this task-directed discovery."
+  },
+  "source_evidence": [
+    {
+      "capability": "visual",
+      "path": "weird_captcha_gym/shared_scripts/incubator_generators/cloudpost_circuit.py",
+      "lines": "96-119",
+      "claim": "Each generated delivery seal has x, y, and z world coordinates; the route varies lateral and vertical position and keeps successive waypoints in a 3D turn envelope."
+    },
+    {
+      "capability": "visual",
+      "path": "weird_captcha_gym/shared_runtime/app/mechanics/cloudpost_circuit.js",
+      "lines": "64-86",
+      "claim": "The visible scene uses plane yaw/pitch to construct camera basis vectors and perspective-projects world points using depth."
+    },
+    {
+      "capability": "temporal",
+      "path": "weird_captcha_gym/shared_runtime/app/mechanics/cloudpost_circuit.js",
+      "lines": "127-154",
+      "claim": "Every physics step increments the flight tick, changes yaw/pitch toward the current control, advances x/y/z, and records contacts when the moving plane enters a world-space radius."
+    },
+    {
+      "capability": "temporal",
+      "path": "weird_captcha_gym/shared_runtime/app/mechanics/cloudpost_circuit.js",
+      "lines": "97-114,245-257",
+      "claim": "Pointer commands persist in model.control and the animation loop repeatedly executes physics ticks; the UI tells the agent to correct from the next frame."
+    },
+    {
+      "capability": "reasoning_planning",
+      "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/cloudpost_circuit.py",
+      "lines": "121-151",
+      "claim": "The authoritative replay applies controls over time, enforces corridor bounds, computes Euclidean 3D contact distance, and applies steering events after the current tick so action consequences affect later trajectory."
+    },
+    {
+      "capability": "reasoning_planning",
+      "path": "weird_captcha_gym/shared_runtime/app/mechanics/cloudpost_circuit.js",
+      "lines": "227-239",
+      "claim": "The plane is a fixed cockpit marker, while collection is computed from the plane's 3D pose rather than from the drawn screen overlap."
+    },
+    {
+      "capability": "exploration_interface",
+      "path": "weird_captcha_gym/shared_scripts/incubator_generators/cloudpost_circuit.py",
+      "lines": "102-119",
+      "claim": "The generator explicitly allows the first seal to start outside the initial camera frustum while varying the route's lateral and vertical spans."
+    },
+    {
+      "capability": "exploration_interface",
+      "path": "weird_captcha_gym/shared_runtime/app/mechanics/cloudpost_circuit.js",
+      "lines": "227-230,305-325",
+      "claim": "Only projected, in-view uncollected seals are drawn; the visible UI warns that targets may be beyond the current view and binds the two visible control surfaces to steering."
+    },
+    {
+      "capability": "exploration_interface",
+      "path": "weird_captcha_gym/shared_runtime/app/mechanics/cloudpost_circuit.css",
+      "lines": "67-87",
+      "claim": "The flight field is a bounded visible canvas, so off-frustum information is not supplied by another visible pane or persistent list."
+    }
+  ],
+  "configuration_exceptions": [
+    {
+      "difficulties": [1, 2],
+      "interaction_modes": ["simplified", "full"],
+      "capability": "exploration_interface",
+      "label": "no",
+      "reason": "With profiles 1 and 2, the generator's forced first-seal lateral span and bounded vertical span keep the initial seal, and the recursively bounded later seals, within the browser's initial projection window; all seals can therefore be read from the initial visible field. The interaction mode changes only whether the same vector is set by trim buttons or pointer movement, not what information is visible.",
+      "source_evidence": [
+        {
+          "capability": "exploration_interface",
+          "path": "weird_captcha_gym/environments/cloudpost_circuit_env/controls.json",
+          "lines": "6-14",
+          "claim": "Difficulty profiles 1 and 2 use the smallest lateral/vertical spans and both simplified and full interaction modes are implemented."
+        },
+        {
+          "capability": "exploration_interface",
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/cloudpost_circuit.py",
+          "lines": "105-119",
+          "claim": "Initial and successive x/y target coordinates are bounded by the selected profile spans, with later coordinates contracted toward the previous waypoint."
+        },
+        {
+          "capability": "exploration_interface",
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/cloudpost_circuit.js",
+          "lines": "227-230",
+          "claim": "The browser draws every uncollected seal whose projection is inside the canvas draw window; for the low-span profiles the generated route remains in that initial window."
+        }
+      ]
+    }
+  ],
+  "observation_only_temporal": false,
+  "files_read_completely": [
+    "AGENTS.md",
+    "weird_captcha_gym/docs/capability-annotation-guidelines.md",
+    "weird_captcha_gym/docs/controllability/temporal.md",
+    "weird_captcha_gym/environments/cloudpost_circuit_env/env.json",
+    "weird_captcha_gym/environments/cloudpost_circuit_env/tasks/cloudpost_circuit_seed_0001/task.json",
+    "weird_captcha_gym/environments/cloudpost_circuit_env/controls.json",
+    "weird_captcha_gym/shared_scripts/incubator_generators/cloudpost_circuit.py",
+    "weird_captcha_gym/shared_runtime/app/mechanics/cloudpost_circuit.js",
+    "weird_captcha_gym/shared_runtime/app/mechanics/cloudpost_circuit.css",
+    "weird_captcha_gym/shared_runtime/server/incubator_graders/cloudpost_circuit.py",
+    "weird_captcha_gym/environments/cloudpost_circuit_env/tasks/cloudpost_circuit_seed_0001/verifier.py",
+    "weird_captcha_gym/tools/incubator_solvers/cloudpost_circuit.py"
+  ],
+  "runtime_checks": [],
+  "uncertainties": []
+}
