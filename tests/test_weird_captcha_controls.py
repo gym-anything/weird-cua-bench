@@ -19,6 +19,21 @@ from weird_captcha_gym.shared_runtime.verifier_helpers import (
 ROOT = Path(__file__).resolve().parents[1]
 BENCHMARK = ROOT / "weird_captcha_gym"
 CONTROLLED_ENVIRONMENTS = (
+    "downsky_causeway_env",
+    "lanternfin_dive_env",
+    "crater_walker_env",
+    "facet_lantern_env",
+    "cloudstep_caddie_env",
+    "hearthlift_courier_env",
+    "rising_causeway_env",
+    "polycube_parcel_env",
+    "lantern_loft_env",
+    "surveyors_toybox_env",
+    "lampwrights_program_env",
+    "pearl_lattice_env",
+    "cloudpost_circuit_env",
+    "horizon_relay_env",
+    "lanternwing_roundup_env",
     "pendulum_post_env",
     "clockwork_courier_works_env",
     "ember_anvil_env",
@@ -177,6 +192,21 @@ CONTROLLED_ENVIRONMENTS = (
 )
 
 BASELINE_LEVELS = {
+    "downsky_causeway_env": 4,
+    "lanternfin_dive_env": 4,
+    "crater_walker_env": 4,
+    "facet_lantern_env": 3,
+    "cloudstep_caddie_env": 4,
+    "hearthlift_courier_env": 4,
+    "rising_causeway_env": 4,
+    "polycube_parcel_env": 4,
+    "lantern_loft_env": 4,
+    "surveyors_toybox_env": 4,
+    "lampwrights_program_env": 4,
+    "pearl_lattice_env": 3,
+    "cloudpost_circuit_env": 4,
+    "horizon_relay_env": 3,
+    "lanternwing_roundup_env": 4,
     "pendulum_post_env": 4,
     "clockwork_courier_works_env": 2,
     "ember_anvil_env": 3,
@@ -598,6 +628,11 @@ def test_original_tasks_match_their_independently_assigned_baselines() -> None:
             # the same value in control_condition instead.
             assert original_public["interaction_mode"] == baseline_public["control_condition"]["interaction"]
             assert without_control_identity(baseline_public) == without_control_identity(original_public, extra=("interaction_mode",))
+            assert without_control_identity(baseline_truth) == without_control_identity(original_truth)
+        elif mechanic == "crater_walker":
+            # The difficulty profile rephrases the support-transfer instructions;
+            # all generated geometry, goals and reference data must still match.
+            assert without_control_identity(baseline_public, extra=("prompt",)) == without_control_identity(original_public, extra=("prompt",))
             assert without_control_identity(baseline_truth) == without_control_identity(original_truth)
         elif mechanic in {
             "consequences_boss",
@@ -1664,6 +1699,11 @@ def test_hovercar_browser_binds_keyboard_only_for_full_interaction() -> None:
 def test_implemented_interaction_pairs_share_generated_worlds_and_goals() -> None:
     seed = "interaction-pair-equivalence"
     mode_fields = {
+        "facet_lantern_env": "interaction",
+        "polycube_parcel_env": "interaction",
+        "pearl_lattice_env": "interaction",
+        "surveyors_toybox_env": "interaction_mode",
+        "horizon_relay_env": "interaction_mode",
         "firewatch_fold_env": "interaction",
         "branch_repair_env": "interaction",
         "quiet_transfer_env": "interaction_mode",
@@ -1693,6 +1733,10 @@ def test_implemented_interaction_pairs_share_generated_worlds_and_goals() -> Non
             first_normalized = without_control_identity(first_public)
             normalized = without_control_identity(public)
             if env_name in {
+                "facet_lantern_env",
+                "hearthlift_courier_env",
+                "polycube_parcel_env",
+                "pearl_lattice_env",
                 "shadow_crime_lab_env",
                 "slot_reel_capture_env",
                 "ribbon_switchboard_env",
@@ -1737,6 +1781,18 @@ def test_implemented_interaction_pairs_share_generated_worlds_and_goals() -> Non
             if env_name == "ember_mosaic_env":
                 assert first_truth_normalized["world"]["control_condition"].pop("interaction") == interactions[0]
                 assert truth_normalized["world"]["control_condition"].pop("interaction") == interaction
+            if env_name == "hearthlift_courier_env":
+                # Reference actions have identical state transitions but name
+                # the selected keyboard/drag or button input surface.
+                for bundle, mode in ((first_truth_normalized, interactions[0]), (truth_normalized, interaction)):
+                    sources = {
+                        "camera": "camera_drag" if mode == "full" else "camera_button",
+                        "move": "keyboard_move" if mode == "full" else "proxy_move",
+                        "certify": "certify_button",
+                    }
+                    default = "keyboard_action" if mode == "full" else "proxy_action"
+                    for event in bundle["solution_events"]:
+                        assert event.pop("input_source") == sources.get(event["type"], default)
             assert truth_normalized == first_truth_normalized, env_name
     assert paired >= 1
 
