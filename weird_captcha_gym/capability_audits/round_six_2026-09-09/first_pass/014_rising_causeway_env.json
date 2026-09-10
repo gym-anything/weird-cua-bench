@@ -1,0 +1,96 @@
+{
+  "case_index": 14,
+  "environment_id": "rising_causeway_env",
+  "public_name": "Rising Causeway",
+  "revision": "48e86f5950c056bfa0f2822fa430f9762c5fc29c",
+  "baseline": {
+    "difficulty": 4,
+    "interaction": "full"
+  },
+  "labels": {
+    "visual": "3D",
+    "temporal": "yes",
+    "reasoning_planning": "yes",
+    "exploration_interface": "no"
+  },
+  "temporal_status": "provisional_baseline_audit",
+  "visible_solution": "From the first-person chamber view, inspect the solid geometry and the visible red, yellow, blue, and terminal markers. In full mode, click the red actuator three times to close the three-stage bridge, click the yellow stair endpoint whose high side leads toward the far ledge, and click the blue launcher whose visible orientation and landing alignment match the terminal. Hold WASD or the arrow keys to cross the rebuilt bridge and stair, use lateral movement to reach the primed launcher contact, observe the visible launch arc until it settles, then walk to the terminal and click it.",
+  "reasoning": {
+    "visual": "The required route depends on volumetric x/y/z relationships: a staged bridge spans a gap, the three stair steps have different left and right heights, launchers are floor- or wall-oriented, and the selected launch lands at a particular height and lateral offset before the terminal. The browser renders this as a first-person projected chamber with visible side planes, surfaces, launcher normals, and terminal height.",
+    "temporal": "A solution must sustain and release movement inputs while the avatar position and support surface change, and must reach the launcher contact before the launch begins. After contact, the browser advances an 840 ms gravity arc across physics ticks and blocks control changes until landing. This is a temporal action-control demand even though no correct action expires merely while the agent is waiting for inference.",
+    "reasoning_planning": "The agent must infer the red extension depth, select the stair end that raises the route toward the far ledge, and at baseline choose the launcher whose normal and landing geometry lead to the terminal. These choices have later physical consequences: an unextended gap, wrong stair direction, wrong contact launcher, or premature terminal activation fails the route. The one-launcher lower profiles still require the red-stage and stair decisions.",
+    "exploration_interface": "No exploratory interaction is required to reveal a hidden rule or learn an unknown control scheme. The initial UI renders the chamber and its colored architectural actuators, gives the rule card explaining support, stair height, and contact launch, and exposes either the full mouse/keyboard hint or the simplified labeled controls. Looking or moving to execute the route is task control, not a separate interface-discovery phase."
+  },
+  "source_evidence": [
+    {
+      "capability": "visual",
+      "path": "weird_captcha_gym/shared_scripts/incubator_generators/rising_causeway.py",
+      "lines": "66-106, 118-164, 216-228",
+      "claim": "The generated world is explicitly volumetric, with x/y/z stair heights, corridor surfaces, launcher normals and contact/landing coordinates, and a terminal whose height and lateral position are derived from the selected landing."
+    },
+    {
+      "capability": "visual",
+      "path": "weird_captcha_gym/shared_runtime/app/mechanics/rising_causeway.js",
+      "lines": "257-325",
+      "claim": "The visible renderer draws chamber side planes, stair surfaces, staged bridge surfaces, launcher orientation markers, the terminal, and the launch trajectory in a first-person projection."
+    },
+    {
+      "capability": "temporal",
+      "path": "weird_captcha_gym/shared_runtime/app/mechanics/rising_causeway.js",
+      "lines": "350-418, 421-429",
+      "claim": "Movement is applied on recurring physics ticks while keys remain held, and contact starts a multi-tick gravity flight that ends only after the configured duration; movement transitions are recorded as key-down/key-up actions."
+    },
+    {
+      "capability": "temporal",
+      "path": "weird_captcha_gym/shared_runtime/app/mechanics/rising_causeway.js",
+      "lines": "584-589",
+      "claim": "Simplified interaction uses pointer-held movement buttons with separate press and release handlers, preserving the same sustained-control requirement."
+    },
+    {
+      "capability": "reasoning_planning",
+      "path": "weird_captcha_gym/shared_scripts/incubator_generators/rising_causeway.py",
+      "lines": "58-63, 118-164, 193-209",
+      "claim": "The mirrored visible chamber determines the required stair end, the launcher gallery has seeded alternatives and different orientations, and the terminal is positioned from the required launch landing."
+    },
+    {
+      "capability": "reasoning_planning",
+      "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/rising_causeway.py",
+      "lines": "142-149, 250-290, 322-347",
+      "claim": "The independent replay rejects crossing unsupported geometry or the wrong stair, requires staged red and launcher choices, requires physical contact and completed flight, and checks all choices before accepting the terminal."
+    },
+    {
+      "capability": "exploration_interface",
+      "path": "weird_captcha_gym/shared_runtime/app/mechanics/rising_causeway.js",
+      "lines": "617-626, 634-684",
+      "claim": "The initial render presents the chamber, rule card, full-mode action hint, or simplified labeled action surface, then draws the scene immediately; no prerequisite probe is needed to expose the controls or rules."
+    },
+    {
+      "capability": "exploration_interface",
+      "path": "weird_captcha_gym/shared_runtime/app/mechanics/rising_causeway.js",
+      "lines": "220-304, 447-475",
+      "claim": "The scene initially renders the relevant actuators, launchers, launcher orientation marks, and terminal, while direct handlers apply the known red, stair, and launcher actions rather than requiring interface discovery."
+    }
+  ],
+  "configuration_exceptions": [],
+  "observation_only_temporal": false,
+  "files_read_completely": [
+    "AGENTS.md",
+    "weird_captcha_gym/docs/capability-annotation-guidelines.md",
+    "weird_captcha_gym/docs/controllability/temporal.md",
+    "weird_captcha_gym/environments/rising_causeway_env/env.json",
+    "weird_captcha_gym/environments/rising_causeway_env/controls.json",
+    "weird_captcha_gym/environments/rising_causeway_env/tasks/rising_causeway_seed_0001/task.json",
+    "weird_captcha_gym/environments/rising_causeway_env/tasks/rising_causeway_seed_0001/verifier.py",
+    "weird_captcha_gym/environments/rising_causeway_env/tasks/rising_causeway_seed_0001/setup_task.sh",
+    "weird_captcha_gym/environments/rising_causeway_env/tasks/rising_causeway_seed_0001/export_result.sh",
+    "weird_captcha_gym/environments/rising_causeway_env/scripts/setup_puzzle_runtime.sh",
+    "weird_captcha_gym/environments/rising_causeway_env/scripts/install_puzzle_runtime.sh",
+    "weird_captcha_gym/shared_scripts/incubator_generators/rising_causeway.py",
+    "weird_captcha_gym/shared_runtime/app/mechanics/rising_causeway.js",
+    "weird_captcha_gym/shared_runtime/app/mechanics/rising_causeway.css",
+    "weird_captcha_gym/shared_runtime/server/incubator_graders/rising_causeway.py",
+    "weird_captcha_gym/tools/incubator_solvers/rising_causeway.py"
+  ],
+  "runtime_checks": [],
+  "uncertainties": []
+}

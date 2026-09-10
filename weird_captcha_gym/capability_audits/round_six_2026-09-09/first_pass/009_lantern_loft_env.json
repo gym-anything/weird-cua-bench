@@ -1,0 +1,128 @@
+{
+  "case_index": 9,
+  "environment_id": "lantern_loft_env",
+  "public_name": "Lantern Loft",
+  "revision": "48e86f5950c056bfa0f2822fa430f9762c5fc29c",
+  "baseline": {
+    "difficulty": 4,
+    "interaction": "full"
+  },
+  "labels": {
+    "visual": "3D",
+    "temporal": "yes",
+    "reasoning_planning": "yes",
+    "exploration_interface": "no"
+  },
+  "temporal_status": "provisional_baseline_audit",
+  "visible_solution": "Read the visible loft rule, then inspect the isometric modules, their Z-level labels, openings, stair markings, the carrier, the empty rail, and the glowing exit. Reconstruct the walkable route by dragging each required non-carrier module into the adjacent empty rail position, choosing moves whose later board arrangement joins the visible openings and elevations. After each slide, click the joined surface that continues the route; use a marked stair when adjacent modules have different elevations. Repeat until the carrier reaches the glowing exit landing, which records physical contact and submits the result.",
+  "reasoning": {
+    "visual": "The solution must interpret an isometric board as elevated walkable surfaces: module side faces and projected positions are visible, while Z labels, openings, stairs, the carrier, and the exit determine which apparent overlaps are usable. A valid connection depends on adjacent grid positions, mutual openings, elevation difference, and a stair when the heights differ.",
+    "temporal": "The canonical Full configuration requires a slide to remain active through pointerdown and pointermove before pointerup commits it, so the action itself is time-extended. The board and carrier otherwise update synchronously and remain visible; the recorded event timestamp is only checked for monotonicity and a session bound, not for a changing target or a timing window. Simplified proxy clicks do not require this held drag.",
+    "reasoning_planning": "The initial board is scrambled, so the agent must select which non-carrier module to move into the free rail and account for the changed empty slot before choosing later slides. It must then order carrier steps through the reconstructed route; a slide that moves the carrier module, a non-adjacent module, or a step without matching openings/elevation/stairs is rejected.",
+    "exploration_interface": "No exploratory interaction is required. The page states the slide, join, elevation, and stair rules; Full mode visibly explains drag-and-click manipulation, and Simplified mode exposes labeled slide and step proxies for the currently legal actions. The relevant module geometry and readouts are present before solving, so probing is not needed to reveal hidden task information or learn an undocumented interface."
+  },
+  "source_evidence": [
+    {
+      "capability": "visual",
+      "path": "weird_captcha_gym/shared_runtime/app/mechanics/lantern_loft.js",
+      "lines": "105-130",
+      "claim": "The browser renders raised isometric module faces, openings, stair markings, visible Z-level labels, and a glowing EXIT marker on the canvas."
+    },
+    {
+      "capability": "visual",
+      "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/lantern_loft.py",
+      "lines": "54-79",
+      "claim": "Walkability is graded from grid adjacency, openings on both sides, module height difference, and a stair on an elevation-changing connection."
+    },
+    {
+      "capability": "temporal",
+      "path": "weird_captcha_gym/shared_runtime/app/mechanics/lantern_loft.js",
+      "lines": "146-156",
+      "claim": "Slides and carrier steps change the visible model immediately; reaching the exit appends physical-contact completion and submits the result."
+    },
+    {
+      "capability": "temporal",
+      "path": "weird_captcha_gym/shared_runtime/app/mechanics/lantern_loft.js",
+      "lines": "177-182",
+      "claim": "Full mode implements slide execution as pointerdown, held pointermove, and pointerup; the slide is committed only after the held movement reaches a target."
+    },
+    {
+      "capability": "temporal",
+      "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/lantern_loft.py",
+      "lines": "100-110",
+      "claim": "Replay only requires finite nondecreasing event times within 900 seconds, with no minimum duration or state-dependent timing requirement."
+    },
+    {
+      "capability": "reasoning_planning",
+      "path": "weird_captcha_gym/shared_scripts/incubator_generators/lantern_loft.py",
+      "lines": "121-143",
+      "claim": "The generator scrambles the board through a sequence of adjacent free-rail moves and stores the reverse slide sequence as the solution."
+    },
+    {
+      "capability": "reasoning_planning",
+      "path": "weird_captcha_gym/shared_scripts/incubator_generators/lantern_loft.py",
+      "lines": "194-227",
+      "claim": "The generated route is built from adjacent module edges with height-dependent stairs, while decoy openings and the scramble make module selection consequential."
+    },
+    {
+      "capability": "reasoning_planning",
+      "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/lantern_loft.py",
+      "lines": "114-149",
+      "claim": "The grader replays the ordered slide and step consequences and rejects invalid free-rail moves, carrier-module moves, disconnected steps, and premature completion."
+    },
+    {
+      "capability": "exploration_interface",
+      "path": "weird_captcha_gym/shared_runtime/app/mechanics/lantern_loft.js",
+      "lines": "79-93",
+      "claim": "Simplified mode creates labeled slide and step buttons from the currently legal moves rather than requiring exploratory probing."
+    },
+    {
+      "capability": "exploration_interface",
+      "path": "weird_captcha_gym/shared_runtime/app/mechanics/lantern_loft.js",
+      "lines": "168-185",
+      "claim": "The visible rule explains the required slide/join/walk behavior, Full mode states the exact drag-and-click controls, and the initial render presents the complete board."
+    },
+    {
+      "capability": "reasoning_planning",
+      "path": "weird_captcha_gym/environments/lantern_loft_env/controls.json",
+      "lines": "5-17",
+      "claim": "All five difficulty profiles scale route length, slide count, elevation changes, decoy openings, and stair count; both simplified and full interaction profiles are implemented."
+    }
+  ],
+  "configuration_exceptions": [
+    {
+      "difficulties": [1, 2, 3, 4, 5],
+      "interaction_modes": ["simplified"],
+      "capability": "temporal",
+      "label": "no",
+      "reason": "Simplified mode replaces the required held canvas drag with a click on a visible slide proxy. The same generated route, geometry, and planning problem remain, but no sustained action or other nontrivial temporal relationship is required.",
+      "source_evidence": [
+        {
+          "capability": "temporal",
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/lantern_loft.js",
+          "lines": "79-93, 175-182",
+          "claim": "Simplified mode binds proxy clicks directly to performSlide/performStep, whereas only Full mode binds slide execution to held pointer movement."
+        }
+      ]
+    }
+  ],
+  "observation_only_temporal": false,
+  "files_read_completely": [
+    "AGENTS.md",
+    "weird_captcha_gym/docs/capability-annotation-guidelines.md",
+    "weird_captcha_gym/docs/controllability/temporal.md",
+    "weird_captcha_gym/environments/lantern_loft_env/env.json",
+    "weird_captcha_gym/environments/lantern_loft_env/controls.json",
+    "weird_captcha_gym/environments/lantern_loft_env/tasks/lantern_loft_seed_0001/task.json",
+    "weird_captcha_gym/environments/lantern_loft_env/tasks/lantern_loft_seed_0001/verifier.py",
+    "weird_captcha_gym/environments/lantern_loft_env/tasks/lantern_loft_seed_0001/setup_task.sh",
+    "weird_captcha_gym/environments/lantern_loft_env/tasks/lantern_loft_seed_0001/export_result.sh",
+    "weird_captcha_gym/shared_scripts/incubator_generators/lantern_loft.py",
+    "weird_captcha_gym/shared_runtime/app/mechanics/lantern_loft.js",
+    "weird_captcha_gym/shared_runtime/app/mechanics/lantern_loft.css",
+    "weird_captcha_gym/shared_runtime/server/incubator_graders/lantern_loft.py",
+    "weird_captcha_gym/tools/incubator_solvers/lantern_loft.py"
+  ],
+  "runtime_checks": [],
+  "uncertainties": []
+}

@@ -1,0 +1,144 @@
+{
+  "case_index": 4,
+  "environment_id": "downsky_causeway_env",
+  "public_name": "Downsky Causeway",
+  "revision": "48e86f5950c056bfa0f2822fa430f9762c5fc29c",
+  "baseline": {
+    "difficulty": 4,
+    "interaction": "full"
+  },
+  "labels": {
+    "visual": "3D",
+    "temporal": "yes",
+    "reasoning_planning": "yes",
+    "exploration_interface": "no"
+  },
+  "temporal_status": "provisional_baseline_audit",
+  "visible_solution": "Use the first-person canvas to inspect the visible terrace tops, side faces, gaps, relative heights, and illuminated EXIT. Choose the descending, walkable route rather than the lower side shelves; use mouse-look to align with each next terrace, hold WASD or an arrow to cross onto it, and release or redirect after landing so the avatar remains supported. Repeat through the terraces and center on the pavilion floor to trigger physical-contact submission.",
+  "reasoning": {
+    "visual": "3D spatial understanding is necessary: the canvas is a perspective first-person view of floating platforms whose horizontal offsets, depths, visible side faces, heights, gaps, and final pavilion position determine where movement can land.",
+    "temporal": "Yes, because movement is time-extended control rather than a single instantaneous action. A held movement input is applied on repeated 40 ms physics ticks, and the agent must sustain it for the crossing distance, then release or redirect as the support platform changes. The world is not classified as temporal merely because it is observed in frames; the required temporal relationship is the duration and control of movement.",
+    "reasoning_planning": "Yes at the baseline: the agent must infer which lower platform continues the route and choose movement directions whose landing consequences affect later terraces. The visible course includes regular side shelves and a terminal shelf that can be reached by descending but do not continue to the pavilion; leaving a terrace without a valid lower support causes failure, and the final pavilion requires centered physical contact.",
+    "exploration_interface": "No. The relevant terrain and pavilion are rendered in the current first-person view, with support and altitude shown in the HUD and the EXIT marked on the pavilion. Full mode explicitly exposes WASD/arrows for held movement and drag for looking; simplified mode exposes labelled hold and look-step buttons. Looking around to view the already-rendered course is visual navigation, not learning a hidden interface or revealing gated task information."
+  },
+  "source_evidence": [
+    {
+      "capability": "visual",
+      "path": "weird_captcha_gym/shared_scripts/incubator_generators/downsky_causeway.py",
+      "lines": "161-167",
+      "claim": "The generated route consists of platforms with x/y centers and descending z heights, establishing 3D offset terrace geometry."
+    },
+    {
+      "capability": "visual",
+      "path": "weird_captcha_gym/shared_runtime/app/mechanics/downsky_causeway.js",
+      "lines": "105-127",
+      "claim": "The browser projects world coordinates into a first-person perspective using forward, side, camera height, and pitch."
+    },
+    {
+      "capability": "visual",
+      "path": "weird_captcha_gym/shared_runtime/app/mechanics/downsky_causeway.js",
+      "lines": "145-228",
+      "claim": "The visible renderer draws platform top faces, thickness and side faces, and the exit pavilion with an EXIT marker."
+    },
+    {
+      "capability": "temporal",
+      "path": "weird_captcha_gym/shared_runtime/app/mechanics/downsky_causeway.js",
+      "lines": "283-324",
+      "claim": "Held movement keys are integrated on each physics tick; movement can cross to a lower platform or cause support loss."
+    },
+    {
+      "capability": "temporal",
+      "path": "weird_captcha_gym/shared_runtime/app/mechanics/downsky_causeway.js",
+      "lines": "326-333",
+      "claim": "Movement has explicit key-down and key-up state, so the duration of a held action controls displacement."
+    },
+    {
+      "capability": "temporal",
+      "path": "weird_captcha_gym/shared_runtime/app/mechanics/downsky_causeway.js",
+      "lines": "508-515",
+      "claim": "The browser advances the physics model on a recurring timer while the task is active."
+    },
+    {
+      "capability": "reasoning_planning",
+      "path": "weird_captcha_gym/environments/downsky_causeway_env/controls.json",
+      "lines": "89-115",
+      "claim": "The baseline is the seven-terrace reference course with four irreversible side shelves, narrow landings, and a complete descending route to the pavilion."
+    },
+    {
+      "capability": "reasoning_planning",
+      "path": "weird_captcha_gym/shared_scripts/incubator_generators/downsky_causeway.py",
+      "lines": "170-205",
+      "claim": "The generator adds regular side terraces and a terminal lower shelf alongside the route, while preserving the route platform IDs separately."
+    },
+    {
+      "capability": "reasoning_planning",
+      "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/downsky_causeway.py",
+      "lines": "70-93",
+      "claim": "A landing is accepted only for a lower platform within the walkable gap and in the movement direction, requiring route choice from visible geometry."
+    },
+    {
+      "capability": "reasoning_planning",
+      "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/downsky_causeway.py",
+      "lines": "134-148",
+      "claim": "Leaving a terrace without a qualifying lower support fails, while a successful transition changes the platform on which later actions occur."
+    },
+    {
+      "capability": "exploration_interface",
+      "path": "weird_captcha_gym/shared_runtime/app/mechanics/downsky_causeway.js",
+      "lines": "231-265",
+      "claim": "The current canvas renders the complete available platform set and visible exit marker as the camera view changes; no separate discovery interaction supplies task truth."
+    },
+    {
+      "capability": "exploration_interface",
+      "path": "weird_captcha_gym/shared_runtime/app/mechanics/downsky_causeway.js",
+      "lines": "450-475",
+      "claim": "The page exposes the first-person view, support and altitude readouts, the NO JUMP rule, and explicit full or simplified controls."
+    }
+  ],
+  "configuration_exceptions": [
+    {
+      "difficulties": [1],
+      "interaction_modes": ["simplified", "full"],
+      "capability": "reasoning_planning",
+      "label": "no",
+      "reason": "Difficulty 1 has three broad terraces, no side shelves, and a single direct route. A screenshot-only agent can repeatedly steer toward the only visible next support; the alternative-route and irreversible-choice dependency present at the baseline is absent. Visual 3D interpretation, sustained movement control, and the explicit interface remain required.",
+      "source_evidence": [
+        {
+          "capability": "reasoning_planning",
+          "path": "weird_captcha_gym/environments/downsky_causeway_env/controls.json",
+          "lines": "13-36",
+          "claim": "Difficulty 1 specifies three broad terraces, zero branches, no terminal shelf, and generous walkable dimensions."
+        },
+        {
+          "capability": "reasoning_planning",
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/downsky_causeway.py",
+          "lines": "22-37",
+          "claim": "The difficulty-1 generator profile has route_count 3, branch_count 0, regular_branch_count 0, and terminal_shelf false."
+        },
+        {
+          "capability": "reasoning_planning",
+          "path": "weird_captcha_gym/environments/downsky_causeway_env/controls.json",
+          "lines": "38-46",
+          "claim": "Difficulty 2 is the first profile that introduces a lower side shelf requiring a route choice, distinguishing it from difficulty 1."
+        }
+      ]
+    }
+  ],
+  "observation_only_temporal": false,
+  "files_read_completely": [
+    "AGENTS.md",
+    "weird_captcha_gym/docs/capability-annotation-guidelines.md",
+    "weird_captcha_gym/docs/controllability/temporal.md",
+    "weird_captcha_gym/environments/downsky_causeway_env/env.json",
+    "weird_captcha_gym/environments/downsky_causeway_env/controls.json",
+    "weird_captcha_gym/environments/downsky_causeway_env/tasks/downsky_causeway_seed_0001/task.json",
+    "weird_captcha_gym/shared_scripts/incubator_generators/downsky_causeway.py",
+    "weird_captcha_gym/shared_runtime/app/mechanics/downsky_causeway.js",
+    "weird_captcha_gym/shared_runtime/app/mechanics/downsky_causeway.css",
+    "weird_captcha_gym/shared_runtime/server/incubator_graders/downsky_causeway.py",
+    "weird_captcha_gym/environments/downsky_causeway_env/tasks/downsky_causeway_seed_0001/verifier.py",
+    "weird_captcha_gym/tools/incubator_solvers/downsky_causeway.py"
+  ],
+  "runtime_checks": [],
+  "uncertainties": []
+}

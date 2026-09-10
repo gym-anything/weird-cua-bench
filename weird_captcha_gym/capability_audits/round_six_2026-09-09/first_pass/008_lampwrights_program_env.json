@@ -1,0 +1,98 @@
+{
+  "case_index": 8,
+  "environment_id": "lampwrights_program_env",
+  "public_name": "Lampwrights Program",
+  "revision": "48e86f5950c056bfa0f2822fa430f9762c5fc29c",
+  "baseline": {
+    "difficulty": 4,
+    "interaction": "full"
+  },
+  "labels": {
+    "visual": "3D",
+    "temporal": "no",
+    "reasoning_planning": "yes",
+    "exploration_interface": "no"
+  },
+  "temporal_status": "provisional_baseline_audit",
+  "visible_solution": "From the initial screenshot, read the isometric rooftop, robot heading, marked lamp tiles, and visible height changes. Trace a route from the start, using F across level neighbors, J across each one-level change, L/R for turns, and G on marked tiles; factor repeated movement into the A and B routines and place the resulting calls in MAIN. In the baseline full interface, drag each palette glyph into its slot (or drag populated slots to reorder while revising), click RUN PROGRAM, wait for the automatic execution to finish, and click CERTIFY. The simplified profile uses the same route and program but selects a glyph and then clicks its slot.",
+  "reasoning": {
+    "visual": "The agent must use spatial relationships in the isometric map and distinguish elevation, not just read a flat list: block height changes determine whether a forward or jump command is legal, and the robot's heading determines which neighboring block each movement reaches.",
+    "temporal": "The program can be completely chosen and edited from the initial static map. RUN evaluates the complete program immediately, then only plays back the stored steps on a timer; the agent can wait for the static ROUTE COMPLETE state before certifying, so the automatic visible sequence does not require temporal interpretation or timed action control.",
+    "reasoning_planning": "The agent must infer a valid command sequence from the map and targets, choose turns and F versus J according to the current heading and next block height, place G only at marked tiles, and account for how A/B calls change later position, heading, and elevation. D1 through D5 change route length, routine/main slot limits, target count, height changes, and decoy terrain, but every profile retains this same route-program dependency; full and simplified modes change placement gestures only. No configuration-specific capability exception is supported.",
+    "exploration_interface": "All task-relevant state and controls are initially exposed: the map and numbered lamp markers are rendered, the palette and MAIN/A/B slots are labeled, the full or simplified placement gesture is stated, and the hint explains F, J, and routine reuse. Running a candidate supplies routine execution feedback, but it is not needed to discover hidden information or learn an undocumented interface behavior."
+  },
+  "source_evidence": [
+    {
+      "capability": "visual",
+      "path": "weird_captcha_gym/shared_runtime/app/mechanics/lampwrights_program.js",
+      "lines": "12-40",
+      "claim": "The visible map projects x, y, and height z into isometric coordinates, draws height-dependent block sides, and renders target lamps plus the robot heading."
+    },
+    {
+      "capability": "visual",
+      "path": "weird_captcha_gym/shared_scripts/incubator_generators/lampwrights_program.py",
+      "lines": "136-168,191-196",
+      "claim": "Generated public state contains stepped terrain, target positions, and rules distinguishing level forward movement from one-height jumps."
+    },
+    {
+      "capability": "temporal",
+      "path": "weird_captcha_gym/shared_runtime/app/mechanics/lampwrights_program.js",
+      "lines": "183-205",
+      "claim": "RUN computes the whole result before playback, records the result, and advances through stored steps with setTimeout until a final static status enables certification; no action choice is required during playback."
+    },
+    {
+      "capability": "reasoning_planning",
+      "path": "weird_captcha_gym/shared_runtime/app/mechanics/lampwrights_program.js",
+      "lines": "148-180",
+      "claim": "The evaluator tracks routine calls, heading, position, terrain height, target hits, and execution bounds; F/J legality and G placement depend on the evolving planned route."
+    },
+    {
+      "capability": "reasoning_planning",
+      "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/lampwrights_program.py",
+      "lines": "18-73,95-119",
+      "claim": "The independent grader replays procedure calls and movement against terrain and targets, then requires all marked tiles and a matching execution transcript."
+    },
+    {
+      "capability": "exploration_interface",
+      "path": "weird_captcha_gym/shared_runtime/app/mechanics/lampwrights_program.js",
+      "lines": "108-141,221-230",
+      "claim": "The implementation explicitly binds full drag-and-drop versus simplified select-then-place controls and initially renders the map, palette, labeled routine panels, RUN/CERTIFY actions, and the F/J/A/B hint."
+    },
+    {
+      "capability": "exploration_interface",
+      "path": "weird_captcha_gym/shared_runtime/app/mechanics/lampwrights_program.js",
+      "lines": "27-48",
+      "claim": "Targets, blocks, and the robot are rendered from the initial public world state, so relevant spatial information is not revealed only after probing."
+    },
+    {
+      "capability": "reasoning_planning",
+      "path": "weird_captcha_gym/environments/lampwrights_program_env/controls.json",
+      "lines": "4-41",
+      "claim": "The baseline is difficulty 4/full, and all five difficulty profiles plus both interaction profiles are enumerated; profile changes alter program/world scale while interaction changes only command placement."
+    }
+  ],
+  "configuration_exceptions": [],
+  "observation_only_temporal": false,
+  "files_read_completely": [
+    "AGENTS.md",
+    "weird_captcha_gym/docs/capability-annotation-guidelines.md",
+    "weird_captcha_gym/docs/controllability/temporal.md",
+    "weird_captcha_gym/environments/lampwrights_program_env/env.json",
+    "weird_captcha_gym/environments/lampwrights_program_env/controls.json",
+    "weird_captcha_gym/environments/lampwrights_program_env/tasks/lampwrights_program_seed_0001/task.json",
+    "weird_captcha_gym/environments/lampwrights_program_env/tasks/lampwrights_program_seed_0001/setup_task.sh",
+    "weird_captcha_gym/environments/lampwrights_program_env/tasks/lampwrights_program_seed_0001/export_result.sh",
+    "weird_captcha_gym/environments/lampwrights_program_env/tasks/lampwrights_program_seed_0001/verifier.py",
+    "weird_captcha_gym/environments/lampwrights_program_env/scripts/install_puzzle_runtime.sh",
+    "weird_captcha_gym/environments/lampwrights_program_env/scripts/setup_puzzle_runtime.sh",
+    "weird_captcha_gym/shared_scripts/incubator_generators/lampwrights_program.py",
+    "weird_captcha_gym/shared_runtime/app/mechanics/lampwrights_program.js",
+    "weird_captcha_gym/shared_runtime/app/mechanics/lampwrights_program.css",
+    "weird_captcha_gym/shared_runtime/server/incubator_graders/lampwrights_program.py",
+    "weird_captcha_gym/tools/incubator_solvers/lampwrights_program.py",
+    "weird_captcha_gym/shared_scripts/open_puzzle_browser.sh",
+    "weird_captcha_gym/shared_scripts/export_result.sh"
+  ],
+  "runtime_checks": [],
+  "uncertainties": []
+}

@@ -1,0 +1,139 @@
+{
+  "case_index": 12,
+  "environment_id": "pearl_lattice_env",
+  "public_name": "Pearl Lattice",
+  "revision": "48e86f5950c056bfa0f2822fa430f9762c5fc29c",
+  "baseline": {
+    "difficulty": 3,
+    "interaction": "full"
+  },
+  "labels": {
+    "visual": "3D",
+    "temporal": "no",
+    "reasoning_planning": "yes",
+    "exploration_interface": "no"
+  },
+  "temporal_status": "provisional_baseline_audit",
+  "visible_solution": "Use the visible prompt and the rotating transparent 4x4x4 board to identify the rival's three-pearl threat and the two player routes that share its open column. In the full interface, click the lattice surface until the shared defensive column is previewed, then click the separate confirmation area below the board. Re-read the changed volume after the clockwork rival responds, cycle to the still-open endpoint of the cross-depth fork, and confirm it. Continue using the visible board, preview landing layer, gravity rule, and rival response until four player pearls form a line, then click CERTIFY WIN.",
+  "reasoning": {
+    "visual": "The baseline uses a transparent 4x4x4 volume. Its cross-depth fork requires identifying player and rival pearls by x, y, and z, distinguishing a route through depth from a screen diagonal, and reading the gravity landing column.",
+    "temporal": "The board projection is redrawn as yaw changes, but the logical preview is an (x,z) column and confirmation remains valid while the projection moves. The board state and preview are sufficient in a single observation; no action must be timed to motion, sustained, or recalled from a no-longer-visible state.",
+    "reasoning_planning": "The initial move must address the rival's visible immediate threat. That placement changes the board and causes a rival response that blocks one of the two player routes, so the agent must choose the remaining route and account for the resulting gravity-filled columns before certifying.",
+    "exploration_interface": "The task prompt and visible console explain the two-stage full control: cycle the preview by clicking the lattice and confirm in the separate area below it. The board also visibly reports the current preview, landing layer, move limit, and rival response; no exploratory action is needed to discover an interface rule or hidden information."
+  },
+  "source_evidence": [
+    {
+      "capability": "visual",
+      "path": "weird_captcha_gym/shared_scripts/incubator_generators/pearl_lattice.py",
+      "lines": "109-129",
+      "claim": "The baseline cross_fork layout contains routes in 3D coordinate space, including a cross-depth x/z route; the generator's spatial_fork profile additionally demonstrates an all-axis line construction."
+    },
+    {
+      "capability": "visual",
+      "path": "weird_captcha_gym/shared_runtime/app/mechanics/pearl_lattice.js",
+      "lines": "32-38",
+      "claim": "The visible board projects x, y, and z coordinates with yaw and depth rather than presenting a flat grid."
+    },
+    {
+      "capability": "temporal",
+      "path": "weird_captcha_gym/shared_runtime/app/mechanics/pearl_lattice.js",
+      "lines": "162-190",
+      "claim": "Cycling changes a logical preview column and placement uses that selected column and its computed gravity height; the action is not tied to the current screen position or a deadline."
+    },
+    {
+      "capability": "temporal",
+      "path": "weird_captcha_gym/shared_runtime/app/mechanics/pearl_lattice.js",
+      "lines": "287-305",
+      "claim": "The animation loop changes only the rendered yaw and continues independently of the cycle, confirmation, and certification handlers."
+    },
+    {
+      "capability": "reasoning_planning",
+      "path": "weird_captcha_gym/shared_scripts/incubator_generators/pearl_lattice.py",
+      "lines": "204-255",
+      "claim": "The authored opponent responds to immediate wins and blocks immediate player wins, while the generator searches for a winning continuation under the move ceiling."
+    },
+    {
+      "capability": "reasoning_planning",
+      "path": "weird_captcha_gym/shared_runtime/app/mechanics/pearl_lattice.js",
+      "lines": "131-146",
+      "claim": "The visible rival logic checks its own immediate win, then the player's immediate winning columns, before selecting pressure."
+    },
+    {
+      "capability": "exploration_interface",
+      "path": "weird_captcha_gym/shared_runtime/app/mechanics/pearl_lattice.js",
+      "lines": "69-91",
+      "claim": "The rendered UI exposes the board, prompt, preview, landing layer, move limit, and full-input instructions, including the separate confirmation zone."
+    },
+    {
+      "capability": "exploration_interface",
+      "path": "weird_captcha_gym/shared_runtime/app/mechanics/pearl_lattice.js",
+      "lines": "294-305",
+      "claim": "The full interface binds the documented board click to cycling and the documented below-board click to placement; no probe is required to learn the controls."
+    }
+  ],
+  "configuration_exceptions": [
+    {
+      "difficulties": [1],
+      "interaction_modes": ["full", "simplified"],
+      "capability": "visual",
+      "label": "2D",
+      "reason": "planar_easy creates the player and rival lines in one fixed y=1 plane. The single missing shared cell can be found from the planar cross, while gravity supplies the landing layer; no volumetric line or depth-changing route is required.",
+      "source_evidence": [
+        {
+          "capability": "visual",
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/pearl_lattice.py",
+          "lines": "101-108",
+          "claim": "The difficulty-1 target and opponent lines are both confined to y=1, with one x-directed and one z-directed line in that plane."
+        },
+        {
+          "capability": "visual",
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/pearl_lattice.py",
+          "lines": "267-273",
+          "claim": "Difficulty 1 pre-fills three player pearls on the planar target and the opponent pearls on the crossing line, leaving the shared planar cell as the relevant placement."
+        }
+      ]
+    },
+    {
+      "difficulties": [1],
+      "interaction_modes": ["full", "simplified"],
+      "capability": "reasoning_planning",
+      "label": "no",
+      "reason": "The difficulty-1 board is one pearl short of an immediate player line; the placement terminates as a win before an opponent response, so there is no later-consequence choice or fork to plan.",
+      "source_evidence": [
+        {
+          "capability": "reasoning_planning",
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/pearl_lattice.py",
+          "lines": "267-273",
+          "claim": "The planar_easy profile forces three prefilled player cells on its one target line and leaves the shared cell open."
+        },
+        {
+          "capability": "reasoning_planning",
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/pearl_lattice.js",
+          "lines": "174-205",
+          "claim": "After the player placement, a detected player line makes the state terminal and returns before the rival move is made."
+        }
+      ]
+    }
+  ],
+  "observation_only_temporal": false,
+  "files_read_completely": [
+    "AGENTS.md",
+    "weird_captcha_gym/docs/capability-annotation-guidelines.md",
+    "weird_captcha_gym/docs/controllability/temporal.md",
+    "weird_captcha_gym/environments/pearl_lattice_env/env.json",
+    "weird_captcha_gym/environments/pearl_lattice_env/controls.json",
+    "weird_captcha_gym/environments/pearl_lattice_env/tasks/pearl_lattice_seed_0001/task.json",
+    "weird_captcha_gym/shared_scripts/incubator_generators/pearl_lattice.py",
+    "weird_captcha_gym/shared_runtime/app/mechanics/pearl_lattice.js",
+    "weird_captcha_gym/shared_runtime/app/mechanics/pearl_lattice.css",
+    "weird_captcha_gym/shared_runtime/server/incubator_graders/pearl_lattice.py",
+    "weird_captcha_gym/environments/pearl_lattice_env/tasks/pearl_lattice_seed_0001/verifier.py",
+    "weird_captcha_gym/tools/incubator_solvers/pearl_lattice.py",
+    "weird_captcha_gym/environments/pearl_lattice_env/scripts/install_puzzle_runtime.sh",
+    "weird_captcha_gym/environments/pearl_lattice_env/scripts/setup_puzzle_runtime.sh",
+    "weird_captcha_gym/environments/pearl_lattice_env/tasks/pearl_lattice_seed_0001/setup_task.sh",
+    "weird_captcha_gym/environments/pearl_lattice_env/tasks/pearl_lattice_seed_0001/export_result.sh"
+  ],
+  "runtime_checks": [],
+  "uncertainties": []
+}

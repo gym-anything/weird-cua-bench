@@ -1,0 +1,104 @@
+{
+  "case_index": 2,
+  "environment_id": "cloudstep_caddie_env",
+  "public_name": "Cloudstep Caddie",
+  "revision": "48e86f5950c056bfa0f2822fa430f9762c5fc29c",
+  "baseline": {
+    "difficulty": 4,
+    "interaction": "simplified"
+  },
+  "labels": {
+    "visual": "3D",
+    "temporal": "no",
+    "reasoning_planning": "yes",
+    "exploration_interface": "no"
+  },
+  "temporal_status": "provisional_baseline_audit",
+  "visible_solution": "From the screenshot, read the isometric course from the start ball to the cup, including raised tile heights, fairway, sand, water, ramps, and the visible legend. Read each dealt card's roll/chip kind and distance, then plan an order and compass direction that obeys the displayed field rules, reaches the cup, and uses the exact hand. In the simplified baseline, click a card and then its direction button; after each settled stroke, use the still-visible ball, elevation, and spent-card counter to continue. When all seven baseline cards have been spent at the cup, click CERTIFY SUNKEN BALL.",
+  "reasoning": {
+    "visual": "3D is required because the visible course is an isometric set of raised tiles and the legal transitions use tile z, elevation changes, ramps, water, sand, and the cup. The agent must interpret spatial height and surface, not just decorative perspective, to choose legal rolls and chips.",
+    "temporal": "No. The course is static while it is being solved: there is no moving target, timer, duration requirement, or automatic evolving state. Each stroke settles immediately, and the current ball position, elevation, surface, and used-card counter remain visible, so successful play does not require remembering earlier hidden state or interpreting change across frames.",
+    "reasoning_planning": "Yes. The agent must infer a legal route from the visible course and exact card hand, choose which card and direction to use next, and account for consequences at later positions. Rolls cannot cross water, uphill rolls need ramps, sand limits rolls, and chips have landing-height clearance; certification also requires the cup and every card.",
+    "exploration_interface": "No. The initial UI visibly provides the card hand, compass, legend, interaction instruction, field rules, ball/cup scene, and certification control. Selecting a card or dragging it is an explicitly described input, and routine stroke feedback does not reveal a prerequisite hidden rule or require learning the interface before solving. This remains true for the full surface, whose visible directive says to drag a card onto a compass direction. All five difficulty profiles and both interaction modes preserve these capability requirements; no supported configuration exception was found."
+  },
+  "source_evidence": [
+    {
+      "capability": "visual",
+      "path": "weird_captcha_gym/shared_scripts/incubator_generators/cloudstep_caddie.py",
+      "lines": "183-201",
+      "claim": "Generated course tiles carry x, y, z, surface, and optional ramp direction as task geometry."
+    },
+    {
+      "capability": "visual",
+      "path": "weird_captcha_gym/shared_runtime/app/mechanics/cloudstep_caddie.js",
+      "lines": "57-64",
+      "claim": "The browser projects x, y, and z into the isometric scene, with z changing the rendered vertical position."
+    },
+    {
+      "capability": "visual",
+      "path": "weird_captcha_gym/shared_runtime/app/mechanics/cloudstep_caddie.js",
+      "lines": "92-118",
+      "claim": "The visible course distinguishes fairway, sand, water, ramp, and cup, renders tile height through the isometric geometry, and displays the ball elevation and spent-card count."
+    },
+    {
+      "capability": "temporal",
+      "path": "weird_captcha_gym/shared_runtime/app/mechanics/cloudstep_caddie.js",
+      "lines": "149-165",
+      "claim": "A stroke computes one settled transition, updates the visible ball and used-card state, and redraws the scene; no time-dependent mechanic is used."
+    },
+    {
+      "capability": "temporal",
+      "path": "weird_captcha_gym/shared_runtime/app/mechanics/cloudstep_caddie.js",
+      "lines": "169-183",
+      "claim": "Certification checks the current visible ball and used-card state and submits the event transcript; it does not require action duration, motion tracking, or hidden earlier state."
+    },
+    {
+      "capability": "reasoning_planning",
+      "path": "weird_captcha_gym/shared_runtime/app/mechanics/cloudstep_caddie.js",
+      "lines": "25-55",
+      "claim": "The legal result of each selected card and direction depends on current position, card kind and distance, water, sand, height changes, ramps, and chip clearance."
+    },
+    {
+      "capability": "reasoning_planning",
+      "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/cloudstep_caddie.py",
+      "lines": "109-169",
+      "claim": "The grader independently replays the ordered strokes from the visible start state, rejects false before/after states and reused cards, and requires the final cup position plus the complete hand."
+    },
+    {
+      "capability": "exploration_interface",
+      "path": "weird_captcha_gym/shared_runtime/app/mechanics/cloudstep_caddie.js",
+      "lines": "121-145",
+      "claim": "The card controls visibly implement the two prescribed surfaces: click-to-select for simplified mode and drag-to-compass for full mode, with explicit readouts describing the action."
+    },
+    {
+      "capability": "exploration_interface",
+      "path": "weird_captcha_gym/shared_runtime/app/mechanics/cloudstep_caddie.js",
+      "lines": "186-202",
+      "claim": "The rendered UI explicitly instructs the selected interaction, shows the direction compass and legend, and prints the field rules about water, chips, height, and sand before play."
+    },
+    {
+      "capability": "visual",
+      "path": "weird_captcha_gym/environments/cloudstep_caddie_env/controls.json",
+      "lines": "4-40",
+      "claim": "The baseline is difficulty 4 with simplified interaction, and all five profiles plus both implemented interaction modes retain the raised-course/card mechanic rather than switching to a different task."
+    }
+  ],
+  "configuration_exceptions": [],
+  "observation_only_temporal": false,
+  "files_read_completely": [
+    "AGENTS.md",
+    "weird_captcha_gym/docs/capability-annotation-guidelines.md",
+    "weird_captcha_gym/docs/controllability/temporal.md",
+    "weird_captcha_gym/environments/cloudstep_caddie_env/env.json",
+    "weird_captcha_gym/environments/cloudstep_caddie_env/controls.json",
+    "weird_captcha_gym/environments/cloudstep_caddie_env/tasks/cloudstep_caddie_seed_0001/task.json",
+    "weird_captcha_gym/shared_scripts/incubator_generators/cloudstep_caddie.py",
+    "weird_captcha_gym/shared_runtime/app/mechanics/cloudstep_caddie.js",
+    "weird_captcha_gym/shared_runtime/app/mechanics/cloudstep_caddie.css",
+    "weird_captcha_gym/shared_runtime/server/incubator_graders/cloudstep_caddie.py",
+    "weird_captcha_gym/environments/cloudstep_caddie_env/tasks/cloudstep_caddie_seed_0001/verifier.py",
+    "weird_captcha_gym/tools/incubator_solvers/cloudstep_caddie.py"
+  ],
+  "runtime_checks": [],
+  "uncertainties": []
+}

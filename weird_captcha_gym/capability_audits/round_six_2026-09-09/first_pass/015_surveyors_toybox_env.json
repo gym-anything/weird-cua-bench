@@ -1,0 +1,110 @@
+{
+  "case_index": 15,
+  "environment_id": "surveyors_toybox_env",
+  "public_name": "Surveyors Toybox",
+  "revision": "48e86f5950c056bfa0f2822fa430f9762c5fc29c",
+  "baseline": {
+    "difficulty": 4,
+    "interaction": "full"
+  },
+  "labels": {
+    "visual": "3D",
+    "temporal": "no",
+    "reasoning_planning": "yes",
+    "exploration_interface": "no"
+  },
+  "temporal_status": "provisional_baseline_audit",
+  "visible_solution": "From the screenshot, read the requested-object list and the sparse colored point cloud. For each requested object, select it, use the visible point-cloud view and the overhead, front, and side calibrated camera images to infer its 3D center, half-extents, and heading, then drag the visible cuboid handles to fit those seven fields. For every synchronized frame and each of the three views, compare the neutral camera marks with the same physical subject, click the matching mark, click LINK SELECTED MARK → BOX, and repeat for every target before submitting CERTIFY SURVEY. In the baseline full interface, orbit, pan, and zoom are optional visible view aids and the cuboid edits and mark selections use direct pointer input.",
+  "reasoning": {
+    "visual": "The solution must recover a 3D oriented cuboid: the scan is a spatial point cloud, the box has a 3D center, three half-extents, and yaw, and the visible evidence is supplied in overhead XZ, front XY, and side ZY projections. This is 3D spatial understanding rather than decorative perspective.",
+    "temporal": "No. The generated camera_frames are a finite set of selectable synchronized plates. Selecting a frame replaces the displayed static camera images and can be solved independently; success does not require interpreting motion, duration, an evolving state, or information that disappears after an earlier frame. The frame-count increase in higher profiles adds plates to inspect, not a temporal control demand.",
+    "reasoning_planning": "Yes. The agent must infer center, extent, and yaw constraints from sparse scan returns and reconcile them with three calibrated projections, then choose the neutral mark belonging to the same physical object in every frame and view. The grader checks center and extent error, yaw tolerance, 3D IoU, and the complete target/frame/view link map, so visual recognition alone is insufficient.",
+    "exploration_interface": "No. The scan, requested targets, calibrated camera views, frame tabs, direct manipulation instructions, mark regions, link button, and submit button are visible. Selecting a labelled target or frame and using the explicitly described handles or controls is routine task execution; orbit, pan, and zoom are optional view aids, and no causal probing or hidden interface rule must be discovered before solving.",
+    "configuration_review": "All difficulty profiles 1 through 5 and both simplified and full interaction modes were examined. Difficulty changes target and distractor counts, static frame count, point density, starting error, and fit/heading tolerances; interaction changes direct handles versus visible proxy buttons. These alter workload, precision, or motor surface but preserve the same 3D fitting, cross-view linking, non-temporal, and non-exploratory capability requirements. No supported configuration exception was found."
+  },
+  "source_evidence": [
+    {
+      "capability": "visual",
+      "path": "weird_captcha_gym/shared_scripts/incubator_generators/surveyors_toybox.py",
+      "lines": "19-31",
+      "claim": "The generator constructs rotated 3D cuboid corners from a 3D center, half-extents, and yaw."
+    },
+    {
+      "capability": "visual",
+      "path": "weird_captcha_gym/shared_scripts/incubator_generators/surveyors_toybox.py",
+      "lines": "198-226",
+      "claim": "The visible evidence uses overhead XZ, front XY, and side ZY projections across synchronized camera frames."
+    },
+    {
+      "capability": "temporal",
+      "path": "weird_captcha_gym/shared_runtime/app/mechanics/surveyors_toybox.js",
+      "lines": "168-172",
+      "claim": "Frame changes occur only when the user selects a labelled frame tab; the handler selects a static frame and redraws it."
+    },
+    {
+      "capability": "temporal",
+      "path": "weird_captcha_gym/shared_scripts/incubator_generators/surveyors_toybox.py",
+      "lines": "203-226",
+      "claim": "The generator creates a finite list of camera-frame records with static marks and scene objects, rather than a continuously evolving task state."
+    },
+    {
+      "capability": "reasoning_planning",
+      "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/surveyors_toybox.py",
+      "lines": "194-209",
+      "claim": "The authoritative grade requires center, extent, yaw, and 3D IoU fit for every target plus exact links for every frame and view."
+    },
+    {
+      "capability": "reasoning_planning",
+      "path": "weird_captcha_gym/shared_scripts/incubator_generators/surveyors_toybox.py",
+      "lines": "253-267",
+      "claim": "The browser receives rendered scan and camera evidence while target boxes and expected correspondence links remain authoritative truth, requiring visible cross-modal inference."
+    },
+    {
+      "capability": "exploration_interface",
+      "path": "weird_captcha_gym/shared_runtime/app/mechanics/surveyors_toybox.js",
+      "lines": "291-326",
+      "claim": "The interface visibly labels direct or proxy editing, view tools, target and frame selectors, camera surfaces, mark linking, and submission, and installs their handlers directly."
+    },
+    {
+      "capability": "exploration_interface",
+      "path": "weird_captcha_gym/shared_runtime/app/mechanics/surveyors_toybox.js",
+      "lines": "190-260",
+      "claim": "The initial render draws the scan, fitted cuboid overlays, all three camera canvases, and neutral marks; view changes are optional display operations rather than hidden-state discovery."
+    },
+    {
+      "capability": "configuration",
+      "path": "weird_captcha_gym/environments/surveyors_toybox_env/controls.json",
+      "lines": "5-34",
+      "claim": "All five difficulty profiles and both implemented interaction modes are explicitly defined; the profiles vary parameters and input surface without a separate capability mechanic."
+    },
+    {
+      "capability": "configuration",
+      "path": "weird_captcha_gym/shared_scripts/incubator_generators/surveyors_toybox.py",
+      "lines": "114-157",
+      "claim": "The generator applies profile parameters to counts, frame count, density, tolerances, and initial error while preserving the same task construction and interaction choices."
+    }
+  ],
+  "configuration_exceptions": [],
+  "observation_only_temporal": false,
+  "files_read_completely": [
+    "AGENTS.md",
+    "weird_captcha_gym/docs/capability-annotation-guidelines.md",
+    "weird_captcha_gym/docs/controllability/temporal.md",
+    "weird_captcha_gym/environments/surveyors_toybox_env/env.json",
+    "weird_captcha_gym/environments/surveyors_toybox_env/controls.json",
+    "weird_captcha_gym/environments/surveyors_toybox_env/tasks/surveyors_toybox_seed_0001/task.json",
+    "weird_captcha_gym/environments/surveyors_toybox_env/tasks/surveyors_toybox_seed_0001/verifier.py",
+    "weird_captcha_gym/environments/surveyors_toybox_env/tasks/surveyors_toybox_seed_0001/setup_task.sh",
+    "weird_captcha_gym/environments/surveyors_toybox_env/tasks/surveyors_toybox_seed_0001/export_result.sh",
+    "weird_captcha_gym/environments/surveyors_toybox_env/scripts/install_puzzle_runtime.sh",
+    "weird_captcha_gym/environments/surveyors_toybox_env/scripts/setup_puzzle_runtime.sh",
+    "weird_captcha_gym/shared_scripts/incubator_generators/surveyors_toybox.py",
+    "weird_captcha_gym/shared_runtime/app/mechanics/surveyors_toybox.js",
+    "weird_captcha_gym/shared_runtime/app/mechanics/surveyors_toybox.css",
+    "weird_captcha_gym/shared_runtime/server/incubator_graders/surveyors_toybox.py",
+    "weird_captcha_gym/tools/incubator_solvers/surveyors_toybox.py",
+    "weird_captcha_gym/shared_runtime/app/index.html"
+  ],
+  "runtime_checks": [],
+  "uncertainties": []
+}

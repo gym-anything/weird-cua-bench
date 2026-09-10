@@ -1,0 +1,150 @@
+{
+  "case_index": 5,
+  "environment_id": "facet_lantern_env",
+  "public_name": "Facet Lantern",
+  "revision": "48e86f5950c056bfa0f2822fa430f9762c5fc29c",
+  "baseline": {"difficulty": 3, "interaction": "full"},
+  "labels": {
+    "visual": "3D",
+    "temporal": "yes",
+    "reasoning_planning": "yes",
+    "exploration_interface": "no"
+  },
+  "temporal_status": "provisional_baseline_audit",
+  "visible_solution": "Read the requested outline entries and their persistent vertex labels in the sidebar, inspect the projected bipyramid and its current connection lines, and account for any already-drawn required edges. In the baseline full interface, press on an empty part of the solid and drag horizontally to rotate it until the two labelled studs for a needed edge are both glowing and visible. Click the first stud and then its intended neighbour to add that edge; the connection remains drawn and the ledger and facet status update. Repeat for every missing consecutive edge in each displayed polygon, including each polygon's closing edge, while avoiding duplicate or extra connections, then click CERTIFY LANTERN.",
+  "reasoning": {
+    "visual": "The solution must understand a projected 3D bipyramid: top and bottom apexes and a ring of vertices are represented by x/y/z coordinates, faces are projected with depth sorting, and studs behind the solid are hidden. It must use the changing projection and persistent labels to choose visible endpoints.",
+    "temporal": "Baseline full interaction requires a pointer-down/move/up drag whose path changes yaw continuously and whose release determines the new projection. That time-extended control affects which labelled studs can be selected; the grader also requires a recorded direct-pointer rotation. There is no autonomous scene motion or observation-only temporal demand.",
+    "reasoning_planning": "The target list supplies polygon vertex sequences, but the agent must infer the cyclic edge set, account for the random subset of initial required connections, and choose only the missing edges. The grader rejects duplicate, extra, hidden, or incomplete connections and requires the final connection set to equal the required set, so action consequences matter later.",
+    "exploration_interface": "No exploratory discovery is required. The initial UI immediately shows the task prompt, requested outline labels, the active interaction mode, rotation instructions, yaw, score target, and connection ledger. Rotating only exposes already-identified labelled studs and follows an explicitly described control; it does not require learning an undisclosed rule or interface behavior."
+  },
+  "source_evidence": [
+    {
+      "capability": "visual",
+      "path": "weird_captcha_gym/shared_scripts/incubator_generators/facet_lantern.py",
+      "lines": "66-122",
+      "claim": "The generator creates top and bottom apexes plus a ring of vertices with 3D x/y/z coordinates and triangular bipyramid faces."
+    },
+    {
+      "capability": "visual",
+      "path": "weird_captcha_gym/shared_runtime/app/mechanics/facet_lantern.js",
+      "lines": "10-21,134-169",
+      "claim": "The browser projects x/y/z into screen coordinates with depth, sorts faces by depth, and renders each stud only when its depth passes the occlusion test."
+    },
+    {
+      "capability": "temporal",
+      "path": "weird_captcha_gym/shared_runtime/app/mechanics/facet_lantern.js",
+      "lines": "204-226",
+      "claim": "Full mode holds a pointer during a path of movement, continuously updates yaw from displacement, and records the released drag as a direct-pointer rotation."
+    },
+    {
+      "capability": "reasoning_planning",
+      "path": "weird_captcha_gym/shared_scripts/incubator_generators/facet_lantern.py",
+      "lines": "93-110,125-142",
+      "claim": "Requested facets are selected from faces, their cyclic boundary edges become the required set, and only a seed-dependent subset is initially connected; completion and scoring depend on the exact edge set."
+    },
+    {
+      "capability": "reasoning_planning",
+      "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/facet_lantern.py",
+      "lines": "134-170",
+      "claim": "Replay requires each connection to follow a visible two-click selection, rejects duplicates, and accepts only when the final connections exactly equal the required edges and all targets score correctly."
+    },
+    {
+      "capability": "exploration_interface",
+      "path": "weird_captcha_gym/shared_runtime/app/mechanics/facet_lantern.js",
+      "lines": "66-83,124-132",
+      "claim": "The initial render exposes the prompt, requested outline list, interaction instructions, yaw/score/ledger UI, and persistent target labels before any exploratory action."
+    },
+    {
+      "capability": "exploration_interface",
+      "path": "weird_captcha_gym/shared_runtime/app/mechanics/facet_lantern.js",
+      "lines": "157-169,172-180",
+      "claim": "Rotation reveals the known studs according to the displayed occlusion rule and updates the scene; it is an instructed task action rather than an interface-learning probe."
+    },
+    {
+      "capability": "temporal",
+      "path": "weird_captcha_gym/shared_runtime/app/mechanics/facet_lantern.js",
+      "lines": "172-180,256-257",
+      "claim": "Simplified mode uses labeled LEFT/RIGHT buttons that apply one fixed rotation step and rerender a static view, without the sustained pointer path used by full mode."
+    }
+  ],
+  "configuration_exceptions": [
+    {
+      "difficulties": [1],
+      "interaction_modes": ["simplified"],
+      "capability": "temporal",
+      "label": "no",
+      "reason": "Difficulty 1 simplified mode uses a discrete labeled turn-button click at the fixed 15-degree step; the remaining stud-click and polygon-closure rules are unchanged, so no sustained pointer control or nontrivial temporal interpretation is required.",
+      "source_evidence": [
+        {"path": "weird_captcha_gym/environments/facet_lantern_env/controls.json", "lines": "6-12,52-54", "claim": "Difficulty 1 supports both interfaces and defines simplified as turn buttons replacing direct horizontal drags."},
+        {"path": "weird_captcha_gym/shared_runtime/app/mechanics/facet_lantern.js", "lines": "172-180,256-257", "claim": "Proxy buttons apply a fixed step and rerender the scene."}
+      ]
+    },
+    {
+      "difficulties": [2],
+      "interaction_modes": ["simplified"],
+      "capability": "temporal",
+      "label": "no",
+      "reason": "Difficulty 2 simplified mode uses a discrete labeled turn-button click at the fixed 15-degree step; the remaining stud-click and polygon-closure rules are unchanged, so no sustained pointer control or nontrivial temporal interpretation is required.",
+      "source_evidence": [
+        {"path": "weird_captcha_gym/environments/facet_lantern_env/controls.json", "lines": "15-21,52-54", "claim": "Difficulty 2 supports both interfaces and defines simplified as turn buttons replacing direct horizontal drags."},
+        {"path": "weird_captcha_gym/shared_runtime/app/mechanics/facet_lantern.js", "lines": "172-180,256-257", "claim": "Proxy buttons apply a fixed step and rerender the scene."}
+      ]
+    },
+    {
+      "difficulties": [3],
+      "interaction_modes": ["simplified"],
+      "capability": "temporal",
+      "label": "no",
+      "reason": "Difficulty 3 simplified mode uses a discrete labeled turn-button click at the fixed 15-degree step; the remaining stud-click and polygon-closure rules are unchanged, so no sustained pointer control or nontrivial temporal interpretation is required.",
+      "source_evidence": [
+        {"path": "weird_captcha_gym/environments/facet_lantern_env/controls.json", "lines": "24-30,52-54", "claim": "Difficulty 3 supports both interfaces and defines simplified as turn buttons replacing direct horizontal drags."},
+        {"path": "weird_captcha_gym/shared_runtime/app/mechanics/facet_lantern.js", "lines": "172-180,256-257", "claim": "Proxy buttons apply a fixed step and rerender the scene."}
+      ]
+    },
+    {
+      "difficulties": [4],
+      "interaction_modes": ["simplified"],
+      "capability": "temporal",
+      "label": "no",
+      "reason": "Difficulty 4 simplified mode uses a discrete labeled turn-button click at the fixed 15-degree step; the remaining stud-click and polygon-closure rules are unchanged, so no sustained pointer control or nontrivial temporal interpretation is required.",
+      "source_evidence": [
+        {"path": "weird_captcha_gym/environments/facet_lantern_env/controls.json", "lines": "33-39,52-54", "claim": "Difficulty 4 supports both interfaces and defines simplified as turn buttons replacing direct horizontal drags."},
+        {"path": "weird_captcha_gym/shared_runtime/app/mechanics/facet_lantern.js", "lines": "172-180,256-257", "claim": "Proxy buttons apply a fixed step and rerender the scene."}
+      ]
+    },
+    {
+      "difficulties": [5],
+      "interaction_modes": ["simplified"],
+      "capability": "temporal",
+      "label": "no",
+      "reason": "Difficulty 5 simplified mode uses a discrete labeled turn-button click at the fixed 15-degree step; the remaining stud-click and polygon-closure rules are unchanged, so no sustained pointer control or nontrivial temporal interpretation is required.",
+      "source_evidence": [
+        {"path": "weird_captcha_gym/environments/facet_lantern_env/controls.json", "lines": "42-48,52-54", "claim": "Difficulty 5 supports both interfaces and defines simplified as turn buttons replacing direct horizontal drags."},
+        {"path": "weird_captcha_gym/shared_runtime/app/mechanics/facet_lantern.js", "lines": "172-180,256-257", "claim": "Proxy buttons apply a fixed step and rerender the scene."}
+      ]
+    }
+  ],
+  "observation_only_temporal": false,
+  "files_read_completely": [
+    "AGENTS.md",
+    "weird_captcha_gym/docs/capability-annotation-guidelines.md",
+    "weird_captcha_gym/docs/controllability/temporal.md",
+    "weird_captcha_gym/environments/facet_lantern_env/env.json",
+    "weird_captcha_gym/environments/facet_lantern_env/controls.json",
+    "weird_captcha_gym/environments/facet_lantern_env/tasks/facet_lantern_seed_0001/task.json",
+    "weird_captcha_gym/environments/facet_lantern_env/tasks/facet_lantern_seed_0001/setup_task.sh",
+    "weird_captcha_gym/environments/facet_lantern_env/tasks/facet_lantern_seed_0001/export_result.sh",
+    "weird_captcha_gym/shared_scripts/incubator_generators/facet_lantern.py",
+    "weird_captcha_gym/shared_runtime/app/mechanics/facet_lantern.js",
+    "weird_captcha_gym/shared_runtime/app/mechanics/facet_lantern.css",
+    "weird_captcha_gym/shared_runtime/server/incubator_graders/facet_lantern.py",
+    "weird_captcha_gym/environments/facet_lantern_env/tasks/facet_lantern_seed_0001/verifier.py",
+    "weird_captcha_gym/tools/incubator_solvers/facet_lantern.py",
+    "weird_captcha_gym/shared_runtime/verifier_helpers.py"
+  ],
+  "runtime_checks": [],
+  "uncertainties": [
+    "Temporal labels are provisional as required by the frozen prompt; this audit does not assign a real-time label. All five difficulty profiles and both interaction modes were examined."
+  ]
+}

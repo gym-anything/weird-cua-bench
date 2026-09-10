@@ -1,0 +1,1951 @@
+{
+  "schema_version": 1,
+  "source_revision": "48e86f5950c056bfa0f2822fa430f9762c5fc29c",
+  "model": "gpt-5.6-luna",
+  "reasoning_effort": "xhigh",
+  "status": "adjudicated_source_review",
+  "environments": [
+    {
+      "environment_id": "cloudpost_circuit_env",
+      "public_name": "Cloudpost Circuit",
+      "cohort": "new_15",
+      "labels": {
+        "visual": "3D",
+        "temporal": true,
+        "reasoning_planning": true,
+        "exploration_interface": true
+      },
+      "baseline": {
+        "difficulty": 4,
+        "interaction": "full"
+      },
+      "annotation_revision": "48e86f5950c056bfa0f2822fa430f9762c5fc29c",
+      "re_audited_in_this_pass": true,
+      "evidence_file": "primary_checks/001_cloudpost_circuit_env.json",
+      "rationale": {
+        "visual": "The task requires spatial interpretation of x/y/z target positions through a yaw/pitch camera: projected screen position and apparent size depend on depth, while success is a three-dimensional plane-to-seal distance. The plane marker is fixed in the cockpit view, so the agent must use the changing projected scene and depth cues to infer the needed world-space alignment.",
+        "temporal": "Temporal understanding is required because the browser advances physics on repeated ticks while the agent waits: yaw and pitch turn toward persistent controls, the plane moves forward, contacts occur at particular poses, and pointer or trim changes affect the following tick. A successful solution must sustain and redirect control as the route evolves; it cannot ignore the changing pose and contact opportunities.",
+        "reasoning_planning": "The agent must infer a yaw/pitch correction from each seal's relative 3D position and choose controls whose consequences affect later contacts. Turn-rate limits, flight speed, a finite contact radius, and corridor bounds require anticipating the plane's trajectory and correcting before or while reaching a seal; screen overlap alone is explicitly insufficient.",
+        "exploration_interface": "The L1-L2 No exception does not rely on the JavaScript's expanded draw-culling window being visible. L1 seals are in the initial canvas. At the L2 extreme, a first-seal center can lie just beyond the top/bottom edge (|y|<=34, z>=60 implies center y in [-13.34,553.34]), but its glow radius is at least 2.6*16*38/76=20.8 pixels. This provides an initial visible directional cue even at the extreme; the later waypoints are farther away with contracted lateral/vertical offsets. Such direct steering toward an already visible cue does not require a separate information-discovery action. L3-L5 allow seals with no visible part until the camera is steered."
+      },
+      "first_pass_file": "first_pass/001_cloudpost_circuit_env.json",
+      "first_pass_sha256": "cb74a248b8bf449777d9db21cc7ac9d32ee5cf1158e582499bb913f49fdd361f",
+      "primary_decision": "Keep all baseline labels and the L1-L2 exploration No exception in both interaction modes. World-space contact, persistent flight-vector control and forward-only motion support 3D, temporal and consequential trajectory choice. Some baseline routes hide the first seal completely outside the canvas; steering is required to discover it.",
+      "label_changes": {},
+      "configuration_exceptions": [
+        {
+          "difficulties": [
+            1,
+            2
+          ],
+          "interaction_modes": [
+            "simplified",
+            "full"
+          ],
+          "capability": "exploration_interface",
+          "label": "no",
+          "reason": "With profiles 1 and 2, the generator's forced first-seal lateral span and bounded vertical span keep the initial seal, and the recursively bounded later seals, within the browser's initial projection window; all seals can therefore be read from the initial visible field. The interaction mode changes only whether the same vector is set by trim buttons or pointer movement, not what information is visible.",
+          "source_evidence": [
+            {
+              "capability": "exploration_interface",
+              "path": "weird_captcha_gym/environments/cloudpost_circuit_env/controls.json",
+              "lines": "6-14",
+              "claim": "Difficulty profiles 1 and 2 use the smallest lateral/vertical spans and both simplified and full interaction modes are implemented."
+            },
+            {
+              "capability": "exploration_interface",
+              "path": "weird_captcha_gym/shared_scripts/incubator_generators/cloudpost_circuit.py",
+              "lines": "105-119",
+              "claim": "Initial and successive x/y target coordinates are bounded by the selected profile spans, with later coordinates contracted toward the previous waypoint."
+            },
+            {
+              "capability": "exploration_interface",
+              "path": "weird_captcha_gym/shared_runtime/app/mechanics/cloudpost_circuit.js",
+              "lines": "227-230",
+              "claim": "The browser draws every uncollected seal whose projection is inside the canvas draw window; for the low-span profiles the generated route remains in that initial window."
+            }
+          ]
+        }
+      ],
+      "source_evidence": [
+        {
+          "capability": "visual",
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/cloudpost_circuit.py",
+          "lines": "96-119",
+          "claim": "Each generated delivery seal has x, y, and z world coordinates; the route varies lateral and vertical position and keeps successive waypoints in a 3D turn envelope."
+        },
+        {
+          "capability": "visual",
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/cloudpost_circuit.js",
+          "lines": "64-86",
+          "claim": "The visible scene uses plane yaw/pitch to construct camera basis vectors and perspective-projects world points using depth."
+        },
+        {
+          "capability": "temporal",
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/cloudpost_circuit.js",
+          "lines": "127-154",
+          "claim": "Every physics step increments the flight tick, changes yaw/pitch toward the current control, advances x/y/z, and records contacts when the moving plane enters a world-space radius."
+        },
+        {
+          "capability": "temporal",
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/cloudpost_circuit.js",
+          "lines": "97-114,245-257",
+          "claim": "Pointer commands persist in model.control and the animation loop repeatedly executes physics ticks; the UI tells the agent to correct from the next frame."
+        },
+        {
+          "capability": "reasoning_planning",
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/cloudpost_circuit.py",
+          "lines": "121-151",
+          "claim": "The authoritative replay applies controls over time, enforces corridor bounds, computes Euclidean 3D contact distance, and applies steering events after the current tick so action consequences affect later trajectory."
+        },
+        {
+          "capability": "reasoning_planning",
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/cloudpost_circuit.js",
+          "lines": "227-239",
+          "claim": "The plane is a fixed cockpit marker, while collection is computed from the plane's 3D pose rather than from the drawn screen overlap."
+        },
+        {
+          "capability": "exploration_interface",
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/cloudpost_circuit.py",
+          "lines": "102-119",
+          "claim": "The generator explicitly allows the first seal to start outside the initial camera frustum while varying the route's lateral and vertical spans."
+        },
+        {
+          "capability": "exploration_interface",
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/cloudpost_circuit.js",
+          "lines": "227-230,305-325",
+          "claim": "Only projected, in-view uncollected seals are drawn; the visible UI warns that targets may be beyond the current view and binds the two visible control surfaces to steering."
+        },
+        {
+          "capability": "exploration_interface",
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/cloudpost_circuit.css",
+          "lines": "67-87",
+          "claim": "The flight field is a bounded visible canvas, so off-frustum information is not supplied by another visible pane or persistent list."
+        },
+        {
+          "capability": "exploration_interface",
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/cloudpost_circuit.py",
+          "lines": "14-39,96-119",
+          "claim": "L1-L2 spans and first target depth bounds; later target offsets contract and depths increase."
+        },
+        {
+          "capability": "exploration_interface",
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/cloudpost_circuit.js",
+          "lines": "75-86,162-172,227-230",
+          "claim": "Perspective projection, depth-scaled glow radius, and the distinction between off-canvas drawing and visible canvas content."
+        }
+      ],
+      "source_evidence_note": "First-pass evidence is retained even where primary adjudication rejects its interpretation; use the final rationale and primary decision.",
+      "files_read_completely_by_first_reviewer": [
+        "AGENTS.md",
+        "weird_captcha_gym/docs/capability-annotation-guidelines.md",
+        "weird_captcha_gym/docs/controllability/temporal.md",
+        "weird_captcha_gym/environments/cloudpost_circuit_env/env.json",
+        "weird_captcha_gym/environments/cloudpost_circuit_env/tasks/cloudpost_circuit_seed_0001/task.json",
+        "weird_captcha_gym/environments/cloudpost_circuit_env/controls.json",
+        "weird_captcha_gym/shared_scripts/incubator_generators/cloudpost_circuit.py",
+        "weird_captcha_gym/shared_runtime/app/mechanics/cloudpost_circuit.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/cloudpost_circuit.css",
+        "weird_captcha_gym/shared_runtime/server/incubator_graders/cloudpost_circuit.py",
+        "weird_captcha_gym/environments/cloudpost_circuit_env/tasks/cloudpost_circuit_seed_0001/verifier.py",
+        "weird_captcha_gym/tools/incubator_solvers/cloudpost_circuit.py"
+      ],
+      "primary_review_scope": "Primary read the full first-pass report and independently read env.json, task.json, controls.json, generator, browser JavaScript, mechanic CSS, grader, task verifier, solver, and shared verifier_helpers.py.",
+      "observation_only_temporal": false,
+      "uncertainties": [
+        "Source-supported annotation only; no human or screenshot-only agent run was performed, and no success-rate or difficulty calibration is claimed."
+      ],
+      "runtime_checks": []
+    },
+    {
+      "environment_id": "cloudstep_caddie_env",
+      "public_name": "Cloudstep Caddie",
+      "cohort": "new_15",
+      "labels": {
+        "visual": "3D",
+        "temporal": false,
+        "reasoning_planning": true,
+        "exploration_interface": false
+      },
+      "baseline": {
+        "difficulty": 4,
+        "interaction": "simplified"
+      },
+      "annotation_revision": "48e86f5950c056bfa0f2822fa430f9762c5fc29c",
+      "re_audited_in_this_pass": true,
+      "evidence_file": "primary_checks/002_cloudstep_caddie_env.json",
+      "rationale": {
+        "visual": "3D is required because the visible course is an isometric set of raised tiles and the legal transitions use tile z, elevation changes, ramps, water, sand, and the cup. The agent must interpret spatial height and surface, not just decorative perspective, to choose legal rolls and chips.",
+        "temporal": "No. The course is static while it is being solved: there is no moving target, timer, duration requirement, or automatic evolving state. Each stroke settles immediately, and the current ball position, elevation, surface, and used-card counter remain visible, so successful play does not require remembering earlier hidden state or interpreting change across frames.",
+        "reasoning_planning": "Yes. The agent must infer a legal route from the visible course and exact card hand, choose which card and direction to use next, and account for consequences at later positions. Rolls cannot cross water, uphill rolls need ramps, sand limits rolls, and chips have landing-height clearance; certification also requires the cup and every card.",
+        "exploration_interface": "The UI describes the interaction, surfaces and stroke rules at a general level; it does not print every numerical transition constant. The No label concerns the absence of a required probe or reveal stage, not a claim that all implementation parameters are written on screen. Illegal-move feedback is routine feedback, not itself evidence of exploration."
+      },
+      "first_pass_file": "first_pass/002_cloudstep_caddie_env.json",
+      "first_pass_sha256": "b83cc73d716f13bdb81de881aef71763f09c36110fe686d3d3d3cd78b15f3d8b",
+      "primary_decision": "Keep all labels and no profile exceptions. Tile elevation changes which card transitions are legal, so 3D is functional rather than decorative. Exact-use cards change both position and the remaining hand, requiring route planning. Strokes immediately produce a settled static state, the hand visibly marks spent cards, and neither interface needs sustained time-dependent control. No prerequisite information-reveal interaction is implemented.",
+      "label_changes": {},
+      "configuration_exceptions": [],
+      "source_evidence": [
+        {
+          "capability": "visual",
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/cloudstep_caddie.py",
+          "lines": "183-201",
+          "claim": "Generated course tiles carry x, y, z, surface, and optional ramp direction as task geometry."
+        },
+        {
+          "capability": "visual",
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/cloudstep_caddie.js",
+          "lines": "57-64",
+          "claim": "The browser projects x, y, and z into the isometric scene, with z changing the rendered vertical position."
+        },
+        {
+          "capability": "visual",
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/cloudstep_caddie.js",
+          "lines": "92-118",
+          "claim": "The visible course distinguishes fairway, sand, water, ramp, and cup, renders tile height through the isometric geometry, and displays the ball elevation and spent-card count."
+        },
+        {
+          "capability": "temporal",
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/cloudstep_caddie.js",
+          "lines": "149-165",
+          "claim": "A stroke computes one settled transition, updates the visible ball and used-card state, and redraws the scene; no time-dependent mechanic is used."
+        },
+        {
+          "capability": "temporal",
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/cloudstep_caddie.js",
+          "lines": "169-183",
+          "claim": "Certification checks the current visible ball and used-card state and submits the event transcript; it does not require action duration, motion tracking, or hidden earlier state."
+        },
+        {
+          "capability": "reasoning_planning",
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/cloudstep_caddie.js",
+          "lines": "25-55",
+          "claim": "The legal result of each selected card and direction depends on current position, card kind and distance, water, sand, height changes, ramps, and chip clearance."
+        },
+        {
+          "capability": "reasoning_planning",
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/cloudstep_caddie.py",
+          "lines": "109-169",
+          "claim": "The grader independently replays the ordered strokes from the visible start state, rejects false before/after states and reused cards, and requires the final cup position plus the complete hand."
+        },
+        {
+          "capability": "exploration_interface",
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/cloudstep_caddie.js",
+          "lines": "121-145",
+          "claim": "The card controls visibly implement the two prescribed surfaces: click-to-select for simplified mode and drag-to-compass for full mode, with explicit readouts describing the action."
+        },
+        {
+          "capability": "exploration_interface",
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/cloudstep_caddie.js",
+          "lines": "186-202",
+          "claim": "The rendered UI explicitly instructs the selected interaction, shows the direction compass and legend, and prints the field rules about water, chips, height, and sand before play."
+        },
+        {
+          "capability": "visual",
+          "path": "weird_captcha_gym/environments/cloudstep_caddie_env/controls.json",
+          "lines": "4-40",
+          "claim": "The baseline is difficulty 4 with simplified interaction, and all five profiles plus both implemented interaction modes retain the raised-course/card mechanic rather than switching to a different task."
+        },
+        {
+          "capability": "visual",
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/cloudstep_caddie.py",
+          "lines": "228-251",
+          "claim": "The constructed route includes actual elevation-changing chips; the 3D label is not based only on isometric decoration."
+        },
+        {
+          "capability": "temporal",
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/cloudstep_caddie.js",
+          "lines": "121-162",
+          "claim": "Spent cards remain marked and each input immediately redraws the settled ball; the full drag surface adds no duration criterion."
+        }
+      ],
+      "source_evidence_note": "First-pass evidence is retained even where primary adjudication rejects its interpretation; use the final rationale and primary decision.",
+      "files_read_completely_by_first_reviewer": [
+        "AGENTS.md",
+        "weird_captcha_gym/docs/capability-annotation-guidelines.md",
+        "weird_captcha_gym/docs/controllability/temporal.md",
+        "weird_captcha_gym/environments/cloudstep_caddie_env/env.json",
+        "weird_captcha_gym/environments/cloudstep_caddie_env/controls.json",
+        "weird_captcha_gym/environments/cloudstep_caddie_env/tasks/cloudstep_caddie_seed_0001/task.json",
+        "weird_captcha_gym/shared_scripts/incubator_generators/cloudstep_caddie.py",
+        "weird_captcha_gym/shared_runtime/app/mechanics/cloudstep_caddie.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/cloudstep_caddie.css",
+        "weird_captcha_gym/shared_runtime/server/incubator_graders/cloudstep_caddie.py",
+        "weird_captcha_gym/environments/cloudstep_caddie_env/tasks/cloudstep_caddie_seed_0001/verifier.py",
+        "weird_captcha_gym/tools/incubator_solvers/cloudstep_caddie.py"
+      ],
+      "primary_review_scope": "Primary read the complete first-pass report and independently read the full env.json, task.json, controls.json, generator, browser JavaScript, mechanic CSS, grader, task verifier and solver. The shared verifier helper had already been read in full.",
+      "observation_only_temporal": false,
+      "uncertainties": [
+        "Source review only; visual legibility, human calibration and screenshot-only agent success were not measured."
+      ],
+      "runtime_checks": []
+    },
+    {
+      "environment_id": "crater_walker_env",
+      "public_name": "Crater Walker",
+      "cohort": "new_15",
+      "labels": {
+        "visual": "3D",
+        "temporal": false,
+        "reasoning_planning": true,
+        "exploration_interface": true
+      },
+      "baseline": {
+        "difficulty": 4,
+        "interaction": "simplified"
+      },
+      "annotation_revision": "48e86f5950c056bfa0f2822fa430f9762c5fc29c",
+      "re_audited_in_this_pass": true,
+      "evidence_file": "primary_checks/003_crater_walker_env.json",
+      "rationale": {
+        "visual": "3D is necessary: each leg's YAW, LIFT, and EXTEND values place its foot in world x/y/z, contact is against finite raised support surfaces, and the canvas uses a yaw/pitch projection in which near and far pads can overlap. The task therefore requires spatial interpretation of nonplanar terrain and support height, not merely decorative perspective.",
+        "temporal": "The hidden released marker can be satisfied by the visible raise-then-settle procedure; it is not itself evidence of a required remembered state.",
+        "reasoning_planning": "Yes. The agent must infer actuator settings that place the indicated leg on the next terrace's specific support pad while preserving the other three current contacts. Raising the leg first, then choosing YAW/EXTEND and lowering LIFT, has later consequences: an unsafe support count, wrong pad, excessive posture, or terrain collision fails the attempt or prevents the next terrace from starting.",
+        "exploration_interface": "Yes at the baseline. The relevant pad relationship can be ambiguous in the initial projection, and the visible orbit buttons/drag surface are needed to resolve near/far geometry before committing a transfer. The transfer banner, highlighted card, canvas legend, actuator controls, and SETTLE/CERTIFY buttons provide the interface surface; difficulties 1 and 2 are exceptions because their broad, low-decoy routes are readable without an information-revealing view interaction."
+      },
+      "first_pass_file": "first_pass/003_crater_walker_env.json",
+      "first_pass_sha256": "bbf7a136f2669ef5c8540852d1ace37d0fce3e46885177df9c2ef7c561146f15",
+      "primary_decision": "Keep baseline 3D, temporal No, reasoning/planning Yes and exploration/interface Yes. The actuator-to-foot geometry and three-contact support requirement make height/depth and safe ordered placement consequential. SETTLE advances a finite visible transition rather than requiring control of elapsed time. Active views resolve near/far pad relationships at the baseline.",
+      "label_changes": {},
+      "configuration_exceptions": [
+        {
+          "difficulties": [
+            1,
+            2
+          ],
+          "interaction_modes": [
+            "simplified",
+            "full"
+          ],
+          "capability": "exploration_interface",
+          "label": "no",
+          "reason": "These profiles generate broad, easy-to-read routes (d1 has no decoys; d2 has only one false foothold and wide contacts), and the canvas visibly marks decoys in grey. The initial screenshot therefore supplies the route information without requiring orbit interaction. From d3 onward, increasing lateral variation and depth ambiguity make orbiting the visible way to resolve the support relationship. The interaction mode changes nudge buttons to direct rails and view buttons to canvas dragging but does not change this capability distinction.",
+          "source_evidence": [
+            {
+              "capability": "exploration_interface",
+              "path": "weird_captcha_gym/environments/crater_walker_env/controls.json",
+              "lines": "10-49",
+              "claim": "Difficulty 1 and 2 use no/one decoy with broad contacts, while difficulty 3 and above increase lateral variation and require depth-sensitive route reading."
+            },
+            {
+              "capability": "exploration_interface",
+              "path": "weird_captcha_gym/shared_runtime/app/mechanics/crater_walker.js",
+              "lines": "185-207",
+              "claim": "The same initial canvas renders the full pad set and explicitly distinguishes grey decoys, so d1-d2 do not require a reveal interaction to identify the relevant route."
+            }
+          ]
+        }
+      ],
+      "source_evidence": [
+        {
+          "capability": "visual",
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/crater_walker.py",
+          "lines": "53-67",
+          "claim": "The three actuator channels map a leg to world x, y, and z coordinates, and the inverse mapping is used to derive visible transfer settings."
+        },
+        {
+          "capability": "visual",
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/crater_walker.py",
+          "lines": "114-135",
+          "claim": "Generated footholds are finite raised support-surface terrain quads, so contact depends on 3D support geometry rather than marker appearance alone."
+        },
+        {
+          "capability": "visual",
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/crater_walker.js",
+          "lines": "99-106",
+          "claim": "The browser projects world x/y/z points using camera yaw and pitch, with depth affecting the screenshot position."
+        },
+        {
+          "capability": "temporal",
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/crater_walker.js",
+          "lines": "250-314",
+          "claim": "SETTLE advances a finite body path one step at a time and then exposes the next terrace; there is no action-duration or expiry condition in this transition."
+        },
+        {
+          "capability": "reasoning_planning",
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/crater_walker.js",
+          "lines": "66-82",
+          "claim": "Contacts are selected by 3D distance to visible pads, with one pad per leg and raised lift releasing a foot."
+        },
+        {
+          "capability": "reasoning_planning",
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/crater_walker.py",
+          "lines": "185-218",
+          "claim": "The replay requires at least three contacts, safe non-transfer legs, release of the indicated leg, landing on the next stage's specified pad, and sequential body transit to completion."
+        },
+        {
+          "capability": "exploration_interface",
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/crater_walker.js",
+          "lines": "352-372",
+          "claim": "The visible UI exposes a transfer banner, highlighted leg cards, mode-specific actuator controls, orbit buttons, and canvas drag orbiting."
+        },
+        {
+          "capability": "exploration_interface",
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/crater_walker.js",
+          "lines": "185-207",
+          "claim": "The screenshot renders all terrain and pads with a legend distinguishing contacts, available pads, and decoys, while the canvas help warns that near/far feet may overlap in projection."
+        }
+      ],
+      "source_evidence_note": "First-pass evidence is retained even where primary adjudication rejects its interpretation; use the final rationale and primary decision.",
+      "files_read_completely_by_first_reviewer": [
+        "AGENTS.md",
+        "weird_captcha_gym/docs/capability-annotation-guidelines.md",
+        "weird_captcha_gym/docs/controllability/temporal.md",
+        "weird_captcha_gym/environments/crater_walker_env/env.json",
+        "weird_captcha_gym/environments/crater_walker_env/controls.json",
+        "weird_captcha_gym/environments/crater_walker_env/scripts/install_puzzle_runtime.sh",
+        "weird_captcha_gym/environments/crater_walker_env/scripts/setup_puzzle_runtime.sh",
+        "weird_captcha_gym/environments/crater_walker_env/tasks/crater_walker_seed_0001/task.json",
+        "weird_captcha_gym/environments/crater_walker_env/tasks/crater_walker_seed_0001/setup_task.sh",
+        "weird_captcha_gym/environments/crater_walker_env/tasks/crater_walker_seed_0001/export_result.sh",
+        "weird_captcha_gym/environments/crater_walker_env/tasks/crater_walker_seed_0001/verifier.py",
+        "weird_captcha_gym/shared_scripts/incubator_generators/crater_walker.py",
+        "weird_captcha_gym/shared_runtime/app/index.html",
+        "weird_captcha_gym/shared_runtime/app/mechanics/crater_walker.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/crater_walker.css",
+        "weird_captcha_gym/shared_runtime/server/incubator_graders/crater_walker.py",
+        "weird_captcha_gym/tools/incubator_solvers/crater_walker.py"
+      ],
+      "primary_review_scope": "Primary read the complete first-pass report and independently read full env.json, task.json, controls.json, generator, browser JavaScript, CSS, grader, verifier and solver.",
+      "observation_only_temporal": false,
+      "uncertainties": [
+        "The baseline labels are decided. The exact L2/L3 boundary for when an orbit becomes necessary remains a source-review limitation; no all-seed screenshot visibility experiment was performed. Configuration exceptions are not independently calibrated."
+      ],
+      "runtime_checks": []
+    },
+    {
+      "environment_id": "downsky_causeway_env",
+      "public_name": "Downsky Causeway",
+      "cohort": "new_15",
+      "labels": {
+        "visual": "3D",
+        "temporal": true,
+        "reasoning_planning": true,
+        "exploration_interface": false
+      },
+      "baseline": {
+        "difficulty": 4,
+        "interaction": "full"
+      },
+      "annotation_revision": "48e86f5950c056bfa0f2822fa430f9762c5fc29c",
+      "re_audited_in_this_pass": true,
+      "evidence_file": "primary_checks/004_downsky_causeway_env.json",
+      "rationale": {
+        "visual": "3D spatial understanding is necessary: the canvas is a perspective first-person view of floating platforms whose horizontal offsets, depths, visible side faces, heights, gaps, and final pavilion position determine where movement can land.",
+        "temporal": "Yes, because movement is time-extended control rather than a single instantaneous action. A held movement input is applied on repeated 40 ms physics ticks, and the agent must sustain it for the crossing distance, then release or redirect as the support platform changes. The world is not classified as temporal merely because it is observed in frames; the required temporal relationship is the duration and control of movement.",
+        "reasoning_planning": "Yes at the baseline: the agent must infer which lower platform continues the route and choose movement directions whose landing consequences affect later terraces. The visible course includes regular side shelves and a terminal shelf that can be reached by descending but do not continue to the pavilion; leaving a terrace without a valid lower support causes failure, and the final pavilion requires centered physical contact.",
+        "exploration_interface": "Do not generalize the first-pass statement that looking around never counts as exploration: active viewing does count when it reveals information needed to solve. Here the generator starts the camera toward the next terrace and lays the route ahead, while the renderer exposes platform tops, sides and the exit marker. Camera alignment can support navigation, but there is no supported necessity for a separate search or probe before choosing the visible forward continuation. This is not based merely on all platform data being present in the renderer."
+      },
+      "first_pass_file": "first_pass/004_downsky_causeway_env.json",
+      "first_pass_sha256": "d84a76725a59dde813145c13cfc1d2ca05d29d35382f1e86890af570599a0e9a",
+      "primary_decision": "Keep the baseline labels and L1 reasoning/planning No exception. Functional platform heights, one-way lower-platform landings and held movement support 3D and temporal labels. Baseline side shelves create consequential route choices; L1 removes the branching choice. The forward descending route and marked exit are available as visible geometry, without a required information-reveal or interface-learning stage.",
+      "label_changes": {},
+      "configuration_exceptions": [
+        {
+          "difficulties": [
+            1
+          ],
+          "interaction_modes": [
+            "simplified",
+            "full"
+          ],
+          "capability": "reasoning_planning",
+          "label": "no",
+          "reason": "Difficulty 1 has three broad terraces, no side shelves, and a single direct route. A screenshot-only agent can repeatedly steer toward the only visible next support; the alternative-route and irreversible-choice dependency present at the baseline is absent. Visual 3D interpretation, sustained movement control, and the explicit interface remain required.",
+          "source_evidence": [
+            {
+              "capability": "reasoning_planning",
+              "path": "weird_captcha_gym/environments/downsky_causeway_env/controls.json",
+              "lines": "13-36",
+              "claim": "Difficulty 1 specifies three broad terraces, zero branches, no terminal shelf, and generous walkable dimensions."
+            },
+            {
+              "capability": "reasoning_planning",
+              "path": "weird_captcha_gym/shared_scripts/incubator_generators/downsky_causeway.py",
+              "lines": "22-37",
+              "claim": "The difficulty-1 generator profile has route_count 3, branch_count 0, regular_branch_count 0, and terminal_shelf false."
+            },
+            {
+              "capability": "reasoning_planning",
+              "path": "weird_captcha_gym/environments/downsky_causeway_env/controls.json",
+              "lines": "38-46",
+              "claim": "Difficulty 2 is the first profile that introduces a lower side shelf requiring a route choice, distinguishing it from difficulty 1."
+            }
+          ]
+        }
+      ],
+      "source_evidence": [
+        {
+          "capability": "visual",
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/downsky_causeway.py",
+          "lines": "161-167",
+          "claim": "The generated route consists of platforms with x/y centers and descending z heights, establishing 3D offset terrace geometry."
+        },
+        {
+          "capability": "visual",
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/downsky_causeway.js",
+          "lines": "105-127",
+          "claim": "The browser projects world coordinates into a first-person perspective using forward, side, camera height, and pitch."
+        },
+        {
+          "capability": "visual",
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/downsky_causeway.js",
+          "lines": "145-228",
+          "claim": "The visible renderer draws platform top faces, thickness and side faces, and the exit pavilion with an EXIT marker."
+        },
+        {
+          "capability": "temporal",
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/downsky_causeway.js",
+          "lines": "283-324",
+          "claim": "Held movement keys are integrated on each physics tick; movement can cross to a lower platform or cause support loss."
+        },
+        {
+          "capability": "temporal",
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/downsky_causeway.js",
+          "lines": "326-333",
+          "claim": "Movement has explicit key-down and key-up state, so the duration of a held action controls displacement."
+        },
+        {
+          "capability": "temporal",
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/downsky_causeway.js",
+          "lines": "508-515",
+          "claim": "The browser advances the physics model on a recurring timer while the task is active."
+        },
+        {
+          "capability": "reasoning_planning",
+          "path": "weird_captcha_gym/environments/downsky_causeway_env/controls.json",
+          "lines": "89-115",
+          "claim": "The baseline is the seven-terrace reference course with four irreversible side shelves, narrow landings, and a complete descending route to the pavilion."
+        },
+        {
+          "capability": "reasoning_planning",
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/downsky_causeway.py",
+          "lines": "170-205",
+          "claim": "The generator adds regular side terraces and a terminal lower shelf alongside the route, while preserving the route platform IDs separately."
+        },
+        {
+          "capability": "reasoning_planning",
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/downsky_causeway.py",
+          "lines": "70-93",
+          "claim": "A landing is accepted only for a lower platform within the walkable gap and in the movement direction, requiring route choice from visible geometry."
+        },
+        {
+          "capability": "reasoning_planning",
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/downsky_causeway.py",
+          "lines": "134-148",
+          "claim": "Leaving a terrace without a qualifying lower support fails, while a successful transition changes the platform on which later actions occur."
+        },
+        {
+          "capability": "exploration_interface",
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/downsky_causeway.js",
+          "lines": "231-265",
+          "claim": "The current canvas renders the complete available platform set and visible exit marker as the camera view changes; no separate discovery interaction supplies task truth."
+        },
+        {
+          "capability": "exploration_interface",
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/downsky_causeway.js",
+          "lines": "450-475",
+          "claim": "The page exposes the first-person view, support and altitude readouts, the NO JUMP rule, and explicit full or simplified controls."
+        },
+        {
+          "capability": "exploration_interface",
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/downsky_causeway.py",
+          "lines": "161-167,214-219",
+          "claim": "Route terrace centers advance along one horizontal axis; the initial camera heading points toward the next terrace."
+        },
+        {
+          "capability": "temporal",
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/downsky_causeway.js",
+          "lines": "283-345,405-416",
+          "claim": "Both interfaces sustain movement across ticks and require release/redirection; discrete look buttons do not turn held walking into an untimed action."
+        }
+      ],
+      "source_evidence_note": "First-pass evidence is retained even where primary adjudication rejects its interpretation; use the final rationale and primary decision.",
+      "files_read_completely_by_first_reviewer": [
+        "AGENTS.md",
+        "weird_captcha_gym/docs/capability-annotation-guidelines.md",
+        "weird_captcha_gym/docs/controllability/temporal.md",
+        "weird_captcha_gym/environments/downsky_causeway_env/env.json",
+        "weird_captcha_gym/environments/downsky_causeway_env/controls.json",
+        "weird_captcha_gym/environments/downsky_causeway_env/tasks/downsky_causeway_seed_0001/task.json",
+        "weird_captcha_gym/shared_scripts/incubator_generators/downsky_causeway.py",
+        "weird_captcha_gym/shared_runtime/app/mechanics/downsky_causeway.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/downsky_causeway.css",
+        "weird_captcha_gym/shared_runtime/server/incubator_graders/downsky_causeway.py",
+        "weird_captcha_gym/environments/downsky_causeway_env/tasks/downsky_causeway_seed_0001/verifier.py",
+        "weird_captcha_gym/tools/incubator_solvers/downsky_causeway.py"
+      ],
+      "primary_review_scope": "Primary read the complete first-pass report and independently read the full env.json, task.json, controls.json, generator, browser JavaScript, mechanic CSS, grader, task verifier and solver. The shared verifier helper had already been read in full.",
+      "observation_only_temporal": false,
+      "uncertainties": [
+        "Source review only; this does not establish screenshot-only agent performance or visual legibility at every viewpoint and seed."
+      ],
+      "runtime_checks": []
+    },
+    {
+      "environment_id": "facet_lantern_env",
+      "public_name": "Facet Lantern",
+      "cohort": "new_15",
+      "labels": {
+        "visual": "3D",
+        "temporal": false,
+        "reasoning_planning": true,
+        "exploration_interface": true
+      },
+      "baseline": {
+        "difficulty": 3,
+        "interaction": "full"
+      },
+      "annotation_revision": "48e86f5950c056bfa0f2822fa430f9762c5fc29c",
+      "re_audited_in_this_pass": true,
+      "evidence_file": "primary_checks/005_facet_lantern_env.json",
+      "rationale": {
+        "visual": "The solution must understand a projected 3D bipyramid: top and bottom apexes and a ring of vertices are represented by x/y/z coordinates, faces are projected with depth sorting, and studs behind the solid are hidden. It must use the changing projection and persistent labels to choose visible endpoints.",
+        "temporal": "Change temporal to No and exploration/interface understanding to Yes at baseline. The full-mode camera is position-controlled by pointer displacement, not elapsed time, and can be manipulated in untimed increments followed by a static screenshot. Holding a still pointer has no continuing effect; the path witness and rotation quota do not establish a temporal relationship. Conversely, relevant stud locations and existing connection geometry are hidden behind the object until it is turned. Knowing their letters and being told how to rotate does not make those locations visible. Keep 3D for depth-dependent visibility and occlusion of the solid, and reasoning/planning for constructing the missing cyclic edges without extra or duplicate connections.",
+        "reasoning_planning": "The target list supplies polygon vertex sequences, but the agent must infer the cyclic edge set, account for the random subset of initial required connections, and choose only the missing edges. The grader rejects duplicate, extra, hidden, or incomplete connections and requires the final connection set to equal the required set, so action consequences matter later.",
+        "exploration_interface": "Change temporal to No and exploration/interface understanding to Yes at baseline. The full-mode camera is position-controlled by pointer displacement, not elapsed time, and can be manipulated in untimed increments followed by a static screenshot. Holding a still pointer has no continuing effect; the path witness and rotation quota do not establish a temporal relationship. Conversely, relevant stud locations and existing connection geometry are hidden behind the object until it is turned. Knowing their letters and being told how to rotate does not make those locations visible. Keep 3D for depth-dependent visibility and occlusion of the solid, and reasoning/planning for constructing the missing cyclic edges without extra or duplicate connections."
+      },
+      "first_pass_file": "first_pass/005_facet_lantern_env.json",
+      "first_pass_sha256": "2133b3fe9633e21b6667680dbe3715a4ea4d50bc8cc0a01b4d6a4d25bc464032",
+      "primary_decision": "Change temporal to No and exploration/interface understanding to Yes at baseline. The full-mode camera is position-controlled by pointer displacement, not elapsed time, and can be manipulated in untimed increments followed by a static screenshot. Holding a still pointer has no continuing effect; the path witness and rotation quota do not establish a temporal relationship. Conversely, relevant stud locations and existing connection geometry are hidden behind the object until it is turned. Knowing their letters and being told how to rotate does not make those locations visible. Keep 3D for depth-dependent visibility and occlusion of the solid, and reasoning/planning for constructing the missing cyclic edges without extra or duplicate connections.",
+      "label_changes": {
+        "temporal": {
+          "from": "yes",
+          "to": "no"
+        },
+        "exploration_interface": {
+          "from": "no",
+          "to": "yes"
+        }
+      },
+      "configuration_exceptions": [
+        {
+          "difficulties": [
+            1
+          ],
+          "interaction_modes": [
+            "full",
+            "simplified"
+          ],
+          "capability": "exploration_interface",
+          "label": "no",
+          "reason": "L1 uses ring size 4, target stride 1, two top faces, initial yaw 0 and occlusion band .45. Their required studs A/B/C/D have depths 0/0/1/0 and are all initially visible. A small instructed turn can meet the grader's rotation quota without a required hidden-information reveal. This is an explicit geometry exception, not an inference from fewer facets.",
+          "source_evidence": [
+            {
+              "capability": "exploration_interface",
+              "path": "weird_captcha_gym/environments/facet_lantern_env/controls.json",
+              "lines": "6-12",
+              "claim": "L1 parameters fix the two adjacent top faces and initial view."
+            },
+            {
+              "capability": "exploration_interface",
+              "path": "weird_captcha_gym/shared_scripts/incubator_generators/facet_lantern.py",
+              "lines": "66-110",
+              "claim": "Vertex positions and face indices determine the initially visible required studs."
+            },
+            {
+              "capability": "exploration_interface",
+              "path": "weird_captcha_gym/shared_runtime/app/mechanics/facet_lantern.js",
+              "lines": "10-21,157-169",
+              "claim": "Stud visibility is determined by rotated depth against the occlusion band."
+            }
+          ]
+        }
+      ],
+      "source_evidence": [
+        {
+          "capability": "visual",
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/facet_lantern.py",
+          "lines": "66-122",
+          "claim": "The generator creates top and bottom apexes plus a ring of vertices with 3D x/y/z coordinates and triangular bipyramid faces."
+        },
+        {
+          "capability": "visual",
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/facet_lantern.js",
+          "lines": "10-21,134-169",
+          "claim": "The browser projects x/y/z into screen coordinates with depth, sorts faces by depth, and renders each stud only when its depth passes the occlusion test."
+        },
+        {
+          "capability": "temporal",
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/facet_lantern.js",
+          "lines": "204-226",
+          "claim": "Full mode holds a pointer during a path of movement, continuously updates yaw from displacement, and records the released drag as a direct-pointer rotation."
+        },
+        {
+          "capability": "reasoning_planning",
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/facet_lantern.py",
+          "lines": "93-110,125-142",
+          "claim": "Requested facets are selected from faces, their cyclic boundary edges become the required set, and only a seed-dependent subset is initially connected; completion and scoring depend on the exact edge set."
+        },
+        {
+          "capability": "reasoning_planning",
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/facet_lantern.py",
+          "lines": "134-170",
+          "claim": "Replay requires each connection to follow a visible two-click selection, rejects duplicates, and accepts only when the final connections exactly equal the required edges and all targets score correctly."
+        },
+        {
+          "capability": "exploration_interface",
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/facet_lantern.js",
+          "lines": "66-83,124-132",
+          "claim": "The initial render exposes the prompt, requested outline list, interaction instructions, yaw/score/ledger UI, and persistent target labels before any exploratory action."
+        },
+        {
+          "capability": "exploration_interface",
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/facet_lantern.js",
+          "lines": "157-169,172-180",
+          "claim": "Rotation reveals the known studs according to the displayed occlusion rule and updates the scene; it is an instructed task action rather than an interface-learning probe."
+        },
+        {
+          "capability": "temporal",
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/facet_lantern.js",
+          "lines": "172-180,256-257",
+          "claim": "Simplified mode uses labeled LEFT/RIGHT buttons that apply one fixed rotation step and rerender a static view, without the sustained pointer path used by full mode."
+        },
+        {
+          "capability": "temporal",
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/facet_lantern.js",
+          "lines": "204-230",
+          "claim": "Yaw depends on drag displacement; no elapsed time, dwell duration or autonomous movement participates."
+        },
+        {
+          "capability": "exploration_interface",
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/facet_lantern.js",
+          "lines": "157-180",
+          "claim": "Depth-hidden studs are display:none until rotation exposes them."
+        }
+      ],
+      "source_evidence_note": "First-pass evidence is retained even where primary adjudication rejects its interpretation; use the final rationale and primary decision.",
+      "files_read_completely_by_first_reviewer": [
+        "AGENTS.md",
+        "weird_captcha_gym/docs/capability-annotation-guidelines.md",
+        "weird_captcha_gym/docs/controllability/temporal.md",
+        "weird_captcha_gym/environments/facet_lantern_env/env.json",
+        "weird_captcha_gym/environments/facet_lantern_env/controls.json",
+        "weird_captcha_gym/environments/facet_lantern_env/tasks/facet_lantern_seed_0001/task.json",
+        "weird_captcha_gym/environments/facet_lantern_env/tasks/facet_lantern_seed_0001/setup_task.sh",
+        "weird_captcha_gym/environments/facet_lantern_env/tasks/facet_lantern_seed_0001/export_result.sh",
+        "weird_captcha_gym/shared_scripts/incubator_generators/facet_lantern.py",
+        "weird_captcha_gym/shared_runtime/app/mechanics/facet_lantern.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/facet_lantern.css",
+        "weird_captcha_gym/shared_runtime/server/incubator_graders/facet_lantern.py",
+        "weird_captcha_gym/environments/facet_lantern_env/tasks/facet_lantern_seed_0001/verifier.py",
+        "weird_captcha_gym/tools/incubator_solvers/facet_lantern.py",
+        "weird_captcha_gym/shared_runtime/verifier_helpers.py"
+      ],
+      "primary_review_scope": "Primary read the complete first-pass report and independently read the complete env.json, task.json, controls.json, generator, browser JavaScript, CSS, grader, verifier and solver. Shared verifier helper already read in full.",
+      "observation_only_temporal": false,
+      "uncertainties": [
+        "Temporal labels are provisional as required by the frozen prompt; this audit does not assign a real-time label. All five difficulty profiles and both interaction modes were examined.",
+        "Source review only; temporal classification remains provisional pending the separately deferred temporal audit. No screenshot-only gameplay or all-seed visual usability claim."
+      ],
+      "runtime_checks": []
+    },
+    {
+      "environment_id": "hearthlift_courier_env",
+      "public_name": "Hearthlift Courier",
+      "cohort": "new_15",
+      "labels": {
+        "visual": "3D",
+        "temporal": false,
+        "reasoning_planning": true,
+        "exploration_interface": true
+      },
+      "baseline": {
+        "difficulty": 4,
+        "interaction": "full"
+      },
+      "annotation_revision": "48e86f5950c056bfa0f2822fa430f9762c5fc29c",
+      "re_audited_in_this_pass": true,
+      "evidence_file": "primary_checks/006_hearthlift_courier_env.json",
+      "rationale": {
+        "visual": "The task requires 3D spatial understanding: the browser renders cells, crates, the courier, and the hearth as isometric voxels using x/y depth and z height. Legal movement depends on same-height cells, one-voxel ledges, and crate tops, while side shelves and lane turns change the depth relationships.",
+        "temporal": "The full camera drag changes yaw by pointer displacement and can be completed without interpreting motion or managing duration, consistently with the corrected Facet Lantern temporal label.",
+        "reasoning_planning": "Yes. The agent must infer which visible helper crates form the route and push each into an empty same-height cell because that placement creates the support needed for the later climb and higher crossing. It must plan a return to the cargo and preserve those supports for the subsequent carried-cargo traversal, while ignoring decoys.",
+        "exploration_interface": "Do not treat omitted construction-only route data or the grader's camera quota as proof of exploration. The relevant evidence is the spatial inspection provided by changing the view of depth-staggered cells and stacked crates. The displayed STEP/DECOY labels mean that hidden crate identity or unknown interface rules are not the reason for this label."
+      },
+      "first_pass_file": "first_pass/006_hearthlift_courier_env.json",
+      "first_pass_sha256": "925906b83406e0629f6a3bc0bc72fa6d765445584e2db298a535139dba4b0f7e",
+      "primary_decision": "Keep 3D, temporal No, reasoning/planning Yes and exploration/interface Yes at the baseline. Support crates change the elevations usable on the later cargo traversal; the task is not merely an isometric depiction of a planar route. Discrete moves, climbs and cargo actions leave the relevant state visible. Orbit provides active inspection of overlapping near/far cells and stacks.",
+      "label_changes": {},
+      "configuration_exceptions": [],
+      "source_evidence": [
+        {
+          "capability": "visual",
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/hearthlift_courier.py",
+          "lines": "228-314",
+          "claim": "The generator creates route cells at multiple heights, helper and decoy boxes, a higher hearth, depth turns, and a camera whose stated purpose is inspecting depth-staggered shelves and the hearth approach."
+        },
+        {
+          "capability": "visual",
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/hearthlift_courier.js",
+          "lines": "98-200",
+          "claim": "The browser projects x/y/z coordinates and renders cells, crate cubes, the courier, and hearth as an isometric voxel scene, with depth-dependent ordering and opacity."
+        },
+        {
+          "capability": "temporal",
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/hearthlift_courier.py",
+          "lines": "73-144",
+          "claim": "The replay contract applies camera yaw and the movement, climb, pickup, and drop operations as discrete state updates without elapsed-time or duration conditions."
+        },
+        {
+          "capability": "temporal",
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/hearthlift_courier.js",
+          "lines": "217-245,282-352",
+          "claim": "Actions are applied, snapshotted, recorded, and rendered immediately; camera dragging changes the view and is not coupled to a changing world state or timed target."
+        },
+        {
+          "capability": "temporal",
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/hearthlift_courier.css",
+          "lines": "38-47",
+          "claim": "The only CSS animation is the cargo's idle breathing presentation, with no gameplay state or action condition tied to waiting."
+        },
+        {
+          "capability": "reasoning_planning",
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/hearthlift_courier.js",
+          "lines": "34-95",
+          "claim": "A push requires an empty same-height destination, climb requires an adjacent same-level box, pickup requires adjacent same-height cargo, and drop requires the hearth, making support placement and later action order consequential."
+        },
+        {
+          "capability": "reasoning_planning",
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/hearthlift_courier.py",
+          "lines": "325-355",
+          "claim": "The construction witness explicitly builds the route with push and climb actions, reverses the route to pick up cargo, and traverses the raised route again before dropping it."
+        },
+        {
+          "capability": "exploration_interface",
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/hearthlift_courier.py",
+          "lines": "285-324",
+          "claim": "Decoy crates are real side-shelf cells, while the public world removes the cell map, route, and stage table; the browser therefore must use the visible scene and camera rather than a serialized solution map."
+        },
+        {
+          "capability": "exploration_interface",
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/hearthlift_courier.js",
+          "lines": "238-245,292,305-349",
+          "claim": "The visible UI instructs the agent to rotate the garden to inspect depth and implements orbit through a full-mode scene drag or simplified-mode orbit buttons, while exposing the movement, climb, cargo, and visible rules controls."
+        },
+        {
+          "capability": "configuration",
+          "path": "weird_captcha_gym/environments/hearthlift_courier_env/controls.json",
+          "lines": "4-46",
+          "claim": "The baseline is difficulty 4/full; all five profiles and both interaction modes are implemented, with scaling parameters changing route/support/decoy/depth complexity and the two modes retaining the same discrete action effects."
+        }
+      ],
+      "source_evidence_note": "First-pass evidence is retained even where primary adjudication rejects its interpretation; use the final rationale and primary decision.",
+      "files_read_completely_by_first_reviewer": [
+        "AGENTS.md",
+        "weird_captcha_gym/docs/capability-annotation-guidelines.md",
+        "weird_captcha_gym/docs/controllability/temporal.md",
+        "weird_captcha_gym/environments/hearthlift_courier_env/env.json",
+        "weird_captcha_gym/environments/hearthlift_courier_env/controls.json",
+        "weird_captcha_gym/environments/hearthlift_courier_env/tasks/hearthlift_courier_seed_0001/task.json",
+        "weird_captcha_gym/environments/hearthlift_courier_env/tasks/hearthlift_courier_seed_0001/verifier.py",
+        "weird_captcha_gym/environments/hearthlift_courier_env/tasks/hearthlift_courier_seed_0001/setup_task.sh",
+        "weird_captcha_gym/environments/hearthlift_courier_env/tasks/hearthlift_courier_seed_0001/export_result.sh",
+        "weird_captcha_gym/environments/hearthlift_courier_env/scripts/setup_puzzle_runtime.sh",
+        "weird_captcha_gym/environments/hearthlift_courier_env/scripts/install_puzzle_runtime.sh",
+        "weird_captcha_gym/shared_scripts/incubator_generators/hearthlift_courier.py",
+        "weird_captcha_gym/shared_runtime/app/mechanics/hearthlift_courier.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/hearthlift_courier.css",
+        "weird_captcha_gym/shared_runtime/server/incubator_graders/hearthlift_courier.py",
+        "weird_captcha_gym/tools/incubator_solvers/hearthlift_courier.py",
+        "weird_captcha_gym/shared_runtime/app/index.html",
+        "weird_captcha_gym/shared_scripts/export_result.sh"
+      ],
+      "primary_review_scope": "Primary read the complete first-pass report, its cited evidence, and independently read the complete generator, browser JavaScript and controls.json. Remaining required source files were read completely by the first-pass reviewer; this is not an independent double annotation of every source file.",
+      "observation_only_temporal": false,
+      "uncertainties": [
+        "Source-only spatial inspection judgment. No runtime test establishes camera necessity for every seed or low-difficulty profile; the no-exception result means no additional source-supported exception was established, not an empirical proof that every seed requires orbit."
+      ],
+      "runtime_checks": []
+    },
+    {
+      "environment_id": "horizon_relay_env",
+      "public_name": "Horizon Relay",
+      "cohort": "new_15",
+      "labels": {
+        "visual": "2D",
+        "temporal": true,
+        "reasoning_planning": false,
+        "exploration_interface": false
+      },
+      "baseline": {
+        "difficulty": 3,
+        "interaction": "full"
+      },
+      "annotation_revision": "48e86f5950c056bfa0f2822fa430f9762c5fc29c",
+      "re_audited_in_this_pass": true,
+      "evidence_file": "primary_checks/007_horizon_relay_env.json",
+      "rationale": {
+        "visual": "3D is implemented by the simulator but is not required of the visible-UI solver: the automatically updated station cards explicitly enumerate the correct station-to-craft relation and UI handlers compute aim vectors.",
+        "temporal": "Do not describe HOLD LINK as a minimum-duration physical hold. It is a latched button. Full-mode station markers move; in simplified mode a selected aim can become stale before the separate HOLD LINK action, so the current temporal Yes is provisional action-validity/timing evidence, not autonomous animation alone.",
+        "reasoning_planning": "No route, scarce resource, progress penalty or downstream dependency requires planning: each request's units survive link breaks, and the visible lookup supplies the next eligible pair. Re-aiming or retrying after routine feedback does not by itself establish reasoning/planning.",
+        "exploration_interface": "All station-to-craft availability is computed and displayed before any selection, and is refreshed automatically."
+      },
+      "first_pass_file": "first_pass/007_horizon_relay_env.json",
+      "first_pass_sha256": "a7f1ea6febfd0f939426905a939df4ed5841f7159c37849ebac3c2e4a498114f",
+      "primary_decision": "Change visual to 2D and reasoning/planning to No. Every station card automatically lists the currently reachable spacecraft. Matching a listed craft to its screen marker is sufficient; on release or target-button click the browser computes the exact 3D aim vector itself. The solver need not infer the sphere-normal relation. Progress is accumulated independently for each craft and survives link breaks, so a general UI policy is to use any currently listed unfinished craft, let the link run, and repeat after a break. This requires no future handoff plan or tradeoff between deliveries. Keep temporal Yes provisionally for changing station coordinates in full mode and the limited validity of an aim before activation/refresh, and exploration No because availability and progress are automatically displayed.",
+      "label_changes": {
+        "visual": {
+          "from": "3D",
+          "to": "2D"
+        },
+        "reasoning_planning": {
+          "from": "yes",
+          "to": "no"
+        }
+      },
+      "configuration_exceptions": [],
+      "source_evidence": [
+        {
+          "capability": "visual",
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/horizon_relay.py",
+          "lines": "19-26, 79-94, 117-129",
+          "claim": "Spacecraft are generated as 3D Cartesian positions; their positions remain inertial while stations rotate, and the public contract identifies visibility as a 3D sphere-normal rule."
+        },
+        {
+          "capability": "visual",
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/horizon_relay.js",
+          "lines": "43-49, 60-82, 100-117",
+          "claim": "The visible UI presents a rotating 3D globe, front/far-side markers, a local horizon cue, and projected stations and spacecraft; visibility and aim error are computed from 3D vectors."
+        },
+        {
+          "capability": "temporal",
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/horizon_relay.js",
+          "lines": "178-188, 204-207",
+          "claim": "A 100 ms timer advances the tick; an active link produces a sample only while visibility and aim tolerance hold, otherwise it records a link break, and the relay timer continues until completion."
+        },
+        {
+          "capability": "temporal",
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/horizon_relay.py",
+          "lines": "148-181, 191-196",
+          "claim": "The authoritative replay requires consecutive task ticks with valid visibility and aim, rejects invalid samples, and requires every spacecraft to reach its required sample count before submission passes."
+        },
+        {
+          "capability": "reasoning_planning",
+          "path": "weird_captcha_gym/environments/horizon_relay_env/controls.json",
+          "lines": "18-34",
+          "claim": "The baseline difficulty has three requests, 20 required ticks, changing station horizons, and tighter aiming than easier profiles, making relay selection and continuation decisions part of the active task."
+        },
+        {
+          "capability": "reasoning_planning",
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/horizon_relay.js",
+          "lines": "128-161, 178-186",
+          "claim": "The UI exposes the currently reachable spacecraft per station, but the agent must select a station, aim it, hold or activate the relay, and decide when to re-aim or recover as the active link succeeds or breaks."
+        },
+        {
+          "capability": "exploration_interface",
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/horizon_relay.js",
+          "lines": "34-53, 120-138",
+          "claim": "Instructions, the 3D legend, station horizon information, request rows, controls, and progress are rendered in the initial scene and refreshed as state changes; no interaction is needed to discover them."
+        },
+        {
+          "capability": "exploration_interface",
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/horizon_relay.js",
+          "lines": "141-161",
+          "claim": "The click, target, hold/stop, and certify handlers implement the explicitly described action sequence rather than an information-revealing exploration mechanic."
+        },
+        {
+          "capability": "configuration_profiles",
+          "path": "weird_captcha_gym/environments/horizon_relay_env/controls.json",
+          "lines": "4-41",
+          "claim": "All five difficulty profiles retain the same relay, horizon, and aiming rules while scaling counts, required ticks, rotation speed, tolerance, latitude spread, and craft radius; simplified and full profiles change the input surface only. No supported profile changes a core capability label."
+        },
+        {
+          "capability": "visual",
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/horizon_relay.js",
+          "lines": "128-137,146-151,169",
+          "claim": "Station cards list all reachable craft; both input handlers compute exact 3D aiming automatically from the selected IDs."
+        },
+        {
+          "capability": "reasoning_planning",
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/horizon_relay.js",
+          "lines": "178-186",
+          "claim": "Progress only increments, and a link break clears the active link without erasing delivered units."
+        },
+        {
+          "capability": "temporal",
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/horizon_relay.js",
+          "lines": "146-158,178-186",
+          "claim": "Simplified aiming snapshots a vector before a separate hold action; later sampling can reject its changing angular error."
+        }
+      ],
+      "source_evidence_note": "First-pass evidence is retained even where primary adjudication rejects its interpretation; use the final rationale and primary decision.",
+      "files_read_completely_by_first_reviewer": [
+        "AGENTS.md",
+        "weird_captcha_gym/docs/capability-annotation-guidelines.md",
+        "weird_captcha_gym/docs/controllability/temporal.md",
+        "weird_captcha_gym/docs/controllability-plan.md",
+        "weird_captcha_gym/environments/horizon_relay_env/env.json",
+        "weird_captcha_gym/environments/horizon_relay_env/tasks/horizon_relay_seed_0001/task.json",
+        "weird_captcha_gym/environments/horizon_relay_env/controls.json",
+        "weird_captcha_gym/environments/horizon_relay_env/tasks/horizon_relay_seed_0001/setup_task.sh",
+        "weird_captcha_gym/environments/horizon_relay_env/tasks/horizon_relay_seed_0001/export_result.sh",
+        "weird_captcha_gym/environments/horizon_relay_env/scripts/install_puzzle_runtime.sh",
+        "weird_captcha_gym/environments/horizon_relay_env/scripts/setup_puzzle_runtime.sh",
+        "weird_captcha_gym/shared_scripts/incubator_generators/horizon_relay.py",
+        "weird_captcha_gym/shared_runtime/app/mechanics/horizon_relay.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/horizon_relay.css",
+        "weird_captcha_gym/shared_runtime/server/incubator_graders/horizon_relay.py",
+        "weird_captcha_gym/environments/horizon_relay_env/tasks/horizon_relay_seed_0001/verifier.py",
+        "weird_captcha_gym/tools/incubator_solvers/horizon_relay.py",
+        "weird_captcha_gym/shared_runtime/app/time_controller.js"
+      ],
+      "primary_review_scope": "Primary independently read all complete required core files: env.json, task.json, controls.json, generator, browser JavaScript, CSS, grader, verifier and solver, as well as the first-pass report. The shared verifier helper had already been read in full.",
+      "observation_only_temporal": false,
+      "uncertainties": [
+        "Source-only classification. Temporal labels, especially the latched simplified interface, remain provisional pending the separately deferred configuration-wide temporal audit. No real-time label assigned."
+      ],
+      "runtime_checks": []
+    },
+    {
+      "environment_id": "lampwrights_program_env",
+      "public_name": "Lampwrights Program",
+      "cohort": "new_15",
+      "labels": {
+        "visual": "3D",
+        "temporal": false,
+        "reasoning_planning": true,
+        "exploration_interface": false
+      },
+      "baseline": {
+        "difficulty": 4,
+        "interaction": "full"
+      },
+      "annotation_revision": "48e86f5950c056bfa0f2822fa430f9762c5fc29c",
+      "re_audited_in_this_pass": true,
+      "evidence_file": "primary_checks/008_lampwrights_program_env.json",
+      "rationale": {
+        "visual": "The agent must use spatial relationships in the isometric map and distinguish elevation, not just read a flat list: block height changes determine whether a forward or jump command is legal, and the robot's heading determines which neighboring block each movement reaches.",
+        "temporal": "The program can be completely chosen and edited from the initial static map. RUN evaluates the complete program immediately, then only plays back the stored steps on a timer; the agent can wait for the static ROUTE COMPLETE state before certifying, so the automatic visible sequence does not require temporal interpretation or timed action control.",
+        "reasoning_planning": "The agent must infer a valid command sequence from the map and targets, choose turns and F versus J according to the current heading and next block height, place G only at marked tiles, and account for how A/B calls change later position, heading, and elevation. D1 through D5 change route length, routine/main slot limits, target count, height changes, and decoy terrain, but every profile retains this same route-program dependency; full and simplified modes change placement gestures only. No configuration-specific capability exception is supported.",
+        "exploration_interface": "All task-relevant state and controls are initially exposed: the map and numbered lamp markers are rendered, the palette and MAIN/A/B slots are labeled, the full or simplified placement gesture is stated, and the hint explains F, J, and routine reuse. Running a candidate supplies routine execution feedback, but it is not needed to discover hidden information or learn an undocumented interface behavior."
+      },
+      "first_pass_file": "first_pass/008_lampwrights_program_env.json",
+      "first_pass_sha256": "ab5dde0b6180685dc1d2ca8303e146c4222a88bddf4583902121c48fc8370bce",
+      "primary_decision": "Keep all four baseline labels, with no supported configuration exception. Forward-versus-jump legality depends on actual roof heights. Program and subroutine choices affect later heading, position and lamp visits. The initial map and editor expose the information needed to plan; execution is computed before automatic playback, after which a static status enables certification. Untimed drag-and-drop placement is not a temporal requirement.",
+      "label_changes": {},
+      "configuration_exceptions": [],
+      "source_evidence": [
+        {
+          "capability": "visual",
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/lampwrights_program.js",
+          "lines": "12-40",
+          "claim": "The visible map projects x, y, and height z into isometric coordinates, draws height-dependent block sides, and renders target lamps plus the robot heading."
+        },
+        {
+          "capability": "visual",
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/lampwrights_program.py",
+          "lines": "136-168,191-196",
+          "claim": "Generated public state contains stepped terrain, target positions, and rules distinguishing level forward movement from one-height jumps."
+        },
+        {
+          "capability": "temporal",
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/lampwrights_program.js",
+          "lines": "183-205",
+          "claim": "RUN computes the whole result before playback, records the result, and advances through stored steps with setTimeout until a final static status enables certification; no action choice is required during playback."
+        },
+        {
+          "capability": "reasoning_planning",
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/lampwrights_program.js",
+          "lines": "148-180",
+          "claim": "The evaluator tracks routine calls, heading, position, terrain height, target hits, and execution bounds; F/J legality and G placement depend on the evolving planned route."
+        },
+        {
+          "capability": "reasoning_planning",
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/lampwrights_program.py",
+          "lines": "18-73,95-119",
+          "claim": "The independent grader replays procedure calls and movement against terrain and targets, then requires all marked tiles and a matching execution transcript."
+        },
+        {
+          "capability": "exploration_interface",
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/lampwrights_program.js",
+          "lines": "108-141,221-230",
+          "claim": "The implementation explicitly binds full drag-and-drop versus simplified select-then-place controls and initially renders the map, palette, labeled routine panels, RUN/CERTIFY actions, and the F/J/A/B hint."
+        },
+        {
+          "capability": "exploration_interface",
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/lampwrights_program.js",
+          "lines": "27-48",
+          "claim": "Targets, blocks, and the robot are rendered from the initial public world state, so relevant spatial information is not revealed only after probing."
+        },
+        {
+          "capability": "reasoning_planning",
+          "path": "weird_captcha_gym/environments/lampwrights_program_env/controls.json",
+          "lines": "4-41",
+          "claim": "The baseline is difficulty 4/full, and all five difficulty profiles plus both interaction profiles are enumerated; profile changes alter program/world scale while interaction changes only command placement."
+        }
+      ],
+      "source_evidence_note": "First-pass evidence is retained even where primary adjudication rejects its interpretation; use the final rationale and primary decision.",
+      "files_read_completely_by_first_reviewer": [
+        "AGENTS.md",
+        "weird_captcha_gym/docs/capability-annotation-guidelines.md",
+        "weird_captcha_gym/docs/controllability/temporal.md",
+        "weird_captcha_gym/environments/lampwrights_program_env/env.json",
+        "weird_captcha_gym/environments/lampwrights_program_env/controls.json",
+        "weird_captcha_gym/environments/lampwrights_program_env/tasks/lampwrights_program_seed_0001/task.json",
+        "weird_captcha_gym/environments/lampwrights_program_env/tasks/lampwrights_program_seed_0001/setup_task.sh",
+        "weird_captcha_gym/environments/lampwrights_program_env/tasks/lampwrights_program_seed_0001/export_result.sh",
+        "weird_captcha_gym/environments/lampwrights_program_env/tasks/lampwrights_program_seed_0001/verifier.py",
+        "weird_captcha_gym/environments/lampwrights_program_env/scripts/install_puzzle_runtime.sh",
+        "weird_captcha_gym/environments/lampwrights_program_env/scripts/setup_puzzle_runtime.sh",
+        "weird_captcha_gym/shared_scripts/incubator_generators/lampwrights_program.py",
+        "weird_captcha_gym/shared_runtime/app/mechanics/lampwrights_program.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/lampwrights_program.css",
+        "weird_captcha_gym/shared_runtime/server/incubator_graders/lampwrights_program.py",
+        "weird_captcha_gym/tools/incubator_solvers/lampwrights_program.py",
+        "weird_captcha_gym/shared_scripts/open_puzzle_browser.sh",
+        "weird_captcha_gym/shared_scripts/export_result.sh"
+      ],
+      "primary_review_scope": "Primary read the complete first-pass report and independently read the complete generator, browser JavaScript and grader. All other required files were read completely by the first-pass reviewer; this is not an independent double annotation of every source file.",
+      "observation_only_temporal": false,
+      "uncertainties": [
+        "Source audit, not visual calibration or screenshot-only gameplay evidence."
+      ],
+      "runtime_checks": []
+    },
+    {
+      "environment_id": "lantern_loft_env",
+      "public_name": "Lantern Loft",
+      "cohort": "new_15",
+      "labels": {
+        "visual": "3D",
+        "temporal": false,
+        "reasoning_planning": true,
+        "exploration_interface": false
+      },
+      "baseline": {
+        "difficulty": 4,
+        "interaction": "full"
+      },
+      "annotation_revision": "48e86f5950c056bfa0f2822fa430f9762c5fc29c",
+      "re_audited_in_this_pass": true,
+      "evidence_file": "primary_checks/009_lantern_loft_env.json",
+      "rationale": {
+        "visual": "The solution must interpret an isometric board as elevated walkable surfaces: module side faces and projected positions are visible, while Z labels, openings, stairs, the carrier, and the exit determine which apparent overlaps are usable. A valid connection depends on adjacent grid positions, mutual openings, elevation difference, and a stair when the heights differ.",
+        "temporal": "Full-mode dragging is untimed spatial placement. The board changes only on release; pointermove draws a preview. Both modes permit a solution from the current static board without interpreting change or controlling duration.",
+        "reasoning_planning": "The initial board is scrambled, so the agent must select which non-carrier module to move into the free rail and account for the changed empty slot before choosing later slides. It must then order carrier steps through the reconstructed route; a slide that moves the carrier module, a non-adjacent module, or a step without matching openings/elevation/stairs is rejected.",
+        "exploration_interface": "No exploratory interaction is required. The page states the slide, join, elevation, and stair rules; Full mode visibly explains drag-and-click manipulation, and Simplified mode exposes labeled slide and step proxies for the currently legal actions. The relevant module geometry and readouts are present before solving, so probing is not needed to reveal hidden task information or learn an undocumented interface."
+      },
+      "first_pass_file": "first_pass/009_lantern_loft_env.json",
+      "first_pass_sha256": "48fff4521c389453de0a944b093f9541bf567482751fb1a6ebe6ead72843efa5",
+      "primary_decision": "Change temporal to No in full mode, making both modes non-temporal at all five levels. The pointer path is an untimed drag from one static module to the static empty slot; only the release updates the board. There is no sustained effect while the pointer is still, minimum duration, moving target, or dependence on past hidden state. Monotonic timestamps and the ordinary session bound are not temporal capability evidence. Keep 3D for functional elevation/stair connections, reasoning/planning for consequential empty-slot and route reconfiguration, and exploration No for the initially exposed geometry/rules.",
+      "label_changes": {
+        "temporal": {
+          "from": "yes",
+          "to": "no"
+        }
+      },
+      "configuration_exceptions": [],
+      "source_evidence": [
+        {
+          "capability": "visual",
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/lantern_loft.js",
+          "lines": "105-130",
+          "claim": "The browser renders raised isometric module faces, openings, stair markings, visible Z-level labels, and a glowing EXIT marker on the canvas."
+        },
+        {
+          "capability": "visual",
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/lantern_loft.py",
+          "lines": "54-79",
+          "claim": "Walkability is graded from grid adjacency, openings on both sides, module height difference, and a stair on an elevation-changing connection."
+        },
+        {
+          "capability": "temporal",
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/lantern_loft.js",
+          "lines": "146-156",
+          "claim": "Slides and carrier steps change the visible model immediately; reaching the exit appends physical-contact completion and submits the result."
+        },
+        {
+          "capability": "temporal",
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/lantern_loft.js",
+          "lines": "177-182",
+          "claim": "Full mode implements slide execution as pointerdown, held pointermove, and pointerup; the slide is committed only after the held movement reaches a target."
+        },
+        {
+          "capability": "temporal",
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/lantern_loft.py",
+          "lines": "100-110",
+          "claim": "Replay only requires finite nondecreasing event times within 900 seconds, with no minimum duration or state-dependent timing requirement."
+        },
+        {
+          "capability": "reasoning_planning",
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/lantern_loft.py",
+          "lines": "121-143",
+          "claim": "The generator scrambles the board through a sequence of adjacent free-rail moves and stores the reverse slide sequence as the solution."
+        },
+        {
+          "capability": "reasoning_planning",
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/lantern_loft.py",
+          "lines": "194-227",
+          "claim": "The generated route is built from adjacent module edges with height-dependent stairs, while decoy openings and the scramble make module selection consequential."
+        },
+        {
+          "capability": "reasoning_planning",
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/lantern_loft.py",
+          "lines": "114-149",
+          "claim": "The grader replays the ordered slide and step consequences and rejects invalid free-rail moves, carrier-module moves, disconnected steps, and premature completion."
+        },
+        {
+          "capability": "exploration_interface",
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/lantern_loft.js",
+          "lines": "79-93",
+          "claim": "Simplified mode creates labeled slide and step buttons from the currently legal moves rather than requiring exploratory probing."
+        },
+        {
+          "capability": "exploration_interface",
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/lantern_loft.js",
+          "lines": "168-185",
+          "claim": "The visible rule explains the required slide/join/walk behavior, Full mode states the exact drag-and-click controls, and the initial render presents the complete board."
+        },
+        {
+          "capability": "reasoning_planning",
+          "path": "weird_captcha_gym/environments/lantern_loft_env/controls.json",
+          "lines": "5-17",
+          "claim": "All five difficulty profiles scale route length, slide count, elevation changes, decoy openings, and stair count; both simplified and full interaction profiles are implemented."
+        },
+        {
+          "capability": "temporal",
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/lantern_loft.js",
+          "lines": "146-156,177-182",
+          "claim": "Pointermove previews a source-to-pointer line; the static endpoint on pointerup triggers a discrete slide. Steps are also immediate state changes."
+        },
+        {
+          "capability": "temporal",
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/lantern_loft.py",
+          "lines": "100-110",
+          "claim": "Event time checks impose only monotonicity and a 900-second session bound, not an action-duration or timing-window requirement."
+        }
+      ],
+      "source_evidence_note": "First-pass evidence is retained even where primary adjudication rejects its interpretation; use the final rationale and primary decision.",
+      "files_read_completely_by_first_reviewer": [
+        "AGENTS.md",
+        "weird_captcha_gym/docs/capability-annotation-guidelines.md",
+        "weird_captcha_gym/docs/controllability/temporal.md",
+        "weird_captcha_gym/environments/lantern_loft_env/env.json",
+        "weird_captcha_gym/environments/lantern_loft_env/controls.json",
+        "weird_captcha_gym/environments/lantern_loft_env/tasks/lantern_loft_seed_0001/task.json",
+        "weird_captcha_gym/environments/lantern_loft_env/tasks/lantern_loft_seed_0001/verifier.py",
+        "weird_captcha_gym/environments/lantern_loft_env/tasks/lantern_loft_seed_0001/setup_task.sh",
+        "weird_captcha_gym/environments/lantern_loft_env/tasks/lantern_loft_seed_0001/export_result.sh",
+        "weird_captcha_gym/shared_scripts/incubator_generators/lantern_loft.py",
+        "weird_captcha_gym/shared_runtime/app/mechanics/lantern_loft.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/lantern_loft.css",
+        "weird_captcha_gym/shared_runtime/server/incubator_graders/lantern_loft.py",
+        "weird_captcha_gym/tools/incubator_solvers/lantern_loft.py"
+      ],
+      "primary_review_scope": "Primary independently read the complete first-pass report and every required core file: env.json, task.json, controls.json, generator, browser JavaScript, CSS, grader, verifier and solver. Shared verifier helper already read.",
+      "observation_only_temporal": false,
+      "uncertainties": [
+        "Source review only; no new gameplay, quality calibration, real-time or difficulty classification."
+      ],
+      "runtime_checks": []
+    },
+    {
+      "environment_id": "lanternfin_dive_env",
+      "public_name": "Lanternfin Dive",
+      "cohort": "new_15",
+      "labels": {
+        "visual": "3D",
+        "temporal": true,
+        "reasoning_planning": true,
+        "exploration_interface": true
+      },
+      "baseline": {
+        "difficulty": 4,
+        "interaction": "full"
+      },
+      "annotation_revision": "48e86f5950c056bfa0f2822fa430f9762c5fc29c",
+      "re_audited_in_this_pass": true,
+      "evidence_file": "primary_checks/010_lanternfin_dive_env.json",
+      "rationale": {
+        "visual": "The target is generated with x, y, and z coordinates in a tank, and the browser renders both fish and pearl through a perspective projection. Success therefore requires spatially locating a 3D destination and reading body orientation and depth cues.",
+        "temporal": "Torque inputs continue to affect the fish on repeated physics ticks, while arrival requires distance, speed, pitch, and roll conditions to remain satisfied for the configured hold interval. The agent must use changing observations to time propulsion, corrections, braking, release, and certification.",
+        "reasoning_planning": "The agent must choose signed values for four coupled channels. Tail thrust follows the current yaw and pitch, fin torques change future attitude and velocity, and the final action sequence must trade off reaching the pearl, braking, leveling, and preserving the arrival state for the hold.",
+        "exploration_interface": "The orbit is counted as active spatial inspection of target depth, not because the key bindings are unknown; those bindings and telemetry are explicitly displayed."
+      },
+      "first_pass_file": "first_pass/010_lanternfin_dive_env.json",
+      "first_pass_sha256": "67a322b4291f5206e7dee16328e7b934fc205cb7261bf3d8659dfb5d10f999bc",
+      "primary_decision": "Keep all four baseline labels. The destination varies through tank depth and height; orbiting changes the view used to locate it. Held/persistent torque has continuing effects on angular rate and velocity, and success requires a multi-tick low-speed upright arrival. Propulsion and orientation choices affect subsequent motion, braking and final settling.",
+      "label_changes": {},
+      "configuration_exceptions": [],
+      "source_evidence": [
+        {
+          "capability": "visual",
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/lanternfin_dive.py",
+          "lines": "63-70, 93-97",
+          "claim": "Each challenge places the pearl at generated x/y/z coordinates and exposes a 3D tank, target, fish, and physics state."
+        },
+        {
+          "capability": "visual",
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/lanternfin_dive.js",
+          "lines": "57-68, 154-161",
+          "claim": "The browser uses perspective projection for the tank objects and visibly renders the destination pearl, fish, position, attitude, and range."
+        },
+        {
+          "capability": "temporal",
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/lanternfin_dive.js",
+          "lines": "165-180, 220-222",
+          "claim": "Controls persist while a timer advances the fish each tick; the visible hold counter is updated from the evolving arrival state."
+        },
+        {
+          "capability": "temporal",
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/lanternfin_dive.py",
+          "lines": "120-123, 145-153",
+          "claim": "The authoritative replay advances state between event ticks and requires the arrival condition and hold count to agree at certification."
+        },
+        {
+          "capability": "reasoning_planning",
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/lanternfin_dive.js",
+          "lines": "16-43, 50-55",
+          "claim": "Four signed controls alter angular rates, orientation, forward direction, lift, velocity, and position; arrival couples position, speed, pitch, and roll."
+        },
+        {
+          "capability": "reasoning_planning",
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/lanternfin_dive.py",
+          "lines": "31-60, 63-71",
+          "claim": "The independent grader replays the coupled fluid dynamics and checks all spatial, speed, and upright constraints."
+        },
+        {
+          "capability": "exploration_interface",
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/lanternfin_dive.js",
+          "lines": "121-123, 210-212",
+          "claim": "The visible help directs the agent to drag the canvas to inspect pearl depth, and pointer dragging changes the camera view without changing the fish state."
+        },
+        {
+          "capability": "exploration_interface",
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/lanternfin_dive.js",
+          "lines": "137-162, 197-208",
+          "claim": "The task UI visibly supplies the canvas, telemetry, control surface, and the distinct simplified/full input bindings."
+        }
+      ],
+      "source_evidence_note": "First-pass evidence is retained even where primary adjudication rejects its interpretation; use the final rationale and primary decision.",
+      "files_read_completely_by_first_reviewer": [
+        "AGENTS.md",
+        "weird_captcha_gym/docs/capability-annotation-guidelines.md",
+        "weird_captcha_gym/docs/controllability/temporal.md",
+        "weird_captcha_gym/environments/lanternfin_dive_env/env.json",
+        "weird_captcha_gym/environments/lanternfin_dive_env/controls.json",
+        "weird_captcha_gym/environments/lanternfin_dive_env/tasks/lanternfin_dive_seed_0001/task.json",
+        "weird_captcha_gym/environments/lanternfin_dive_env/tasks/lanternfin_dive_seed_0001/verifier.py",
+        "weird_captcha_gym/shared_scripts/incubator_generators/lanternfin_dive.py",
+        "weird_captcha_gym/shared_runtime/app/mechanics/lanternfin_dive.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/lanternfin_dive.css",
+        "weird_captcha_gym/shared_runtime/server/incubator_graders/lanternfin_dive.py",
+        "weird_captcha_gym/tools/incubator_solvers/lanternfin_dive.py",
+        "weird_captcha_gym/environments/lanternfin_dive_env/tasks/lanternfin_dive_seed_0001/export_result.sh",
+        "weird_captcha_gym/environments/lanternfin_dive_env/tasks/lanternfin_dive_seed_0001/setup_task.sh",
+        "weird_captcha_gym/environments/lanternfin_dive_env/scripts/setup_puzzle_runtime.sh",
+        "weird_captcha_gym/environments/lanternfin_dive_env/scripts/install_puzzle_runtime.sh"
+      ],
+      "primary_review_scope": "Primary read the full first-pass report and independently read the full generator, browser JavaScript and controls.json. The reviewer read all remaining required files completely.",
+      "observation_only_temporal": false,
+      "uncertainties": [
+        "Source-based baseline labels and profile review; no all-seed human/agent calibration or dedicated temporal diagnostic was performed."
+      ],
+      "runtime_checks": []
+    },
+    {
+      "environment_id": "lanternwing_roundup_env",
+      "public_name": "Lanternwing Roundup",
+      "cohort": "new_15",
+      "labels": {
+        "visual": "3D",
+        "temporal": true,
+        "reasoning_planning": true,
+        "exploration_interface": false
+      },
+      "baseline": {
+        "difficulty": 4,
+        "interaction": "full"
+      },
+      "annotation_revision": "48e86f5950c056bfa0f2822fa430f9762c5fc29c",
+      "re_audited_in_this_pass": true,
+      "evidence_file": "primary_checks/011_lanternwing_roundup_env.json",
+      "rationale": {
+        "visual": "The solution must recover horizontal position, height, and depth from a perspective first-person canvas, distinguish the wanted wing appearances from the scene, and route a capsule through visible terraced geometry. The projectile direction is three-dimensional and the contact test uses x, y, and z distance.",
+        "temporal": "Each creature has nonzero x, y, and z motion, and each tick advances the creatures while an in-flight projectile advances under gravity. The agent must use the changing target state to lead a shot and observe the resulting flight/contact; this is not only an automatic transition to a static answer. The same temporal dependency remains in every difficulty profile and both interaction modes.",
+        "reasoning_planning": "Success requires choosing yaw and pitch for a ballistic trajectory from the launch position, accounting for range, height, target motion, and obelisk collisions. At difficulty 4 the agent must sequence three wanted captures, avoid two decoys, and conserve eight capsules; those choices affect later chances. The lower profiles retain the same 3D gravity/contact decision even when they reduce counts or obstacles.",
+        "exploration_interface": "This No is based on the generated forward sanctuary and visible target cues, not on a claim that camera movement can never be exploration."
+      },
+      "first_pass_file": "first_pass/011_lanternwing_roundup_env.json",
+      "first_pass_sha256": "713b0eee7cbb7c2e7cd7a369b0a8adc479660807d6e9cf319e0d64b05a949b26",
+      "primary_decision": "Keep all four baseline labels. Capsule launch and collision use 3D trajectory geometry, gravity and evolving target positions. Aiming choices affect future contact and consume finite ammunition. Targets are generated ahead of the initial camera, their appearances are listed, and the renderer draws them after obstacle geometry; this task does not require a separate hidden-information search before targeting.",
+      "label_changes": {},
+      "configuration_exceptions": [],
+      "source_evidence": [
+        {
+          "capability": "visual",
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/lanternwing_roundup.py",
+          "lines": "142-158",
+          "claim": "The generated world has a first-person player with x/y/z position, terraces and optional 3D obstacles; physics exposes gravity, projectile speed, radius, and tick limits."
+        },
+        {
+          "capability": "visual",
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/lanternwing_roundup.js",
+          "lines": "218-227",
+          "claim": "The canvas projection computes side, vertical, and depth coordinates from x/y/z relative to yaw and pitch."
+        },
+        {
+          "capability": "visual",
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/lanternwing_roundup.py",
+          "lines": "179-215",
+          "claim": "The authoritative replay derives a three-axis throw and accepts contact using Euclidean x/y/z distance while checking 3D obstacle intersection."
+        },
+        {
+          "capability": "temporal",
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/lanternwing_roundup.py",
+          "lines": "73-79",
+          "claim": "Creature positions are functions of tick-dependent phase in all three coordinates."
+        },
+        {
+          "capability": "temporal",
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/lanternwing_roundup.js",
+          "lines": "84-117",
+          "claim": "Every step advances creature positions and projectile age/position/vertical velocity, resolves collisions against the current creature state, and runs until capture or exhaustion."
+        },
+        {
+          "capability": "temporal",
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/lanternwing_roundup.js",
+          "lines": "277-289",
+          "claim": "The visible UI says wings keep moving during flight, instructs the agent to lead the moving wing and inspect the next frame, and exposes the changing sanctuary tick."
+        },
+        {
+          "capability": "reasoning_planning",
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/lanternwing_roundup.js",
+          "lines": "156-165",
+          "claim": "A throw converts the current camera yaw/pitch and player launch position into a finite-speed projectile and spends ammunition."
+        },
+        {
+          "capability": "reasoning_planning",
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/lanternwing_roundup.py",
+          "lines": "202-240",
+          "claim": "The replay advances later state from earlier input, handles obstacle/decoy/miss outcomes, requires all target IDs, and reports the finite capture result at certification."
+        },
+        {
+          "capability": "exploration_interface",
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/lanternwing_roundup.js",
+          "lines": "286-307",
+          "claim": "The initial render displays wanted appearance cues, the prompt, controls, contact model, clock, ammunition, and certification control; it binds either labeled proxy controls or explicitly described full controls immediately."
+        },
+        {
+          "capability": "exploration_interface",
+          "path": "weird_captcha_gym/environments/lanternwing_roundup_env/controls.json",
+          "lines": "96-104",
+          "claim": "Both interaction profiles are implemented as explicit surfaces, with simplified one-tick movement/look/throw proxies and a described full keyboard/mouse surface."
+        }
+      ],
+      "source_evidence_note": "First-pass evidence is retained even where primary adjudication rejects its interpretation; use the final rationale and primary decision.",
+      "files_read_completely_by_first_reviewer": [
+        "AGENTS.md",
+        "weird_captcha_gym/docs/capability-annotation-guidelines.md",
+        "weird_captcha_gym/docs/controllability/temporal.md",
+        "weird_captcha_gym/environments/lanternwing_roundup_env/env.json",
+        "weird_captcha_gym/environments/lanternwing_roundup_env/controls.json",
+        "weird_captcha_gym/environments/lanternwing_roundup_env/tasks/lanternwing_roundup_seed_0001/task.json",
+        "weird_captcha_gym/shared_scripts/incubator_generators/lanternwing_roundup.py",
+        "weird_captcha_gym/shared_runtime/app/mechanics/lanternwing_roundup.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/lanternwing_roundup.css",
+        "weird_captcha_gym/shared_runtime/server/incubator_graders/lanternwing_roundup.py",
+        "weird_captcha_gym/environments/lanternwing_roundup_env/tasks/lanternwing_roundup_seed_0001/verifier.py",
+        "weird_captcha_gym/tools/incubator_solvers/lanternwing_roundup.py",
+        "weird_captcha_gym/shared_runtime/app/time_controller.js"
+      ],
+      "primary_review_scope": "Primary read the full first-pass report and independently read the full generator and browser JavaScript. The reviewer read all remaining required files completely.",
+      "observation_only_temporal": false,
+      "uncertainties": [
+        "Source-based baseline labels and profile review; no all-seed human/agent calibration or dedicated temporal diagnostic was performed."
+      ],
+      "runtime_checks": []
+    },
+    {
+      "environment_id": "pearl_lattice_env",
+      "public_name": "Pearl Lattice",
+      "cohort": "new_15",
+      "labels": {
+        "visual": "3D",
+        "temporal": false,
+        "reasoning_planning": true,
+        "exploration_interface": false
+      },
+      "baseline": {
+        "difficulty": 3,
+        "interaction": "full"
+      },
+      "annotation_revision": "48e86f5950c056bfa0f2822fa430f9762c5fc29c",
+      "re_audited_in_this_pass": true,
+      "evidence_file": "primary_checks/012_pearl_lattice_env.json",
+      "rationale": {
+        "visual": "The baseline cross_fork's designed winning routes lie in the same y=1 plane; the diagonal changes x and z, not all three axes. The 3D baseline judgment rests on identifying that plane among a multi-layer gravity volume with support/noise occupancy, not a claim that cross_fork itself uses an all-axis line. L1 confines the useful immediate-win decision to the simple planar crossing.",
+        "temporal": "The preview's logical x/z column and gravity landing are persistent, and the confirmation zone is fixed. Animated camera yaw alone does not require temporal interpretation.",
+        "reasoning_planning": "The initial move must address the rival's visible immediate threat. That placement changes the board and causes a rival response that blocks one of the two player routes, so the agent must choose the remaining route and account for the resulting gravity-filled columns before certifying.",
+        "exploration_interface": "The task prompt and visible console explain the two-stage full control: cycle the preview by clicking the lattice and confirm in the separate area below it. The board also visibly reports the current preview, landing layer, move limit, and rival response; no exploratory action is needed to discover an interface rule or hidden information."
+      },
+      "first_pass_file": "first_pass/012_pearl_lattice_env.json",
+      "first_pass_sha256": "aaa417134cf7660968b1992aad8710852ec4f2a1297760c81dbdd43510228fcc",
+      "primary_decision": "Keep baseline 3D, temporal No, reasoning/planning Yes and exploration/interface No. The screenshot solver must separate the relevant gravity layer, supports and noise in the projected volume, then choose a defensive/fork move whose rival response changes the next decision. Selecting and confirming a logical column is independent of the changing rendered yaw. Retain the reviewer's L1 planar immediate-win visual 2D and reasoning/planning No exceptions.",
+      "label_changes": {},
+      "configuration_exceptions": [
+        {
+          "difficulties": [
+            1
+          ],
+          "interaction_modes": [
+            "full",
+            "simplified"
+          ],
+          "capability": "visual",
+          "label": "2D",
+          "reason": "planar_easy creates the player and rival lines in one fixed y=1 plane. The single missing shared cell can be found from the planar cross, while gravity supplies the landing layer; no volumetric line or depth-changing route is required.",
+          "source_evidence": [
+            {
+              "capability": "visual",
+              "path": "weird_captcha_gym/shared_scripts/incubator_generators/pearl_lattice.py",
+              "lines": "101-108",
+              "claim": "The difficulty-1 target and opponent lines are both confined to y=1, with one x-directed and one z-directed line in that plane."
+            },
+            {
+              "capability": "visual",
+              "path": "weird_captcha_gym/shared_scripts/incubator_generators/pearl_lattice.py",
+              "lines": "267-273",
+              "claim": "Difficulty 1 pre-fills three player pearls on the planar target and the opponent pearls on the crossing line, leaving the shared planar cell as the relevant placement."
+            }
+          ]
+        },
+        {
+          "difficulties": [
+            1
+          ],
+          "interaction_modes": [
+            "full",
+            "simplified"
+          ],
+          "capability": "reasoning_planning",
+          "label": "no",
+          "reason": "The difficulty-1 board is one pearl short of an immediate player line; the placement terminates as a win before an opponent response, so there is no later-consequence choice or fork to plan.",
+          "source_evidence": [
+            {
+              "capability": "reasoning_planning",
+              "path": "weird_captcha_gym/shared_scripts/incubator_generators/pearl_lattice.py",
+              "lines": "267-273",
+              "claim": "The planar_easy profile forces three prefilled player cells on its one target line and leaves the shared cell open."
+            },
+            {
+              "capability": "reasoning_planning",
+              "path": "weird_captcha_gym/shared_runtime/app/mechanics/pearl_lattice.js",
+              "lines": "174-205",
+              "claim": "After the player placement, a detected player line makes the state terminal and returns before the rival move is made."
+            }
+          ]
+        }
+      ],
+      "source_evidence": [
+        {
+          "capability": "visual",
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/pearl_lattice.py",
+          "lines": "109-129",
+          "claim": "The baseline cross_fork layout contains routes in 3D coordinate space, including a cross-depth x/z route; the generator's spatial_fork profile additionally demonstrates an all-axis line construction."
+        },
+        {
+          "capability": "visual",
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/pearl_lattice.js",
+          "lines": "32-38",
+          "claim": "The visible board projects x, y, and z coordinates with yaw and depth rather than presenting a flat grid."
+        },
+        {
+          "capability": "temporal",
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/pearl_lattice.js",
+          "lines": "162-190",
+          "claim": "Cycling changes a logical preview column and placement uses that selected column and its computed gravity height; the action is not tied to the current screen position or a deadline."
+        },
+        {
+          "capability": "temporal",
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/pearl_lattice.js",
+          "lines": "287-305",
+          "claim": "The animation loop changes only the rendered yaw and continues independently of the cycle, confirmation, and certification handlers."
+        },
+        {
+          "capability": "reasoning_planning",
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/pearl_lattice.py",
+          "lines": "204-255",
+          "claim": "The authored opponent responds to immediate wins and blocks immediate player wins, while the generator searches for a winning continuation under the move ceiling."
+        },
+        {
+          "capability": "reasoning_planning",
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/pearl_lattice.js",
+          "lines": "131-146",
+          "claim": "The visible rival logic checks its own immediate win, then the player's immediate winning columns, before selecting pressure."
+        },
+        {
+          "capability": "exploration_interface",
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/pearl_lattice.js",
+          "lines": "69-91",
+          "claim": "The rendered UI exposes the board, prompt, preview, landing layer, move limit, and full-input instructions, including the separate confirmation zone."
+        },
+        {
+          "capability": "exploration_interface",
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/pearl_lattice.js",
+          "lines": "294-305",
+          "claim": "The full interface binds the documented board click to cycling and the documented below-board click to placement; no probe is required to learn the controls."
+        }
+      ],
+      "source_evidence_note": "First-pass evidence is retained even where primary adjudication rejects its interpretation; use the final rationale and primary decision.",
+      "files_read_completely_by_first_reviewer": [
+        "AGENTS.md",
+        "weird_captcha_gym/docs/capability-annotation-guidelines.md",
+        "weird_captcha_gym/docs/controllability/temporal.md",
+        "weird_captcha_gym/environments/pearl_lattice_env/env.json",
+        "weird_captcha_gym/environments/pearl_lattice_env/controls.json",
+        "weird_captcha_gym/environments/pearl_lattice_env/tasks/pearl_lattice_seed_0001/task.json",
+        "weird_captcha_gym/shared_scripts/incubator_generators/pearl_lattice.py",
+        "weird_captcha_gym/shared_runtime/app/mechanics/pearl_lattice.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/pearl_lattice.css",
+        "weird_captcha_gym/shared_runtime/server/incubator_graders/pearl_lattice.py",
+        "weird_captcha_gym/environments/pearl_lattice_env/tasks/pearl_lattice_seed_0001/verifier.py",
+        "weird_captcha_gym/tools/incubator_solvers/pearl_lattice.py",
+        "weird_captcha_gym/environments/pearl_lattice_env/scripts/install_puzzle_runtime.sh",
+        "weird_captcha_gym/environments/pearl_lattice_env/scripts/setup_puzzle_runtime.sh",
+        "weird_captcha_gym/environments/pearl_lattice_env/tasks/pearl_lattice_seed_0001/setup_task.sh",
+        "weird_captcha_gym/environments/pearl_lattice_env/tasks/pearl_lattice_seed_0001/export_result.sh"
+      ],
+      "primary_review_scope": "Primary read the full first-pass report and independently read the complete generator and browser JavaScript. The first-pass reviewer read all other required files completely.",
+      "observation_only_temporal": false,
+      "uncertainties": [
+        "Source-based capability judgments; no screenshot-only gameplay or empirical validation of profile boundaries."
+      ],
+      "runtime_checks": []
+    },
+    {
+      "environment_id": "polycube_parcel_env",
+      "public_name": "Polycube Parcel",
+      "cohort": "new_15",
+      "labels": {
+        "visual": "3D",
+        "temporal": false,
+        "reasoning_planning": true,
+        "exploration_interface": true
+      },
+      "baseline": {
+        "difficulty": 4,
+        "interaction": "full"
+      },
+      "annotation_revision": "48e86f5950c056bfa0f2822fa430f9762c5fc29c",
+      "re_audited_in_this_pass": true,
+      "evidence_file": "primary_checks/013_polycube_parcel_env.json",
+      "rationale": {
+        "visual": "The task requires interpreting a projected 3D volume: each piece consists of integer (x, y, z) cells, the parcel is a 3x3x3 lattice, and the browser projects cube corners and depth-sorts their faces. The agent must use multiple views to understand spatial occupancy.",
+        "temporal": "No temporal capability is required in the provisional baseline. The parcel is static; camera orbit, piece rotation, and piece placement update state only in response to direct input, and successful action does not depend on duration, motion of the world, or an evolving timed state.",
+        "reasoning_planning": "The full interface snaps a drop to the nearest valid projected candidate, which assists placement but does not supply a global exact-cover plan. The agent must still choose orientations and a compatible sequence of piece placements.",
+        "exploration_interface": "The evidence is active inspection of rear/interior volume and overlapping pieces. The grader's camera-event quota is transcript wiring, not by itself evidence of an exploration capability."
+      },
+      "first_pass_file": "first_pass/013_polycube_parcel_env.json",
+      "first_pass_sha256": "915429868e150800f3a92cab8e544aa90e0cdfe31686531bd0765ced74fd8482",
+      "primary_decision": "Keep all baseline labels and no supported configuration exception. Rigid piece orientation, three-dimensional occupancy and remaining cavities determine valid exact coverage. Camera inspection exposes spatial relationships not available from one overlapped view. Dragging, axis rotations and placement are untimed spatial operations, with no continuing world effect while an input is merely held.",
+      "label_changes": {},
+      "configuration_exceptions": [],
+      "source_evidence": [
+        {
+          "capability": "visual",
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/polycube_parcel.py",
+          "lines": "20-30, 112-118, 186-193",
+          "claim": "The generated pieces are defined as three-coordinate cell sets and the world is a 3x3x3 parcel with camera, piece, and parcel presentation parameters."
+        },
+        {
+          "capability": "visual",
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/polycube_parcel.js",
+          "lines": "24-56, 144-158",
+          "claim": "The browser transforms cells in 3D, projects x/y/z points using yaw and pitch, depth-sorts cube faces, and renders the parcel and pieces as projected cube geometry."
+        },
+        {
+          "capability": "temporal",
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/polycube_parcel.js",
+          "lines": "59-67, 175-232",
+          "claim": "The mechanic keeps a static interaction model and applies camera, rotation, and placement changes directly from pointer/button events; it contains no timed world update or duration-sensitive mechanic."
+        },
+        {
+          "capability": "temporal",
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/polycube_parcel.py",
+          "lines": "119-155, 167-226",
+          "claim": "The independent grader replays an ordered event transcript and validates transforms, paths, and occupancy, but uses no timestamps or evolving-world state that would make action timing relevant."
+        },
+        {
+          "capability": "reasoning_planning",
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/polycube_parcel.py",
+          "lines": "32-42, 112-118, 158-180, 213-228",
+          "claim": "The task supplies seven pieces totaling an exact 3x3x3 cover, varies which pieces are preplaced, and leaves loose pieces to be oriented and placed into the remaining volume."
+        },
+        {
+          "capability": "reasoning_planning",
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/polycube_parcel.js",
+          "lines": "95-109, 175-192",
+          "claim": "A placement is accepted only if the transformed piece remains in the 3x3x3 bounds, has unique cells, and avoids already placed cells; rotations and placements change the current state."
+        },
+        {
+          "capability": "reasoning_planning",
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/polycube_parcel.py",
+          "lines": "200-226",
+          "claim": "The grader replays each placement against prior occupancy and finally requires all seven pieces and exactly the 27 parcel cells with no overlap."
+        },
+        {
+          "capability": "exploration_interface",
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/polycube_parcel.js",
+          "lines": "75-80, 216-243",
+          "claim": "The visible UI says to rotate the view to inspect the back and implements camera orbit through either direct scene dragging or visible proxy buttons; the baseline full mode uses direct dragging."
+        },
+        {
+          "capability": "exploration_interface",
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/polycube_parcel.py",
+          "lines": "141-155, 218-226",
+          "claim": "The accepted transcript must contain a camera_orbit event before the final exact-cover check, making the information-revealing camera interaction part of the visible solution loop."
+        }
+      ],
+      "source_evidence_note": "First-pass evidence is retained even where primary adjudication rejects its interpretation; use the final rationale and primary decision.",
+      "files_read_completely_by_first_reviewer": [
+        "AGENTS.md",
+        "weird_captcha_gym/docs/capability-annotation-guidelines.md",
+        "weird_captcha_gym/docs/controllability/temporal.md",
+        "weird_captcha_gym/environments/polycube_parcel_env/env.json",
+        "weird_captcha_gym/environments/polycube_parcel_env/controls.json",
+        "weird_captcha_gym/environments/polycube_parcel_env/tasks/polycube_parcel_seed_0001/task.json",
+        "weird_captcha_gym/shared_scripts/incubator_generators/polycube_parcel.py",
+        "weird_captcha_gym/shared_runtime/app/mechanics/polycube_parcel.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/polycube_parcel.css",
+        "weird_captcha_gym/shared_runtime/server/incubator_graders/polycube_parcel.py",
+        "weird_captcha_gym/environments/polycube_parcel_env/tasks/polycube_parcel_seed_0001/verifier.py",
+        "weird_captcha_gym/tools/incubator_solvers/polycube_parcel.py",
+        "weird_captcha_gym/environments/polycube_parcel_env/scripts/install_puzzle_runtime.sh",
+        "weird_captcha_gym/environments/polycube_parcel_env/scripts/setup_puzzle_runtime.sh",
+        "weird_captcha_gym/environments/polycube_parcel_env/tasks/polycube_parcel_seed_0001/setup_task.sh",
+        "weird_captcha_gym/environments/polycube_parcel_env/tasks/polycube_parcel_seed_0001/export_result.sh"
+      ],
+      "primary_review_scope": "Primary read the full first-pass report and independently read the complete generator and browser JavaScript. The first-pass reviewer read all other required files completely.",
+      "observation_only_temporal": false,
+      "uncertainties": [
+        "Source-based capability judgments; no screenshot-only gameplay or empirical validation of profile boundaries."
+      ],
+      "runtime_checks": []
+    },
+    {
+      "environment_id": "rising_causeway_env",
+      "public_name": "Rising Causeway",
+      "cohort": "new_15",
+      "labels": {
+        "visual": "3D",
+        "temporal": true,
+        "reasoning_planning": true,
+        "exploration_interface": false
+      },
+      "baseline": {
+        "difficulty": 4,
+        "interaction": "full"
+      },
+      "annotation_revision": "48e86f5950c056bfa0f2822fa430f9762c5fc29c",
+      "re_audited_in_this_pass": true,
+      "evidence_file": "primary_checks/014_rising_causeway_env.json",
+      "rationale": {
+        "visual": "The required route depends on volumetric x/y/z relationships: a staged bridge spans a gap, the three stair steps have different left and right heights, launchers are floor- or wall-oriented, and the selected launch lands at a particular height and lateral offset before the terminal. The browser renders this as a first-person projected chamber with visible side planes, surfaces, launcher normals, and terminal height.",
+        "temporal": "The temporal evidence is held movement: the agent must regulate duration and release controls while position changes, including avoiding continued walking after landing. The automatic launch arc, during which new movement is blocked, is not by itself evidence of temporal understanding. No real-time classification is assigned by this capability audit.",
+        "reasoning_planning": "The agent must infer the red extension depth, select the stair end that raises the route toward the far ledge, and at baseline choose the launcher whose normal and landing geometry lead to the terminal. These choices have later physical consequences: an unextended gap, wrong stair direction, wrong contact launcher, or premature terminal activation fails the route. The one-launcher lower profiles still require the red-stage and stair decisions.",
+        "exploration_interface": "Active viewing can count as exploration when needed to reveal task information. Here the needed route markers and launcher normals are rendered ahead of the initial camera; applying a known actuator and receiving its support-state update is execution, not by itself a prerequisite information-gathering probe."
+      },
+      "first_pass_file": "first_pass/014_rising_causeway_env.json",
+      "first_pass_sha256": "73ba886c6045a19d1d0b26daffbb0e333b3614e261febfec32466958febac6a4",
+      "primary_decision": "Keep all four baseline labels and no configuration exceptions. Three-dimensional support, stair height, launcher normal and terminal alignment determine the route. Sustained movement advances on physics ticks in both interaction modes. Actuator choices must establish a traversable route before crossing it. The initial forward-facing view contains the relevant actuator markers, launcher orientation marks and terminal, with the interaction rules supplied by the visible rule card.",
+      "label_changes": {},
+      "configuration_exceptions": [],
+      "source_evidence": [
+        {
+          "capability": "visual",
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/rising_causeway.py",
+          "lines": "66-106, 118-164, 216-228",
+          "claim": "The generated world is explicitly volumetric, with x/y/z stair heights, corridor surfaces, launcher normals and contact/landing coordinates, and a terminal whose height and lateral position are derived from the selected landing."
+        },
+        {
+          "capability": "visual",
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/rising_causeway.js",
+          "lines": "257-325",
+          "claim": "The visible renderer draws chamber side planes, stair surfaces, staged bridge surfaces, launcher orientation markers, the terminal, and the launch trajectory in a first-person projection."
+        },
+        {
+          "capability": "temporal",
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/rising_causeway.js",
+          "lines": "350-418, 421-429",
+          "claim": "Movement is applied on recurring physics ticks while keys remain held, and contact starts a multi-tick gravity flight that ends only after the configured duration; movement transitions are recorded as key-down/key-up actions."
+        },
+        {
+          "capability": "temporal",
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/rising_causeway.js",
+          "lines": "584-589",
+          "claim": "Simplified interaction uses pointer-held movement buttons with separate press and release handlers, preserving the same sustained-control requirement."
+        },
+        {
+          "capability": "reasoning_planning",
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/rising_causeway.py",
+          "lines": "58-63, 118-164, 193-209",
+          "claim": "The mirrored visible chamber determines the required stair end, the launcher gallery has seeded alternatives and different orientations, and the terminal is positioned from the required launch landing."
+        },
+        {
+          "capability": "reasoning_planning",
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/rising_causeway.py",
+          "lines": "142-149, 250-290, 322-347",
+          "claim": "The independent replay rejects crossing unsupported geometry or the wrong stair, requires staged red and launcher choices, requires physical contact and completed flight, and checks all choices before accepting the terminal."
+        },
+        {
+          "capability": "exploration_interface",
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/rising_causeway.js",
+          "lines": "617-626, 634-684",
+          "claim": "The initial render presents the chamber, rule card, full-mode action hint, or simplified labeled action surface, then draws the scene immediately; no prerequisite probe is needed to expose the controls or rules."
+        },
+        {
+          "capability": "exploration_interface",
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/rising_causeway.js",
+          "lines": "220-304, 447-475",
+          "claim": "The scene initially renders the relevant actuators, launchers, launcher orientation marks, and terminal, while direct handlers apply the known red, stair, and launcher actions rather than requiring interface discovery."
+        }
+      ],
+      "source_evidence_note": "First-pass evidence is retained even where primary adjudication rejects its interpretation; use the final rationale and primary decision.",
+      "files_read_completely_by_first_reviewer": [
+        "AGENTS.md",
+        "weird_captcha_gym/docs/capability-annotation-guidelines.md",
+        "weird_captcha_gym/docs/controllability/temporal.md",
+        "weird_captcha_gym/environments/rising_causeway_env/env.json",
+        "weird_captcha_gym/environments/rising_causeway_env/controls.json",
+        "weird_captcha_gym/environments/rising_causeway_env/tasks/rising_causeway_seed_0001/task.json",
+        "weird_captcha_gym/environments/rising_causeway_env/tasks/rising_causeway_seed_0001/verifier.py",
+        "weird_captcha_gym/environments/rising_causeway_env/tasks/rising_causeway_seed_0001/setup_task.sh",
+        "weird_captcha_gym/environments/rising_causeway_env/tasks/rising_causeway_seed_0001/export_result.sh",
+        "weird_captcha_gym/environments/rising_causeway_env/scripts/setup_puzzle_runtime.sh",
+        "weird_captcha_gym/environments/rising_causeway_env/scripts/install_puzzle_runtime.sh",
+        "weird_captcha_gym/shared_scripts/incubator_generators/rising_causeway.py",
+        "weird_captcha_gym/shared_runtime/app/mechanics/rising_causeway.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/rising_causeway.css",
+        "weird_captcha_gym/shared_runtime/server/incubator_graders/rising_causeway.py",
+        "weird_captcha_gym/tools/incubator_solvers/rising_causeway.py"
+      ],
+      "primary_review_scope": "Primary read the full first-pass report and independently read the complete generator, browser JavaScript and controls.json. The first-pass reviewer read all other required files completely.",
+      "observation_only_temporal": false,
+      "uncertainties": [
+        "Source-based capability judgments; no screenshot-only gameplay or empirical validation of profile boundaries."
+      ],
+      "runtime_checks": []
+    },
+    {
+      "environment_id": "surveyors_toybox_env",
+      "public_name": "Surveyors Toybox",
+      "cohort": "new_15",
+      "labels": {
+        "visual": "3D",
+        "temporal": false,
+        "reasoning_planning": true,
+        "exploration_interface": false
+      },
+      "baseline": {
+        "difficulty": 4,
+        "interaction": "full"
+      },
+      "annotation_revision": "48e86f5950c056bfa0f2822fa430f9762c5fc29c",
+      "re_audited_in_this_pass": true,
+      "evidence_file": "primary_checks/015_surveyors_toybox_env.json",
+      "rationale": {
+        "visual": "The solution must recover a 3D oriented cuboid: the scan is a spatial point cloud, the box has a 3D center, three half-extents, and yaw, and the visible evidence is supplied in overhead XZ, front XY, and side ZY projections. This is 3D spatial understanding rather than decorative perspective.",
+        "temporal": "No. The generated camera_frames are a finite set of selectable synchronized plates. Selecting a frame replaces the displayed static camera images and can be solved independently; success does not require interpreting motion, duration, an evolving state, or information that disappears after an earlier frame. The frame-count increase in higher profiles adds plates to inspect, not a temporal control demand.",
+        "reasoning_planning": "Center, half-extents, yaw and cross-view correspondences must agree. Lower profiles still enforce a 3D intersection-over-union threshold of 0.62 in addition to center, extent and yaw tolerances; broad individual tolerances alone do not establish that the starting cuboids already solve the fitting problem.",
+        "exploration_interface": "No prerequisite hidden rule or missing camera plate must be discovered: the three calibrated projections and scan are visible, and the controls state how to edit and link. Optional orbit/pan/zoom is not sufficient evidence that an active information-revealing probe is necessary.",
+        "configuration_review": "All difficulty profiles 1 through 5 and both simplified and full interaction modes were examined. Difficulty changes target and distractor counts, static frame count, point density, starting error, and fit/heading tolerances; interaction changes direct handles versus visible proxy buttons. These alter workload, precision, or motor surface but preserve the same 3D fitting, cross-view linking, non-temporal, and non-exploratory capability requirements. No supported configuration exception was found."
+      },
+      "first_pass_file": "first_pass/015_surveyors_toybox_env.json",
+      "first_pass_sha256": "6ffb3139261d0683e35443e254fb71eaf3072e6eb7627f3a996229464a3afbd0",
+      "primary_decision": "Keep all four baseline labels and no supported configuration exceptions. The task is a static oriented-volume fit plus cross-view correspondence problem. A synchronized frame is a selectable static plate of the same objects, not evidence of movement. The calibrated overhead, front and side images are simultaneously displayed alongside the colored scan; optional view aids and known target/frame selectors do not by themselves require an exploration label.",
+      "label_changes": {},
+      "configuration_exceptions": [],
+      "source_evidence": [
+        {
+          "capability": "visual",
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/surveyors_toybox.py",
+          "lines": "19-31",
+          "claim": "The generator constructs rotated 3D cuboid corners from a 3D center, half-extents, and yaw."
+        },
+        {
+          "capability": "visual",
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/surveyors_toybox.py",
+          "lines": "198-226",
+          "claim": "The visible evidence uses overhead XZ, front XY, and side ZY projections across synchronized camera frames."
+        },
+        {
+          "capability": "temporal",
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/surveyors_toybox.js",
+          "lines": "168-172",
+          "claim": "Frame changes occur only when the user selects a labelled frame tab; the handler selects a static frame and redraws it."
+        },
+        {
+          "capability": "temporal",
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/surveyors_toybox.py",
+          "lines": "203-226",
+          "claim": "The generator creates a finite list of camera-frame records with static marks and scene objects, rather than a continuously evolving task state."
+        },
+        {
+          "capability": "reasoning_planning",
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/surveyors_toybox.py",
+          "lines": "194-209",
+          "claim": "The authoritative grade requires center, extent, yaw, and 3D IoU fit for every target plus exact links for every frame and view."
+        },
+        {
+          "capability": "reasoning_planning",
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/surveyors_toybox.py",
+          "lines": "253-267",
+          "claim": "The browser receives rendered scan and camera evidence while target boxes and expected correspondence links remain authoritative truth, requiring visible cross-modal inference."
+        },
+        {
+          "capability": "exploration_interface",
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/surveyors_toybox.js",
+          "lines": "291-326",
+          "claim": "The interface visibly labels direct or proxy editing, view tools, target and frame selectors, camera surfaces, mark linking, and submission, and installs their handlers directly."
+        },
+        {
+          "capability": "exploration_interface",
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/surveyors_toybox.js",
+          "lines": "190-260",
+          "claim": "The initial render draws the scan, fitted cuboid overlays, all three camera canvases, and neutral marks; view changes are optional display operations rather than hidden-state discovery."
+        },
+        {
+          "capability": "configuration",
+          "path": "weird_captcha_gym/environments/surveyors_toybox_env/controls.json",
+          "lines": "5-34",
+          "claim": "All five difficulty profiles and both implemented interaction modes are explicitly defined; the profiles vary parameters and input surface without a separate capability mechanic."
+        },
+        {
+          "capability": "configuration",
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/surveyors_toybox.py",
+          "lines": "114-157",
+          "claim": "The generator applies profile parameters to counts, frame count, density, tolerances, and initial error while preserving the same task construction and interaction choices."
+        }
+      ],
+      "source_evidence_note": "First-pass evidence is retained even where primary adjudication rejects its interpretation; use the final rationale and primary decision.",
+      "files_read_completely_by_first_reviewer": [
+        "AGENTS.md",
+        "weird_captcha_gym/docs/capability-annotation-guidelines.md",
+        "weird_captcha_gym/docs/controllability/temporal.md",
+        "weird_captcha_gym/environments/surveyors_toybox_env/env.json",
+        "weird_captcha_gym/environments/surveyors_toybox_env/controls.json",
+        "weird_captcha_gym/environments/surveyors_toybox_env/tasks/surveyors_toybox_seed_0001/task.json",
+        "weird_captcha_gym/environments/surveyors_toybox_env/tasks/surveyors_toybox_seed_0001/verifier.py",
+        "weird_captcha_gym/environments/surveyors_toybox_env/tasks/surveyors_toybox_seed_0001/setup_task.sh",
+        "weird_captcha_gym/environments/surveyors_toybox_env/tasks/surveyors_toybox_seed_0001/export_result.sh",
+        "weird_captcha_gym/environments/surveyors_toybox_env/scripts/install_puzzle_runtime.sh",
+        "weird_captcha_gym/environments/surveyors_toybox_env/scripts/setup_puzzle_runtime.sh",
+        "weird_captcha_gym/shared_scripts/incubator_generators/surveyors_toybox.py",
+        "weird_captcha_gym/shared_runtime/app/mechanics/surveyors_toybox.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/surveyors_toybox.css",
+        "weird_captcha_gym/shared_runtime/server/incubator_graders/surveyors_toybox.py",
+        "weird_captcha_gym/tools/incubator_solvers/surveyors_toybox.py",
+        "weird_captcha_gym/shared_runtime/app/index.html"
+      ],
+      "primary_review_scope": "Primary read the full first-pass report and independently read the complete generator, browser JavaScript, CSS, grader, solver, controls.json, env.json, task.json and verifier. Shared exported-result loading was read previously in full.",
+      "observation_only_temporal": false,
+      "uncertainties": [
+        "Source-based capability judgments; no screenshot-only gameplay or empirical validation of profile boundaries."
+      ],
+      "runtime_checks": []
+    }
+  ]
+}

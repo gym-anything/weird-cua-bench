@@ -1,0 +1,38 @@
+{
+  "case_index": 1,
+  "environment_id": "cloudpost_circuit_env",
+  "public_name": "Cloudpost Circuit",
+  "first_pass_sha256": "cb74a248b8bf449777d9db21cc7ac9d32ee5cf1158e582499bb913f49fdd361f",
+  "status": "decided",
+  "labels": {
+    "visual": "3D",
+    "temporal": "yes",
+    "reasoning_planning": "yes",
+    "exploration_interface": "yes"
+  },
+  "label_changes": {},
+  "configuration_exceptions_action": "preserve",
+  "review_scope": "Primary read the full first-pass report and independently read env.json, task.json, controls.json, generator, browser JavaScript, mechanic CSS, grader, task verifier, solver, and shared verifier_helpers.py.",
+  "decision": "Keep all baseline labels and the L1-L2 exploration No exception in both interaction modes. World-space contact, persistent flight-vector control and forward-only motion support 3D, temporal and consequential trajectory choice. Some baseline routes hide the first seal completely outside the canvas; steering is required to discover it.",
+  "rationale_clarifications": {
+    "exploration_interface": "The L1-L2 No exception does not rely on the JavaScript's expanded draw-culling window being visible. L1 seals are in the initial canvas. At the L2 extreme, a first-seal center can lie just beyond the top/bottom edge (|y|<=34, z>=60 implies center y in [-13.34,553.34]), but its glow radius is at least 2.6*16*38/76=20.8 pixels. This provides an initial visible directional cue even at the extreme; the later waypoints are farther away with contracted lateral/vertical offsets. Such direct steering toward an already visible cue does not require a separate information-discovery action. L3-L5 allow seals with no visible part until the camera is steered."
+  },
+  "additional_source_evidence": [
+    {
+      "capability": "exploration_interface",
+      "path": "weird_captcha_gym/shared_scripts/incubator_generators/cloudpost_circuit.py",
+      "lines": "14-39,96-119",
+      "claim": "L1-L2 spans and first target depth bounds; later target offsets contract and depths increase."
+    },
+    {
+      "capability": "exploration_interface",
+      "path": "weird_captcha_gym/shared_runtime/app/mechanics/cloudpost_circuit.js",
+      "lines": "75-86,162-172,227-230",
+      "claim": "Perspective projection, depth-scaled glow radius, and the distinction between off-canvas drawing and visible canvas content."
+    }
+  ],
+  "uncertainties": [
+    "Source-supported annotation only; no human or screenshot-only agent run was performed, and no success-rate or difficulty calibration is claimed."
+  ],
+  "runtime_checks": []
+}

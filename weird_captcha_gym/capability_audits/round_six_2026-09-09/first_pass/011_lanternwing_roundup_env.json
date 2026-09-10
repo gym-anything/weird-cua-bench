@@ -1,0 +1,105 @@
+{
+  "case_index": 11,
+  "environment_id": "lanternwing_roundup_env",
+  "public_name": "Lanternwing Roundup",
+  "revision": "48e86f5950c056bfa0f2822fa430f9762c5fc29c",
+  "baseline": {
+    "difficulty": 4,
+    "interaction": "full"
+  },
+  "labels": {
+    "visual": "3D",
+    "temporal": "yes",
+    "reasoning_planning": "yes",
+    "exploration_interface": "no"
+  },
+  "temporal_status": "provisional_baseline_audit",
+  "visible_solution": "Read the wanted-wing cards (color and sigil), locate the matching moving wings in the first-person sanctuary, and use the full surface (WASD, canvas drag for look, and canvas click to throw) to choose a useful launch position and camera direction. Aim for the wing's future three-dimensional position, compensating for gravity and obstacles, release a capsule, inspect the flight and contact in later frames, and repeat for each wanted wing without spending the finite ammunition on decoys. Click CERTIFY ROUNDUP after all wanted contacts are secured.",
+  "reasoning": {
+    "visual": "The solution must recover horizontal position, height, and depth from a perspective first-person canvas, distinguish the wanted wing appearances from the scene, and route a capsule through visible terraced geometry. The projectile direction is three-dimensional and the contact test uses x, y, and z distance.",
+    "temporal": "Each creature has nonzero x, y, and z motion, and each tick advances the creatures while an in-flight projectile advances under gravity. The agent must use the changing target state to lead a shot and observe the resulting flight/contact; this is not only an automatic transition to a static answer. The same temporal dependency remains in every difficulty profile and both interaction modes.",
+    "reasoning_planning": "Success requires choosing yaw and pitch for a ballistic trajectory from the launch position, accounting for range, height, target motion, and obelisk collisions. At difficulty 4 the agent must sequence three wanted captures, avoid two decoys, and conserve eight capsules; those choices affect later chances. The lower profiles retain the same 3D gravity/contact decision even when they reduce counts or obstacles.",
+    "exploration_interface": "No exploratory interaction is required. The initial visible UI supplies the wanted color/sigil cards, the prompt and rules, the input-surface instructions, the 3-axes-plus-gravity contact model, the clock, and ammunition. The simplified buttons are also explicitly labeled; later frames and routine contact feedback provide task state rather than revealing a hidden rule or teaching an unknown interface. No profile changes this requirement."
+  },
+  "source_evidence": [
+    {
+      "capability": "visual",
+      "path": "weird_captcha_gym/shared_scripts/incubator_generators/lanternwing_roundup.py",
+      "lines": "142-158",
+      "claim": "The generated world has a first-person player with x/y/z position, terraces and optional 3D obstacles; physics exposes gravity, projectile speed, radius, and tick limits."
+    },
+    {
+      "capability": "visual",
+      "path": "weird_captcha_gym/shared_runtime/app/mechanics/lanternwing_roundup.js",
+      "lines": "218-227",
+      "claim": "The canvas projection computes side, vertical, and depth coordinates from x/y/z relative to yaw and pitch."
+    },
+    {
+      "capability": "visual",
+      "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/lanternwing_roundup.py",
+      "lines": "179-215",
+      "claim": "The authoritative replay derives a three-axis throw and accepts contact using Euclidean x/y/z distance while checking 3D obstacle intersection."
+    },
+    {
+      "capability": "temporal",
+      "path": "weird_captcha_gym/shared_scripts/incubator_generators/lanternwing_roundup.py",
+      "lines": "73-79",
+      "claim": "Creature positions are functions of tick-dependent phase in all three coordinates."
+    },
+    {
+      "capability": "temporal",
+      "path": "weird_captcha_gym/shared_runtime/app/mechanics/lanternwing_roundup.js",
+      "lines": "84-117",
+      "claim": "Every step advances creature positions and projectile age/position/vertical velocity, resolves collisions against the current creature state, and runs until capture or exhaustion."
+    },
+    {
+      "capability": "temporal",
+      "path": "weird_captcha_gym/shared_runtime/app/mechanics/lanternwing_roundup.js",
+      "lines": "277-289",
+      "claim": "The visible UI says wings keep moving during flight, instructs the agent to lead the moving wing and inspect the next frame, and exposes the changing sanctuary tick."
+    },
+    {
+      "capability": "reasoning_planning",
+      "path": "weird_captcha_gym/shared_runtime/app/mechanics/lanternwing_roundup.js",
+      "lines": "156-165",
+      "claim": "A throw converts the current camera yaw/pitch and player launch position into a finite-speed projectile and spends ammunition."
+    },
+    {
+      "capability": "reasoning_planning",
+      "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/lanternwing_roundup.py",
+      "lines": "202-240",
+      "claim": "The replay advances later state from earlier input, handles obstacle/decoy/miss outcomes, requires all target IDs, and reports the finite capture result at certification."
+    },
+    {
+      "capability": "exploration_interface",
+      "path": "weird_captcha_gym/shared_runtime/app/mechanics/lanternwing_roundup.js",
+      "lines": "286-307",
+      "claim": "The initial render displays wanted appearance cues, the prompt, controls, contact model, clock, ammunition, and certification control; it binds either labeled proxy controls or explicitly described full controls immediately."
+    },
+    {
+      "capability": "exploration_interface",
+      "path": "weird_captcha_gym/environments/lanternwing_roundup_env/controls.json",
+      "lines": "96-104",
+      "claim": "Both interaction profiles are implemented as explicit surfaces, with simplified one-tick movement/look/throw proxies and a described full keyboard/mouse surface."
+    }
+  ],
+  "configuration_exceptions": [],
+  "observation_only_temporal": false,
+  "files_read_completely": [
+    "AGENTS.md",
+    "weird_captcha_gym/docs/capability-annotation-guidelines.md",
+    "weird_captcha_gym/docs/controllability/temporal.md",
+    "weird_captcha_gym/environments/lanternwing_roundup_env/env.json",
+    "weird_captcha_gym/environments/lanternwing_roundup_env/controls.json",
+    "weird_captcha_gym/environments/lanternwing_roundup_env/tasks/lanternwing_roundup_seed_0001/task.json",
+    "weird_captcha_gym/shared_scripts/incubator_generators/lanternwing_roundup.py",
+    "weird_captcha_gym/shared_runtime/app/mechanics/lanternwing_roundup.js",
+    "weird_captcha_gym/shared_runtime/app/mechanics/lanternwing_roundup.css",
+    "weird_captcha_gym/shared_runtime/server/incubator_graders/lanternwing_roundup.py",
+    "weird_captcha_gym/environments/lanternwing_roundup_env/tasks/lanternwing_roundup_seed_0001/verifier.py",
+    "weird_captcha_gym/tools/incubator_solvers/lanternwing_roundup.py",
+    "weird_captcha_gym/shared_runtime/app/time_controller.js"
+  ],
+  "runtime_checks": [],
+  "uncertainties": []
+}
