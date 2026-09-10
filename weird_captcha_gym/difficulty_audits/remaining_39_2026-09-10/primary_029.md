@@ -1,0 +1,11 @@
+# Five-Second Rule — primary assessment
+
+Decision: keep L4/Full and the active relative ladder provisionally. The parent read the complete controls, generator, browser JavaScript/CSS, grader, task verifier, solver and task/environment specifications. Absolute L1–L5 calibration remains unmeasured.
+
+Increasing token competition, relational target selection, motion speed, and tightening gate, orientation and shutter windows change the live decision/control problem. The five independent dispatches and six-event pass contract are not additional planning depth. The wider L1 hold endpoint tolerances overlap: `460 - 2*300 = -140ms`, so a short positive hold in the overlap can pass. Timing endpoints still matter; do not describe L1 as requiring a 460ms sustained hold.
+
+Full-only flick travel and drop endpoint precision are real mode-specific effects. They are consistent with direct gestures versus intended-action proxy controls; they do not automatically constitute a broken interaction pair or require adding a proxy quota. The generated moving world, selected targets, orientation/open-window predicates and action outcomes remain shared. State clearly which parameters affect only the direct input procedure.
+
+All five original Simplified browser solves passed, while all five original Full solves failed. The Full errors must not be reported as difficulty failures. Inspection found that the oracle moved `min_travel_px + 24` **screen** pixels, but the browser converts input into an 820×390 logical stage. In the L4 capture the stage is 1612×770: the original 78px vertical drag became only about 39.5 logical pixels, below the 54px minimum. A separate diagnostic converts the intended 78 logical pixels to 154 screen pixels; the unchanged task then passed browser, server, direct grader and exported verification. The same coordinate correction passed all five Full levels. Each diagnostic is recorded individually and does not overwrite an original check.
+
+The adjustment changes only the solver-local drag-distance calculation, not puzzle state, timing, parameters or grading. This is privileged implementation evidence, not a screenshot-only agent run. References: solver `_solve_flick`, browser `logicalPoint`/`attemptFlick`, grader `_flick`, and the `five_scaled_flick_diagnostic` records.
