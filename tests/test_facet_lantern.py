@@ -3,6 +3,7 @@ from __future__ import annotations
 import copy
 import importlib.util
 import json
+import math
 from pathlib import Path
 
 from weird_captcha_gym.shared_scripts import setup_task
@@ -23,6 +24,7 @@ def _load(name: str, path: Path):
 
 GENERATOR = _load("facet_lantern_generator_test", ROOT / "weird_captcha_gym/shared_scripts/incubator_generators/facet_lantern.py")
 GRADER = _load("facet_lantern_grader_test", ROOT / "weird_captcha_gym/shared_runtime/server/incubator_graders/facet_lantern.py")
+SOLVER = _load("facet_lantern_solver_test", ROOT / "weird_captcha_gym/tools/incubator_solvers/facet_lantern.py")
 
 
 def _base_task() -> dict:
@@ -180,3 +182,29 @@ def test_browser_contract_records_the_two_rotation_surfaces() -> None:
     assert ".fl-turns[hidden] { display: none; }" in styles
     assert "occlusion_band" in renderer
     assert "fl-turn-left" in renderer and "fl-turn-right" in renderer
+
+
+def test_profile_geometry_changes_spacing_and_visibility_not_edge_dependencies() -> None:
+    windows, spacings = [], []
+    for level in range(1, 6):
+        public, truth = setup_task.generate_task_state(_controlled_task(level, "full"), "spatial-profile")
+        world = truth["world"]
+        windows.append(math.pi + 2 * math.asin(world["occlusion_band"]))
+        spacings.append(math.dist([world["vertices"][1][a] for a in ("x", "y", "z")], [world["vertices"][2][a] for a in ("x", "y", "z")]))
+        reverse_plan = copy.deepcopy(truth)
+        reverse_plan["required_connections"].reverse()
+        assert GRADER.grade(_payload(public, reverse_plan, "full"), truth, public)["passed"] is True
+        vertices = {vertex["id"]: vertex for vertex in world["vertices"]}
+        for first_id, second_id in truth["required_connections"]:
+            for step in (None, world["rotation_step_degrees"]):
+                yaw = SOLVER._target_yaw(vertices[first_id], vertices[second_id], world, step=step)
+                exposed = GRADER._visible_ids(world, yaw)
+                assert {first_id, second_id} <= exposed
+                radians = math.radians(yaw)
+                def point(vertex):
+                    return ((vertex["x"] * math.cos(radians) - vertex["z"] * math.sin(radians)) * 150, vertex["y"] * 150)
+                for endpoint in (first_id, second_id):
+                    nearest = min(math.dist(point(vertices[endpoint]), point(vertices[other])) for other in exposed - {endpoint})
+                    assert nearest > 22, (level, endpoint, yaw, nearest)
+    assert all(b < a for a, b in zip(windows, windows[1:]))
+    assert all(b < a for a, b in zip(spacings, spacings[1:]))

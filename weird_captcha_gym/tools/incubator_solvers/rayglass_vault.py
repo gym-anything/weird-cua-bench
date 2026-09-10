@@ -23,12 +23,21 @@ def physics():
 
 
 def choose(page, selector, index):
-    # Native dropdown keyboard interaction; no page-state mutation.
-    page.locator(selector).click()
-    page.keyboard.press('Home')
-    for _ in range(index):
-        page.keyboard.press('ArrowDown')
-    page.keyboard.press('Enter')
+    # Native popup typeahead works across Chromium platforms; Home/arrow
+    # handling in an open macOS popup does not reliably change selection.
+    control = page.locator(selector)
+    option = control.locator('option').nth(index)
+    label, value = option.inner_text(), option.get_attribute('value')
+    # Cycle the first-character group. Typing a repeated-digit label like
+    # "22" can be interpreted as two cycle requests, skipping the target.
+    for _ in range(control.locator('option').count()+1):
+        if control.input_value() == value:
+            return
+        control.click()
+        page.keyboard.type(label[0])
+        page.keyboard.press('Enter')
+        page.keyboard.press('Tab')
+    raise AssertionError(f'Rayglass native selection did not choose {label}')
 
 
 def click_probe(page, port, mode):

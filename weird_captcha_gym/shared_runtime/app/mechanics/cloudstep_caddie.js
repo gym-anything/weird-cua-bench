@@ -39,6 +39,7 @@
         const nextZ = Number(tile.z), heightChange = nextZ - z;
         if (Math.abs(heightChange) > Number(rules.roll_max_step_height || 1)) return {error: "RISER TOO HIGH FOR A ROLL"};
         if (heightChange > 0 && tile.surface !== "ramp") return {error: "UPHILL ROLL NEEDS A RAMP"};
+        if (heightChange > 0 && tile.ramp_direction !== direction) return {error: "UPHILL ROLL MUST FOLLOW THE RAMP ARROW"};
         if (tile.surface === "sand" && offset < distance) return {error: "THE BALL SETTLES IN SAND EARLY"};
         x = Number(tile.x); y = Number(tile.y); z = nextZ;
       }
@@ -56,15 +57,15 @@
 
   function project(x, y, z) {
     const course = model.state.course;
-    const tileW = Math.min(58, 680 / Math.max(Number(course.width), Number(course.height)));
+    const tileW = Math.min(94, 1360 / (Number(course.width) + Number(course.height)));
     const tileH = tileW * 0.5;
-    const originX = 380;
-    const originY = 62;
+    const originX = 380 - (Number(course.width) - Number(course.height)) * tileW / 4;
+    const originY = 100;
     return {x: originX + (Number(x) - Number(y)) * tileW * 0.5, y: originY + (Number(x) + Number(y)) * tileH * 0.5 - Number(z) * 25, tileW, tileH};
   }
 
   function diamond(ctx, point, inset = 0) {
-    const w = point.tileW - inset, h = point.tileH - inset * 0.48;
+    const w = point.tileW / 2 - inset, h = point.tileH / 2 - inset * 0.48;
     return [[point.x, point.y - h], [point.x + w, point.y], [point.x, point.y + h], [point.x - w, point.y]];
   }
 
@@ -99,15 +100,22 @@
       polygon(ctx, top, colors[tile.surface] || palette.fairway, palette.ink, 1);
       if (tile.surface === "water") {
         ctx.strokeStyle = "rgba(236,255,255,.7)"; ctx.lineWidth = 2;
-        for (let wave = -0.42; wave <= 0.42; wave += .28) { ctx.beginPath(); ctx.moveTo(p.x - p.tileW * .42, p.y + wave * p.tileH); ctx.lineTo(p.x - p.tileW * .08, p.y + (wave + .05) * p.tileH); ctx.lineTo(p.x + p.tileW * .28, p.y + wave * p.tileH); ctx.stroke(); }
+        for (let wave = -0.21; wave <= 0.21; wave += .14) { ctx.beginPath(); ctx.moveTo(p.x - p.tileW * .21, p.y + wave * p.tileH); ctx.lineTo(p.x - p.tileW * .04, p.y + (wave + .025) * p.tileH); ctx.lineTo(p.x + p.tileW * .14, p.y + wave * p.tileH); ctx.stroke(); }
       } else if (tile.surface === "sand") {
         ctx.fillStyle = "rgba(124,77,36,.38)"; [[-.25, -.1], [.2, .08], [0, .28]].forEach(([ox, oy]) => { ctx.beginPath(); ctx.arc(p.x + ox * p.tileW, p.y + oy * p.tileH, 2, 0, Math.PI * 2); ctx.fill(); });
       } else if (tile.surface === "ramp") {
-        ctx.strokeStyle = palette.ink; ctx.lineWidth = 2; ctx.beginPath(); ctx.moveTo(p.x - p.tileW * .35, p.y + p.tileH * .1); ctx.lineTo(p.x + p.tileW * .35, p.y - p.tileH * .1); ctx.stroke();
+        const [dx, dy] = vectors[tile.ramp_direction];
+        const vx = (dx - dy) * p.tileW / 2, vy = (dx + dy) * p.tileH / 2;
+        const length = Math.hypot(vx, vy), ux = vx / length, uy = vy / length;
+        const tip = [p.x + vx * .42, p.y + vy * .42];
+        ctx.strokeStyle = palette.ink; ctx.lineWidth = 2; ctx.beginPath();
+        ctx.moveTo(p.x - vx * .42, p.y - vy * .42); ctx.lineTo(...tip);
+        ctx.moveTo(tip[0] - ux * 7 - uy * 4, tip[1] - uy * 7 + ux * 4); ctx.lineTo(...tip);
+        ctx.lineTo(tip[0] - ux * 7 + uy * 4, tip[1] - uy * 7 - ux * 4); ctx.stroke();
       }
       if (tile.surface === "cup") {
         ctx.strokeStyle = palette.ink; ctx.lineWidth = 3; ctx.beginPath(); ctx.arc(p.x, p.y + 1, p.tileW * .23, 0, Math.PI * 2); ctx.stroke();
-        ctx.strokeStyle = palette.accent; ctx.lineWidth = 3; ctx.beginPath(); ctx.moveTo(p.x, p.y, p.x, p.y - 28); ctx.stroke(); polygon(ctx, [[p.x, p.y - 28], [p.x + 21, p.y - 22], [p.x, p.y - 16]], palette.accent);
+        ctx.strokeStyle = palette.accent; ctx.lineWidth = 3; ctx.beginPath(); ctx.moveTo(p.x, p.y); ctx.lineTo(p.x, p.y - 28); ctx.stroke(); polygon(ctx, [[p.x, p.y - 28], [p.x + 21, p.y - 22], [p.x, p.y - 16]], palette.accent);
       }
     });
     const cup = model.state.course.cup, cupPoint = project(cup.x, cup.y, cup.z);
@@ -197,7 +205,7 @@
     document.body.dataset.mechanic = "cloudstep-caddie";
     document.body.dataset.cheatMode = helpers.isCheatMode() ? "true" : "false";
     const directNote = model.interaction === "full" ? "Drag a pictured stroke card onto a direction. Release on the compass." : "Click a pictured stroke card, then choose its direction.";
-    helpers.app.innerHTML = `<section class="cloudstep-caddie" data-interaction="${esc(model.interaction)}" data-challenge-id="${esc(state.challenge_id)}"><header class="cloudstep-head"><div><span>CLOUD ISLANDS / STROKE LEDGER</span><h1>Cloudstep Caddie</h1><p>${esc(state.prompt)}</p></div><div class="cloudstep-mark">⛳<b>HEIGHT<br>MATTERS</b></div></header><main class="cloudstep-workbench"><section class="cloudstep-stage"><canvas id="cloudstep-course" width="760" height="480" aria-label="isometric cloud island golf course"></canvas><div class="cloudstep-legend"><span><i class="legend-fairway"></i>FAIRWAY</span><span><i class="legend-sand"></i>SAND</span><span><i class="legend-water"></i>WATER</span><span><i class="legend-ramp"></i>RAMP</span><span><i class="legend-cup"></i>CUP</span></div></section><aside class="cloudstep-console"><div class="cloudstep-console-head"><span>DEALT HAND</span><b id="cloudstep-counter">0 / ${state.cards.length}</b></div><p class="cloudstep-directive">${esc(directNote)}</p><div id="cloudstep-hand" class="cloudstep-hand"></div><div class="cloudstep-compass" aria-label="direction compass"><span>CHOOSE DIRECTION</span><div class="compass-grid"><button type="button" data-direction="north">↑<small>N</small></button><button type="button" data-direction="west">←<small>W</small></button><div class="compass-center">⟡</div><button type="button" data-direction="east">→<small>E</small></button><button type="button" data-direction="south">↓<small>S</small></button></div></div><div class="cloudstep-rule"><b>FIELD NOTES</b><span>Rolls cannot cross water. Chips clear gaps and height. Sand stops a long roll.</span></div><button id="cloudstep-submit" class="cloudstep-submit" type="button">CERTIFY SUNKEN BALL</button></aside></main><footer class="cloudstep-foot"><div class="readout" data-status="idle">READY · READ THE HEIGHT STEPS</div><span>${esc(state.challenge_id.toUpperCase())} / FIXED HAND / TILE CONTACT REPLAY</span></footer></section>`;
+    helpers.app.innerHTML = `<section class="cloudstep-caddie" data-interaction="${esc(model.interaction)}" data-challenge-id="${esc(state.challenge_id)}"><header class="cloudstep-head"><div><span>CLOUD ISLANDS / STROKE LEDGER</span><h1>Cloudstep Caddie</h1><p>${esc(state.prompt)}</p></div><div class="cloudstep-mark">⛳<b>HEIGHT<br>MATTERS</b></div></header><main class="cloudstep-workbench"><section class="cloudstep-stage"><canvas id="cloudstep-course" width="760" height="480" aria-label="isometric cloud island golf course"></canvas><div class="cloudstep-legend"><span><i class="legend-fairway"></i>FAIRWAY</span><span><i class="legend-sand"></i>SAND</span><span><i class="legend-water"></i>WATER</span><span><i class="legend-ramp"></i>RAMP</span><span><i class="legend-cup"></i>CUP</span></div></section><aside class="cloudstep-console"><div class="cloudstep-console-head"><span>DEALT HAND</span><b id="cloudstep-counter">0 / ${state.cards.length}</b></div><p class="cloudstep-directive">${esc(directNote)}</p><div id="cloudstep-hand" class="cloudstep-hand"></div><div class="cloudstep-compass" aria-label="direction compass"><span>CHOOSE DIRECTION</span><div class="compass-grid"><button type="button" data-direction="north">↑<small>N</small></button><button type="button" data-direction="west">←<small>W</small></button><div class="compass-center">⟡</div><button type="button" data-direction="east">→<small>E</small></button><button type="button" data-direction="south">↓<small>S</small></button></div></div><div class="cloudstep-rule"><b>FIELD NOTES</b><span>Rolls cannot cross water. Uphill rolls climb one level only along a ramp arrow. Chips clear gaps and up to ${Number(state.course.rules.chip_clearance)} height level(s). Sand stops a long roll.</span></div><button id="cloudstep-submit" class="cloudstep-submit" type="button">CERTIFY SUNKEN BALL</button></aside></main><footer class="cloudstep-foot"><div class="readout" data-status="idle">READY · READ THE HEIGHT STEPS</div><span>${esc(state.challenge_id.toUpperCase())} / FIXED HAND / TILE CONTACT REPLAY</span></footer></section>`;
     document.getElementById("cloudstep-submit").addEventListener("click", certify);
     renderHand(); installCompass(); drawScene(); updateStatus();
     cleanup = () => {};

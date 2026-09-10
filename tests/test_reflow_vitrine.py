@@ -3,8 +3,11 @@ from __future__ import annotations
 import copy
 import importlib.util
 import json
+import shutil
+import subprocess
 from pathlib import Path
 
+import pytest
 
 ROOT = Path(__file__).resolve().parents[1]
 BENCH = ROOT / "weird_captcha_gym"
@@ -23,6 +26,53 @@ def _load(name: str, path: Path):
 
 GENERATOR = _load("reflow_vitrine_generator_test", GENERATOR_PATH)
 GRADER = _load("reflow_vitrine_grader_test", GRADER_PATH)
+
+
+def test_browser_layout_and_raster_match_independent_replay() -> None:
+    """Exercise the actual JS functions, not a second Python-only fixture.
+
+    Closure instrumentation is confined to an isolated Node VM. No task page,
+    solver action or production module gets a privileged state-setting API.
+    """
+    node = shutil.which("node")
+    if node is None:
+        pytest.skip("Node is required for the cross-language layout regression")
+    rows = []
+    for level in range(1, 6):
+        for seed in ("1", "17", "101"):
+            public, truth = GENERATOR.generate(_task(level, "full"), seed)
+            for state in ("initial", "target"):
+                rows.append({
+                    "name": f"d{level}-seed{seed}-{state}", "frames": public["frames"],
+                    "items": public["items"], "config": truth[f"{state}_config"],
+                })
+    script = r"""
+const fs = require('fs');
+const vm = require('vm');
+const input = JSON.parse(fs.readFileSync(0, 'utf8'));
+const source = fs.readFileSync(input.path, 'utf8');
+const end = source.lastIndexOf('})();');
+if (end < 0) throw new Error('missing mechanic closure');
+const sandbox = {window: {}};
+vm.runInNewContext(source.slice(0, end) +
+  'globalThis.testLayout = row => { model = row; const boxes = solveLayout(row.config); return {boxes, pixels: raster(boxes)}; };\n' +
+  source.slice(end), sandbox, {timeout: 5000});
+process.stdout.write(JSON.stringify(input.rows.map(row => sandbox.testLayout(row))));
+"""
+    result = subprocess.run(
+        [node, "-e", script], input=json.dumps({
+            "path": str(BENCH / "shared_runtime/app/mechanics/reflow_vitrine.js"), "rows": rows,
+        }), text=True, capture_output=True, check=True, timeout=30,
+    )
+    for row, actual in zip(rows, json.loads(result.stdout), strict=True):
+        expected = GRADER._layout(row["frames"], row["items"], row["config"])
+        assert actual["boxes"].keys() == expected.keys(), row["name"]
+        for node_id, box in expected.items():
+            for coordinate in ("x", "y", "w", "h"):
+                assert actual["boxes"][node_id][coordinate] == pytest.approx(box[coordinate], abs=1e-8), (
+                    row["name"], node_id, coordinate,
+                )
+        assert actual["pixels"] == GRADER._raster(expected), row["name"]
 
 
 def _assert_contained(boxes: dict) -> None:

@@ -3,6 +3,7 @@ from __future__ import annotations
 import copy
 import importlib.util
 import json
+import subprocess
 from pathlib import Path
 
 
@@ -149,3 +150,48 @@ def test_grader_rejects_cross_surface_transcripts_and_false_certification() -> N
         "completed": False,
     }
     assert "wrong interaction" in GRADER.grade(wrong_surface, truth, public)["feedback"]
+
+
+def test_body_roll_rotates_visible_fins_and_dorsal_axis() -> None:
+    frontend = BENCHMARK / "shared_runtime/app/mechanics/lanternfin_dive.js"
+    script = r'''
+const fs = require('fs'), vm = require('vm');
+let source = fs.readFileSync(process.argv[1], 'utf8');
+source = source.replace('window.WeirdCaptchaMechanics =', 'window.testBasis = fishBasis; window.WeirdCaptchaMechanics =');
+const sandbox = {window: {}}; vm.runInNewContext(source,sandbox);
+const basis = sandbox.window.testBasis;
+for (const yaw of [-.4,0,.8]) for (const pitch of [-.3,0,.2]) {
+  const zero = basis({yaw,pitch,roll:0});
+  for (const roll of [-.9,.5]) {
+    const rotated = basis({yaw,pitch,roll});
+    for (const axis of ['x','y','z']) {
+      if (Math.abs(rotated.forward[axis]-zero.forward[axis]) > 1e-10) throw Error('roll changed forward');
+      if (Math.abs(rotated.right[axis]-(Math.cos(roll)*zero.right[axis]-Math.sin(roll)*zero.up[axis])) > 1e-10) throw Error('body roll is not rendered');
+      if (Math.abs(rotated.up[axis]-(Math.cos(roll)*zero.up[axis]+Math.sin(roll)*zero.right[axis])) > 1e-10) throw Error('dorsal bank is not rendered');
+    }
+  }
+}
+'''
+    subprocess.run(["node", "-e", script, str(frontend)], text=True, capture_output=True, check=True)
+
+
+def test_controller_docks_with_residual_motion_and_delayed_decisions() -> None:
+    for period in (1, 2, 3):
+        for level in range(1, 6):
+            for seed in range(100):
+                public, _ = GENERATOR.generate(_task(level, "full"), str(seed))
+                fish = copy.deepcopy(public["initial"])
+                hold = 0
+                snapshot = {"fish": fish, "target": public["target"], "physics": public["physics"]}
+                for tick in range(public["physics"]["max_ticks"]):
+                    if tick % period == 0:
+                        controls = {channel: 0 for channel in SOLVER.CHANNELS} if SOLVER._coast_safe(snapshot) else SOLVER._desired(snapshot)
+                    GRADER._step(fish, controls, public["physics"])
+                    hold = hold + 1 if GRADER._arrival(fish, public["target"], public["physics"]) else 0
+                    if hold >= public["physics"]["hold_ticks"] and SOLVER._coast_safe(snapshot):
+                        break
+                else:
+                    raise AssertionError((period, level, seed, fish))
+                for _ in range(80):
+                    GRADER._step(fish, {channel: 0 for channel in SOLVER.CHANNELS}, public["physics"])
+                    assert GRADER._arrival(fish, public["target"], public["physics"]), (period, level, seed)

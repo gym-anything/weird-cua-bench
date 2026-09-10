@@ -71,6 +71,9 @@ def solve(page, state_dir: Path, out_dir: Path, mechanic: str, *, certify: bool 
         raise AssertionError(f"unexpected mechanic {mechanic!r}")
     state = _state(state_dir)
     interaction = (state.get("control_condition") or {}).get("interaction") or "full"
+    page.locator(".ud-rule-card summary").click()
+    page.screenshot(path=str(out_dir / "visible-rule-contract.png"))
+    page.locator(".ud-rule-card summary").click()
     probe_ids = _choose_visible_probe_plan(state)
     observed_outcomes: dict[str, bool] = {}
 
@@ -96,6 +99,22 @@ def solve(page, state_dir: Path, out_dir: Path, mechanic: str, *, certify: bool 
         page.screenshot(path=str(out_dir / "archive-last-record.png"))
     page.locator("#ud-open-final").click()
     page.screenshot(path=str(out_dir / "calibration-complete.png"))
+    _file_finals(page, state, predictions, interaction, out_dir, certify=certify)
+
+
+def solve_without_probes(page, state_dir: Path, out_dir: Path, mechanic: str) -> None:
+    """Exercise the optional-probe boundary; truth chooses only the UI actions."""
+    if mechanic != MECHANIC_ID:
+        raise AssertionError(f"unexpected mechanic {mechanic!r}")
+    state = _state(state_dir)
+    truth = json.loads((state_dir / "ground_truth.json").read_text(encoding="utf-8"))
+    interaction = (state.get("control_condition") or {}).get("interaction") or "full"
+    page.locator("#ud-open-final").click()
+    page.screenshot(path=str(out_dir / "zero-probes-final-open.png"))
+    _file_finals(page, state, truth["final_outcomes"], interaction, out_dir)
+
+
+def _file_finals(page, state, predictions, interaction, out_dir, *, certify=True) -> None:
 
     for index, specimen in enumerate(state["final_specimens"], 1):
         if index <= 2:

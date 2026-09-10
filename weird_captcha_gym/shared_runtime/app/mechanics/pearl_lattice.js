@@ -79,7 +79,7 @@
             <button type="button" class="pl-confirm-zone" aria-label="Confirm the current preview below the lattice"><span>CONFIRM PREVIEW</span><b>CLICK BELOW THE LATTICE</b></button>
           </section>
           <aside class="pl-console">
-            <section class="pl-brief"><p class="pl-label">COMMISSION</p><h2>Beat the clockwork rival.</h2><p>Cycle a glowing preview through legal ${previewLabelDetail === "layer" ? "columns" : "(x,z) columns"}. Gravity places it at the lowest open layer. Confirm only after reading the whole volume.</p></section>
+            <section class="pl-brief"><p class="pl-label">COMMISSION</p><h2>Beat the clockwork rival.</h2><p>Cycle a glowing preview through legal ${previewLabelDetail === "layer" ? "columns" : "(x,z) columns"}. Gravity places it at the lowest open layer. Confirm only after reading the whole volume.</p><p class="pl-rival-rule">${esc(state.rules.opponent)}</p></section>
             <section class="pl-preview-card"><p class="pl-label">CURRENT PREVIEW</p><div class="pl-preview-line"><span class="pl-preview-pearl"></span><strong class="pl-preview-column">—</strong></div><div class="pl-preview-height">LANDING LAYER —</div></section>
             <section class="pl-move-limit"><p class="pl-label">PLAYER MOVE LIMIT</p><strong class="pl-moves">—</strong></section>
             <section class="pl-proxy-controls"${interaction === "full" ? " hidden aria-hidden=\"true\"" : ""}><p class="pl-label">SIMPLIFIED INPUT</p><button type="button" class="pl-next">NEXT LEGAL COLUMN ↻</button><button type="button" class="pl-confirm">CONFIRM PREVIEW</button></section>
@@ -131,7 +131,7 @@
     function opponentColumn() {
       const own = immediateColumns(OPPONENT);
       if (own.length) return own[0];
-      const block = immediateColumns(PLAYER);
+      const block = difficultyParameters.opponent_policy === "threat_then_block" ? immediateColumns(PLAYER) : [];
       if (block.length) return block[0];
       const pressure = (state.opponent?.pressure_columns || []).map(column);
       if (pressure.length) {
@@ -143,6 +143,7 @@
           }
         }
       }
+      model.pressureIndex += 1;
       return legalColumns()[0] || null;
     }
     function record(event) {

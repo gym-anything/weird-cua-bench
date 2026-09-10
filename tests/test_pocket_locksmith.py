@@ -194,7 +194,7 @@ def test_visible_contact_fit_is_not_rejected_by_private_target_torsions():
     )
     visible_fit = grader._world_check(public, truth, current)
     assert visible_fit["passed"], visible_fit
-    assert any(error > float(truth["torsion_tolerance_deg"]) for error in visible_fit["torsion_errors"])
+    assert any(error >= 15 for error in visible_fit["torsion_errors"])
     payload = {
         "mechanic_id": "pocket_locksmith",
         "task_id": truth["task_id"],
@@ -213,3 +213,17 @@ def test_full_replay_rejects_hidden_or_unwitnessed_torsion_input():
     decision = grader.grade(payload, truth, public)
     assert decision["passed"] is False
     assert "handle" in decision["feedback"]
+
+
+def test_no_inactive_private_angle_tolerance_in_difficulty_or_generated_truth():
+    for level in range(1, 6):
+        assert "torsion_tolerance_deg" not in CONTROLS["difficulty"][str(level)]["parameters"]
+        public, truth = generator.generate(_task(level, "simplified"), "angle-contract")
+        assert "torsion_tolerance_deg" not in truth
+        assert "torsion_tolerance_deg" not in public["control_condition"]["difficulty_parameters"]
+        # Construction angles remain an oracle/diagnostic aid; they are not a
+        # second hidden goal in addition to the visible fit constraints.
+        altered = copy.deepcopy(truth)
+        altered["target_torsions"] = [value + 90 for value in truth["target_torsions"]]
+        payload = _success_payload(public, truth, "simplified")
+        assert grader.grade(payload, altered, public)["passed"] is True

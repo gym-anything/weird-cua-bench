@@ -199,6 +199,8 @@
   function drawRouteGate(context, gate) {
     const [x, y] = gate.center;
     const radius = Number(gate.radius);
+    const aperture = Number(model.state.mechanics.gate_center_tolerance);
+    const headingTolerance = Number(model.state.mechanics.gate_heading_tolerance_degrees) * Math.PI / 180;
     context.save();
     context.translate(x, y);
     context.rotate(Number(gate.heading_deg) * Math.PI / 180);
@@ -221,10 +223,24 @@
     context.moveTo(-radius - 7, -7); context.lineTo(-radius, 0); context.lineTo(-radius - 7, 7);
     context.moveTo(radius + 7, -7); context.lineTo(radius, 0); context.lineTo(radius + 7, 7);
     context.stroke();
+    // The small center aperture and angular fan are the actual acceptance
+    // limits, not correctness feedback for the selected ingredient.
+    context.shadowBlur = 0;
+    context.lineWidth = 1;
     context.beginPath();
-    context.arc(0, 0, 3, 0, Math.PI * 2);
-    context.fillStyle = "#5a482c";
+    context.arc(0, 0, aperture, 0, Math.PI * 2);
+    context.fillStyle = "rgba(250,229,164,.65)";
     context.fill();
+    context.stroke();
+    context.fillStyle = "rgba(118,95,53,.18)";
+    for (const direction of [0, Math.PI]) {
+      context.beginPath();
+      context.moveTo(0, 0);
+      context.arc(0, 0, radius + 28, direction - headingTolerance, direction + headingTolerance);
+      context.closePath();
+      context.fill();
+      context.stroke();
+    }
     context.restore();
   }
 
@@ -317,6 +333,12 @@
       context.beginPath();
       remaining.forEach((point, index) => index ? context.lineTo(point[0], point[1]) : context.moveTo(point[0], point[1]));
       context.stroke(); context.setLineDash([]);
+      // Alignment is sampled at these same path points in generation and
+      // replay. Show them so a line segment alone cannot imply acceptance.
+      context.fillStyle = ingredient.color;
+      for (const point of remaining) {
+        context.beginPath(); context.arc(point[0], point[1], .9, 0, Math.PI * 2); context.fill();
+      }
     }
     const routeGate = currentRouteGate();
     if (routeGate) drawRouteGate(context, routeGate);

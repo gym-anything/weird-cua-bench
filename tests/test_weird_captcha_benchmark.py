@@ -170,13 +170,15 @@ class WeirdCaptchaBenchmarkTests(unittest.TestCase):
                 {"install_puzzle_runtime.sh", "setup_puzzle_runtime.sh"},
                 env_name,
             )
+            # Removed generated variants can leave cache-only directories.
+            # Validate every actual task, not inert __pycache__ parents.
+            task_dirs = sorted(path.parent for path in env_root.glob("tasks/*/task.json"))
             task_hooks = [
                 hook
-                for task_dir in env_root.glob("tasks/*")
-                if task_dir.is_dir()
+                for task_dir in task_dirs
                 for hook in task_dir.glob("*.sh")
             ]
-            for task_dir in sorted(path for path in (env_root / "tasks").glob("*") if path.is_dir()):
+            for task_dir in task_dirs:
                 self.assertEqual(
                     {hook.name for hook in task_dir.glob("*.sh")},
                     {"setup_task.sh", "export_result.sh"},

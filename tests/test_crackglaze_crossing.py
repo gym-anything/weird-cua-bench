@@ -5,6 +5,8 @@ import importlib.util
 import json
 from pathlib import Path
 
+import pytest
+
 from weird_captcha_gym.tools.materialize_controlled_tasks import controlled_task, materialize_environment
 
 
@@ -352,3 +354,74 @@ def test_full_mode_keeps_expired_ground_targetable_for_the_real_failure_path() -
     assert 'interaction() === "full" && stage !== "shattered"' not in frontend
     assert ".stage-shattered:not(button) { pointer-events: none; }" in styles
     assert ".stage-shattered { pointer-events: none; }" not in styles
+
+
+def test_rendered_tile_edges_match_replay_and_gallery_hides_precollapse_age() -> None:
+    """Inspect actual CSS boxes and walk with trusted clicks in a fresh browser.
+
+    The fixture renders the production mechanic at its benchmark viewport;
+    initialization is privileged test setup, not a solving action.
+    """
+    from playwright.sync_api import sync_playwright
+
+    public, truth = GENERATOR.generate(_task(3, "full"), "1")
+    cells = {cell["id"]: cell for cell in public["cells"]}
+    with sync_playwright() as playwright:
+        browser = playwright.chromium.launch(headless=True)
+        try:
+            page = browser.new_page(viewport={"width": 1920, "height": 1080})
+            page.set_content('<div id="app" class="app-shell"></div>')
+            page.add_style_tag(content="body { margin: 0; }" + STYLES_PATH.read_text())
+            # Expose only the recorded events to this test process; do not
+            # add a state setter or production task API.
+            page.add_script_tag(content=FRONTEND_PATH.read_text().replace(
+                "window.WeirdCaptchaMechanics = window.WeirdCaptchaMechanics || {};",
+                "window.__crackTestEvents = () => model.events;\n"
+                "window.WeirdCaptchaMechanics = window.WeirdCaptchaMechanics || {};",
+            ))
+            page.evaluate("""state => WeirdCaptchaMechanics.crackglaze_crossing.render(state, {
+                app: document.querySelector('#app'), cheatPanelTemplate: () => '',
+                installCheatPanel: () => {}, setReadout: () => {},
+            })""", public)
+            board = page.locator(".crack-board").bounding_box()
+            for cell_id, cell in cells.items():
+                tile = page.locator(f'[data-cell-id="{cell_id}"]')
+                bounds = tile.bounding_box()
+                actual = [(bounds["x"] - board["x"]) / board["width"],
+                          (bounds["y"] - board["y"]) / board["height"],
+                          bounds["width"] / board["width"], bounds["height"] / board["height"]]
+                expected = GRADER._cell_rect(cell, public["rows"], public["columns"])
+                assert actual == pytest.approx(expected, abs=.00005)
+                x, y, width, height = expected
+                assert not GRADER._inside([x - .001, y + height / 2], expected)
+                assert not GRADER._inside([x + width + .001, y + height / 2], expected)
+            gallery_styles = {}
+            seen_stages = set()
+            for index, destination in enumerate(truth["certified_solution"][1:-1]):
+                tile = page.locator(f'[data-cell-id="{destination}"]')
+                bounds = tile.bounding_box()
+                # Exercise all four near-corner hit targets, including the
+                # r0c5 edge that the historical browser/server check rejected.
+                fx, fy = ((.002, .002), (.998, .002), (.998, .998), (.002, .998))[index % 4]
+                point = [bounds["x"] + bounds["width"] * fx,
+                         bounds["y"] + bounds["height"] * fy]
+                normalized = [(point[0] - board["x"]) / board["width"],
+                              (point[1] - board["y"]) / board["height"]]
+                assert GRADER._inside(normalized, GRADER._cell_rect(cells[destination], public["rows"], public["columns"]))
+                page.mouse.click(*point)
+                assert page.locator(".crackglaze-crossing").get_attribute("data-position") == destination
+                recorded = page.evaluate("() => window.__crackTestEvents().at(-1)")
+                assert GRADER._inside(recorded["point"], GRADER._cell_rect(cells[destination], public["rows"], public["columns"]))
+                for cell_id, cell in cells.items():
+                    if not cell["under_gallery"]:
+                        continue
+                    hidden = page.locator(f'[data-cell-id="{cell_id}"]')
+                    stage = hidden.get_attribute("data-stage")
+                    if stage == "shattered":
+                        continue
+                    seen_stages.add(stage)
+                    style = hidden.locator(".ceramic").evaluate("el => {const s = getComputedStyle(el); return [s.filter, s.transform, s.boxShadow, s.opacity];}")
+                    assert style == gallery_styles.setdefault(cell_id, style)
+            assert {"unlit", "lit", "hairline"} <= seen_stages
+        finally:
+            browser.close()

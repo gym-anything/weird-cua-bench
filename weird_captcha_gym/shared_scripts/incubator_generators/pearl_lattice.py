@@ -68,7 +68,7 @@ def _condition(task: dict[str, Any]) -> tuple[dict[str, Any], dict[str, Any]]:
         raise ValueError("pearl lattice rotation rate is invalid")
     if values["preview_label_detail"] not in {"coordinates", "layer"}:
         raise ValueError("pearl lattice preview label detail is invalid")
-    if values["opponent_policy"] != "threat_then_block":
+    if values["opponent_policy"] not in {"threat_then_block", "win_then_pressure"}:
         raise ValueError("pearl lattice opponent policy is invalid")
     condition = {
         "difficulty": int(raw.get("difficulty", 3)),
@@ -192,20 +192,23 @@ def _copy_board(board: dict[Coord, int]) -> dict[Coord, int]:
 
 
 def _immediate_columns(board: dict[Coord, int], mark: int) -> list[Column]:
-    winning: list[Column] = []
-    for column in _legal_columns(board):
-        candidate = _copy_board(board)
-        _drop(candidate, column, mark)
-        if _has_line(candidate, mark):
-            winning.append(column)
-    return winning
+    legal = _legal_columns(board)
+    if _has_line(board, mark):
+        return legal
+    landing_cells = {(x, _height(board, (x, z)), z) for x, z in legal}
+    winning = set()
+    for line in ALL_LINES:
+        missing = [cell for cell in line if board.get(cell, EMPTY) != mark]
+        if len(missing) == 1 and missing[0] in landing_cells:
+            winning.add((missing[0][0], missing[0][2]))
+    return [column for column in legal if column in winning]
 
 
-def _opponent_column(board: dict[Coord, int], pressure_columns: list[Column], pressure_index: int) -> tuple[Column | None, int]:
+def _opponent_column(board: dict[Coord, int], pressure_columns: list[Column], pressure_index: int, policy: str = "threat_then_block") -> tuple[Column | None, int]:
     own_wins = _immediate_columns(board, OPPONENT)
     if own_wins:
         return own_wins[0], pressure_index
-    player_wins = _immediate_columns(board, PLAYER)
+    player_wins = _immediate_columns(board, PLAYER) if policy == "threat_then_block" else []
     if player_wins:
         return player_wins[0], pressure_index
     legal = set(_legal_columns(board))
@@ -213,7 +216,7 @@ def _opponent_column(board: dict[Coord, int], pressure_columns: list[Column], pr
         column = pressure_columns[(pressure_index + offset) % len(pressure_columns)]
         if column in legal:
             return column, pressure_index + offset + 1
-    return (next(iter(legal), None), pressure_index + 1)
+    return (next((column for column in _legal_columns(board) if column in legal), None), pressure_index + 1)
 
 
 def _solution_moves(
@@ -221,6 +224,7 @@ def _solution_moves(
     pressure_columns: list[Column],
     max_moves: int,
     target_lines: list[list[Coord]],
+    policy: str = "threat_then_block",
 ) -> list[Column]:
     target_columns = {(x, z) for line in target_lines for x, _, z in line}
     queue = deque([(initial, 0, [], 0)])
@@ -241,7 +245,7 @@ def _solution_moves(
             next_moves = moves + [column]
             if _has_line(next_board, PLAYER):
                 return next_moves
-            opponent_column, next_pressure = _opponent_column(next_board, pressure_columns, pressure_index)
+            opponent_column, next_pressure = _opponent_column(next_board, pressure_columns, pressure_index, policy)
             if opponent_column is None:
                 continue
             _drop(next_board, opponent_column, OPPONENT)
@@ -279,6 +283,45 @@ def _build_board(parameters: dict[str, Any], seed: str) -> tuple[dict[Coord, int
         raise RuntimeError("pearl lattice line layout violates gravity")
 
     shared_column = (shared[0], shared[2])
+    reserved_columns = {(x, z) for x, _, z in target_cells | opponent_cells}
+    noise_rng = random.Random(_seed_int(seed, "noise"))
+    desired_noise = int(parameters["extra_noise"])
+
+    def fill(candidate: dict[Coord, int]) -> bool:
+        # A support colouring can make the requested fillers impossible. Search
+        # a bounded number of distinct partial boards, then resample supports;
+        # never silently emit an under-filled configuration.
+        visited = set()
+        nodes = 0
+
+        def place_noise(remaining: int) -> bool:
+            nonlocal nodes
+            if remaining == 0:
+                return True
+            signature = tuple(sorted(candidate.items()))
+            if signature in visited or nodes >= 256:
+                return False
+            visited.add(signature)
+            choices = [(column, mark) for column in _legal_columns(candidate)
+                       if column not in reserved_columns for mark in (PLAYER, OPPONENT)]
+            noise_rng.shuffle(choices)
+            for column, mark in choices:
+                nodes += 1
+                if nodes > 256:
+                    return False
+                cell = (column[0], _height(candidate, column), column[1])
+                candidate[cell] = mark
+                shortcut = parameters["geometry"] != "planar_easy" and bool(_immediate_columns(candidate, PLAYER))
+                if not _has_line(candidate, mark) and not shortcut and _immediate_columns(candidate, OPPONENT) == [shared_column]:
+                    defended = _copy_board(candidate)
+                    _drop(defended, shared_column, PLAYER)
+                    if not _immediate_columns(defended, OPPONENT) and place_noise(remaining - 1):
+                        return True
+                candidate.pop(cell)
+            return False
+
+        return place_noise(desired_noise)
+
     ordered_supports = sorted(support_cells, key=lambda item: (item[1], item[2], item[0]))
     board: dict[Coord, int] | None = None
     support_rng = random.Random(_seed_int(seed, "supports"))
@@ -302,47 +345,22 @@ def _build_board(parameters: dict[str, Any], seed: str) -> tuple[dict[Coord, int
             continue
         if _immediate_columns(candidate_board, OPPONENT) != [shared_column]:
             continue
+        if parameters["geometry"] != "planar_easy" and _immediate_columns(candidate_board, PLAYER):
+            continue
         defense_board = _copy_board(candidate_board)
         if _drop(defense_board, shared_column, PLAYER) is None or _immediate_columns(defense_board, OPPONENT):
+            continue
+        if not fill(candidate_board):
             continue
         board = candidate_board
         break
     if board is None:
-        raise RuntimeError("pearl lattice could not place a gravity support without an extra opponent win")
-
-    reserved_columns = {(x, z) for x, _, z in target_cells | opponent_cells}
-    noise_rng = random.Random(_seed_int(seed, "noise"))
-    desired_noise = int(parameters["extra_noise"])
-    for _ in range(desired_noise):
-        candidates = []
-        for column in _legal_columns(board):
-            if column in reserved_columns:
-                continue
-            height = _height(board, column)
-            if height < SIZE:
-                candidates.append((column, height))
-        noise_rng.shuffle(candidates)
-        placed_noise = False
-        for column, height in candidates:
-            for mark in (PLAYER, OPPONENT) if noise_rng.randrange(2) else (OPPONENT, PLAYER):
-                cell = (column[0], height, column[1])
-                board[cell] = mark
-                opponent_wins = set(_immediate_columns(board, OPPONENT))
-                defense_board = _copy_board(board)
-                defended = _drop(defense_board, shared_column, PLAYER) is not None and not _immediate_columns(defense_board, OPPONENT)
-                if not _has_line(board, mark) and opponent_wins <= {shared_column} and defended:
-                    placed_noise = True
-                    break
-                board.pop(cell)
-            if placed_noise:
-                break
-        if not placed_noise:
-            break
+        raise RuntimeError("pearl lattice could not construct safe supports and the exact configured filler count")
 
     safe_columns = [column for column in _legal_columns(board) if column not in reserved_columns]
     if not safe_columns:
         safe_columns = _legal_columns(board)
-    solution = _solution_moves(board, safe_columns, int(parameters["max_player_moves"]), targets)
+    solution = _solution_moves(board, safe_columns, int(parameters["max_player_moves"]), targets, parameters["opponent_policy"])
     return board, targets, opponent_line, safe_columns, solution
 
 
@@ -389,7 +407,7 @@ def generate(task: dict[str, Any], seed: str) -> tuple[dict[str, Any], dict[str,
             "placement": "Pearls fall to the lowest free cell in a selected (x,z) column.",
             "cycle": "Click the lattice surface to cycle the preview through legal columns.",
             "confirm": "Click the separate confirmation area below the lattice to commit the preview.",
-            "opponent": "The clockwork rival responds after every confirmed pearl.",
+            "opponent": ("The rival takes an immediate win, otherwise plays its pressure routine; it does not block your threats." if parameters["opponent_policy"] == "win_then_pressure" else "The rival takes an immediate win, otherwise blocks your next winning column before playing its pressure routine."),
             "rotation": "The automatic turn advances in the configured visible degree steps.",
             "move_limit": f"The player may make at most {int(parameters['max_player_moves'])} placements before certification.",
         },

@@ -145,7 +145,7 @@ def test_apothecary_controls_and_canonical_interaction_profiles_match_audit() ->
         assert task_profiles[interaction] == expected
 
 
-def test_seventy_five_non_audited_canonical_tasks_have_no_audit_metadata() -> None:
+def test_non_audited_canonical_tasks_have_no_audit_metadata() -> None:
     audit_ids = set(load_capability_audit()["environments"])
     canonical = sorted(ENVIRONMENTS.glob("*_env/tasks/*_seed_0001/task.json"))
     legacy = [
@@ -153,8 +153,10 @@ def test_seventy_five_non_audited_canonical_tasks_have_no_audit_metadata() -> No
         for path in canonical
         if path.parent.parent.parent.name[:-4] not in audit_ids
     ]
-    assert len(canonical) == 155
-    assert len(legacy) == 75
+    manifest = json.loads((ENVIRONMENTS.parent / "benchmark_manifest.json").read_text())
+    assert {path.parent.parent.parent.name for path in canonical} == set(manifest["environments"])
+    assert len(canonical) == manifest["environment_count"]
+    assert len(legacy) == len(canonical) - len(audit_ids)
 
     for path in legacy:
         current = json.loads(path.read_text(encoding="utf-8"))

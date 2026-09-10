@@ -19,29 +19,33 @@ def _truth(state_dir: Path) -> dict:
     return json.loads((state_dir / "ground_truth.json").read_text(encoding="utf-8"))
 
 
-def _paused(page) -> bool:
-    return page.evaluate("new URLSearchParams(location.search).get('time_mode') === 'paused'")
-
-
 def _advance(page, milliseconds: int) -> None:
-    if _paused(page):
-        page.evaluate("ms => WeirdCaptchaTime.runFor(ms)", milliseconds)
-        deadline = time.monotonic() + 8
-        while time.monotonic() < deadline:
-            if page.evaluate("WeirdCaptchaTime.status().phase") == "completed":
-                return
-            time.sleep(0.01)
-        raise AssertionError("paused observation window did not complete")
+    # Observation scheduling belongs to the shared runner/harness, never to
+    # the policy. In a paused run the harness advances its fixed frame window.
     page.wait_for_timeout(milliseconds)
 
 
+def _visible_box(page, selector: str) -> dict:
+    for _ in range(12):
+        box = page.locator(selector).bounding_box()
+        if not box:
+            raise AssertionError(f"missing input surface {selector}")
+        height = page.viewport_size["height"]
+        center = box["y"] + box["height"] / 2
+        if 16 <= center <= height - 16:
+            return box
+        # Scroll the task document with the same wheel input a model has.
+        page.mouse.move(20, height / 2)
+        page.mouse.wheel(0, max(-600, min(600, center - height / 2)))
+        page.wait_for_timeout(40)
+    raise AssertionError(f"cannot scroll input into the viewport: {selector}")
+
+
 def _drag(page, source_selector: str, target_selector: str) -> None:
-    source = page.locator(source_selector).bounding_box()
-    target = page.locator(target_selector).bounding_box()
-    if not source or not target:
-        raise AssertionError(f"missing drag surface {source_selector} -> {target_selector}")
+    source = _visible_box(page, source_selector)
     page.mouse.move(source["x"] + source["width"] / 2, source["y"] + source["height"] / 2)
     page.mouse.down()
+    target = _visible_box(page, target_selector)
     page.mouse.move(target["x"] + target["width"] / 2, target["y"] + target["height"] / 2, steps=8)
     page.mouse.up()
 
@@ -80,7 +84,13 @@ def _place(page, protein_id: str, mode: str) -> None:
         _drag(page, f'.protein-card[data-protein="{protein_id}"]', f'.membrane-slot[data-slot="{slot}"]')
     else:
         slot = next(index for index, item in enumerate(_sim(page)["slots"]) if item is None)
-        page.locator(f'[data-place-slot="{protein_id}"]').select_option(str(slot))
+        selector = page.locator(f'[data-place-slot="{protein_id}"]')
+        selector.click()
+        # Native type-ahead also works in isolated Chromium on macOS, where
+        # popup arrow/Home keys may leave the selected option unchanged.
+        page.keyboard.type(f"SLOT {slot + 1}")
+        page.keyboard.press("Enter")
+        assert selector.input_value() == str(slot), "native selector did not choose the first empty slot"
         page.locator(f'[data-place="{protein_id}"]').click()
     page.wait_for_timeout(60)
     assert protein_id in _sim(page)["slots"], (protein_id, _sim(page))
@@ -105,6 +115,21 @@ def _supply(page, state: dict, mode: str, units: int) -> None:
     else:
         for _ in range(bursts):
             page.locator("[data-supply]").click()
+
+
+def _calibrate(page, state: dict, mode: str) -> None:
+    for sid, targets in state["goal"].items():
+        for side in ("outside", "inside"):
+            for _ in range(int(state["surface"]["capacity"])):
+                count = _sim(page)["counts"][sid][side]
+                low, high = targets[side]
+                if low <= count <= high:
+                    break
+                delta = 1 if count < low else -1
+                if mode == "full":
+                    _drag(page, f'[data-solute="{sid}"][data-delta="{delta}"]', f'.compartment-drop[data-side="{side}"]')
+                else:
+                    page.locator(f'[data-adjust="{sid}"][data-side="{side}"][data-delta="{delta}"]').click()
 
 
 def fail_once(page, state_dir: Path, out_dir: Path, mechanic: str) -> None:
@@ -137,14 +162,7 @@ def solve(page, state_dir: Path, out_dir: Path, mechanic: str) -> None:
         _place(page, leak, mode)
         deadline = time.monotonic() + 20
         while time.monotonic() < deadline and _sim(page)["crossings"]["passive"].get(leak, 0) < 1:
-            # In live mode this probe is intentionally sampled more finely
-            # than one full transport period so the scripted evidence removes
-            # the visible leak after the first crossing. Paused mode retains
-            # the evaluator's fixed observation window.
-            _advance(
-                page,
-                100 if _paused(page) else 20,
-            )
+            _advance(page, 20)
         assert _sim(page)["crossings"]["passive"].get(leak, 0) >= 1, _sim(page)
         page.screenshot(path=str(out_dir / "cell_gatekeeper-passive-crossing.png"))
         _remove(page, leak, mode)
@@ -156,6 +174,12 @@ def solve(page, state_dir: Path, out_dir: Path, mechanic: str) -> None:
     page.screenshot(path=str(out_dir / "cell_gatekeeper-active-transport.png"))
 
     deadline = time.monotonic() + 50
+    while time.monotonic() < deadline:
+        sim = _sim(page)
+        if all(sim["crossings"]["active"].get(pid, 0) >= state["parameters"]["pump_cycles"] for pid in pumps) and sim["atp"] < len(pumps):
+            break
+        _advance(page, 50)
+    _calibrate(page, state, mode)
     while time.monotonic() < deadline and not _goal_ok(page, state):
         _advance(page, max(100, int(state["parameters"]["pump_period"]) * 45))
     assert _goal_ok(page, state), _sim(page)

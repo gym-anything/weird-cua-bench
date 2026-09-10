@@ -67,7 +67,7 @@
     const cp = Math.cos(pitch);
     const f = [Math.sin(yaw) * cp, Math.sin(pitch), Math.cos(yaw) * cp];
     const r = [Math.cos(yaw), 0, -Math.sin(yaw)];
-    const u = [Math.sin(yaw) * Math.sin(pitch), Math.cos(pitch), Math.cos(yaw) * Math.sin(pitch)];
+    const u = [-Math.sin(yaw) * Math.sin(pitch), Math.cos(pitch), -Math.cos(yaw) * Math.sin(pitch)];
     return {f, r, u};
   }
 
@@ -159,6 +159,23 @@
   }
 
   function drawSeal(ctx, target, point, colors) {
+    // Three projected great circles show the same world-space sphere used by
+    // contact detection. The central stamp remains an identifying marker.
+    ctx.save(); ctx.strokeStyle=colors[3]; ctx.lineWidth=1; ctx.globalAlpha=.55;
+    for(let axis=0;axis<3;axis+=1) {
+      ctx.beginPath(); let drawing=false;
+      for(let i=0;i<=48;i+=1) {
+        const theta=i*Math.PI/24, offset=[0,0,0];
+        offset[(axis+1)%3]=Number(target.radius)*Math.cos(theta);
+        offset[(axis+2)%3]=Number(target.radius)*Math.sin(theta);
+        const p=project({x:target.x+offset[0],y:target.y+offset[1],z:target.z+offset[2]});
+        if(!p) {drawing=false;continue;}
+        if(drawing) ctx.lineTo(p.x,p.y); else ctx.moveTo(p.x,p.y);
+        drawing=true;
+      }
+      ctx.stroke();
+    }
+    ctx.restore();
     const scale = clamp(38 / point.depth, 0.42, 2.2);
     const radius = Number(target.radius) * scale;
     ctx.save();
@@ -314,6 +331,7 @@
       const actions = {left: [-0.12, 0, "TRIM LEFT"], right: [0.12, 0, "TRIM RIGHT"], up: [0, 0.10, "CLIMB VECTOR"], down: [0, -0.10, "DIVE VECTOR"], level: [0, 0, "LEVEL VECTOR"]};
       for (const button of document.querySelectorAll("[data-trim]")) {
         const handler = () => {
+          if (model.terminal) return;
           const [yaw, pitch, label] = actions[button.dataset.trim];
           if (button.dataset.trim === "level") { model.control = [0, 0]; record("steer", {tick: model.tick, yaw: 0, pitch: 0, input_source: "trim_button"}); setReadout("LEVEL VECTOR · WATCH THE NEXT FRAME", "pending"); return; }
           trimControl(yaw, pitch, label);
@@ -326,5 +344,9 @@
     updateCounters(); drawScene(); model.frameId = requestAnimationFrame(loop);
   }
 
-  window.WeirdCaptchaMechanics.cloudpost_circuit = {rootSelector: ".cloudpost-shell", render};
+  window.WeirdCaptchaMechanics.cloudpost_circuit = {rootSelector: ".cloudpost-shell", render,
+    // Read-only diagnostics for privileged construction checks. No setter,
+    // clock control, action, hidden target or solution is exposed here.
+    snapshot: () => JSON.parse(JSON.stringify({plane:model.plane, control:model.control, tick:model.tick,
+      collected:model.collected, terminal:model.terminal, challenge_id:model.state?.challenge_id}))};
 })();

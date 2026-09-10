@@ -72,7 +72,7 @@
         <main class="fl-main">
           <section class="fl-stage-card">
             <div class="fl-stage-top"><span class="fl-mode">${interaction === "full" ? "DIRECT POINTER / DRAG TO TURN" : "PROXY TURN / BUTTON CONTROL"}</span><span class="fl-angle">YAW <b>0°</b></span></div>
-            <div class="fl-stage-wrap"><svg class="fl-stage" viewBox="0 0 920 560" role="application" aria-label="Rotatable three-dimensional facet lantern"></svg><div class="fl-stage-caption">Each glowing stud keeps its letter when the lantern turns. Pale studs are behind the solid.</div></div>
+            <div class="fl-stage-wrap"><svg class="fl-stage" viewBox="0 0 920 560" role="application" aria-label="Rotatable three-dimensional facet lantern"></svg><div class="fl-stage-caption">Stud letters stay fixed. Hidden-side studs appear when turned toward you.</div></div>
           </section>
           <aside class="fl-sidebar">
             <section class="fl-brief"><p class="fl-section-label">REQUESTED OUTLINES</p><div class="fl-target-list"></div></section>

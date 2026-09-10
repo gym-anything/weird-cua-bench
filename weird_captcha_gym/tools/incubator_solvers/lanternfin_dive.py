@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import json
 import math
-import time
 from pathlib import Path
 
 
@@ -37,44 +36,53 @@ def _wrap(value: float) -> float:
 def _desired(snapshot: dict) -> dict[str, int]:
     fish = snapshot["fish"]
     target = snapshot["target"]
-    dx = float(target["x"]) - float(fish["x"])
-    dy = float(target["y"]) - float(fish["y"])
-    dz = float(target["z"]) - float(fish["z"])
+    physics = snapshot["physics"]
+    linear_coast = float(physics["linear_damping"]) / (1 - float(physics["linear_damping"]))
+    angular_coast = float(physics["angular_damping"]) / (1 - float(physics["angular_damping"]))
+    dx, dy, dz = (float(target[axis]) - float(fish[axis]) - float(fish["v" + axis]) * linear_coast for axis in ("x", "y", "z"))
     horizontal = math.hypot(dx, dz)
     desired_yaw = math.atan2(dz, dx)
     desired_pitch = math.atan2(dy, max(0.001, horizontal))
     distance = math.sqrt(dx * dx + dy * dy + dz * dz)
-    yaw_error = _wrap(desired_yaw - float(fish["yaw"]))
-    # The last part of the task is a docking maneuver, not a continued
-    # point-at-the-pearl maneuver: once close, level the body before the
-    # upright hold is counted.
+    stopped_yaw = float(fish["yaw"]) + float(fish["yaw_rate"]) * angular_coast
+    # Reverse thrust can correct an overshoot without a half-turn orbit.
+    if abs(_wrap(desired_yaw - stopped_yaw)) > math.pi / 2:
+        desired_yaw = _wrap(desired_yaw + math.pi)
+        desired_pitch = -desired_pitch
+    yaw_error = _wrap(desired_yaw - stopped_yaw)
+    radius = float(physics["arrival_radius"])
     pitch_error = (
-        -float(fish["pitch"])
-        if distance < 0.30 and abs(dy) < 0.08
-        else desired_pitch - float(fish["pitch"])
+        0 if distance < .30 and abs(dy) < radius * .55 else desired_pitch
+    ) - (
+        float(fish["pitch"]) + float(fish["pitch_rate"]) * angular_coast
     )
-    speed = math.sqrt(sum(float(fish[key]) ** 2 for key in ("vx", "vy", "vz")))
     def sign(value: float, deadband: float) -> int:
         return 1 if value > deadband else -1 if value < -deadband else 0
-    # The controller is deliberately a closed-loop policy: it reads the
-    # rendered state after each short burst, then chooses the next visible
-    # torque detent from the observed attitude and 3D range.
-    radius = float(snapshot["physics"]["arrival_radius"])
-    speed_limit = float(snapshot["physics"]["speed_limit"])
-    if distance > 0.24:
-        tail = 1
-    elif distance > radius * 0.80 and speed < speed_limit * 1.5:
-        tail = 1
-    elif distance < 0.48 and speed > speed_limit * 1.25:
-        tail = -1
-    else:
-        tail = 0
+    forward = (math.cos(fish["pitch"]) * math.cos(fish["yaw"]), math.sin(fish["pitch"]), math.cos(fish["pitch"]) * math.sin(fish["yaw"]))
+    along = sum(a * b for a, b in zip((dx, dy, dz), forward))
+    tail = sign(along, radius * .2) if distance > radius * .65 and abs(along) > distance * .65 else 0
     return {
-        "yaw": sign(yaw_error, 0.075),
-        "pitch": sign(pitch_error, 0.06),
-        "roll": sign(-float(fish["roll"]), 0.045),
+        "yaw": sign(yaw_error, .075) if distance > radius * .65 else 0,
+        "pitch": sign(pitch_error, .06),
+        "roll": sign(-float(fish["roll"]) - float(fish["roll_rate"]) * angular_coast, .06),
         "tail": tail,
     }
+
+
+def _coast_safe(snapshot: dict) -> bool:
+    """Will neutral inputs keep the current accepted state inside forever?"""
+    fish, target, physics = snapshot["fish"], snapshot["target"], snapshot["physics"]
+    linear = physics["linear_damping"] / (1 - physics["linear_damping"])
+    angular = physics["angular_damping"] / (1 - physics["angular_damping"])
+    # With all torques neutral, velocity decays geometrically and the path
+    # is the line segment to this endpoint. A ball is convex, so checking
+    # both endpoints covers the complete coast, without a hidden task change.
+    for multiplier in (0, linear):
+        if math.sqrt(sum((fish[a] + fish["v" + a] * multiplier - target[a]) ** 2 for a in ("x", "y", "z"))) > physics["arrival_radius"]:
+            return False
+    if math.sqrt(sum(fish["v" + a] ** 2 for a in ("x", "y", "z"))) > physics["speed_limit"]:
+        return False
+    return all(abs(fish[a] + fish[a + "_rate"] * multiplier) <= physics["upright_tolerance"] for a in ("pitch", "roll") for multiplier in (0, angular))
 
 
 def _set_simplified(page, active: dict[str, int], desired: dict[str, int]) -> None:
@@ -107,20 +115,23 @@ def _release_full(page, active: dict[str, int]) -> None:
 
 
 def fail_once(page, state_dir: Path, out_dir: Path, mechanic: str) -> None:
-    del out_dir
     if mechanic != MECHANIC_ID:
         raise AssertionError(f"unexpected mechanic {mechanic!r}")
-    page.locator("#lf-certify").click()
-    deadline = time.monotonic() + 5
-    while time.monotonic() < deadline:
-        if (state_dir / "attempts.jsonl").is_file():
-            return
-        time.sleep(0.05)
-    raise AssertionError("Lanternfin deliberate certification did not reach the server")
+    before = _read(state_dir / "ground_truth.json")["challenge_id"]
+    with page.expect_response(lambda response: response.request.method == "POST" and response.url.endswith("/result")) as received:
+        page.locator("#lf-certify").click()
+    result = received.value.json()
+    assert result.get("passed") is False, result
+    fresh = result.get("state", {}).get("challenge_id")
+    assert fresh and fresh != before, "rejection did not replace the dive"
+    page.locator(f'.lanternfin[data-challenge-id="{fresh}"]').wait_for(state="visible")
+    page.locator(".lf-verdict.is-fresh").wait_for(state="visible")
+    page.screenshot(path=str(out_dir / "lanternfin-fresh-failure.png"))
+    page.locator(".lf-verdict.is-fresh").wait_for(state="hidden")
 
 
 def solve(page, state_dir: Path, out_dir: Path, mechanic: str) -> None:
-    del state_dir, out_dir
+    del state_dir
     if mechanic != MECHANIC_ID:
         raise AssertionError(f"unexpected mechanic {mechanic!r}")
     first = _model(page)
@@ -134,18 +145,21 @@ def solve(page, state_dir: Path, out_dir: Path, mechanic: str) -> None:
     page.mouse.down()
     page.mouse.move(560, 338, steps=3)
     page.mouse.up()
+    page.screenshot(path=str(out_dir / "lanternfin-orbit-initial.png"))
     settled = False
-    for _ in range(int(first["physics"]["max_ticks"]) + 20):
+    for index in range(int(first["physics"]["max_ticks"]) + 20):
         snapshot = _model(page)
         if not snapshot:
             raise AssertionError("Lanternfin model disappeared during solve")
-        desired = _desired(snapshot)
+        desired = {channel: 0 for channel in CHANNELS} if _coast_safe(snapshot) else _desired(snapshot)
         if interaction == "simplified":
             _set_simplified(page, active, desired)
         else:
             _set_full(page, active, desired)
         page.wait_for_timeout(82)
         current = _model(page)
+        if index == 30:
+            page.screenshot(path=str(out_dir / "lanternfin-approach.png"))
         if current and current["tick"] >= int(current["physics"]["max_ticks"]):
             break
         if current:
@@ -153,7 +167,7 @@ def solve(page, state_dir: Path, out_dir: Path, mechanic: str) -> None:
             target = current["target"]
             distance = math.sqrt(sum((float(fish[a]) - float(target[a])) ** 2 for a in ("x", "y", "z")))
             speed = math.sqrt(sum(float(fish[a]) ** 2 for a in ("vx", "vy", "vz")))
-            if int(current.get("hold", 0)) >= int(current["physics"]["hold_ticks"]):
+            if int(current.get("hold", 0)) >= int(current["physics"]["hold_ticks"]) and _coast_safe(current):
                 # Neutralize the visible controls and require the hold to
                 # survive one more physical tick before certifying. This
                 # avoids turning a transient overlap into a false oracle
@@ -164,12 +178,14 @@ def solve(page, state_dir: Path, out_dir: Path, mechanic: str) -> None:
                     _set_simplified(page, active, {channel: 0 for channel in CHANNELS})
                 page.wait_for_timeout(82)
                 stable = _model(page)
-                if stable and int(stable.get("hold", 0)) >= int(stable["physics"]["hold_ticks"]):
+                if stable and _coast_safe(stable) and int(stable.get("hold", 0)) >= int(stable["physics"]["hold_ticks"]):
                     settled = True
                     break
     if interaction == "full":
         _release_full(page, active)
     elif not settled:
         _set_simplified(page, active, {channel: 0 for channel in CHANNELS})
+    assert settled, "controller did not produce a stable upright arrival"
+    page.screenshot(path=str(out_dir / "lanternfin-settled.png"))
     page.locator("#lf-certify").click()
     page.wait_for_function("() => document.querySelector('#lanternfin-readout')?.textContent === 'PASS'", timeout=20_000)

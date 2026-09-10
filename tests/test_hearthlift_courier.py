@@ -3,6 +3,8 @@ from __future__ import annotations
 import copy
 import importlib.util
 import json
+import subprocess
+from collections import deque
 from pathlib import Path
 
 
@@ -123,3 +125,74 @@ def test_registry_split_and_task_provenance_are_task_bound():
     assert "Use only screenshots and visible controls" in task["natural_language"]
     assert "Developer Tools" in task["description"]
     assert (BENCH / "shared_runtime/assets/provenance/hearthlift_courier_v0.json").is_file()
+
+
+def test_unchanged_helper_positions_cannot_deliver_cargo():
+    # Exhaust the movement/climb state graph after pickup, not a push quota.
+    for level in range(1, 6):
+        for seed in range(20):
+            _, truth = GENERATOR.generate(_task(level, "full"), str(seed))
+            world = truth["world"]
+            start = copy.deepcopy(truth["initial_state"])
+            cargo = next(box for box in start["boxes"] if box["kind"] == "cargo")
+            start["boxes"].remove(cargo)
+            start["held"] = cargo["id"]
+            queue = deque([start])
+            seen = set()
+            reached_hearth = False
+            while queue:
+                state = queue.popleft()
+                pos = tuple(state["avatar"][key] for key in ("x", "y", "z"))
+                if pos in seen:
+                    continue
+                seen.add(pos)
+                if pos == tuple(world["hearth"][key] for key in ("x", "y", "height")):
+                    reached_hearth = True
+                    break
+                for action_type in ("move", "climb"):
+                    for direction in GENERATOR.DIRECTIONS:
+                        candidate = copy.deepcopy(state)
+                        try:
+                            GRADER._apply_action(world, candidate, {"type": action_type, "direction": direction})
+                        except ValueError:
+                            continue
+                        assert candidate["boxes"] == start["boxes"]
+                        queue.append(candidate)
+            assert not reached_hearth, (level, seed)
+
+
+def test_browser_geometry_and_movement_match_the_independent_voxel_replay():
+    rows = []
+    for level in range(1, 6):
+        for seed in range(10):
+            public, truth = GENERATOR.generate(_task(level, "full"), str(seed))
+            assert "stack_height" not in truth["control_condition"]["difficulty_parameters"]
+            assert all(world_stage["height_before"] == 2*index for index, world_stage in enumerate(truth["world"]["stages"]))
+            rows.append({"world": public["world"], "events": truth["solution_events"]})
+    source = (BENCH / "shared_runtime/app/mechanics/hearthlift_courier.js").read_text()
+    source = source.replace("  window.WeirdCaptchaMechanics.hearthlift_courier =", "  globalThis.testApi = {applyAction,snapshot,project,footprint};\n  window.WeirdCaptchaMechanics.hearthlift_courier =")
+    script = """
+const vm=require('vm'), fs=require('fs');
+const {source,rows} = JSON.parse(fs.readFileSync(0,'utf8'));
+const context={window:{}}; vm.createContext(context); vm.runInContext(source,context);
+const {applyAction,snapshot,project,footprint}=context.testApi;
+for (const {world,events} of rows) {
+  const model={world,current:{avatar:structuredClone(world.avatar_start),boxes:structuredClone(world.boxes),held:null,delivered:false},cells:new Map(world.cells.map(c=>[`${c.x},${c.y}`,c]))};
+  for (const event of events) {
+    if (!['camera','certify'].includes(event.type)) applyAction(model,event);
+    if (JSON.stringify(snapshot(model)) !== JSON.stringify(event.after)) throw Error('browser voxel replay mismatch');
+  }
+  for (let angle=0;angle<360;angle+=15) {
+    model.cameraYaw=angle*Math.PI/180;
+    model.projection={scale:0.7,centerX:0,centerY:0};
+    const a=footprint(model,3,2,4,0.5), b=footprint(model,4,2,4,0.5);
+    for (const [first,second] of [[a[1],b[0]],[a[2],b[3]]]) {
+      if (Math.hypot(first.x-second.x,first.y-second.y)>1e-9) throw Error('projected neighbors do not share an edge');
+    }
+    const high=project(model,3,2,4), low=project(model,3,2,2);
+    if (Math.abs((low.y-high.y)-2*32*0.7)>1e-9) throw Error('visible height differs from two-voxel ledge');
+  }
+}
+"""
+    result = subprocess.run(["node", "-e", script], input=json.dumps({"source": source, "rows": rows}), text=True, capture_output=True)
+    assert result.returncode == 0, result.stderr

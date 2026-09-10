@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import importlib.util
 import json
+import subprocess
 from pathlib import Path
 
 
@@ -123,3 +124,62 @@ def test_target_metadata_and_registry_are_present():
     assert "lantern_loft_env" in manifest["environments"]
     assert real_time["environments"]["lantern_loft"]["observation_window_ms"] == 0
     assert real_time["environments"]["lantern_loft"]["frames_per_observation"] == 1
+
+
+def test_profiles_require_reconfiguration_and_real_elevation_changes():
+    for level in range(1, 6):
+        for seed in range(100):
+            public, truth = GENERATOR.generate(_task(level, "full"), str(seed))
+            world = public["world"]
+            modules = GRADER._module_map(world)
+            heights = [modules[mid]["height"] for mid in truth["route_module_ids"]]
+            assert sum(a != b for a, b in zip(heights, heights[1:])) == GENERATOR.PROFILES[level]["elevation_changes"], (level,seed)
+            seen = {world["carrier_slot"]}
+            pending = list(seen)
+            while pending:
+                source = pending.pop()
+                for target in range(9):
+                    if target not in seen and GRADER._connected(world, world["board"], source, target):
+                        seen.add(target)
+                        pending.append(target)
+            assert world["exit_slot"] not in seen, (level,seed)
+            # Each authored connection has two openings; remaining openings
+            # are the exact additional, potentially misleading choices.
+            opening_count = sum(sum(m["openings"].values()) for m in modules.values())
+            assert opening_count == 2*(len(heights)-1) + GENERATOR.PROFILES[level]["decoy_openings"]
+            assert GRADER.grade(_passing_payload(public,truth),truth,public)["passed"]
+
+
+def test_browser_replay_draw_coordinates_and_unfiltered_proxies():
+    rows = []
+    for level in range(1, 6):
+        for seed in range(10):
+            public, truth = GENERATOR.generate(_task(level, "simplified"), str(seed))
+            rows.append({"public": public,"payload": _passing_payload(public,truth)})
+    source = (ROOT / "weird_captcha_gym/shared_runtime/app/mechanics/lantern_loft.js").read_text()
+    source = source.replace("  window.WeirdCaptchaMechanics =", "  globalThis.testApi={polygon,connected,drawScene,updateProxy,hitSlot,setModel: value=>{model=value;}};\n  window.WeirdCaptchaMechanics =")
+    script = """
+const vm=require('vm'),fs=require('fs');
+const {rows,source}=JSON.parse(fs.readFileSync(0,'utf8'));
+const slide={innerHTML:'',querySelectorAll:()=>[]},step={innerHTML:'',querySelectorAll:()=>[]};
+const drawing=new Proxy({}, {get:(_,key)=>key==='createLinearGradient'?(()=>({addColorStop(){}})):(...args)=>{for(const a of args) if(typeof a==='number'&&!Number.isFinite(a)) throw Error(`non-finite drawing coordinate: ${key}`);},set:()=>true});
+const canvas={width:900,height:560,getContext:()=>drawing};
+const context={window:{},document:{querySelector:s=>({'#lantern-slide-proxy':slide,'#lantern-step-proxy':step,'#lantern-loft-canvas':canvas}[s]||null)}};
+vm.createContext(context);vm.runInContext(source,context);
+const api=context.testApi;
+for (const row of rows) {
+  const world=row.public.world;
+  const model={state:row.public,board:[...world.board],modules:Object.fromEntries(world.modules.map(m=>[m.id,m])),emptySlot:world.empty_slot,carrierSlot:world.carrier_slot,exitSlot:world.exit_slot,helpers:{text:String}};
+  api.setModel(model);
+  for(const event of row.payload.events) {
+    api.drawScene(); api.updateProxy();
+    if ((slide.innerHTML.match(/data-slide-module=/g)||[]).length!==8 || (step.innerHTML.match(/data-step-slot=/g)||[]).length!==9 || /disabled/.test(slide.innerHTML+step.innerHTML)) throw Error('proxies expose move legality');
+    if(event.kind==='slide') {model.board[event.to_slot]=model.board[event.from_slot];model.board[event.from_slot]=null;model.emptySlot=event.from_slot;}
+    if(event.kind==='step') {if(!api.connected(model.carrierSlot,event.to_slot)) throw Error('browser/Python connectivity mismatch');model.carrierSlot=event.to_slot;}
+  }
+  const a=api.polygon(0,1), b=api.polygon(1,1);
+  if(JSON.stringify(a[1])!==JSON.stringify(b[0]) || JSON.stringify(a[2])!==JSON.stringify(b[3])) throw Error('adjacent top surfaces do not share their projected edge');
+}
+"""
+    result = subprocess.run(["node", "-e", script], input=json.dumps({"source": source, "rows": rows}), text=True, capture_output=True)
+    assert result.returncode == 0, result.stderr

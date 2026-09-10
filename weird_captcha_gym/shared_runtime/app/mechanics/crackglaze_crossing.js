@@ -62,7 +62,9 @@
       ${item.exit ? `<span class="far-door ${model.collected.size === model.state.lantern_ids.length ? "is-open" : ""}"><i></i></span>` : ""}
       ${item.start ? '<span class="start-mark" aria-label="starting tile"></span>' : ""}
       ${current && model.status !== "failed" ? '<span class="walker"><i></i></span>' : ""}`;
-    const style = `grid-row:${item.row + 1};grid-column:${item.column + 1}`;
+    // Board-normalized geometry is also replayed by the independent grader.
+    // Keep the visible face and the button in the same (unprojected) frame.
+    const style = `left:${100 * (item.column + .03) / model.state.columns}%;top:${100 * (item.row + .04) / model.state.rows}%;width:${94 / model.state.columns}%;height:${92 / model.state.rows}%`;
     // The hole remains the visible target geometry for a losing step.  Making
     // shattered ground non-clickable would silently protect Full-mode players
     // from the same expired-destination failure that the direction pad allows.
@@ -207,10 +209,18 @@
 
   function bind() {
     if (interaction() === "full") {
-      document.querySelectorAll("button.crack-tile").forEach((tile) => tile.addEventListener("click", (event) => {
-        event.preventDefault();
-        attemptMove(tile.dataset.cellId, "tile_click", event);
-      }));
+      document.querySelectorAll("button.crack-tile").forEach((tile) => {
+        let releasedAt = null;
+        // Legacy click MouseEvents truncate client coordinates to integers,
+        // although Chromium hit-tests the fractional pointer position. Retain
+        // the real release coordinates so an inside edge hit replays as one.
+        tile.addEventListener("pointerup", (event) => { releasedAt = event; });
+        tile.addEventListener("click", (event) => {
+          event.preventDefault();
+          if (releasedAt) attemptMove(tile.dataset.cellId, "tile_click", releasedAt);
+          releasedAt = null;
+        });
+      });
     } else {
       document.querySelectorAll(".crack-dpad button[data-direction]").forEach((button) => button.addEventListener("click", () => {
         const destination = destinationFor(button.dataset.direction);

@@ -3,6 +3,7 @@ from __future__ import annotations
 import importlib.util
 import json
 from pathlib import Path
+import pytest
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -93,3 +94,30 @@ def test_full_slot_drag_preserves_occupied_destination_as_reorder():
     assert "function reorderSlot(fromPanel, fromIndex, toPanel, toIndex)" in MECHANIC_JS
     assert 'type: "reorder"' in MECHANIC_JS
     assert 'reorderSlot(fromPanel, Number(fromIndex), slot.dataset.panel, Number(slot.dataset.index));' in MECHANIC_JS
+
+
+@pytest.mark.parametrize('interaction', ['full','simplified'])
+def test_edit_and_failed_rerun_invalidate_completion_in_native_browser(interaction):
+    from playwright.sync_api import sync_playwright, expect
+    from weird_captcha_gym.tools.incubator_solvers.lampwrights_program import _fill_solution, _place
+    public,truth = GENERATOR.generate(_task(1,interaction),'completion-regression')
+    with sync_playwright() as playwright:
+        browser = playwright.chromium.launch(headless=True)
+        page = browser.new_page(viewport=dict(width=1920,height=1080))
+        # Isolated fixture setup only; subsequent editing/running uses native input.
+        page.set_content('<div id="app"></div>')
+        page.add_style_tag(path=str(ROOT/'weird_captcha_gym/shared_runtime/app/mechanics/lampwrights_program.css'))
+        page.add_script_tag(path=str(ROOT/'weird_captcha_gym/shared_runtime/app/mechanics/lampwrights_program.js'))
+        page.evaluate('state => WeirdCaptchaMechanics.lampwrights_program.render(state,{app:document.querySelector("#app"),setReadout:()=>{}})',public)
+        expect(page.locator('#lp-certify')).to_be_enabled()
+        _fill_solution(page,truth['program_solution'],interaction)
+        page.locator('#lp-run').click()
+        page.wait_for_function('lampwrightsProgramModel.completed && !lampwrightsProgramModel.playing')
+        _place(page,'main',0,'J',interaction)
+        assert page.evaluate('lampwrightsProgramModel.completed') is False
+        page.locator('#lp-run').click()
+        page.wait_for_function('!lampwrightsProgramModel.playing')
+        assert page.evaluate('lampwrightsProgramModel.completed') is False
+        expect(page.locator('#lp-status')).to_contain_text('BLOCKED')
+        expect(page.locator('#lp-certify')).to_be_enabled()
+        browser.close()

@@ -266,7 +266,7 @@ def test_live_and_paused_are_observation_schedules_not_task_branches() -> None:
     assert paused["control_condition"]["real_time"] == "paused"
 
 
-def test_replay_rejects_early_open_forged_feedback_wrong_surface_and_stationary_click() -> None:
+def test_replay_rejects_post_open_probes_forged_feedback_wrong_surface_and_stationary_click() -> None:
     public, truth = GENERATOR.generate(_task(4, "full"), "negative-replay")
 
     early = _solution(public, truth, "full")
@@ -308,6 +308,21 @@ def test_replay_rejects_early_open_forged_feedback_wrong_surface_and_stationary_
         event["sequence"] = sequence
     over_budget["tested_probe_ids"].append(extra["id"])
     assert "unavailable specimen" in GRADER.grade(over_budget, truth, public)["feedback"]
+
+
+def test_probe_budget_is_an_upper_bound_not_a_completion_quota() -> None:
+    for level in range(1, 6):
+        for mode in ("full", "simplified"):
+            public, truth = GENERATOR.generate(_task(level, mode), "optional-tests")
+            complete = _solution(public, truth, mode)
+            for count in range(public["parameters"]["probe_count"]):
+                payload = copy.deepcopy(complete)
+                probes = [event for event in payload["events"] if event["type"] == "probe"][:count]
+                payload["events"] = probes + [event for event in payload["events"] if event["type"] != "probe"]
+                payload["tested_probe_ids"] = [event["specimen_id"] for event in probes]
+                for index, event in enumerate(payload["events"], 1):
+                    event["sequence"] = index
+                assert GRADER.grade(payload, truth, public)["passed"] is True, (level, mode, count)
 
 
 def test_incorrect_final_sort_and_mutated_contract_are_rejected() -> None:

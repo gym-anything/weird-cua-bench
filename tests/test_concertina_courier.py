@@ -161,3 +161,23 @@ def test_island_has_distinct_support_choices_and_reachable_well(level):
         assert p['opening_range'][1]<a['area']/p['clearance'] or level==3
         directions.add(a['seals'][-1][0]>a['initial_state']['x'])
     assert directions=={False,True}
+
+
+@pytest.mark.parametrize('level',[3,4,5])
+def test_saturated_controller_recovers_small_coast_errors(level):
+    from weird_captcha_gym.tools.incubator_solvers.concertina_courier import settle_plan
+    for seed in ['1','17','101']:
+        a,_=world(seed,level,'full')
+        target=a['seals'][3][0]
+        for offset in [-7.4,-3.104836,3.104836,7.4]:
+            s=copy.deepcopy(a['initial_state'])
+            s.update(x=target+offset,h=32,collected=[0,1,2])
+            assert clear(s,a)
+            for _ in range(4):
+                if abs(target-s['x'])<3:break
+                for control,ticks in settle_plan(s,a,target):
+                    for _ in range(ticks):advance(s,control,a)
+            assert s['status']=='active'
+            assert abs(target-s['x'])<3,(level,seed,offset,s)
+            for _ in range(60):advance(s,[0,1],a)
+            assert s['status']=='solved',(level,seed,offset,s)

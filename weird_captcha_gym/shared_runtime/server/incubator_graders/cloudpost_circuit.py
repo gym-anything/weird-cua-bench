@@ -58,6 +58,8 @@ def grade(payload: dict[str, Any], truth: dict[str, Any], public: dict[str, Any]
         return _fail("public challenge is not the submitted challenge")
 
     condition = truth.get("control_condition")
+    if public.get("control_condition") != condition or public.get("physics") != truth.get("physics") or public.get("targets") != truth.get("targets"):
+        return _fail("visible flight geometry or condition differs from the authoritative world")
     expected_interaction = "full" if condition is None else str(condition.get("interaction") or "")
     if payload.get("interaction") != expected_interaction:
         return _fail("wrong interaction mode for this task")
@@ -78,10 +80,13 @@ def grade(payload: dict[str, Any], truth: dict[str, Any], public: dict[str, Any]
     contacts_reported: list[dict[str, Any]] = []
     terminal: dict[str, Any] | None = None
     last_tick = 0
+    prior_control = (0.0, 0.0)
     for sequence, event in enumerate(events, 1):
         if not isinstance(event, dict) or event.get("seq") != sequence:
             return _fail(f"event {sequence} sequence invalid")
         kind = str(event.get("type") or "")
+        if terminal is not None:
+            return _fail("flight ledger continues after terminal state")
         try:
             tick = int(event.get("tick"))
         except (TypeError, ValueError):
@@ -94,8 +99,16 @@ def grade(payload: dict[str, Any], truth: dict[str, Any], public: dict[str, Any]
                 return _fail("steering event came from the wrong interaction surface")
             if not _finite(event.get("yaw")) or not _finite(event.get("pitch")):
                 return _fail("steering control is not finite")
-            yaw = _clamp(float(event["yaw"]), -1.0, 1.0)
-            pitch = _clamp(float(event["pitch"]), -1.0, 1.0)
+            yaw, pitch = float(event["yaw"]), float(event["pitch"])
+            if not -1 <= yaw <= 1 or not -1 <= pitch <= 1:
+                return _fail("steering vector exceeds the visible control range")
+            if expected_interaction == "simplified":
+                py, pp = prior_control
+                legal = [(0.0,0.0), (_clamp(py-.12,-1,1),pp), (_clamp(py+.12,-1,1),pp),
+                         (py,_clamp(pp-.10,-1,1)), (py,_clamp(pp+.10,-1,1))]
+                if not any(abs(yaw-ly)<1e-7 and abs(pitch-lp)<1e-7 for ly,lp in legal):
+                    return _fail("trim event is not one visible button increment or LEVEL")
+            prior_control = (yaw,pitch)
             schedule[tick] = (yaw, pitch)
         elif kind == "contact":
             contacts_reported.append(event)

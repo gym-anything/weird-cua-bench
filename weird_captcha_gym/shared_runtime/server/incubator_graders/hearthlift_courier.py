@@ -65,7 +65,7 @@ def _apply_action(world: dict[str, Any], state: dict[str, Any], event: dict[str,
         box = _box_at(state, tx, ty)
         if box is not None:
             top = int(cell["height"]) + 1
-            if int(avatar["z"]) == top:
+            if 0 <= int(avatar["z"]) - top <= 1:
                 avatar.update({"x": tx, "y": ty, "z": top})
                 return None
             dest = _cell(world, tx + dx, ty + dy)
@@ -157,7 +157,6 @@ def grade(payload: dict[str, Any], truth: dict[str, Any], public: dict[str, Any]
         "camera_yaw": float(((truth.get("world") or {}).get("camera") or {}).get("initial_yaw", 0.0)),
     }
     camera_events = 0
-    push_or_climb = 0
     pickup = drop = 0
     certified = False
     try:
@@ -178,15 +177,11 @@ def grade(payload: dict[str, Any], truth: dict[str, Any], public: dict[str, Any]
                 continue
             if event.get("before") != _snapshot(state):
                 return _fail(f"event {sequence} starts from a stale visible state")
-            previous_boxes = len(state["boxes"])
             _apply_action(truth["world"], state, event)
             if event.get("after") != _snapshot(state):
                 return _fail(f"event {sequence} reports a state not produced by voxel replay")
             if event_type == "camera":
                 camera_events += 1
-            if event_type in {"climb", "move"}:
-                if event_type == "climb" or len(state["boxes"]) == previous_boxes:
-                    push_or_climb += 1
             if event_type == "pickup":
                 pickup += 1
             if event_type == "drop":
@@ -195,8 +190,6 @@ def grade(payload: dict[str, Any], truth: dict[str, Any], public: dict[str, Any]
             return _fail("attempt was not certified")
         if camera_events < 1:
             return _fail("the 3D garden was never inspected from another camera angle")
-        if push_or_climb < 2:
-            return _fail("the route did not use the visible helper boxes")
         if pickup != 1 or drop != 1 or not state.get("delivered") or state.get("held") is not None:
             return _fail("marked cargo was not carried and burned at the hearth")
         return {"graded": True, "passed": True, "score": 100, "feedback": "voxel replay delivered the marked cargo through the inspected stacked route"}

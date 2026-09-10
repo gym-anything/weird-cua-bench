@@ -22,7 +22,40 @@ def _shot(page, out_dir: Path, label: str) -> None:
 
 
 def _point(page, slot_id: int) -> tuple[float, float]:
-    point = page.evaluate("slot => window.lanternLoftModel.slotPoint(slot)", slot_id)
+    geometry = page.evaluate("() => { const m=window.lanternLoftModel; return Array.from({length:9},(_,id)=>({id,point:m.slotPoint(id),height:m.modules[m.board[id]]?.height ?? null})); }")
+    target = geometry[slot_id]
+    candidates = sorted((item for item in geometry if item["height"] is not None),
+                        key=lambda item: (item["id"] % 3 + item["id"] // 3, item["id"]), reverse=True)
+
+    def polygon(item):
+        x, y = item["point"]
+        return [(x,y-52),(x+108,y),(x,y+52),(x-108,y)]
+
+    def inside(point, corners):
+        px, py = point
+        result = False
+        for (ax,ay), (bx,by) in zip(corners, corners[1:]+corners[:1]):
+            if (ay > py) != (by > py) and px < (bx-ax)*(py-ay)/(by-ay)+ax:
+                result = not result
+        return result
+
+    def hit(point):
+        for item in candidates:
+            top = polygon(item)
+            if inside(point,top):
+                return item["id"]
+            bottom = [(x,y+22+item["height"]*34) for x,y in top]
+            if any(inside(point,[top[i],top[(i+1)%4],bottom[(i+1)%4],bottom[i]]) for i in range(4)):
+                return None
+        return target["id"] if target["height"] is None and inside(point,polygon(target)) else None
+
+    cx, cy = target["point"]
+    options = [(cx+dx,cy+dy) for dy in range(-42,43,6) for dx in range(-90,91,6)
+               if abs(dx)/108+abs(dy)/52 < .85]
+    options.sort(key=lambda p:(p[0]-cx)**2+(p[1]-cy)**2)
+    point = next((p for p in options if hit(p)==slot_id),None)
+    if point is None:
+        raise AssertionError(f"Lantern Loft surface {slot_id+1} has no visible input point")
     canvas = page.locator("#lantern-loft-canvas")
     box = canvas.bounding_box()
     if not box:
@@ -43,6 +76,9 @@ def _slide(page, move: dict, interaction: str) -> None:
         page.mouse.move(tx, ty, steps=10)
         page.mouse.up()
     page.wait_for_timeout(45)
+    actual = page.evaluate("() => window.lanternLoftModel.board")
+    if actual[target] != move["module_id"] or actual[source] is not None:
+        raise AssertionError(f"Lantern Loft slide did not move {move}")
 
 
 def _step(page, target: int, interaction: str) -> None:
@@ -52,6 +88,9 @@ def _step(page, target: int, interaction: str) -> None:
         x, y = _point(page, target)
         page.mouse.click(x, y)
     page.wait_for_timeout(45)
+    actual = page.evaluate("() => window.lanternLoftModel.carrierSlot")
+    if actual != target:
+        raise AssertionError(f"Lantern Loft step did not reach surface {target+1}; at {actual+1}")
 
 
 def _wait_new_challenge(state_dir: Path, previous: str) -> None:

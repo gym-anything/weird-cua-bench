@@ -11,6 +11,27 @@
   const specimenById = (id) => [...model.state.probe_specimens, ...model.state.final_specimens]
     .find((item) => item.id === id);
 
+  function ruleCardMarkup() {
+    const families = {
+      literal: "One property controls FILE: it must be in one fixed state. Discover the property and state.",
+      and2: "Two different properties must each be in one fixed state for FILE. Both requirements must hold.",
+      xor2: "Two different properties control FILE: their states must either match or differ. Discover the pair and relation.",
+      majority3: "Three different properties each have a preferred state. FILE requires at least two of those states.",
+      paired4: "Four different properties form two pairs. FILE requires a fixed match-or-differ relation in each pair; both relations must hold.",
+    };
+    const features = [
+      ["CORE", "hollow / solid"], ["RIM", "spined / smooth"],
+      ["SATELLITES", "paired circles / one diamond"], ["VEINS", "crossed / parallel"],
+      ["ARMS", "balanced pair / one-sided"], ["MARKS", "bands / dots"],
+    ].slice(0, Number(model.state.parameters.feature_pool));
+    return `<details class="ud-rule-card"><summary>RULE FAMILY & ATTRIBUTES</summary><div>
+      <h2>CASE CONTRACT</h2><p>${esc(families[model.state.parameters.rule_family])}</p>
+      <dl>${features.map(([name, states]) => `<div><dt>${name}</dt><dd>${states}</dd></div>`).join("")}</dl>
+      <p>Only these properties may affect the rule. Unlisted properties, colour, size, rotation and paper do not.</p>
+      <p>Use at most ${probeBudget()} tests. Opening the final tray ends calibration, even if tests remain.</p>
+    </div></details>`;
+  }
+
   function clearFreshFailure() {
     if (!model?.freshFailure) return;
     model.freshFailure = false;
@@ -100,12 +121,12 @@
         <section class="ud-oracle" data-drop="probe">
           <div class="ud-oracle-mouth"><span></span><b>CALIBRATION SLOT</b><small>${interaction() === "full" ? "DROP TO TEST" : "TEST"}</small></div>
           <div class="ud-oracle-answer">
-            <small>CALIBRATION SEALS</small><strong>${model.tested.length} / ${probeBudget()}</strong>
+            <small>TESTS USED / LIMIT</small><strong>${model.tested.length} / ${probeBudget()}</strong>
           </div>
           ${interaction() === "simplified" ? `<button class="ud-action" id="ud-test" ${!model.selectedId || ready ? "disabled" : ""}>TEST SELECTED</button>` : ""}
         </section>
-        <section class="ud-seal ${ready ? "is-ready" : ""}"><div><small>FINAL TRAY</small><b>${ready ? "UNSEALED" : "SEALED"}</b></div>
-          <button id="ud-open-final" ${ready ? "" : "disabled"}>${ready ? "BREAK SEAL" : `${probeBudget() - model.tested.length} SEALS REMAIN`}</button>
+        <section class="ud-seal is-ready"><div><small>FINAL TRAY</small><b>ENDS CALIBRATION</b></div>
+          <button id="ud-open-final">OPEN FINAL TRAY</button>
         </section>
       </aside>`;
     }
@@ -177,7 +198,7 @@
   }
 
   function openFinal() {
-    if (model.tested.length !== probeBudget() || model.finalOpen) return;
+    if (model.finalOpen || model.submitting || model.terminal) return;
     record({type: "open_final", input_source: "seal_latch"});
     model.finalOpen = true;
     model.selectedId = null;
@@ -305,7 +326,7 @@
       terminal: false,
     };
     helpers.app.innerHTML = `<section class="unlabeled-drawer mode-${interaction()}" data-interaction="${esc(interaction())}" data-challenge-id="${esc(state.challenge_id)}" data-fresh-failure="${options.freshFailure ? "true" : "false"}">
-      <header class="ud-masthead"><div class="ud-sealmark"><span>UD</span><small>19—27</small></div><div><small>DEPARTMENT OF IMPOSSIBLE NATURAL HISTORY · ANNEX IV</small><h1>${esc(state.prompt)}</h1></div><div class="ud-condition"><b>${interaction().toUpperCase()} INPUT</b><span>STATIC OBSERVATION</span></div></header>
+      <header class="ud-masthead"><div class="ud-sealmark"><span>UD</span><small>19—27</small></div><div><small>DEPARTMENT OF IMPOSSIBLE NATURAL HISTORY · ANNEX IV</small><h1>${esc(state.prompt)}</h1></div><div class="ud-condition"><b>${interaction().toUpperCase()} INPUT</b>${ruleCardMarkup()}</div></header>
       <main class="ud-stage"></main>
       <footer class="ud-footer"><div><small>ANNEX IV</small><b>UD · 19—27</b></div><div class="readout" data-status="idle">CABINET READY</div><button id="ud-certify">CERTIFY SORT</button></footer>
       ${helpers.cheatPanelTemplate()}

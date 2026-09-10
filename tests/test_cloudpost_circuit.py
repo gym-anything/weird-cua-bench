@@ -3,6 +3,7 @@ from __future__ import annotations
 import importlib.util
 import json
 import math
+import subprocess
 from pathlib import Path
 
 import pytest
@@ -66,11 +67,22 @@ def _route_payload(public: dict, truth: dict, source: str) -> dict:
         dy = target["y"] - plane["y"]
         dz = target["z"] - plane["z"]
         distance = max(1e-6, math.sqrt(dx * dx + dy * dy + dz * dz))
-        control = (
+        desired = (
             max(-1.0, min(1.0, math.atan2(dx, dz) / physics["max_yaw"])),
             max(-1.0, min(1.0, math.asin(max(-1.0, min(1.0, dy / distance))) / physics["max_pitch"])),
         )
-        events.append({"seq": len(events) + 1, "type": "steer", "tick": tick - 1, "yaw": control[0], "pitch": control[1], "input_source": source})
+        if source == "trim_button":
+            control = list(control)
+            for axis, increment in ((0,.12),(1,.10)):
+                for _ in range(20):
+                    error = desired[axis]-control[axis]
+                    if abs(error) <= increment/2:
+                        break
+                    control[axis] = max(-1,min(1,control[axis]+math.copysign(increment,error)))
+                    events.append({"seq":len(events)+1,"type":"steer","tick":tick-1,"yaw":control[0],"pitch":control[1],"input_source":source})
+        else:
+            control = desired
+            events.append({"seq": len(events) + 1, "type": "steer", "tick": tick - 1, "yaw": control[0], "pitch": control[1], "input_source": source})
         _step(plane, control, physics)
         newly_collected = []
         for candidate in public["targets"]:
@@ -166,7 +178,7 @@ def test_independent_replay_accepts_full_and_simplified_input_sources(controlled
         assert rejected["passed"] is False
 
 
-def test_solver_stops_on_visible_contact_despite_prediction_drift(monkeypatch, tmp_path):
+def test_solver_stops_on_observed_contact_without_extrapolating_past_it(monkeypatch, tmp_path):
     from types import SimpleNamespace
 
     solver = _load(
@@ -176,10 +188,10 @@ def test_solver_stops_on_visible_contact_despite_prediction_drift(monkeypatch, t
     state, _ = GENERATOR.generate(_task("cloudpost_circuit_seed_0001"), "stopping-test")
     state["targets"] = [state["targets"][0]]
     monkeypatch.setattr(solver, "_read_public", lambda _: state)
-    monkeypatch.setattr(solver, "_visible_tick", lambda _: 0)
-    monkeypatch.setattr(solver, "_visible_count", lambda _: 1)
-    monkeypatch.setattr(solver, "_full_step", lambda *args: 0)
-    # No predicted movement: the estimate stays far outside the contact radius.
+    monkeypatch.setattr(solver, "_snapshot", lambda _: {"challenge_id":state["challenge_id"],"collected":[state["targets"][0]["id"]]})
+    monkeypatch.setattr(solver, "_shot", lambda *args: None)
+    monkeypatch.setattr(solver, "expect", lambda _: SimpleNamespace(to_have_text=lambda *args,**kwargs: None))
+    # An observed contact needs no further steering or predicted movement.
     page = SimpleNamespace(
         locator=lambda _: SimpleNamespace(
             bounding_box=lambda: {"x": 0, "y": 0, "width": 1920, "height": 1080},
@@ -188,3 +200,37 @@ def test_solver_stops_on_visible_contact_despite_prediction_drift(monkeypatch, t
         wait_for_timeout=lambda _: None,
     )
     solver.solve(page, tmp_path, tmp_path, "cloudpost_circuit")
+
+
+def test_simplified_replay_rejects_continuous_pointer_vectors(controlled_tasks):
+    public, truth = GENERATOR.generate(_task("cloudpost_circuit_d5_simplified_seed_0001",controlled_tasks), "native-trims")
+    forged = _route_payload(public,truth,"pointer_steer")
+    forged["interaction"] = "simplified"
+    for event in forged["events"]:
+        if event["type"] == "steer":
+            event["input_source"] = "trim_button"
+    rejected = GRADER.grade(forged,truth,public)
+    assert rejected["passed"] is False and "increment" in rejected["feedback"]
+    real = _route_payload(public,truth,"trim_button")
+    assert GRADER.grade(real,truth,public)["passed"]
+    real["events"].append({"seq":len(real["events"])+1,"type":"steer","tick":real["events"][-1]["tick"],"yaw":0,"pitch":0,"input_source":"trim_button"})
+    assert "after terminal" in GRADER.grade(real,truth,public)["feedback"]
+
+
+def test_camera_axes_and_forward_projection_are_consistent():
+    source = (ROOT / "weird_captcha_gym/shared_runtime/app/mechanics/cloudpost_circuit.js").read_text()
+    source = source.replace("  window.WeirdCaptchaMechanics.cloudpost_circuit =", "  globalThis.testApi={cameraBasis,project,model};\n  window.WeirdCaptchaMechanics.cloudpost_circuit =")
+    script = """
+const vm=require('vm'),fs=require('fs');
+const context={window:{}};vm.createContext(context);vm.runInContext(fs.readFileSync(0,'utf8'),context);
+const {cameraBasis,project,model}=context.testApi;
+for(let yaw=-1;yaw<=1;yaw+=.2) for(let pitch=-.6;pitch<=.6;pitch+=.2) {
+  model.plane={x:0,y:0,z:0,yaw,pitch};
+  const {f,r,u}=cameraBasis();
+  for(const [a,b] of [[f,r],[f,u],[r,u]]) if(Math.abs(a.reduce((sum,v,i)=>sum+v*b[i],0))>1e-9) throw Error('nonorthogonal camera');
+  const p=project({x:f[0]*100,y:f[1]*100,z:f[2]*100});
+  if(Math.hypot(p.x-460,p.y-270)>1e-9) throw Error('forward point is not at view center');
+}
+"""
+    result = subprocess.run(["node","-e",script],input=source,text=True,capture_output=True)
+    assert result.returncode == 0, result.stderr

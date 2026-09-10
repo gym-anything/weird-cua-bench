@@ -68,6 +68,7 @@
   function edit(panel, index, command, source) {
     if (!model || model.playing || model.submitting) return;
     model.program[panel][index] = command;
+    model.completed = false;
     model.editorEvents.push({type: "place", panel, index, command, input_source: source});
     renderProgram();
     setStatus(`${COMMAND_LABELS[command]} placed in ${panel === "main" ? "MAIN" : panel} / SLOT ${index + 1}`);
@@ -77,6 +78,7 @@
     if (!model || model.playing || model.submitting || !model.program[panel][index]) return;
     model.editorEvents.push({type: "erase", panel, index, command: model.program[panel][index], input_source: source});
     model.program[panel][index] = null;
+    model.completed = false;
     renderProgram();
     setStatus("SLOT CLEARED");
   }
@@ -91,6 +93,7 @@
     const targetCommand = targetSlots[toIndex] || null;
     sourceSlots[fromIndex] = targetCommand;
     targetSlots[toIndex] = sourceCommand;
+    model.completed = false;
     model.editorEvents.push({
       type: "reorder",
       from_panel: fromPanel,
@@ -182,7 +185,7 @@
 
   function runProgram() {
     if (model.playing || model.submitting) return;
-    model.runId += 1; model.lit = new Set(); model.pose = copy(model.state.world.start); renderWorld();
+    model.runId += 1; model.completed = false; model.lit = new Set(); model.pose = copy(model.state.world.start); renderWorld();
     const result = evaluate();
     const runId = model.runId;
     model.executionEvents.push({type: "run_start", run_id: runId});
@@ -195,7 +198,7 @@
       if (!model || !model.playing || model.runId !== runId) return;
       if (model.playbackIndex >= model.playback.length) {
         model.playing = false; model.pose = result.pose; model.lit = result.lit; renderWorld();
-        const certify = document.querySelector("#lp-certify"); if (certify) certify.disabled = !model.completed;
+        const certify = document.querySelector("#lp-certify"); if (certify) certify.disabled = false;
         if (result.ok) setStatus("ROUTE COMPLETE — CERTIFY WHEN READY", "pass"); else setStatus(result.message, "error");
         return;
       }
@@ -206,9 +209,9 @@
   }
 
   async function submit() {
-    if (!model || model.playing || model.submitting || !model.completed) return;
+    if (!model || model.playing || model.submitting) return;
     model.submitting = true; setStatus("REPLAYING PROGRAM INDEPENDENTLY…");
-    const payload = {mechanic_id: model.state.mechanic_id, task_id: model.state.task_id, challenge_id: model.state.challenge_id, program: Object.fromEntries(Object.entries(model.program).map(([panel, slots]) => [panel, slots.filter(Boolean)])), editor_events: model.editorEvents, execution_events: model.executionEvents, completed: true};
+    const payload = {mechanic_id: model.state.mechanic_id, task_id: model.state.task_id, challenge_id: model.state.challenge_id, program: Object.fromEntries(Object.entries(model.program).map(([panel, slots]) => [panel, slots.filter(Boolean)])), editor_events: model.editorEvents, execution_events: model.executionEvents, completed: model.completed};
     try {
       const response = await fetch("/result", {method: "POST", headers: {"content-type": "application/json"}, body: JSON.stringify(payload)});
       const outcome = await response.json();
@@ -226,7 +229,9 @@
     renderProgram(); installPalette(); renderWorld();
     document.querySelector("#lp-run").addEventListener("click", runProgram);
     document.querySelector("#lp-certify").addEventListener("click", submit);
-    const observer = new MutationObserver(() => { const button = document.querySelector("#lp-certify"); if (button) button.disabled = !model.completed || model.playing || model.submitting; });
+    document.querySelector("#lp-certify").disabled = false;
+    document.querySelector(".lp-hint").append(" CERTIFY submits this program; rejection starts a fresh roof.");
+    const observer = new MutationObserver(() => { const button = document.querySelector("#lp-certify"); if (button) button.disabled = model.playing || model.submitting; });
     observer.observe(document.querySelector(".lp-shell"), {subtree: true, childList: true});
   }
 

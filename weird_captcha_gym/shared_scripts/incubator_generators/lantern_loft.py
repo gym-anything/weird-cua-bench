@@ -19,35 +19,30 @@ PROFILES: dict[int, dict[str, Any]] = {
         "slide_count": 1,
         "elevation_changes": 1,
         "decoy_openings": 0,
-        "stair_count": 1,
     },
     2: {
         "route_count": 4,
         "slide_count": 2,
         "elevation_changes": 1,
         "decoy_openings": 1,
-        "stair_count": 1,
     },
     3: {
         "route_count": 5,
         "slide_count": 3,
         "elevation_changes": 2,
         "decoy_openings": 1,
-        "stair_count": 2,
     },
     4: {
         "route_count": 7,
         "slide_count": 4,
         "elevation_changes": 3,
         "decoy_openings": 2,
-        "stair_count": 3,
     },
     5: {
         "route_count": 8,
         "slide_count": 6,
         "elevation_changes": 5,
         "decoy_openings": 3,
-        "stair_count": 5,
     },
 }
 
@@ -143,6 +138,26 @@ def _choose_scramble(board: list[str | None], empty: int, start_slot: int, rng: 
     return board, empty, moves
 
 
+def _walkable(board: list[str | None], modules: dict[str, dict[str, Any]], start: int, end: int) -> bool:
+    pending = [start]
+    seen = {start}
+    while pending:
+        source = pending.pop()
+        if source == end:
+            return True
+        first = modules[str(board[source])]
+        for target in range(9):
+            if target in seen or board[target] is None or not _adjacent(source, target):
+                continue
+            second = modules[str(board[target])]
+            side = _direction(source, target)
+            delta = abs(first["height"]-second["height"])
+            if first["openings"][side] and second["openings"][OPPOSITE[side]] and (delta == 0 or delta == 1 and (first["stairs"][side] or second["stairs"][OPPOSITE[side]])):
+                seen.add(target)
+                pending.append(target)
+    return False
+
+
 def generate(task: dict[str, Any], seed: str) -> tuple[dict[str, Any], dict[str, Any]]:
     condition = copy.deepcopy(task.get("_control_condition"))
     difficulty = int((condition or {}).get("difficulty", 4))
@@ -166,9 +181,9 @@ def generate(task: dict[str, Any], seed: str) -> tuple[dict[str, Any], dict[str,
     heights = [0] * int(profile["route_count"])
     change_indices = set(rng.sample(range(1, len(heights)), min(int(profile["elevation_changes"]), len(heights) - 1)))
     for index in range(1, len(heights)):
-        heights[index] = heights[index - 1] + (1 if index in change_indices and heights[index - 1] < 2 else 0)
-        if index not in change_indices and rng.random() < 0.22 and heights[index - 1] > 0:
-            heights[index] = heights[index - 1] - 1
+        previous = heights[index - 1]
+        heights[index] = (rng.choice([value for value in (previous-1, previous+1) if 0 <= value <= 2])
+                          if index in change_indices else previous)
 
     modules: dict[str, dict[str, Any]] = {}
     route_module_ids: list[str] = []
@@ -180,6 +195,12 @@ def generate(task: dict[str, Any], seed: str) -> tuple[dict[str, Any], dict[str,
     for index in range(decoy_count):
         module_id = f"decoy-{index:02d}"
         modules[module_id] = _module(module_id, len(route_module_ids) + index, rng.randrange(3), rng)
+
+    # Surface names identify pieces without numbering the hidden route order.
+    labels = list(range(1, 9))
+    random.Random(_seed_int(seed, "module-labels")).shuffle(labels)
+    for module, label in zip(modules.values(), labels):
+        module["label"] = f"LOFT-{label:02d}"
 
     target_board: list[str | None] = [None] * 9
     route_slot_to_module: dict[int, str | None] = {}
@@ -199,28 +220,32 @@ def generate(task: dict[str, Any], seed: str) -> tuple[dict[str, Any], dict[str,
         _set_connection(modules, route_slot_to_module, a, b, stair)
         route_edges.append((a, b, _direction(a, b)))
 
-    # The stair budget is visible geometry as well as a route parameter. Some
-    # same-height joins carry a shallow decorative stair, which makes a
-    # projected opening ambiguous until the agent reads the elevation labels.
-    stair_budget = min(int(profile["stair_count"]), len(route_edges))
-    for a, b, side in route_edges[:stair_budget]:
-        first = modules[str(route_slot_to_module[a])]
-        second = modules[str(route_slot_to_module[b])]
-        first["stairs"][side] = True
-        second["stairs"][OPPOSITE[side]] = True
+    # Extra openings can belong to route modules too, including L5's board
+    # with no separate decoy module. Do not accidentally create a new target
+    # connection: these openings face a wall, the free rail or the perimeter.
+    extra_candidates = [(slot, side) for slot, mid in enumerate(target_board) if mid
+                        for side in SIDES if not modules[mid]["openings"][side]]
+    rng.shuffle(extra_candidates)
+    added = 0
+    for slot, side in extra_candidates:
+        if added == int(profile["decoy_openings"]):
+            break
+        x, y = _xy(slot)
+        dx, dy = {"n": (0,-1), "e": (1,0), "s": (0,1), "w": (-1,0)}[side]
+        other_id = target_board[_slot(x+dx,y+dy)] if 0 <= x+dx < 3 and 0 <= y+dy < 3 else None
+        if other_id and modules[other_id]["openings"][OPPOSITE[side]]:
+            continue
+        modules[str(target_board[slot])]["openings"][side] = True
+        added += 1
+    if added != int(profile["decoy_openings"]):
+        raise RuntimeError("Lantern Loft could not place the configured extra openings")
 
-    decoy_slots = [slot for slot, module_id in enumerate(target_board) if module_id and module_id.startswith("decoy-")]
-    for slot in decoy_slots:
-        module_id = str(target_board[slot])
-        module = modules[module_id]
-        for side in SIDES:
-            if rng.random() < float(profile["decoy_openings"]) / 5.0:
-                module["openings"][side] = True
-        if rng.random() < 0.4:
-            module["stairs"][rng.choice(SIDES)] = True
-
-    board = list(target_board)
-    board, empty_slot, scrambled_moves = _choose_scramble(board, empty_target, start_slot, rng, int(profile["slide_count"]))
+    for _ in range(512):
+        board, empty_slot, scrambled_moves = _choose_scramble(list(target_board), empty_target, start_slot, rng, int(profile["slide_count"]))
+        if len(scrambled_moves) == int(profile["slide_count"]) and not _walkable(board, modules, start_slot, exit_slot):
+            break
+    else:
+        raise RuntimeError("Lantern Loft could not construct a disconnected initial route")
     solution_slides = [
         {"module_id": move["module_id"], "from_slot": move["to_slot"], "to_slot": move["from_slot"]}
         for move in reversed(scrambled_moves)

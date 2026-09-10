@@ -29,9 +29,19 @@ def _visible(vertex: dict, yaw: float, world: dict) -> bool:
 
 def _target_yaw(first: dict, second: dict, world: dict, *, step: float | None = None) -> float:
     candidates = [i * (step or 1.0) for i in range(int(360 / (step or 1.0)))]
+    choices = []
     for yaw in candidates:
         if _visible(first, yaw, world) and _visible(second, yaw, world):
-            return yaw
+            radians = math.radians(yaw)
+            def point(vertex):
+                return ((float(vertex["x"]) * math.cos(radians) - float(vertex["z"]) * math.sin(radians)) * 150, float(vertex["y"]) * 150)
+            # A visible depth flag alone does not make an endpoint clickable:
+            # another projected stud can cover it. Choose an exposed view
+            # with enough separation for the actual SVG stud hit areas.
+            clearance = min(math.dist(point(endpoint), point(other)) for endpoint in (first, second) for other in world["vertices"] if other["id"] != endpoint["id"] and _visible(other, yaw, world))
+            choices.append((clearance, yaw))
+    if choices:
+        return max(choices)[1]
     raise AssertionError(f"no common visible yaw for {first['id']} and {second['id']}")
 
 

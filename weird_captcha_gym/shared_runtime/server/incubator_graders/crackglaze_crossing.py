@@ -35,15 +35,19 @@ def _point(value: Any) -> list[float]:
 
 
 def _cell_rect(cell: dict[str, Any], rows: int, columns: int) -> list[float]:
+    # The browser positions both the face and hit target in this board frame;
+    # the gaps are not clickable floor. No CSS padding or perspective applies.
     return [
-        float(cell["column"]) / columns,
-        float(cell["row"]) / rows,
-        1.0 / columns,
-        1.0 / rows,
+        (float(cell["column"]) + 0.03) / columns,
+        (float(cell["row"]) + 0.04) / rows,
+        0.94 / columns,
+        0.92 / rows,
     ]
 
 
-def _inside(point: list[float], rect: list[float], tolerance: float = 0.008) -> bool:
+def _inside(point: list[float], rect: list[float], tolerance: float = 0.00005) -> bool:
+    # Covers CSS's 1/64px layout quantization and six-decimal event rounding
+    # at the benchmark viewport, not the gaps between floor faces.
     x, y, width, height = rect
     return x - tolerance <= point[0] <= x + width + tolerance and y - tolerance <= point[1] <= y + height + tolerance
 

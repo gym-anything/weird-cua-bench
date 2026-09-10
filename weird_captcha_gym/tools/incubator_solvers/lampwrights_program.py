@@ -39,12 +39,23 @@ def _fill_solution(page, solution: dict[str, list[str]], interaction: str) -> No
 def fail_once(page, state_dir: Path, out_dir: Path, mechanic: str) -> None:
     if mechanic != MECHANIC_ID:
         raise AssertionError(f"unexpected mechanic {mechanic!r}")
+    before = _read(state_dir / "ground_truth.json")["challenge_id"]
     _place(page, "main", 0, "J", str(_read(state_dir / "ground_truth.json").get("control_condition", {}).get("interaction") or "full"))
     page.locator("#lp-run").click()
     _wait_run(page)
     if "BLOCKED" not in page.locator("#lp-status").inner_text():
         raise AssertionError("deliberately invalid program did not show a blocked execution")
     _shot(page, out_dir, "blocked-revision")
+    page.locator("#lp-certify").click()
+    page.wait_for_function(
+        "before => window.lampwrightsProgramModel?.state.challenge_id !== before",
+        arg=before, timeout=10_000,
+    )
+    from playwright.sync_api import expect
+    expect(page.locator(".readout")).to_contain_text("FAIL")
+    if _read(state_dir / "ground_truth.json")["challenge_id"] == before:
+        raise AssertionError("rejected program did not issue a fresh roof")
+    _shot(page, out_dir, "rejected-fresh-roof")
 
 
 def solve(page, state_dir: Path, out_dir: Path, mechanic: str) -> None:

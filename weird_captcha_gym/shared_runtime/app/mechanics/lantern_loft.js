@@ -27,7 +27,7 @@
   }
   function polygon(slotId, height = 0) {
     const [cx, cy] = slotPoint(slotId, height);
-    return [[cx, cy - 24], [cx + 50, cy], [cx, cy + 24], [cx - 50, cy]];
+    return [[cx, cy - 52], [cx + 108, cy], [cx, cy + 52], [cx - 108, cy]];
   }
   function pointIn(point, points) {
     let inside = false;
@@ -41,11 +41,23 @@
     const candidates = [];
     for (let slotId = 0; slotId < 9; slotId += 1) {
       const module = moduleAt(slotId);
-      candidates.push({slot: slotId, height: module ? n(module.height) : 0, filled: Boolean(module)});
+      if (module) candidates.push({slot: slotId, height: n(module.height)});
     }
-    candidates.sort((a, b) => b.height - a.height || b.slot - a.slot);
-    for (const candidate of candidates) if (pointIn([x, y], polygon(candidate.slot, candidate.height))) return candidate.slot;
-    return null;
+    // Match the front-to-back inverse of drawScene's painter order.
+    candidates.sort((a, b) => {
+      const [ax,ay] = xy(a.slot), [bx,by] = xy(b.slot);
+      return bx+by-ax-ay || b.slot-a.slot;
+    });
+    for (const candidate of candidates) {
+      const top=polygon(candidate.slot,candidate.height);
+      if (pointIn([x,y],top)) return candidate.slot;
+      const bottom=top.map(([px,py])=>[px,py+22+candidate.height*34]);
+      for(let edge=0;edge<4;edge+=1) {
+        const next=(edge+1)%4;
+        if(pointIn([x,y],[top[edge],top[next],bottom[next],bottom[edge]])) return null;
+      }
+    }
+    return pointIn([x,y],polygon(model.emptySlot,0)) ? model.emptySlot : null;
   }
   function connected(a, b) {
     const side = adjacent(a, b);
@@ -68,23 +80,15 @@
     const node = document.querySelector(".lantern-loft .lantern-status");
     if (node) { node.dataset.status = kind; node.textContent = text; }
   }
-  function legalSlides() {
-    return Array.from({length: 9}, (_, source) => source).filter((source) => {
-      return Boolean(moduleAt(source)) && source !== model.carrierSlot && Boolean(adjacent(source, model.emptySlot));
-    });
-  }
-  function legalSteps() {
-    return Array.from({length: 9}, (_, target) => target).filter((target) => Boolean(adjacent(model.carrierSlot, target)) && connected(model.carrierSlot, target));
-  }
   function updateProxy() {
     const slideBox = document.querySelector("#lantern-slide-proxy");
     const stepBox = document.querySelector("#lantern-step-proxy");
     if (!slideBox || !stepBox) return;
-    slideBox.innerHTML = legalSlides().map((source) => {
+    slideBox.innerHTML = Array.from({length: 9}, (_, source) => source).filter(source => moduleAt(source)).map((source) => {
       const module = moduleAt(source);
-      return `<button type="button" data-slide-module="${model.helpers.text(module.id)}" data-slide-from="${source}" data-slide-to="${model.emptySlot}">Slide ${model.helpers.text(module.label)} → rail ${model.emptySlot + 1}</button>`;
-    }).join("") || "<span class=\"proxy-empty\">No free rail move</span>";
-    stepBox.innerHTML = legalSteps().map((target) => `<button type="button" data-step-slot="${target}">Walk to surface ${target + 1}</button>`).join("") || "<span class=\"proxy-empty\">No joined surface</span>";
+      return `<button type="button" data-slide-module="${model.helpers.text(module.id)}" data-slide-from="${source}" data-slide-to="${model.emptySlot}">Slide ${model.helpers.text(module.label)} (${source+1})</button>`;
+    }).join("");
+    stepBox.innerHTML = Array.from({length: 9}, (_, target) => `<button type="button" data-step-slot="${target}">Step ${target + 1}</button>`).join("");
     slideBox.querySelectorAll("[data-slide-module]").forEach((button) => button.addEventListener("click", () => {
       performSlide(n(button.dataset.slideFrom), n(button.dataset.slideTo), "proxy_slide");
     }));
@@ -105,7 +109,7 @@
   function drawModule(ctx, slotId, module, palette) {
     const height = n(module.height); const top = polygon(slotId, height);
     const [cx, cy] = slotPoint(slotId, height);
-    const thickness = 22 + height * 4;
+    const thickness = 22 + height * 34;
     const bottom = top.map(([x, y]) => [x, y + thickness]);
     const side = (a, b, fill) => { ctx.beginPath(); ctx.moveTo(a[0], a[1]); ctx.lineTo(b[0], b[1]); ctx.lineTo(bottom[top.indexOf(b)][0], bottom[top.indexOf(b)][1]); ctx.lineTo(bottom[top.indexOf(a)][0], bottom[top.indexOf(a)][1]); ctx.closePath(); ctx.fillStyle = fill; ctx.fill(); };
     side(top[3], top[0], palette.edge); side(top[0], top[1], palette.edge); side(top[1], top[2], "#603b2d"); side(top[2], top[3], "#80513b");
@@ -133,9 +137,30 @@
     const canvas = document.querySelector("#lantern-loft-canvas"); if (!canvas || !model) return;
     const ctx = canvas.getContext("2d"); const palette = model.state.palette || {};
     const gradient = ctx.createLinearGradient(0, 0, 0, canvas.height); gradient.addColorStop(0, palette.paper || "#fff4dc"); gradient.addColorStop(1, "#e7d6cc"); ctx.fillStyle = gradient; ctx.fillRect(0, 0, canvas.width, canvas.height);
-    ctx.fillStyle = "rgba(80,53,62,.08)"; for (let y = 0; y < 3; y += 1) for (let x = 0; x < 3; x += 1) { const p = polygon(slot(x + y * 3), 0); ctx.beginPath(); p.forEach((point, index) => index ? ctx.lineTo(point[0], point[1]) : ctx.moveTo(point[0], point[1])); ctx.closePath(); ctx.fill(); }
+    for (let y = 0; y < 3; y += 1) for (let x = 0; x < 3; x += 1) {
+      const id=slot(x,y), p=polygon(id,0), [cx,cy]=slotPoint(id,0);
+      ctx.fillStyle="rgba(80,53,62,.08)"; ctx.strokeStyle="rgba(80,53,62,.24)";
+      ctx.beginPath(); p.forEach((point,index) => index ? ctx.lineTo(...point) : ctx.moveTo(...point)); ctx.closePath(); ctx.fill(); ctx.stroke();
+      if (!moduleAt(id)) { ctx.fillStyle=palette.ink; ctx.font="700 11px ui-monospace, monospace"; ctx.textAlign="center"; ctx.fillText(`EMPTY RAIL ${id+1}`,cx,cy); if(id===model.exitSlot) ctx.fillText("EXIT LANDING",cx,cy+15); ctx.textAlign="start"; }
+    }
     const order = Array.from({length: 9}, (_, id) => id).sort((a, b) => { const [ax, ay] = xy(a); const [bx, by] = xy(b); return ax + ay - bx - by; });
     for (const slotId of order) { const module = moduleAt(slotId); if (module) drawModule(ctx, slotId, module, palette); }
+    // Render the actual height span at joined stair edges, not just a stripe
+    // suggesting a staircase on a same-height surface.
+    for (let a=0;a<9;a+=1) for (let b=a+1;b<9;b+=1) {
+      if (!connected(a,b)) continue;
+      const first=moduleAt(a), second=moduleAt(b);
+      if (first.height === second.height) continue;
+      const side=SIDE_ORDER.indexOf(adjacent(a,b)), edge=polygon(a,first.height);
+      const p=edge[side], q=edge[(side+1)%4], dy=(first.height-second.height)*34;
+      const from=[p[0]*.65+q[0]*.35,p[1]*.65+q[1]*.35], to=[p[0]*.35+q[0]*.65,p[1]*.35+q[1]*.65];
+      ctx.fillStyle=palette.glow;ctx.strokeStyle=palette.accent;ctx.lineWidth=1;
+      ctx.beginPath();ctx.moveTo(...from);ctx.lineTo(...to);ctx.lineTo(to[0],to[1]+dy);ctx.lineTo(from[0],from[1]+dy);ctx.closePath();ctx.fill();ctx.stroke();
+      for(let step=1;step<5;step+=1) {ctx.beginPath();ctx.moveTo(from[0],from[1]+dy*step/5);ctx.lineTo(to[0],to[1]+dy*step/5);ctx.stroke();}
+    }
+    ctx.fillStyle=palette.ink;ctx.font="700 10px ui-monospace, monospace";ctx.textAlign="center";
+    for(let id=0;id<9;id+=1) {const m=moduleAt(id);if(m){const [cx,cy]=slotPoint(id,m.height);ctx.fillText(`SURFACE ${id+1}`,cx,cy+32);}}
+    ctx.textAlign="start";
     const carrierModule = moduleAt(model.carrierSlot); const [cx, cy] = slotPoint(model.carrierSlot, carrierModule?.height || 0);
     ctx.save(); ctx.shadowColor = palette.glow || "#ffd56b"; ctx.shadowBlur = 18; ctx.fillStyle = palette.glow || "#ffd56b"; ctx.beginPath(); ctx.arc(cx, cy - 20, 9, 0, Math.PI * 2); ctx.fill(); ctx.restore();
     ctx.fillStyle = palette.ink || "#2f2439"; ctx.beginPath(); ctx.arc(cx, cy - 18, 4, 0, Math.PI * 2); ctx.fill();
@@ -144,12 +169,14 @@
   }
   function updateAll() { updateHud(); updateProxy(); drawScene(); }
   function performSlide(source, target, inputSource) {
-    if (!model || model.completed || !moduleAt(source) || source === model.carrierSlot || target !== model.emptySlot || !adjacent(source, target)) return false;
+    if (!model || model.completed) return false;
+    if (!moduleAt(source) || source === model.carrierSlot || target !== model.emptySlot || !adjacent(source, target)) { setStatus("BLOCKED · SLIDE AN UNOCCUPIED ADJACENT MODULE INTO THE EMPTY RAIL", "error"); return false; }
     const moduleId = model.board[source]; model.board[target] = moduleId; model.board[source] = null; model.emptySlot = source;
     push({kind: "slide", module_id: moduleId, from_slot: source, to_slot: target, input_source: inputSource}); setStatus("SLIDE REGISTERED · CHECK THE NEW ELEVATION LINKS"); updateAll(); return true;
   }
   function performStep(target, inputSource) {
-    if (!model || model.completed || !connected(model.carrierSlot, target)) return false;
+    if (!model || model.completed) return false;
+    if (!connected(model.carrierSlot, target)) { setStatus("BLOCKED · MATCH BOTH OPENINGS AND THE ELEVATION / STAIR CONNECTION", "error"); return false; }
     const from = model.carrierSlot; model.carrierSlot = target; push({kind: "step", from_slot: from, to_slot: target, input_source: inputSource});
     if (model.carrierSlot === model.exitSlot) { model.completed = true; push({kind: "finish", input_source: "physical_contact"}); submitResult(true); setStatus("EXIT CONTACT · CERTIFYING", "passed"); }
     else setStatus("CARRIER MOVED · REASSESS THE NEXT SURFACE");

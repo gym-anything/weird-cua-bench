@@ -42,7 +42,7 @@
     const box = boxAt(model, tx, ty);
     if (box) {
       const top = Number(cell.height) + 1;
-      if (Number(avatar.z) === top) {
+      if (Number(avatar.z) >= top && Number(avatar.z) - top <= 1) {
         avatar.x = tx; avatar.y = ty; avatar.z = top;
         return;
       }
@@ -107,7 +107,7 @@
     const addPoint = (x, y, z) => points.push(rawProject(model, x, y, z));
     (model.world.cells || []).forEach((cell) => {
       addPoint(cell.x, cell.y, Number(cell.height));
-      addPoint(cell.x, cell.y, Math.max(0, Number(cell.height) - 1));
+      addPoint(cell.x, cell.y, -0.25);
     });
     (model.current.boxes || []).forEach((box) => addPoint(box.x, box.y, Number(box.base_z) + 1));
     const hearth = model.world.hearth;
@@ -125,7 +125,7 @@
     const spanY = Math.max(1, maxY - minY);
     const scale = Math.min(1.14, 730 / (spanX + 90), 390 / (spanY + 80));
     model.projection = {
-      scale: Math.max(0.5, scale),
+      scale,
       centerX: (minX + maxX) / 2,
       centerY: (minY + maxY) / 2,
       depthMin: Math.min(...depths, 0),
@@ -151,54 +151,52 @@
     return Math.max(0.34, 1 - obscurity * 0.68 * farFraction);
   }
 
-  function diamond(point, width = 25, depth = 15) {
-    return `${(point.x).toFixed(1)},${(point.y - depth).toFixed(1)} ${(point.x + width).toFixed(1)},${point.y.toFixed(1)} ${(point.x).toFixed(1)},${(point.y + depth).toFixed(1)} ${(point.x - width).toFixed(1)},${point.y.toFixed(1)}`;
+  function footprint(model, x, y, z, half = 0.48) {
+    return [[-half,-half], [half,-half], [half,half], [-half,half]]
+      .map(([dx,dy]) => project(model, Number(x)+dx, Number(y)+dy, z));
+  }
+
+  function prism(model, x, y, topZ, baseZ, half, fill) {
+    const top = footprint(model, x, y, topZ, half);
+    const base = footprint(model, x, y, baseZ, half);
+    const points = values => values.map(p => `${p.x.toFixed(2)},${p.y.toFixed(2)}`).join(" ");
+    const faces = top.map((point, index) => {
+      const next = (index+1)%4;
+      return {depth: (point.depth+top[next].depth)/2,
+        html: `<polygon points="${points([point,top[next],base[next],base[index]])}" fill="${fill}" opacity="${index%2 ? 0.68 : 0.86}"/>`};
+    }).sort((a,b) => b.depth-a.depth);
+    return faces.map(face => face.html).join("") + `<polygon points="${points(top)}" fill="${fill}"/>`;
   }
 
   function cubeMarkup(model, box) {
     const p = project(model, box.x, box.y, Number(box.base_z) + 1);
-    const base = project(model, box.x, box.y, Number(box.base_z));
     const tileScale = model.projection?.scale || 1;
-    const halfWidth = 22 * tileScale;
-    const halfDepth = 13 * tileScale;
-    const top = diamond(p, halfWidth, halfDepth);
-    const left = `${(p.x - halfWidth).toFixed(1)},${p.y.toFixed(1)} ${(p.x).toFixed(1)},${(p.y + halfDepth).toFixed(1)} ${(base.x).toFixed(1)},${(base.y + halfDepth).toFixed(1)} ${(base.x - halfWidth).toFixed(1)},${base.y.toFixed(1)}`;
-    const right = `${(p.x + halfWidth).toFixed(1)},${p.y.toFixed(1)} ${(p.x).toFixed(1)},${(p.y + halfDepth).toFixed(1)} ${(base.x).toFixed(1)},${(base.y + halfDepth).toFixed(1)} ${(base.x + halfWidth).toFixed(1)},${base.y.toFixed(1)}`;
     const fill = box.kind === "cargo" ? "#ffd66b" : box.kind === "helper" ? "#75c9b2" : "#9b769d";
     const cls = box.kind === "cargo" ? "hl-cargo" : box.kind === "helper" ? "hl-helper" : "hl-decoy";
-    return `<g class="hl-box ${cls}" opacity="${visibilityOpacity(model, p.depth).toFixed(3)}" data-box-id="${esc(box.id)}"><polygon class="hl-box-left" points="${left}" fill="${fill}"/><polygon class="hl-box-right" points="${right}" fill="${fill}"/><polygon class="hl-box-top" points="${top}" fill="${fill}"/><text x="${p.x.toFixed(1)}" y="${(p.y - 20 * tileScale).toFixed(1)}">${box.kind === "cargo" ? "CARGO" : box.kind === "helper" ? "STEP" : "DECOY"}</text></g>`;
+    return `<g class="hl-box ${cls}" opacity="${visibilityOpacity(model, p.depth).toFixed(3)}" data-box-id="${esc(box.id)}">${prism(model,box.x,box.y,Number(box.base_z)+1,Number(box.base_z),0.42,fill)}<text x="${p.x.toFixed(1)}" y="${(p.y - 20 * tileScale).toFixed(1)}">${box.kind === "cargo" ? "CARGO" : box.kind === "helper" ? "STEP" : "DECOY"}</text></g>`;
   }
 
   function renderScene(model) {
     fitProjection(model);
     const svg = model.svg;
-    const cells = model.world.cells.slice().sort((a, b) => {
-      const ap = project(model, a.x, a.y, a.height);
-      const bp = project(model, b.x, b.y, b.height);
-      return (ap.depth + a.height * 0.2) - (bp.depth + b.height * 0.2);
-    });
-    const cellMarkup = cells.map((cell) => {
+    const objects = model.world.cells.map((cell) => {
       const top = project(model, cell.x, cell.y, cell.height);
-      const lower = project(model, cell.x, cell.y, Math.max(0, Number(cell.height) - 1));
-      const fill = cell.material === "hearthstone" ? "#5f3945" : cell.material === "side-shelf" ? "#594d6e" : "#3f786f";
-      const tileScale = model.projection?.scale || 1;
-      const halfWidth = 25 * tileScale;
-      const halfDepth = 15 * tileScale;
-      const left = `${(top.x - halfWidth).toFixed(1)},${top.y.toFixed(1)} ${(top.x).toFixed(1)},${(top.y + halfDepth).toFixed(1)} ${(lower.x).toFixed(1)},${(lower.y + halfDepth).toFixed(1)} ${(lower.x - halfWidth).toFixed(1)},${lower.y.toFixed(1)}`;
-      const right = `${(top.x + halfWidth).toFixed(1)},${top.y.toFixed(1)} ${(top.x).toFixed(1)},${(top.y + halfDepth).toFixed(1)} ${(lower.x).toFixed(1)},${(lower.y + halfDepth).toFixed(1)} ${(lower.x + halfWidth).toFixed(1)},${lower.y.toFixed(1)}`;
-      return `<g class="hl-cell" opacity="${visibilityOpacity(model, top.depth).toFixed(3)}"><polygon points="${left}" fill="${fill}" opacity=".86"/><polygon points="${right}" fill="${fill}" opacity=".62"/><polygon points="${diamond(top, halfWidth, halfDepth)}" fill="${cell.material === "hearthstone" ? "#ca765d" : "#72b49b"}"/></g>`;
-    }).join("");
+      const fill = cell.material === "hearthstone" ? "#ca765d" : cell.material === "side-shelf" ? "#796d8e" : "#72b49b";
+      return {depth: top.depth, order: 0, html: `<g class="hl-cell" opacity="${visibilityOpacity(model, top.depth).toFixed(3)}">${prism(model,cell.x,cell.y,cell.height,-0.25,0.48,fill)}<text class="hl-elevation" x="${top.x.toFixed(1)}" y="${(top.y+3).toFixed(1)}">${cell.height}</text></g>`};
+    });
     const hearth = model.world.hearth;
     const hp = project(model, hearth.x, hearth.y, hearth.height + 0.06);
     const tileScale = model.projection?.scale || 1;
     const flame = `<g class="hl-hearth"><ellipse cx="${hp.x.toFixed(1)}" cy="${(hp.y + 11 * tileScale).toFixed(1)}" rx="${(28 * tileScale).toFixed(1)}" ry="${(10 * tileScale).toFixed(1)}"/><path d="M ${hp.x.toFixed(1)} ${(hp.y + 3 * tileScale).toFixed(1)} C ${(hp.x - 14 * tileScale).toFixed(1)} ${(hp.y - 11 * tileScale).toFixed(1)}, ${(hp.x - 4 * tileScale).toFixed(1)} ${(hp.y - 22 * tileScale).toFixed(1)}, ${hp.x.toFixed(1)} ${(hp.y - 29 * tileScale).toFixed(1)} C ${(hp.x + 15 * tileScale).toFixed(1)} ${(hp.y - 13 * tileScale).toFixed(1)}, ${(hp.x + 13 * tileScale).toFixed(1)} ${(hp.y - 5 * tileScale).toFixed(1)}, ${hp.x.toFixed(1)} ${(hp.y + 3 * tileScale).toFixed(1)}Z"/><text x="${hp.x.toFixed(1)}" y="${(hp.y - 38 * tileScale).toFixed(1)}">HEARTH</text></g>`;
-    const boxes = model.current.boxes.map((box) => ({box, depth: project(model, box.x, box.y, Number(box.base_z) + 1).depth})).sort((a, b) => a.depth - b.depth).map((item) => cubeMarkup(model, item.box)).join("");
+    model.current.boxes.forEach(box => objects.push({depth: project(model,box.x,box.y,box.base_z).depth, order: 1, html: cubeMarkup(model,box)}));
     const avatar = model.current.avatar;
     const ap = project(model, avatar.x, avatar.y, Number(avatar.z) + 0.48);
     const held = model.current.held ? `<rect x="${(ap.x - 14).toFixed(1)}" y="${(ap.y - 34).toFixed(1)}" width="28" height="24" rx="4" fill="#ffd66b" stroke="#fff1ae" stroke-width="3"/><text x="${ap.x.toFixed(1)}" y="${(ap.y - 39).toFixed(1)}">CARGO</text>` : "";
     const avatarMarkup = `<g class="hl-avatar"><ellipse cx="${ap.x.toFixed(1)}" cy="${(ap.y + 18).toFixed(1)}" rx="19" ry="7"/><rect x="${(ap.x - 13).toFixed(1)}" y="${(ap.y - 18).toFixed(1)}" width="26" height="38" rx="10"/><circle cx="${(ap.x).toFixed(1)}" cy="${(ap.y - 25).toFixed(1)}" r="11"/>${held}<text x="${ap.x.toFixed(1)}" y="${(ap.y + 38).toFixed(1)}">COURIER</text></g>`;
-    svg.innerHTML = `<defs><filter id="hl-glow"><feGaussianBlur stdDeviation="5"/></filter></defs><rect class="hl-sky" x="0" y="0" width="860" height="540" rx="22"/><g>${cellMarkup}</g><g>${flame}${boxes}${avatarMarkup}</g>`;
-    model.cameraValue.textContent = `${Math.round(Number(model.cameraYaw) * 57.2958)}°`;
+    objects.push({depth: hp.depth, order: 2, html: flame}, {depth: ap.depth, order: 3, html: avatarMarkup});
+    objects.sort((a,b) => b.depth-a.depth || a.order-b.order);
+    svg.innerHTML = `<defs><filter id="hl-glow"><feGaussianBlur stdDeviation="5"/></filter></defs><rect class="hl-sky" x="0" y="0" width="860" height="540" rx="22"/><g>${objects.map(item => item.html).join("")}</g>`;
+    model.shell.querySelectorAll(".hl-camera-value").forEach(node => { node.textContent = `${Math.round(Number(model.cameraYaw) * 57.2958)}°`; });
     model.heightValue.textContent = `FEET Z ${avatar.z}`;
     model.cargoValue.textContent = model.current.delivered ? "DELIVERED" : model.current.held ? "IN HAND" : "WAITING";
     model.positionValue.textContent = `${avatar.x}, ${avatar.y}`;
@@ -291,6 +289,7 @@
     };
     app.innerHTML = `<section class="hl-shell" data-interaction="${esc(interaction)}" data-challenge-id="${esc(state.challenge_id)}"><header class="hl-header"><div><p class="hl-kicker">VOXEL DELIVERY / HEARTHLIFT COURIER</p><h1>Carry the marked crate to the ember hearth.</h1><p class="hl-prompt">${esc(state.prompt)}</p></div><div class="hl-badge"><span>WORLD</span><strong>3D STACK</strong><small>${interaction === "full" ? "DIRECT INPUT" : "PROXY INPUT"}</small></div></header><main class="hl-main"><section class="hl-stage-card"><div class="hl-stage-top"><span>ROTATE THE GARDEN TO INSPECT DEPTH</span><span>CAMERA <b class="hl-camera-value">-36°</b> · VISIBILITY <b class="hl-obscurity-value">—</b></span></div><div class="hl-viewport"><svg class="hl-scene" viewBox="0 0 860 540" role="application" aria-label="Isometric voxel garden with stacked boxes, courier, and glowing hearth"></svg><div class="hl-stage-caption">Push a crate to make a step. CLIMB its top, then cross the higher ledge. The glowing hearth is the only delivery point.</div></div></section><aside class="hl-sidebar"><section class="hl-ledger"><p class="hl-section-label">COURIER LEDGER</p><div class="hl-ledger-grid"><span>POSITION <b class="hl-position">—</b></span><span><b class="hl-height">FEET Z —</b></span><span>CARGO <b class="hl-cargo-value">WAITING</b></span><span>CAMERA <b class="hl-camera-value">—</b></span></div></section><section class="hl-controls hl-proxy" ${interaction === "full" ? "hidden" : ""}><p class="hl-section-label">PROXY MOVEMENT</p><div class="hl-dpad"><button data-direction="N">NORTH</button><button data-direction="W">WEST</button><button data-direction="E">EAST</button><button data-direction="S">SOUTH</button></div><div class="hl-action-row"><button class="hl-climb">CLIMB</button><button class="hl-cargo">PICK UP / DROP</button></div><div class="hl-camera-row"><button data-camera="-0.34">ORBIT LEFT</button><button data-camera="0.34">ORBIT RIGHT</button></div></section><section class="hl-controls hl-direct" ${interaction === "simplified" ? "hidden" : ""}><p class="hl-section-label">DIRECT INPUT</p><div class="hl-keyboard"><kbd>WASD</kbd> or <kbd>ARROWS</kbd> move<br><kbd>C</kbd> climbs an adjacent crate<br><kbd>E</kbd> picks up or drops cargo</div><p class="hl-hint">Drag the voxel garden itself to orbit. Camera motion changes the view, not the route.</p></section><section class="hl-rules"><p class="hl-section-label">VISIBLE RULES</p><ol><li>Crates at your feet can be pushed into an empty same-height cell.</li><li>Use CLIMB / C when a crate top is one voxel above you.</li><li>Return for the marked crate, then carry it to the hearth.</li></ol></section><div class="hl-actions"><button class="hl-abandon">ABANDON ATTEMPT</button><button class="hl-submit">${esc(state.submit_label || "CERTIFY DELIVERY")}</button></div><div class="hl-readout" data-status="idle">ORBIT FIRST, THEN READ THE STACKED ROUTE.</div></aside></main></section>`;
     model.shell = app.querySelector(".hl-shell");
+    model.shell.querySelector(".hl-rules ol").insertAdjacentHTML("beforeend", "<li>Each ledge rises two voxels. Carrying prevents pushing. Move up or down at most one voxel per step; floor numbers show elevation.</li>");
     model.svg = app.querySelector(".hl-scene");
     model.readout = app.querySelector(".hl-readout");
     model.submit = app.querySelector(".hl-submit");

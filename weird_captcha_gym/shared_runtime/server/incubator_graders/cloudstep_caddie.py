@@ -47,6 +47,8 @@ def _tile_map(course: dict[str, Any]) -> dict[tuple[int, int], dict[str, Any]]:
             raise ValueError("course has duplicate tile coordinates")
         if surface not in {"fairway", "sand", "water", "ramp", "cup"}:
             raise ValueError("course tile has an unknown surface")
+        if surface == "ramp" and tile.get("ramp_direction") not in _DIRECTIONS:
+            raise ValueError("ramp has no visible uphill direction")
         result[key] = tile
     return result
 
@@ -93,6 +95,8 @@ def _transition(
                 return None, "the riser is too high for a roll"
             if height_change > 0 and str(tile.get("surface")) != "ramp":
                 return None, "an uphill roll needs a visible ramp"
+            if height_change > 0 and tile.get("ramp_direction") != direction:
+                return None, "an uphill roll must follow the ramp arrow"
             if str(tile.get("surface")) == "sand" and offset < distance:
                 return None, "the ball settles in sand before the card distance ends"
             x, y, z = int(tile["x"]), int(tile["y"]), next_z

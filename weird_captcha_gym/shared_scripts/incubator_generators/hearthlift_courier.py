@@ -24,7 +24,6 @@ DEFAULT_PARAMETERS: dict[str, Any] = {
     "stage_count": 4,
     "decoy_count": 3,
     "turn_count": 3,
-    "stack_height": 4,
     "camera_obscurity": 0.72,
     "cargo_detour": 1,
 }
@@ -89,7 +88,7 @@ def _apply_action(world: dict[str, Any], state: dict[str, Any], action: dict[str
         box = _box_at(state, tx, ty)
         if box is not None:
             top = int(cell["height"]) + 1
-            if int(avatar["z"]) == top:
+            if 0 <= int(avatar["z"]) - top <= 1:
                 avatar.update({"x": tx, "y": ty, "z": top})
                 return
             if state.get("held") is not None:
@@ -201,7 +200,6 @@ def _build_world(seed: str, parameters: dict[str, Any]) -> tuple[dict[str, Any],
     stage_count = int(parameters["stage_count"])
     decoy_count = int(parameters["decoy_count"])
     turn_count = int(parameters["turn_count"])
-    stack_height = int(parameters["stack_height"])
     cargo_detour = int(parameters["cargo_detour"])
     if not 2 <= stage_count <= 5 or not 0 <= decoy_count <= 5 or not 0 <= turn_count <= 4:
         raise ValueError("hearthlift profile is outside the supported range")
@@ -226,15 +224,15 @@ def _build_world(seed: str, parameters: dict[str, Any]) -> tuple[dict[str, Any],
 
     append_route(x, y, 0)
     for index in range(stage_count):
-        height = index
+        height = 2 * index
         box_before = (x + 1, y)
         box_after = (x + 2, y)
         high = (x + 3, y)
         connector = (x + 4, y)
         append_route(*box_before, height)
         append_route(*box_after, height)
-        append_route(*high, height + 1)
-        append_route(*connector, height + 1)
+        append_route(*high, height + 2)
+        append_route(*connector, height + 2)
         boxes.append({
             "id": f"lift-box-{index + 1}",
             "kind": "helper",
@@ -260,7 +258,7 @@ def _build_world(seed: str, parameters: dict[str, Any]) -> tuple[dict[str, Any],
                 dy *= -1
             if dy:
                 turn_cell = (connector[0], connector[1] + dy)
-                append_route(*turn_cell, height + 1)
+                append_route(*turn_cell, height + 2)
                 stage["turn"] = {"direction": "S" if dy > 0 else "N", "cell": list(turn_cell)}
                 x, y = turn_cell
             else:
@@ -271,14 +269,13 @@ def _build_world(seed: str, parameters: dict[str, Any]) -> tuple[dict[str, Any],
             stage["turn"] = None
         stages.append(stage)
 
-    hearth = {"x": x, "y": y, "height": stage_count, "label": "EMBER HEARTH"}
-    add_cell(x, y, stage_count, "hearthstone")
+    hearth = {"x": x, "y": y, "height": 2 * stage_count, "label": "EMBER HEARTH"}
+    add_cell(x, y, 2 * stage_count, "hearthstone")
     start = {"x": 1, "y": 2, "z": 0}
-    # The baseline keeps its marked cargo on the north approach.  The
-    # lower-profile setting deliberately puts it on the south approach so the
-    # same seed presents a different visible pickup decision rather than an
-    # inert metadata-only toggle.
-    cargo = (1, 1 if cargo_detour else 3)
+    # A detour adds an approach cell, not just an adjacent-side relabelling.
+    cargo = (1, 0 if cargo_detour else 3)
+    if cargo_detour:
+        add_cell(1, 1, 0, "fernstone")
     add_cell(cargo[0], cargo[1], 0, "fernstone")
     boxes.append({"id": "marked-cargo", "kind": "cargo", "x": cargo[0], "y": cargo[1], "base_z": 0, "accent": "gold", "marked": True})
 
@@ -291,14 +288,14 @@ def _build_world(seed: str, parameters: dict[str, Any]) -> tuple[dict[str, Any],
         candidate_y = 0 if index % 2 == 0 else 4
         if _key(candidate_x, candidate_y) in used:
             candidate_x = max(1, candidate_x - 1)
-        candidate_h = min(stage_count - 1, index % max(1, stack_height))
+        candidate_h = 2 * min(stage_count - 1, index)
         add_cell(candidate_x, candidate_y, candidate_h, "side-shelf")
         used.add(_key(candidate_x, candidate_y))
         boxes.append({"id": f"decoy-crate-{index + 1}", "kind": "decoy", "x": candidate_x, "y": candidate_y, "base_z": candidate_h, "accent": "smoke" if index % 2 else "coral"})
 
     world = {
         "version": "hearthlift-voxel-v1",
-        "dimensions": {"width": x + 3, "depth": 5, "height": stage_count + 2},
+        "dimensions": {"width": x + 3, "depth": 5, "height": 2 * stage_count + 2},
         "cells": sorted(cells.values(), key=lambda item: (item["height"], item["y"], item["x"])),
         "cell_map": cells,
         "route": [list(point) for point in route],
@@ -309,7 +306,7 @@ def _build_world(seed: str, parameters: dict[str, Any]) -> tuple[dict[str, Any],
         "camera": {"initial_yaw": -0.62, "obscurity": float(parameters["camera_obscurity"]), "orbit_step": 0.34},
         "rules": {
             "move": "One cardinal move crosses at most one voxel height. A box at the current level is pushed into an empty same-height cell; a box one voxel above the feet can be climbed with CLIMB.",
-            "carry": "The marked cargo is picked up from an adjacent same-height cell and dropped only on the glowing hearth.",
+            "carry": "The marked cargo is picked up from an adjacent same-height cell and dropped only on the glowing hearth. Carrying prevents pushing; climb or descend at most one voxel at a time.",
             "camera": "Orbiting changes the projection only. It is required to inspect the depth-staggered shelves and the hearth approach.",
         },
     }
@@ -341,7 +338,11 @@ def _build_world(seed: str, parameters: dict[str, Any]) -> tuple[dict[str, Any],
     # helper crates are now climbable from their top surfaces.
     for first, second in zip(reversed(route[1:]), reversed(route[:-1])):
         actions.append({"type": "move", "direction": _direction(tuple(first), tuple(second))})
+    if cargo_detour:
+        actions.append({"type": "move", "direction": "N"})
     actions.append({"type": "pickup"})
+    if cargo_detour:
+        actions.append({"type": "move", "direction": "S"})
     current = tuple(route[0])
     for stage in stages:
         before = tuple(stage["box_before"])

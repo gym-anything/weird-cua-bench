@@ -6,6 +6,17 @@ from weird_captcha_gym.shared_runtime.server.incubator_graders.clockbeat_catacom
 
 from weird_captcha_gym.shared_runtime.server.incubator_graders.clockbeat_catacomb import find_route as plan
 
+def fail_once(page,state_dir,out_dir,mechanic='clockbeat_catacomb'):
+    from playwright.sync_api import expect
+    before=json.loads((Path(state_dir)/'ground_truth.json').read_text())['challenge_id']
+    page.locator('.cc-submit').click()
+    expect(page.locator('.readout')).to_contain_text('FAIL')
+    deadline=time.monotonic()+10
+    while json.loads((Path(state_dir)/'ground_truth.json').read_text())['challenge_id']==before:
+        if time.monotonic()>deadline:raise AssertionError('fresh catacomb was not received')
+        page.wait_for_timeout(20)
+    page.screenshot(path=str(Path(out_dir)/f'{mechanic}-failure-fresh.png'))
+
 def solve(page,state_dir,out_dir=None,mechanic='clockbeat_catacomb'):
     public=json.loads((Path(state_dir)/'public_state.json').read_text());b=public['board'];mode=(public.get('control_condition') or {}).get('interaction','full')
     route=plan(b);page.locator('.cc-start').click();beat=0

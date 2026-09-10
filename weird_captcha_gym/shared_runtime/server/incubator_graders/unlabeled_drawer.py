@@ -231,8 +231,8 @@ def grade(payload: dict[str, Any], truth: dict[str, Any], public: dict[str, Any]
                     _gesture(event, regions["probe"], public["source_regions"]["probe-rack"], "probe-rack")
                 tested.add(specimen_id)
             elif event_type == "open_final":
-                if opened_final or len(tested) != int(truth["parameters"]["probe_count"]) or event.get("input_source") != "seal_latch":
-                    raise ValueError(f"event {sequence} opens the sealed tray too early")
+                if opened_final or event.get("input_source") != "seal_latch":
+                    raise ValueError(f"event {sequence} reopens the tray or uses the wrong latch")
                 opened_final = True
             elif event_type == "assign":
                 specimen_id = str(event.get("specimen_id") or "")
@@ -269,7 +269,7 @@ def grade(payload: dict[str, Any], truth: dict[str, Any], public: dict[str, Any]
     passed = (
         payload.get("completed") is True
         and opened_final
-        and len(tested) == int(truth["parameters"]["probe_count"])
+        and len(tested) <= int(truth["parameters"]["probe_count"])
         and len(assignments) == len(finals)
         and correct == len(finals)
     )

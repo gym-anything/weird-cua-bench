@@ -67,6 +67,29 @@ def test_baseline_preservation():
     assert p['world']==q['world'] and g['fleet']==h['fleet'] and g['omniscient_min_shots']==h['omniscient_min_shots']
 
 
+@pytest.mark.parametrize('level', [3, 4, 5])
+def test_reverse_profiles_always_change_an_occupied_designation(level):
+    for seed in range(500):
+        public, truth = gen.generate(task(level, 'full'), f'reversal-{seed}')
+        world = public['world']
+        target = {c for ship in truth['fleet'] for c in ship['cells']}
+        reversed_targets = []
+        forward_cells = []
+        for cell in world['cells']:
+            run = next(run for run in world['runs'] if (run['band'], run['block']) == (cell['band'], cell['block']))
+            forward = cell['column'] - run['start'] + 1
+            reverse = run['start'] + run['width'] - cell['column']
+            assert cell['count'] == (reverse if run['reverse'] else forward)
+            if forward != reverse:
+                if run['reverse'] and cell['id'] in target:
+                    reversed_targets.append(cell)
+                elif not run['reverse']:
+                    forward_cells.append(cell)
+        assert reversed_targets and forward_cells, (level, seed)
+        cell = reversed_targets[0]
+        assert grader.resolve(world, [cell['band'], cell['block'], cell['count']]) == [cell['id']]
+
+
 @pytest.mark.parametrize('mutation',['identity','wrong_address','false_hit','no_selectors','fake_geometry','false_final','nan_geometry','boolean_axis','missing_start','stationary_click','outside_start'])
 def test_forged_transcripts_rejected(mutation):
     p,g=gen.generate(task(2,'full'),'adversarial');x=tape(p,g)

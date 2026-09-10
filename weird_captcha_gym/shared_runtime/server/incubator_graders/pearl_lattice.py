@@ -81,11 +81,11 @@ def _immediate_columns(board: dict[Coord, int], mark: int) -> list[Column]:
     return result
 
 
-def _opponent_column(board: dict[Coord, int], pressure: list[Column], pressure_index: int) -> tuple[Column | None, int]:
+def _opponent_column(board: dict[Coord, int], pressure: list[Column], pressure_index: int, policy: str = "threat_then_block") -> tuple[Column | None, int]:
     own_wins = _immediate_columns(board, OPPONENT)
     if own_wins:
         return own_wins[0], pressure_index
-    player_wins = _immediate_columns(board, PLAYER)
+    player_wins = _immediate_columns(board, PLAYER) if policy == "threat_then_block" else []
     if player_wins:
         return player_wins[0], pressure_index
     legal = set(_legal_columns(board))
@@ -93,7 +93,7 @@ def _opponent_column(board: dict[Coord, int], pressure: list[Column], pressure_i
         column = tuple(int(value) for value in pressure[(pressure_index + offset) % len(pressure)])
         if column in legal:
             return column, pressure_index + offset + 1
-    return (sorted(legal)[0] if legal else None, pressure_index + 1)
+    return (next((column for column in _legal_columns(board) if column in legal), None), pressure_index + 1)
 
 
 def _parse_board(truth: dict[str, Any]) -> dict[Coord, int] | None:
@@ -140,6 +140,9 @@ def grade(payload: dict[str, Any], truth: dict[str, Any], public: dict[str, Any]
     cycle_source = "board_surface" if interaction == "full" else "proxy_next"
     confirm_source = "confirm_area" if interaction == "full" else "confirm_button"
     parameters = condition.get("difficulty_parameters") or {}
+    policy = parameters.get("opponent_policy")
+    if policy not in {"threat_then_block", "win_then_pressure"}:
+        return _fail("lattice opponent policy is invalid")
     max_player_moves = parameters.get("max_player_moves")
     if isinstance(max_player_moves, bool) or not isinstance(max_player_moves, int) or max_player_moves < 1:
         return _fail("lattice player move ceiling is invalid")
@@ -233,7 +236,7 @@ def grade(payload: dict[str, Any], truth: dict[str, Any], public: dict[str, Any]
                 if player_moves >= max_player_moves:
                     move_ceiling_reached = True
                     continue
-                expected_rival, expected_pressure_index = _opponent_column(board, pressure_columns, pressure_index)
+                expected_rival, expected_pressure_index = _opponent_column(board, pressure_columns, pressure_index, policy)
                 if expected_rival is None:
                     return _fail("clockwork rival has no legal response")
                 awaiting_rival = True

@@ -77,7 +77,12 @@ def _set_proxy_flow(page, x_milli: int) -> None:
 
 
 def _wait_output(page, output: str, timeout: int = 8_000) -> None:
-    expect(page.locator(".rapids-output-value")).to_have_attribute("data-output", output, timeout=timeout)
+    # Stop flow promptly on the committed symbol. Assertion backoff can leave
+    # flow engaged long enough to commit an unintended second symbol.
+    page.wait_for_function(
+        "output => document.querySelector('.rapids-output-value')?.dataset.output === output",
+        arg=output, polling=5, timeout=timeout,
+    )
 
 
 def _enter_symbol(page, truth: dict, output: str, symbol: str) -> str:

@@ -3,6 +3,7 @@ from __future__ import annotations
 import copy
 import importlib.util
 import json
+import subprocess
 from pathlib import Path
 
 
@@ -148,3 +149,57 @@ def test_materialized_task_matrix_and_verifier_files_exist(tmp_path) -> None:
             assert (task_root / name / "verifier.py").is_file()
             assert (task_root / name / "setup_task.sh").is_file()
             assert (task_root / name / "export_result.sh").is_file()
+
+
+def test_cup_sand_and_ramp_geometry_agree_across_generated_worlds() -> None:
+    for level in range(1, 6):
+        for seed in range(40):
+            public, truth = _state_pair(level, "full", str(seed))
+            course = public["course"]
+            tiles = grader._tile_map(course)
+            cup = course["cup"]
+            assert tiles[(cup["x"], cup["y"])]["surface"] == "cup"
+            assert sum(tile["surface"] == "cup" for tile in tiles.values()) == 1
+            events = _winning_payload(public, truth)["events"][:-1]
+            assert sum(event["after"]["surface"] == "sand" for event in events) == {1: 0, 2: 1, 3: 1, 4: 2, 5: 3}[level]
+            assert sum(event["after"]["z"] != event["before"]["z"] for event in events) == (1 if level < 3 else 2)
+            for tile in tiles.values():
+                if tile["surface"] == "ramp":
+                    canonical = generator._transform_direction(tile["ramp_direction"], course["transform"])
+                    assert canonical in grader._DIRECTIONS
+
+
+def test_ramp_direction_and_drawn_cell_edges_match_independent_replay() -> None:
+    rows = []
+    for direction, (dx, dy) in grader._DIRECTIONS.items():
+        for heading in grader._DIRECTIONS:
+            course = {"width": 7, "height": 6, "tiles": [
+                {"x": 2, "y": 2, "z": 0, "surface": "fairway"},
+                {"x": 2 + dx, "y": 2 + dy, "z": 1, "surface": "ramp", "ramp_direction": heading},
+            ], "rules": {"roll_max_step_height": 1}}
+            before = {"x": 2, "y": 2, "z": 0, "surface": "fairway", "used_card_ids": []}
+            card = {"kind": "roll", "distance": 1}
+            after, error = grader._transition(before, card, direction, course, grader._tile_map(course))
+            assert (error is None) is (direction == heading)
+            rows.append({"course": course, "before": before, "card": card, "direction": direction, "legal": after is not None})
+    script = r'''
+const fs = require('fs'), vm = require('vm');
+let source = fs.readFileSync(process.argv[1], 'utf8');
+source = source.replace('registry.cloudstep_caddie =', 'window.testApi = {transition, project, diamond, setCourse(course) {model = {state: {course}, tiles: tileMap(course)};}}; registry.cloudstep_caddie =');
+const sandbox = {window: {}};
+vm.runInNewContext(source, sandbox);
+const api = sandbox.window.testApi;
+const rows = JSON.parse(fs.readFileSync(0, 'utf8'));
+for (const row of rows) {api.setCourse(row.course); if (!api.transition(row.before,row.card,row.direction).error !== row.legal) throw Error('browser/replay ramp mismatch');}
+const scales = [];
+for (const [width,height] of [[7,6],[8,7],[9,8],[11,9],[12,9]]) {
+  api.setCourse({width,height});
+  const p = api.project(2,2,0), q = api.project(3,2,0);
+  const a = api.diamond(null,p), b = api.diamond(null,q);
+  for (const [i,j] of [[1,0],[2,3]]) for (const axis of [0,1]) if (Math.abs(a[i][axis]-b[j][axis]) > 1e-8) throw Error('neighboring tile edges overlap or separate');
+  scales.push(p.tileW);
+}
+if (!scales.every((scale,index) => index === 0 || scale < scales[index-1])) throw Error('claimed scale progression is inactive');
+'''
+    frontend = ROOT / "weird_captcha_gym/shared_runtime/app/mechanics/cloudstep_caddie.js"
+    subprocess.run(["node", "-e", script, str(frontend)], input=json.dumps(rows), text=True, check=True, capture_output=True)

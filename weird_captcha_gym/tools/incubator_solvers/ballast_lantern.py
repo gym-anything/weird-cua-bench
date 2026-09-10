@@ -31,6 +31,16 @@ def fail_once(page, state_dir: Path, out_dir: Path, mechanic: str) -> None:
     _screenshot(page, out_dir, mechanic, "fail-refresh")
 
 
+def _click_winch(page, engaged: bool) -> None:
+    box = page.locator(".ballast-haul" if engaged else ".ballast-coast").bounding_box()
+    if box is None:
+        raise AssertionError("Ballast Lantern winch button is not visible")
+    # The live shaft can finish after observation but before input delivery.
+    # A native click on its now-disabled button is harmless; locator.click()
+    # would wait for it to become enabled again even though the run is over.
+    page.mouse.click(box["x"] + box["width"] / 2, box["y"] + box["height"] / 2)
+
+
 def solve(page, state_dir: Path, out_dir: Path, mechanic: str) -> None:
     truth = _read(state_dir / "ground_truth.json")
     parameters = truth["parameters"]
@@ -78,7 +88,7 @@ def solve(page, state_dir: Path, out_dir: Path, mechanic: str) -> None:
                 if interaction == "full":
                     (page.keyboard.down if desired else page.keyboard.up)("Space")
                 else:
-                    page.locator(".ballast-haul" if desired else ".ballast-coast").click()
+                    _click_winch(page, desired)
             next_decision = (sim["tick"] // decision_interval + 1) * decision_interval
             if paused_mode:
                 page.evaluate("ms => WeirdCaptchaTime.runFor(ms)", (next_decision - sim["tick"]) * parameters["tick_ms"])

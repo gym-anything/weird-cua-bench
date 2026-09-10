@@ -142,7 +142,7 @@ PROFILES: dict[int, dict[str, Any]] = {
             {"direction": "south", "distance": 1, "kind": "roll"},
             {"direction": "east", "distance": 1, "kind": "chip"},
         ],
-        "sand_route_indices": [2, 4, 8],
+        "sand_route_indices": [2, 4, 7],
         "water_count": 7,
         "ramp_count": 4,
         "decoy_count": 26,
@@ -229,8 +229,8 @@ def generate(task: dict[str, Any], seed: str) -> tuple[dict[str, Any], dict[str,
         dx, dy = VECTORS[direction]
         target = (current[0] + dx * distance, current[1] + dy * distance)
         target_z = current_z
-        if index in {2, 3, 8} and kind == "chip":
-            target_z = min(2, current_z + (1 if index != 3 else 2))
+        if kind == "chip":
+            target_z = min(2, current_z + 1)
         if kind == "roll" and target_z != current_z:
             raise ValueError("generated roll route unexpectedly changes height")
         for offset in range(1, distance + 1):
@@ -240,7 +240,7 @@ def generate(task: dict[str, Any], seed: str) -> tuple[dict[str, Any], dict[str,
                 canonical_tiles.setdefault(point, _course_tile(point[0], point[1], current_z, "water", f"water-route-{index}", rng))
                 continue
             surface = "cup" if index == len(profile["action_plan"]) - 1 and is_target else "fairway"
-            if is_target and index in set(int(item) for item in profile.get("sand_route_indices", [])):
+            if surface != "cup" and is_target and index in set(int(item) for item in profile.get("sand_route_indices", [])):
                 surface = "sand"
             canonical_tiles[point] = _course_tile(point[0], point[1], target_z if is_target else current_z, surface, f"tile-route-{index}-{offset}", rng)
         current = target
@@ -271,6 +271,8 @@ def generate(task: dict[str, Any], seed: str) -> tuple[dict[str, Any], dict[str,
         tx, ty = _transform_point((x, y), width, height, transform)
         item = dict(tile)
         item["x"], item["y"] = tx, ty
+        if item["ramp_direction"] is not None:
+            item["ramp_direction"] = _transform_direction(item["ramp_direction"], transform)
         transformed_lookup[(tx, ty)] = item
         tiles.append(item)
     tiles.sort(key=lambda item: (int(item["x"]) + int(item["y"]), int(item["z"]), str(item["id"])))

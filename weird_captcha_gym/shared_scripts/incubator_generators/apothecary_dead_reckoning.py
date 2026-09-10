@@ -16,8 +16,7 @@ PATH_SAMPLES = 24
 STIR_STRIDE = 6
 GRIND_TICK_MS = 240
 GATE_REVEAL_FACTOR = 0.92
-GATE_CENTER_TOLERANCE = 2.25
-GATE_HEADING_TOLERANCE_DEGREES = 2.0
+GATE_APERTURE_RATIO = 3 / 16
 VARIANT_COUNT = 9_400_000_000
 
 BASELINE_PARAMETERS = {
@@ -223,8 +222,8 @@ def gate_alignment(
         (candidate_heading - float(gate["heading_deg"]) + 180) % 360 - 180
     )
     return {
-        "aligned": center_error <= GATE_CENTER_TOLERANCE
-        and heading_error <= GATE_HEADING_TOLERANCE_DEGREES,
+        "aligned": center_error <= float(gate["radius"]) * GATE_APERTURE_RATIO
+        and heading_error <= float(gate["radius"]) / 6,
         "center_error": round(center_error, 4),
         "heading_error": round(heading_error, 4),
         "path_index": nearest_index,
@@ -707,8 +706,8 @@ def generate(task: dict[str, Any], seed: str):
         "stir_stride": STIR_STRIDE,
         "grind_tick_ms": GRIND_TICK_MS,
         "gate_reveal_factor": GATE_REVEAL_FACTOR,
-        "gate_center_tolerance": GATE_CENTER_TOLERANCE,
-        "gate_heading_tolerance_degrees": GATE_HEADING_TOLERANCE_DEGREES,
+        "gate_center_tolerance": float(parameters["gate_radius"]) * GATE_APERTURE_RATIO,
+        "gate_heading_tolerance_degrees": float(parameters["gate_radius"]) / 6,
         "route_feedback": "post_commit_only",
         "marker_radius": 8,
         "vortex_turn_degrees": 90,

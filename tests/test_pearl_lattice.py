@@ -3,6 +3,8 @@ from __future__ import annotations
 import copy
 import importlib.util
 import json
+import random
+import subprocess
 from pathlib import Path
 
 from weird_captcha_gym.shared_scripts import setup_task
@@ -103,7 +105,7 @@ def _payload(public: dict, truth: dict, interaction: str) -> dict:
         })
         if line(1):
             break
-        rival, pressure_index = GENERATOR._opponent_column(board, pressure, pressure_index)
+        rival, pressure_index = GENERATOR._opponent_column(board, pressure, pressure_index, truth["parameters"]["opponent_policy"])
         assert rival is not None
         rival_height = _drop(board, rival, -1)
         sequence += 1
@@ -225,3 +227,75 @@ def test_controls_split_and_browser_contract_are_complete() -> None:
         assert public["world"]["max_player_moves"] == json.loads((ENV / "controls.json").read_text())["difficulty"][str(level)]["parameters"]["max_player_moves"]
     l5_public, _ = setup_task.generate_task_state(_controlled_task(5, "full"), "pearl-contract-l5")
     assert l5_public["world"]["preview_label_detail"] == "layer"
+
+
+def test_exact_fillers_preserve_defense_without_creating_shortcut_wins() -> None:
+    for level in range(1, 6):
+        for seed in range(40):
+            public, truth = setup_task.generate_task_state(_controlled_task(level, "full"), str(seed))
+            parameters = truth["parameters"]
+            targets, opponent = GENERATOR._layout(parameters, str(seed))
+            line_cells = {cell for line in targets for cell in line} | set(opponent)
+            supports = {(x, below, z) for x, y, z in line_cells for below in range(y)}
+            roles = {cell for line in targets for cell in line[1:1 + parameters["prefill_player"]]} | set(opponent[1:])
+            board = GRADER._parse_board(truth)
+            assert len(board) == len(supports | roles) + parameters["extra_noise"], (level, seed)
+            assert len(GRADER._immediate_columns(board, -1)) == 1
+            if level > 1:
+                assert not GRADER._immediate_columns(board, 1), (level, seed)
+            assert GRADER.grade(_payload(public, truth, "full"), truth, public)["passed"] is True
+
+
+def test_l2_rival_does_not_block_but_l3_requires_reading_its_block() -> None:
+    for level in (2, 3):
+        for seed in range(20):
+            public, truth = setup_task.generate_task_state(_controlled_task(level, "full"), str(seed))
+            board = GRADER._parse_board(truth)
+            defense = GRADER._immediate_columns(board, -1)[0]
+            GRADER._drop(board, defense, 1)
+            wins = GRADER._immediate_columns(board, 1)
+            assert len(wins) >= 2
+            args = (board, [tuple(column) for column in truth["pressure_columns"]], 0, truth["parameters"]["opponent_policy"])
+            move, _ = GRADER._opponent_column(*args)
+            assert GRADER._opponent_column(*args) == GENERATOR._opponent_column(*args)
+            assert (move in wins) is (level == 3)
+            assert public["rules"]["opponent"]
+
+
+def test_browser_and_independent_replays_agree_on_both_rival_policies() -> None:
+    rng = random.Random(413)
+    rows = []
+    for _ in range(100):
+        board = {}
+        for _ in range(rng.randrange(1, 60)):
+            legal = GRADER._legal_columns(board)
+            if legal:
+                GRADER._drop(board, rng.choice(legal), rng.choice((-1, 1)))
+        for mark in (-1, 1):
+            assert GENERATOR._immediate_columns(board, mark) == GRADER._immediate_columns(board, mark)
+        pressure = [(0, 0)] if rng.randrange(2) else []
+        for policy in ("win_then_pressure", "threat_then_block"):
+            expected, index = GRADER._opponent_column(board, pressure, 0, policy)
+            assert GENERATOR._opponent_column(board, pressure, 0, policy) == (expected, index)
+            rows.append({"board": {"%d,%d,%d" % k: v for k, v in board.items()},
+                         "pressure": pressure, "policy": policy,
+                         "expected": [list(expected) if expected else None, index]})
+    source = (ROOT / "weird_captcha_gym/shared_runtime/app/mechanics/pearl_lattice.js").read_text()
+    functions = source[source.index("    function legalColumns()"):source.index("    function record(event)")]
+    script = """
+const fs = require('fs');
+const {rows, functions, lines} = JSON.parse(fs.readFileSync(0, 'utf8'));
+const SIZE=4, PLAYER=1, OPPONENT=-1, LINES=lines;
+const key = (x,y,z) => `${x},${y},${z}`;
+const column = value => value.map(Number);
+const sameColumn = (a,b) => a && b && a[0] === b[0] && a[1] === b[1];
+for (const row of rows) {
+  const model = {board: new Map(Object.entries(row.board)), pressureIndex: 0};
+  const state = {opponent: {pressure_columns: row.pressure}};
+  const difficultyParameters = {opponent_policy: row.policy};
+  const actual = eval(functions + '; [opponentColumn(), model.pressureIndex]');
+  if (JSON.stringify(actual) !== JSON.stringify(row.expected)) throw Error(JSON.stringify({row,actual}));
+}
+"""
+    result = subprocess.run(["node", "-e", script], input=json.dumps({"rows": rows, "functions": functions, "lines": GRADER.ALL_LINES}), text=True, capture_output=True)
+    assert result.returncode == 0, result.stderr

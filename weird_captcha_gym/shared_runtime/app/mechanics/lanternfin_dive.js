@@ -72,7 +72,13 @@
     const forward = {x: Math.cos(fish.pitch) * Math.cos(fish.yaw), y: Math.sin(fish.pitch), z: Math.cos(fish.pitch) * Math.sin(fish.yaw)};
     const right = {x: -Math.sin(fish.yaw), y: 0, z: Math.cos(fish.yaw)};
     const up = {x: -Math.sin(fish.pitch) * Math.cos(fish.yaw), y: Math.cos(fish.pitch), z: -Math.sin(fish.pitch) * Math.sin(fish.yaw)};
-    return {forward, right, up};
+    const cosine = Math.cos(fish.roll), sine = Math.sin(fish.roll);
+    const bankedRight = {}, bankedUp = {};
+    for (const axis of ["x", "y", "z"]) {
+      bankedRight[axis] = right[axis] * cosine - up[axis] * sine;
+      bankedUp[axis] = up[axis] * cosine + right[axis] * sine;
+    }
+    return {forward, right: bankedRight, up: bankedUp};
   }
 
   function renderFish(ctx, fish, camera, width, height) {
@@ -98,9 +104,15 @@
     ctx.strokeStyle = "#bbfff2";
     ctx.lineWidth = Math.max(6, body.scale * 0.035);
     ctx.beginPath(); ctx.moveTo(finLeft.x, finLeft.y); ctx.lineTo(body.x, body.y); ctx.lineTo(finRight.x, finRight.y); ctx.stroke();
+    const dorsal = project(add(.25, basis.up), camera, width, height);
+    const back = project(add(-.1), camera, width, height);
+    ctx.fillStyle = "#72b9e9";
+    ctx.beginPath(); ctx.moveTo(back.x, back.y); ctx.lineTo(dorsal.x, dorsal.y); ctx.lineTo(nose.x, nose.y); ctx.closePath(); ctx.fill();
     ctx.strokeStyle = "#d6e7ff";
     ctx.lineWidth = Math.max(4, body.scale * 0.022);
-    const tailTip = project(add(-0.42), camera, width, height);
+    const tailBase = add(-.42);
+    const sway = .10 * Math.sin(fish.tail_phase);
+    const tailTip = project({x: tailBase.x + basis.right.x * sway, y: tailBase.y + basis.right.y * sway, z: tailBase.z + basis.right.z * sway}, camera, width, height);
     ctx.beginPath(); ctx.moveTo(tail.x, tail.y); ctx.lineTo(tailTip.x, tailTip.y); ctx.stroke();
     ctx.fillStyle = "#fff6c5"; ctx.beginPath(); ctx.arc(nose.x, nose.y, Math.max(4, body.scale * 0.027), 0, Math.PI * 2); ctx.fill();
     ctx.restore();
@@ -191,6 +203,8 @@
         } else if (result.passed === false && result.state) {
           await helpers.render(result.state);
           helpers.app.querySelector(".lanternfin")?.insertAdjacentHTML("beforeend", `<div class="lf-verdict is-fresh"><strong>FAIL · FRESH DIVE</strong><span>${esc(result.feedback || "The failed dive was replaced")}</span></div>`);
+          const notice = helpers.app.querySelector(".lf-verdict.is-fresh");
+          setTimeout(() => notice?.remove(), 1800);
         } else { model.submitting = false; setMessage(`FAIL · ${result.feedback || result.error || "NO AUTHORITATIVE GRADE"}`, "error"); }
       } catch (error) { model.submitting = false; setMessage(`FAIL · VERIFIER OFFLINE · ${error.message}`, "error"); }
     };

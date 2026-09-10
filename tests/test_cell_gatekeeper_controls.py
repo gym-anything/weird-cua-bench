@@ -196,3 +196,39 @@ def test_atp_burst_effect_is_identical_across_input_surfaces() -> None:
         if public["parameters"]["atp_batch"] == 1:
             wrong_event["amount"] = 2
         assert GRADER.grade(wrong, truth, public)["passed"] is False
+
+
+def test_manual_calibration_can_finish_after_transport_stops_without_skipping_crossings() -> None:
+    for level in range(1, 6):
+        for mode in ("full", "simplified"):
+            public, truth = SETUP.generate_task_state(controlled_task(level, mode), "manual-calibration")
+            reference = passing_payload(public, truth, mode)
+            sim = copy.deepcopy(public["initial_state"])
+            events = []
+
+            def apply(event):
+                GRADER._advance(sim, public, event["tick"] - sim["tick"])
+                assert GRADER._apply_event(sim, event, public, mode) is None
+                events.append({**event, "seq": len(events) + 1})
+
+            for event in reference["events"][:-1]:
+                apply(event)
+            GRADER._advance(sim, public, 40 - sim["tick"])
+            for slot, protein in enumerate(list(sim["slots"])):
+                if protein:
+                    apply({"type": "remove", "tick": sim["tick"], "slot": slot,
+                           "input_source": "protein_drag" if mode == "full" else "protein_button"})
+            sid = public["species"][0]["id"]
+            low, high = public["goal"][sid]["outside"]
+            for target in (high + 2, low):
+                while sim["counts"][sid]["outside"] != target:
+                    delta = 1 if sim["counts"][sid]["outside"] < target else -1
+                    apply({"type": "solute", "tick": sim["tick"], "species": sid, "side": "outside", "delta": delta,
+                           "input_source": "solute_drag" if mode == "full" else "solute_button"})
+                assert GRADER._base_goal_ok(sim, public) is (target == low)
+            GRADER._advance(sim, public, public["parameters"]["observation_ticks"])
+            events.append({"seq": len(events) + 1, "type": "certify", "tick": sim["tick"], "accepted": True, "input_source": "lock_button"})
+            payload = {**reference, "events": events, "terminal_tick": sim["tick"], "final_state": sim}
+            assert GRADER.grade(payload, truth, public)["passed"] is True
+            assert all(sim["crossings"]["active"].get(pid, 0) >= public["parameters"]["pump_cycles"]
+                       for pid in public["required_proteins"] if pid.endswith("_pump"))

@@ -146,3 +146,20 @@ def test_controlled_materialization_deterministic(tmp_path):
     for a,b in zip(first,second):
         assert (a/'task.json').read_bytes()==(b/'task.json').read_bytes()
         assert (a/'setup_task.sh').stat().st_mode & 0o111
+
+
+def test_native_dropdown_typeahead_handles_numeric_prefixes():
+    from playwright.sync_api import sync_playwright
+    from weird_captcha_gym.tools.incubator_solvers.rayglass_vault import choose
+    # Standalone fixture, isolated headless process and fresh browser context;
+    # the task solver itself never installs HTML or sets an option value.
+    with sync_playwright() as playwright:
+        browser = playwright.chromium.launch(headless=True)
+        try:
+            page = browser.new_page()
+            page.set_content('<select id="pick">'+''.join(f'<option value="{i}">{i+1}</option>' for i in range(28))+'</select><button>Next control</button>')
+            for index in (27,0,9,1,18,2,11,0,19,20,1,7,26,0,21,10,21,*range(27,-1,-1)):
+                choose(page,'#pick',index)
+                assert page.locator('#pick').input_value() == str(index)
+        finally:
+            browser.close()

@@ -50,10 +50,28 @@ def fail_once(page,state_dir,out_dir,mechanic):
     page.screenshot(path=str(out_dir/f'{mechanic}-failure-retry.png'))
 
 
+def drive_command(state, world, target):
+    """Receding two-tick prediction followed by a neutral coast."""
+    r = world['parameters']['drag']**.25
+    choices = []
+    for first in (0,-1,1):
+        for second in (0,-1,1):
+            if abs(state['vx'])<.01 and first==0 and second!=0:
+                continue  # Do not indefinitely postpone a pulse at rest.
+            simulated = copy.deepcopy(state)
+            for control in (first,second):
+                advance(simulated,[control,0],world)
+            rest = simulated['x']+simulated['vx']*r/(4*(1-r))
+            cost = abs(target-rest)+.005*abs(simulated['vx'])+.001*(abs(first)+2*abs(second))
+            if simulated['status'] not in ('active','solved'):
+                cost += 10000
+            choices.append((cost,first))
+    return [min(choices)[1],0]
+
+
 def solve(page,state_dir,out_dir,mechanic):
     from playwright.sync_api import expect
     w=json.loads((state_dir/'ground_truth.json').read_text());mode=(w.get('control_condition') or {}).get('interaction','full')
-    paused=page.evaluate("new URLSearchParams(location.search).get('time_mode')==='paused'")
     current=[0,0]
     def command(c):
         nonlocal current
@@ -62,57 +80,53 @@ def solve(page,state_dir,out_dir,mechanic):
             if current!=[0,0]:page.mouse.up()
             if c!=[0,0]:
                 b=page.locator(f'[data-c="{c[0]},{c[1]}"]').bounding_box();page.mouse.move(b['x']+b['width']/2,b['y']+b['height']/2);page.mouse.down()
-        else:page.locator(f'[data-latch="{c[0]},{c[1]}"]').click()
+        else:
+            b=page.locator(f'[data-latch="{c[0]},{c[1]}"]').bounding_box()
+            page.mouse.click(b['x']+b['width']/2,b['y']+b['height']/2)
         current=c
-    def move(target,shape=None,precision=16):
+    def move(target,shape=None,precision=16,seal=None):
         deadline=time.monotonic()+90
         while time.monotonic()<deadline:
             s=page.evaluate('concertinaCourierModel.sim')
             if s['status']=='solved':command([0,0]);return
             assert s['status']=='active',s
-            if shape is None and precision<16:
-                if abs(target-s['x'])<precision and abs(s['vx'])<.15:
-                    command([0,0]);return
-                for c,ticks in settle_plan(s,w,target):
-                    if not ticks:continue
-                    command(c)
-                    for _ in range(ticks//2):
-                        if paused:
-                            page.evaluate('WeirdCaptchaTime.runFor(80)')
-                            while page.evaluate('WeirdCaptchaTime.status().phase')!='completed':time.sleep(.01)
-                        else:time.sleep(.08)
-                        if page.evaluate('concertinaCourierModel.sim.status')!='active':break
-                continue
+            if seal is not None and seal in s['collected']:
+                command([0,0]);return
             if shape is not None:
                 error=shape-s['h'];c=[0,1 if error>1.5 else -1 if error<-1.5 else 0]
-                done=(0<=error<6) if paused else abs(error)<3
+                done=abs(error)<3
             else:
                 error=target-s['x'];lead=s['vx']*w['parameters']['drag']**.25/(4*(1-w['parameters']['drag']**.25))
-                band=min(10,precision/2)
-                c=[1 if error-lead>band else -1 if error-lead<-band else 0,0]
-                if paused:
-                    choices=[]
-                    r=w['parameters']['drag']**.25
-                    for first in [0,-1,1]:
-                        for second in [0,-1,1]:
-                            predicted=copy.deepcopy(s)
-                            for u in [first,first,second,second]:advance(predicted,[u,0],w)
-                            rest=predicted['x']+predicted['vx']*r/(4*(1-r))
-                            cost=abs(target-rest)+.001*abs(predicted['vx'])+.001*(abs(first)+2*abs(second))
-                            choices.append((cost,first))
-                    c=[min(choices)[1],0]
-                    if abs(target-(s['x']+s['vx']*r/(4*(1-r))))<precision/2:c=[0,0]
-                done=abs(error)<precision and abs(s['vx'])<.15
+                c=drive_command(s,w,target)
+                if abs(error-lead)<precision/2:c=[0,0]
+                done=abs(error)<precision and abs(error-lead)<precision and abs(s['vx'])<.05
             if done:command([0,0]);return
+            if shape is None and c==[0,0] and abs(s['vx'])<.05:
+                # Small unsaturated integer-tick pulses have quantized coast
+                # distances. A two-tick prediction can therefore stall near a
+                # narrow opening. Plan a capped drive/brake manoeuvre instead.
+                command([0,0])
+                for planned,ticks in settle_plan(s,w,target):
+                    if not ticks:continue
+                    command(planned)
+                    begin=page.evaluate('concertinaCourierModel.sim.tick')
+                    page.wait_for_function(
+                        'end => concertinaCourierModel.sim.tick >= end || concertinaCourierModel.sim.status !== "active"',
+                        arg=begin+ticks,polling=2,timeout=15000,
+                    )
+                    if page.evaluate('concertinaCourierModel.sim.status')!='active':break
+                command([0,0])
+                continue
             command(c)
-            if paused:
-                page.evaluate('WeirdCaptchaTime.runFor(80)')
-                while page.evaluate("WeirdCaptchaTime.status().phase")!='completed':time.sleep(.01)
-            else:time.sleep(.04)
+            # The shared harness owns any paused schedule; the policy only
+            # waits for feedback and never mutates the task clock.
+            page.wait_for_timeout(35)
         raise AssertionError(f'control failed target={target} shape={shape}, state={s}')
     # Use room geometry, not a seed-specific action tape.
     if w['parameters'].get('layout')=='island':
-        move(0,200);move(w['seals'][0][0],precision=8)
+        move(0,200)
+        if 0 not in page.evaluate('concertinaCourierModel.sim.collected'):
+            move(w['seals'][0][0],precision=8,seal=0)
         page.screenshot(path=str(out_dir/f'{mechanic}-extended.png'))
         move(0,32)
         move(w['seals'][3][0],precision=3)
