@@ -111,6 +111,10 @@ Final-source checks found three edits after the initial browser records: the Dra
 
 These implementation checks do not include a real VM/VNC run, paused Gym-Anything `env.step` solution replay, a screenshot-only model evaluation or human calibration. They do not establish a model success rate or calibrated difficulty labels.
 
+### PR integration follow-up
+
+The fresh PR test environment exposed import-time Playwright dependencies in tests of browser-independent helpers. Playwright and browser-smoke imports now load only inside the browser entry points in the Facet Lantern, Letter Rapids and Ballast Lantern solvers and the single-task UI verifier. All 52 affected tests pass, including a new subprocess regression with Playwright unavailable; the full suite also collects successfully without Playwright. No tests were skipped to resolve the collection errors. AST comparisons against the pre-change files confirm that all four files are identical after excluding only the relocated imports. The archived browser records and source hashes still identify the earlier, pre-import-refactor sources; they have not been rewritten as new runs.
+
 ## Reproducing a UI check
 
 Use the existing project test dependencies, including its pinned Gym-Anything revision. To run an independent native-input attempt, choose a new output directory:

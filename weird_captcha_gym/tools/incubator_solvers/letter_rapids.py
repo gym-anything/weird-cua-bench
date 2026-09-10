@@ -4,9 +4,6 @@ import json
 import time
 from pathlib import Path
 
-from playwright.sync_api import expect
-
-
 MECHANIC_ID = "letter_rapids"
 
 
@@ -113,6 +110,8 @@ def _wait_new(state_dir: Path, previous: str) -> None:
 
 
 def fail_once(page, state_dir: Path, out_dir: Path, mechanic: str) -> None:
+    from playwright.sync_api import expect
+
     if mechanic != MECHANIC_ID:
         raise AssertionError(mechanic)
     truth = _read(state_dir / "ground_truth.json")
@@ -136,6 +135,8 @@ def fail_once(page, state_dir: Path, out_dir: Path, mechanic: str) -> None:
 
 
 def solve(page, state_dir: Path, out_dir: Path, mechanic: str) -> None:
+    from playwright.sync_api import expect
+
     if mechanic != MECHANIC_ID:
         raise AssertionError(mechanic)
     truth = _read(state_dir / "ground_truth.json")

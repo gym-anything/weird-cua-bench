@@ -11,9 +11,6 @@ import json
 import math
 from pathlib import Path
 
-from playwright.sync_api import expect
-
-
 MECHANIC_ID = "facet_lantern"
 
 
@@ -96,12 +93,16 @@ def _rotate_simplified(page, current: float, target: float, step: float) -> floa
 
 
 def _connect(page, vertex_id: str) -> None:
+    from playwright.sync_api import expect
+
     locator = page.locator(f'.fl-stud[data-vertex-id="{vertex_id}"]')
     expect(locator).to_be_visible(timeout=3000)
     locator.click()
 
 
 def fail_once(page, state_dir: Path, out_dir: Path, mechanic: str = MECHANIC_ID) -> None:
+    from playwright.sync_api import expect
+
     old = json.loads((state_dir / "public_state.json").read_text(encoding="utf-8"))["challenge_id"]
     page.locator(".fl-abandon").click()
     expect(page.locator(".fl-readout")).to_contain_text("FAIL", timeout=15000)
@@ -112,6 +113,8 @@ def fail_once(page, state_dir: Path, out_dir: Path, mechanic: str = MECHANIC_ID)
 
 
 def solve(page, state_dir: Path, out_dir: Path, mechanic: str = MECHANIC_ID, advance=None) -> None:
+    from playwright.sync_api import expect
+
     del advance
     truth = json.loads((state_dir / "ground_truth.json").read_text(encoding="utf-8"))
     public = json.loads((state_dir / "public_state.json").read_text(encoding="utf-8"))

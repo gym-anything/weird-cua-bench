@@ -1,6 +1,8 @@
 """Oracle regressions: planning may be privileged; effects remain native UI."""
 from unittest.mock import Mock
 from pathlib import Path
+import subprocess
+import sys
 
 import pytest
 
@@ -8,6 +10,23 @@ from weird_captcha_gym.tools.incubator_solvers.five_second_rule import _solve_fl
 from weird_captcha_gym.tools.incubator_solvers.letter_rapids import _wait_output
 from weird_captcha_gym.tools.incubator_solvers.ballast_lantern import _click_winch
 from weird_captcha_gym.tools.verify_task_ui import check_solver_actions
+
+
+def test_pure_oracle_helpers_import_without_playwright():
+    result = subprocess.run(
+        [sys.executable, "-c", "\n".join([
+            "import sys",
+            "sys.modules['playwright'] = None",
+            "from weird_captcha_gym.tools.incubator_solvers.facet_lantern import _target_yaw",
+            "from weird_captcha_gym.tools.incubator_solvers.letter_rapids import _wait_output",
+            "from weird_captcha_gym.tools.incubator_solvers.ballast_lantern import _click_winch",
+            "from weird_captcha_gym.tools.verify_task_ui import check_solver_actions",
+        ])],
+        cwd=Path(__file__).resolve().parents[1],
+        capture_output=True,
+        text=True,
+    )
+    assert result.returncode == 0, result.stderr
 
 
 @pytest.mark.parametrize('direction,vector', [('NORTH',(0,-1)),('EAST',(1,0)),('SOUTH',(0,1)),('WEST',(-1,0))])

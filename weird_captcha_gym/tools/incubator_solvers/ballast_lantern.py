@@ -4,8 +4,6 @@ import json
 import time
 from pathlib import Path
 
-from playwright.sync_api import expect
-
 from weird_captcha_gym.shared_scripts.incubator_generators.ballast_lantern import _control_for_target
 
 
@@ -22,6 +20,8 @@ def _screenshot(page, out_dir: Path, mechanic: str, name: str) -> None:
 
 
 def fail_once(page, state_dir: Path, out_dir: Path, mechanic: str) -> None:
+    from playwright.sync_api import expect
+
     before = str(_read(state_dir / "ground_truth.json")["challenge_id"])
     page.locator(".ballast-abandon").click()
     expect(page.locator(".ballast-foot .readout")).to_contain_text("FAIL", timeout=7000)
@@ -42,6 +42,8 @@ def _click_winch(page, engaged: bool) -> None:
 
 
 def solve(page, state_dir: Path, out_dir: Path, mechanic: str) -> None:
+    from playwright.sync_api import expect
+
     truth = _read(state_dir / "ground_truth.json")
     parameters = truth["parameters"]
     crate = truth["crate"]

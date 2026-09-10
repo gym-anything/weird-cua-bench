@@ -23,19 +23,14 @@ from urllib.parse import urlparse
 ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(ROOT))
 
-from playwright.sync_api import sync_playwright
 from weird_captcha_gym.shared_scripts.setup_task import generate_task_state
 from weird_captcha_gym.tools.env_step_action_trace import RECORDER_SCRIPT, parse_input_trace
 from weird_captcha_gym.tools.materialize_controlled_tasks import materialize_environment
 from weird_captcha_gym.tools.smoke_controlled_interaction_ui import (
     controlled_task, load_module, observation_viewport, read_json, reserve_port,
 )
-from weird_captcha_gym.tools.smoke_incubator_batch_one_ui import exported_payload, run_task_verifier
 from weird_captcha_gym.tools.verify_randomized_env_step_matrix import (
     _collect_context_events, _reject_programmatic_solver_actions,
-)
-from weird_captcha_gym.tools.smoke_realtime_control import (
-    post, post_input, wait_status, wait_input_status,
 )
 
 BENCH = ROOT / "weird_captcha_gym"
@@ -65,6 +60,10 @@ def check_clock(page, base: str, controls: dict) -> dict:
     This checks frozen renders, input delivery, and exact fixed-window clock
     endpoints. It is not an env.step solve or a frame-sampling calibration.
     """
+    from weird_captcha_gym.tools.smoke_realtime_control import (
+        post, post_input, wait_status, wait_input_status,
+    )
+
     wait_status(base, lambda item: item.get('ready') is True)
     armed = post_input(base, dict(command='arm',category='mouse',required=True))
     wait_input_status(base, lambda item: item.get('command_sequence')==armed['sequence'] and item.get('phase')=='armed')
@@ -101,6 +100,10 @@ def source_hashes(mechanic: str) -> dict[str, str]:
 
 
 def run(args) -> bool:
+    from playwright.sync_api import sync_playwright
+    from weird_captcha_gym.tools.smoke_incubator_batch_one_ui import exported_payload, run_task_verifier
+    from weird_captcha_gym.tools.smoke_realtime_control import wait_status
+
     env_root = BENCH / "environments" / args.environment
     controls = read_json(env_root / "controls.json")
     mechanic = controls["mechanic_id"]
