@@ -1,0 +1,126 @@
+{
+  "case_index": 140,
+  "public_environment_name": "Concertina Courier",
+  "environment_id": "concertina_courier_env",
+  "difficulty": 5,
+  "interaction_mode": "simplified",
+  "label": "yes",
+  "controls_available": [
+    "The visible task canvas shows the brown solid platforms and shelves, gold seals, and the current fixed-area parcel.",
+    "Simplified mouse console click on ← sets persistent control [-1, 0] (slide left).",
+    "Simplified mouse console click on → sets persistent control [1, 0] (slide right).",
+    "Simplified mouse console click on TALLER sets persistent control [0, 1].",
+    "Simplified mouse console click on WIDER sets persistent control [0, -1].",
+    "Simplified mouse console click on COAST sets persistent control [0, 0] and releases the active latch.",
+    "CERTIFY and NEW ROOM are administrative submission/restart controls, not outcome-affecting controls; the page does not bind a separate keyboard control for this simplified mechanic."
+  ],
+  "autonomous_processes": [
+    "Every 40 ms the physics advances through four substeps: the active control changes height while preserving area, horizontal velocity receives acceleration and drag, and collision-constrained horizontal motion updates the parcel position.",
+    "Gravity increases vertical velocity on each substep. An unsupported parcel descends, can land only on an intersecting solid, and becomes fell once bottom exceeds 570; visible parcel-solid contact also collects seals and can terminate the task as solved.",
+    "Between simplified console clicks the selected latch persists. After COAST, residual horizontal velocity still decays and carries the parcel; once it leaves a support, gravity changes its trajectory without another agent action. The browser redraws this state from elapsed task time."
+  ],
+  "grouped_control_modes": [
+    "D_console_latch: the single outcome-affecting simplified control surface, containing slide-left, slide-right, morph-taller, morph-wider, and coast at every occurrence across generated seeds and attempts; administrative certification/restart is excluded."
+  ],
+  "delta_ms": 80,
+  "window_ms": 80,
+  "clause_i": {
+    "holds": true,
+    "reason": "Across the complete D_console_latch population, generated rooms vary the island position, reflection, gap, overhead opening, and receiving well. Histories can share the same prior actions and task times while requiring opposite horizontal corrections or different shape controls at the delayed bridge/well decision. An action-only q therefore cannot be optimal for every history in C_Delta(D)."
+  },
+  "clause_ii": {
+    "holds": true,
+    "reason": "The canvas visibly renders all solids, seals, and the parcel rectangle, while three chronological frames within the configured 80 ms window reveal horizontal drift, support loss, descent, and shape change. That bounded recent visual trajectory, together with I_t, is sufficient to choose the slide or morph control that predicts the parcel state at t+Delta; no new random task state is introduced after generation."
+  },
+  "clause_iii": {
+    "holds": true,
+    "reason": "Use D_console_latch at an active approach to a visible gap, with residual horizontal velocity and COAST as the current latch, and take a=WIDER. With no new action, the same physics advances the parcel toward the unsupported gap and then increases its bottom through gravity; for a witness chosen before the point of no return, tau=40 ms is less than Delta=80 ms, the delayed state remains active and salvageable by another immediate correction, but WIDER delivered at t+tau has less support and morphing margin and can no longer bridge before the falling state becomes unrecoverable. Thus Q for WIDER, or its advantage over no-op, strictly decreases because of momentum/gravity and the gap, not because of a deadline or later completion."
+  },
+  "common_visible_process": "The common phenomenon is deterministic fixed-area parcel physics: residual horizontal momentum and drag move the parcel across visible support edges, gravity changes vertical position when unsupported, and the resulting descent removes the useful opportunity to widen or correct the parcel before landing. The same motion is visible in the recent frame window and is what determines the delayed-optimal console action.",
+  "pre_run": {
+    "threshold": 0.5,
+    "at_least_half": false,
+    "rate": null,
+    "basis": "source_structural",
+    "reason": "The L5 generator creates four seals in a seed-dependent reflected island room with a variable gap, wall, opening, and well; the browser starts an active physics simulation and collects seals only as the parcel is driven through that room. There is no source-defined launch or commit phase after preparation in which a fixed no-action trajectory completes the task: height, horizontal route, and recovery controls remain outcome-affecting throughout, and the simplified COAST state is itself a control mode rather than a one-shot completion phase. The implementation therefore does not provide successful pre-run solutions for at least half of generated instances, so the threshold does not override the mathematical result.",
+    "seed_probe": null
+  },
+  "files_read_completely": [
+    "AGENTS.md",
+    "weird_captcha_gym/docs/controllability/real-time.md",
+    "weird_captcha_gym/environments/concertina_courier_env/controls.json",
+    "weird_captcha_gym/environments/concertina_courier_env/env.json",
+    "weird_captcha_gym/environments/concertina_courier_env/tasks/concertina_courier_seed_0001/task.json",
+    "weird_captcha_gym/environments/concertina_courier_env/tasks/concertina_courier_seed_0001/verifier.py",
+    "weird_captcha_gym/shared_scripts/incubator_generators/concertina_courier.py",
+    "weird_captcha_gym/shared_runtime/app/mechanics/concertina_courier.js",
+    "weird_captcha_gym/shared_runtime/app/mechanics/concertina_courier.css",
+    "weird_captcha_gym/shared_runtime/server/incubator_graders/concertina_courier.py",
+    "weird_captcha_gym/tools/incubator_solvers/concertina_courier.py",
+    "weird_captcha_gym/shared_runtime/app/index.html",
+    "weird_captcha_gym/shared_runtime/app/time_controller.js"
+  ],
+  "source_evidence": [
+    {
+      "path": "weird_captcha_gym/environments/concertina_courier_env/controls.json",
+      "lines": "72-90",
+      "claim": "Difficulty 5 is the island configuration with island_width 170, gap range 140-175, opening range 52-60, clearance 42, reach 185, drag 0.94, and well_clearance 145."
+    },
+    {
+      "path": "weird_captcha_gym/environments/concertina_courier_env/controls.json",
+      "lines": "97-104",
+      "claim": "Simplified interaction is implemented, with an 80 ms observation window and three frames per observation."
+    },
+    {
+      "path": "weird_captcha_gym/shared_scripts/incubator_generators/concertina_courier.py",
+      "lines": "46-78",
+      "claim": "The island generator varies center, reflection, landing gap, opening, and well position; it constructs the six solids, four seals, fixed-area limits, 40 ms tick, and active initial state."
+    },
+    {
+      "path": "weird_captcha_gym/shared_runtime/app/mechanics/concertina_courier.js",
+      "lines": "5-22",
+      "claim": "The browser replay applies area-preserving morphology, drag-based horizontal velocity, gravity, collision/landing, seal contact, and fell/solved/timeout transitions on each physics tick."
+    },
+    {
+      "path": "weird_captcha_gym/shared_runtime/app/mechanics/concertina_courier.js",
+      "lines": "24-43",
+      "claim": "The visible UI renders platforms, seals, and the parcel on a canvas; tick advances by elapsed task time; simplified console controls set persistent latch values and record console_latch events."
+    },
+    {
+      "path": "weird_captcha_gym/shared_runtime/app/mechanics/concertina_courier.js",
+      "lines": "46-52",
+      "claim": "Full body controls are separate, while simplified data-latch buttons are click-bound; CERTIFY and NEW ROOM are administrative handlers."
+    },
+    {
+      "path": "weird_captcha_gym/shared_runtime/app/mechanics/concertina_courier.css",
+      "lines": "1",
+      "claim": "The relevant CSS lays out the canvas room and visible simplified console buttons, with the full body controls hidden when the hidden attribute is applied."
+    },
+    {
+      "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/concertina_courier.py",
+      "lines": "21-49",
+      "claim": "The authoritative replay uses the same four-substep physics, including persistent control between event ticks, gravity, landing, seal collection, and the fell terminal condition."
+    },
+    {
+      "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/concertina_courier.py",
+      "lines": "62-79",
+      "claim": "The grader binds simplified transcripts to console_latch and advances the prior control until each next event, so delayed state evolution and the selected input surface affect grading."
+    },
+    {
+      "path": "weird_captcha_gym/environments/concertina_courier_env/tasks/concertina_courier_seed_0001/verifier.py",
+      "lines": "36-49",
+      "claim": "The verifier loads the independent Concertina Courier grader and grades the exported replay, rather than trusting client collection claims."
+    },
+    {
+      "path": "weird_captcha_gym/tools/incubator_solvers/concertina_courier.py",
+      "lines": "53-69,87-123",
+      "claim": "The wiring solver uses two-tick prediction, feedback from the current parcel state, and repeated control correction; this corroborates the mechanic but is not treated as policy-visible private state."
+    },
+    {
+      "path": "weird_captcha_gym/shared_runtime/app/time_controller.js",
+      "lines": "55-62,155-175,267-330,548-599",
+      "claim": "The shared controller maps elapsed task time to virtual performance time, freezes physics/RAF work when paused, and advances it only during live or scheduled run windows."
+    }
+  ],
+  "uncertainties": []
+}

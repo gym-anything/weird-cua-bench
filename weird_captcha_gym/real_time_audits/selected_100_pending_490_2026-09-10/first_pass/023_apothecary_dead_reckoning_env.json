@@ -1,0 +1,110 @@
+{
+  "case_index": 23,
+  "public_environment_name": "Apothecary Dead Reckoning",
+  "environment_id": "apothecary_dead_reckoning_env",
+  "difficulty": 2,
+  "interaction_mode": "full",
+  "label": "yes",
+  "controls_available": [
+    "Drag one of six visible ingredient jars into the mortar; full mode requires a physical drag with visible travel.",
+    "Hold and release the pestle; while held, the grind notch advances autonomously by one notch every 240 ms, capped at notch 9.",
+    "Click STIR PATH to advance the selected path synchronously in six-sample segments.",
+    "Click WATER or BELLOWS for synchronous recovery movement when no ingredient is active.",
+    "Click SEAL to submit the final position; this is administrative after the run."
+  ],
+  "autonomous_processes": [
+    "During a full-interface pestle hold, requestAnimationFrame-driven grinding advances grindStep according to elapsed performance time, with GRIND_TICK_MS = 240.",
+    "The active pestle also has a 240 ms CSS pounding animation, but that animation alone has no outcome effect.",
+    "The 1800 ms failure-overlay timeout only clears presentation and has no task-outcome effect."
+  ],
+  "grouped_control_modes": [
+    "full-interface ingredient jar drag and replacement",
+    "full-interface pestle hold and release",
+    "STIR PATH clicks",
+    "WATER recovery clicks",
+    "BELLOWS recovery clicks",
+    "SEAL submission"
+  ],
+  "delta_ms": 240,
+  "window_ms": 240,
+  "clause_i": {
+    "holds": true,
+    "reason": "For D = full-interface pestle holds across all route stages, q(I_t) cannot see the seed-specific route gate or candidate path. The generator shuffles a distinct four-step grind schedule per generated world, and each route gate uniquely accepts one ingredient and grind step. Therefore an action-clock-only policy cannot select the optimal release/replacement action for every history in D."
+  },
+  "clause_ii": {
+    "holds": true,
+    "reason": "With w = 240 ms, the visible current notch/readout, live dashed candidate path, and route gate expose the state that predicts the next 240 ms grind tick. The browser redraws the filled/current notch and preview when a tick occurs, so a bounded recent visual window (one configured frame per observation, with consecutive observations exposing the tick) lets g choose whether the delayed action should release at the accepted notch, continue holding, or replace a visibly nonmatching candidate."
+  },
+  "clause_iii": {
+    "holds": true,
+    "reason": "Choose a history in D where the held ingredient is at its accepted route notch just before the next 240 ms tick, with success still recoverable. Releasing then commits the aligned curvature; allowing any 0 < tau < 240 ms that crosses the tick advances grindStep and changes the path curvature/heading, so the same release commits a nonmatching route and has strictly lower value (or requires longer recovery under the definition's equal-outcome continuation tie-break). This loss is caused by the visible grind-state transition, not by a deadline or later completion alone."
+  },
+  "common_visible_process": "The common witness is the full pestle hold: elapsed hold time advances the visible current grind notch and the selected ingredient's visible path relative to the visible route gate. That same process makes the delayed release depend on the visual state and makes an aligned release degrade after the next grind tick.",
+  "pre_run": {
+    "threshold": 0.5,
+    "at_least_half": false,
+    "rate": null,
+    "basis": "source_structural",
+    "reason": "The qualifying whole-run pre-run strategy is not available: after any pestle-grind phase, each of the four route commits still requires outcome-affecting ingredient loading/replacement and STIR PATH clicks, and recovery movement is also action-triggered. No instance can enter a terminal autonomous outcome phase after preparation and complete the route without further outcome-affecting actions. SEAL is the only final administrative submission.",
+    "seed_probe": null
+  },
+  "files_read_completely": [
+    "AGENTS.md",
+    "weird_captcha_gym/docs/controllability/real-time.md",
+    "weird_captcha_gym/environments/apothecary_dead_reckoning_env/controls.json",
+    "weird_captcha_gym/environments/apothecary_dead_reckoning_env/env.json",
+    "weird_captcha_gym/environments/apothecary_dead_reckoning_env/tasks/apothecary_dead_reckoning_seed_0001/task.json",
+    "weird_captcha_gym/environments/apothecary_dead_reckoning_env/tasks/apothecary_dead_reckoning_seed_0001/setup_task.sh",
+    "weird_captcha_gym/environments/apothecary_dead_reckoning_env/tasks/apothecary_dead_reckoning_seed_0001/export_result.sh",
+    "weird_captcha_gym/shared_scripts/incubator_generators/apothecary_dead_reckoning.py",
+    "weird_captcha_gym/shared_runtime/app/mechanics/apothecary_dead_reckoning.js",
+    "weird_captcha_gym/shared_runtime/app/mechanics/apothecary_dead_reckoning.css",
+    "weird_captcha_gym/shared_runtime/server/incubator_graders/apothecary_dead_reckoning.py",
+    "weird_captcha_gym/shared_runtime/verifier_helpers.py",
+    "weird_captcha_gym/environments/apothecary_dead_reckoning_env/tasks/apothecary_dead_reckoning_seed_0001/verifier.py",
+    "weird_captcha_gym/tools/incubator_solvers/apothecary_dead_reckoning.py"
+  ],
+  "source_evidence": [
+    {
+      "path": "weird_captcha_gym/environments/apothecary_dead_reckoning_env/controls.json",
+      "lines": "12-17,44-50",
+      "claim": "Difficulty 2 is the six-ingredient, four-route, nine-notch configuration; full interaction is jar drag plus duration-based pestle control; the exact observation window is 240 ms with one frame."
+    },
+    {
+      "path": "weird_captcha_gym/shared_scripts/incubator_generators/apothecary_dead_reckoning.py",
+      "lines": "314-347,525-592,704-715",
+      "claim": "The generator shuffles route grind outcomes per seed, verifies a unique ingredient/grind match for each visible route gate, and exports a 240 ms grind tick plus post-commit route feedback."
+    },
+    {
+      "path": "weird_captcha_gym/shared_runtime/app/mechanics/apothecary_dead_reckoning.js",
+      "lines": "330-344,358-389,408-489",
+      "claim": "The canvas renders the candidate path and route gate; the current notch is rendered in the readout/track; pestle hold starts an animation-frame loop; each elapsed 240 ms tick advances grindStep; release records the notch; and STIR PATH advances motion only on clicks."
+    },
+    {
+      "path": "weird_captcha_gym/shared_runtime/app/mechanics/apothecary_dead_reckoning.css",
+      "lines": "170-180",
+      "claim": "The full-interface pestle has a visible active hold animation and the visible grind track exposes its current/filled notch state."
+    },
+    {
+      "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/apothecary_dead_reckoning.py",
+      "lines": "345-374,441-557,558-614,644-653",
+      "claim": "The grader requires the unique ingredient/grind alignment, replays full-mode hold ticks and release, advances route progress only through synchronous stir events, and requires all route rings plus a single final seal for success."
+    },
+    {
+      "path": "weird_captcha_gym/tools/incubator_solvers/apothecary_dead_reckoning.py",
+      "lines": "52-77,126-172",
+      "claim": "The full solver waits for a target grind notch during a pestle hold, then performs repeated explicit STIR PATH clicks for every route segment before sealing."
+    },
+    {
+      "path": "weird_captcha_gym/docs/controllability/real-time.md",
+      "lines": "38-81,104-128",
+      "claim": "The frozen diagnostic requires one common visible process, a bounded window, a state-dependent delayed action, and a strictly degrading opportunity; it also defines the 50% pre-run override."
+    },
+    {
+      "path": "weird_captcha_gym/environments/apothecary_dead_reckoning_env/env.json",
+      "lines": "9-14",
+      "claim": "The runner configuration independently confirms the 240 ms observation window, one captured frame, and finite 180-second play allowance."
+    }
+  ],
+  "uncertainties": []
+}

@@ -1,0 +1,141 @@
+{
+  "case_index": 8,
+  "public_environment_name": "After Hours at the Reliquary",
+  "environment_id": "after_hours_at_the_reliquary_env",
+  "difficulty": 4,
+  "interaction_mode": "simplified",
+  "label": "no",
+  "controls_available": [
+    "Six fixed views are navigated with visible TURN LEFT and TURN RIGHT buttons.",
+    "The current view exposes clickable scene hotspots for inspecting, changing, or collecting objects; cue_level is unmarked.",
+    "A tray object can be selected and then applied to a scene destination or selected together with a second tray object to combine them.",
+    "The digit ward uses digit-wheel buttons and SET DIAL; the colour ward uses palette buttons, CLEAR, and SET GLASS.",
+    "The recovered ward key is selected and applied to the keyhole, and the door handle is clicked after all three wards are released."
+  ],
+  "autonomous_processes": [
+    {
+      "period": "Between agent actions while the fixed-view puzzle is idle",
+      "process": "None. The generated views, target rectangles, clues, flags, inventory, and ward state remain unchanged without an event handler running."
+    },
+    {
+      "period": "After the final successful door-handle click",
+      "process": "The door receives an action-triggered CSS transform transition lasting 0.8 seconds; the door is already unwarded and terminal submission has begun, so this is not an expiring control opportunity."
+    },
+    {
+      "period": "After a ward reaches three wrong entries",
+      "process": "The prior wrong action starts an asynchronous result request that can render a fresh failed challenge; this is failure/retry handling caused by the action, not autonomous task-state evolution during an active opportunity."
+    }
+  ],
+  "grouped_control_modes": [
+    {
+      "mode": "simplified fixed-view navigation",
+      "controls": "TURN LEFT and TURN RIGHT buttons"
+    },
+    {
+      "mode": "simplified scene inspection and collection",
+      "controls": "click an available scene hotspot"
+    },
+    {
+      "mode": "simplified inventory combination",
+      "controls": "select two tray objects"
+    },
+    {
+      "mode": "simplified inventory use",
+      "controls": "select a tray object, then click an available scene destination"
+    },
+    {
+      "mode": "simplified ward entry",
+      "controls": "digit-wheel or colour-palette controls followed by ward submission"
+    },
+    {
+      "mode": "simplified key and exit",
+      "controls": "apply the ward key to the keyhole, then click the door handle"
+    }
+  ],
+  "delta_ms": null,
+  "window_ms": 0,
+  "clause_i": {
+    "holds": true,
+    "reason": "For a candidate grouped scene-control mode, an observation-free q(I_t) cannot be uniformly optimal across generated seeds: prior actions and task times do not encode seed-specific target geometry, clue values, or the cross-view reading direction. This static information mismatch is not sufficient for real-time classification."
+  },
+  "clause_ii": {
+    "holds": true,
+    "reason": "For the same kind of static scene-control candidate, the current screenshot is sufficient at the configured w=0 because the fixed-view artwork, available hotspots, and current controls are visible; no motion trace is needed. Cross-view memory can be required for the whole solution, but that does not create an autonomous process."
+  },
+  "clause_iii": {
+    "holds": false,
+    "reason": "No legitimate D, Delta, and w can satisfy clause (iii). The generator creates fixed views, clues, and rectangles, while the browser changes view, flags, inventory, and ward state only in synchronous handlers. Waiting does not make an outcome-affecting action unavailable or strictly less effective. The only visible transition is the final action-triggered door CSS transition, which occurs after all wards are released and does not degrade a still-available action."
+  },
+  "common_visible_process": "None. The task has no non-clock autonomous process whose visible evolution can be used to predict a degrading action opportunity; the terminal door transition and failure re-render are both consequences of preceding actions.",
+  "pre_run": {
+    "threshold": 0.5,
+    "at_least_half": null,
+    "rate": null,
+    "basis": "not_applicable",
+    "reason": "The mathematical definition already fails clause (iii), so the pre-run threshold cannot change the catalog label. No autonomous outcome phase exists in this configuration and no rate is estimated.",
+    "seed_probe": null
+  },
+  "files_read_completely": [
+    "AGENTS.md",
+    "weird_captcha_gym/docs/controllability/real-time.md",
+    "weird_captcha_gym/environments/after_hours_at_the_reliquary_env/controls.json",
+    "weird_captcha_gym/environments/after_hours_at_the_reliquary_env/env.json",
+    "weird_captcha_gym/environments/after_hours_at_the_reliquary_env/tasks/after_hours_at_the_reliquary_seed_0001/task.json",
+    "weird_captcha_gym/environments/after_hours_at_the_reliquary_env/tasks/after_hours_at_the_reliquary_seed_0001/setup_task.sh",
+    "weird_captcha_gym/environments/after_hours_at_the_reliquary_env/tasks/after_hours_at_the_reliquary_seed_0001/export_result.sh",
+    "weird_captcha_gym/environments/after_hours_at_the_reliquary_env/tasks/after_hours_at_the_reliquary_seed_0001/verifier.py",
+    "weird_captcha_gym/shared_scripts/setup_task.py",
+    "weird_captcha_gym/shared_scripts/incubator_generators/after_hours_at_the_reliquary.py",
+    "weird_captcha_gym/shared_runtime/app/index.html",
+    "weird_captcha_gym/shared_runtime/app/app.js",
+    "weird_captcha_gym/shared_runtime/app/time_controller.js",
+    "weird_captcha_gym/shared_runtime/app/mechanics/after_hours_at_the_reliquary.js",
+    "weird_captcha_gym/shared_runtime/app/mechanics/after_hours_at_the_reliquary.css",
+    "weird_captcha_gym/shared_runtime/verifier_helpers.py",
+    "weird_captcha_gym/shared_runtime/server/incubator_graders/after_hours_at_the_reliquary.py",
+    "weird_captcha_gym/tools/incubator_solvers/after_hours_at_the_reliquary.py"
+  ],
+  "source_evidence": [
+    {
+      "path": "weird_captcha_gym/environments/after_hours_at_the_reliquary_env/controls.json",
+      "lines": "24-41",
+      "claim": "Difficulty 4 activates six views, digit/colour/key wards, four- and five-symbol clues, combined hook construction, unmarked cues, cross-view order, and three wrong-entry limit; simplified interaction uses turn buttons and select-then-click inventory use; observation_window_ms is 0 and frames_per_observation is 1."
+    },
+    {
+      "path": "weird_captcha_gym/shared_scripts/incubator_generators/after_hours_at_the_reliquary.py",
+      "lines": "57-61,143-167,169-263",
+      "claim": "The generator reads the injected difficulty parameters, derives seed-randomized clues/directions, creates a fixed view list and normalized target rectangles, and exports static public state and answers; it defines no task-time progression."
+    },
+    {
+      "path": "weird_captcha_gym/shared_runtime/app/mechanics/after_hours_at_the_reliquary.js",
+      "lines": "174-203,206-242,244-335,359-394,442-473,480-494",
+      "claim": "The simplified UI renders visible turn controls, scene hotspots, tray selection/use/combine controls, ward controls, and terminal submission; state mutations occur in click/pointer handlers and the only network calls are result submissions."
+    },
+    {
+      "path": "weird_captcha_gym/shared_runtime/app/mechanics/after_hours_at_the_reliquary.css",
+      "lines": "153-159,226-233",
+      "claim": "The door has a fixed 0.8-second transform transition when the action adds the open class; the rest of the mechanic CSS supplies static geometry and controls, with no autonomous task animation."
+    },
+    {
+      "path": "weird_captcha_gym/shared_runtime/app/time_controller.js",
+      "lines": "55-57,155-177,301-339",
+      "claim": "The shared clock advances timers and animation frames only while running and freezes them while paused; the exact configuration's zero-length observation window supplies no mechanic-specific autonomous progression, and this mechanic does not register a timer or animation loop."
+    },
+    {
+      "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/after_hours_at_the_reliquary.py",
+      "lines": "278-343,344-417,482-498",
+      "claim": "The server replays a finite event transcript synchronously against fixed views, flags, inventory, ward answers, and geometry, and grades the final state; it records no timing-dependent action value."
+    },
+    {
+      "path": "weird_captcha_gym/environments/after_hours_at_the_reliquary_env/tasks/after_hours_at_the_reliquary_seed_0001/verifier.py",
+      "lines": "22-43",
+      "claim": "The task verifier loads the exported result and delegates the final outcome to the independent reliquary grader."
+    },
+    {
+      "path": "weird_captcha_gym/tools/incubator_solvers/after_hours_at_the_reliquary.py",
+      "lines": "117-156",
+      "claim": "The solver performs a finite sequence of screenshots, view turns, hotspot clicks, object combinations, ward submissions, and final door click; it has no waiting or continuous observation phase."
+    }
+  ],
+  "uncertainties": []
+}

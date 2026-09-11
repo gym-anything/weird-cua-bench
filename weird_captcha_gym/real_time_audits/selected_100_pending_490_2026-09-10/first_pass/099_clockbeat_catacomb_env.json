@@ -1,0 +1,127 @@
+{
+  "case_index": 99,
+  "public_environment_name": "Clockbeat Catacomb",
+  "environment_id": "clockbeat_catacomb_env",
+  "difficulty": 5,
+  "interaction_mode": "full",
+  "label": "yes",
+  "controls_available": [
+    "The selected full interaction surface accepts Arrow keys or WASD for UP, RIGHT, DOWN, and LEFT, and Space for WAIT; key repeat is ignored.",
+    "WIND THE CLOCK starts the autonomous outcome phase; SUBMIT EXPEDITION is administrative.",
+    "One outcome-affecting keyboard action can be accepted during the first 1150 ms of each 1800 ms beat. Off-beat presses do not move or attack, while sentries still act at beat boundaries.",
+    "Difficulty 5 uses a 9x9 board with 9 interior walls, one crawler, one hopper, two lancers, two hit points per sentry, two player hearts, and a 100-beat maximum."
+  ],
+  "autonomous_processes": [
+    "Before WIND THE CLOCK, the board is static and input is not accepted.",
+    "After the clock starts, the browser continuously advances the visible beat progress and status from performance.now; synchronization runs every 50 ms.",
+    "At every 1800 ms beat boundary, each live crawler or active hopper moves one tile toward the player when possible; a hopper alternates rest/open and shield/chase phases; a lancer remains rooted and damages the player when its phase is STRIKE and the player is adjacent. The beat counter increments and the next action slot opens.",
+    "At 100 beats the clock is exhausted; terminal success or death stops further autonomous updates."
+  ],
+  "grouped_control_modes": [
+    {
+      "name": "full-mode active beat action",
+      "members": ["UP", "RIGHT", "DOWN", "LEFT", "WAIT"],
+      "input_surface": "keyboard (arrows/WASD/Space)",
+      "scope": "Every outcome-affecting action occurrence during an active gold beat window across seeds, rounds, and attempts."
+    }
+  ],
+  "delta_ms": 1800,
+  "window_ms": 300,
+  "clause_i": {
+    "holds": true,
+    "reason": "No policy q using only prior actions and their task times can select an optimal delayed full-keyboard action across this grouped mode. At the same action history, generated boards, enemy positions, and enemy phase offsets differ; the sentry configuration that will be reached after the next beat can require an attack, retreat, direction, or WAIT choice that is not recoverable from I_t. The missing information is the visible, changing sentry state, not merely the fixed beat schedule."
+  },
+  "clause_ii": {
+    "holds": true,
+    "reason": "A bounded 300 ms window (the configured three chronological frames) exposes the board walls and exit, player position and health, enemy positions and hit points, hopper shield/open state, lancer phase and danger tiles, the beat label, and the gold progress bar. The one-beat transition is deterministic from that visible state, so a policy g using I_t and this recent window can predict the state at t+1800 ms and choose the delayed-optimal keyboard action. A window straddling a beat boundary visibly shows the sentry/phase change; a single current frame is sufficient when the full state is already displayed."
+  },
+  "clause_iii": {
+    "holds": true,
+    "reason": "Use the same grouped mode with Delta=1800 ms. For example, take t=1900 ms after winding the clock: the action is 100 ms into an active gold window, W_t^300 spans 1600--1900 ms and visibly straddles the 1800 ms sentry boundary, and delivery at t+Delta=3700 ms is again 100 ms into an active window. Some such histories remain solvable after no input for one beat (the generator requires a route and a read-only seed-0 replay retained a 19-action route after one no-input beat). During the delay the same visible sentry process moves chasers, changes hopper/lancer phases, and can strike an adjacent player. A direction that attacks or evades a visible sentry at H_t can therefore miss that target or be followed with reduced health at H_t^tau, making its Q strictly lower (or reducing its advantage over no-op) while success remains possible. The loss is caused by non-clock task-state evolution, not by merely having less deadline."
+  },
+  "common_visible_process": "Beat-boundary sentry evolution is the common witness: the crawler and hopper positions, hopper shield/rest phase, lancer strike phase and danger tiles, health, and the beat progress are rendered in the task UI. That same recent visible state prevents an observation-free action policy, permits a bounded-window prediction of the delayed state, and causes an available attack/defensive action to degrade when the sentries move or strike during the delay.",
+  "pre_run": {
+    "threshold": 0.5,
+    "at_least_half": false,
+    "rate": 0.0,
+    "basis": "source_structural",
+    "reason": "No generated instance admits a successful pre-run solution. Before the clock starts, actions are ignored. After it starts, a run with no outcome-affecting actions can only execute autonomous sentry steps: those steps move or strike sentries, but never decrement enemy health, move the player, or set won. The only code that attacks/moves the player and can set success is act(), so clearing every sentry and entering the stair is impossible without post-start actions. The pre-run rate is therefore structurally 0, below the 0.5 override threshold.",
+    "seed_probe": null
+  },
+  "files_read_completely": [
+    "AGENTS.md",
+    "weird_captcha_gym/docs/controllability/real-time.md",
+    "weird_captcha_gym/environments/clockbeat_catacomb_env/controls.json",
+    "weird_captcha_gym/environments/clockbeat_catacomb_env/env.json",
+    "weird_captcha_gym/environments/clockbeat_catacomb_env/scripts/install_puzzle_runtime.sh",
+    "weird_captcha_gym/environments/clockbeat_catacomb_env/scripts/setup_puzzle_runtime.sh",
+    "weird_captcha_gym/environments/clockbeat_catacomb_env/tasks/clockbeat_catacomb_seed_0001/setup_task.sh",
+    "weird_captcha_gym/environments/clockbeat_catacomb_env/tasks/clockbeat_catacomb_seed_0001/export_result.sh",
+    "weird_captcha_gym/environments/clockbeat_catacomb_env/tasks/clockbeat_catacomb_seed_0001/task.json",
+    "weird_captcha_gym/environments/clockbeat_catacomb_env/tasks/clockbeat_catacomb_seed_0001/verifier.py",
+    "weird_captcha_gym/shared_scripts/incubator_generators/clockbeat_catacomb.py",
+    "weird_captcha_gym/shared_runtime/app/mechanics/clockbeat_catacomb.js",
+    "weird_captcha_gym/shared_runtime/app/mechanics/clockbeat_catacomb.css",
+    "weird_captcha_gym/shared_runtime/server/incubator_graders/clockbeat_catacomb.py",
+    "weird_captcha_gym/shared_runtime/verifier_helpers.py",
+    "weird_captcha_gym/tools/incubator_solvers/clockbeat_catacomb.py"
+  ],
+  "source_evidence": [
+    {
+      "path": "weird_captcha_gym/environments/clockbeat_catacomb_env/controls.json",
+      "lines": "87-122",
+      "claim": "Difficulty 5 is the 9x9, 9-wall, crawler/hopper/two-lancer, two-health profile; full interaction is implemented with arrows/WASD/Space; the task has a 1800 ms beat, 1150 ms open window, 300 ms observation window, and three frames."
+    },
+    {
+      "path": "weird_captcha_gym/shared_scripts/incubator_generators/clockbeat_catacomb.py",
+      "lines": "15-18,21-40",
+      "claim": "The generator applies the supplied difficulty parameters, randomizes connected walls, positions, and enemy phase offsets across seeds, sets beat_ms=1800/open_ms=1150/max_beats=100, and requires a reachable route."
+    },
+    {
+      "path": "weird_captcha_gym/shared_runtime/app/mechanics/clockbeat_catacomb.js",
+      "lines": "9-20",
+      "claim": "The browser initializes the visible player/enemy state; active direction actions move or attack, hopper shields can block attacks, and success requires all sentries defeated plus the exit."
+    },
+    {
+      "path": "weird_captcha_gym/shared_runtime/app/mechanics/clockbeat_catacomb.js",
+      "lines": "22-40",
+      "claim": "Autonomous step processing moves chasers, applies lancer contact damage on strike phases, increments beats, and is driven by elapsed task time at beat boundaries."
+    },
+    {
+      "path": "weird_captcha_gym/shared_runtime/app/mechanics/clockbeat_catacomb.js",
+      "lines": "47-58",
+      "claim": "The visible UI renders beat status/progress, enemy phase text and health, player/enemy positions, lancer danger tiles, and the current elapsed/beat state."
+    },
+    {
+      "path": "weird_captcha_gym/shared_runtime/app/mechanics/clockbeat_catacomb.js",
+      "lines": "60-68",
+      "claim": "Input is accepted only in the gold portion of each beat; the full mode maps arrows/WASD/Space to the five grouped actions and starts the clock with WIND THE CLOCK."
+    },
+    {
+      "path": "weird_captcha_gym/shared_runtime/app/mechanics/clockbeat_catacomb.css",
+      "lines": "1-3",
+      "claim": "The pulse, danger-tile, enemy, shield, and board classes used by the browser are visibly styled in the task UI."
+    },
+    {
+      "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/clockbeat_catacomb.py",
+      "lines": "7-49",
+      "claim": "The authoritative replay defines the same initial state, phase calculation, action effects, autonomous enemy movement/strikes, beat increment, and action-slot reset."
+    },
+    {
+      "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/clockbeat_catacomb.py",
+      "lines": "59-78",
+      "claim": "Grading replays autonomous beats based on submitted task times, enforces the full-mode keyboard source and beat-window outcomes, and requires the final won state with positive health."
+    },
+    {
+      "path": "weird_captcha_gym/environments/clockbeat_catacomb_env/tasks/clockbeat_catacomb_seed_0001/verifier.py",
+      "lines": "22-35",
+      "claim": "The environment verifier loads the exported result and applies the independent clockbeat replay grader rather than trusting the client state."
+    },
+    {
+      "path": "weird_captcha_gym/tools/incubator_solvers/clockbeat_catacomb.py",
+      "lines": "20-34",
+      "claim": "The wiring solver waits for each beat and sends one planned key in the active window, corroborating that the intended interaction requires repeated timed actions while the clock runs."
+    }
+  ],
+  "uncertainties": []
+}

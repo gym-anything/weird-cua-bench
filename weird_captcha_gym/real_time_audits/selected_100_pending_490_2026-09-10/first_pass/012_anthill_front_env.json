@@ -1,0 +1,143 @@
+{
+  "case_index": 12,
+  "public_environment_name": "Anthill Front",
+  "environment_id": "anthill_front_env",
+  "difficulty": 1,
+  "interaction_mode": "simplified",
+  "label": "no",
+  "controls_available": [
+    "Simplified roster buttons for WORKERS, SOLDIERS, CLEAR, and individual visible unit buttons",
+    "GATHER selected workers -> SEEDS",
+    "RAISE 2 SEEDS -> SOLDIER",
+    "MARCH NORTH selected soldiers",
+    "MARCH SOUTH selected soldiers",
+    "ASSAULT RIVAL selected soldiers -> ENEMY QUEEN",
+    "Minimap click and left/right pan controls",
+    "CERTIFY FRONT"
+  ],
+  "autonomous_processes": [
+    "The live task clock advances the simulation in 100 ms ticks without new agent actions.",
+    "Workers ordered to GATHER complete a seed trip every 18 ticks, changing the resource total.",
+    "RAISE orders complete after 14 ticks and create soldiers from the production queue.",
+    "The rival outpost builds autonomously through tick 168; the single raid spawns at tick 180 and approaches the colony.",
+    "From response-open tick 223, the raid formation visibly advances in x and feints vertically according to its seeded phase; the response band ends at tick 268.",
+    "At impact tick 280, the commitment is resolved, the queen can lose health, and a failed defense can terminate the task.",
+    "After an accepted assault, soldiers travel for 45 ticks and attack the rival queen; tick 640 is the terminal match limit.",
+    "The CSS live-dot pulse continues independently, but it is decorative and does not change task state or control effectiveness."
+  ],
+  "grouped_control_modes": [
+    "D_defensive_intercept: the command-panel MARCH NORTH or MARCH SOUTH commitment for the active one-wave raid; this is the common witness mode.",
+    "D_economy: command-panel GATHER assignments to the seed pile.",
+    "D_production: command-panel RAISE orders at the brood chamber.",
+    "D_assault: command-panel MARCH to the enemy queen after every raid is cleared.",
+    "Selection, panning, and certification are visible controls but are not outcome-affecting grouped modes."
+  ],
+  "delta_ms": 300,
+  "window_ms": 800,
+  "clause_i": {
+    "holds": true,
+    "reason": "A policy q using only its own action history and task times cannot choose the delayed defensive target for every admissible history: the generator independently varies the first seeded lane and a 0-35 tick motion phase offset. Identical preparation and command timing can therefore require NORTH in one instance or phase and SOUTH in another. A wrong commitment has no correct defenders, and at count 3 it breaches the 3-HP queen at impact."
+  },
+  "clause_ii": {
+    "holds": true,
+    "reason": "The configured bounded window is 800 ms with 6 chronological frames. The formation's recent x/y positions expose its approach and sinusoidal vertical motion; its observed vertical direction and phase determine the lane returned by interceptLane at delivery. A window policy g can extrapolate that visible trajectory 300 ms ahead and select the corresponding fixed NORTH or SOUTH command-panel button."
+  },
+  "clause_iii": {
+    "holds": true,
+    "reason": "Use a prepared history with soldiers available and t inside the response band near a vertical-motion phase crossing, with Delta=300 ms. For some generated phase offsets, a lane command is correct at t, but after a non-clock phase change within tau<300 ms the same command remains available yet is marked incorrect by interceptLane; a new opposite-lane command could still succeed before tick 268. Once the first commitment is recorded, the active-wave filter prevents correction, so Q(H_t^tau,a) is strictly below Q(H_t,a) for the same action. This loss is caused by the visibly changing raid vector, not merely by deadline passage."
+  },
+  "common_visible_process": "The single rival formation is the common process: it spawns at tick 180, travels toward the colony, and after tick 223 visibly oscillates vertically while crossing the marked intercept band. The same recent trajectory is needed to choose the delayed defensive lane, and the phase oscillation can make that lane commitment ineffective before the raid impacts at tick 280.",
+  "pre_run": {
+    "threshold": 0.5,
+    "at_least_half": false,
+    "rate": null,
+    "basis": "source_structural",
+    "reason": "Preparation can gather seeds and raise soldiers, but the only defensive commitment is an outcome-affecting MARCH action. The browser and grader accept NORTH/SOUTH only when the current tick is in the response band 223-268, after the autonomous raid has already spawned and begun moving; there is no queued or pre-commit defense action. Thus no screenshot-only instance can start the autonomous raid outcome phase and send no further outcome-affecting action until that phase ends. The pre-run threshold therefore overrides the mathematical witness and makes the configuration label no.",
+    "seed_probe": null
+  },
+  "files_read_completely": [
+    "AGENTS.md",
+    "weird_captcha_gym/docs/controllability/real-time.md",
+    "weird_captcha_gym/environments/anthill_front_env/controls.json",
+    "weird_captcha_gym/environments/anthill_front_env/env.json",
+    "weird_captcha_gym/environments/anthill_front_env/tasks/anthill_front_seed_0001/task.json",
+    "weird_captcha_gym/environments/anthill_front_env/tasks/anthill_front_seed_0001/setup_task.sh",
+    "weird_captcha_gym/environments/anthill_front_env/tasks/anthill_front_seed_0001/export_result.sh",
+    "weird_captcha_gym/environments/anthill_front_env/tasks/anthill_front_seed_0001/verifier.py",
+    "weird_captcha_gym/shared_scripts/incubator_generators/anthill_front.py",
+    "weird_captcha_gym/shared_runtime/app/index.html",
+    "weird_captcha_gym/shared_runtime/app/time_controller.js",
+    "weird_captcha_gym/shared_runtime/app/mechanics/anthill_front.js",
+    "weird_captcha_gym/shared_runtime/app/mechanics/anthill_front.css",
+    "weird_captcha_gym/shared_runtime/server/incubator_graders/anthill_front.py",
+    "weird_captcha_gym/tools/incubator_solvers/anthill_front.py"
+  ],
+  "source_evidence": [
+    {
+      "path": "weird_captcha_gym/environments/anthill_front_env/controls.json",
+      "lines": "3-16",
+      "claim": "The exact profile is difficulty 1 with worker_count 4, initial_seeds 5, brood_ready true, no diggers, no hidden opening, one 3-ant raid, spawn 180, impact 280, enemy queen HP 4, and an 800 ms/6-frame observation window; simplified mode uses a labelled roster and explicit order buttons."
+    },
+    {
+      "path": "weird_captcha_gym/shared_scripts/incubator_generators/anthill_front.py",
+      "lines": "31-51",
+      "claim": "The generator consumes the injected difficulty condition and activates its parameter values for the generated world."
+    },
+    {
+      "path": "weird_captcha_gym/shared_scripts/incubator_generators/anthill_front.py",
+      "lines": "48-50,97-121,147-160",
+      "claim": "Each instance chooses a first lane, gives the raid a random 0-35 tick phase offset, computes response-open/deadline ticks from spawn and impact, and sets a 100 ms world tick with the level-1 one-wave schedule."
+    },
+    {
+      "path": "weird_captcha_gym/shared_runtime/app/mechanics/anthill_front.js",
+      "lines": "55-138",
+      "claim": "Autonomous ticks advance scouting, economy, production, outpost readiness, raid impact, soldier assault damage, and the maximum-clock terminal condition."
+    },
+    {
+      "path": "weird_captcha_gym/shared_runtime/app/mechanics/anthill_front.js",
+      "lines": "141-205",
+      "claim": "MARCH NORTH/SOUTH is accepted only for an active uncommitted raid inside its response band; the chosen lane is compared with interceptLane at the current action tick and then fixed in the defense commitment."
+    },
+    {
+      "path": "weird_captcha_gym/shared_runtime/app/mechanics/anthill_front.js",
+      "lines": "263-279,344-375,436-445",
+      "claim": "The raid formation has autonomous x travel and post-open sinusoidal y motion, is drawn on the visible canvas, and is labelled as a moving vector while contact is in the band."
+    },
+    {
+      "path": "weird_captcha_gym/shared_runtime/app/mechanics/anthill_front.js",
+      "lines": "517-557",
+      "claim": "The simplified renderer conditionally omits SCOUT and EXCAVATE for this world, exposes the fixed command-panel buttons, and advances the simulation from the live task clock."
+    },
+    {
+      "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/anthill_front.py",
+      "lines": "47-52,105-138,167-262",
+      "claim": "The grader uses the same phase-derived intercept lane, resolves a wrong commitment as no stopped defenders and queen breach, and enforces the response band and no-correction commitment rules."
+    },
+    {
+      "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/anthill_front.py",
+      "lines": "291-360",
+      "claim": "Replay requires the simplified command_panel input source and counts all raids as successfully intercepted before accepting victory."
+    },
+    {
+      "path": "weird_captcha_gym/tools/incubator_solvers/anthill_front.py",
+      "lines": "233-369",
+      "claim": "The normal visible-control solver performs level-dependent preparation, waits for the visible contact band, samples formation y across successive observations to infer NORTH/SOUTH, commits the defense, then assaults the rival queen."
+    },
+    {
+      "path": "weird_captcha_gym/shared_runtime/app/time_controller.js",
+      "lines": "55-80,155-201,548-603",
+      "claim": "Live task time is based on the virtual performance clock, while paused windows freeze the task clock; the common run_for/pause/resume cycle supplies the configured observation window."
+    },
+    {
+      "path": "weird_captcha_gym/shared_runtime/app/mechanics/anthill_front.css",
+      "lines": "52-55,67-120",
+      "claim": "The visible live-dot pulse is a CSS animation, whereas the battlefield, minimap, roster, command panel, and response readout are the task UI; the pulse is unrelated to outcome state."
+    },
+    {
+      "path": "weird_captcha_gym/environments/anthill_front_env/tasks/anthill_front_seed_0001/verifier.py",
+      "lines": "7-32",
+      "claim": "The environment verifier loads the exported result and the independent Anthill Front grader, so outcome grading follows the deterministic replay contract."
+    }
+  ],
+  "uncertainties": []
+}

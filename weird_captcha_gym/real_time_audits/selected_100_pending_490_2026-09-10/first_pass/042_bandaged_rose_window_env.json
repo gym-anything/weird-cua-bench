@@ -1,0 +1,112 @@
+{
+  "case_index": 42,
+  "public_environment_name": "Bandaged Rose Window",
+  "environment_id": "bandaged_rose_window_env",
+  "difficulty": 1,
+  "interaction_mode": "simplified",
+  "label": "no",
+  "controls_available": [
+    "Six visible proxy turn buttons: clockwise and counter-clockwise for NORTH, SOUTHWEST, and SOUTHEAST; each requests one sixth-turn.",
+    "SEAL submits the current transcript and is administrative.",
+    "RETRY appears after a failed submission and renders a fresh challenge; it is administrative.",
+    "No outcome-affecting keyboard control is installed by this simplified mechanic."
+  ],
+  "autonomous_processes": [],
+  "grouped_control_modes": [
+    "simplified proxy_buttons: every occurrence of the six disc-and-direction turn-button actions across seeds and turns"
+  ],
+  "delta_ms": null,
+  "window_ms": 0,
+  "clause_i": {
+    "holds": false,
+    "reason": "At the initial decision I_t contains no prior action and is identical across instances, while the generator samples multiple filtered depth-2 states. A source graph probe found 12 such choices and an empty intersection of their shortest first-action sets, so no observation-free q(I_t) selects an optimal next proxy button for every history."
+  },
+  "clause_ii": {
+    "holds": true,
+    "reason": "The current rose and the reference rose are visible in the rendered SVG, and the legality and turn effects are deterministic from that visible arrangement. With the configured zero-length observation window (one endpoint frame), a bounded-window policy can choose the optimal next proxy button from the screenshot; waiting does not alter the state before delivery."
+  },
+  "clause_iii": {
+    "holds": false,
+    "reason": "No positive delay has a non-clock autonomous task-state change. The mechanic updates current only inside the proxy-button attempt handler, and refused attempts leave the visible rose unchanged; the source contains no task timer, animation loop, or autonomous state update for this mechanic. All proxy buttons remain available and no turn opportunity expires or strictly degrades. Any loss from the 180-second play limit would be deadline-only and is excluded by the frozen definition."
+  },
+  "common_visible_process": "None: the rose is static between agent actions. The only visible state transition is the synchronous result of an agent-triggered turn, so there is no common autonomous process to observe and predict.",
+  "pre_run": {
+    "threshold": 0.5,
+    "at_least_half": null,
+    "rate": null,
+    "basis": "not_applicable",
+    "reason": "The mathematical definition already fails clause (iii), so the pre-run threshold cannot change this configuration's No label. There is no autonomous outcome phase in this mechanic to evaluate as a pre-run run.",
+    "seed_probe": null
+  },
+  "files_read_completely": [
+    "AGENTS.md",
+    "weird_captcha_gym/docs/controllability/real-time.md",
+    "weird_captcha_gym/environments/bandaged_rose_window_env/controls.json",
+    "weird_captcha_gym/environments/bandaged_rose_window_env/env.json",
+    "weird_captcha_gym/environments/bandaged_rose_window_env/scripts/install_puzzle_runtime.sh",
+    "weird_captcha_gym/environments/bandaged_rose_window_env/scripts/setup_puzzle_runtime.sh",
+    "weird_captcha_gym/environments/bandaged_rose_window_env/tasks/bandaged_rose_window_seed_0001/export_result.sh",
+    "weird_captcha_gym/environments/bandaged_rose_window_env/tasks/bandaged_rose_window_seed_0001/setup_task.sh",
+    "weird_captcha_gym/environments/bandaged_rose_window_env/tasks/bandaged_rose_window_seed_0001/task.json",
+    "weird_captcha_gym/environments/bandaged_rose_window_env/tasks/bandaged_rose_window_seed_0001/verifier.py",
+    "weird_captcha_gym/shared_scripts/incubator_generators/bandaged_rose_window.py",
+    "weird_captcha_gym/shared_runtime/app/mechanics/bandaged_rose_window.js",
+    "weird_captcha_gym/shared_runtime/app/mechanics/bandaged_rose_window.css",
+    "weird_captcha_gym/shared_runtime/server/incubator_graders/bandaged_rose_window.py",
+    "weird_captcha_gym/shared_runtime/verifier_helpers.py",
+    "weird_captcha_gym/tools/incubator_solvers/bandaged_rose_window.py"
+  ],
+  "source_evidence": [
+    {
+      "path": "weird_captcha_gym/docs/controllability/real-time.md",
+      "lines": "40-68,70-88",
+      "claim": "Real-time requires the same grouped mode to have a visible autonomous evolution that makes an action strictly worse within a positive delay; clock-only deadline loss and static puzzles do not satisfy clause (iii)."
+    },
+    {
+      "path": "weird_captcha_gym/environments/bandaged_rose_window_env/controls.json",
+      "lines": "9-14,41-54",
+      "claim": "Difficulty 1 sets scramble_depth to 2, simplified mode is the six proxy-button surface, and the configured observation window is 0 ms with one frame."
+    },
+    {
+      "path": "weird_captcha_gym/environments/bandaged_rose_window_env/env.json",
+      "lines": "9-14",
+      "claim": "The runtime exposes a zero-ms observation window, one frame per observation, a 180-second play allowance, synchronous actions, and a 160-ms runner step cycle."
+    },
+    {
+      "path": "weird_captcha_gym/shared_scripts/incubator_generators/bandaged_rose_window.py",
+      "lines": "36-77,110-155",
+      "claim": "The generator builds a static legal-turn BFS graph, applies the supplied difficulty_parameters, samples an exact depth-2 state from a seed, and exports the visible initial/solved rose plus an exact solution path; it contains no elapsed-time or autonomous phase."
+    },
+    {
+      "path": "weird_captcha_gym/shared_runtime/app/mechanics/bandaged_rose_window.js",
+      "lines": "77-115,220-242",
+      "claim": "Simplified rendering creates six proxy buttons; only their click listeners call attempt, which synchronously computes legality and updates the rose on a successful turn. Rendering, submission, and retry are event-driven, with no timer or autonomous update loop."
+    },
+    {
+      "path": "weird_captcha_gym/shared_runtime/app/mechanics/bandaged_rose_window.css",
+      "lines": "1-4",
+      "claim": "The mechanic-specific CSS supplies static layout, hover, filter, and pass/fail styles and declares no time-based animation or transition for the rose state."
+    },
+    {
+      "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/bandaged_rose_window.py",
+      "lines": "34-105",
+      "claim": "The grader replays the submitted event transcript using the rose's current state and legal-turn physics; success is determined by the final solved state, with no timing input."
+    },
+    {
+      "path": "weird_captcha_gym/environments/bandaged_rose_window_env/tasks/bandaged_rose_window_seed_0001/verifier.py",
+      "lines": "39-105",
+      "claim": "The exported verifier independently replays each requested turn and checks final state and counts; it has no elapsed-time or autonomous-state condition."
+    },
+    {
+      "path": "weird_captcha_gym/tools/incubator_solvers/bandaged_rose_window.py",
+      "lines": "50-56,77-96",
+      "claim": "The solver uses proxy-button clicks for simplified interaction, waits only for the synchronous successful-turn count, and then submits; it does not rely on a changing world."
+    },
+    {
+      "path": "weird_captcha_gym/shared_runtime/verifier_helpers.py",
+      "lines": "15-30,33-45",
+      "claim": "The task verifier loads the exported result and dispatches the task-specific grader, confirming that grading is transcript/outcome based rather than time based."
+    }
+  ],
+  "uncertainties": []
+}

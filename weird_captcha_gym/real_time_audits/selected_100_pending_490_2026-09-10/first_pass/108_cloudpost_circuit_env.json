@@ -1,0 +1,124 @@
+{
+  "case_index": 108,
+  "public_environment_name": "Cloudpost Circuit",
+  "environment_id": "cloudpost_circuit_env",
+  "difficulty": 4,
+  "interaction_mode": "simplified",
+  "label": "yes",
+  "controls_available": [
+    "Five visible trim buttons are available: TURN LEFT and TURN RIGHT change the persistent yaw control by -0.12 and +0.12, CLIMB and DIVE change the persistent pitch control by +0.10 and -0.10, and LEVEL resets both controls to zero.",
+    "The simplified interface does not use pointer steering; each accepted trim click is an outcome-affecting control change and the vector persists between clicks.",
+    "The flight starts when the mechanic renders; successful or failed result posting is automatic and administrative."
+  ],
+  "autonomous_processes": [
+    "During every interval without a new action, requestAnimationFrame accumulates elapsed time and advances the flight physics every 40 ms.",
+    "Each physics tick turns the plane toward the persistent yaw and pitch controls, moves its 3D position at the configured flight speed, updates the visible projected seals, and may record world-space contact or terminate on corridor exit/all-seal completion.",
+    "After a failed terminal result, a 520 ms UI timer can render a fresh route; this is administrative regeneration after the outcome, not an active control opportunity."
+  ],
+  "grouped_control_modes": [
+    "D: all simplified trim-button course-correction occurrences while an uncollected seal is visibly in the flight field, across every seed and route waypoint; the mode contains left, right, up, down, and level increments.",
+    "Full-pointer steering is inactive for this configuration, and terminal result submission is administrative rather than an outcome-affecting control mode."
+  ],
+  "delta_ms": 600,
+  "window_ms": 600,
+  "clause_i": {
+    "holds": true,
+    "reason": "No policy using only prior actions and task times can choose the delayed-optimal trim for every history in D: the procedural route varies lateral and vertical target coordinates, including opposite-sided current seals, while the same action history and timing can occur on different seeds. A fixed schedule or persistent vector therefore cannot select the needed correction."
+  },
+  "clause_ii": {
+    "holds": true,
+    "reason": "For the visible-seal correction histories in D, six chronological frames over the configured 600 ms window show the seal's projected location, apparent depth/size, and the changing flight-field geometry. That bounded recent evidence is sufficient to choose the one-step simplified trim that places the plane on the seal at the delayed endpoint, with later corrections continuing the route."
+  },
+  "clause_iii": {
+    "holds": true,
+    "reason": "C_600(D) is nonempty when a visible seal is ahead with enough corridor remaining for recovery. If the agent waits, for example, 240 ms (six 40 ms ticks) before delivering the same right/left or climb/dive correction, the plane's x/y/z pose and heading change while it advances; over the full 600 ms witness horizon it moves for 15 ticks at the L4 speed of 2.30. The same trim can then arrive after the best intercept or with a less useful heading, reducing Q or its advantage over no-op while success remains possible. The strict loss is caused by changing flight geometry, not by a deadline or later completion alone."
+  },
+  "common_visible_process": "A stationary uncollected delivery seal is rendered in the plane-relative 3D field while the plane autonomously advances. Across the recent frames its projected position, size, and depth change as the 40 ms physics ticks alter the plane pose; that same visible trajectory predicts where the delayed trim will land. A trim chosen before the plane crosses the seal's world-space contact region has higher value, while waiting lets the plane pass or drift beyond the 12-unit L4 contact radius. This is the shared process for clauses (i), (ii), and (iii), not an unrelated idle animation.",
+  "pre_run": {
+    "threshold": 0.5,
+    "at_least_half": false,
+    "rate": null,
+    "basis": "source_structural",
+    "reason": "There is no separate start phase in the mechanic: render initializes the control and immediately starts the physics loop, so a pre-run with no further outcome-affecting action leaves one fixed flight vector. For L4, the first generated x coordinate always has absolute value at least 78*0.62 = 48.36 (or is forced to 78*0.86), while each later x coordinate is bounded by 0.35 times the previous magnitude plus 78*0.18 = 14.04. Thus the fourth seal has |x| <= 0.35^3*78 + 14.04*(1+0.35+0.35^2) = 24.019, whereas contacting the first seal with radius 12 requires the plane to have |x| >= 48.36-12 = 36.36. Under one fixed yaw vector the plane's |x| is monotone, so it cannot contact the first and fourth seals in one no-action run. This source bound rules out a successful pre-run for every generated route; no percentage is invented or reported.",
+    "seed_probe": null
+  },
+  "files_read_completely": [
+    "AGENTS.md",
+    "weird_captcha_gym/docs/controllability/real-time.md",
+    "weird_captcha_gym/environments/cloudpost_circuit_env/controls.json",
+    "weird_captcha_gym/environments/cloudpost_circuit_env/env.json",
+    "weird_captcha_gym/environments/cloudpost_circuit_env/tasks/cloudpost_circuit_seed_0001/task.json",
+    "weird_captcha_gym/environments/cloudpost_circuit_env/tasks/cloudpost_circuit_seed_0001/verifier.py",
+    "weird_captcha_gym/environments/cloudpost_circuit_env/tasks/cloudpost_circuit_seed_0001/setup_task.sh",
+    "weird_captcha_gym/environments/cloudpost_circuit_env/tasks/cloudpost_circuit_seed_0001/export_result.sh",
+    "weird_captcha_gym/environments/cloudpost_circuit_env/scripts/setup_puzzle_runtime.sh",
+    "weird_captcha_gym/environments/cloudpost_circuit_env/scripts/install_puzzle_runtime.sh",
+    "weird_captcha_gym/shared_scripts/incubator_generators/cloudpost_circuit.py",
+    "weird_captcha_gym/shared_runtime/app/mechanics/cloudpost_circuit.js",
+    "weird_captcha_gym/shared_runtime/app/mechanics/cloudpost_circuit.css",
+    "weird_captcha_gym/shared_runtime/server/incubator_graders/cloudpost_circuit.py",
+    "weird_captcha_gym/shared_runtime/verifier_helpers.py",
+    "weird_captcha_gym/tools/incubator_solvers/cloudpost_circuit.py"
+  ],
+  "source_evidence": [
+    {
+      "path": "weird_captcha_gym/environments/cloudpost_circuit_env/controls.json",
+      "lines": "4-16",
+      "claim": "Difficulty 4 selects five targets, spacing 92, lateral/vertical spans 78/59, flight speed 2.30, turn step 0.24, and contact radius 12; simplified trim buttons are implemented; the observation window is 600 ms with six frames."
+    },
+    {
+      "path": "weird_captcha_gym/environments/cloudpost_circuit_env/env.json",
+      "lines": "9-12",
+      "claim": "The runtime exposes frame-window observations and configures the same 600 ms observation window, six frames per observation, and 150-second play allowance."
+    },
+    {
+      "path": "weird_captcha_gym/shared_scripts/incubator_generators/cloudpost_circuit.py",
+      "lines": "48-57, 82-119, 122-172",
+      "claim": "The L4 profile is exact; target generation forces the first seal away from the center when needed and contracts later x/y waypoints toward the prior point; physics ticks every 40 ms and uses world-space contact radius."
+    },
+    {
+      "path": "weird_captcha_gym/shared_runtime/app/mechanics/cloudpost_circuit.js",
+      "lines": "36-42, 89-114, 127-159",
+      "claim": "The state reads the selected interaction, simplified trim clicks modify a persistent control vector, and each autonomous tick changes heading and 3D position before checking contacts and corridor termination."
+    },
+    {
+      "path": "weird_captcha_gym/shared_runtime/app/mechanics/cloudpost_circuit.js",
+      "lines": "203-274",
+      "claim": "The browser projects scenery and uncollected seals from the changing plane pose, draws the visible flight field, and runs the autonomous physics loop from requestAnimationFrame elapsed time."
+    },
+    {
+      "path": "weird_captcha_gym/shared_runtime/app/mechanics/cloudpost_circuit.js",
+      "lines": "316-344",
+      "claim": "Simplified rendering creates the five visible trim buttons; left/right and up/down apply fixed increments, LEVEL resets the vector, and the flight loop starts immediately on render."
+    },
+    {
+      "path": "weird_captcha_gym/shared_runtime/app/mechanics/cloudpost_circuit.css",
+      "lines": "77-87, 127-182",
+      "claim": "The flight canvas is the visible task field and the simplified trim controls are rendered as ordinary visible buttons."
+    },
+    {
+      "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/cloudpost_circuit.py",
+      "lines": "32-44, 60-112, 122-188",
+      "claim": "The grader replays the same turn, position, world-space contact, corridor, and terminal rules; it requires the simplified trim-button event source and legal visible increments."
+    },
+    {
+      "path": "weird_captcha_gym/tools/incubator_solvers/cloudpost_circuit.py",
+      "lines": "53-93",
+      "claim": "The privileged solver repeatedly snapshots the plane and target state, computes a target-directed correction, and re-observes after each simplified trim; this corroborates closed-loop correction but its private state is not used as policy information."
+    },
+    {
+      "path": "weird_captcha_gym/environments/cloudpost_circuit_env/tasks/cloudpost_circuit_seed_0001/verifier.py",
+      "lines": "21-34",
+      "claim": "The task verifier loads the exported result and authoritative Cloudpost grader, so outcome validity is based on the independent world-space replay."
+    },
+    {
+      "path": "weird_captcha_gym/docs/controllability/real-time.md",
+      "lines": "36-68, 70-90",
+      "claim": "The frozen diagnostic requires one common visible autonomous process, a bounded window, a state-dependent delayed action, and strict loss of the action opportunity; the pre-run threshold overrides only when at least half of instances admit an action-free outcome phase."
+    }
+  ],
+  "uncertainties": [
+    "The generator notes that the first seal may begin outside the initial camera frustum. The common witness therefore uses every visible-seal trim-correction occurrence across seeds and waypoints, rather than selecting an early interval; the initial search is not needed for the witness.",
+    "The checked seed task fixture is labeled baseline/full, but the assigned configuration is the controls.json difficulty-4/simplified override; the browser mechanic and grader explicitly branch on that condition."
+  ]
+}

@@ -1,0 +1,117 @@
+{
+  "case_index": 150,
+  "public_environment_name": "Consent Gauntlet",
+  "environment_id": "consent_gauntlet_env",
+  "difficulty": 5,
+  "interaction_mode": "simplified",
+  "label": "no",
+  "controls_available": [
+    "Difficulty 5 generates 10 purposes (5 negative statements), 3 drawers, 7 entry options, 7 final options, 2 reset traps, 2 directed links, and moving gateways at 28 degrees per second.",
+    "Simplified entry and final gateways use fixed option_proxy buttons; the moving orbit cards are not actionable.",
+    "Preferences use fixed drawer_navigator previous/next buttons, SET NO and SET YES switch_direction_button controls, RESTORE DEFAULTS trap_proxy buttons, REVIEW CURRENT CHOICES, and RETURN TO LEDGER.",
+    "The environment advertises mouse and keyboard action surfaces, but this mechanic's simplified task controls are implemented as visible mouse-click buttons; no physical switch drag is required."
+  ],
+  "autonomous_processes": [
+    "While the entry or final gateway is displayed, requestAnimationFrame updates the visible task timer and recomputes each orbit card's left/top position and z-index from the 28 degrees-per-second phase.",
+    "While the preferences ledger is displayed, the animation loop continues updating the timer, but there are no orbit cards; drawer, purpose, reset, link, and stage state changes occur only in input handlers.",
+    "The shared clock advances performance.now and queued animation frames during live task windows and freezes them while paused; this changes when the orbit is observed, not the simplified proxy controls or their effects."
+  ],
+  "grouped_control_modes": [
+    "gateway selection via option_proxy fixed buttons at entry and final stages",
+    "drawer navigation via drawer_navigator previous/next buttons",
+    "purpose setting via switch_direction_button SET NO/SET YES buttons",
+    "drawer reset via trap_proxy RESTORE DEFAULTS buttons",
+    "ledger review via review_button and return via back_button"
+  ],
+  "delta_ms": null,
+  "window_ms": null,
+  "clause_i": {
+    "holds": true,
+    "reason": "For a legitimate grouped mode such as the simplified gateway proxies, the generated option order and semantic labels vary by seed. Histories with identical prior actions and task times can therefore have different optimal proxy buttons, so no observation-free q based only on I_t is optimal across the configuration."
+  },
+  "clause_ii": {
+    "holds": true,
+    "reason": "The fixed proxy labels, current drawer, visible purpose statements, switch states, and link notes are present in the screenshot. A bounded endpoint observation is sufficient to choose the semantic proxy or ledger action; no unbounded temporal memory is needed."
+  },
+  "clause_iii": {
+    "holds": false,
+    "reason": "The autonomous process only changes the timer and the disabled orbit-card styles/positions. In simplified mode the proxy buttons stay fixed and their action semantics, availability, and effects do not change during a wait; ledger state changes only after an input event. The grader uses option_proxy for simplified gateways and skips moving-card geometry validation, while elapsed task time is only checked as a finite value within 180000 ms. Thus no legitimate D has an available action with a strict Q loss caused by non-clock task-state evolution."
+  },
+  "common_visible_process": "There is no qualifying common visible process. The 28 degrees-per-second orbit is visibly autonomous, but it affects only orbit cards that simplified CSS makes non-interactive; the outcome-affecting proxy controls remain stationary and actionable. The timer is likewise unrelated to the graded outcome and provides no expiring opportunity.",
+  "pre_run": {
+    "threshold": 0.5,
+    "at_least_half": null,
+    "rate": null,
+    "basis": "not_applicable",
+    "reason": "The mathematical definition already fails clause (iii), so the pre-run threshold cannot change the catalog label. No percentage is inferred or invented.",
+    "seed_probe": null
+  },
+  "files_read_completely": [
+    "AGENTS.md",
+    "weird_captcha_gym/docs/controllability/real-time.md",
+    "weird_captcha_gym/environments/consent_gauntlet_env/controls.json",
+    "weird_captcha_gym/environments/consent_gauntlet_env/env.json",
+    "weird_captcha_gym/environments/consent_gauntlet_env/scripts/install_puzzle_runtime.sh",
+    "weird_captcha_gym/environments/consent_gauntlet_env/scripts/setup_puzzle_runtime.sh",
+    "weird_captcha_gym/environments/consent_gauntlet_env/tasks/consent_gauntlet_seed_0001/setup_task.sh",
+    "weird_captcha_gym/environments/consent_gauntlet_env/tasks/consent_gauntlet_seed_0001/export_result.sh",
+    "weird_captcha_gym/environments/consent_gauntlet_env/tasks/consent_gauntlet_seed_0001/task.json",
+    "weird_captcha_gym/environments/consent_gauntlet_env/tasks/consent_gauntlet_seed_0001/verifier.py",
+    "weird_captcha_gym/shared_scripts/incubator_generators/consent_gauntlet.py",
+    "weird_captcha_gym/shared_runtime/app/mechanics/consent_gauntlet.js",
+    "weird_captcha_gym/shared_runtime/app/mechanics/consent_gauntlet.css",
+    "weird_captcha_gym/shared_runtime/server/incubator_graders/consent_gauntlet.py",
+    "weird_captcha_gym/tools/incubator_solvers/consent_gauntlet.py",
+    "weird_captcha_gym/shared_runtime/verifier_helpers.py",
+    "weird_captcha_gym/shared_runtime/app/time_controller.js",
+    "weird_captcha_gym/shared_runtime/app/index.html"
+  ],
+  "source_evidence": [
+    {
+      "path": "weird_captcha_gym/environments/consent_gauntlet_env/controls.json",
+      "lines": "30-41",
+      "claim": "The assigned level-5 parameters include moving_gateways=true at 28 degrees per second, while simplified interaction explicitly uses fixed gateway proxies; the configured observation window is 720 ms with 5 frames and the play allowance is 180 seconds."
+    },
+    {
+      "path": "weird_captcha_gym/shared_scripts/incubator_generators/consent_gauntlet.py",
+      "lines": "81-95, 152-177, 221-258",
+      "claim": "The generator takes the launcher-supplied difficulty parameters, randomizes semantic gateway order and purpose labels/states, creates the phase and orbit offsets, and copies the control condition into public and ground-truth state."
+    },
+    {
+      "path": "weird_captcha_gym/shared_runtime/app/mechanics/consent_gauntlet.js",
+      "lines": "101-160",
+      "claim": "Gateway motion is derived from virtual performance time and changes orbit-card style positions; optionClick records orbit_card only in full mode and option_proxy in simplified mode, with no proxy geometry proof."
+    },
+    {
+      "path": "weird_captcha_gym/shared_runtime/app/mechanics/consent_gauntlet.js",
+      "lines": "163-175, 205-229, 331-353",
+      "claim": "Simplified rendering adds fixed proxy buttons for gateways and drawers, while action handlers change stage, drawers, purposes, resets, links, and review state only in response to clicks."
+    },
+    {
+      "path": "weird_captcha_gym/shared_runtime/app/mechanics/consent_gauntlet.css",
+      "lines": "99-113, 129-157",
+      "claim": "Simplified CSS disables pointer events on orbit cards, tabs, and physical switch rails, while fixed proxy buttons remain the actionable controls."
+    },
+    {
+      "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/consent_gauntlet.py",
+      "lines": "62-106, 129-184, 192-269",
+      "claim": "Only full interaction invokes moving gateway and drag-gesture replay; simplified uses option_proxy, drawer_navigator, switch_direction_button, and trap_proxy, and the only time check is monotonic finite task time bounded by 180 seconds."
+    },
+    {
+      "path": "weird_captcha_gym/tools/incubator_solvers/consent_gauntlet.py",
+      "lines": "26-35, 66-108, 134-163",
+      "claim": "The simplified solver selects fixed proxy buttons and fixed SET controls, navigating drawers without waiting for or sampling the orbit; its visible-label solution can complete through ordinary controls."
+    },
+    {
+      "path": "weird_captcha_gym/shared_runtime/app/time_controller.js",
+      "lines": "55-61, 155-177, 267-339, 548-603",
+      "claim": "The shared clock virtualizes performance time and requestAnimationFrame, advances them only in running windows, and freezes them at paused boundaries; this governs observation timing but does not add a task-state effect to proxy actions."
+    },
+    {
+      "path": "weird_captcha_gym/environments/consent_gauntlet_env/tasks/consent_gauntlet_seed_0001/verifier.py",
+      "lines": "7-35",
+      "claim": "The task verifier loads the exported result and delegates to the independent Consent Gauntlet grader, so the replay contract is the relevant outcome authority."
+    }
+  ],
+  "uncertainties": []
+}

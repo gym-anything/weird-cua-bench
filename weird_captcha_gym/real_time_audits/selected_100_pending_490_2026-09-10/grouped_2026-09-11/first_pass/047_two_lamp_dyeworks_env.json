@@ -1,0 +1,787 @@
+{
+  "case_index": 47,
+  "environment_id": "two_lamp_dyeworks_env",
+  "public_environment_name": "Two-Lamp Dyeworks",
+  "configuration_reports": [
+    {
+      "case_index": 461,
+      "public_environment_name": "Two-Lamp Dyeworks",
+      "environment_id": "two_lamp_dyeworks_env",
+      "difficulty": 1,
+      "interaction_mode": "full",
+      "label": "no",
+      "controls_available": [
+        "Select one of 2 visible pigment bottles; the visible lot rule requires 1–2 active dye families and 2–3 total units.",
+        "Drag the physical syringe plunger to a 1–5-unit graduation and click INJECT INTO VAT; each dose is irreversible within the current vat, with 6-unit vat capacity.",
+        "Drag the physical stirrer through a sampled complete circle in the vat, then drag the fresh test strip into the visible vat opening.",
+        "Toggle NORTH-LIGHT and SODIUM with the lamp switch, view the current strip under both lamps, and click the certification control.",
+        "Click DUMP THIS VAT to discard the current mixture and consume one of 5 fresh vats; the mechanic exposes mouse/pointer controls and binds no keyboard shortcut."
+      ],
+      "autonomous_processes": [
+        "There is no autonomous outcome-affecting task-state process between actions; composition, vat index, lamp, stirred, sampledComposition, viewed, and ready are changed synchronously by input handlers.",
+        "A successful stir starts only the presentational dye-whorl CSS animation for 0.46 seconds and schedules removal of its class after 480 ms; model.stirred remains true until a later dose or vat reset.",
+        "Dosing, lamp changes, sampling, and liquid rendering use short CSS transitions, while the verdict stamp is added after terminal certification or vat exhaustion; these effects do not change an available action's outcome value."
+      ],
+      "grouped_control_modes": [
+        "dose: select a visible pigment, drag the syringe plunger, then click INJECT INTO VAT (plunger_drag)",
+        "stir: complete-circle physical stirrer gesture (stir_gesture)",
+        "dip: drag the fresh test strip into the vat opening (strip_drag)",
+        "lamp inspection: toggle the lamp switch (lamp_switch)",
+        "certification/check: use the certification button after both lamp views (certify_button)",
+        "vat recovery: discard the current vat (dump_valve)"
+      ],
+      "delta_ms": null,
+      "window_ms": null,
+      "clause_i": {
+        "holds": true,
+        "reason": "For a static candidate decision such as initial dosing, histories with identical prior actions can have different visible target ribbons across generated seeds, so an observation-free q cannot be uniformly optimal; this is static visual planning evidence, not a real-time witness."
+      },
+      "clause_ii": {
+        "holds": true,
+        "reason": "The current screenshot exposes the pinned ribbon, visible lot specification, mixture headroom, and lamp/proof state; the configured observation is a single endpoint with a 0 ms window, which is sufficient for a visual policy to choose the static pointer action."
+      },
+      "clause_iii": {
+        "holds": false,
+        "reason": "No positive delay causes non-clock task-state evolution. Waiting leaves the discrete mixture and control state unchanged; only the stir-whorl, lamp/swatch/liquid transitions, and terminal stamp animate. No available dose, stir, dip, lamp, dump, or certification opportunity becomes unavailable or strictly less effective during such a wait."
+      },
+      "common_visible_process": "None. The only between-action changes are decorative CSS transitions/animations; no single visible autonomous process changes an outcome-affecting opportunity.",
+      "pre_run": {
+        "threshold": 0.5,
+        "at_least_half": false,
+        "rate": null,
+        "basis": "source_structural",
+        "reason": "No generated profile has an autonomous outcome phase: a successful run requires further agent-controlled dosing, stirring, sampling, lamp inspection, and certification. Therefore no instance qualifies for the pre-run pattern, and no percentage is asserted; the mathematical failure of clause (iii) already makes this configuration No.",
+        "seed_probe": null
+      },
+      "files_read_completely": [
+        "AGENTS.md",
+        "weird_captcha_gym/docs/controllability/real-time.md",
+        "weird_captcha_gym/environments/two_lamp_dyeworks_env/controls.json",
+        "weird_captcha_gym/environments/two_lamp_dyeworks_env/env.json",
+        "weird_captcha_gym/environments/two_lamp_dyeworks_env/tasks/two_lamp_dyeworks_seed_0001/task.json",
+        "weird_captcha_gym/environments/two_lamp_dyeworks_env/tasks/two_lamp_dyeworks_seed_0001/setup_task.sh",
+        "weird_captcha_gym/environments/two_lamp_dyeworks_env/tasks/two_lamp_dyeworks_seed_0001/export_result.sh",
+        "weird_captcha_gym/shared_scripts/incubator_generators/two_lamp_dyeworks.py",
+        "weird_captcha_gym/shared_runtime/app/index.html",
+        "weird_captcha_gym/shared_runtime/app/time_controller.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/two_lamp_dyeworks.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/two_lamp_dyeworks.css",
+        "weird_captcha_gym/shared_runtime/server/incubator_graders/two_lamp_dyeworks.py",
+        "weird_captcha_gym/environments/two_lamp_dyeworks_env/tasks/two_lamp_dyeworks_seed_0001/verifier.py",
+        "weird_captcha_gym/tools/incubator_solvers/two_lamp_dyeworks.py"
+      ],
+      "source_evidence": [
+        {"path": "weird_captcha_gym/environments/two_lamp_dyeworks_env/controls.json", "lines": "5-10", "claim": "Difficulty 1 supplies 2 pigments, 1–2 active dyes, 2–3 total units, 6-unit capacity, 5 vats, tolerance ΔE 7.0, and numbered graduations."},
+        {"path": "weird_captcha_gym/environments/two_lamp_dyeworks_env/controls.json", "lines": "37-41", "claim": "Full mode is a plunger/stir/strip gesture surface; the configured observation window is 0 ms with one frame and a 180-second play allowance."},
+        {"path": "weird_captcha_gym/shared_scripts/incubator_generators/two_lamp_dyeworks.py", "lines": "205-245", "claim": "Generation reads only the supplied difficulty parameters and uses them to build a static pigment rack and target; no task clock, tick, motion, or timer parameter is generated."},
+        {"path": "weird_captcha_gym/shared_runtime/app/mechanics/two_lamp_dyeworks.js", "lines": "285-349", "claim": "Full plunger input and stirring mutate model state synchronously; the only timer registered by the mechanic removes the stir presentation class."},
+        {"path": "weird_captcha_gym/shared_runtime/app/mechanics/two_lamp_dyeworks.js", "lines": "414-487;489-590", "claim": "The full strip gesture, lamp inspection, certification, and vat disposal are explicit input handlers; lamp, sample, and vat state changes occur at event delivery."},
+        {"path": "weird_captcha_gym/shared_runtime/app/mechanics/two_lamp_dyeworks.css", "lines": "169;230;242;249;253-275", "claim": "The timed effects are CSS transitions, the 0.46-second dye-whorl, or the post-terminal stamp animation, all of which are presentational."},
+        {"path": "weird_captcha_gym/shared_runtime/server/incubator_graders/two_lamp_dyeworks.py", "lines": "266-379", "claim": "The grader accepts the mode-specific event sources and replays only discrete dose/stir/dip/lamp/check/certify/dump events; it contains no task-time evolution."}
+      ],
+      "uncertainties": []
+    },
+    {
+      "case_index": 462,
+      "public_environment_name": "Two-Lamp Dyeworks",
+      "environment_id": "two_lamp_dyeworks_env",
+      "difficulty": 1,
+      "interaction_mode": "simplified",
+      "label": "no",
+      "controls_available": [
+        "Select one of 2 visible pigment bottles; the visible lot rule requires 1–2 active dye families and 2–3 total units.",
+        "Use the −/+ dose controls to select 1–5 units and click INJECT INTO VAT; each dose is irreversible within the current vat, with 6-unit vat capacity.",
+        "Click STIR VAT and then click DIP STRIP to sample the mixture.",
+        "Toggle NORTH-LIGHT and SODIUM with the lamp switch, view the current strip under both lamps, and click the certification control.",
+        "Click DUMP THIS VAT to discard the current mixture and consume one of 5 fresh vats; the mechanic exposes mouse/click controls and binds no keyboard shortcut."
+      ],
+      "autonomous_processes": [
+        "There is no autonomous outcome-affecting task-state process between actions; composition, vat index, lamp, stirred, sampledComposition, viewed, and ready are changed synchronously by input handlers.",
+        "A successful stir starts only the presentational dye-whorl CSS animation for 0.46 seconds and schedules removal of its class after 480 ms; model.stirred remains true until a later dose or vat reset.",
+        "Dosing, lamp changes, sampling, and liquid rendering use short CSS transitions, while the verdict stamp is added after terminal certification or vat exhaustion; these effects do not change an available action's outcome value."
+      ],
+      "grouped_control_modes": [
+        "dose: select a visible pigment, set units with −/+ dose buttons, then click INJECT INTO VAT (dose_buttons)",
+        "stir: click STIR VAT (stir_button)",
+        "dip: click DIP STRIP (dip_button)",
+        "lamp inspection: toggle the lamp switch (lamp_switch)",
+        "certification/check: use the certification button after both lamp views (certify_button)",
+        "vat recovery: discard the current vat (dump_valve)"
+      ],
+      "delta_ms": null,
+      "window_ms": null,
+      "clause_i": {
+        "holds": true,
+        "reason": "For a static candidate decision such as initial dosing, histories with identical prior actions can have different visible target ribbons across generated seeds, so an observation-free q cannot be uniformly optimal; this is static visual planning evidence, not a real-time witness."
+      },
+      "clause_ii": {
+        "holds": true,
+        "reason": "The current screenshot exposes the pinned ribbon, visible lot specification, mixture headroom, and lamp/proof state; the configured observation is a single endpoint with a 0 ms window, which is sufficient for a visual policy to choose the static button action."
+      },
+      "clause_iii": {
+        "holds": false,
+        "reason": "No positive delay causes non-clock task-state evolution. Waiting leaves the discrete mixture and control state unchanged; only the stir-whorl, lamp/swatch/liquid transitions, and terminal stamp animate. No available dose, stir, dip, lamp, dump, or certification opportunity becomes unavailable or strictly less effective during such a wait."
+      },
+      "common_visible_process": "None. The only between-action changes are decorative CSS transitions/animations; no single visible autonomous process changes an outcome-affecting opportunity.",
+      "pre_run": {
+        "threshold": 0.5,
+        "at_least_half": false,
+        "rate": null,
+        "basis": "source_structural",
+        "reason": "No generated profile has an autonomous outcome phase: a successful run requires further agent-controlled dosing, stirring, sampling, lamp inspection, and certification. Therefore no instance qualifies for the pre-run pattern, and no percentage is asserted; the mathematical failure of clause (iii) already makes this configuration No.",
+        "seed_probe": null
+      },
+      "files_read_completely": [
+        "AGENTS.md",
+        "weird_captcha_gym/docs/controllability/real-time.md",
+        "weird_captcha_gym/environments/two_lamp_dyeworks_env/controls.json",
+        "weird_captcha_gym/environments/two_lamp_dyeworks_env/env.json",
+        "weird_captcha_gym/environments/two_lamp_dyeworks_env/tasks/two_lamp_dyeworks_seed_0001/task.json",
+        "weird_captcha_gym/environments/two_lamp_dyeworks_env/tasks/two_lamp_dyeworks_seed_0001/setup_task.sh",
+        "weird_captcha_gym/environments/two_lamp_dyeworks_env/tasks/two_lamp_dyeworks_seed_0001/export_result.sh",
+        "weird_captcha_gym/shared_scripts/incubator_generators/two_lamp_dyeworks.py",
+        "weird_captcha_gym/shared_runtime/app/index.html",
+        "weird_captcha_gym/shared_runtime/app/time_controller.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/two_lamp_dyeworks.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/two_lamp_dyeworks.css",
+        "weird_captcha_gym/shared_runtime/server/incubator_graders/two_lamp_dyeworks.py",
+        "weird_captcha_gym/environments/two_lamp_dyeworks_env/tasks/two_lamp_dyeworks_seed_0001/verifier.py",
+        "weird_captcha_gym/tools/incubator_solvers/two_lamp_dyeworks.py"
+      ],
+      "source_evidence": [
+        {"path": "weird_captcha_gym/environments/two_lamp_dyeworks_env/controls.json", "lines": "5-10", "claim": "Difficulty 1 supplies 2 pigments, 1–2 active dyes, 2–3 total units, 6-unit capacity, 5 vats, tolerance ΔE 7.0, and numbered graduations."},
+        {"path": "weird_captcha_gym/environments/two_lamp_dyeworks_env/controls.json", "lines": "37-41", "claim": "Simplified mode is a dose-button/stir-button/dip-button surface; the configured observation window is 0 ms with one frame and a 180-second play allowance."},
+        {"path": "weird_captcha_gym/shared_scripts/incubator_generators/two_lamp_dyeworks.py", "lines": "205-245", "claim": "Generation reads only the supplied difficulty parameters and uses them to build a static pigment rack and target; no task clock, tick, motion, or timer parameter is generated."},
+        {"path": "weird_captcha_gym/shared_runtime/app/mechanics/two_lamp_dyeworks.js", "lines": "246-283;337-349", "claim": "Simplified dose buttons and the explicit stir button mutate model state synchronously; the only timer registered by the mechanic removes the stir presentation class."},
+        {"path": "weird_captcha_gym/shared_runtime/app/mechanics/two_lamp_dyeworks.js", "lines": "489-590;592-601", "claim": "The simplified stir/dip controls, lamp inspection, certification, and vat disposal are explicit input handlers; lamp, sample, and vat state changes occur at event delivery."},
+        {"path": "weird_captcha_gym/shared_runtime/app/mechanics/two_lamp_dyeworks.css", "lines": "205-208;169;230;242;249;253-275", "claim": "Simplified mode hides the physical syringe and exposes proxy buttons; the timed effects are CSS transitions, the 0.46-second dye-whorl, or the post-terminal stamp animation, all presentational."},
+        {"path": "weird_captcha_gym/shared_runtime/server/incubator_graders/two_lamp_dyeworks.py", "lines": "266-379", "claim": "The grader accepts the simplified event sources and replays only discrete dose/stir/dip/lamp/check/certify/dump events; it contains no task-time evolution."}
+      ],
+      "uncertainties": []
+    },
+    {
+      "case_index": 463,
+      "public_environment_name": "Two-Lamp Dyeworks",
+      "environment_id": "two_lamp_dyeworks_env",
+      "difficulty": 2,
+      "interaction_mode": "full",
+      "label": "no",
+      "controls_available": [
+        "Select one of 3 visible pigment bottles; the visible lot rule requires 2–3 active dye families and 4–6 total units.",
+        "Drag the physical syringe plunger to a 1–5-unit graduation and click INJECT INTO VAT; each dose is irreversible within the current vat, with 8-unit vat capacity.",
+        "Drag the physical stirrer through a sampled complete circle in the vat, then drag the fresh test strip into the visible vat opening.",
+        "Toggle NORTH-LIGHT and SODIUM with the lamp switch, view the current strip under both lamps, and click the certification control.",
+        "Click DUMP THIS VAT to discard the current mixture and consume one of 4 fresh vats; the mechanic exposes mouse/pointer controls and binds no keyboard shortcut."
+      ],
+      "autonomous_processes": [
+        "There is no autonomous outcome-affecting task-state process between actions; composition, vat index, lamp, stirred, sampledComposition, viewed, and ready are changed synchronously by input handlers.",
+        "A successful stir starts only the presentational dye-whorl CSS animation for 0.46 seconds and schedules removal of its class after 480 ms; model.stirred remains true until a later dose or vat reset.",
+        "Dosing, lamp changes, sampling, and liquid rendering use short CSS transitions, while the verdict stamp is added after terminal certification or vat exhaustion; these effects do not change an available action's outcome value."
+      ],
+      "grouped_control_modes": [
+        "dose: select a visible pigment, drag the syringe plunger, then click INJECT INTO VAT (plunger_drag)",
+        "stir: complete-circle physical stirrer gesture (stir_gesture)",
+        "dip: drag the fresh test strip into the vat opening (strip_drag)",
+        "lamp inspection: toggle the lamp switch (lamp_switch)",
+        "certification/check: use the certification button after both lamp views (certify_button)",
+        "vat recovery: discard the current vat (dump_valve)"
+      ],
+      "delta_ms": null,
+      "window_ms": null,
+      "clause_i": {
+        "holds": true,
+        "reason": "For a static candidate decision such as initial dosing, histories with identical prior actions can have different visible target ribbons across generated seeds, so an observation-free q cannot be uniformly optimal; this is static visual planning evidence, not a real-time witness."
+      },
+      "clause_ii": {
+        "holds": true,
+        "reason": "The current screenshot exposes the pinned ribbon, visible lot specification, mixture headroom, and lamp/proof state; the configured observation is a single endpoint with a 0 ms window, which is sufficient for a visual policy to choose the static pointer action."
+      },
+      "clause_iii": {
+        "holds": false,
+        "reason": "No positive delay causes non-clock task-state evolution. Waiting leaves the discrete mixture and control state unchanged; only the stir-whorl, lamp/swatch/liquid transitions, and terminal stamp animate. No available dose, stir, dip, lamp, dump, or certification opportunity becomes unavailable or strictly less effective during such a wait."
+      },
+      "common_visible_process": "None. The only between-action changes are decorative CSS transitions/animations; no single visible autonomous process changes an outcome-affecting opportunity.",
+      "pre_run": {
+        "threshold": 0.5,
+        "at_least_half": false,
+        "rate": null,
+        "basis": "source_structural",
+        "reason": "No generated profile has an autonomous outcome phase: a successful run requires further agent-controlled dosing, stirring, sampling, lamp inspection, and certification. Therefore no instance qualifies for the pre-run pattern, and no percentage is asserted; the mathematical failure of clause (iii) already makes this configuration No.",
+        "seed_probe": null
+      },
+      "files_read_completely": [
+        "AGENTS.md",
+        "weird_captcha_gym/docs/controllability/real-time.md",
+        "weird_captcha_gym/environments/two_lamp_dyeworks_env/controls.json",
+        "weird_captcha_gym/environments/two_lamp_dyeworks_env/env.json",
+        "weird_captcha_gym/environments/two_lamp_dyeworks_env/tasks/two_lamp_dyeworks_seed_0001/task.json",
+        "weird_captcha_gym/environments/two_lamp_dyeworks_env/tasks/two_lamp_dyeworks_seed_0001/setup_task.sh",
+        "weird_captcha_gym/environments/two_lamp_dyeworks_env/tasks/two_lamp_dyeworks_seed_0001/export_result.sh",
+        "weird_captcha_gym/shared_scripts/incubator_generators/two_lamp_dyeworks.py",
+        "weird_captcha_gym/shared_runtime/app/index.html",
+        "weird_captcha_gym/shared_runtime/app/time_controller.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/two_lamp_dyeworks.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/two_lamp_dyeworks.css",
+        "weird_captcha_gym/shared_runtime/server/incubator_graders/two_lamp_dyeworks.py",
+        "weird_captcha_gym/environments/two_lamp_dyeworks_env/tasks/two_lamp_dyeworks_seed_0001/verifier.py",
+        "weird_captcha_gym/tools/incubator_solvers/two_lamp_dyeworks.py"
+      ],
+      "source_evidence": [
+        {"path": "weird_captcha_gym/environments/two_lamp_dyeworks_env/controls.json", "lines": "12-16", "claim": "Difficulty 2 supplies 3 pigments, 2–3 active dyes, 4–6 total units, 8-unit capacity, 4 vats, tolerance ΔE 6.0, and numbered graduations."},
+        {"path": "weird_captcha_gym/environments/two_lamp_dyeworks_env/controls.json", "lines": "37-41", "claim": "Full mode is a plunger/stir/strip gesture surface; the configured observation window is 0 ms with one frame and a 180-second play allowance."},
+        {"path": "weird_captcha_gym/shared_scripts/incubator_generators/two_lamp_dyeworks.py", "lines": "205-245", "claim": "Generation reads only the supplied difficulty parameters and uses them to build a static pigment rack and target; no task clock, tick, motion, or timer parameter is generated."},
+        {"path": "weird_captcha_gym/shared_runtime/app/mechanics/two_lamp_dyeworks.js", "lines": "285-349", "claim": "Full plunger input and stirring mutate model state synchronously; the only timer registered by the mechanic removes the stir presentation class."},
+        {"path": "weird_captcha_gym/shared_runtime/app/mechanics/two_lamp_dyeworks.js", "lines": "414-487;489-590", "claim": "The full strip gesture, lamp inspection, certification, and vat disposal are explicit input handlers; lamp, sample, and vat state changes occur at event delivery."},
+        {"path": "weird_captcha_gym/shared_runtime/app/mechanics/two_lamp_dyeworks.css", "lines": "169;230;242;249;253-275", "claim": "The timed effects are CSS transitions, the 0.46-second dye-whorl, or the post-terminal stamp animation, all of which are presentational."},
+        {"path": "weird_captcha_gym/shared_runtime/server/incubator_graders/two_lamp_dyeworks.py", "lines": "266-379", "claim": "The grader accepts the mode-specific event sources and replays only discrete dose/stir/dip/lamp/check/certify/dump events; it contains no task-time evolution."}
+      ],
+      "uncertainties": []
+    },
+    {
+      "case_index": 464,
+      "public_environment_name": "Two-Lamp Dyeworks",
+      "environment_id": "two_lamp_dyeworks_env",
+      "difficulty": 2,
+      "interaction_mode": "simplified",
+      "label": "no",
+      "controls_available": [
+        "Select one of 3 visible pigment bottles; the visible lot rule requires 2–3 active dye families and 4–6 total units.",
+        "Use the −/+ dose controls to select 1–5 units and click INJECT INTO VAT; each dose is irreversible within the current vat, with 8-unit vat capacity.",
+        "Click STIR VAT and then click DIP STRIP to sample the mixture.",
+        "Toggle NORTH-LIGHT and SODIUM with the lamp switch, view the current strip under both lamps, and click the certification control.",
+        "Click DUMP THIS VAT to discard the current mixture and consume one of 4 fresh vats; the mechanic exposes mouse/click controls and binds no keyboard shortcut."
+      ],
+      "autonomous_processes": [
+        "There is no autonomous outcome-affecting task-state process between actions; composition, vat index, lamp, stirred, sampledComposition, viewed, and ready are changed synchronously by input handlers.",
+        "A successful stir starts only the presentational dye-whorl CSS animation for 0.46 seconds and schedules removal of its class after 480 ms; model.stirred remains true until a later dose or vat reset.",
+        "Dosing, lamp changes, sampling, and liquid rendering use short CSS transitions, while the verdict stamp is added after terminal certification or vat exhaustion; these effects do not change an available action's outcome value."
+      ],
+      "grouped_control_modes": [
+        "dose: select a visible pigment, set units with −/+ dose buttons, then click INJECT INTO VAT (dose_buttons)",
+        "stir: click STIR VAT (stir_button)",
+        "dip: click DIP STRIP (dip_button)",
+        "lamp inspection: toggle the lamp switch (lamp_switch)",
+        "certification/check: use the certification button after both lamp views (certify_button)",
+        "vat recovery: discard the current vat (dump_valve)"
+      ],
+      "delta_ms": null,
+      "window_ms": null,
+      "clause_i": {
+        "holds": true,
+        "reason": "For a static candidate decision such as initial dosing, histories with identical prior actions can have different visible target ribbons across generated seeds, so an observation-free q cannot be uniformly optimal; this is static visual planning evidence, not a real-time witness."
+      },
+      "clause_ii": {
+        "holds": true,
+        "reason": "The current screenshot exposes the pinned ribbon, visible lot specification, mixture headroom, and lamp/proof state; the configured observation is a single endpoint with a 0 ms window, which is sufficient for a visual policy to choose the static button action."
+      },
+      "clause_iii": {
+        "holds": false,
+        "reason": "No positive delay causes non-clock task-state evolution. Waiting leaves the discrete mixture and control state unchanged; only the stir-whorl, lamp/swatch/liquid transitions, and terminal stamp animate. No available dose, stir, dip, lamp, dump, or certification opportunity becomes unavailable or strictly less effective during such a wait."
+      },
+      "common_visible_process": "None. The only between-action changes are decorative CSS transitions/animations; no single visible autonomous process changes an outcome-affecting opportunity.",
+      "pre_run": {
+        "threshold": 0.5,
+        "at_least_half": false,
+        "rate": null,
+        "basis": "source_structural",
+        "reason": "No generated profile has an autonomous outcome phase: a successful run requires further agent-controlled dosing, stirring, sampling, lamp inspection, and certification. Therefore no instance qualifies for the pre-run pattern, and no percentage is asserted; the mathematical failure of clause (iii) already makes this configuration No.",
+        "seed_probe": null
+      },
+      "files_read_completely": [
+        "AGENTS.md",
+        "weird_captcha_gym/docs/controllability/real-time.md",
+        "weird_captcha_gym/environments/two_lamp_dyeworks_env/controls.json",
+        "weird_captcha_gym/environments/two_lamp_dyeworks_env/env.json",
+        "weird_captcha_gym/environments/two_lamp_dyeworks_env/tasks/two_lamp_dyeworks_seed_0001/task.json",
+        "weird_captcha_gym/environments/two_lamp_dyeworks_env/tasks/two_lamp_dyeworks_seed_0001/setup_task.sh",
+        "weird_captcha_gym/environments/two_lamp_dyeworks_env/tasks/two_lamp_dyeworks_seed_0001/export_result.sh",
+        "weird_captcha_gym/shared_scripts/incubator_generators/two_lamp_dyeworks.py",
+        "weird_captcha_gym/shared_runtime/app/index.html",
+        "weird_captcha_gym/shared_runtime/app/time_controller.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/two_lamp_dyeworks.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/two_lamp_dyeworks.css",
+        "weird_captcha_gym/shared_runtime/server/incubator_graders/two_lamp_dyeworks.py",
+        "weird_captcha_gym/environments/two_lamp_dyeworks_env/tasks/two_lamp_dyeworks_seed_0001/verifier.py",
+        "weird_captcha_gym/tools/incubator_solvers/two_lamp_dyeworks.py"
+      ],
+      "source_evidence": [
+        {"path": "weird_captcha_gym/environments/two_lamp_dyeworks_env/controls.json", "lines": "12-16", "claim": "Difficulty 2 supplies 3 pigments, 2–3 active dyes, 4–6 total units, 8-unit capacity, 4 vats, tolerance ΔE 6.0, and numbered graduations."},
+        {"path": "weird_captcha_gym/environments/two_lamp_dyeworks_env/controls.json", "lines": "37-41", "claim": "Simplified mode is a dose-button/stir-button/dip-button surface; the configured observation window is 0 ms with one frame and a 180-second play allowance."},
+        {"path": "weird_captcha_gym/shared_scripts/incubator_generators/two_lamp_dyeworks.py", "lines": "205-245", "claim": "Generation reads only the supplied difficulty parameters and uses them to build a static pigment rack and target; no task clock, tick, motion, or timer parameter is generated."},
+        {"path": "weird_captcha_gym/shared_runtime/app/mechanics/two_lamp_dyeworks.js", "lines": "246-283;337-349", "claim": "Simplified dose buttons and the explicit stir button mutate model state synchronously; the only timer registered by the mechanic removes the stir presentation class."},
+        {"path": "weird_captcha_gym/shared_runtime/app/mechanics/two_lamp_dyeworks.js", "lines": "489-590;592-601", "claim": "The simplified stir/dip controls, lamp inspection, certification, and vat disposal are explicit input handlers; lamp, sample, and vat state changes occur at event delivery."},
+        {"path": "weird_captcha_gym/shared_runtime/app/mechanics/two_lamp_dyeworks.css", "lines": "205-208;169;230;242;249;253-275", "claim": "Simplified mode hides the physical syringe and exposes proxy buttons; the timed effects are CSS transitions, the 0.46-second dye-whorl, or the post-terminal stamp animation, all presentational."},
+        {"path": "weird_captcha_gym/shared_runtime/server/incubator_graders/two_lamp_dyeworks.py", "lines": "266-379", "claim": "The grader accepts the simplified event sources and replays only discrete dose/stir/dip/lamp/check/certify/dump events; it contains no task-time evolution."}
+      ],
+      "uncertainties": []
+    },
+    {
+      "case_index": 465,
+      "public_environment_name": "Two-Lamp Dyeworks",
+      "environment_id": "two_lamp_dyeworks_env",
+      "difficulty": 3,
+      "interaction_mode": "full",
+      "label": "no",
+      "controls_available": [
+        "Select one of 3 visible pigment bottles; the visible lot rule requires all 3 active dye families and 6–8 total units.",
+        "Drag the physical syringe plunger to a 1–5-unit graduation and click INJECT INTO VAT; each dose is irreversible within the current vat, with 10-unit vat capacity.",
+        "Drag the physical stirrer through a sampled complete circle in the vat, then drag the fresh test strip into the visible vat opening.",
+        "Toggle NORTH-LIGHT and SODIUM with the lamp switch, view the current strip under both lamps, and click the certification control; only major syringe marks are emphasized.",
+        "Click DUMP THIS VAT to discard the current mixture and consume one of 4 fresh vats; the mechanic exposes mouse/pointer controls and binds no keyboard shortcut."
+      ],
+      "autonomous_processes": [
+        "There is no autonomous outcome-affecting task-state process between actions; composition, vat index, lamp, stirred, sampledComposition, viewed, and ready are changed synchronously by input handlers.",
+        "A successful stir starts only the presentational dye-whorl CSS animation for 0.46 seconds and schedules removal of its class after 480 ms; model.stirred remains true until a later dose or vat reset.",
+        "Dosing, lamp changes, sampling, and liquid rendering use short CSS transitions, while the verdict stamp is added after terminal certification or vat exhaustion; these effects do not change an available action's outcome value."
+      ],
+      "grouped_control_modes": [
+        "dose: select a visible pigment, drag the syringe plunger, then click INJECT INTO VAT (plunger_drag)",
+        "stir: complete-circle physical stirrer gesture (stir_gesture)",
+        "dip: drag the fresh test strip into the vat opening (strip_drag)",
+        "lamp inspection: toggle the lamp switch (lamp_switch)",
+        "certification/check: use the certification button after both lamp views (certify_button)",
+        "vat recovery: discard the current vat (dump_valve)"
+      ],
+      "delta_ms": null,
+      "window_ms": null,
+      "clause_i": {
+        "holds": true,
+        "reason": "For a static candidate decision such as initial dosing, histories with identical prior actions can have different visible target ribbons across generated seeds, so an observation-free q cannot be uniformly optimal; this is static visual planning evidence, not a real-time witness."
+      },
+      "clause_ii": {
+        "holds": true,
+        "reason": "The current screenshot exposes the pinned ribbon, visible lot specification, mixture headroom, and lamp/proof state; the configured observation is a single endpoint with a 0 ms window, which is sufficient for a visual policy to choose the static pointer action."
+      },
+      "clause_iii": {
+        "holds": false,
+        "reason": "No positive delay causes non-clock task-state evolution. Waiting leaves the discrete mixture and control state unchanged; only the stir-whorl, lamp/swatch/liquid transitions, and terminal stamp animate. No available dose, stir, dip, lamp, dump, or certification opportunity becomes unavailable or strictly less effective during such a wait."
+      },
+      "common_visible_process": "None. The only between-action changes are decorative CSS transitions/animations; no single visible autonomous process changes an outcome-affecting opportunity.",
+      "pre_run": {
+        "threshold": 0.5,
+        "at_least_half": false,
+        "rate": null,
+        "basis": "source_structural",
+        "reason": "No generated profile has an autonomous outcome phase: a successful run requires further agent-controlled dosing, stirring, sampling, lamp inspection, and certification. Therefore no instance qualifies for the pre-run pattern, and no percentage is asserted; the mathematical failure of clause (iii) already makes this configuration No.",
+        "seed_probe": null
+      },
+      "files_read_completely": [
+        "AGENTS.md",
+        "weird_captcha_gym/docs/controllability/real-time.md",
+        "weird_captcha_gym/environments/two_lamp_dyeworks_env/controls.json",
+        "weird_captcha_gym/environments/two_lamp_dyeworks_env/env.json",
+        "weird_captcha_gym/environments/two_lamp_dyeworks_env/tasks/two_lamp_dyeworks_seed_0001/task.json",
+        "weird_captcha_gym/environments/two_lamp_dyeworks_env/tasks/two_lamp_dyeworks_seed_0001/setup_task.sh",
+        "weird_captcha_gym/environments/two_lamp_dyeworks_env/tasks/two_lamp_dyeworks_seed_0001/export_result.sh",
+        "weird_captcha_gym/shared_scripts/incubator_generators/two_lamp_dyeworks.py",
+        "weird_captcha_gym/shared_runtime/app/index.html",
+        "weird_captcha_gym/shared_runtime/app/time_controller.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/two_lamp_dyeworks.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/two_lamp_dyeworks.css",
+        "weird_captcha_gym/shared_runtime/server/incubator_graders/two_lamp_dyeworks.py",
+        "weird_captcha_gym/environments/two_lamp_dyeworks_env/tasks/two_lamp_dyeworks_seed_0001/verifier.py",
+        "weird_captcha_gym/tools/incubator_solvers/two_lamp_dyeworks.py"
+      ],
+      "source_evidence": [
+        {"path": "weird_captcha_gym/environments/two_lamp_dyeworks_env/controls.json", "lines": "18-22", "claim": "Difficulty 3 supplies 3 pigments, exactly 3 active dyes, 6–8 total units, 10-unit capacity, 4 vats, tolerance ΔE 5.0, and major graduation support."},
+        {"path": "weird_captcha_gym/environments/two_lamp_dyeworks_env/controls.json", "lines": "37-41", "claim": "Full mode is a plunger/stir/strip gesture surface; the configured observation window is 0 ms with one frame and a 180-second play allowance."},
+        {"path": "weird_captcha_gym/shared_scripts/incubator_generators/two_lamp_dyeworks.py", "lines": "205-245", "claim": "Generation reads only the supplied difficulty parameters and uses them to build a static pigment rack and target; no task clock, tick, motion, or timer parameter is generated."},
+        {"path": "weird_captcha_gym/shared_runtime/app/mechanics/two_lamp_dyeworks.js", "lines": "285-349", "claim": "Full plunger input and stirring mutate model state synchronously; the only timer registered by the mechanic removes the stir presentation class."},
+        {"path": "weird_captcha_gym/shared_runtime/app/mechanics/two_lamp_dyeworks.js", "lines": "414-487;489-590", "claim": "The full strip gesture, lamp inspection, certification, and vat disposal are explicit input handlers; lamp, sample, and vat state changes occur at event delivery."},
+        {"path": "weird_captcha_gym/shared_runtime/app/mechanics/two_lamp_dyeworks.css", "lines": "169;230;242;249;253-275", "claim": "The timed effects are CSS transitions, the 0.46-second dye-whorl, or the post-terminal stamp animation, all of which are presentational."},
+        {"path": "weird_captcha_gym/shared_runtime/server/incubator_graders/two_lamp_dyeworks.py", "lines": "266-379", "claim": "The grader accepts the mode-specific event sources and replays only discrete dose/stir/dip/lamp/check/certify/dump events; it contains no task-time evolution."}
+      ],
+      "uncertainties": []
+    },
+    {
+      "case_index": 466,
+      "public_environment_name": "Two-Lamp Dyeworks",
+      "environment_id": "two_lamp_dyeworks_env",
+      "difficulty": 3,
+      "interaction_mode": "simplified",
+      "label": "no",
+      "controls_available": [
+        "Select one of 3 visible pigment bottles; the visible lot rule requires all 3 active dye families and 6–8 total units.",
+        "Use the −/+ dose controls to select 1–5 units and click INJECT INTO VAT; each dose is irreversible within the current vat, with 10-unit vat capacity.",
+        "Click STIR VAT and then click DIP STRIP to sample the mixture.",
+        "Toggle NORTH-LIGHT and SODIUM with the lamp switch, view the current strip under both lamps, and click the certification control; only major syringe marks are emphasized.",
+        "Click DUMP THIS VAT to discard the current mixture and consume one of 4 fresh vats; the mechanic exposes mouse/click controls and binds no keyboard shortcut."
+      ],
+      "autonomous_processes": [
+        "There is no autonomous outcome-affecting task-state process between actions; composition, vat index, lamp, stirred, sampledComposition, viewed, and ready are changed synchronously by input handlers.",
+        "A successful stir starts only the presentational dye-whorl CSS animation for 0.46 seconds and schedules removal of its class after 480 ms; model.stirred remains true until a later dose or vat reset.",
+        "Dosing, lamp changes, sampling, and liquid rendering use short CSS transitions, while the verdict stamp is added after terminal certification or vat exhaustion; these effects do not change an available action's outcome value."
+      ],
+      "grouped_control_modes": [
+        "dose: select a visible pigment, set units with −/+ dose buttons, then click INJECT INTO VAT (dose_buttons)",
+        "stir: click STIR VAT (stir_button)",
+        "dip: click DIP STRIP (dip_button)",
+        "lamp inspection: toggle the lamp switch (lamp_switch)",
+        "certification/check: use the certification button after both lamp views (certify_button)",
+        "vat recovery: discard the current vat (dump_valve)"
+      ],
+      "delta_ms": null,
+      "window_ms": null,
+      "clause_i": {
+        "holds": true,
+        "reason": "For a static candidate decision such as initial dosing, histories with identical prior actions can have different visible target ribbons across generated seeds, so an observation-free q cannot be uniformly optimal; this is static visual planning evidence, not a real-time witness."
+      },
+      "clause_ii": {
+        "holds": true,
+        "reason": "The current screenshot exposes the pinned ribbon, visible lot specification, mixture headroom, and lamp/proof state; the configured observation is a single endpoint with a 0 ms window, which is sufficient for a visual policy to choose the static button action."
+      },
+      "clause_iii": {
+        "holds": false,
+        "reason": "No positive delay causes non-clock task-state evolution. Waiting leaves the discrete mixture and control state unchanged; only the stir-whorl, lamp/swatch/liquid transitions, and terminal stamp animate. No available dose, stir, dip, lamp, dump, or certification opportunity becomes unavailable or strictly less effective during such a wait."
+      },
+      "common_visible_process": "None. The only between-action changes are decorative CSS transitions/animations; no single visible autonomous process changes an outcome-affecting opportunity.",
+      "pre_run": {
+        "threshold": 0.5,
+        "at_least_half": false,
+        "rate": null,
+        "basis": "source_structural",
+        "reason": "No generated profile has an autonomous outcome phase: a successful run requires further agent-controlled dosing, stirring, sampling, lamp inspection, and certification. Therefore no instance qualifies for the pre-run pattern, and no percentage is asserted; the mathematical failure of clause (iii) already makes this configuration No.",
+        "seed_probe": null
+      },
+      "files_read_completely": [
+        "AGENTS.md",
+        "weird_captcha_gym/docs/controllability/real-time.md",
+        "weird_captcha_gym/environments/two_lamp_dyeworks_env/controls.json",
+        "weird_captcha_gym/environments/two_lamp_dyeworks_env/env.json",
+        "weird_captcha_gym/environments/two_lamp_dyeworks_env/tasks/two_lamp_dyeworks_seed_0001/task.json",
+        "weird_captcha_gym/environments/two_lamp_dyeworks_env/tasks/two_lamp_dyeworks_seed_0001/setup_task.sh",
+        "weird_captcha_gym/environments/two_lamp_dyeworks_env/tasks/two_lamp_dyeworks_seed_0001/export_result.sh",
+        "weird_captcha_gym/shared_scripts/incubator_generators/two_lamp_dyeworks.py",
+        "weird_captcha_gym/shared_runtime/app/index.html",
+        "weird_captcha_gym/shared_runtime/app/time_controller.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/two_lamp_dyeworks.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/two_lamp_dyeworks.css",
+        "weird_captcha_gym/shared_runtime/server/incubator_graders/two_lamp_dyeworks.py",
+        "weird_captcha_gym/environments/two_lamp_dyeworks_env/tasks/two_lamp_dyeworks_seed_0001/verifier.py",
+        "weird_captcha_gym/tools/incubator_solvers/two_lamp_dyeworks.py"
+      ],
+      "source_evidence": [
+        {"path": "weird_captcha_gym/environments/two_lamp_dyeworks_env/controls.json", "lines": "18-22", "claim": "Difficulty 3 supplies 3 pigments, exactly 3 active dyes, 6–8 total units, 10-unit capacity, 4 vats, tolerance ΔE 5.0, and major graduation support."},
+        {"path": "weird_captcha_gym/environments/two_lamp_dyeworks_env/controls.json", "lines": "37-41", "claim": "Simplified mode is a dose-button/stir-button/dip-button surface; the configured observation window is 0 ms with one frame and a 180-second play allowance."},
+        {"path": "weird_captcha_gym/shared_scripts/incubator_generators/two_lamp_dyeworks.py", "lines": "205-245", "claim": "Generation reads only the supplied difficulty parameters and uses them to build a static pigment rack and target; no task clock, tick, motion, or timer parameter is generated."},
+        {"path": "weird_captcha_gym/shared_runtime/app/mechanics/two_lamp_dyeworks.js", "lines": "246-283;337-349", "claim": "Simplified dose buttons and the explicit stir button mutate model state synchronously; the only timer registered by the mechanic removes the stir presentation class."},
+        {"path": "weird_captcha_gym/shared_runtime/app/mechanics/two_lamp_dyeworks.js", "lines": "489-590;592-601", "claim": "The simplified stir/dip controls, lamp inspection, certification, and vat disposal are explicit input handlers; lamp, sample, and vat state changes occur at event delivery."},
+        {"path": "weird_captcha_gym/shared_runtime/app/mechanics/two_lamp_dyeworks.css", "lines": "205-208;169;230;242;249;253-275", "claim": "Simplified mode hides the physical syringe and exposes proxy buttons; the timed effects are CSS transitions, the 0.46-second dye-whorl, or the post-terminal stamp animation, all presentational."},
+        {"path": "weird_captcha_gym/shared_runtime/server/incubator_graders/two_lamp_dyeworks.py", "lines": "266-379", "claim": "The grader accepts the simplified event sources and replays only discrete dose/stir/dip/lamp/check/certify/dump events; it contains no task-time evolution."}
+      ],
+      "uncertainties": []
+    },
+    {
+      "case_index": 467,
+      "public_environment_name": "Two-Lamp Dyeworks",
+      "environment_id": "two_lamp_dyeworks_env",
+      "difficulty": 4,
+      "interaction_mode": "full",
+      "label": "no",
+      "controls_available": [
+        "Select one of 4 visible pigment bottles; the visible lot rule requires 3–4 active dye families and 8–11 total units.",
+        "Drag the physical syringe plunger to a 1–5-unit graduation and click INJECT INTO VAT; each dose is irreversible within the current vat, with 13-unit vat capacity.",
+        "Drag the physical stirrer through a sampled complete circle in the vat, then drag the fresh test strip into the visible vat opening.",
+        "Toggle NORTH-LIGHT and SODIUM with the lamp switch, view the same strip under both lamps, and certify only a two-light match; a daylight near-match may fail under sodium.",
+        "Click DUMP THIS VAT to discard the current mixture and consume one of 3 fresh vats; the mechanic exposes mouse/pointer controls and binds no keyboard shortcut."
+      ],
+      "autonomous_processes": [
+        "There is no autonomous outcome-affecting task-state process between actions; composition, vat index, lamp, stirred, sampledComposition, viewed, and ready are changed synchronously by input handlers.",
+        "A successful stir starts only the presentational dye-whorl CSS animation for 0.46 seconds and schedules removal of its class after 480 ms; model.stirred remains true until a later dose or vat reset.",
+        "Dosing, lamp changes, sampling, and liquid rendering use short CSS transitions, while the verdict stamp is added after terminal certification or vat exhaustion; these effects do not change an available action's outcome value."
+      ],
+      "grouped_control_modes": [
+        "dose: select a visible pigment, drag the syringe plunger, then click INJECT INTO VAT (plunger_drag)",
+        "stir: complete-circle physical stirrer gesture (stir_gesture)",
+        "dip: drag the fresh test strip into the vat opening (strip_drag)",
+        "lamp inspection: toggle the lamp switch (lamp_switch)",
+        "certification/check: use the certification button after both lamp views (certify_button)",
+        "vat recovery: discard the current vat (dump_valve)"
+      ],
+      "delta_ms": null,
+      "window_ms": null,
+      "clause_i": {
+        "holds": true,
+        "reason": "For a static candidate decision such as initial dosing, histories with identical prior actions can have different visible target ribbons across generated seeds, so an observation-free q cannot be uniformly optimal; this is static visual planning evidence, not a real-time witness."
+      },
+      "clause_ii": {
+        "holds": true,
+        "reason": "The current screenshot exposes the pinned ribbon, visible lot specification, mixture headroom, and lamp/proof state; the configured observation is a single endpoint with a 0 ms window, which is sufficient for a visual policy to choose the static pointer action."
+      },
+      "clause_iii": {
+        "holds": false,
+        "reason": "No positive delay causes non-clock task-state evolution. Waiting leaves the discrete mixture and control state unchanged; only the stir-whorl, lamp/swatch/liquid transitions, and terminal stamp animate. No available dose, stir, dip, lamp, dump, or certification opportunity becomes unavailable or strictly less effective during such a wait."
+      },
+      "common_visible_process": "None. The only between-action changes are decorative CSS transitions/animations; no single visible autonomous process changes an outcome-affecting opportunity.",
+      "pre_run": {
+        "threshold": 0.5,
+        "at_least_half": false,
+        "rate": null,
+        "basis": "source_structural",
+        "reason": "No generated profile has an autonomous outcome phase: a successful run requires further agent-controlled dosing, stirring, sampling, lamp inspection, and certification. Therefore no instance qualifies for the pre-run pattern, and no percentage is asserted; the mathematical failure of clause (iii) already makes this configuration No.",
+        "seed_probe": null
+      },
+      "files_read_completely": [
+        "AGENTS.md",
+        "weird_captcha_gym/docs/controllability/real-time.md",
+        "weird_captcha_gym/environments/two_lamp_dyeworks_env/controls.json",
+        "weird_captcha_gym/environments/two_lamp_dyeworks_env/env.json",
+        "weird_captcha_gym/environments/two_lamp_dyeworks_env/tasks/two_lamp_dyeworks_seed_0001/task.json",
+        "weird_captcha_gym/environments/two_lamp_dyeworks_env/tasks/two_lamp_dyeworks_seed_0001/setup_task.sh",
+        "weird_captcha_gym/environments/two_lamp_dyeworks_env/tasks/two_lamp_dyeworks_seed_0001/export_result.sh",
+        "weird_captcha_gym/shared_scripts/incubator_generators/two_lamp_dyeworks.py",
+        "weird_captcha_gym/shared_runtime/app/index.html",
+        "weird_captcha_gym/shared_runtime/app/time_controller.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/two_lamp_dyeworks.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/two_lamp_dyeworks.css",
+        "weird_captcha_gym/shared_runtime/server/incubator_graders/two_lamp_dyeworks.py",
+        "weird_captcha_gym/environments/two_lamp_dyeworks_env/tasks/two_lamp_dyeworks_seed_0001/verifier.py",
+        "weird_captcha_gym/tools/incubator_solvers/two_lamp_dyeworks.py"
+      ],
+      "source_evidence": [
+        {"path": "weird_captcha_gym/environments/two_lamp_dyeworks_env/controls.json", "lines": "24-28", "claim": "Difficulty 4 supplies 4 pigments, 3–4 active dyes, 8–11 total units, 13-unit capacity, 3 vats, tolerance ΔE 4.2, and daylight/sodium metamer constraints."},
+        {"path": "weird_captcha_gym/environments/two_lamp_dyeworks_env/controls.json", "lines": "37-41", "claim": "Full mode is a plunger/stir/strip gesture surface; the configured observation window is 0 ms with one frame and a 180-second play allowance."},
+        {"path": "weird_captcha_gym/shared_scripts/incubator_generators/two_lamp_dyeworks.py", "lines": "141-202;205-245", "claim": "Difficulty 4 constructs static spectral targets and lot-compliant near-metamer decoys; generation has no task clock, tick, motion, or timer parameter."},
+        {"path": "weird_captcha_gym/shared_runtime/app/mechanics/two_lamp_dyeworks.js", "lines": "285-349", "claim": "Full plunger input and stirring mutate model state synchronously; the only timer registered by the mechanic removes the stir presentation class."},
+        {"path": "weird_captcha_gym/shared_runtime/app/mechanics/two_lamp_dyeworks.js", "lines": "414-487;489-590", "claim": "The full strip gesture, two-lamp inspection, certification, and vat disposal are explicit input handlers; lamp, sample, and vat state changes occur at event delivery."},
+        {"path": "weird_captcha_gym/shared_runtime/app/mechanics/two_lamp_dyeworks.css", "lines": "169;230;242;249;253-275", "claim": "The timed effects are CSS transitions, the 0.46-second dye-whorl, or the post-terminal stamp animation, all of which are presentational."},
+        {"path": "weird_captcha_gym/shared_runtime/server/incubator_graders/two_lamp_dyeworks.py", "lines": "348-379;394-407", "claim": "Certification is judged from the replayed composition, lamp views, lot specification, and ΔE values; no elapsed task time is graded."}
+      ],
+      "uncertainties": []
+    },
+    {
+      "case_index": 468,
+      "public_environment_name": "Two-Lamp Dyeworks",
+      "environment_id": "two_lamp_dyeworks_env",
+      "difficulty": 4,
+      "interaction_mode": "simplified",
+      "label": "no",
+      "controls_available": [
+        "Select one of 4 visible pigment bottles; the visible lot rule requires 3–4 active dye families and 8–11 total units.",
+        "Use the −/+ dose controls to select 1–5 units and click INJECT INTO VAT; each dose is irreversible within the current vat, with 13-unit vat capacity.",
+        "Click STIR VAT and then click DIP STRIP to sample the mixture.",
+        "Toggle NORTH-LIGHT and SODIUM with the lamp switch, view the same strip under both lamps, and certify only a two-light match; a daylight near-match may fail under sodium.",
+        "Click DUMP THIS VAT to discard the current mixture and consume one of 3 fresh vats; the mechanic exposes mouse/click controls and binds no keyboard shortcut."
+      ],
+      "autonomous_processes": [
+        "There is no autonomous outcome-affecting task-state process between actions; composition, vat index, lamp, stirred, sampledComposition, viewed, and ready are changed synchronously by input handlers.",
+        "A successful stir starts only the presentational dye-whorl CSS animation for 0.46 seconds and schedules removal of its class after 480 ms; model.stirred remains true until a later dose or vat reset.",
+        "Dosing, lamp changes, sampling, and liquid rendering use short CSS transitions, while the verdict stamp is added after terminal certification or vat exhaustion; these effects do not change an available action's outcome value."
+      ],
+      "grouped_control_modes": [
+        "dose: select a visible pigment, set units with −/+ dose buttons, then click INJECT INTO VAT (dose_buttons)",
+        "stir: click STIR VAT (stir_button)",
+        "dip: click DIP STRIP (dip_button)",
+        "lamp inspection: toggle the lamp switch (lamp_switch)",
+        "certification/check: use the certification button after both lamp views (certify_button)",
+        "vat recovery: discard the current vat (dump_valve)"
+      ],
+      "delta_ms": null,
+      "window_ms": null,
+      "clause_i": {
+        "holds": true,
+        "reason": "For a static candidate decision such as initial dosing, histories with identical prior actions can have different visible target ribbons across generated seeds, so an observation-free q cannot be uniformly optimal; this is static visual planning evidence, not a real-time witness."
+      },
+      "clause_ii": {
+        "holds": true,
+        "reason": "The current screenshot exposes the pinned ribbon, visible lot specification, mixture headroom, and lamp/proof state; the configured observation is a single endpoint with a 0 ms window, which is sufficient for a visual policy to choose the static button action."
+      },
+      "clause_iii": {
+        "holds": false,
+        "reason": "No positive delay causes non-clock task-state evolution. Waiting leaves the discrete mixture and control state unchanged; only the stir-whorl, lamp/swatch/liquid transitions, and terminal stamp animate. No available dose, stir, dip, lamp, dump, or certification opportunity becomes unavailable or strictly less effective during such a wait."
+      },
+      "common_visible_process": "None. The only between-action changes are decorative CSS transitions/animations; no single visible autonomous process changes an outcome-affecting opportunity.",
+      "pre_run": {
+        "threshold": 0.5,
+        "at_least_half": false,
+        "rate": null,
+        "basis": "source_structural",
+        "reason": "No generated profile has an autonomous outcome phase: a successful run requires further agent-controlled dosing, stirring, sampling, lamp inspection, and certification. Therefore no instance qualifies for the pre-run pattern, and no percentage is asserted; the mathematical failure of clause (iii) already makes this configuration No.",
+        "seed_probe": null
+      },
+      "files_read_completely": [
+        "AGENTS.md",
+        "weird_captcha_gym/docs/controllability/real-time.md",
+        "weird_captcha_gym/environments/two_lamp_dyeworks_env/controls.json",
+        "weird_captcha_gym/environments/two_lamp_dyeworks_env/env.json",
+        "weird_captcha_gym/environments/two_lamp_dyeworks_env/tasks/two_lamp_dyeworks_seed_0001/task.json",
+        "weird_captcha_gym/environments/two_lamp_dyeworks_env/tasks/two_lamp_dyeworks_seed_0001/setup_task.sh",
+        "weird_captcha_gym/environments/two_lamp_dyeworks_env/tasks/two_lamp_dyeworks_seed_0001/export_result.sh",
+        "weird_captcha_gym/shared_scripts/incubator_generators/two_lamp_dyeworks.py",
+        "weird_captcha_gym/shared_runtime/app/index.html",
+        "weird_captcha_gym/shared_runtime/app/time_controller.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/two_lamp_dyeworks.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/two_lamp_dyeworks.css",
+        "weird_captcha_gym/shared_runtime/server/incubator_graders/two_lamp_dyeworks.py",
+        "weird_captcha_gym/environments/two_lamp_dyeworks_env/tasks/two_lamp_dyeworks_seed_0001/verifier.py",
+        "weird_captcha_gym/tools/incubator_solvers/two_lamp_dyeworks.py"
+      ],
+      "source_evidence": [
+        {"path": "weird_captcha_gym/environments/two_lamp_dyeworks_env/controls.json", "lines": "24-28", "claim": "Difficulty 4 supplies 4 pigments, 3–4 active dyes, 8–11 total units, 13-unit capacity, 3 vats, tolerance ΔE 4.2, and daylight/sodium metamer constraints."},
+        {"path": "weird_captcha_gym/environments/two_lamp_dyeworks_env/controls.json", "lines": "37-41", "claim": "Simplified mode is a dose-button/stir-button/dip-button surface; the configured observation window is 0 ms with one frame and a 180-second play allowance."},
+        {"path": "weird_captcha_gym/shared_scripts/incubator_generators/two_lamp_dyeworks.py", "lines": "141-202;205-245", "claim": "Difficulty 4 constructs static spectral targets and lot-compliant near-metamer decoys; generation has no task clock, tick, motion, or timer parameter."},
+        {"path": "weird_captcha_gym/shared_runtime/app/mechanics/two_lamp_dyeworks.js", "lines": "246-283;337-349", "claim": "Simplified dose buttons and the explicit stir button mutate model state synchronously; the only timer registered by the mechanic removes the stir presentation class."},
+        {"path": "weird_captcha_gym/shared_runtime/app/mechanics/two_lamp_dyeworks.js", "lines": "489-590;592-601", "claim": "The simplified stir/dip controls, two-lamp inspection, certification, and vat disposal are explicit input handlers; lamp, sample, and vat state changes occur at event delivery."},
+        {"path": "weird_captcha_gym/shared_runtime/app/mechanics/two_lamp_dyeworks.css", "lines": "205-208;169;230;242;249;253-275", "claim": "Simplified mode hides the physical syringe and exposes proxy buttons; the timed effects are CSS transitions, the 0.46-second dye-whorl, or the post-terminal stamp animation, all presentational."},
+        {"path": "weird_captcha_gym/shared_runtime/server/incubator_graders/two_lamp_dyeworks.py", "lines": "348-379;394-407", "claim": "Certification is judged from the replayed composition, lamp views, lot specification, and ΔE values; no elapsed task time is graded."}
+      ],
+      "uncertainties": []
+    },
+    {
+      "case_index": 469,
+      "public_environment_name": "Two-Lamp Dyeworks",
+      "environment_id": "two_lamp_dyeworks_env",
+      "difficulty": 5,
+      "interaction_mode": "full",
+      "label": "no",
+      "controls_available": [
+        "Select one of 4 visible pigment bottles; the visible lot rule requires 3–4 active dye families and 10–12 total units.",
+        "Drag the physical syringe plunger to a 1–5-unit graduation and click INJECT INTO VAT; each dose is irreversible within the current vat, with 13-unit vat capacity.",
+        "Drag the physical stirrer through a sampled complete circle in the vat, then drag the fresh test strip into the visible vat opening.",
+        "Toggle NORTH-LIGHT and SODIUM with the lamp switch, view the same strip under both lamps, and certify only a two-light match; a narrow ΔE 3.6 tolerance and sparse graduations apply.",
+        "Click DUMP THIS VAT to discard the current mixture and consume one of 2 fresh vats; the mechanic exposes mouse/pointer controls and binds no keyboard shortcut."
+      ],
+      "autonomous_processes": [
+        "There is no autonomous outcome-affecting task-state process between actions; composition, vat index, lamp, stirred, sampledComposition, viewed, and ready are changed synchronously by input handlers.",
+        "A successful stir starts only the presentational dye-whorl CSS animation for 0.46 seconds and schedules removal of its class after 480 ms; model.stirred remains true until a later dose or vat reset.",
+        "Dosing, lamp changes, sampling, and liquid rendering use short CSS transitions, while the verdict stamp is added after terminal certification or vat exhaustion; these effects do not change an available action's outcome value."
+      ],
+      "grouped_control_modes": [
+        "dose: select a visible pigment, drag the syringe plunger, then click INJECT INTO VAT (plunger_drag)",
+        "stir: complete-circle physical stirrer gesture (stir_gesture)",
+        "dip: drag the fresh test strip into the vat opening (strip_drag)",
+        "lamp inspection: toggle the lamp switch (lamp_switch)",
+        "certification/check: use the certification button after both lamp views (certify_button)",
+        "vat recovery: discard the current vat (dump_valve)"
+      ],
+      "delta_ms": null,
+      "window_ms": null,
+      "clause_i": {
+        "holds": true,
+        "reason": "For a static candidate decision such as initial dosing, histories with identical prior actions can have different visible target ribbons across generated seeds, so an observation-free q cannot be uniformly optimal; this is static visual planning evidence, not a real-time witness."
+      },
+      "clause_ii": {
+        "holds": true,
+        "reason": "The current screenshot exposes the pinned ribbon, visible lot specification, mixture headroom, and lamp/proof state; the configured observation is a single endpoint with a 0 ms window, which is sufficient for a visual policy to choose the static pointer action."
+      },
+      "clause_iii": {
+        "holds": false,
+        "reason": "No positive delay causes non-clock task-state evolution. Waiting leaves the discrete mixture and control state unchanged; only the stir-whorl, lamp/swatch/liquid transitions, and terminal stamp animate. No available dose, stir, dip, lamp, dump, or certification opportunity becomes unavailable or strictly less effective during such a wait."
+      },
+      "common_visible_process": "None. The only between-action changes are decorative CSS transitions/animations; no single visible autonomous process changes an outcome-affecting opportunity.",
+      "pre_run": {
+        "threshold": 0.5,
+        "at_least_half": false,
+        "rate": null,
+        "basis": "source_structural",
+        "reason": "No generated profile has an autonomous outcome phase: a successful run requires further agent-controlled dosing, stirring, sampling, lamp inspection, and certification. Therefore no instance qualifies for the pre-run pattern, and no percentage is asserted; the mathematical failure of clause (iii) already makes this configuration No.",
+        "seed_probe": null
+      },
+      "files_read_completely": [
+        "AGENTS.md",
+        "weird_captcha_gym/docs/controllability/real-time.md",
+        "weird_captcha_gym/environments/two_lamp_dyeworks_env/controls.json",
+        "weird_captcha_gym/environments/two_lamp_dyeworks_env/env.json",
+        "weird_captcha_gym/environments/two_lamp_dyeworks_env/tasks/two_lamp_dyeworks_seed_0001/task.json",
+        "weird_captcha_gym/environments/two_lamp_dyeworks_env/tasks/two_lamp_dyeworks_seed_0001/setup_task.sh",
+        "weird_captcha_gym/environments/two_lamp_dyeworks_env/tasks/two_lamp_dyeworks_seed_0001/export_result.sh",
+        "weird_captcha_gym/shared_scripts/incubator_generators/two_lamp_dyeworks.py",
+        "weird_captcha_gym/shared_runtime/app/index.html",
+        "weird_captcha_gym/shared_runtime/app/time_controller.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/two_lamp_dyeworks.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/two_lamp_dyeworks.css",
+        "weird_captcha_gym/shared_runtime/server/incubator_graders/two_lamp_dyeworks.py",
+        "weird_captcha_gym/environments/two_lamp_dyeworks_env/tasks/two_lamp_dyeworks_seed_0001/verifier.py",
+        "weird_captcha_gym/tools/incubator_solvers/two_lamp_dyeworks.py"
+      ],
+      "source_evidence": [
+        {"path": "weird_captcha_gym/environments/two_lamp_dyeworks_env/controls.json", "lines": "30-34", "claim": "Difficulty 5 supplies 4 pigments, 3–4 active dyes, 10–12 total units, 13-unit capacity, 2 vats, tolerance ΔE 3.6, sparse graduation support, and the cross-lamp metamer constraints."},
+        {"path": "weird_captcha_gym/environments/two_lamp_dyeworks_env/controls.json", "lines": "37-41", "claim": "Full mode is a plunger/stir/strip gesture surface; the configured observation window is 0 ms with one frame and a 180-second play allowance."},
+        {"path": "weird_captcha_gym/shared_scripts/incubator_generators/two_lamp_dyeworks.py", "lines": "141-202;205-245", "claim": "Difficulty 5 constructs static spectral targets and lot-compliant near-metamer decoys; generation has no task clock, tick, motion, or timer parameter."},
+        {"path": "weird_captcha_gym/shared_runtime/app/mechanics/two_lamp_dyeworks.js", "lines": "285-349", "claim": "Full plunger input and stirring mutate model state synchronously; the only timer registered by the mechanic removes the stir presentation class."},
+        {"path": "weird_captcha_gym/shared_runtime/app/mechanics/two_lamp_dyeworks.js", "lines": "414-487;489-590", "claim": "The full strip gesture, two-lamp inspection, certification, and vat disposal are explicit input handlers; lamp, sample, and vat state changes occur at event delivery."},
+        {"path": "weird_captcha_gym/shared_runtime/app/mechanics/two_lamp_dyeworks.css", "lines": "169;230;242;249;253-275", "claim": "The timed effects are CSS transitions, the 0.46-second dye-whorl, or the post-terminal stamp animation, all of which are presentational."},
+        {"path": "weird_captcha_gym/shared_runtime/server/incubator_graders/two_lamp_dyeworks.py", "lines": "348-379;394-407", "claim": "Certification is judged from the replayed composition, lamp views, lot specification, and ΔE values; no elapsed task time is graded."}
+      ],
+      "uncertainties": []
+    },
+    {
+      "case_index": 470,
+      "public_environment_name": "Two-Lamp Dyeworks",
+      "environment_id": "two_lamp_dyeworks_env",
+      "difficulty": 5,
+      "interaction_mode": "simplified",
+      "label": "no",
+      "controls_available": [
+        "Select one of 4 visible pigment bottles; the visible lot rule requires 3–4 active dye families and 10–12 total units.",
+        "Use the −/+ dose controls to select 1–5 units and click INJECT INTO VAT; each dose is irreversible within the current vat, with 13-unit vat capacity.",
+        "Click STIR VAT and then click DIP STRIP to sample the mixture.",
+        "Toggle NORTH-LIGHT and SODIUM with the lamp switch, view the same strip under both lamps, and certify only a two-light match; a narrow ΔE 3.6 tolerance and sparse graduations apply.",
+        "Click DUMP THIS VAT to discard the current mixture and consume one of 2 fresh vats; the mechanic exposes mouse/click controls and binds no keyboard shortcut."
+      ],
+      "autonomous_processes": [
+        "There is no autonomous outcome-affecting task-state process between actions; composition, vat index, lamp, stirred, sampledComposition, viewed, and ready are changed synchronously by input handlers.",
+        "A successful stir starts only the presentational dye-whorl CSS animation for 0.46 seconds and schedules removal of its class after 480 ms; model.stirred remains true until a later dose or vat reset.",
+        "Dosing, lamp changes, sampling, and liquid rendering use short CSS transitions, while the verdict stamp is added after terminal certification or vat exhaustion; these effects do not change an available action's outcome value."
+      ],
+      "grouped_control_modes": [
+        "dose: select a visible pigment, set units with −/+ dose buttons, then click INJECT INTO VAT (dose_buttons)",
+        "stir: click STIR VAT (stir_button)",
+        "dip: click DIP STRIP (dip_button)",
+        "lamp inspection: toggle the lamp switch (lamp_switch)",
+        "certification/check: use the certification button after both lamp views (certify_button)",
+        "vat recovery: discard the current vat (dump_valve)"
+      ],
+      "delta_ms": null,
+      "window_ms": null,
+      "clause_i": {
+        "holds": true,
+        "reason": "For a static candidate decision such as initial dosing, histories with identical prior actions can have different visible target ribbons across generated seeds, so an observation-free q cannot be uniformly optimal; this is static visual planning evidence, not a real-time witness."
+      },
+      "clause_ii": {
+        "holds": true,
+        "reason": "The current screenshot exposes the pinned ribbon, visible lot specification, mixture headroom, and lamp/proof state; the configured observation is a single endpoint with a 0 ms window, which is sufficient for a visual policy to choose the static button action."
+      },
+      "clause_iii": {
+        "holds": false,
+        "reason": "No positive delay causes non-clock task-state evolution. Waiting leaves the discrete mixture and control state unchanged; only the stir-whorl, lamp/swatch/liquid transitions, and terminal stamp animate. No available dose, stir, dip, lamp, dump, or certification opportunity becomes unavailable or strictly less effective during such a wait."
+      },
+      "common_visible_process": "None. The only between-action changes are decorative CSS transitions/animations; no single visible autonomous process changes an outcome-affecting opportunity.",
+      "pre_run": {
+        "threshold": 0.5,
+        "at_least_half": false,
+        "rate": null,
+        "basis": "source_structural",
+        "reason": "No generated profile has an autonomous outcome phase: a successful run requires further agent-controlled dosing, stirring, sampling, lamp inspection, and certification. Therefore no instance qualifies for the pre-run pattern, and no percentage is asserted; the mathematical failure of clause (iii) already makes this configuration No.",
+        "seed_probe": null
+      },
+      "files_read_completely": [
+        "AGENTS.md",
+        "weird_captcha_gym/docs/controllability/real-time.md",
+        "weird_captcha_gym/environments/two_lamp_dyeworks_env/controls.json",
+        "weird_captcha_gym/environments/two_lamp_dyeworks_env/env.json",
+        "weird_captcha_gym/environments/two_lamp_dyeworks_env/tasks/two_lamp_dyeworks_seed_0001/task.json",
+        "weird_captcha_gym/environments/two_lamp_dyeworks_env/tasks/two_lamp_dyeworks_seed_0001/setup_task.sh",
+        "weird_captcha_gym/environments/two_lamp_dyeworks_env/tasks/two_lamp_dyeworks_seed_0001/export_result.sh",
+        "weird_captcha_gym/shared_scripts/incubator_generators/two_lamp_dyeworks.py",
+        "weird_captcha_gym/shared_runtime/app/index.html",
+        "weird_captcha_gym/shared_runtime/app/time_controller.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/two_lamp_dyeworks.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/two_lamp_dyeworks.css",
+        "weird_captcha_gym/shared_runtime/server/incubator_graders/two_lamp_dyeworks.py",
+        "weird_captcha_gym/environments/two_lamp_dyeworks_env/tasks/two_lamp_dyeworks_seed_0001/verifier.py",
+        "weird_captcha_gym/tools/incubator_solvers/two_lamp_dyeworks.py"
+      ],
+      "source_evidence": [
+        {"path": "weird_captcha_gym/environments/two_lamp_dyeworks_env/controls.json", "lines": "30-34", "claim": "Difficulty 5 supplies 4 pigments, 3–4 active dyes, 10–12 total units, 13-unit capacity, 2 vats, tolerance ΔE 3.6, sparse graduation support, and the cross-lamp metamer constraints."},
+        {"path": "weird_captcha_gym/environments/two_lamp_dyeworks_env/controls.json", "lines": "37-41", "claim": "Simplified mode is a dose-button/stir-button/dip-button surface; the configured observation window is 0 ms with one frame and a 180-second play allowance."},
+        {"path": "weird_captcha_gym/shared_scripts/incubator_generators/two_lamp_dyeworks.py", "lines": "141-202;205-245", "claim": "Difficulty 5 constructs static spectral targets and lot-compliant near-metamer decoys; generation has no task clock, tick, motion, or timer parameter."},
+        {"path": "weird_captcha_gym/shared_runtime/app/mechanics/two_lamp_dyeworks.js", "lines": "246-283;337-349", "claim": "Simplified dose buttons and the explicit stir button mutate model state synchronously; the only timer registered by the mechanic removes the stir presentation class."},
+        {"path": "weird_captcha_gym/shared_runtime/app/mechanics/two_lamp_dyeworks.js", "lines": "489-590;592-601", "claim": "The simplified stir/dip controls, two-lamp inspection, certification, and vat disposal are explicit input handlers; lamp, sample, and vat state changes occur at event delivery."},
+        {"path": "weird_captcha_gym/shared_runtime/app/mechanics/two_lamp_dyeworks.css", "lines": "205-208;169;230;242;249;253-275", "claim": "Simplified mode hides the physical syringe and exposes proxy buttons; the timed effects are CSS transitions, the 0.46-second dye-whorl, or the post-terminal stamp animation, all presentational."},
+        {"path": "weird_captcha_gym/shared_runtime/server/incubator_graders/two_lamp_dyeworks.py", "lines": "348-379;394-407", "claim": "Certification is judged from the replayed composition, lamp views, lot specification, and ΔE values; no elapsed task time is graded."}
+      ],
+      "uncertainties": []
+    }
+  ]
+}

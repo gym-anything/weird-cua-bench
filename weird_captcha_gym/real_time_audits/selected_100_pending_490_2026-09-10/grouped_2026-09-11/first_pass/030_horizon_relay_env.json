@@ -1,0 +1,937 @@
+{
+  "case_index": 30,
+  "environment_id": "horizon_relay_env",
+  "public_environment_name": "Horizon Relay",
+  "configuration_reports": [
+    {
+      "case_index": 291,
+      "public_environment_name": "Horizon Relay",
+      "environment_id": "horizon_relay_env",
+      "difficulty": 1,
+      "interaction_mode": "full",
+      "label": "no",
+      "controls_available": [
+        "Full mouse control: drag a bright station dish from its SVG marker to a visible spacecraft marker; the drag starts a relay, and another drag refreshes the aim or hands off the relay.",
+        "A no-movement station pointer action only selects a station for the visible readout; no outcome-affecting keyboard control is bound.",
+        "CERTIFY ALL RELAYS submits the ledger after delivery and is administrative."
+      ],
+      "autonomous_processes": [
+        "Every 100 ms, the relay step increments the task tick and rotates station positions by 0.16 degrees per tick while each spacecraft remains at its generated inertial position.",
+        "While a relay is active, each tick either delivers one unit or emits a link break and clears the active relay when the station horizon or fixed aim tolerance is lost; after each completion, the next spacecraft still requires a new relay action."
+      ],
+      "grouped_control_modes": [
+        "Witness D: full dish_drag aim/start, re-aim, or handoff toward a currently visible station-spacecraft pair.",
+        "station_click selection is an auxiliary mode; certification is administrative and not part of D."
+      ],
+      "delta_ms": 400,
+      "window_ms": 480,
+      "clause_i": {
+        "holds": true,
+        "reason": "An action-clock-only q cannot choose the delayed station-spacecraft target for every occurrence in D: seed-dependent spacecraft placement and the rotating station horizons produce different valid pairs with the same prior action history."
+      },
+      "clause_ii": {
+        "holds": true,
+        "reason": "The configured six chronological frames over 480 ms show station and spacecraft marker motion, bright/dim horizon status, labels, and the tick readout. That bounded window gives g the current horizon phase and rotation direction needed to choose the pair and drag that will be valid at t+400 ms."
+      },
+      "clause_iii": {
+        "holds": true,
+        "reason": "In a deterministic geometry probe using seed probe-0000, At tick 218 California-to-craft-1 is visible, but after three autonomous ticks (300 ms) it is below California's horizon while Australia still sees craft-1. The same dish-drag action is effective before the crossing and ineffective afterward; the strict loss is geometric line-of-sight change, not a deadline."
+      },
+      "common_visible_process": "The shared 100 ms step rotates the three ground stations on the globe while spacecraft positions stay inertial. Recent frames visibly evidence the changing station-spacecraft line of sight; a pair can approach and cross a local horizon, so a stale aim or handoff target loses value while another station can keep the request solvable.",
+      "pre_run": {
+        "threshold": 0.5,
+        "at_least_half": true,
+        "rate": null,
+        "basis": "source_structural",
+        "reason": "Level 1 has one spacecraft and its controls explicitly state that one visible station can complete the short transfer without a handoff. The generator bounds craft-1 near the initially visible California station, and the station moves only 1.92 degrees during 12 required ticks against an 18-degree aim tolerance, so one initial aim can complete the whole outcome phase for at least half of generated instances; certification is administrative.",
+        "seed_probe": null
+      },
+      "files_read_completely": [
+        "AGENTS.md",
+        "weird_captcha_gym/docs/controllability/real-time.md",
+        "weird_captcha_gym/environments/horizon_relay_env/controls.json",
+        "weird_captcha_gym/environments/horizon_relay_env/env.json",
+        "weird_captcha_gym/environments/horizon_relay_env/tasks/horizon_relay_seed_0001/task.json",
+        "weird_captcha_gym/environments/horizon_relay_env/tasks/horizon_relay_seed_0001/setup_task.sh",
+        "weird_captcha_gym/environments/horizon_relay_env/tasks/horizon_relay_seed_0001/verifier.py",
+        "weird_captcha_gym/shared_scripts/incubator_generators/horizon_relay.py",
+        "weird_captcha_gym/shared_runtime/app/app.js",
+        "weird_captcha_gym/shared_runtime/app/time_controller.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/horizon_relay.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/horizon_relay.css",
+        "weird_captcha_gym/shared_runtime/server/incubator_graders/horizon_relay.py",
+        "weird_captcha_gym/tools/incubator_solvers/horizon_relay.py"
+      ],
+      "source_evidence": [
+        {
+          "path": "weird_captcha_gym/environments/horizon_relay_env/controls.json",
+          "lines": "6-10",
+          "claim": "Difficulty 1 has 1 spacecraft, 12 required ticks, 0.16 degrees per tick, and 18 degrees of aim tolerance."
+        },
+        {
+          "path": "weird_captcha_gym/environments/horizon_relay_env/controls.json",
+          "lines": "37-41",
+          "claim": "Full mode is direct dish dragging, and the observation schedule is a 480 ms window with six frames."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/horizon_relay.py",
+          "lines": "65-95",
+          "claim": "Stations are generated on the planet, while spacecraft positions are generated from latitude/longitude values and stored as fixed 3D positions; the generator comment explicitly says their inertial positions do not rotate with the globe."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/horizon_relay.js",
+          "lines": "60-79,162-186",
+          "claim": "Full drags set a fixed aim; autonomous ticks rotate station geometry, sample valid links, or break links when visibility or aim error fails."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/horizon_relay.py",
+          "lines": "79-85,120-181,191-196",
+          "claim": "The full input surface is enforced and the grader requires all 1 craft to have replayed samples and completions before submission can pass."
+        },
+        {
+          "path": "weird_captcha_gym/tools/incubator_solvers/horizon_relay.py",
+          "lines": "63-100",
+          "claim": "The solver selects visible pairs and refreshes active aim based on rendered speed and tolerance."
+        }
+      ],
+      "uncertainties": []
+    },
+    {
+      "case_index": 292,
+      "public_environment_name": "Horizon Relay",
+      "environment_id": "horizon_relay_env",
+      "difficulty": 1,
+      "interaction_mode": "simplified",
+      "label": "no",
+      "controls_available": [
+        "Simplified mouse control: click a station button, click AIM THIS CRAFT for a currently visible spacecraft, then click HOLD LINK; use STOP or a new selection for recovery or handoff.",
+        "The same rotating globe, station horizons, fixed aim, per-tick progress, and spacecraft requests remain active; no outcome-affecting keyboard control is bound.",
+        "CERTIFY ALL RELAYS submits the ledger after delivery and is administrative."
+      ],
+      "autonomous_processes": [
+        "Every 100 ms, the relay step increments the task tick and rotates station positions by 0.16 degrees per tick while each spacecraft remains at its generated inertial position.",
+        "While HOLD LINK is active, each tick either delivers one unit or emits a link break and clears the active relay when the station horizon or fixed aim tolerance is lost; after each completion, the next spacecraft still requires a new relay action."
+      ],
+      "grouped_control_modes": [
+        "Witness D: simplified station_button selection followed by target_button aim and hold_button start/re-aim or handoff toward a currently visible pair.",
+        "stop_button terminates an active link for recovery; certification is administrative and not part of D."
+      ],
+      "delta_ms": 400,
+      "window_ms": 480,
+      "clause_i": {
+        "holds": true,
+        "reason": "An action-clock-only q cannot choose the delayed station button, target button, and HOLD LINK sequence for every occurrence in D: seed-dependent spacecraft placement and the rotating station horizons produce different valid pairs with the same prior action history."
+      },
+      "clause_ii": {
+        "holds": true,
+        "reason": "The configured six chronological frames over 480 ms show station and spacecraft marker motion, bright/dim horizon status, labels, and the tick readout. That bounded window gives g the current horizon phase and rotation direction needed to choose the station/target controls that will be valid at t+400 ms."
+      },
+      "clause_iii": {
+        "holds": true,
+        "reason": "In a deterministic geometry probe using seed probe-0000, At tick 218 California-to-craft-1 is visible, but after three autonomous ticks (300 ms) it is below California's horizon while Australia still sees craft-1. The same target-button/HOLD LINK action is effective before the crossing and ineffective afterward; the strict loss is geometric line-of-sight change, not a deadline."
+      },
+      "common_visible_process": "The shared 100 ms step rotates the three ground stations on the globe while spacecraft positions stay inertial. Recent frames visibly evidence the changing station-spacecraft line of sight; a pair can approach and cross a local horizon, so a stale aim or handoff target loses value while another station can keep the request solvable.",
+      "pre_run": {
+        "threshold": 0.5,
+        "at_least_half": true,
+        "rate": null,
+        "basis": "source_structural",
+        "reason": "Level 1 has one spacecraft and its controls explicitly state that one visible station can complete the short transfer without a handoff. The generator bounds craft-1 near the initially visible California station, and the station moves only 1.92 degrees during 12 required ticks against an 18-degree aim tolerance, so one initial aim can complete the whole outcome phase for at least half of generated instances; certification is administrative.",
+        "seed_probe": null
+      },
+      "files_read_completely": [
+        "AGENTS.md",
+        "weird_captcha_gym/docs/controllability/real-time.md",
+        "weird_captcha_gym/environments/horizon_relay_env/controls.json",
+        "weird_captcha_gym/environments/horizon_relay_env/env.json",
+        "weird_captcha_gym/environments/horizon_relay_env/tasks/horizon_relay_seed_0001/task.json",
+        "weird_captcha_gym/environments/horizon_relay_env/tasks/horizon_relay_seed_0001/setup_task.sh",
+        "weird_captcha_gym/environments/horizon_relay_env/tasks/horizon_relay_seed_0001/verifier.py",
+        "weird_captcha_gym/shared_scripts/incubator_generators/horizon_relay.py",
+        "weird_captcha_gym/shared_runtime/app/app.js",
+        "weird_captcha_gym/shared_runtime/app/time_controller.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/horizon_relay.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/horizon_relay.css",
+        "weird_captcha_gym/shared_runtime/server/incubator_graders/horizon_relay.py",
+        "weird_captcha_gym/tools/incubator_solvers/horizon_relay.py"
+      ],
+      "source_evidence": [
+        {
+          "path": "weird_captcha_gym/environments/horizon_relay_env/controls.json",
+          "lines": "6-10",
+          "claim": "Difficulty 1 has 1 spacecraft, 12 required ticks, 0.16 degrees per tick, and 18 degrees of aim tolerance."
+        },
+        {
+          "path": "weird_captcha_gym/environments/horizon_relay_env/controls.json",
+          "lines": "37-41",
+          "claim": "Simplified mode uses station and spacecraft buttons plus HOLD LINK, with the same world and a 480 ms six-frame observation window."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/horizon_relay.py",
+          "lines": "65-95",
+          "claim": "Stations are generated on the planet, while spacecraft positions are generated from latitude/longitude values and stored as fixed 3D positions; the generator comment explicitly says their inertial positions do not rotate with the globe."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/horizon_relay.js",
+          "lines": "60-79,141-160,178-186",
+          "claim": "Simplified controls set an aim and start one active relay; autonomous ticks rotate station geometry, sample valid links, or break links when visibility or aim error fails."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/horizon_relay.py",
+          "lines": "79-85,113-181,191-196",
+          "claim": "The simplified input surface is enforced and the grader requires all 1 craft to have replayed samples and completions before submission can pass."
+        },
+        {
+          "path": "weird_captcha_gym/tools/incubator_solvers/horizon_relay.py",
+          "lines": "63-100",
+          "claim": "The solver selects visible pairs, performs HOLD LINK, and refreshes active aim based on rendered speed and tolerance."
+        }
+      ],
+      "uncertainties": []
+    },
+    {
+      "case_index": 293,
+      "public_environment_name": "Horizon Relay",
+      "environment_id": "horizon_relay_env",
+      "difficulty": 2,
+      "interaction_mode": "full",
+      "label": "yes",
+      "controls_available": [
+        "Full mouse control: drag a bright station dish from its SVG marker to a visible spacecraft marker; the drag starts a relay, and another drag refreshes the aim or hands off the relay.",
+        "A no-movement station pointer action only selects a station for the visible readout; no outcome-affecting keyboard control is bound.",
+        "CERTIFY ALL RELAYS submits the ledger after delivery and is administrative."
+      ],
+      "autonomous_processes": [
+        "Every 100 ms, the relay step increments the task tick and rotates station positions by 0.26 degrees per tick while each spacecraft remains at its generated inertial position.",
+        "While a relay is active, each tick either delivers one unit or emits a link break and clears the active relay when the station horizon or fixed aim tolerance is lost; after each completion, the next spacecraft still requires a new relay action."
+      ],
+      "grouped_control_modes": [
+        "Witness D: full dish_drag aim/start, re-aim, or handoff toward a currently visible station-spacecraft pair.",
+        "station_click selection is an auxiliary mode; certification is administrative and not part of D."
+      ],
+      "delta_ms": 400,
+      "window_ms": 480,
+      "clause_i": {
+        "holds": true,
+        "reason": "An action-clock-only q cannot choose the delayed station-spacecraft target for every occurrence in D: seed-dependent spacecraft placement and the rotating station horizons produce different valid pairs with the same prior action history."
+      },
+      "clause_ii": {
+        "holds": true,
+        "reason": "The configured six chronological frames over 480 ms show station and spacecraft marker motion, bright/dim horizon status, labels, and the tick readout. That bounded window gives g the current horizon phase and rotation direction needed to choose the pair and drag that will be valid at t+400 ms."
+      },
+      "clause_iii": {
+        "holds": true,
+        "reason": "In a deterministic geometry probe using seed probe-0000, At tick 125 California-to-craft-1 is visible, but after three autonomous ticks (300 ms) it is below California's horizon while Australia still sees craft-1. The same dish-drag action is effective before the crossing and ineffective afterward; the strict loss is geometric line-of-sight change, not a deadline."
+      },
+      "common_visible_process": "The shared 100 ms step rotates the three ground stations on the globe while spacecraft positions stay inertial. Recent frames visibly evidence the changing station-spacecraft line of sight; a pair can approach and cross a local horizon, so a stale aim or handoff target loses value while another station can keep the request solvable.",
+      "pre_run": {
+        "threshold": 0.5,
+        "at_least_half": false,
+        "rate": null,
+        "basis": "source_structural",
+        "reason": "A successful whole-task pre-run is impossible for every instance because level 2 has 2 spacecraft but the browser and grader maintain only one active station/craft relay. transfer_complete clears the active relay and no next craft is selected automatically, so at least 1 additional outcome-affecting aim/start action sequence is required before certification.",
+        "seed_probe": null
+      },
+      "files_read_completely": [
+        "AGENTS.md",
+        "weird_captcha_gym/docs/controllability/real-time.md",
+        "weird_captcha_gym/environments/horizon_relay_env/controls.json",
+        "weird_captcha_gym/environments/horizon_relay_env/env.json",
+        "weird_captcha_gym/environments/horizon_relay_env/tasks/horizon_relay_seed_0001/task.json",
+        "weird_captcha_gym/environments/horizon_relay_env/tasks/horizon_relay_seed_0001/setup_task.sh",
+        "weird_captcha_gym/environments/horizon_relay_env/tasks/horizon_relay_seed_0001/verifier.py",
+        "weird_captcha_gym/shared_scripts/incubator_generators/horizon_relay.py",
+        "weird_captcha_gym/shared_runtime/app/app.js",
+        "weird_captcha_gym/shared_runtime/app/time_controller.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/horizon_relay.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/horizon_relay.css",
+        "weird_captcha_gym/shared_runtime/server/incubator_graders/horizon_relay.py",
+        "weird_captcha_gym/tools/incubator_solvers/horizon_relay.py"
+      ],
+      "source_evidence": [
+        {
+          "path": "weird_captcha_gym/environments/horizon_relay_env/controls.json",
+          "lines": "12-16",
+          "claim": "Difficulty 2 has 2 spacecraft, 16 required ticks, 0.26 degrees per tick, and 15 degrees of aim tolerance."
+        },
+        {
+          "path": "weird_captcha_gym/environments/horizon_relay_env/controls.json",
+          "lines": "37-41",
+          "claim": "Full mode is direct dish dragging, and the observation schedule is a 480 ms window with six frames."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/horizon_relay.py",
+          "lines": "65-95",
+          "claim": "Stations are generated on the planet, while spacecraft positions are generated from latitude/longitude values and stored as fixed 3D positions; the generator comment explicitly says their inertial positions do not rotate with the globe."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/horizon_relay.js",
+          "lines": "60-79,162-186",
+          "claim": "Full drags set a fixed aim; autonomous ticks rotate station geometry, sample valid links, or break links when visibility or aim error fails."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/horizon_relay.py",
+          "lines": "79-85,120-181,191-196",
+          "claim": "The full input surface is enforced and the grader requires all 2 craft to have replayed samples and completions before submission can pass."
+        },
+        {
+          "path": "weird_captcha_gym/tools/incubator_solvers/horizon_relay.py",
+          "lines": "63-100",
+          "claim": "The solver selects visible pairs and refreshes active aim based on rendered speed and tolerance."
+        }
+      ],
+      "uncertainties": []
+    },
+    {
+      "case_index": 294,
+      "public_environment_name": "Horizon Relay",
+      "environment_id": "horizon_relay_env",
+      "difficulty": 2,
+      "interaction_mode": "simplified",
+      "label": "yes",
+      "controls_available": [
+        "Simplified mouse control: click a station button, click AIM THIS CRAFT for a currently visible spacecraft, then click HOLD LINK; use STOP or a new selection for recovery or handoff.",
+        "The same rotating globe, station horizons, fixed aim, per-tick progress, and spacecraft requests remain active; no outcome-affecting keyboard control is bound.",
+        "CERTIFY ALL RELAYS submits the ledger after delivery and is administrative."
+      ],
+      "autonomous_processes": [
+        "Every 100 ms, the relay step increments the task tick and rotates station positions by 0.26 degrees per tick while each spacecraft remains at its generated inertial position.",
+        "While HOLD LINK is active, each tick either delivers one unit or emits a link break and clears the active relay when the station horizon or fixed aim tolerance is lost; after each completion, the next spacecraft still requires a new relay action."
+      ],
+      "grouped_control_modes": [
+        "Witness D: simplified station_button selection followed by target_button aim and hold_button start/re-aim or handoff toward a currently visible pair.",
+        "stop_button terminates an active link for recovery; certification is administrative and not part of D."
+      ],
+      "delta_ms": 400,
+      "window_ms": 480,
+      "clause_i": {
+        "holds": true,
+        "reason": "An action-clock-only q cannot choose the delayed station button, target button, and HOLD LINK sequence for every occurrence in D: seed-dependent spacecraft placement and the rotating station horizons produce different valid pairs with the same prior action history."
+      },
+      "clause_ii": {
+        "holds": true,
+        "reason": "The configured six chronological frames over 480 ms show station and spacecraft marker motion, bright/dim horizon status, labels, and the tick readout. That bounded window gives g the current horizon phase and rotation direction needed to choose the station/target controls that will be valid at t+400 ms."
+      },
+      "clause_iii": {
+        "holds": true,
+        "reason": "In a deterministic geometry probe using seed probe-0000, At tick 125 California-to-craft-1 is visible, but after three autonomous ticks (300 ms) it is below California's horizon while Australia still sees craft-1. The same target-button/HOLD LINK action is effective before the crossing and ineffective afterward; the strict loss is geometric line-of-sight change, not a deadline."
+      },
+      "common_visible_process": "The shared 100 ms step rotates the three ground stations on the globe while spacecraft positions stay inertial. Recent frames visibly evidence the changing station-spacecraft line of sight; a pair can approach and cross a local horizon, so a stale aim or handoff target loses value while another station can keep the request solvable.",
+      "pre_run": {
+        "threshold": 0.5,
+        "at_least_half": false,
+        "rate": null,
+        "basis": "source_structural",
+        "reason": "A successful whole-task pre-run is impossible for every instance because level 2 has 2 spacecraft but the browser and grader maintain only one active station/craft relay. transfer_complete clears the active relay and no next craft is selected automatically, so at least 1 additional outcome-affecting station/target/HOLD LINK action sequence is required before certification.",
+        "seed_probe": null
+      },
+      "files_read_completely": [
+        "AGENTS.md",
+        "weird_captcha_gym/docs/controllability/real-time.md",
+        "weird_captcha_gym/environments/horizon_relay_env/controls.json",
+        "weird_captcha_gym/environments/horizon_relay_env/env.json",
+        "weird_captcha_gym/environments/horizon_relay_env/tasks/horizon_relay_seed_0001/task.json",
+        "weird_captcha_gym/environments/horizon_relay_env/tasks/horizon_relay_seed_0001/setup_task.sh",
+        "weird_captcha_gym/environments/horizon_relay_env/tasks/horizon_relay_seed_0001/verifier.py",
+        "weird_captcha_gym/shared_scripts/incubator_generators/horizon_relay.py",
+        "weird_captcha_gym/shared_runtime/app/app.js",
+        "weird_captcha_gym/shared_runtime/app/time_controller.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/horizon_relay.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/horizon_relay.css",
+        "weird_captcha_gym/shared_runtime/server/incubator_graders/horizon_relay.py",
+        "weird_captcha_gym/tools/incubator_solvers/horizon_relay.py"
+      ],
+      "source_evidence": [
+        {
+          "path": "weird_captcha_gym/environments/horizon_relay_env/controls.json",
+          "lines": "12-16",
+          "claim": "Difficulty 2 has 2 spacecraft, 16 required ticks, 0.26 degrees per tick, and 15 degrees of aim tolerance."
+        },
+        {
+          "path": "weird_captcha_gym/environments/horizon_relay_env/controls.json",
+          "lines": "37-41",
+          "claim": "Simplified mode uses station and spacecraft buttons plus HOLD LINK, with the same world and a 480 ms six-frame observation window."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/horizon_relay.py",
+          "lines": "65-95",
+          "claim": "Stations are generated on the planet, while spacecraft positions are generated from latitude/longitude values and stored as fixed 3D positions; the generator comment explicitly says their inertial positions do not rotate with the globe."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/horizon_relay.js",
+          "lines": "60-79,141-160,178-186",
+          "claim": "Simplified controls set an aim and start one active relay; autonomous ticks rotate station geometry, sample valid links, or break links when visibility or aim error fails."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/horizon_relay.py",
+          "lines": "79-85,113-181,191-196",
+          "claim": "The simplified input surface is enforced and the grader requires all 2 craft to have replayed samples and completions before submission can pass."
+        },
+        {
+          "path": "weird_captcha_gym/tools/incubator_solvers/horizon_relay.py",
+          "lines": "63-100",
+          "claim": "The solver selects visible pairs, performs HOLD LINK, and refreshes active aim based on rendered speed and tolerance."
+        }
+      ],
+      "uncertainties": []
+    },
+    {
+      "case_index": 295,
+      "public_environment_name": "Horizon Relay",
+      "environment_id": "horizon_relay_env",
+      "difficulty": 3,
+      "interaction_mode": "full",
+      "label": "yes",
+      "controls_available": [
+        "Full mouse control: drag a bright station dish from its SVG marker to a visible spacecraft marker; the drag starts a relay, and another drag refreshes the aim or hands off the relay.",
+        "A no-movement station pointer action only selects a station for the visible readout; no outcome-affecting keyboard control is bound.",
+        "CERTIFY ALL RELAYS submits the ledger after delivery and is administrative."
+      ],
+      "autonomous_processes": [
+        "Every 100 ms, the relay step increments the task tick and rotates station positions by 0.40 degrees per tick while each spacecraft remains at its generated inertial position.",
+        "While a relay is active, each tick either delivers one unit or emits a link break and clears the active relay when the station horizon or fixed aim tolerance is lost; after each completion, the next spacecraft still requires a new relay action."
+      ],
+      "grouped_control_modes": [
+        "Witness D: full dish_drag aim/start, re-aim, or handoff toward a currently visible station-spacecraft pair.",
+        "station_click selection is an auxiliary mode; certification is administrative and not part of D."
+      ],
+      "delta_ms": 400,
+      "window_ms": 480,
+      "clause_i": {
+        "holds": true,
+        "reason": "An action-clock-only q cannot choose the delayed station-spacecraft target for every occurrence in D: seed-dependent spacecraft placement and the rotating station horizons produce different valid pairs with the same prior action history."
+      },
+      "clause_ii": {
+        "holds": true,
+        "reason": "The configured six chronological frames over 480 ms show station and spacecraft marker motion, bright/dim horizon status, labels, and the tick readout. That bounded window gives g the current horizon phase and rotation direction needed to choose the pair and drag that will be valid at t+400 ms."
+      },
+      "clause_iii": {
+        "holds": true,
+        "reason": "In a deterministic geometry probe using seed probe-0000, At tick 75 California-to-craft-1 is visible, but after three autonomous ticks (300 ms) it is below California's horizon while Australia still sees craft-1. The same dish-drag action is effective before the crossing and ineffective afterward; the strict loss is geometric line-of-sight change, not a deadline."
+      },
+      "common_visible_process": "The shared 100 ms step rotates the three ground stations on the globe while spacecraft positions stay inertial. Recent frames visibly evidence the changing station-spacecraft line of sight; a pair can approach and cross a local horizon, so a stale aim or handoff target loses value while another station can keep the request solvable.",
+      "pre_run": {
+        "threshold": 0.5,
+        "at_least_half": false,
+        "rate": null,
+        "basis": "source_structural",
+        "reason": "A successful whole-task pre-run is impossible for every instance because level 3 has 3 spacecraft but the browser and grader maintain only one active station/craft relay. transfer_complete clears the active relay and no next craft is selected automatically, so at least 2 additional outcome-affecting aim/start action sequences is required before certification.",
+        "seed_probe": null
+      },
+      "files_read_completely": [
+        "AGENTS.md",
+        "weird_captcha_gym/docs/controllability/real-time.md",
+        "weird_captcha_gym/environments/horizon_relay_env/controls.json",
+        "weird_captcha_gym/environments/horizon_relay_env/env.json",
+        "weird_captcha_gym/environments/horizon_relay_env/tasks/horizon_relay_seed_0001/task.json",
+        "weird_captcha_gym/environments/horizon_relay_env/tasks/horizon_relay_seed_0001/setup_task.sh",
+        "weird_captcha_gym/environments/horizon_relay_env/tasks/horizon_relay_seed_0001/verifier.py",
+        "weird_captcha_gym/shared_scripts/incubator_generators/horizon_relay.py",
+        "weird_captcha_gym/shared_runtime/app/app.js",
+        "weird_captcha_gym/shared_runtime/app/time_controller.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/horizon_relay.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/horizon_relay.css",
+        "weird_captcha_gym/shared_runtime/server/incubator_graders/horizon_relay.py",
+        "weird_captcha_gym/tools/incubator_solvers/horizon_relay.py"
+      ],
+      "source_evidence": [
+        {
+          "path": "weird_captcha_gym/environments/horizon_relay_env/controls.json",
+          "lines": "18-22",
+          "claim": "Difficulty 3 has 3 spacecraft, 20 required ticks, 0.40 degrees per tick, and 12 degrees of aim tolerance."
+        },
+        {
+          "path": "weird_captcha_gym/environments/horizon_relay_env/controls.json",
+          "lines": "37-41",
+          "claim": "Full mode is direct dish dragging, and the observation schedule is a 480 ms window with six frames."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/horizon_relay.py",
+          "lines": "65-95",
+          "claim": "Stations are generated on the planet, while spacecraft positions are generated from latitude/longitude values and stored as fixed 3D positions; the generator comment explicitly says their inertial positions do not rotate with the globe."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/horizon_relay.js",
+          "lines": "60-79,162-186",
+          "claim": "Full drags set a fixed aim; autonomous ticks rotate station geometry, sample valid links, or break links when visibility or aim error fails."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/horizon_relay.py",
+          "lines": "79-85,120-181,191-196",
+          "claim": "The full input surface is enforced and the grader requires all 3 craft to have replayed samples and completions before submission can pass."
+        },
+        {
+          "path": "weird_captcha_gym/tools/incubator_solvers/horizon_relay.py",
+          "lines": "63-100",
+          "claim": "The solver selects visible pairs and refreshes active aim based on rendered speed and tolerance."
+        }
+      ],
+      "uncertainties": []
+    },
+    {
+      "case_index": 296,
+      "public_environment_name": "Horizon Relay",
+      "environment_id": "horizon_relay_env",
+      "difficulty": 3,
+      "interaction_mode": "simplified",
+      "label": "yes",
+      "controls_available": [
+        "Simplified mouse control: click a station button, click AIM THIS CRAFT for a currently visible spacecraft, then click HOLD LINK; use STOP or a new selection for recovery or handoff.",
+        "The same rotating globe, station horizons, fixed aim, per-tick progress, and spacecraft requests remain active; no outcome-affecting keyboard control is bound.",
+        "CERTIFY ALL RELAYS submits the ledger after delivery and is administrative."
+      ],
+      "autonomous_processes": [
+        "Every 100 ms, the relay step increments the task tick and rotates station positions by 0.40 degrees per tick while each spacecraft remains at its generated inertial position.",
+        "While HOLD LINK is active, each tick either delivers one unit or emits a link break and clears the active relay when the station horizon or fixed aim tolerance is lost; after each completion, the next spacecraft still requires a new relay action."
+      ],
+      "grouped_control_modes": [
+        "Witness D: simplified station_button selection followed by target_button aim and hold_button start/re-aim or handoff toward a currently visible pair.",
+        "stop_button terminates an active link for recovery; certification is administrative and not part of D."
+      ],
+      "delta_ms": 400,
+      "window_ms": 480,
+      "clause_i": {
+        "holds": true,
+        "reason": "An action-clock-only q cannot choose the delayed station button, target button, and HOLD LINK sequence for every occurrence in D: seed-dependent spacecraft placement and the rotating station horizons produce different valid pairs with the same prior action history."
+      },
+      "clause_ii": {
+        "holds": true,
+        "reason": "The configured six chronological frames over 480 ms show station and spacecraft marker motion, bright/dim horizon status, labels, and the tick readout. That bounded window gives g the current horizon phase and rotation direction needed to choose the station/target controls that will be valid at t+400 ms."
+      },
+      "clause_iii": {
+        "holds": true,
+        "reason": "In a deterministic geometry probe using seed probe-0000, At tick 75 California-to-craft-1 is visible, but after three autonomous ticks (300 ms) it is below California's horizon while Australia still sees craft-1. The same target-button/HOLD LINK action is effective before the crossing and ineffective afterward; the strict loss is geometric line-of-sight change, not a deadline."
+      },
+      "common_visible_process": "The shared 100 ms step rotates the three ground stations on the globe while spacecraft positions stay inertial. Recent frames visibly evidence the changing station-spacecraft line of sight; a pair can approach and cross a local horizon, so a stale aim or handoff target loses value while another station can keep the request solvable.",
+      "pre_run": {
+        "threshold": 0.5,
+        "at_least_half": false,
+        "rate": null,
+        "basis": "source_structural",
+        "reason": "A successful whole-task pre-run is impossible for every instance because level 3 has 3 spacecraft but the browser and grader maintain only one active station/craft relay. transfer_complete clears the active relay and no next craft is selected automatically, so at least 2 additional outcome-affecting station/target/HOLD LINK action sequences is required before certification.",
+        "seed_probe": null
+      },
+      "files_read_completely": [
+        "AGENTS.md",
+        "weird_captcha_gym/docs/controllability/real-time.md",
+        "weird_captcha_gym/environments/horizon_relay_env/controls.json",
+        "weird_captcha_gym/environments/horizon_relay_env/env.json",
+        "weird_captcha_gym/environments/horizon_relay_env/tasks/horizon_relay_seed_0001/task.json",
+        "weird_captcha_gym/environments/horizon_relay_env/tasks/horizon_relay_seed_0001/setup_task.sh",
+        "weird_captcha_gym/environments/horizon_relay_env/tasks/horizon_relay_seed_0001/verifier.py",
+        "weird_captcha_gym/shared_scripts/incubator_generators/horizon_relay.py",
+        "weird_captcha_gym/shared_runtime/app/app.js",
+        "weird_captcha_gym/shared_runtime/app/time_controller.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/horizon_relay.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/horizon_relay.css",
+        "weird_captcha_gym/shared_runtime/server/incubator_graders/horizon_relay.py",
+        "weird_captcha_gym/tools/incubator_solvers/horizon_relay.py"
+      ],
+      "source_evidence": [
+        {
+          "path": "weird_captcha_gym/environments/horizon_relay_env/controls.json",
+          "lines": "18-22",
+          "claim": "Difficulty 3 has 3 spacecraft, 20 required ticks, 0.40 degrees per tick, and 12 degrees of aim tolerance."
+        },
+        {
+          "path": "weird_captcha_gym/environments/horizon_relay_env/controls.json",
+          "lines": "37-41",
+          "claim": "Simplified mode uses station and spacecraft buttons plus HOLD LINK, with the same world and a 480 ms six-frame observation window."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/horizon_relay.py",
+          "lines": "65-95",
+          "claim": "Stations are generated on the planet, while spacecraft positions are generated from latitude/longitude values and stored as fixed 3D positions; the generator comment explicitly says their inertial positions do not rotate with the globe."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/horizon_relay.js",
+          "lines": "60-79,141-160,178-186",
+          "claim": "Simplified controls set an aim and start one active relay; autonomous ticks rotate station geometry, sample valid links, or break links when visibility or aim error fails."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/horizon_relay.py",
+          "lines": "79-85,113-181,191-196",
+          "claim": "The simplified input surface is enforced and the grader requires all 3 craft to have replayed samples and completions before submission can pass."
+        },
+        {
+          "path": "weird_captcha_gym/tools/incubator_solvers/horizon_relay.py",
+          "lines": "63-100",
+          "claim": "The solver selects visible pairs, performs HOLD LINK, and refreshes active aim based on rendered speed and tolerance."
+        }
+      ],
+      "uncertainties": []
+    },
+    {
+      "case_index": 297,
+      "public_environment_name": "Horizon Relay",
+      "environment_id": "horizon_relay_env",
+      "difficulty": 4,
+      "interaction_mode": "full",
+      "label": "yes",
+      "controls_available": [
+        "Full mouse control: drag a bright station dish from its SVG marker to a visible spacecraft marker; the drag starts a relay, and another drag refreshes the aim or hands off the relay.",
+        "A no-movement station pointer action only selects a station for the visible readout; no outcome-affecting keyboard control is bound.",
+        "CERTIFY ALL RELAYS submits the ledger after delivery and is administrative."
+      ],
+      "autonomous_processes": [
+        "Every 100 ms, the relay step increments the task tick and rotates station positions by 0.55 degrees per tick while each spacecraft remains at its generated inertial position.",
+        "While a relay is active, each tick either delivers one unit or emits a link break and clears the active relay when the station horizon or fixed aim tolerance is lost; after each completion, the next spacecraft still requires a new relay action."
+      ],
+      "grouped_control_modes": [
+        "Witness D: full dish_drag aim/start, re-aim, or handoff toward a currently visible station-spacecraft pair.",
+        "station_click selection is an auxiliary mode; certification is administrative and not part of D."
+      ],
+      "delta_ms": 400,
+      "window_ms": 480,
+      "clause_i": {
+        "holds": true,
+        "reason": "An action-clock-only q cannot choose the delayed station-spacecraft target for every occurrence in D: seed-dependent spacecraft placement and the rotating station horizons produce different valid pairs with the same prior action history."
+      },
+      "clause_ii": {
+        "holds": true,
+        "reason": "The configured six chronological frames over 480 ms show station and spacecraft marker motion, bright/dim horizon status, labels, and the tick readout. That bounded window gives g the current horizon phase and rotation direction needed to choose the pair and drag that will be valid at t+400 ms."
+      },
+      "clause_iii": {
+        "holds": true,
+        "reason": "In a deterministic geometry probe using seed probe-0000, At tick 50 California-to-craft-1 is visible, but after three autonomous ticks (300 ms) it is below California's horizon while Australia still sees craft-1. The same dish-drag action is effective before the crossing and ineffective afterward; the strict loss is geometric line-of-sight change, not a deadline."
+      },
+      "common_visible_process": "The shared 100 ms step rotates the three ground stations on the globe while spacecraft positions stay inertial. Recent frames visibly evidence the changing station-spacecraft line of sight; a pair can approach and cross a local horizon, so a stale aim or handoff target loses value while another station can keep the request solvable.",
+      "pre_run": {
+        "threshold": 0.5,
+        "at_least_half": false,
+        "rate": null,
+        "basis": "source_structural",
+        "reason": "A successful whole-task pre-run is impossible for every instance because level 4 has 4 spacecraft but the browser and grader maintain only one active station/craft relay. transfer_complete clears the active relay and no next craft is selected automatically, so at least 3 additional outcome-affecting aim/start action sequences is required before certification.",
+        "seed_probe": null
+      },
+      "files_read_completely": [
+        "AGENTS.md",
+        "weird_captcha_gym/docs/controllability/real-time.md",
+        "weird_captcha_gym/environments/horizon_relay_env/controls.json",
+        "weird_captcha_gym/environments/horizon_relay_env/env.json",
+        "weird_captcha_gym/environments/horizon_relay_env/tasks/horizon_relay_seed_0001/task.json",
+        "weird_captcha_gym/environments/horizon_relay_env/tasks/horizon_relay_seed_0001/setup_task.sh",
+        "weird_captcha_gym/environments/horizon_relay_env/tasks/horizon_relay_seed_0001/verifier.py",
+        "weird_captcha_gym/shared_scripts/incubator_generators/horizon_relay.py",
+        "weird_captcha_gym/shared_runtime/app/app.js",
+        "weird_captcha_gym/shared_runtime/app/time_controller.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/horizon_relay.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/horizon_relay.css",
+        "weird_captcha_gym/shared_runtime/server/incubator_graders/horizon_relay.py",
+        "weird_captcha_gym/tools/incubator_solvers/horizon_relay.py"
+      ],
+      "source_evidence": [
+        {
+          "path": "weird_captcha_gym/environments/horizon_relay_env/controls.json",
+          "lines": "24-28",
+          "claim": "Difficulty 4 has 4 spacecraft, 24 required ticks, 0.55 degrees per tick, and 9 degrees of aim tolerance."
+        },
+        {
+          "path": "weird_captcha_gym/environments/horizon_relay_env/controls.json",
+          "lines": "37-41",
+          "claim": "Full mode is direct dish dragging, and the observation schedule is a 480 ms window with six frames."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/horizon_relay.py",
+          "lines": "65-95",
+          "claim": "Stations are generated on the planet, while spacecraft positions are generated from latitude/longitude values and stored as fixed 3D positions; the generator comment explicitly says their inertial positions do not rotate with the globe."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/horizon_relay.js",
+          "lines": "60-79,162-186",
+          "claim": "Full drags set a fixed aim; autonomous ticks rotate station geometry, sample valid links, or break links when visibility or aim error fails."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/horizon_relay.py",
+          "lines": "79-85,120-181,191-196",
+          "claim": "The full input surface is enforced and the grader requires all 4 craft to have replayed samples and completions before submission can pass."
+        },
+        {
+          "path": "weird_captcha_gym/tools/incubator_solvers/horizon_relay.py",
+          "lines": "63-100",
+          "claim": "The solver selects visible pairs and refreshes active aim based on rendered speed and tolerance."
+        }
+      ],
+      "uncertainties": []
+    },
+    {
+      "case_index": 298,
+      "public_environment_name": "Horizon Relay",
+      "environment_id": "horizon_relay_env",
+      "difficulty": 4,
+      "interaction_mode": "simplified",
+      "label": "yes",
+      "controls_available": [
+        "Simplified mouse control: click a station button, click AIM THIS CRAFT for a currently visible spacecraft, then click HOLD LINK; use STOP or a new selection for recovery or handoff.",
+        "The same rotating globe, station horizons, fixed aim, per-tick progress, and spacecraft requests remain active; no outcome-affecting keyboard control is bound.",
+        "CERTIFY ALL RELAYS submits the ledger after delivery and is administrative."
+      ],
+      "autonomous_processes": [
+        "Every 100 ms, the relay step increments the task tick and rotates station positions by 0.55 degrees per tick while each spacecraft remains at its generated inertial position.",
+        "While HOLD LINK is active, each tick either delivers one unit or emits a link break and clears the active relay when the station horizon or fixed aim tolerance is lost; after each completion, the next spacecraft still requires a new relay action."
+      ],
+      "grouped_control_modes": [
+        "Witness D: simplified station_button selection followed by target_button aim and hold_button start/re-aim or handoff toward a currently visible pair.",
+        "stop_button terminates an active link for recovery; certification is administrative and not part of D."
+      ],
+      "delta_ms": 400,
+      "window_ms": 480,
+      "clause_i": {
+        "holds": true,
+        "reason": "An action-clock-only q cannot choose the delayed station button, target button, and HOLD LINK sequence for every occurrence in D: seed-dependent spacecraft placement and the rotating station horizons produce different valid pairs with the same prior action history."
+      },
+      "clause_ii": {
+        "holds": true,
+        "reason": "The configured six chronological frames over 480 ms show station and spacecraft marker motion, bright/dim horizon status, labels, and the tick readout. That bounded window gives g the current horizon phase and rotation direction needed to choose the station/target controls that will be valid at t+400 ms."
+      },
+      "clause_iii": {
+        "holds": true,
+        "reason": "In a deterministic geometry probe using seed probe-0000, At tick 50 California-to-craft-1 is visible, but after three autonomous ticks (300 ms) it is below California's horizon while Australia still sees craft-1. The same target-button/HOLD LINK action is effective before the crossing and ineffective afterward; the strict loss is geometric line-of-sight change, not a deadline."
+      },
+      "common_visible_process": "The shared 100 ms step rotates the three ground stations on the globe while spacecraft positions stay inertial. Recent frames visibly evidence the changing station-spacecraft line of sight; a pair can approach and cross a local horizon, so a stale aim or handoff target loses value while another station can keep the request solvable.",
+      "pre_run": {
+        "threshold": 0.5,
+        "at_least_half": false,
+        "rate": null,
+        "basis": "source_structural",
+        "reason": "A successful whole-task pre-run is impossible for every instance because level 4 has 4 spacecraft but the browser and grader maintain only one active station/craft relay. transfer_complete clears the active relay and no next craft is selected automatically, so at least 3 additional outcome-affecting station/target/HOLD LINK action sequences is required before certification.",
+        "seed_probe": null
+      },
+      "files_read_completely": [
+        "AGENTS.md",
+        "weird_captcha_gym/docs/controllability/real-time.md",
+        "weird_captcha_gym/environments/horizon_relay_env/controls.json",
+        "weird_captcha_gym/environments/horizon_relay_env/env.json",
+        "weird_captcha_gym/environments/horizon_relay_env/tasks/horizon_relay_seed_0001/task.json",
+        "weird_captcha_gym/environments/horizon_relay_env/tasks/horizon_relay_seed_0001/setup_task.sh",
+        "weird_captcha_gym/environments/horizon_relay_env/tasks/horizon_relay_seed_0001/verifier.py",
+        "weird_captcha_gym/shared_scripts/incubator_generators/horizon_relay.py",
+        "weird_captcha_gym/shared_runtime/app/app.js",
+        "weird_captcha_gym/shared_runtime/app/time_controller.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/horizon_relay.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/horizon_relay.css",
+        "weird_captcha_gym/shared_runtime/server/incubator_graders/horizon_relay.py",
+        "weird_captcha_gym/tools/incubator_solvers/horizon_relay.py"
+      ],
+      "source_evidence": [
+        {
+          "path": "weird_captcha_gym/environments/horizon_relay_env/controls.json",
+          "lines": "24-28",
+          "claim": "Difficulty 4 has 4 spacecraft, 24 required ticks, 0.55 degrees per tick, and 9 degrees of aim tolerance."
+        },
+        {
+          "path": "weird_captcha_gym/environments/horizon_relay_env/controls.json",
+          "lines": "37-41",
+          "claim": "Simplified mode uses station and spacecraft buttons plus HOLD LINK, with the same world and a 480 ms six-frame observation window."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/horizon_relay.py",
+          "lines": "65-95",
+          "claim": "Stations are generated on the planet, while spacecraft positions are generated from latitude/longitude values and stored as fixed 3D positions; the generator comment explicitly says their inertial positions do not rotate with the globe."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/horizon_relay.js",
+          "lines": "60-79,141-160,178-186",
+          "claim": "Simplified controls set an aim and start one active relay; autonomous ticks rotate station geometry, sample valid links, or break links when visibility or aim error fails."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/horizon_relay.py",
+          "lines": "79-85,113-181,191-196",
+          "claim": "The simplified input surface is enforced and the grader requires all 4 craft to have replayed samples and completions before submission can pass."
+        },
+        {
+          "path": "weird_captcha_gym/tools/incubator_solvers/horizon_relay.py",
+          "lines": "63-100",
+          "claim": "The solver selects visible pairs, performs HOLD LINK, and refreshes active aim based on rendered speed and tolerance."
+        }
+      ],
+      "uncertainties": []
+    },
+    {
+      "case_index": 299,
+      "public_environment_name": "Horizon Relay",
+      "environment_id": "horizon_relay_env",
+      "difficulty": 5,
+      "interaction_mode": "full",
+      "label": "yes",
+      "controls_available": [
+        "Full mouse control: drag a bright station dish from its SVG marker to a visible spacecraft marker; the drag starts a relay, and another drag refreshes the aim or hands off the relay.",
+        "A no-movement station pointer action only selects a station for the visible readout; no outcome-affecting keyboard control is bound.",
+        "CERTIFY ALL RELAYS submits the ledger after delivery and is administrative."
+      ],
+      "autonomous_processes": [
+        "Every 100 ms, the relay step increments the task tick and rotates station positions by 0.70 degrees per tick while each spacecraft remains at its generated inertial position.",
+        "While a relay is active, each tick either delivers one unit or emits a link break and clears the active relay when the station horizon or fixed aim tolerance is lost; after each completion, the next spacecraft still requires a new relay action."
+      ],
+      "grouped_control_modes": [
+        "Witness D: full dish_drag aim/start, re-aim, or handoff toward a currently visible station-spacecraft pair.",
+        "station_click selection is an auxiliary mode; certification is administrative and not part of D."
+      ],
+      "delta_ms": 400,
+      "window_ms": 480,
+      "clause_i": {
+        "holds": true,
+        "reason": "An action-clock-only q cannot choose the delayed station-spacecraft target for every occurrence in D: seed-dependent spacecraft placement and the rotating station horizons produce different valid pairs with the same prior action history."
+      },
+      "clause_ii": {
+        "holds": true,
+        "reason": "The configured six chronological frames over 480 ms show station and spacecraft marker motion, bright/dim horizon status, labels, and the tick readout. That bounded window gives g the current horizon phase and rotation direction needed to choose the pair and drag that will be valid at t+400 ms."
+      },
+      "clause_iii": {
+        "holds": true,
+        "reason": "In a deterministic geometry probe using seed probe-0000, At tick 36 Spain-to-craft-2 is visible, but after three autonomous ticks (300 ms) it is below Spain's horizon while California still sees craft-2. The same dish-drag action is effective before the crossing and ineffective afterward; the strict loss is geometric line-of-sight change, not a deadline."
+      },
+      "common_visible_process": "The shared 100 ms step rotates the three ground stations on the globe while spacecraft positions stay inertial. Recent frames visibly evidence the changing station-spacecraft line of sight; a pair can approach and cross a local horizon, so a stale aim or handoff target loses value while another station can keep the request solvable.",
+      "pre_run": {
+        "threshold": 0.5,
+        "at_least_half": false,
+        "rate": null,
+        "basis": "source_structural",
+        "reason": "A successful whole-task pre-run is impossible for every instance because level 5 has 5 spacecraft but the browser and grader maintain only one active station/craft relay. transfer_complete clears the active relay and no next craft is selected automatically, so at least 4 additional outcome-affecting aim/start action sequences is required before certification.",
+        "seed_probe": null
+      },
+      "files_read_completely": [
+        "AGENTS.md",
+        "weird_captcha_gym/docs/controllability/real-time.md",
+        "weird_captcha_gym/environments/horizon_relay_env/controls.json",
+        "weird_captcha_gym/environments/horizon_relay_env/env.json",
+        "weird_captcha_gym/environments/horizon_relay_env/tasks/horizon_relay_seed_0001/task.json",
+        "weird_captcha_gym/environments/horizon_relay_env/tasks/horizon_relay_seed_0001/setup_task.sh",
+        "weird_captcha_gym/environments/horizon_relay_env/tasks/horizon_relay_seed_0001/verifier.py",
+        "weird_captcha_gym/shared_scripts/incubator_generators/horizon_relay.py",
+        "weird_captcha_gym/shared_runtime/app/app.js",
+        "weird_captcha_gym/shared_runtime/app/time_controller.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/horizon_relay.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/horizon_relay.css",
+        "weird_captcha_gym/shared_runtime/server/incubator_graders/horizon_relay.py",
+        "weird_captcha_gym/tools/incubator_solvers/horizon_relay.py"
+      ],
+      "source_evidence": [
+        {
+          "path": "weird_captcha_gym/environments/horizon_relay_env/controls.json",
+          "lines": "30-34",
+          "claim": "Difficulty 5 has 5 spacecraft, 30 required ticks, 0.70 degrees per tick, and 7 degrees of aim tolerance."
+        },
+        {
+          "path": "weird_captcha_gym/environments/horizon_relay_env/controls.json",
+          "lines": "37-41",
+          "claim": "Full mode is direct dish dragging, and the observation schedule is a 480 ms window with six frames."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/horizon_relay.py",
+          "lines": "65-95",
+          "claim": "Stations are generated on the planet, while spacecraft positions are generated from latitude/longitude values and stored as fixed 3D positions; the generator comment explicitly says their inertial positions do not rotate with the globe."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/horizon_relay.js",
+          "lines": "60-79,162-186",
+          "claim": "Full drags set a fixed aim; autonomous ticks rotate station geometry, sample valid links, or break links when visibility or aim error fails."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/horizon_relay.py",
+          "lines": "79-85,120-181,191-196",
+          "claim": "The full input surface is enforced and the grader requires all 5 craft to have replayed samples and completions before submission can pass."
+        },
+        {
+          "path": "weird_captcha_gym/tools/incubator_solvers/horizon_relay.py",
+          "lines": "63-100",
+          "claim": "The solver selects visible pairs and refreshes active aim based on rendered speed and tolerance."
+        }
+      ],
+      "uncertainties": []
+    },
+    {
+      "case_index": 300,
+      "public_environment_name": "Horizon Relay",
+      "environment_id": "horizon_relay_env",
+      "difficulty": 5,
+      "interaction_mode": "simplified",
+      "label": "yes",
+      "controls_available": [
+        "Simplified mouse control: click a station button, click AIM THIS CRAFT for a currently visible spacecraft, then click HOLD LINK; use STOP or a new selection for recovery or handoff.",
+        "The same rotating globe, station horizons, fixed aim, per-tick progress, and spacecraft requests remain active; no outcome-affecting keyboard control is bound.",
+        "CERTIFY ALL RELAYS submits the ledger after delivery and is administrative."
+      ],
+      "autonomous_processes": [
+        "Every 100 ms, the relay step increments the task tick and rotates station positions by 0.70 degrees per tick while each spacecraft remains at its generated inertial position.",
+        "While HOLD LINK is active, each tick either delivers one unit or emits a link break and clears the active relay when the station horizon or fixed aim tolerance is lost; after each completion, the next spacecraft still requires a new relay action."
+      ],
+      "grouped_control_modes": [
+        "Witness D: simplified station_button selection followed by target_button aim and hold_button start/re-aim or handoff toward a currently visible pair.",
+        "stop_button terminates an active link for recovery; certification is administrative and not part of D."
+      ],
+      "delta_ms": 400,
+      "window_ms": 480,
+      "clause_i": {
+        "holds": true,
+        "reason": "An action-clock-only q cannot choose the delayed station button, target button, and HOLD LINK sequence for every occurrence in D: seed-dependent spacecraft placement and the rotating station horizons produce different valid pairs with the same prior action history."
+      },
+      "clause_ii": {
+        "holds": true,
+        "reason": "The configured six chronological frames over 480 ms show station and spacecraft marker motion, bright/dim horizon status, labels, and the tick readout. That bounded window gives g the current horizon phase and rotation direction needed to choose the station/target controls that will be valid at t+400 ms."
+      },
+      "clause_iii": {
+        "holds": true,
+        "reason": "In a deterministic geometry probe using seed probe-0000, At tick 36 Spain-to-craft-2 is visible, but after three autonomous ticks (300 ms) it is below Spain's horizon while California still sees craft-2. The same target-button/HOLD LINK action is effective before the crossing and ineffective afterward; the strict loss is geometric line-of-sight change, not a deadline."
+      },
+      "common_visible_process": "The shared 100 ms step rotates the three ground stations on the globe while spacecraft positions stay inertial. Recent frames visibly evidence the changing station-spacecraft line of sight; a pair can approach and cross a local horizon, so a stale aim or handoff target loses value while another station can keep the request solvable.",
+      "pre_run": {
+        "threshold": 0.5,
+        "at_least_half": false,
+        "rate": null,
+        "basis": "source_structural",
+        "reason": "A successful whole-task pre-run is impossible for every instance because level 5 has 5 spacecraft but the browser and grader maintain only one active station/craft relay. transfer_complete clears the active relay and no next craft is selected automatically, so at least 4 additional outcome-affecting station/target/HOLD LINK action sequences is required before certification.",
+        "seed_probe": null
+      },
+      "files_read_completely": [
+        "AGENTS.md",
+        "weird_captcha_gym/docs/controllability/real-time.md",
+        "weird_captcha_gym/environments/horizon_relay_env/controls.json",
+        "weird_captcha_gym/environments/horizon_relay_env/env.json",
+        "weird_captcha_gym/environments/horizon_relay_env/tasks/horizon_relay_seed_0001/task.json",
+        "weird_captcha_gym/environments/horizon_relay_env/tasks/horizon_relay_seed_0001/setup_task.sh",
+        "weird_captcha_gym/environments/horizon_relay_env/tasks/horizon_relay_seed_0001/verifier.py",
+        "weird_captcha_gym/shared_scripts/incubator_generators/horizon_relay.py",
+        "weird_captcha_gym/shared_runtime/app/app.js",
+        "weird_captcha_gym/shared_runtime/app/time_controller.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/horizon_relay.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/horizon_relay.css",
+        "weird_captcha_gym/shared_runtime/server/incubator_graders/horizon_relay.py",
+        "weird_captcha_gym/tools/incubator_solvers/horizon_relay.py"
+      ],
+      "source_evidence": [
+        {
+          "path": "weird_captcha_gym/environments/horizon_relay_env/controls.json",
+          "lines": "30-34",
+          "claim": "Difficulty 5 has 5 spacecraft, 30 required ticks, 0.70 degrees per tick, and 7 degrees of aim tolerance."
+        },
+        {
+          "path": "weird_captcha_gym/environments/horizon_relay_env/controls.json",
+          "lines": "37-41",
+          "claim": "Simplified mode uses station and spacecraft buttons plus HOLD LINK, with the same world and a 480 ms six-frame observation window."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/horizon_relay.py",
+          "lines": "65-95",
+          "claim": "Stations are generated on the planet, while spacecraft positions are generated from latitude/longitude values and stored as fixed 3D positions; the generator comment explicitly says their inertial positions do not rotate with the globe."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/horizon_relay.js",
+          "lines": "60-79,141-160,178-186",
+          "claim": "Simplified controls set an aim and start one active relay; autonomous ticks rotate station geometry, sample valid links, or break links when visibility or aim error fails."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/horizon_relay.py",
+          "lines": "79-85,113-181,191-196",
+          "claim": "The simplified input surface is enforced and the grader requires all 5 craft to have replayed samples and completions before submission can pass."
+        },
+        {
+          "path": "weird_captcha_gym/tools/incubator_solvers/horizon_relay.py",
+          "lines": "63-100",
+          "claim": "The solver selects visible pairs, performs HOLD LINK, and refreshes active aim based on rendered speed and tolerance."
+        }
+      ],
+      "uncertainties": []
+    }
+  ]
+}

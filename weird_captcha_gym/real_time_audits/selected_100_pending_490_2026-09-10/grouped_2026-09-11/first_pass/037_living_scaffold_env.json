@@ -1,0 +1,1037 @@
+{
+  "case_index": 37,
+  "environment_id": "living_scaffold_env",
+  "public_environment_name": "Living Scaffold",
+  "configuration_reports": [
+    {
+      "case_index": 361,
+      "public_environment_name": "Living Scaffold",
+      "environment_id": "living_scaffold_env",
+      "difficulty": 1,
+      "interaction_mode": "full",
+      "label": "no",
+      "controls_available": [
+        "Difficulty 1 uses one creature with no return blossom, high canopy, or overhang.",
+        "Select a creature by clicking its visible body, then move its head with Arrow keys or W/A/S/D.",
+        "Undo, Restart, and Check garden are available as visible controls."
+      ],
+      "autonomous_processes": [],
+      "grouped_control_modes": [
+        "Selected-creature movement through the full surface: body click followed by keyboard movement.",
+        "Undo or Restart recovery actions."
+      ],
+      "delta_ms": null,
+      "window_ms": 0,
+      "clause_i": {
+        "holds": true,
+        "reason": "For the cross-seed movement group, I_t does not contain the generated board or creature identity. The generator can mirror the board and permute creature order, so a schedule based only on prior actions cannot in general choose the board-specific move; the visible board can." 
+      },
+      "clause_ii": {
+        "holds": true,
+        "reason": "The current board, fruit, blossoms, rocks, and creature positions are rendered in the screenshot, and movement is discrete. The current one-frame observation is sufficient to plan a move; no future frame is needed." 
+      },
+      "clause_iii": {
+        "holds": false,
+        "reason": "No autonomous task-state change occurs during a no-action interval. Gravity is run synchronously inside step/settle after a move, while move, undo, and reset are event handlers; there is no timer, animation loop, held-input update, or other process that can make an action strictly less effective during Delta. Thus no legitimate D, Delta > 0, and tau can satisfy clause (iii)."
+      },
+      "common_visible_process": "None. After the initially settled board is rendered, the visible task state is static until a move, undo, or reset event; synchronous gravity is part of the action response, not an autonomous process.",
+      "pre_run": {
+        "threshold": 0.5,
+        "at_least_half": null,
+        "rate": null,
+        "basis": "not_applicable",
+        "reason": "The mathematical definition already fails at clause (iii), so the pre-run threshold is not consulted.",
+        "seed_probe": null
+      },
+      "files_read_completely": [
+        "weird_captcha_gym/environments/living_scaffold_env/controls.json",
+        "weird_captcha_gym/environments/living_scaffold_env/env.json",
+        "weird_captcha_gym/environments/living_scaffold_env/tasks/living_scaffold_seed_0001/task.json",
+        "weird_captcha_gym/environments/living_scaffold_env/tasks/living_scaffold_seed_0001/setup_task.sh",
+        "weird_captcha_gym/environments/living_scaffold_env/tasks/living_scaffold_seed_0001/export_result.sh",
+        "weird_captcha_gym/shared_scripts/incubator_generators/living_scaffold.py",
+        "weird_captcha_gym/shared_runtime/app/index.html",
+        "weird_captcha_gym/shared_runtime/app/mechanics/living_scaffold.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/living_scaffold.css",
+        "weird_captcha_gym/shared_runtime/server/incubator_graders/living_scaffold.py",
+        "weird_captcha_gym/environments/living_scaffold_env/tasks/living_scaffold_seed_0001/verifier.py",
+        "weird_captcha_gym/tools/incubator_solvers/living_scaffold.py"
+      ],
+      "source_evidence": [
+        {
+          "path": "weird_captcha_gym/environments/living_scaffold_env/controls.json",
+          "lines": "10-23",
+          "claim": "Difficulty 1 is the one-creature profile with no return blossom, high canopy, or overhang."
+        },
+        {
+          "path": "weird_captcha_gym/environments/living_scaffold_env/controls.json",
+          "lines": "86-99",
+          "claim": "Full input is body selection plus Arrow/WASD movement; simplified input is card selection plus direction buttons; the configured observation window is 0 ms with one frame."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/living_scaffold.py",
+          "lines": "22-63",
+          "claim": "Generation constructs a discrete board, certifies it with synchronous physics search, then may mirror the board and permute creature identity; no runtime schedule is generated."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/living_scaffold.js",
+          "lines": "3-45",
+          "claim": "The browser physics are synchronous: step computes one move and settle applies gravity immediately, with no autonomous tick."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/living_scaffold.js",
+          "lines": "46-50",
+          "claim": "Render initializes a local state from the settled board and selects the configured full mode."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/living_scaffold.js",
+          "lines": "87-118",
+          "claim": "State changes are triggered by move, undo, reset, submit, or full-mode keydown handlers; the initial draw is otherwise static."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/living_scaffold.css",
+          "lines": "1-6",
+          "claim": "The mechanic CSS contains layout, hover/focus, media, and disabled styles but no autonomous animation or transition."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/living_scaffold.py",
+          "lines": "103-123",
+          "claim": "The grader replays only the submitted discrete action transcript, checks the mode-specific keyboard input source, and evaluates the final solved state without task-time evolution."
+        },
+        {
+          "path": "weird_captcha_gym/tools/incubator_solvers/living_scaffold.py",
+          "lines": "22-37",
+          "claim": "The solver performs ordinary body-click plus keyboard actions in full mode and card plus direction-button actions in simplified mode; its waits are solver pacing, not game mechanics."
+        }
+      ],
+      "uncertainties": []
+    },
+    {
+      "case_index": 362,
+      "public_environment_name": "Living Scaffold",
+      "environment_id": "living_scaffold_env",
+      "difficulty": 1,
+      "interaction_mode": "simplified",
+      "label": "no",
+      "controls_available": [
+        "Difficulty 1 uses one creature with no return blossom, high canopy, or overhang.",
+        "Select a crew card, then click the fixed N/W/S/E direction buttons to move its head.",
+        "Undo, Restart, and Check garden are available as visible controls."
+      ],
+      "autonomous_processes": [],
+      "grouped_control_modes": [
+        "Selected-creature movement through the simplified surface: crew-card selection followed by fixed direction buttons.",
+        "Undo or Restart recovery actions."
+      ],
+      "delta_ms": null,
+      "window_ms": 0,
+      "clause_i": {
+        "holds": true,
+        "reason": "For the cross-seed movement group, I_t does not contain the generated board or creature identity. The generator can mirror the board and permute creature order, so a schedule based only on prior actions cannot in general choose the board-specific move; the visible board can." 
+      },
+      "clause_ii": {
+        "holds": true,
+        "reason": "The current board, fruit, blossoms, rocks, and creature positions are rendered in the screenshot, and movement is discrete. The current one-frame observation is sufficient to plan a move; no future frame is needed." 
+      },
+      "clause_iii": {
+        "holds": false,
+        "reason": "No autonomous task-state change occurs during a no-action interval. Gravity is run synchronously inside step/settle after a move, while move, undo, and reset are event handlers; there is no timer, animation loop, held-input update, or other process that can make an action strictly less effective during Delta. Thus no legitimate D, Delta > 0, and tau can satisfy clause (iii)."
+      },
+      "common_visible_process": "None. After the initially settled board is rendered, the visible task state is static until a move, undo, or reset event; synchronous gravity is part of the action response, not an autonomous process.",
+      "pre_run": {
+        "threshold": 0.5,
+        "at_least_half": null,
+        "rate": null,
+        "basis": "not_applicable",
+        "reason": "The mathematical definition already fails at clause (iii), so the pre-run threshold is not consulted.",
+        "seed_probe": null
+      },
+      "files_read_completely": [
+        "weird_captcha_gym/environments/living_scaffold_env/controls.json",
+        "weird_captcha_gym/environments/living_scaffold_env/env.json",
+        "weird_captcha_gym/environments/living_scaffold_env/tasks/living_scaffold_seed_0001/task.json",
+        "weird_captcha_gym/environments/living_scaffold_env/tasks/living_scaffold_seed_0001/setup_task.sh",
+        "weird_captcha_gym/environments/living_scaffold_env/tasks/living_scaffold_seed_0001/export_result.sh",
+        "weird_captcha_gym/shared_scripts/incubator_generators/living_scaffold.py",
+        "weird_captcha_gym/shared_runtime/app/index.html",
+        "weird_captcha_gym/shared_runtime/app/mechanics/living_scaffold.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/living_scaffold.css",
+        "weird_captcha_gym/shared_runtime/server/incubator_graders/living_scaffold.py",
+        "weird_captcha_gym/environments/living_scaffold_env/tasks/living_scaffold_seed_0001/verifier.py",
+        "weird_captcha_gym/tools/incubator_solvers/living_scaffold.py"
+      ],
+      "source_evidence": [
+        {
+          "path": "weird_captcha_gym/environments/living_scaffold_env/controls.json",
+          "lines": "10-23",
+          "claim": "Difficulty 1 is the one-creature profile with no return blossom, high canopy, or overhang."
+        },
+        {
+          "path": "weird_captcha_gym/environments/living_scaffold_env/controls.json",
+          "lines": "86-99",
+          "claim": "Full input is body selection plus Arrow/WASD movement; simplified input is card selection plus direction buttons; the configured observation window is 0 ms with one frame."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/living_scaffold.py",
+          "lines": "22-63",
+          "claim": "Generation constructs a discrete board, certifies it with synchronous physics search, then may mirror the board and permute creature identity; no runtime schedule is generated."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/living_scaffold.js",
+          "lines": "3-45",
+          "claim": "The browser physics are synchronous: step computes one move and settle applies gravity immediately, with no autonomous tick."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/living_scaffold.js",
+          "lines": "46-50",
+          "claim": "Render initializes a local state from the settled board and selects the configured simplified mode."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/living_scaffold.js",
+          "lines": "87-118",
+          "claim": "State changes are triggered by move, undo, reset, submit, or simplified button handlers; the initial draw is otherwise static."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/living_scaffold.css",
+          "lines": "1-6",
+          "claim": "The mechanic CSS contains layout, hover/focus, media, and disabled styles but no autonomous animation or transition."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/living_scaffold.py",
+          "lines": "103-123",
+          "claim": "The grader replays only the submitted discrete action transcript, checks the mode-specific buttons input source, and evaluates the final solved state without task-time evolution."
+        },
+        {
+          "path": "weird_captcha_gym/tools/incubator_solvers/living_scaffold.py",
+          "lines": "22-37",
+          "claim": "The solver performs ordinary body-click plus keyboard actions in full mode and card plus direction-button actions in simplified mode; its waits are solver pacing, not game mechanics."
+        }
+      ],
+      "uncertainties": []
+    },
+    {
+      "case_index": 363,
+      "public_environment_name": "Living Scaffold",
+      "environment_id": "living_scaffold_env",
+      "difficulty": 2,
+      "interaction_mode": "full",
+      "label": "no",
+      "controls_available": [
+        "Difficulty 2 uses two creatures with no return blossom, high canopy, or overhang.",
+        "Select a creature by clicking its visible body, then move its head with Arrow keys or W/A/S/D.",
+        "Undo, Restart, and Check garden are available as visible controls."
+      ],
+      "autonomous_processes": [],
+      "grouped_control_modes": [
+        "Selected-creature movement through the full surface: body click followed by keyboard movement.",
+        "Undo or Restart recovery actions."
+      ],
+      "delta_ms": null,
+      "window_ms": 0,
+      "clause_i": {
+        "holds": true,
+        "reason": "For the cross-seed movement group, I_t does not contain the generated board or creature identity. The generator can mirror the board and permute creature order, so a schedule based only on prior actions cannot in general choose the board-specific move; the visible board can." 
+      },
+      "clause_ii": {
+        "holds": true,
+        "reason": "The current board, fruit, blossoms, rocks, and creature positions are rendered in the screenshot, and movement is discrete. The current one-frame observation is sufficient to plan a move; no future frame is needed." 
+      },
+      "clause_iii": {
+        "holds": false,
+        "reason": "No autonomous task-state change occurs during a no-action interval. Gravity is run synchronously inside step/settle after a move, while move, undo, and reset are event handlers; there is no timer, animation loop, held-input update, or other process that can make an action strictly less effective during Delta. Thus no legitimate D, Delta > 0, and tau can satisfy clause (iii)."
+      },
+      "common_visible_process": "None. After the initially settled board is rendered, the visible task state is static until a move, undo, or reset event; synchronous gravity is part of the action response, not an autonomous process.",
+      "pre_run": {
+        "threshold": 0.5,
+        "at_least_half": null,
+        "rate": null,
+        "basis": "not_applicable",
+        "reason": "The mathematical definition already fails at clause (iii), so the pre-run threshold is not consulted.",
+        "seed_probe": null
+      },
+      "files_read_completely": [
+        "weird_captcha_gym/environments/living_scaffold_env/controls.json",
+        "weird_captcha_gym/environments/living_scaffold_env/env.json",
+        "weird_captcha_gym/environments/living_scaffold_env/tasks/living_scaffold_seed_0001/task.json",
+        "weird_captcha_gym/environments/living_scaffold_env/tasks/living_scaffold_seed_0001/setup_task.sh",
+        "weird_captcha_gym/environments/living_scaffold_env/tasks/living_scaffold_seed_0001/export_result.sh",
+        "weird_captcha_gym/shared_scripts/incubator_generators/living_scaffold.py",
+        "weird_captcha_gym/shared_runtime/app/index.html",
+        "weird_captcha_gym/shared_runtime/app/mechanics/living_scaffold.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/living_scaffold.css",
+        "weird_captcha_gym/shared_runtime/server/incubator_graders/living_scaffold.py",
+        "weird_captcha_gym/environments/living_scaffold_env/tasks/living_scaffold_seed_0001/verifier.py",
+        "weird_captcha_gym/tools/incubator_solvers/living_scaffold.py"
+      ],
+      "source_evidence": [
+        {
+          "path": "weird_captcha_gym/environments/living_scaffold_env/controls.json",
+          "lines": "25-38",
+          "claim": "Difficulty 2 is the two-creature profile with no return blossom, high canopy, or overhang."
+        },
+        {
+          "path": "weird_captcha_gym/environments/living_scaffold_env/controls.json",
+          "lines": "86-99",
+          "claim": "Full input is body selection plus Arrow/WASD movement; simplified input is card selection plus direction buttons; the configured observation window is 0 ms with one frame."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/living_scaffold.py",
+          "lines": "22-63",
+          "claim": "Generation constructs a discrete board, certifies it with synchronous physics search, then may mirror the board and permute creature identity; no runtime schedule is generated."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/living_scaffold.js",
+          "lines": "3-45",
+          "claim": "The browser physics are synchronous: step computes one move and settle applies gravity immediately, with no autonomous tick."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/living_scaffold.js",
+          "lines": "46-50",
+          "claim": "Render initializes a local state from the settled board and selects the configured full mode."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/living_scaffold.js",
+          "lines": "87-118",
+          "claim": "State changes are triggered by move, undo, reset, submit, or full-mode keydown handlers; the initial draw is otherwise static."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/living_scaffold.css",
+          "lines": "1-6",
+          "claim": "The mechanic CSS contains layout, hover/focus, media, and disabled styles but no autonomous animation or transition."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/living_scaffold.py",
+          "lines": "103-123",
+          "claim": "The grader replays only the submitted discrete action transcript, checks the mode-specific keyboard input source, and evaluates the final solved state without task-time evolution."
+        },
+        {
+          "path": "weird_captcha_gym/tools/incubator_solvers/living_scaffold.py",
+          "lines": "22-37",
+          "claim": "The solver performs ordinary body-click plus keyboard actions in full mode and card plus direction-button actions in simplified mode; its waits are solver pacing, not game mechanics."
+        }
+      ],
+      "uncertainties": []
+    },
+    {
+      "case_index": 364,
+      "public_environment_name": "Living Scaffold",
+      "environment_id": "living_scaffold_env",
+      "difficulty": 2,
+      "interaction_mode": "simplified",
+      "label": "no",
+      "controls_available": [
+        "Difficulty 2 uses two creatures with no return blossom, high canopy, or overhang.",
+        "Select a crew card, then click the fixed N/W/S/E direction buttons to move its head.",
+        "Undo, Restart, and Check garden are available as visible controls."
+      ],
+      "autonomous_processes": [],
+      "grouped_control_modes": [
+        "Selected-creature movement through the simplified surface: crew-card selection followed by fixed direction buttons.",
+        "Undo or Restart recovery actions."
+      ],
+      "delta_ms": null,
+      "window_ms": 0,
+      "clause_i": {
+        "holds": true,
+        "reason": "For the cross-seed movement group, I_t does not contain the generated board or creature identity. The generator can mirror the board and permute creature order, so a schedule based only on prior actions cannot in general choose the board-specific move; the visible board can." 
+      },
+      "clause_ii": {
+        "holds": true,
+        "reason": "The current board, fruit, blossoms, rocks, and creature positions are rendered in the screenshot, and movement is discrete. The current one-frame observation is sufficient to plan a move; no future frame is needed." 
+      },
+      "clause_iii": {
+        "holds": false,
+        "reason": "No autonomous task-state change occurs during a no-action interval. Gravity is run synchronously inside step/settle after a move, while move, undo, and reset are event handlers; there is no timer, animation loop, held-input update, or other process that can make an action strictly less effective during Delta. Thus no legitimate D, Delta > 0, and tau can satisfy clause (iii)."
+      },
+      "common_visible_process": "None. After the initially settled board is rendered, the visible task state is static until a move, undo, or reset event; synchronous gravity is part of the action response, not an autonomous process.",
+      "pre_run": {
+        "threshold": 0.5,
+        "at_least_half": null,
+        "rate": null,
+        "basis": "not_applicable",
+        "reason": "The mathematical definition already fails at clause (iii), so the pre-run threshold is not consulted.",
+        "seed_probe": null
+      },
+      "files_read_completely": [
+        "weird_captcha_gym/environments/living_scaffold_env/controls.json",
+        "weird_captcha_gym/environments/living_scaffold_env/env.json",
+        "weird_captcha_gym/environments/living_scaffold_env/tasks/living_scaffold_seed_0001/task.json",
+        "weird_captcha_gym/environments/living_scaffold_env/tasks/living_scaffold_seed_0001/setup_task.sh",
+        "weird_captcha_gym/environments/living_scaffold_env/tasks/living_scaffold_seed_0001/export_result.sh",
+        "weird_captcha_gym/shared_scripts/incubator_generators/living_scaffold.py",
+        "weird_captcha_gym/shared_runtime/app/index.html",
+        "weird_captcha_gym/shared_runtime/app/mechanics/living_scaffold.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/living_scaffold.css",
+        "weird_captcha_gym/shared_runtime/server/incubator_graders/living_scaffold.py",
+        "weird_captcha_gym/environments/living_scaffold_env/tasks/living_scaffold_seed_0001/verifier.py",
+        "weird_captcha_gym/tools/incubator_solvers/living_scaffold.py"
+      ],
+      "source_evidence": [
+        {
+          "path": "weird_captcha_gym/environments/living_scaffold_env/controls.json",
+          "lines": "25-38",
+          "claim": "Difficulty 2 is the two-creature profile with no return blossom, high canopy, or overhang."
+        },
+        {
+          "path": "weird_captcha_gym/environments/living_scaffold_env/controls.json",
+          "lines": "86-99",
+          "claim": "Full input is body selection plus Arrow/WASD movement; simplified input is card selection plus direction buttons; the configured observation window is 0 ms with one frame."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/living_scaffold.py",
+          "lines": "22-63",
+          "claim": "Generation constructs a discrete board, certifies it with synchronous physics search, then may mirror the board and permute creature identity; no runtime schedule is generated."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/living_scaffold.js",
+          "lines": "3-45",
+          "claim": "The browser physics are synchronous: step computes one move and settle applies gravity immediately, with no autonomous tick."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/living_scaffold.js",
+          "lines": "46-50",
+          "claim": "Render initializes a local state from the settled board and selects the configured simplified mode."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/living_scaffold.js",
+          "lines": "87-118",
+          "claim": "State changes are triggered by move, undo, reset, submit, or simplified button handlers; the initial draw is otherwise static."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/living_scaffold.css",
+          "lines": "1-6",
+          "claim": "The mechanic CSS contains layout, hover/focus, media, and disabled styles but no autonomous animation or transition."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/living_scaffold.py",
+          "lines": "103-123",
+          "claim": "The grader replays only the submitted discrete action transcript, checks the mode-specific buttons input source, and evaluates the final solved state without task-time evolution."
+        },
+        {
+          "path": "weird_captcha_gym/tools/incubator_solvers/living_scaffold.py",
+          "lines": "22-37",
+          "claim": "The solver performs ordinary body-click plus keyboard actions in full mode and card plus direction-button actions in simplified mode; its waits are solver pacing, not game mechanics."
+        }
+      ],
+      "uncertainties": []
+    },
+    {
+      "case_index": 365,
+      "public_environment_name": "Living Scaffold",
+      "environment_id": "living_scaffold_env",
+      "difficulty": 3,
+      "interaction_mode": "full",
+      "label": "no",
+      "controls_available": [
+        "Difficulty 3 uses two creatures, a return blossom, and a high canopy, with no overhang.",
+        "Select a creature by clicking its visible body, then move its head with Arrow keys or W/A/S/D.",
+        "Undo, Restart, and Check garden are available as visible controls."
+      ],
+      "autonomous_processes": [],
+      "grouped_control_modes": [
+        "Selected-creature movement through the full surface: body click followed by keyboard movement.",
+        "Undo or Restart recovery actions."
+      ],
+      "delta_ms": null,
+      "window_ms": 0,
+      "clause_i": {
+        "holds": true,
+        "reason": "For the cross-seed movement group, I_t does not contain the generated board or creature identity. The generator can mirror the board and permute creature order, so a schedule based only on prior actions cannot in general choose the board-specific move; the visible board can." 
+      },
+      "clause_ii": {
+        "holds": true,
+        "reason": "The current board, fruit, blossoms, rocks, and creature positions are rendered in the screenshot, and movement is discrete. The current one-frame observation is sufficient to plan a move; no future frame is needed." 
+      },
+      "clause_iii": {
+        "holds": false,
+        "reason": "No autonomous task-state change occurs during a no-action interval. Gravity is run synchronously inside step/settle after a move, while move, undo, and reset are event handlers; there is no timer, animation loop, held-input update, or other process that can make an action strictly less effective during Delta. Thus no legitimate D, Delta > 0, and tau can satisfy clause (iii)."
+      },
+      "common_visible_process": "None. After the initially settled board is rendered, the visible task state is static until a move, undo, or reset event; synchronous gravity is part of the action response, not an autonomous process.",
+      "pre_run": {
+        "threshold": 0.5,
+        "at_least_half": null,
+        "rate": null,
+        "basis": "not_applicable",
+        "reason": "The mathematical definition already fails at clause (iii), so the pre-run threshold is not consulted.",
+        "seed_probe": null
+      },
+      "files_read_completely": [
+        "weird_captcha_gym/environments/living_scaffold_env/controls.json",
+        "weird_captcha_gym/environments/living_scaffold_env/env.json",
+        "weird_captcha_gym/environments/living_scaffold_env/tasks/living_scaffold_seed_0001/task.json",
+        "weird_captcha_gym/environments/living_scaffold_env/tasks/living_scaffold_seed_0001/setup_task.sh",
+        "weird_captcha_gym/environments/living_scaffold_env/tasks/living_scaffold_seed_0001/export_result.sh",
+        "weird_captcha_gym/shared_scripts/incubator_generators/living_scaffold.py",
+        "weird_captcha_gym/shared_runtime/app/index.html",
+        "weird_captcha_gym/shared_runtime/app/mechanics/living_scaffold.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/living_scaffold.css",
+        "weird_captcha_gym/shared_runtime/server/incubator_graders/living_scaffold.py",
+        "weird_captcha_gym/environments/living_scaffold_env/tasks/living_scaffold_seed_0001/verifier.py",
+        "weird_captcha_gym/tools/incubator_solvers/living_scaffold.py"
+      ],
+      "source_evidence": [
+        {
+          "path": "weird_captcha_gym/environments/living_scaffold_env/controls.json",
+          "lines": "40-53",
+          "claim": "Difficulty 3 is the two-creature profile with a return blossom and high canopy but no overhang."
+        },
+        {
+          "path": "weird_captcha_gym/environments/living_scaffold_env/controls.json",
+          "lines": "86-99",
+          "claim": "Full input is body selection plus Arrow/WASD movement; simplified input is card selection plus direction buttons; the configured observation window is 0 ms with one frame."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/living_scaffold.py",
+          "lines": "22-63",
+          "claim": "Generation constructs a discrete board, certifies it with synchronous physics search, then may mirror the board and permute creature identity; no runtime schedule is generated."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/living_scaffold.js",
+          "lines": "3-45",
+          "claim": "The browser physics are synchronous: step computes one move and settle applies gravity immediately, with no autonomous tick."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/living_scaffold.js",
+          "lines": "46-50",
+          "claim": "Render initializes a local state from the settled board and selects the configured full mode."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/living_scaffold.js",
+          "lines": "87-118",
+          "claim": "State changes are triggered by move, undo, reset, submit, or full-mode keydown handlers; the initial draw is otherwise static."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/living_scaffold.css",
+          "lines": "1-6",
+          "claim": "The mechanic CSS contains layout, hover/focus, media, and disabled styles but no autonomous animation or transition."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/living_scaffold.py",
+          "lines": "103-123",
+          "claim": "The grader replays only the submitted discrete action transcript, checks the mode-specific keyboard input source, and evaluates the final solved state without task-time evolution."
+        },
+        {
+          "path": "weird_captcha_gym/tools/incubator_solvers/living_scaffold.py",
+          "lines": "22-37",
+          "claim": "The solver performs ordinary body-click plus keyboard actions in full mode and card plus direction-button actions in simplified mode; its waits are solver pacing, not game mechanics."
+        }
+      ],
+      "uncertainties": []
+    },
+    {
+      "case_index": 366,
+      "public_environment_name": "Living Scaffold",
+      "environment_id": "living_scaffold_env",
+      "difficulty": 3,
+      "interaction_mode": "simplified",
+      "label": "no",
+      "controls_available": [
+        "Difficulty 3 uses two creatures, a return blossom, and a high canopy, with no overhang.",
+        "Select a crew card, then click the fixed N/W/S/E direction buttons to move its head.",
+        "Undo, Restart, and Check garden are available as visible controls."
+      ],
+      "autonomous_processes": [],
+      "grouped_control_modes": [
+        "Selected-creature movement through the simplified surface: crew-card selection followed by fixed direction buttons.",
+        "Undo or Restart recovery actions."
+      ],
+      "delta_ms": null,
+      "window_ms": 0,
+      "clause_i": {
+        "holds": true,
+        "reason": "For the cross-seed movement group, I_t does not contain the generated board or creature identity. The generator can mirror the board and permute creature order, so a schedule based only on prior actions cannot in general choose the board-specific move; the visible board can." 
+      },
+      "clause_ii": {
+        "holds": true,
+        "reason": "The current board, fruit, blossoms, rocks, and creature positions are rendered in the screenshot, and movement is discrete. The current one-frame observation is sufficient to plan a move; no future frame is needed." 
+      },
+      "clause_iii": {
+        "holds": false,
+        "reason": "No autonomous task-state change occurs during a no-action interval. Gravity is run synchronously inside step/settle after a move, while move, undo, and reset are event handlers; there is no timer, animation loop, held-input update, or other process that can make an action strictly less effective during Delta. Thus no legitimate D, Delta > 0, and tau can satisfy clause (iii)."
+      },
+      "common_visible_process": "None. After the initially settled board is rendered, the visible task state is static until a move, undo, or reset event; synchronous gravity is part of the action response, not an autonomous process.",
+      "pre_run": {
+        "threshold": 0.5,
+        "at_least_half": null,
+        "rate": null,
+        "basis": "not_applicable",
+        "reason": "The mathematical definition already fails at clause (iii), so the pre-run threshold is not consulted.",
+        "seed_probe": null
+      },
+      "files_read_completely": [
+        "weird_captcha_gym/environments/living_scaffold_env/controls.json",
+        "weird_captcha_gym/environments/living_scaffold_env/env.json",
+        "weird_captcha_gym/environments/living_scaffold_env/tasks/living_scaffold_seed_0001/task.json",
+        "weird_captcha_gym/environments/living_scaffold_env/tasks/living_scaffold_seed_0001/setup_task.sh",
+        "weird_captcha_gym/environments/living_scaffold_env/tasks/living_scaffold_seed_0001/export_result.sh",
+        "weird_captcha_gym/shared_scripts/incubator_generators/living_scaffold.py",
+        "weird_captcha_gym/shared_runtime/app/index.html",
+        "weird_captcha_gym/shared_runtime/app/mechanics/living_scaffold.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/living_scaffold.css",
+        "weird_captcha_gym/shared_runtime/server/incubator_graders/living_scaffold.py",
+        "weird_captcha_gym/environments/living_scaffold_env/tasks/living_scaffold_seed_0001/verifier.py",
+        "weird_captcha_gym/tools/incubator_solvers/living_scaffold.py"
+      ],
+      "source_evidence": [
+        {
+          "path": "weird_captcha_gym/environments/living_scaffold_env/controls.json",
+          "lines": "40-53",
+          "claim": "Difficulty 3 is the two-creature profile with a return blossom and high canopy but no overhang."
+        },
+        {
+          "path": "weird_captcha_gym/environments/living_scaffold_env/controls.json",
+          "lines": "86-99",
+          "claim": "Full input is body selection plus Arrow/WASD movement; simplified input is card selection plus direction buttons; the configured observation window is 0 ms with one frame."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/living_scaffold.py",
+          "lines": "22-63",
+          "claim": "Generation constructs a discrete board, certifies it with synchronous physics search, then may mirror the board and permute creature identity; no runtime schedule is generated."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/living_scaffold.js",
+          "lines": "3-45",
+          "claim": "The browser physics are synchronous: step computes one move and settle applies gravity immediately, with no autonomous tick."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/living_scaffold.js",
+          "lines": "46-50",
+          "claim": "Render initializes a local state from the settled board and selects the configured simplified mode."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/living_scaffold.js",
+          "lines": "87-118",
+          "claim": "State changes are triggered by move, undo, reset, submit, or simplified button handlers; the initial draw is otherwise static."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/living_scaffold.css",
+          "lines": "1-6",
+          "claim": "The mechanic CSS contains layout, hover/focus, media, and disabled styles but no autonomous animation or transition."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/living_scaffold.py",
+          "lines": "103-123",
+          "claim": "The grader replays only the submitted discrete action transcript, checks the mode-specific buttons input source, and evaluates the final solved state without task-time evolution."
+        },
+        {
+          "path": "weird_captcha_gym/tools/incubator_solvers/living_scaffold.py",
+          "lines": "22-37",
+          "claim": "The solver performs ordinary body-click plus keyboard actions in full mode and card plus direction-button actions in simplified mode; its waits are solver pacing, not game mechanics."
+        }
+      ],
+      "uncertainties": []
+    },
+    {
+      "case_index": 367,
+      "public_environment_name": "Living Scaffold",
+      "environment_id": "living_scaffold_env",
+      "difficulty": 4,
+      "interaction_mode": "full",
+      "label": "no",
+      "controls_available": [
+        "Difficulty 4 uses three creatures with a high canopy, but no return blossom or overhang.",
+        "Select a creature by clicking its visible body, then move its head with Arrow keys or W/A/S/D.",
+        "Undo, Restart, and Check garden are available as visible controls."
+      ],
+      "autonomous_processes": [],
+      "grouped_control_modes": [
+        "Selected-creature movement through the full surface: body click followed by keyboard movement.",
+        "Undo or Restart recovery actions."
+      ],
+      "delta_ms": null,
+      "window_ms": 0,
+      "clause_i": {
+        "holds": true,
+        "reason": "For the cross-seed movement group, I_t does not contain the generated board or creature identity. The generator can mirror the board and permute creature order, so a schedule based only on prior actions cannot in general choose the board-specific move; the visible board can." 
+      },
+      "clause_ii": {
+        "holds": true,
+        "reason": "The current board, fruit, blossoms, rocks, and creature positions are rendered in the screenshot, and movement is discrete. The current one-frame observation is sufficient to plan a move; no future frame is needed." 
+      },
+      "clause_iii": {
+        "holds": false,
+        "reason": "No autonomous task-state change occurs during a no-action interval. Gravity is run synchronously inside step/settle after a move, while move, undo, and reset are event handlers; there is no timer, animation loop, held-input update, or other process that can make an action strictly less effective during Delta. Thus no legitimate D, Delta > 0, and tau can satisfy clause (iii)."
+      },
+      "common_visible_process": "None. After the initially settled board is rendered, the visible task state is static until a move, undo, or reset event; synchronous gravity is part of the action response, not an autonomous process.",
+      "pre_run": {
+        "threshold": 0.5,
+        "at_least_half": null,
+        "rate": null,
+        "basis": "not_applicable",
+        "reason": "The mathematical definition already fails at clause (iii), so the pre-run threshold is not consulted.",
+        "seed_probe": null
+      },
+      "files_read_completely": [
+        "weird_captcha_gym/environments/living_scaffold_env/controls.json",
+        "weird_captcha_gym/environments/living_scaffold_env/env.json",
+        "weird_captcha_gym/environments/living_scaffold_env/tasks/living_scaffold_seed_0001/task.json",
+        "weird_captcha_gym/environments/living_scaffold_env/tasks/living_scaffold_seed_0001/setup_task.sh",
+        "weird_captcha_gym/environments/living_scaffold_env/tasks/living_scaffold_seed_0001/export_result.sh",
+        "weird_captcha_gym/shared_scripts/incubator_generators/living_scaffold.py",
+        "weird_captcha_gym/shared_runtime/app/index.html",
+        "weird_captcha_gym/shared_runtime/app/mechanics/living_scaffold.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/living_scaffold.css",
+        "weird_captcha_gym/shared_runtime/server/incubator_graders/living_scaffold.py",
+        "weird_captcha_gym/environments/living_scaffold_env/tasks/living_scaffold_seed_0001/verifier.py",
+        "weird_captcha_gym/tools/incubator_solvers/living_scaffold.py"
+      ],
+      "source_evidence": [
+        {
+          "path": "weird_captcha_gym/environments/living_scaffold_env/controls.json",
+          "lines": "55-68",
+          "claim": "Difficulty 4 is the three-creature high-canopy profile with no return blossom or overhang."
+        },
+        {
+          "path": "weird_captcha_gym/environments/living_scaffold_env/controls.json",
+          "lines": "86-99",
+          "claim": "Full input is body selection plus Arrow/WASD movement; simplified input is card selection plus direction buttons; the configured observation window is 0 ms with one frame."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/living_scaffold.py",
+          "lines": "22-63",
+          "claim": "Generation constructs a discrete board, certifies it with synchronous physics search, then may mirror the board and permute creature identity; no runtime schedule is generated."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/living_scaffold.js",
+          "lines": "3-45",
+          "claim": "The browser physics are synchronous: step computes one move and settle applies gravity immediately, with no autonomous tick."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/living_scaffold.js",
+          "lines": "46-50",
+          "claim": "Render initializes a local state from the settled board and selects the configured full mode."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/living_scaffold.js",
+          "lines": "87-118",
+          "claim": "State changes are triggered by move, undo, reset, submit, or full-mode keydown handlers; the initial draw is otherwise static."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/living_scaffold.css",
+          "lines": "1-6",
+          "claim": "The mechanic CSS contains layout, hover/focus, media, and disabled styles but no autonomous animation or transition."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/living_scaffold.py",
+          "lines": "103-123",
+          "claim": "The grader replays only the submitted discrete action transcript, checks the mode-specific keyboard input source, and evaluates the final solved state without task-time evolution."
+        },
+        {
+          "path": "weird_captcha_gym/tools/incubator_solvers/living_scaffold.py",
+          "lines": "22-37",
+          "claim": "The solver performs ordinary body-click plus keyboard actions in full mode and card plus direction-button actions in simplified mode; its waits are solver pacing, not game mechanics."
+        }
+      ],
+      "uncertainties": []
+    },
+    {
+      "case_index": 368,
+      "public_environment_name": "Living Scaffold",
+      "environment_id": "living_scaffold_env",
+      "difficulty": 4,
+      "interaction_mode": "simplified",
+      "label": "no",
+      "controls_available": [
+        "Difficulty 4 uses three creatures with a high canopy, but no return blossom or overhang.",
+        "Select a crew card, then click the fixed N/W/S/E direction buttons to move its head.",
+        "Undo, Restart, and Check garden are available as visible controls."
+      ],
+      "autonomous_processes": [],
+      "grouped_control_modes": [
+        "Selected-creature movement through the simplified surface: crew-card selection followed by fixed direction buttons.",
+        "Undo or Restart recovery actions."
+      ],
+      "delta_ms": null,
+      "window_ms": 0,
+      "clause_i": {
+        "holds": true,
+        "reason": "For the cross-seed movement group, I_t does not contain the generated board or creature identity. The generator can mirror the board and permute creature order, so a schedule based only on prior actions cannot in general choose the board-specific move; the visible board can." 
+      },
+      "clause_ii": {
+        "holds": true,
+        "reason": "The current board, fruit, blossoms, rocks, and creature positions are rendered in the screenshot, and movement is discrete. The current one-frame observation is sufficient to plan a move; no future frame is needed." 
+      },
+      "clause_iii": {
+        "holds": false,
+        "reason": "No autonomous task-state change occurs during a no-action interval. Gravity is run synchronously inside step/settle after a move, while move, undo, and reset are event handlers; there is no timer, animation loop, held-input update, or other process that can make an action strictly less effective during Delta. Thus no legitimate D, Delta > 0, and tau can satisfy clause (iii)."
+      },
+      "common_visible_process": "None. After the initially settled board is rendered, the visible task state is static until a move, undo, or reset event; synchronous gravity is part of the action response, not an autonomous process.",
+      "pre_run": {
+        "threshold": 0.5,
+        "at_least_half": null,
+        "rate": null,
+        "basis": "not_applicable",
+        "reason": "The mathematical definition already fails at clause (iii), so the pre-run threshold is not consulted.",
+        "seed_probe": null
+      },
+      "files_read_completely": [
+        "weird_captcha_gym/environments/living_scaffold_env/controls.json",
+        "weird_captcha_gym/environments/living_scaffold_env/env.json",
+        "weird_captcha_gym/environments/living_scaffold_env/tasks/living_scaffold_seed_0001/task.json",
+        "weird_captcha_gym/environments/living_scaffold_env/tasks/living_scaffold_seed_0001/setup_task.sh",
+        "weird_captcha_gym/environments/living_scaffold_env/tasks/living_scaffold_seed_0001/export_result.sh",
+        "weird_captcha_gym/shared_scripts/incubator_generators/living_scaffold.py",
+        "weird_captcha_gym/shared_runtime/app/index.html",
+        "weird_captcha_gym/shared_runtime/app/mechanics/living_scaffold.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/living_scaffold.css",
+        "weird_captcha_gym/shared_runtime/server/incubator_graders/living_scaffold.py",
+        "weird_captcha_gym/environments/living_scaffold_env/tasks/living_scaffold_seed_0001/verifier.py",
+        "weird_captcha_gym/tools/incubator_solvers/living_scaffold.py"
+      ],
+      "source_evidence": [
+        {
+          "path": "weird_captcha_gym/environments/living_scaffold_env/controls.json",
+          "lines": "55-68",
+          "claim": "Difficulty 4 is the three-creature high-canopy profile with no return blossom or overhang."
+        },
+        {
+          "path": "weird_captcha_gym/environments/living_scaffold_env/controls.json",
+          "lines": "86-99",
+          "claim": "Full input is body selection plus Arrow/WASD movement; simplified input is card selection plus direction buttons; the configured observation window is 0 ms with one frame."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/living_scaffold.py",
+          "lines": "22-63",
+          "claim": "Generation constructs a discrete board, certifies it with synchronous physics search, then may mirror the board and permute creature identity; no runtime schedule is generated."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/living_scaffold.js",
+          "lines": "3-45",
+          "claim": "The browser physics are synchronous: step computes one move and settle applies gravity immediately, with no autonomous tick."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/living_scaffold.js",
+          "lines": "46-50",
+          "claim": "Render initializes a local state from the settled board and selects the configured simplified mode."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/living_scaffold.js",
+          "lines": "87-118",
+          "claim": "State changes are triggered by move, undo, reset, submit, or simplified button handlers; the initial draw is otherwise static."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/living_scaffold.css",
+          "lines": "1-6",
+          "claim": "The mechanic CSS contains layout, hover/focus, media, and disabled styles but no autonomous animation or transition."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/living_scaffold.py",
+          "lines": "103-123",
+          "claim": "The grader replays only the submitted discrete action transcript, checks the mode-specific buttons input source, and evaluates the final solved state without task-time evolution."
+        },
+        {
+          "path": "weird_captcha_gym/tools/incubator_solvers/living_scaffold.py",
+          "lines": "22-37",
+          "claim": "The solver performs ordinary body-click plus keyboard actions in full mode and card plus direction-button actions in simplified mode; its waits are solver pacing, not game mechanics."
+        }
+      ],
+      "uncertainties": []
+    },
+    {
+      "case_index": 369,
+      "public_environment_name": "Living Scaffold",
+      "environment_id": "living_scaffold_env",
+      "difficulty": 5,
+      "interaction_mode": "full",
+      "label": "no",
+      "controls_available": [
+        "Difficulty 5 uses three creatures with a return blossom, high canopy, and overhang.",
+        "Select a creature by clicking its visible body, then move its head with Arrow keys or W/A/S/D.",
+        "Undo, Restart, and Check garden are available as visible controls."
+      ],
+      "autonomous_processes": [],
+      "grouped_control_modes": [
+        "Selected-creature movement through the full surface: body click followed by keyboard movement.",
+        "Undo or Restart recovery actions."
+      ],
+      "delta_ms": null,
+      "window_ms": 0,
+      "clause_i": {
+        "holds": true,
+        "reason": "For the cross-seed movement group, I_t does not contain the generated board or creature identity. The generator can mirror the board and permute creature order, so a schedule based only on prior actions cannot in general choose the board-specific move; the visible board can." 
+      },
+      "clause_ii": {
+        "holds": true,
+        "reason": "The current board, fruit, blossoms, rocks, and creature positions are rendered in the screenshot, and movement is discrete. The current one-frame observation is sufficient to plan a move; no future frame is needed." 
+      },
+      "clause_iii": {
+        "holds": false,
+        "reason": "No autonomous task-state change occurs during a no-action interval. Gravity is run synchronously inside step/settle after a move, while move, undo, and reset are event handlers; there is no timer, animation loop, held-input update, or other process that can make an action strictly less effective during Delta. Thus no legitimate D, Delta > 0, and tau can satisfy clause (iii)."
+      },
+      "common_visible_process": "None. After the initially settled board is rendered, the visible task state is static until a move, undo, or reset event; synchronous gravity is part of the action response, not an autonomous process.",
+      "pre_run": {
+        "threshold": 0.5,
+        "at_least_half": null,
+        "rate": null,
+        "basis": "not_applicable",
+        "reason": "The mathematical definition already fails at clause (iii), so the pre-run threshold is not consulted.",
+        "seed_probe": null
+      },
+      "files_read_completely": [
+        "weird_captcha_gym/environments/living_scaffold_env/controls.json",
+        "weird_captcha_gym/environments/living_scaffold_env/env.json",
+        "weird_captcha_gym/environments/living_scaffold_env/tasks/living_scaffold_seed_0001/task.json",
+        "weird_captcha_gym/environments/living_scaffold_env/tasks/living_scaffold_seed_0001/setup_task.sh",
+        "weird_captcha_gym/environments/living_scaffold_env/tasks/living_scaffold_seed_0001/export_result.sh",
+        "weird_captcha_gym/shared_scripts/incubator_generators/living_scaffold.py",
+        "weird_captcha_gym/shared_runtime/app/index.html",
+        "weird_captcha_gym/shared_runtime/app/mechanics/living_scaffold.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/living_scaffold.css",
+        "weird_captcha_gym/shared_runtime/server/incubator_graders/living_scaffold.py",
+        "weird_captcha_gym/environments/living_scaffold_env/tasks/living_scaffold_seed_0001/verifier.py",
+        "weird_captcha_gym/tools/incubator_solvers/living_scaffold.py"
+      ],
+      "source_evidence": [
+        {
+          "path": "weird_captcha_gym/environments/living_scaffold_env/controls.json",
+          "lines": "70-83",
+          "claim": "Difficulty 5 is the three-creature profile with return blossom, high canopy, and overhang."
+        },
+        {
+          "path": "weird_captcha_gym/environments/living_scaffold_env/controls.json",
+          "lines": "86-99",
+          "claim": "Full input is body selection plus Arrow/WASD movement; simplified input is card selection plus direction buttons; the configured observation window is 0 ms with one frame."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/living_scaffold.py",
+          "lines": "22-63",
+          "claim": "Generation constructs a discrete board, certifies it with synchronous physics search, then may mirror the board and permute creature identity; no runtime schedule is generated."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/living_scaffold.js",
+          "lines": "3-45",
+          "claim": "The browser physics are synchronous: step computes one move and settle applies gravity immediately, with no autonomous tick."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/living_scaffold.js",
+          "lines": "46-50",
+          "claim": "Render initializes a local state from the settled board and selects the configured full mode."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/living_scaffold.js",
+          "lines": "87-118",
+          "claim": "State changes are triggered by move, undo, reset, submit, or full-mode keydown handlers; the initial draw is otherwise static."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/living_scaffold.css",
+          "lines": "1-6",
+          "claim": "The mechanic CSS contains layout, hover/focus, media, and disabled styles but no autonomous animation or transition."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/living_scaffold.py",
+          "lines": "103-123",
+          "claim": "The grader replays only the submitted discrete action transcript, checks the mode-specific keyboard input source, and evaluates the final solved state without task-time evolution."
+        },
+        {
+          "path": "weird_captcha_gym/tools/incubator_solvers/living_scaffold.py",
+          "lines": "22-37",
+          "claim": "The solver performs ordinary body-click plus keyboard actions in full mode and card plus direction-button actions in simplified mode; its waits are solver pacing, not game mechanics."
+        }
+      ],
+      "uncertainties": []
+    },
+    {
+      "case_index": 370,
+      "public_environment_name": "Living Scaffold",
+      "environment_id": "living_scaffold_env",
+      "difficulty": 5,
+      "interaction_mode": "simplified",
+      "label": "no",
+      "controls_available": [
+        "Difficulty 5 uses three creatures with a return blossom, high canopy, and overhang.",
+        "Select a crew card, then click the fixed N/W/S/E direction buttons to move its head.",
+        "Undo, Restart, and Check garden are available as visible controls."
+      ],
+      "autonomous_processes": [],
+      "grouped_control_modes": [
+        "Selected-creature movement through the simplified surface: crew-card selection followed by fixed direction buttons.",
+        "Undo or Restart recovery actions."
+      ],
+      "delta_ms": null,
+      "window_ms": 0,
+      "clause_i": {
+        "holds": true,
+        "reason": "For the cross-seed movement group, I_t does not contain the generated board or creature identity. The generator can mirror the board and permute creature order, so a schedule based only on prior actions cannot in general choose the board-specific move; the visible board can." 
+      },
+      "clause_ii": {
+        "holds": true,
+        "reason": "The current board, fruit, blossoms, rocks, and creature positions are rendered in the screenshot, and movement is discrete. The current one-frame observation is sufficient to plan a move; no future frame is needed." 
+      },
+      "clause_iii": {
+        "holds": false,
+        "reason": "No autonomous task-state change occurs during a no-action interval. Gravity is run synchronously inside step/settle after a move, while move, undo, and reset are event handlers; there is no timer, animation loop, held-input update, or other process that can make an action strictly less effective during Delta. Thus no legitimate D, Delta > 0, and tau can satisfy clause (iii)."
+      },
+      "common_visible_process": "None. After the initially settled board is rendered, the visible task state is static until a move, undo, or reset event; synchronous gravity is part of the action response, not an autonomous process.",
+      "pre_run": {
+        "threshold": 0.5,
+        "at_least_half": null,
+        "rate": null,
+        "basis": "not_applicable",
+        "reason": "The mathematical definition already fails at clause (iii), so the pre-run threshold is not consulted.",
+        "seed_probe": null
+      },
+      "files_read_completely": [
+        "weird_captcha_gym/environments/living_scaffold_env/controls.json",
+        "weird_captcha_gym/environments/living_scaffold_env/env.json",
+        "weird_captcha_gym/environments/living_scaffold_env/tasks/living_scaffold_seed_0001/task.json",
+        "weird_captcha_gym/environments/living_scaffold_env/tasks/living_scaffold_seed_0001/setup_task.sh",
+        "weird_captcha_gym/environments/living_scaffold_env/tasks/living_scaffold_seed_0001/export_result.sh",
+        "weird_captcha_gym/shared_scripts/incubator_generators/living_scaffold.py",
+        "weird_captcha_gym/shared_runtime/app/index.html",
+        "weird_captcha_gym/shared_runtime/app/mechanics/living_scaffold.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/living_scaffold.css",
+        "weird_captcha_gym/shared_runtime/server/incubator_graders/living_scaffold.py",
+        "weird_captcha_gym/environments/living_scaffold_env/tasks/living_scaffold_seed_0001/verifier.py",
+        "weird_captcha_gym/tools/incubator_solvers/living_scaffold.py"
+      ],
+      "source_evidence": [
+        {
+          "path": "weird_captcha_gym/environments/living_scaffold_env/controls.json",
+          "lines": "70-83",
+          "claim": "Difficulty 5 is the three-creature profile with return blossom, high canopy, and overhang."
+        },
+        {
+          "path": "weird_captcha_gym/environments/living_scaffold_env/controls.json",
+          "lines": "86-99",
+          "claim": "Full input is body selection plus Arrow/WASD movement; simplified input is card selection plus direction buttons; the configured observation window is 0 ms with one frame."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/living_scaffold.py",
+          "lines": "22-63",
+          "claim": "Generation constructs a discrete board, certifies it with synchronous physics search, then may mirror the board and permute creature identity; no runtime schedule is generated."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/living_scaffold.js",
+          "lines": "3-45",
+          "claim": "The browser physics are synchronous: step computes one move and settle applies gravity immediately, with no autonomous tick."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/living_scaffold.js",
+          "lines": "46-50",
+          "claim": "Render initializes a local state from the settled board and selects the configured simplified mode."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/living_scaffold.js",
+          "lines": "87-118",
+          "claim": "State changes are triggered by move, undo, reset, submit, or simplified button handlers; the initial draw is otherwise static."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/living_scaffold.css",
+          "lines": "1-6",
+          "claim": "The mechanic CSS contains layout, hover/focus, media, and disabled styles but no autonomous animation or transition."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/living_scaffold.py",
+          "lines": "103-123",
+          "claim": "The grader replays only the submitted discrete action transcript, checks the mode-specific buttons input source, and evaluates the final solved state without task-time evolution."
+        },
+        {
+          "path": "weird_captcha_gym/tools/incubator_solvers/living_scaffold.py",
+          "lines": "22-37",
+          "claim": "The solver performs ordinary body-click plus keyboard actions in full mode and card plus direction-button actions in simplified mode; its waits are solver pacing, not game mechanics."
+        }
+      ],
+      "uncertainties": []
+    }
+  ]
+}

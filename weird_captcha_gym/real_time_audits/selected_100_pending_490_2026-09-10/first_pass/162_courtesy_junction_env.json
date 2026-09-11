@@ -1,0 +1,114 @@
+{
+  "case_index": 162,
+  "public_environment_name": "Courtesy Junction",
+  "environment_id": "courtesy_junction_env",
+  "difficulty": 1,
+  "interaction_mode": "simplified",
+  "label": "yes",
+  "controls_available": [
+    "Start Engine begins the active driving phase.",
+    "After start, LEFT, CENTER, and RIGHT panel buttons set persistent steering to -1, 0, and 1.",
+    "After start, BRAKE, COAST, and THROTTLE panel buttons set persistent pedal to -1, 0, and 1.",
+    "FILE DELIVERY is administrative; keyboard input is not the selected control surface in simplified mode."
+  ],
+  "autonomous_processes": [
+    "After start, requestAnimationFrame/pump advances 20-ms physics ticks from elapsed task time without a new control click.",
+    "The yellow car's speed, heading, and position integrate on every tick under the last persistent steering and pedal settings.",
+    "Traffic cars advance along their lanes and update speed and braking from projected conflicts and same-lane gaps; their lane positions wrap at cycle limits.",
+    "Collision, road-edge, arrival, and timeout status can arise during the active ticks, after which physics stops."
+  ],
+  "grouped_control_modes": [
+    "D: post-start simplified panel-button driving settings, with persistent steering LEFT/CENTER/RIGHT crossed with pedal BRAKE/COAST/THROTTLE (nine combined settings).",
+    "A changed steering-button or pedal-button click is a panel_buttons control event; clicking the already selected setting is ineffective.",
+    "START ENGINE and FILE DELIVERY are administrative boundaries, not outcome-affecting control modes."
+  ],
+  "delta_ms": 400,
+  "window_ms": 400,
+  "clause_i": {
+    "holds": true,
+    "reason": "The difficulty-1 generator still samples each traffic phase, speed, yielding horizon, and deceleration from the seed. Histories with the same prior actions and task times can therefore have a clear exit or a slower car closing the yellow car's path, requiring different delayed steering/pedal choices. An action-history-only q cannot distinguish those histories."
+  },
+  "clause_ii": {
+    "holds": true,
+    "reason": "The configured bounded window is 400 ms with five chronological frames. The canvas visibly shows every traffic car, its lane position, the yellow car, and red brake lamps; consecutive positions reveal direction and relative closing speed. That recent visual evidence is sufficient to choose the delayed panel setting for the observed traffic situation."
+  },
+  "clause_iii": {
+    "holds": true,
+    "reason": "Using the same moving traffic stream, a slower car can advance into or along the right-turn departure path during a 400-ms delay. In a still-clear, safely spaced state, a right-turn/throttle setting is useful; after the visible gap closes, that setting has lower outcome value or lower advantage because it can produce rectangular-body contact, while coast or brake can still preserve a route. The loss is caused by traffic/physics state evolution, not by a deadline or a fixed wait."
+  },
+  "common_visible_process": "The seeded crossing traffic continuously changes position and braking state relative to the yellow car. Its recent visible trajectory and brake lamps determine whether an accelerating right-turn control remains safe and useful after the delay.",
+  "pre_run": {
+    "threshold": 0.5,
+    "at_least_half": false,
+    "rate": null,
+    "basis": "source_structural",
+    "reason": "render initializes control to [0, 0] and started to false, while setControl returns before started is true. Thus preparatory simplified clicks cannot arm steering or throttle. Start begins the autonomous phase; with no post-start outcome-affecting action, pedal remains neutral, initial speed is zero, and the neutral drag update keeps the yellow car stationary, so it cannot reach the goal for any seed.",
+    "seed_probe": null
+  },
+  "files_read_completely": [
+    "AGENTS.md",
+    "weird_captcha_gym/docs/controllability/real-time.md",
+    "weird_captcha_gym/environments/courtesy_junction_env/controls.json",
+    "weird_captcha_gym/environments/courtesy_junction_env/env.json",
+    "weird_captcha_gym/environments/courtesy_junction_env/tasks/courtesy_junction_seed_0001/setup_task.sh",
+    "weird_captcha_gym/environments/courtesy_junction_env/tasks/courtesy_junction_seed_0001/task.json",
+    "weird_captcha_gym/environments/courtesy_junction_env/tasks/courtesy_junction_seed_0001/export_result.sh",
+    "weird_captcha_gym/environments/courtesy_junction_env/tasks/courtesy_junction_seed_0001/verifier.py",
+    "weird_captcha_gym/environments/courtesy_junction_env/scripts/install_puzzle_runtime.sh",
+    "weird_captcha_gym/environments/courtesy_junction_env/scripts/setup_puzzle_runtime.sh",
+    "weird_captcha_gym/shared_scripts/incubator_generators/courtesy_junction.py",
+    "weird_captcha_gym/shared_runtime/app/mechanics/courtesy_junction.js",
+    "weird_captcha_gym/shared_runtime/app/mechanics/courtesy_junction.css",
+    "weird_captcha_gym/shared_runtime/server/incubator_graders/courtesy_junction.py",
+    "weird_captcha_gym/shared_runtime/verifier_helpers.py",
+    "weird_captcha_gym/tools/incubator_solvers/courtesy_junction.py"
+  ],
+  "source_evidence": [
+    {
+      "path": "weird_captcha_gym/environments/courtesy_junction_env/controls.json",
+      "lines": "10-24,94-107",
+      "claim": "Difficulty 1 is one lane, two cars, speeds 26-32, yielding horizons 2.0-2.4, right turn only, and road_half 100; simplified mode uses persistent panel settings; the frame window is 400 ms with five frames."
+    },
+    {
+      "path": "weird_captcha_gym/environments/courtesy_junction_env/env.json",
+      "lines": "20-43",
+      "claim": "The environment exposes a frame window at 10 fps and repeats the 120-second, 400-ms, five-frame runner settings."
+    },
+    {
+      "path": "weird_captcha_gym/shared_scripts/incubator_generators/courtesy_junction.py",
+      "lines": "20-27,46-50",
+      "claim": "The seed changes turn and traffic phase, speed, yielding horizon, deceleration, and color; the generated world contains moving traffic, physics constants, and the right-turn goal."
+    },
+    {
+      "path": "weird_captcha_gym/shared_runtime/app/mechanics/courtesy_junction.js",
+      "lines": "12-24",
+      "claim": "The browser advances ego and traffic state on each tick, recomputes responsive braking/conflicts, persists panel controls, and uses elapsed time to pump ticks without new actions."
+    },
+    {
+      "path": "weird_captcha_gym/shared_runtime/app/mechanics/courtesy_junction.js",
+      "lines": "25-28,30-45",
+      "claim": "Start begins the run; the canvas renders the road, goal, cars, yellow vehicle, and braking lamps; the simplified HTML binds the six panel buttons to panel_buttons events."
+    },
+    {
+      "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/courtesy_junction.py",
+      "lines": "42-75,87-119",
+      "claim": "The authoritative replay applies the same ego/traffic physics, rectangular collision and road checks, and goal test; simplified transcripts must use panel_buttons and arrive successfully."
+    },
+    {
+      "path": "weird_captcha_gym/tools/incubator_solvers/courtesy_junction.py",
+      "lines": "32-50,52-80",
+      "claim": "The ordinary-UI solver evaluates physical continuations including braking drivers and repeatedly updates simplified panel controls while the world runs, corroborating that traffic observations affect control selection."
+    },
+    {
+      "path": "weird_captcha_gym/environments/courtesy_junction_env/tasks/courtesy_junction_seed_0001/verifier.py",
+      "lines": "22-35",
+      "claim": "Task verification loads the exported result and independent Courtesy Junction replay grader."
+    },
+    {
+      "path": "weird_captcha_gym/shared_runtime/verifier_helpers.py",
+      "lines": "33-52",
+      "claim": "The used verifier helper reads the exported task result as a JSON object and returns it to the verifier."
+    }
+  ],
+  "uncertainties": []
+}

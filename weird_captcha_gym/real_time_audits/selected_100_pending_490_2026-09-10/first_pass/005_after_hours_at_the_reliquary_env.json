@@ -1,0 +1,130 @@
+{
+  "case_index": 5,
+  "public_environment_name": "After Hours at the Reliquary",
+  "environment_id": "after_hours_at_the_reliquary_env",
+  "difficulty": 3,
+  "interaction_mode": "full",
+  "label": "no",
+  "controls_available": [
+    {
+      "difficulty_parameters": {
+        "view_count": 6,
+        "active_locks": ["digit", "color", "key"],
+        "digit_length": 4,
+        "color_length": 5,
+        "hook_mode": "combined",
+        "decoy_items": 0,
+        "cue_level": "unmarked",
+        "cross_view_order": false,
+        "max_wrong_entries": 3
+      }
+    },
+    "Full interaction uses edge turn arrows and direct tray-object drags onto scene geometry or another tray object.",
+    {
+      "observation_window_ms": 0,
+      "frames_per_observation": 1,
+      "play_time_seconds": 240
+    }
+  ],
+  "autonomous_processes": [
+    "None during active puzzle play: views, flags, inventory, lock state, and the replay transcript change only in response to agent input handlers.",
+    "After the final successful door action, the CSS vault-door transform transitions for 0.8 seconds; this is post-success presentation after the outcome is submitted, with no remaining outcome-affecting control opportunity."
+  ],
+  "grouped_control_modes": [
+    "Full-mode edge-arrow view turns.",
+    "Visible scene-hotspot clicks for flipping, opening, collecting, revealing, or opening the door.",
+    "Full-mode drag from an inventory card to another inventory card for object combination.",
+    "Full-mode drag from an inventory card to a visible scene target for object use.",
+    "Door lock panel controls: opening a digit or colour ward, advancing digit wheels, choosing colour keys, and submitting the ward entry.",
+    "Background clicks and invalid drops record misses or misuses; they do not create an autonomous control mode."
+  ],
+  "delta_ms": null,
+  "window_ms": null,
+  "clause_i": {
+    "holds": false,
+    "reason": "No valid common real-time witness is available. Static seed-specific clues can make some action choices observation-dependent, but the source has no autonomous process whose visible evolution supplies that dependence; fixed topology and action order can otherwise be scheduled from I_t."
+  },
+  "clause_ii": {
+    "holds": false,
+    "reason": "No bounded recent window predicts a delayed change in this task. A screenshot-only solver uses static visible scene geometry and clues revealed by its own actions, while the configured observation window is 0 ms and nothing continues evolving between actions."
+  },
+  "clause_iii": {
+    "holds": false,
+    "reason": "Fails decisively: the browser model has no timer, requestAnimationFrame loop, physics, moving target, or changing lock during active play. navigate, sceneAction, performCombine, performUse, and submitWard update state synchronously inside input handlers; three-strike seizure is action-count based. The only CSS transition is the 0.8-second vault-door opening after successful terminal submission, so it cannot make an available outcome-affecting action strictly worse."
+  },
+  "common_visible_process": "None. The static room art and seed-generated clue geometry are fixed for the instance. The only autonomous-looking visual change is the post-terminal vault-door transition, which is not an active task opportunity and cannot witness clauses (i)-(iii).",
+  "pre_run": {
+    "threshold": 0.5,
+    "at_least_half": null,
+    "rate": null,
+    "basis": "not_applicable",
+    "reason": "There is no autonomous outcome phase: every puzzle-state transition needed for success is initiated by an agent click, turn, lock entry, or drag. The mathematical definition already fails clause (iii), so a pre-run threshold override is unnecessary.",
+    "seed_probe": null
+  },
+  "files_read_completely": [
+    "AGENTS.md",
+    "weird_captcha_gym/docs/controllability/real-time.md",
+    "weird_captcha_gym/environments/after_hours_at_the_reliquary_env/controls.json",
+    "weird_captcha_gym/environments/after_hours_at_the_reliquary_env/env.json",
+    "weird_captcha_gym/environments/after_hours_at_the_reliquary_env/scripts/install_puzzle_runtime.sh",
+    "weird_captcha_gym/environments/after_hours_at_the_reliquary_env/scripts/setup_puzzle_runtime.sh",
+    "weird_captcha_gym/environments/after_hours_at_the_reliquary_env/tasks/after_hours_at_the_reliquary_seed_0001/setup_task.sh",
+    "weird_captcha_gym/environments/after_hours_at_the_reliquary_env/tasks/after_hours_at_the_reliquary_seed_0001/task.json",
+    "weird_captcha_gym/environments/after_hours_at_the_reliquary_env/tasks/after_hours_at_the_reliquary_seed_0001/export_result.sh",
+    "weird_captcha_gym/environments/after_hours_at_the_reliquary_env/tasks/after_hours_at_the_reliquary_seed_0001/verifier.py",
+    "weird_captcha_gym/shared_scripts/incubator_generators/after_hours_at_the_reliquary.py",
+    "weird_captcha_gym/shared_runtime/app/mechanics/after_hours_at_the_reliquary.js",
+    "weird_captcha_gym/shared_runtime/app/mechanics/after_hours_at_the_reliquary.css",
+    "weird_captcha_gym/shared_runtime/server/incubator_graders/after_hours_at_the_reliquary.py",
+    "weird_captcha_gym/shared_runtime/verifier_helpers.py",
+    "weird_captcha_gym/tools/incubator_solvers/after_hours_at_the_reliquary.py"
+  ],
+  "source_evidence": [
+    {
+      "path": "weird_captcha_gym/environments/after_hours_at_the_reliquary_env/controls.json",
+      "lines": "18-22, 37-41",
+      "claim": "The exact level-3 parameters are six fixed views, digit/color/key wards, four digits, five colors, combined hook construction, no decoys, unmarked cues, no cross-view order, and three wrong entries; full mode is direct dragging with 0-ms observations and one frame."
+    },
+    {
+      "path": "weird_captcha_gym/shared_scripts/incubator_generators/after_hours_at_the_reliquary.py",
+      "lines": "143-167, 169-237",
+      "claim": "Random digits, colors, view palettes, and target rectangles are generated once before play; the generator defines fixed view roles and static flag-gated scene targets, with no ongoing time or motion process."
+    },
+    {
+      "path": "weird_captcha_gym/shared_runtime/app/mechanics/after_hours_at_the_reliquary.js",
+      "lines": "194-242, 244-335",
+      "claim": "Turns, scene discoveries, combinations, item uses, ward releases, and three-strike seizure are performed synchronously in response to input events."
+    },
+    {
+      "path": "weird_captcha_gym/shared_runtime/app/mechanics/after_hours_at_the_reliquary.js",
+      "lines": "359-394, 396-473, 480-498",
+      "claim": "Submission is a result fetch after the final action; drag handling records geometry/travel evidence but has no task-time mechanic, and rendering initializes a static model without timers or animation loops."
+    },
+    {
+      "path": "weird_captcha_gym/shared_runtime/app/mechanics/after_hours_at_the_reliquary.css",
+      "lines": "157-160, 233-237",
+      "claim": "The only relevant transition is the 0.8-second vault-door transform after opening; the rest of the room and inventory styling is static, and the transition follows terminal success."
+    },
+    {
+      "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/after_hours_at_the_reliquary.py",
+      "lines": "278-335, 344-498",
+      "claim": "The grader replays an ordered event list synchronously, validates direct-manipulation geometry, and applies lock seizure from wrong-entry counts; it records no timestamps or autonomous state evolution."
+    },
+    {
+      "path": "weird_captcha_gym/environments/after_hours_at_the_reliquary_env/tasks/after_hours_at_the_reliquary_seed_0001/verifier.py",
+      "lines": "22-43",
+      "claim": "The task verifier only loads the exported result and invokes the reliquary replay grader; it has no timing condition."
+    },
+    {
+      "path": "weird_captcha_gym/tools/incubator_solvers/after_hours_at_the_reliquary.py",
+      "lines": "23-98, 117-156",
+      "claim": "The reference UI solver proceeds through fixed turns, visible hotspots, drags, and lock submissions, then waits only for the final pass readout; it contains no timing or motion control."
+    },
+    {
+      "path": "weird_captcha_gym/shared_runtime/verifier_helpers.py",
+      "lines": "33-52",
+      "claim": "The shared verifier helper only copies and parses /tmp/task_result.json, so the verification path adds no task-time behavior."
+    }
+  ],
+  "uncertainties": []
+}

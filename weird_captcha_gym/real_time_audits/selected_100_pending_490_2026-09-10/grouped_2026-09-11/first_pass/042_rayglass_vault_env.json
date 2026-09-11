@@ -1,0 +1,1348 @@
+{
+  "case_index": 42,
+  "environment_id": "rayglass_vault_env",
+  "public_environment_name": "Rayglass Vault",
+  "configuration_reports": [
+    {
+      "case_index": 411,
+      "public_environment_name": "Rayglass Vault",
+      "environment_id": "rayglass_vault_env",
+      "difficulty": 1,
+      "interaction_mode": "full",
+      "label": "no",
+      "controls_available": [
+        "4×4 static opaque cabinet with 1 required bead marker",
+        "Click any of 16 numbered border ports to fire a probe",
+        "Click any of 16 interior cells to mark or erase a hypothesis",
+        "Click SEAL HYPOTHESIS after placing exactly 1 marker"
+      ],
+      "autonomous_processes": [
+        "No autonomous process: while the agent supplies no new action, the cabinet, hidden layout, marks, and probe ledger remain unchanged."
+      ],
+      "grouped_control_modes": [
+        "Probe: click a numbered border port; input_surface is cabinet_click.",
+        "Hypothesis edit: click an interior cell to toggle mark/erase; input_surface is cabinet_click.",
+        "Seal submission: click SEAL HYPOTHESIS; administrative final submission, not a dynamic control opportunity."
+      ],
+      "delta_ms": null,
+      "window_ms": 0,
+      "clause_i": {
+        "holds": false,
+        "reason": "Across different hidden layouts, the same action history can lead to different visible probe ledgers and require different later hypothesis edits; an observation-free q cannot generally complete the deduction. A fixed initial probe order is possible, but successful edits must use visible observations. This is a static information dependency, not a temporal one."
+      },
+      "clause_ii": {
+        "holds": true,
+        "reason": "A current screenshot is sufficient for the static next decision: it shows the fixed cabinet, accumulated probe ledger, marks, and mode controls. With the configured zero-length observation window, a screenshot-only policy can use this state for deduction, but it does not observe any change across a delay."
+      },
+      "clause_iii": {
+        "holds": false,
+        "reason": "No legitimate control mode has an autonomously degrading opportunity. During any Delta > 0 with no new action, no timer, animation, physics tick, random transition, or task-state update runs, so no probe or mark/erase action becomes unavailable or strictly less effective. The only asynchronous fetch occurs after an explicit seal submission."
+      },
+      "common_visible_process": "No common autonomous visible process exists: the cabinet and hidden layout are fixed, while the ledger and marks change only synchronously in response to the agent's own input. The seal fetch follows an explicit submission and is administrative.",
+      "pre_run": {
+        "threshold": 0.5,
+        "at_least_half": null,
+        "rate": null,
+        "basis": "not_applicable",
+        "reason": "Not applicable because the mathematical test is already No: there is no autonomous outcome phase or expiring action opportunity whose pre-run rate could override the result.",
+        "seed_probe": null
+      },
+      "files_read_completely": [
+        "AGENTS.md",
+        "weird_captcha_gym/docs/controllability/real-time.md",
+        "weird_captcha_gym/environments/rayglass_vault_env/controls.json",
+        "weird_captcha_gym/environments/rayglass_vault_env/env.json",
+        "weird_captcha_gym/environments/rayglass_vault_env/tasks/rayglass_vault_seed_0001/task.json",
+        "weird_captcha_gym/environments/rayglass_vault_env/tasks/rayglass_vault_seed_0001/setup_task.sh",
+        "weird_captcha_gym/environments/rayglass_vault_env/tasks/rayglass_vault_seed_0001/export_result.sh",
+        "weird_captcha_gym/environments/rayglass_vault_env/tasks/rayglass_vault_seed_0001/verifier.py",
+        "weird_captcha_gym/shared_scripts/incubator_generators/rayglass_vault.py",
+        "weird_captcha_gym/shared_runtime/app/mechanics/rayglass_vault.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/rayglass_vault.css",
+        "weird_captcha_gym/shared_runtime/server/incubator_graders/rayglass_vault.py",
+        "weird_captcha_gym/shared_runtime/verifier_helpers.py",
+        "weird_captcha_gym/tools/incubator_solvers/rayglass_vault.py"
+      ],
+      "source_evidence": [
+        {
+          "path": "weird_captcha_gym/environments/rayglass_vault_env/controls.json",
+          "lines": "9-18",
+          "claim": "Difficulty 1 is the static 4×4 profile with 1 bead; the level changes grid size and bead count only."
+        },
+        {
+          "path": "weird_captcha_gym/environments/rayglass_vault_env/controls.json",
+          "lines": "61-64",
+          "claim": "The full interaction profile is direct cabinet clicks for ports and cells."
+        },
+        {
+          "path": "weird_captcha_gym/environments/rayglass_vault_env/controls.json",
+          "lines": "66-70",
+          "claim": "The assigned profile sets observation_window_ms to 0, frames_per_observation to 1, and play_time_seconds to 600."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/rayglass_vault.py",
+          "lines": "22-49",
+          "claim": "Generation samples bead coordinates once from a seed, computes the fixed sensor signature and geometry, and returns public/truth state; it does not define a future task-state process."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/rayglass_vault.js",
+          "lines": "4-10",
+          "claim": "Rendering chooses the requested input mode and builds the cabinet from the supplied state; it does not start an autonomous loop."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/rayglass_vault.js",
+          "lines": "35-48",
+          "claim": "Cells and ports are created from fixed geometry and only full-mode elements receive direct event handlers."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/rayglass_vault.js",
+          "lines": "60-80",
+          "claim": "A probe records the already supplied sensor response and a mark toggles a set entry; update only redraws the ledger, marks, and counts synchronously after an input."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/rayglass_vault.js",
+          "lines": "82-100",
+          "claim": "Simplified buttons call the same synchronous act function, and the only asynchronous operation is the user-triggered result fetch after SEAL HYPOTHESIS."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/rayglass_vault.css",
+          "lines": "1-3",
+          "claim": "The complete game stylesheet supplies static layout and visual rules; it contains no keyframes, timer, or animation rule."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/rayglass_vault.py",
+          "lines": "13-64",
+          "claim": "Ray tracing is a pure function of n, bead coordinates, and port, with a precomputed signature; no time or evolving state is consulted."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/rayglass_vault.py",
+          "lines": "75-139",
+          "claim": "Grading replays the submitted event list, validates the selected input surface, and compares static signatures; events have sequence/type/index but no timestamps or elapsed-time rule."
+        },
+        {
+          "path": "weird_captcha_gym/tools/incubator_solvers/rayglass_vault.py",
+          "lines": "70-110",
+          "claim": "The normal scripted solution repeatedly reads the visible ledger, updates a static candidate set, marks a hypothesis, and seals; it has no timing or wait-dependent action."
+        },
+        {
+          "path": "weird_captcha_gym/environments/rayglass_vault_env/tasks/rayglass_vault_seed_0001/verifier.py",
+          "lines": "17-30",
+          "claim": "The task verifier loads the exported result and invokes the independent static Rayglass grader."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/verifier_helpers.py",
+          "lines": "33-52",
+          "claim": "The shared verifier helper only copies and parses the exported result file, with no task progression."
+        }
+      ],
+      "uncertainties": []
+    },
+    {
+      "case_index": 412,
+      "public_environment_name": "Rayglass Vault",
+      "environment_id": "rayglass_vault_env",
+      "difficulty": 1,
+      "interaction_mode": "simplified",
+      "label": "no",
+      "controls_available": [
+        "4×4 static opaque cabinet with 1 required bead marker",
+        "Select one of 16 ports and press FIRE BEAM",
+        "Select a row and column and press MARK / ERASE for one of 16 cells",
+        "Click SEAL HYPOTHESIS after placing exactly 1 marker"
+      ],
+      "autonomous_processes": [
+        "No autonomous process: while the agent supplies no new action, the cabinet, hidden layout, marks, and probe ledger remain unchanged."
+      ],
+      "grouped_control_modes": [
+        "Probe: select PORT and press FIRE BEAM; input_surface is console_button.",
+        "Hypothesis edit: select ROW and COL and press MARK / ERASE; input_surface is console_button.",
+        "Seal submission: click SEAL HYPOTHESIS; administrative final submission, not a dynamic control opportunity."
+      ],
+      "delta_ms": null,
+      "window_ms": 0,
+      "clause_i": {
+        "holds": false,
+        "reason": "Across different hidden layouts, the same action history can lead to different visible probe ledgers and require different later hypothesis edits; an observation-free q cannot generally complete the deduction. A fixed initial probe order is possible, but successful edits must use visible observations. This is a static information dependency, not a temporal one."
+      },
+      "clause_ii": {
+        "holds": true,
+        "reason": "A current screenshot is sufficient for the static next decision: it shows the fixed cabinet, accumulated probe ledger, marks, and mode controls. With the configured zero-length observation window, a screenshot-only policy can use this state for deduction, but it does not observe any change across a delay."
+      },
+      "clause_iii": {
+        "holds": false,
+        "reason": "No legitimate control mode has an autonomously degrading opportunity. During any Delta > 0 with no new action, no timer, animation, physics tick, random transition, or task-state update runs, so no probe or mark/erase action becomes unavailable or strictly less effective. The only asynchronous fetch occurs after an explicit seal submission."
+      },
+      "common_visible_process": "No common autonomous visible process exists: the cabinet and hidden layout are fixed, while the ledger and marks change only synchronously in response to the agent's own input. The seal fetch follows an explicit submission and is administrative.",
+      "pre_run": {
+        "threshold": 0.5,
+        "at_least_half": null,
+        "rate": null,
+        "basis": "not_applicable",
+        "reason": "Not applicable because the mathematical test is already No: there is no autonomous outcome phase or expiring action opportunity whose pre-run rate could override the result.",
+        "seed_probe": null
+      },
+      "files_read_completely": [
+        "AGENTS.md",
+        "weird_captcha_gym/docs/controllability/real-time.md",
+        "weird_captcha_gym/environments/rayglass_vault_env/controls.json",
+        "weird_captcha_gym/environments/rayglass_vault_env/env.json",
+        "weird_captcha_gym/environments/rayglass_vault_env/tasks/rayglass_vault_seed_0001/task.json",
+        "weird_captcha_gym/environments/rayglass_vault_env/tasks/rayglass_vault_seed_0001/setup_task.sh",
+        "weird_captcha_gym/environments/rayglass_vault_env/tasks/rayglass_vault_seed_0001/export_result.sh",
+        "weird_captcha_gym/environments/rayglass_vault_env/tasks/rayglass_vault_seed_0001/verifier.py",
+        "weird_captcha_gym/shared_scripts/incubator_generators/rayglass_vault.py",
+        "weird_captcha_gym/shared_runtime/app/mechanics/rayglass_vault.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/rayglass_vault.css",
+        "weird_captcha_gym/shared_runtime/server/incubator_graders/rayglass_vault.py",
+        "weird_captcha_gym/shared_runtime/verifier_helpers.py",
+        "weird_captcha_gym/tools/incubator_solvers/rayglass_vault.py"
+      ],
+      "source_evidence": [
+        {
+          "path": "weird_captcha_gym/environments/rayglass_vault_env/controls.json",
+          "lines": "9-18",
+          "claim": "Difficulty 1 is the static 4×4 profile with 1 bead; the level changes grid size and bead count only."
+        },
+        {
+          "path": "weird_captcha_gym/environments/rayglass_vault_env/controls.json",
+          "lines": "56-60",
+          "claim": "The simplified interaction profile is PORT plus FIRE and ROW/COL plus MARK / ERASE."
+        },
+        {
+          "path": "weird_captcha_gym/environments/rayglass_vault_env/controls.json",
+          "lines": "66-70",
+          "claim": "The assigned profile sets observation_window_ms to 0, frames_per_observation to 1, and play_time_seconds to 600."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/rayglass_vault.py",
+          "lines": "22-49",
+          "claim": "Generation samples bead coordinates once from a seed, computes the fixed sensor signature and geometry, and returns public/truth state; it does not define a future task-state process."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/rayglass_vault.js",
+          "lines": "4-10",
+          "claim": "Rendering chooses the requested input mode and builds the cabinet from the supplied state; it does not start an autonomous loop."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/rayglass_vault.js",
+          "lines": "35-48",
+          "claim": "Cells and ports are created from fixed geometry and only full-mode elements receive direct event handlers."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/rayglass_vault.js",
+          "lines": "60-80",
+          "claim": "A probe records the already supplied sensor response and a mark toggles a set entry; update only redraws the ledger, marks, and counts synchronously after an input."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/rayglass_vault.js",
+          "lines": "82-100",
+          "claim": "Simplified buttons call the same synchronous act function, and the only asynchronous operation is the user-triggered result fetch after SEAL HYPOTHESIS."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/rayglass_vault.css",
+          "lines": "1-3",
+          "claim": "The complete game stylesheet supplies static layout and visual rules; it contains no keyframes, timer, or animation rule."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/rayglass_vault.py",
+          "lines": "13-64",
+          "claim": "Ray tracing is a pure function of n, bead coordinates, and port, with a precomputed signature; no time or evolving state is consulted."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/rayglass_vault.py",
+          "lines": "75-139",
+          "claim": "Grading replays the submitted event list, validates the selected input surface, and compares static signatures; events have sequence/type/index but no timestamps or elapsed-time rule."
+        },
+        {
+          "path": "weird_captcha_gym/tools/incubator_solvers/rayglass_vault.py",
+          "lines": "70-110",
+          "claim": "The normal scripted solution repeatedly reads the visible ledger, updates a static candidate set, marks a hypothesis, and seals; it has no timing or wait-dependent action."
+        },
+        {
+          "path": "weird_captcha_gym/environments/rayglass_vault_env/tasks/rayglass_vault_seed_0001/verifier.py",
+          "lines": "17-30",
+          "claim": "The task verifier loads the exported result and invokes the independent static Rayglass grader."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/verifier_helpers.py",
+          "lines": "33-52",
+          "claim": "The shared verifier helper only copies and parses the exported result file, with no task progression."
+        }
+      ],
+      "uncertainties": []
+    },
+    {
+      "case_index": 413,
+      "public_environment_name": "Rayglass Vault",
+      "environment_id": "rayglass_vault_env",
+      "difficulty": 2,
+      "interaction_mode": "full",
+      "label": "no",
+      "controls_available": [
+        "4×4 static opaque cabinet with 2 required bead markers",
+        "Click any of 16 numbered border ports to fire a probe",
+        "Click any of 16 interior cells to mark or erase a hypothesis",
+        "Click SEAL HYPOTHESIS after placing exactly 2 markers"
+      ],
+      "autonomous_processes": [
+        "No autonomous process: while the agent supplies no new action, the cabinet, hidden layout, marks, and probe ledger remain unchanged."
+      ],
+      "grouped_control_modes": [
+        "Probe: click a numbered border port; input_surface is cabinet_click.",
+        "Hypothesis edit: click an interior cell to toggle mark/erase; input_surface is cabinet_click.",
+        "Seal submission: click SEAL HYPOTHESIS; administrative final submission, not a dynamic control opportunity."
+      ],
+      "delta_ms": null,
+      "window_ms": 0,
+      "clause_i": {
+        "holds": false,
+        "reason": "Across different hidden layouts, the same action history can lead to different visible probe ledgers and require different later hypothesis edits; an observation-free q cannot generally complete the deduction. A fixed initial probe order is possible, but successful edits must use visible observations. This is a static information dependency, not a temporal one."
+      },
+      "clause_ii": {
+        "holds": true,
+        "reason": "A current screenshot is sufficient for the static next decision: it shows the fixed cabinet, accumulated probe ledger, marks, and mode controls. With the configured zero-length observation window, a screenshot-only policy can use this state for deduction, but it does not observe any change across a delay."
+      },
+      "clause_iii": {
+        "holds": false,
+        "reason": "No legitimate control mode has an autonomously degrading opportunity. During any Delta > 0 with no new action, no timer, animation, physics tick, random transition, or task-state update runs, so no probe or mark/erase action becomes unavailable or strictly less effective. The only asynchronous fetch occurs after an explicit seal submission."
+      },
+      "common_visible_process": "No common autonomous visible process exists: the cabinet and hidden layout are fixed, while the ledger and marks change only synchronously in response to the agent's own input. The seal fetch follows an explicit submission and is administrative.",
+      "pre_run": {
+        "threshold": 0.5,
+        "at_least_half": null,
+        "rate": null,
+        "basis": "not_applicable",
+        "reason": "Not applicable because the mathematical test is already No: there is no autonomous outcome phase or expiring action opportunity whose pre-run rate could override the result.",
+        "seed_probe": null
+      },
+      "files_read_completely": [
+        "AGENTS.md",
+        "weird_captcha_gym/docs/controllability/real-time.md",
+        "weird_captcha_gym/environments/rayglass_vault_env/controls.json",
+        "weird_captcha_gym/environments/rayglass_vault_env/env.json",
+        "weird_captcha_gym/environments/rayglass_vault_env/tasks/rayglass_vault_seed_0001/task.json",
+        "weird_captcha_gym/environments/rayglass_vault_env/tasks/rayglass_vault_seed_0001/setup_task.sh",
+        "weird_captcha_gym/environments/rayglass_vault_env/tasks/rayglass_vault_seed_0001/export_result.sh",
+        "weird_captcha_gym/environments/rayglass_vault_env/tasks/rayglass_vault_seed_0001/verifier.py",
+        "weird_captcha_gym/shared_scripts/incubator_generators/rayglass_vault.py",
+        "weird_captcha_gym/shared_runtime/app/mechanics/rayglass_vault.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/rayglass_vault.css",
+        "weird_captcha_gym/shared_runtime/server/incubator_graders/rayglass_vault.py",
+        "weird_captcha_gym/shared_runtime/verifier_helpers.py",
+        "weird_captcha_gym/tools/incubator_solvers/rayglass_vault.py"
+      ],
+      "source_evidence": [
+        {
+          "path": "weird_captcha_gym/environments/rayglass_vault_env/controls.json",
+          "lines": "19-27",
+          "claim": "Difficulty 2 is the static 4×4 profile with 2 beads; the level changes grid size and bead count only."
+        },
+        {
+          "path": "weird_captcha_gym/environments/rayglass_vault_env/controls.json",
+          "lines": "61-64",
+          "claim": "The full interaction profile is direct cabinet clicks for ports and cells."
+        },
+        {
+          "path": "weird_captcha_gym/environments/rayglass_vault_env/controls.json",
+          "lines": "66-70",
+          "claim": "The assigned profile sets observation_window_ms to 0, frames_per_observation to 1, and play_time_seconds to 600."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/rayglass_vault.py",
+          "lines": "22-49",
+          "claim": "Generation samples bead coordinates once from a seed, computes the fixed sensor signature and geometry, and returns public/truth state; it does not define a future task-state process."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/rayglass_vault.js",
+          "lines": "4-10",
+          "claim": "Rendering chooses the requested input mode and builds the cabinet from the supplied state; it does not start an autonomous loop."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/rayglass_vault.js",
+          "lines": "35-48",
+          "claim": "Cells and ports are created from fixed geometry and only full-mode elements receive direct event handlers."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/rayglass_vault.js",
+          "lines": "60-80",
+          "claim": "A probe records the already supplied sensor response and a mark toggles a set entry; update only redraws the ledger, marks, and counts synchronously after an input."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/rayglass_vault.js",
+          "lines": "82-100",
+          "claim": "Simplified buttons call the same synchronous act function, and the only asynchronous operation is the user-triggered result fetch after SEAL HYPOTHESIS."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/rayglass_vault.css",
+          "lines": "1-3",
+          "claim": "The complete game stylesheet supplies static layout and visual rules; it contains no keyframes, timer, or animation rule."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/rayglass_vault.py",
+          "lines": "13-64",
+          "claim": "Ray tracing is a pure function of n, bead coordinates, and port, with a precomputed signature; no time or evolving state is consulted."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/rayglass_vault.py",
+          "lines": "75-139",
+          "claim": "Grading replays the submitted event list, validates the selected input surface, and compares static signatures; events have sequence/type/index but no timestamps or elapsed-time rule."
+        },
+        {
+          "path": "weird_captcha_gym/tools/incubator_solvers/rayglass_vault.py",
+          "lines": "70-110",
+          "claim": "The normal scripted solution repeatedly reads the visible ledger, updates a static candidate set, marks a hypothesis, and seals; it has no timing or wait-dependent action."
+        },
+        {
+          "path": "weird_captcha_gym/environments/rayglass_vault_env/tasks/rayglass_vault_seed_0001/verifier.py",
+          "lines": "17-30",
+          "claim": "The task verifier loads the exported result and invokes the independent static Rayglass grader."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/verifier_helpers.py",
+          "lines": "33-52",
+          "claim": "The shared verifier helper only copies and parses the exported result file, with no task progression."
+        }
+      ],
+      "uncertainties": []
+    },
+    {
+      "case_index": 414,
+      "public_environment_name": "Rayglass Vault",
+      "environment_id": "rayglass_vault_env",
+      "difficulty": 2,
+      "interaction_mode": "simplified",
+      "label": "no",
+      "controls_available": [
+        "4×4 static opaque cabinet with 2 required bead markers",
+        "Select one of 16 ports and press FIRE BEAM",
+        "Select a row and column and press MARK / ERASE for one of 16 cells",
+        "Click SEAL HYPOTHESIS after placing exactly 2 markers"
+      ],
+      "autonomous_processes": [
+        "No autonomous process: while the agent supplies no new action, the cabinet, hidden layout, marks, and probe ledger remain unchanged."
+      ],
+      "grouped_control_modes": [
+        "Probe: select PORT and press FIRE BEAM; input_surface is console_button.",
+        "Hypothesis edit: select ROW and COL and press MARK / ERASE; input_surface is console_button.",
+        "Seal submission: click SEAL HYPOTHESIS; administrative final submission, not a dynamic control opportunity."
+      ],
+      "delta_ms": null,
+      "window_ms": 0,
+      "clause_i": {
+        "holds": false,
+        "reason": "Across different hidden layouts, the same action history can lead to different visible probe ledgers and require different later hypothesis edits; an observation-free q cannot generally complete the deduction. A fixed initial probe order is possible, but successful edits must use visible observations. This is a static information dependency, not a temporal one."
+      },
+      "clause_ii": {
+        "holds": true,
+        "reason": "A current screenshot is sufficient for the static next decision: it shows the fixed cabinet, accumulated probe ledger, marks, and mode controls. With the configured zero-length observation window, a screenshot-only policy can use this state for deduction, but it does not observe any change across a delay."
+      },
+      "clause_iii": {
+        "holds": false,
+        "reason": "No legitimate control mode has an autonomously degrading opportunity. During any Delta > 0 with no new action, no timer, animation, physics tick, random transition, or task-state update runs, so no probe or mark/erase action becomes unavailable or strictly less effective. The only asynchronous fetch occurs after an explicit seal submission."
+      },
+      "common_visible_process": "No common autonomous visible process exists: the cabinet and hidden layout are fixed, while the ledger and marks change only synchronously in response to the agent's own input. The seal fetch follows an explicit submission and is administrative.",
+      "pre_run": {
+        "threshold": 0.5,
+        "at_least_half": null,
+        "rate": null,
+        "basis": "not_applicable",
+        "reason": "Not applicable because the mathematical test is already No: there is no autonomous outcome phase or expiring action opportunity whose pre-run rate could override the result.",
+        "seed_probe": null
+      },
+      "files_read_completely": [
+        "AGENTS.md",
+        "weird_captcha_gym/docs/controllability/real-time.md",
+        "weird_captcha_gym/environments/rayglass_vault_env/controls.json",
+        "weird_captcha_gym/environments/rayglass_vault_env/env.json",
+        "weird_captcha_gym/environments/rayglass_vault_env/tasks/rayglass_vault_seed_0001/task.json",
+        "weird_captcha_gym/environments/rayglass_vault_env/tasks/rayglass_vault_seed_0001/setup_task.sh",
+        "weird_captcha_gym/environments/rayglass_vault_env/tasks/rayglass_vault_seed_0001/export_result.sh",
+        "weird_captcha_gym/environments/rayglass_vault_env/tasks/rayglass_vault_seed_0001/verifier.py",
+        "weird_captcha_gym/shared_scripts/incubator_generators/rayglass_vault.py",
+        "weird_captcha_gym/shared_runtime/app/mechanics/rayglass_vault.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/rayglass_vault.css",
+        "weird_captcha_gym/shared_runtime/server/incubator_graders/rayglass_vault.py",
+        "weird_captcha_gym/shared_runtime/verifier_helpers.py",
+        "weird_captcha_gym/tools/incubator_solvers/rayglass_vault.py"
+      ],
+      "source_evidence": [
+        {
+          "path": "weird_captcha_gym/environments/rayglass_vault_env/controls.json",
+          "lines": "19-27",
+          "claim": "Difficulty 2 is the static 4×4 profile with 2 beads; the level changes grid size and bead count only."
+        },
+        {
+          "path": "weird_captcha_gym/environments/rayglass_vault_env/controls.json",
+          "lines": "56-60",
+          "claim": "The simplified interaction profile is PORT plus FIRE and ROW/COL plus MARK / ERASE."
+        },
+        {
+          "path": "weird_captcha_gym/environments/rayglass_vault_env/controls.json",
+          "lines": "66-70",
+          "claim": "The assigned profile sets observation_window_ms to 0, frames_per_observation to 1, and play_time_seconds to 600."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/rayglass_vault.py",
+          "lines": "22-49",
+          "claim": "Generation samples bead coordinates once from a seed, computes the fixed sensor signature and geometry, and returns public/truth state; it does not define a future task-state process."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/rayglass_vault.js",
+          "lines": "4-10",
+          "claim": "Rendering chooses the requested input mode and builds the cabinet from the supplied state; it does not start an autonomous loop."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/rayglass_vault.js",
+          "lines": "35-48",
+          "claim": "Cells and ports are created from fixed geometry and only full-mode elements receive direct event handlers."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/rayglass_vault.js",
+          "lines": "60-80",
+          "claim": "A probe records the already supplied sensor response and a mark toggles a set entry; update only redraws the ledger, marks, and counts synchronously after an input."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/rayglass_vault.js",
+          "lines": "82-100",
+          "claim": "Simplified buttons call the same synchronous act function, and the only asynchronous operation is the user-triggered result fetch after SEAL HYPOTHESIS."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/rayglass_vault.css",
+          "lines": "1-3",
+          "claim": "The complete game stylesheet supplies static layout and visual rules; it contains no keyframes, timer, or animation rule."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/rayglass_vault.py",
+          "lines": "13-64",
+          "claim": "Ray tracing is a pure function of n, bead coordinates, and port, with a precomputed signature; no time or evolving state is consulted."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/rayglass_vault.py",
+          "lines": "75-139",
+          "claim": "Grading replays the submitted event list, validates the selected input surface, and compares static signatures; events have sequence/type/index but no timestamps or elapsed-time rule."
+        },
+        {
+          "path": "weird_captcha_gym/tools/incubator_solvers/rayglass_vault.py",
+          "lines": "70-110",
+          "claim": "The normal scripted solution repeatedly reads the visible ledger, updates a static candidate set, marks a hypothesis, and seals; it has no timing or wait-dependent action."
+        },
+        {
+          "path": "weird_captcha_gym/environments/rayglass_vault_env/tasks/rayglass_vault_seed_0001/verifier.py",
+          "lines": "17-30",
+          "claim": "The task verifier loads the exported result and invokes the independent static Rayglass grader."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/verifier_helpers.py",
+          "lines": "33-52",
+          "claim": "The shared verifier helper only copies and parses the exported result file, with no task progression."
+        }
+      ],
+      "uncertainties": []
+    },
+    {
+      "case_index": 415,
+      "public_environment_name": "Rayglass Vault",
+      "environment_id": "rayglass_vault_env",
+      "difficulty": 3,
+      "interaction_mode": "full",
+      "label": "no",
+      "controls_available": [
+        "5×5 static opaque cabinet with 3 required bead markers",
+        "Click any of 20 numbered border ports to fire a probe",
+        "Click any of 25 interior cells to mark or erase a hypothesis",
+        "Click SEAL HYPOTHESIS after placing exactly 3 markers"
+      ],
+      "autonomous_processes": [
+        "No autonomous process: while the agent supplies no new action, the cabinet, hidden layout, marks, and probe ledger remain unchanged."
+      ],
+      "grouped_control_modes": [
+        "Probe: click a numbered border port; input_surface is cabinet_click.",
+        "Hypothesis edit: click an interior cell to toggle mark/erase; input_surface is cabinet_click.",
+        "Seal submission: click SEAL HYPOTHESIS; administrative final submission, not a dynamic control opportunity."
+      ],
+      "delta_ms": null,
+      "window_ms": 0,
+      "clause_i": {
+        "holds": false,
+        "reason": "Across different hidden layouts, the same action history can lead to different visible probe ledgers and require different later hypothesis edits; an observation-free q cannot generally complete the deduction. A fixed initial probe order is possible, but successful edits must use visible observations. This is a static information dependency, not a temporal one."
+      },
+      "clause_ii": {
+        "holds": true,
+        "reason": "A current screenshot is sufficient for the static next decision: it shows the fixed cabinet, accumulated probe ledger, marks, and mode controls. With the configured zero-length observation window, a screenshot-only policy can use this state for deduction, but it does not observe any change across a delay."
+      },
+      "clause_iii": {
+        "holds": false,
+        "reason": "No legitimate control mode has an autonomously degrading opportunity. During any Delta > 0 with no new action, no timer, animation, physics tick, random transition, or task-state update runs, so no probe or mark/erase action becomes unavailable or strictly less effective. The only asynchronous fetch occurs after an explicit seal submission."
+      },
+      "common_visible_process": "No common autonomous visible process exists: the cabinet and hidden layout are fixed, while the ledger and marks change only synchronously in response to the agent's own input. The seal fetch follows an explicit submission and is administrative.",
+      "pre_run": {
+        "threshold": 0.5,
+        "at_least_half": null,
+        "rate": null,
+        "basis": "not_applicable",
+        "reason": "Not applicable because the mathematical test is already No: there is no autonomous outcome phase or expiring action opportunity whose pre-run rate could override the result.",
+        "seed_probe": null
+      },
+      "files_read_completely": [
+        "AGENTS.md",
+        "weird_captcha_gym/docs/controllability/real-time.md",
+        "weird_captcha_gym/environments/rayglass_vault_env/controls.json",
+        "weird_captcha_gym/environments/rayglass_vault_env/env.json",
+        "weird_captcha_gym/environments/rayglass_vault_env/tasks/rayglass_vault_seed_0001/task.json",
+        "weird_captcha_gym/environments/rayglass_vault_env/tasks/rayglass_vault_seed_0001/setup_task.sh",
+        "weird_captcha_gym/environments/rayglass_vault_env/tasks/rayglass_vault_seed_0001/export_result.sh",
+        "weird_captcha_gym/environments/rayglass_vault_env/tasks/rayglass_vault_seed_0001/verifier.py",
+        "weird_captcha_gym/shared_scripts/incubator_generators/rayglass_vault.py",
+        "weird_captcha_gym/shared_runtime/app/mechanics/rayglass_vault.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/rayglass_vault.css",
+        "weird_captcha_gym/shared_runtime/server/incubator_graders/rayglass_vault.py",
+        "weird_captcha_gym/shared_runtime/verifier_helpers.py",
+        "weird_captcha_gym/tools/incubator_solvers/rayglass_vault.py"
+      ],
+      "source_evidence": [
+        {
+          "path": "weird_captcha_gym/environments/rayglass_vault_env/controls.json",
+          "lines": "28-36",
+          "claim": "Difficulty 3 is the static 5×5 profile with 3 beads; the level changes grid size and bead count only."
+        },
+        {
+          "path": "weird_captcha_gym/environments/rayglass_vault_env/controls.json",
+          "lines": "61-64",
+          "claim": "The full interaction profile is direct cabinet clicks for ports and cells."
+        },
+        {
+          "path": "weird_captcha_gym/environments/rayglass_vault_env/controls.json",
+          "lines": "66-70",
+          "claim": "The assigned profile sets observation_window_ms to 0, frames_per_observation to 1, and play_time_seconds to 600."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/rayglass_vault.py",
+          "lines": "22-49",
+          "claim": "Generation samples bead coordinates once from a seed, computes the fixed sensor signature and geometry, and returns public/truth state; it does not define a future task-state process."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/rayglass_vault.js",
+          "lines": "4-10",
+          "claim": "Rendering chooses the requested input mode and builds the cabinet from the supplied state; it does not start an autonomous loop."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/rayglass_vault.js",
+          "lines": "35-48",
+          "claim": "Cells and ports are created from fixed geometry and only full-mode elements receive direct event handlers."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/rayglass_vault.js",
+          "lines": "60-80",
+          "claim": "A probe records the already supplied sensor response and a mark toggles a set entry; update only redraws the ledger, marks, and counts synchronously after an input."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/rayglass_vault.js",
+          "lines": "82-100",
+          "claim": "Simplified buttons call the same synchronous act function, and the only asynchronous operation is the user-triggered result fetch after SEAL HYPOTHESIS."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/rayglass_vault.css",
+          "lines": "1-3",
+          "claim": "The complete game stylesheet supplies static layout and visual rules; it contains no keyframes, timer, or animation rule."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/rayglass_vault.py",
+          "lines": "13-64",
+          "claim": "Ray tracing is a pure function of n, bead coordinates, and port, with a precomputed signature; no time or evolving state is consulted."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/rayglass_vault.py",
+          "lines": "75-139",
+          "claim": "Grading replays the submitted event list, validates the selected input surface, and compares static signatures; events have sequence/type/index but no timestamps or elapsed-time rule."
+        },
+        {
+          "path": "weird_captcha_gym/tools/incubator_solvers/rayglass_vault.py",
+          "lines": "70-110",
+          "claim": "The normal scripted solution repeatedly reads the visible ledger, updates a static candidate set, marks a hypothesis, and seals; it has no timing or wait-dependent action."
+        },
+        {
+          "path": "weird_captcha_gym/environments/rayglass_vault_env/tasks/rayglass_vault_seed_0001/verifier.py",
+          "lines": "17-30",
+          "claim": "The task verifier loads the exported result and invokes the independent static Rayglass grader."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/verifier_helpers.py",
+          "lines": "33-52",
+          "claim": "The shared verifier helper only copies and parses the exported result file, with no task progression."
+        }
+      ],
+      "uncertainties": []
+    },
+    {
+      "case_index": 416,
+      "public_environment_name": "Rayglass Vault",
+      "environment_id": "rayglass_vault_env",
+      "difficulty": 3,
+      "interaction_mode": "simplified",
+      "label": "no",
+      "controls_available": [
+        "5×5 static opaque cabinet with 3 required bead markers",
+        "Select one of 20 ports and press FIRE BEAM",
+        "Select a row and column and press MARK / ERASE for one of 25 cells",
+        "Click SEAL HYPOTHESIS after placing exactly 3 markers"
+      ],
+      "autonomous_processes": [
+        "No autonomous process: while the agent supplies no new action, the cabinet, hidden layout, marks, and probe ledger remain unchanged."
+      ],
+      "grouped_control_modes": [
+        "Probe: select PORT and press FIRE BEAM; input_surface is console_button.",
+        "Hypothesis edit: select ROW and COL and press MARK / ERASE; input_surface is console_button.",
+        "Seal submission: click SEAL HYPOTHESIS; administrative final submission, not a dynamic control opportunity."
+      ],
+      "delta_ms": null,
+      "window_ms": 0,
+      "clause_i": {
+        "holds": false,
+        "reason": "Across different hidden layouts, the same action history can lead to different visible probe ledgers and require different later hypothesis edits; an observation-free q cannot generally complete the deduction. A fixed initial probe order is possible, but successful edits must use visible observations. This is a static information dependency, not a temporal one."
+      },
+      "clause_ii": {
+        "holds": true,
+        "reason": "A current screenshot is sufficient for the static next decision: it shows the fixed cabinet, accumulated probe ledger, marks, and mode controls. With the configured zero-length observation window, a screenshot-only policy can use this state for deduction, but it does not observe any change across a delay."
+      },
+      "clause_iii": {
+        "holds": false,
+        "reason": "No legitimate control mode has an autonomously degrading opportunity. During any Delta > 0 with no new action, no timer, animation, physics tick, random transition, or task-state update runs, so no probe or mark/erase action becomes unavailable or strictly less effective. The only asynchronous fetch occurs after an explicit seal submission."
+      },
+      "common_visible_process": "No common autonomous visible process exists: the cabinet and hidden layout are fixed, while the ledger and marks change only synchronously in response to the agent's own input. The seal fetch follows an explicit submission and is administrative.",
+      "pre_run": {
+        "threshold": 0.5,
+        "at_least_half": null,
+        "rate": null,
+        "basis": "not_applicable",
+        "reason": "Not applicable because the mathematical test is already No: there is no autonomous outcome phase or expiring action opportunity whose pre-run rate could override the result.",
+        "seed_probe": null
+      },
+      "files_read_completely": [
+        "AGENTS.md",
+        "weird_captcha_gym/docs/controllability/real-time.md",
+        "weird_captcha_gym/environments/rayglass_vault_env/controls.json",
+        "weird_captcha_gym/environments/rayglass_vault_env/env.json",
+        "weird_captcha_gym/environments/rayglass_vault_env/tasks/rayglass_vault_seed_0001/task.json",
+        "weird_captcha_gym/environments/rayglass_vault_env/tasks/rayglass_vault_seed_0001/setup_task.sh",
+        "weird_captcha_gym/environments/rayglass_vault_env/tasks/rayglass_vault_seed_0001/export_result.sh",
+        "weird_captcha_gym/environments/rayglass_vault_env/tasks/rayglass_vault_seed_0001/verifier.py",
+        "weird_captcha_gym/shared_scripts/incubator_generators/rayglass_vault.py",
+        "weird_captcha_gym/shared_runtime/app/mechanics/rayglass_vault.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/rayglass_vault.css",
+        "weird_captcha_gym/shared_runtime/server/incubator_graders/rayglass_vault.py",
+        "weird_captcha_gym/shared_runtime/verifier_helpers.py",
+        "weird_captcha_gym/tools/incubator_solvers/rayglass_vault.py"
+      ],
+      "source_evidence": [
+        {
+          "path": "weird_captcha_gym/environments/rayglass_vault_env/controls.json",
+          "lines": "28-36",
+          "claim": "Difficulty 3 is the static 5×5 profile with 3 beads; the level changes grid size and bead count only."
+        },
+        {
+          "path": "weird_captcha_gym/environments/rayglass_vault_env/controls.json",
+          "lines": "56-60",
+          "claim": "The simplified interaction profile is PORT plus FIRE and ROW/COL plus MARK / ERASE."
+        },
+        {
+          "path": "weird_captcha_gym/environments/rayglass_vault_env/controls.json",
+          "lines": "66-70",
+          "claim": "The assigned profile sets observation_window_ms to 0, frames_per_observation to 1, and play_time_seconds to 600."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/rayglass_vault.py",
+          "lines": "22-49",
+          "claim": "Generation samples bead coordinates once from a seed, computes the fixed sensor signature and geometry, and returns public/truth state; it does not define a future task-state process."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/rayglass_vault.js",
+          "lines": "4-10",
+          "claim": "Rendering chooses the requested input mode and builds the cabinet from the supplied state; it does not start an autonomous loop."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/rayglass_vault.js",
+          "lines": "35-48",
+          "claim": "Cells and ports are created from fixed geometry and only full-mode elements receive direct event handlers."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/rayglass_vault.js",
+          "lines": "60-80",
+          "claim": "A probe records the already supplied sensor response and a mark toggles a set entry; update only redraws the ledger, marks, and counts synchronously after an input."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/rayglass_vault.js",
+          "lines": "82-100",
+          "claim": "Simplified buttons call the same synchronous act function, and the only asynchronous operation is the user-triggered result fetch after SEAL HYPOTHESIS."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/rayglass_vault.css",
+          "lines": "1-3",
+          "claim": "The complete game stylesheet supplies static layout and visual rules; it contains no keyframes, timer, or animation rule."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/rayglass_vault.py",
+          "lines": "13-64",
+          "claim": "Ray tracing is a pure function of n, bead coordinates, and port, with a precomputed signature; no time or evolving state is consulted."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/rayglass_vault.py",
+          "lines": "75-139",
+          "claim": "Grading replays the submitted event list, validates the selected input surface, and compares static signatures; events have sequence/type/index but no timestamps or elapsed-time rule."
+        },
+        {
+          "path": "weird_captcha_gym/tools/incubator_solvers/rayglass_vault.py",
+          "lines": "70-110",
+          "claim": "The normal scripted solution repeatedly reads the visible ledger, updates a static candidate set, marks a hypothesis, and seals; it has no timing or wait-dependent action."
+        },
+        {
+          "path": "weird_captcha_gym/environments/rayglass_vault_env/tasks/rayglass_vault_seed_0001/verifier.py",
+          "lines": "17-30",
+          "claim": "The task verifier loads the exported result and invokes the independent static Rayglass grader."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/verifier_helpers.py",
+          "lines": "33-52",
+          "claim": "The shared verifier helper only copies and parses the exported result file, with no task progression."
+        }
+      ],
+      "uncertainties": []
+    },
+    {
+      "case_index": 417,
+      "public_environment_name": "Rayglass Vault",
+      "environment_id": "rayglass_vault_env",
+      "difficulty": 4,
+      "interaction_mode": "full",
+      "label": "no",
+      "controls_available": [
+        "6×6 static opaque cabinet with 4 required bead markers",
+        "Click any of 24 numbered border ports to fire a probe",
+        "Click any of 36 interior cells to mark or erase a hypothesis",
+        "Click SEAL HYPOTHESIS after placing exactly 4 markers"
+      ],
+      "autonomous_processes": [
+        "No autonomous process: while the agent supplies no new action, the cabinet, hidden layout, marks, and probe ledger remain unchanged."
+      ],
+      "grouped_control_modes": [
+        "Probe: click a numbered border port; input_surface is cabinet_click.",
+        "Hypothesis edit: click an interior cell to toggle mark/erase; input_surface is cabinet_click.",
+        "Seal submission: click SEAL HYPOTHESIS; administrative final submission, not a dynamic control opportunity."
+      ],
+      "delta_ms": null,
+      "window_ms": 0,
+      "clause_i": {
+        "holds": false,
+        "reason": "Across different hidden layouts, the same action history can lead to different visible probe ledgers and require different later hypothesis edits; an observation-free q cannot generally complete the deduction. A fixed initial probe order is possible, but successful edits must use visible observations. This is a static information dependency, not a temporal one."
+      },
+      "clause_ii": {
+        "holds": true,
+        "reason": "A current screenshot is sufficient for the static next decision: it shows the fixed cabinet, accumulated probe ledger, marks, and mode controls. With the configured zero-length observation window, a screenshot-only policy can use this state for deduction, but it does not observe any change across a delay."
+      },
+      "clause_iii": {
+        "holds": false,
+        "reason": "No legitimate control mode has an autonomously degrading opportunity. During any Delta > 0 with no new action, no timer, animation, physics tick, random transition, or task-state update runs, so no probe or mark/erase action becomes unavailable or strictly less effective. The only asynchronous fetch occurs after an explicit seal submission."
+      },
+      "common_visible_process": "No common autonomous visible process exists: the cabinet and hidden layout are fixed, while the ledger and marks change only synchronously in response to the agent's own input. The seal fetch follows an explicit submission and is administrative.",
+      "pre_run": {
+        "threshold": 0.5,
+        "at_least_half": null,
+        "rate": null,
+        "basis": "not_applicable",
+        "reason": "Not applicable because the mathematical test is already No: there is no autonomous outcome phase or expiring action opportunity whose pre-run rate could override the result.",
+        "seed_probe": null
+      },
+      "files_read_completely": [
+        "AGENTS.md",
+        "weird_captcha_gym/docs/controllability/real-time.md",
+        "weird_captcha_gym/environments/rayglass_vault_env/controls.json",
+        "weird_captcha_gym/environments/rayglass_vault_env/env.json",
+        "weird_captcha_gym/environments/rayglass_vault_env/tasks/rayglass_vault_seed_0001/task.json",
+        "weird_captcha_gym/environments/rayglass_vault_env/tasks/rayglass_vault_seed_0001/setup_task.sh",
+        "weird_captcha_gym/environments/rayglass_vault_env/tasks/rayglass_vault_seed_0001/export_result.sh",
+        "weird_captcha_gym/environments/rayglass_vault_env/tasks/rayglass_vault_seed_0001/verifier.py",
+        "weird_captcha_gym/shared_scripts/incubator_generators/rayglass_vault.py",
+        "weird_captcha_gym/shared_runtime/app/mechanics/rayglass_vault.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/rayglass_vault.css",
+        "weird_captcha_gym/shared_runtime/server/incubator_graders/rayglass_vault.py",
+        "weird_captcha_gym/shared_runtime/verifier_helpers.py",
+        "weird_captcha_gym/tools/incubator_solvers/rayglass_vault.py"
+      ],
+      "source_evidence": [
+        {
+          "path": "weird_captcha_gym/environments/rayglass_vault_env/controls.json",
+          "lines": "37-45",
+          "claim": "Difficulty 4 is the static 6×6 profile with 4 beads; the level changes grid size and bead count only."
+        },
+        {
+          "path": "weird_captcha_gym/environments/rayglass_vault_env/controls.json",
+          "lines": "61-64",
+          "claim": "The full interaction profile is direct cabinet clicks for ports and cells."
+        },
+        {
+          "path": "weird_captcha_gym/environments/rayglass_vault_env/controls.json",
+          "lines": "66-70",
+          "claim": "The assigned profile sets observation_window_ms to 0, frames_per_observation to 1, and play_time_seconds to 600."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/rayglass_vault.py",
+          "lines": "22-49",
+          "claim": "Generation samples bead coordinates once from a seed, computes the fixed sensor signature and geometry, and returns public/truth state; it does not define a future task-state process."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/rayglass_vault.js",
+          "lines": "4-10",
+          "claim": "Rendering chooses the requested input mode and builds the cabinet from the supplied state; it does not start an autonomous loop."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/rayglass_vault.js",
+          "lines": "35-48",
+          "claim": "Cells and ports are created from fixed geometry and only full-mode elements receive direct event handlers."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/rayglass_vault.js",
+          "lines": "60-80",
+          "claim": "A probe records the already supplied sensor response and a mark toggles a set entry; update only redraws the ledger, marks, and counts synchronously after an input."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/rayglass_vault.js",
+          "lines": "82-100",
+          "claim": "Simplified buttons call the same synchronous act function, and the only asynchronous operation is the user-triggered result fetch after SEAL HYPOTHESIS."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/rayglass_vault.css",
+          "lines": "1-3",
+          "claim": "The complete game stylesheet supplies static layout and visual rules; it contains no keyframes, timer, or animation rule."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/rayglass_vault.py",
+          "lines": "13-64",
+          "claim": "Ray tracing is a pure function of n, bead coordinates, and port, with a precomputed signature; no time or evolving state is consulted."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/rayglass_vault.py",
+          "lines": "75-139",
+          "claim": "Grading replays the submitted event list, validates the selected input surface, and compares static signatures; events have sequence/type/index but no timestamps or elapsed-time rule."
+        },
+        {
+          "path": "weird_captcha_gym/tools/incubator_solvers/rayglass_vault.py",
+          "lines": "70-110",
+          "claim": "The normal scripted solution repeatedly reads the visible ledger, updates a static candidate set, marks a hypothesis, and seals; it has no timing or wait-dependent action."
+        },
+        {
+          "path": "weird_captcha_gym/environments/rayglass_vault_env/tasks/rayglass_vault_seed_0001/verifier.py",
+          "lines": "17-30",
+          "claim": "The task verifier loads the exported result and invokes the independent static Rayglass grader."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/verifier_helpers.py",
+          "lines": "33-52",
+          "claim": "The shared verifier helper only copies and parses the exported result file, with no task progression."
+        }
+      ],
+      "uncertainties": []
+    },
+    {
+      "case_index": 418,
+      "public_environment_name": "Rayglass Vault",
+      "environment_id": "rayglass_vault_env",
+      "difficulty": 4,
+      "interaction_mode": "simplified",
+      "label": "no",
+      "controls_available": [
+        "6×6 static opaque cabinet with 4 required bead markers",
+        "Select one of 24 ports and press FIRE BEAM",
+        "Select a row and column and press MARK / ERASE for one of 36 cells",
+        "Click SEAL HYPOTHESIS after placing exactly 4 markers"
+      ],
+      "autonomous_processes": [
+        "No autonomous process: while the agent supplies no new action, the cabinet, hidden layout, marks, and probe ledger remain unchanged."
+      ],
+      "grouped_control_modes": [
+        "Probe: select PORT and press FIRE BEAM; input_surface is console_button.",
+        "Hypothesis edit: select ROW and COL and press MARK / ERASE; input_surface is console_button.",
+        "Seal submission: click SEAL HYPOTHESIS; administrative final submission, not a dynamic control opportunity."
+      ],
+      "delta_ms": null,
+      "window_ms": 0,
+      "clause_i": {
+        "holds": false,
+        "reason": "Across different hidden layouts, the same action history can lead to different visible probe ledgers and require different later hypothesis edits; an observation-free q cannot generally complete the deduction. A fixed initial probe order is possible, but successful edits must use visible observations. This is a static information dependency, not a temporal one."
+      },
+      "clause_ii": {
+        "holds": true,
+        "reason": "A current screenshot is sufficient for the static next decision: it shows the fixed cabinet, accumulated probe ledger, marks, and mode controls. With the configured zero-length observation window, a screenshot-only policy can use this state for deduction, but it does not observe any change across a delay."
+      },
+      "clause_iii": {
+        "holds": false,
+        "reason": "No legitimate control mode has an autonomously degrading opportunity. During any Delta > 0 with no new action, no timer, animation, physics tick, random transition, or task-state update runs, so no probe or mark/erase action becomes unavailable or strictly less effective. The only asynchronous fetch occurs after an explicit seal submission."
+      },
+      "common_visible_process": "No common autonomous visible process exists: the cabinet and hidden layout are fixed, while the ledger and marks change only synchronously in response to the agent's own input. The seal fetch follows an explicit submission and is administrative.",
+      "pre_run": {
+        "threshold": 0.5,
+        "at_least_half": null,
+        "rate": null,
+        "basis": "not_applicable",
+        "reason": "Not applicable because the mathematical test is already No: there is no autonomous outcome phase or expiring action opportunity whose pre-run rate could override the result.",
+        "seed_probe": null
+      },
+      "files_read_completely": [
+        "AGENTS.md",
+        "weird_captcha_gym/docs/controllability/real-time.md",
+        "weird_captcha_gym/environments/rayglass_vault_env/controls.json",
+        "weird_captcha_gym/environments/rayglass_vault_env/env.json",
+        "weird_captcha_gym/environments/rayglass_vault_env/tasks/rayglass_vault_seed_0001/task.json",
+        "weird_captcha_gym/environments/rayglass_vault_env/tasks/rayglass_vault_seed_0001/setup_task.sh",
+        "weird_captcha_gym/environments/rayglass_vault_env/tasks/rayglass_vault_seed_0001/export_result.sh",
+        "weird_captcha_gym/environments/rayglass_vault_env/tasks/rayglass_vault_seed_0001/verifier.py",
+        "weird_captcha_gym/shared_scripts/incubator_generators/rayglass_vault.py",
+        "weird_captcha_gym/shared_runtime/app/mechanics/rayglass_vault.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/rayglass_vault.css",
+        "weird_captcha_gym/shared_runtime/server/incubator_graders/rayglass_vault.py",
+        "weird_captcha_gym/shared_runtime/verifier_helpers.py",
+        "weird_captcha_gym/tools/incubator_solvers/rayglass_vault.py"
+      ],
+      "source_evidence": [
+        {
+          "path": "weird_captcha_gym/environments/rayglass_vault_env/controls.json",
+          "lines": "37-45",
+          "claim": "Difficulty 4 is the static 6×6 profile with 4 beads; the level changes grid size and bead count only."
+        },
+        {
+          "path": "weird_captcha_gym/environments/rayglass_vault_env/controls.json",
+          "lines": "56-60",
+          "claim": "The simplified interaction profile is PORT plus FIRE and ROW/COL plus MARK / ERASE."
+        },
+        {
+          "path": "weird_captcha_gym/environments/rayglass_vault_env/controls.json",
+          "lines": "66-70",
+          "claim": "The assigned profile sets observation_window_ms to 0, frames_per_observation to 1, and play_time_seconds to 600."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/rayglass_vault.py",
+          "lines": "22-49",
+          "claim": "Generation samples bead coordinates once from a seed, computes the fixed sensor signature and geometry, and returns public/truth state; it does not define a future task-state process."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/rayglass_vault.js",
+          "lines": "4-10",
+          "claim": "Rendering chooses the requested input mode and builds the cabinet from the supplied state; it does not start an autonomous loop."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/rayglass_vault.js",
+          "lines": "35-48",
+          "claim": "Cells and ports are created from fixed geometry and only full-mode elements receive direct event handlers."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/rayglass_vault.js",
+          "lines": "60-80",
+          "claim": "A probe records the already supplied sensor response and a mark toggles a set entry; update only redraws the ledger, marks, and counts synchronously after an input."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/rayglass_vault.js",
+          "lines": "82-100",
+          "claim": "Simplified buttons call the same synchronous act function, and the only asynchronous operation is the user-triggered result fetch after SEAL HYPOTHESIS."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/rayglass_vault.css",
+          "lines": "1-3",
+          "claim": "The complete game stylesheet supplies static layout and visual rules; it contains no keyframes, timer, or animation rule."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/rayglass_vault.py",
+          "lines": "13-64",
+          "claim": "Ray tracing is a pure function of n, bead coordinates, and port, with a precomputed signature; no time or evolving state is consulted."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/rayglass_vault.py",
+          "lines": "75-139",
+          "claim": "Grading replays the submitted event list, validates the selected input surface, and compares static signatures; events have sequence/type/index but no timestamps or elapsed-time rule."
+        },
+        {
+          "path": "weird_captcha_gym/tools/incubator_solvers/rayglass_vault.py",
+          "lines": "70-110",
+          "claim": "The normal scripted solution repeatedly reads the visible ledger, updates a static candidate set, marks a hypothesis, and seals; it has no timing or wait-dependent action."
+        },
+        {
+          "path": "weird_captcha_gym/environments/rayglass_vault_env/tasks/rayglass_vault_seed_0001/verifier.py",
+          "lines": "17-30",
+          "claim": "The task verifier loads the exported result and invokes the independent static Rayglass grader."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/verifier_helpers.py",
+          "lines": "33-52",
+          "claim": "The shared verifier helper only copies and parses the exported result file, with no task progression."
+        }
+      ],
+      "uncertainties": []
+    },
+    {
+      "case_index": 419,
+      "public_environment_name": "Rayglass Vault",
+      "environment_id": "rayglass_vault_env",
+      "difficulty": 5,
+      "interaction_mode": "full",
+      "label": "no",
+      "controls_available": [
+        "7×7 static opaque cabinet with 5 required bead markers",
+        "Click any of 28 numbered border ports to fire a probe",
+        "Click any of 49 interior cells to mark or erase a hypothesis",
+        "Click SEAL HYPOTHESIS after placing exactly 5 markers"
+      ],
+      "autonomous_processes": [
+        "No autonomous process: while the agent supplies no new action, the cabinet, hidden layout, marks, and probe ledger remain unchanged."
+      ],
+      "grouped_control_modes": [
+        "Probe: click a numbered border port; input_surface is cabinet_click.",
+        "Hypothesis edit: click an interior cell to toggle mark/erase; input_surface is cabinet_click.",
+        "Seal submission: click SEAL HYPOTHESIS; administrative final submission, not a dynamic control opportunity."
+      ],
+      "delta_ms": null,
+      "window_ms": 0,
+      "clause_i": {
+        "holds": false,
+        "reason": "Across different hidden layouts, the same action history can lead to different visible probe ledgers and require different later hypothesis edits; an observation-free q cannot generally complete the deduction. A fixed initial probe order is possible, but successful edits must use visible observations. This is a static information dependency, not a temporal one."
+      },
+      "clause_ii": {
+        "holds": true,
+        "reason": "A current screenshot is sufficient for the static next decision: it shows the fixed cabinet, accumulated probe ledger, marks, and mode controls. With the configured zero-length observation window, a screenshot-only policy can use this state for deduction, but it does not observe any change across a delay."
+      },
+      "clause_iii": {
+        "holds": false,
+        "reason": "No legitimate control mode has an autonomously degrading opportunity. During any Delta > 0 with no new action, no timer, animation, physics tick, random transition, or task-state update runs, so no probe or mark/erase action becomes unavailable or strictly less effective. The only asynchronous fetch occurs after an explicit seal submission."
+      },
+      "common_visible_process": "No common autonomous visible process exists: the cabinet and hidden layout are fixed, while the ledger and marks change only synchronously in response to the agent's own input. The seal fetch follows an explicit submission and is administrative.",
+      "pre_run": {
+        "threshold": 0.5,
+        "at_least_half": null,
+        "rate": null,
+        "basis": "not_applicable",
+        "reason": "Not applicable because the mathematical test is already No: there is no autonomous outcome phase or expiring action opportunity whose pre-run rate could override the result.",
+        "seed_probe": null
+      },
+      "files_read_completely": [
+        "AGENTS.md",
+        "weird_captcha_gym/docs/controllability/real-time.md",
+        "weird_captcha_gym/environments/rayglass_vault_env/controls.json",
+        "weird_captcha_gym/environments/rayglass_vault_env/env.json",
+        "weird_captcha_gym/environments/rayglass_vault_env/tasks/rayglass_vault_seed_0001/task.json",
+        "weird_captcha_gym/environments/rayglass_vault_env/tasks/rayglass_vault_seed_0001/setup_task.sh",
+        "weird_captcha_gym/environments/rayglass_vault_env/tasks/rayglass_vault_seed_0001/export_result.sh",
+        "weird_captcha_gym/environments/rayglass_vault_env/tasks/rayglass_vault_seed_0001/verifier.py",
+        "weird_captcha_gym/shared_scripts/incubator_generators/rayglass_vault.py",
+        "weird_captcha_gym/shared_runtime/app/mechanics/rayglass_vault.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/rayglass_vault.css",
+        "weird_captcha_gym/shared_runtime/server/incubator_graders/rayglass_vault.py",
+        "weird_captcha_gym/shared_runtime/verifier_helpers.py",
+        "weird_captcha_gym/tools/incubator_solvers/rayglass_vault.py"
+      ],
+      "source_evidence": [
+        {
+          "path": "weird_captcha_gym/environments/rayglass_vault_env/controls.json",
+          "lines": "46-54",
+          "claim": "Difficulty 5 is the static 7×7 profile with 5 beads; the level changes grid size and bead count only."
+        },
+        {
+          "path": "weird_captcha_gym/environments/rayglass_vault_env/controls.json",
+          "lines": "61-64",
+          "claim": "The full interaction profile is direct cabinet clicks for ports and cells."
+        },
+        {
+          "path": "weird_captcha_gym/environments/rayglass_vault_env/controls.json",
+          "lines": "66-70",
+          "claim": "The assigned profile sets observation_window_ms to 0, frames_per_observation to 1, and play_time_seconds to 600."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/rayglass_vault.py",
+          "lines": "22-49",
+          "claim": "Generation samples bead coordinates once from a seed, computes the fixed sensor signature and geometry, and returns public/truth state; it does not define a future task-state process."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/rayglass_vault.js",
+          "lines": "4-10",
+          "claim": "Rendering chooses the requested input mode and builds the cabinet from the supplied state; it does not start an autonomous loop."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/rayglass_vault.js",
+          "lines": "35-48",
+          "claim": "Cells and ports are created from fixed geometry and only full-mode elements receive direct event handlers."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/rayglass_vault.js",
+          "lines": "60-80",
+          "claim": "A probe records the already supplied sensor response and a mark toggles a set entry; update only redraws the ledger, marks, and counts synchronously after an input."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/rayglass_vault.js",
+          "lines": "82-100",
+          "claim": "Simplified buttons call the same synchronous act function, and the only asynchronous operation is the user-triggered result fetch after SEAL HYPOTHESIS."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/rayglass_vault.css",
+          "lines": "1-3",
+          "claim": "The complete game stylesheet supplies static layout and visual rules; it contains no keyframes, timer, or animation rule."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/rayglass_vault.py",
+          "lines": "13-64",
+          "claim": "Ray tracing is a pure function of n, bead coordinates, and port, with a precomputed signature; no time or evolving state is consulted."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/rayglass_vault.py",
+          "lines": "75-139",
+          "claim": "Grading replays the submitted event list, validates the selected input surface, and compares static signatures; events have sequence/type/index but no timestamps or elapsed-time rule."
+        },
+        {
+          "path": "weird_captcha_gym/tools/incubator_solvers/rayglass_vault.py",
+          "lines": "70-110",
+          "claim": "The normal scripted solution repeatedly reads the visible ledger, updates a static candidate set, marks a hypothesis, and seals; it has no timing or wait-dependent action."
+        },
+        {
+          "path": "weird_captcha_gym/environments/rayglass_vault_env/tasks/rayglass_vault_seed_0001/verifier.py",
+          "lines": "17-30",
+          "claim": "The task verifier loads the exported result and invokes the independent static Rayglass grader."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/verifier_helpers.py",
+          "lines": "33-52",
+          "claim": "The shared verifier helper only copies and parses the exported result file, with no task progression."
+        }
+      ],
+      "uncertainties": []
+    },
+    {
+      "case_index": 420,
+      "public_environment_name": "Rayglass Vault",
+      "environment_id": "rayglass_vault_env",
+      "difficulty": 5,
+      "interaction_mode": "simplified",
+      "label": "no",
+      "controls_available": [
+        "7×7 static opaque cabinet with 5 required bead markers",
+        "Select one of 28 ports and press FIRE BEAM",
+        "Select a row and column and press MARK / ERASE for one of 49 cells",
+        "Click SEAL HYPOTHESIS after placing exactly 5 markers"
+      ],
+      "autonomous_processes": [
+        "No autonomous process: while the agent supplies no new action, the cabinet, hidden layout, marks, and probe ledger remain unchanged."
+      ],
+      "grouped_control_modes": [
+        "Probe: select PORT and press FIRE BEAM; input_surface is console_button.",
+        "Hypothesis edit: select ROW and COL and press MARK / ERASE; input_surface is console_button.",
+        "Seal submission: click SEAL HYPOTHESIS; administrative final submission, not a dynamic control opportunity."
+      ],
+      "delta_ms": null,
+      "window_ms": 0,
+      "clause_i": {
+        "holds": false,
+        "reason": "Across different hidden layouts, the same action history can lead to different visible probe ledgers and require different later hypothesis edits; an observation-free q cannot generally complete the deduction. A fixed initial probe order is possible, but successful edits must use visible observations. This is a static information dependency, not a temporal one."
+      },
+      "clause_ii": {
+        "holds": true,
+        "reason": "A current screenshot is sufficient for the static next decision: it shows the fixed cabinet, accumulated probe ledger, marks, and mode controls. With the configured zero-length observation window, a screenshot-only policy can use this state for deduction, but it does not observe any change across a delay."
+      },
+      "clause_iii": {
+        "holds": false,
+        "reason": "No legitimate control mode has an autonomously degrading opportunity. During any Delta > 0 with no new action, no timer, animation, physics tick, random transition, or task-state update runs, so no probe or mark/erase action becomes unavailable or strictly less effective. The only asynchronous fetch occurs after an explicit seal submission."
+      },
+      "common_visible_process": "No common autonomous visible process exists: the cabinet and hidden layout are fixed, while the ledger and marks change only synchronously in response to the agent's own input. The seal fetch follows an explicit submission and is administrative.",
+      "pre_run": {
+        "threshold": 0.5,
+        "at_least_half": null,
+        "rate": null,
+        "basis": "not_applicable",
+        "reason": "Not applicable because the mathematical test is already No: there is no autonomous outcome phase or expiring action opportunity whose pre-run rate could override the result.",
+        "seed_probe": null
+      },
+      "files_read_completely": [
+        "AGENTS.md",
+        "weird_captcha_gym/docs/controllability/real-time.md",
+        "weird_captcha_gym/environments/rayglass_vault_env/controls.json",
+        "weird_captcha_gym/environments/rayglass_vault_env/env.json",
+        "weird_captcha_gym/environments/rayglass_vault_env/tasks/rayglass_vault_seed_0001/task.json",
+        "weird_captcha_gym/environments/rayglass_vault_env/tasks/rayglass_vault_seed_0001/setup_task.sh",
+        "weird_captcha_gym/environments/rayglass_vault_env/tasks/rayglass_vault_seed_0001/export_result.sh",
+        "weird_captcha_gym/environments/rayglass_vault_env/tasks/rayglass_vault_seed_0001/verifier.py",
+        "weird_captcha_gym/shared_scripts/incubator_generators/rayglass_vault.py",
+        "weird_captcha_gym/shared_runtime/app/mechanics/rayglass_vault.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/rayglass_vault.css",
+        "weird_captcha_gym/shared_runtime/server/incubator_graders/rayglass_vault.py",
+        "weird_captcha_gym/shared_runtime/verifier_helpers.py",
+        "weird_captcha_gym/tools/incubator_solvers/rayglass_vault.py"
+      ],
+      "source_evidence": [
+        {
+          "path": "weird_captcha_gym/environments/rayglass_vault_env/controls.json",
+          "lines": "46-54",
+          "claim": "Difficulty 5 is the static 7×7 profile with 5 beads; the level changes grid size and bead count only."
+        },
+        {
+          "path": "weird_captcha_gym/environments/rayglass_vault_env/controls.json",
+          "lines": "56-60",
+          "claim": "The simplified interaction profile is PORT plus FIRE and ROW/COL plus MARK / ERASE."
+        },
+        {
+          "path": "weird_captcha_gym/environments/rayglass_vault_env/controls.json",
+          "lines": "66-70",
+          "claim": "The assigned profile sets observation_window_ms to 0, frames_per_observation to 1, and play_time_seconds to 600."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/rayglass_vault.py",
+          "lines": "22-49",
+          "claim": "Generation samples bead coordinates once from a seed, computes the fixed sensor signature and geometry, and returns public/truth state; it does not define a future task-state process."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/rayglass_vault.js",
+          "lines": "4-10",
+          "claim": "Rendering chooses the requested input mode and builds the cabinet from the supplied state; it does not start an autonomous loop."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/rayglass_vault.js",
+          "lines": "35-48",
+          "claim": "Cells and ports are created from fixed geometry and only full-mode elements receive direct event handlers."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/rayglass_vault.js",
+          "lines": "60-80",
+          "claim": "A probe records the already supplied sensor response and a mark toggles a set entry; update only redraws the ledger, marks, and counts synchronously after an input."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/rayglass_vault.js",
+          "lines": "82-100",
+          "claim": "Simplified buttons call the same synchronous act function, and the only asynchronous operation is the user-triggered result fetch after SEAL HYPOTHESIS."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/rayglass_vault.css",
+          "lines": "1-3",
+          "claim": "The complete game stylesheet supplies static layout and visual rules; it contains no keyframes, timer, or animation rule."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/rayglass_vault.py",
+          "lines": "13-64",
+          "claim": "Ray tracing is a pure function of n, bead coordinates, and port, with a precomputed signature; no time or evolving state is consulted."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/rayglass_vault.py",
+          "lines": "75-139",
+          "claim": "Grading replays the submitted event list, validates the selected input surface, and compares static signatures; events have sequence/type/index but no timestamps or elapsed-time rule."
+        },
+        {
+          "path": "weird_captcha_gym/tools/incubator_solvers/rayglass_vault.py",
+          "lines": "70-110",
+          "claim": "The normal scripted solution repeatedly reads the visible ledger, updates a static candidate set, marks a hypothesis, and seals; it has no timing or wait-dependent action."
+        },
+        {
+          "path": "weird_captcha_gym/environments/rayglass_vault_env/tasks/rayglass_vault_seed_0001/verifier.py",
+          "lines": "17-30",
+          "claim": "The task verifier loads the exported result and invokes the independent static Rayglass grader."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/verifier_helpers.py",
+          "lines": "33-52",
+          "claim": "The shared verifier helper only copies and parses the exported result file, with no task progression."
+        }
+      ],
+      "uncertainties": []
+    }
+  ]
+}
+

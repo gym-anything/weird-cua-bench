@@ -1,0 +1,1267 @@
+{
+  "case_index": 19,
+  "environment_id": "crater_walker_env",
+  "public_environment_name": "Crater Walker",
+  "configuration_reports": [
+    {
+      "case_index": 181,
+      "public_environment_name": "Crater Walker",
+      "environment_id": "crater_walker_env",
+      "difficulty": 1,
+      "interaction_mode": "full",
+      "label": "no",
+      "controls_available": [
+        "Difficulty 1 is configured with 2 stages, 0 decoy pads, contact tolerance 0.48, elevation step 0.32, lateral variation 0.06, terrain detail 3, posture limit 0.48.",
+        "Each of the four leg cards exposes signed YAW, LIFT, and EXTEND range sliders with integer values from -5 through 5.",
+        "Select leg cards with their visible name buttons; drag the canvas or use the orbit/pitch view buttons to inspect the 3D scene. These camera and selection controls do not change the success state.",
+        "Click SETTLE SUPPORT to evaluate contacts and, after a valid placement, advance one body-transit step. CERTIFY ESCAPE is administrative final submission and NEW ATTEMPT resets an attempt.",
+        "The mechanic-specific browser implementation registers mouse/pointer controls; it has no keyboard gameplay handler."
+      ],
+      "autonomous_processes": [
+        "None: no timer, animation loop, physics callback, or other task-state process runs while idle; body, contacts, stage, actuators, and motion remain unchanged between explicit actions."
+      ],
+      "grouped_control_modes": [
+        "Direct actuator adjustment via slider_drag for any leg's signed YAW, LIFT, or EXTEND channel.",
+        "Support/state transition via settle_button (SETTLE SUPPORT)."
+      ],
+      "delta_ms": null,
+      "window_ms": null,
+      "clause_i": {
+        "holds": false,
+        "reason": "Fails for every candidate grouped mode: during a no-action delay the generated world and task state remain unchanged, so a constant no-op (or an ineffective view/selection action) delivered at t+Delta preserves the possibility of observing later and completing the same task. That observation-free action is optimal for every history, so no state-dependent delayed choice is forced."
+      },
+      "clause_ii": {
+        "holds": true,
+        "reason": "Holds only in the formal non-real-time sense: a constant no-op is a bounded-window policy, and when an actuator action is eventually needed the current screenshot exposes the 3D pads, transfer banner, contacts, and channel values. No recent frame sequence is needed to predict a delayed state, and this clause is not joined to any autonomous process."
+      },
+      "clause_iii": {
+        "holds": false,
+        "reason": "Fails because no autonomous task-state change occurs for any 0 < tau < Delta after preparation. The JavaScript mutates body, stage, motion, contacts, and the action tick only inside explicit event handlers; the four-pose body path is precomputed data and advances only on SETTLE SUPPORT. Therefore no outcome-affecting action becomes unavailable or strictly less effective during a no-action delay."
+      },
+      "common_visible_process": "None. The generated terrain and walker state are static while idle; re-rendering and CSS transitions are presentation-only, and the precomputed body path advances only after an explicit SETTLE SUPPORT action.",
+      "pre_run": {
+        "threshold": 0.5,
+        "at_least_half": null,
+        "rate": null,
+        "basis": "not_applicable",
+        "reason": "The mathematical definition already fails clause (iii), so the pre-run threshold cannot change this No label; no pre-run percentage is inferred.",
+        "seed_probe": null
+      },
+      "files_read_completely": [
+        "AGENTS.md",
+        "weird_captcha_gym/docs/controllability/real-time.md",
+        "weird_captcha_gym/environments/crater_walker_env/controls.json",
+        "weird_captcha_gym/environments/crater_walker_env/env.json",
+        "weird_captcha_gym/environments/crater_walker_env/scripts/install_puzzle_runtime.sh",
+        "weird_captcha_gym/environments/crater_walker_env/scripts/setup_puzzle_runtime.sh",
+        "weird_captcha_gym/environments/crater_walker_env/tasks/crater_walker_seed_0001/export_result.sh",
+        "weird_captcha_gym/environments/crater_walker_env/tasks/crater_walker_seed_0001/setup_task.sh",
+        "weird_captcha_gym/environments/crater_walker_env/tasks/crater_walker_seed_0001/task.json",
+        "weird_captcha_gym/environments/crater_walker_env/tasks/crater_walker_seed_0001/verifier.py",
+        "weird_captcha_gym/shared_runtime/app/mechanics/crater_walker.css",
+        "weird_captcha_gym/shared_runtime/app/mechanics/crater_walker.js",
+        "weird_captcha_gym/shared_runtime/server/incubator_graders/crater_walker.py",
+        "weird_captcha_gym/shared_runtime/verifier_helpers.py",
+        "weird_captcha_gym/shared_scripts/incubator_generators/crater_walker.py",
+        "weird_captcha_gym/tools/incubator_solvers/crater_walker.py"
+      ],
+      "source_evidence": [
+        {
+          "path": "weird_captcha_gym/environments/crater_walker_env/controls.json",
+          "lines": "10-22",
+          "claim": "The supplied difficulty 1 profile has the exact active geometry and posture parameters recorded in controls_available."
+        },
+        {
+          "path": "weird_captcha_gym/environments/crater_walker_env/controls.json",
+          "lines": "4-7",
+          "claim": "The controls metadata declares the baseline real_time field as live; this declarative value is not used as behavior evidence because the mechanic implementation determines the audit."
+        },
+        {
+          "path": "weird_captcha_gym/environments/crater_walker_env/controls.json",
+          "lines": "81-94",
+          "claim": "The full interface is implemented with its mode-specific actuator surface, and the shared observation settings are 240 ms with 4 frames."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/crater_walker.py",
+          "lines": "139-149",
+          "claim": "The body transit is generated as a finite four-step kinematic path before play; generation does not install a runtime clock or autonomous process."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/crater_walker.py",
+          "lines": "251-266",
+          "claim": "The generated world stores terrain, pads, stages, a nominal tick_ms, and body_motion_steps as static data; camera motion is separate from world state."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/crater_walker.js",
+          "lines": "238-314",
+          "claim": "Actuator changes are explicit control events, and settle() is the only handler that increments the action tick, evaluates contacts, starts motion, or advances a body-path step."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/crater_walker.js",
+          "lines": "352-374",
+          "claim": "Rendering binds slider_drag to actuator changes, binds SETTLE to settle(), and binds orbit/pitch/canvas gestures to view redraws; no timer or animation callback is present."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/crater_walker.css",
+          "lines": "50-75",
+          "claim": "The only transition/filter styling affects card borders, backgrounds, and the passed canvas presentation; it does not mutate task state while idle."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/crater_walker.py",
+          "lines": "154-219",
+          "claim": "The independent replay applies all state-changing progression synchronously in apply_settle(), including body transit, support, posture, and completion."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/crater_walker.py",
+          "lines": "256-313",
+          "claim": "The grader replays only control and settle transcript events; its tick check is a monotonic action field, not elapsed-time progression."
+        },
+        {
+          "path": "weird_captcha_gym/tools/incubator_solvers/crater_walker.py",
+          "lines": "38-64",
+          "claim": "The wiring solver advances the task through explicit actuator operations and repeated SETTLE clicks, including the body-transit settles."
+        },
+        {
+          "path": "weird_captcha_gym/environments/crater_walker_env/tasks/crater_walker_seed_0001/verifier.py",
+          "lines": "22-35",
+          "claim": "The verifier only loads the exported result and invokes the independent grader; it adds no autonomous game-state evolution."
+        }
+      ],
+      "uncertainties": []
+    },
+    {
+      "case_index": 182,
+      "public_environment_name": "Crater Walker",
+      "environment_id": "crater_walker_env",
+      "difficulty": 1,
+      "interaction_mode": "simplified",
+      "label": "no",
+      "controls_available": [
+        "Difficulty 1 is configured with 2 stages, 0 decoy pads, contact tolerance 0.48, elevation step 0.32, lateral variation 0.06, terrain detail 3, posture limit 0.48.",
+        "Each of the four leg cards exposes visible minus/plus nudge buttons for signed YAW, LIFT, and EXTEND values; each click changes one integer step within -5 through 5.",
+        "Select leg cards with their visible name buttons; drag the canvas or use the orbit/pitch view buttons to inspect the 3D scene. These camera and selection controls do not change the success state.",
+        "Click SETTLE SUPPORT to evaluate contacts and, after a valid placement, advance one body-transit step. CERTIFY ESCAPE is administrative final submission and NEW ATTEMPT resets an attempt.",
+        "The mechanic-specific browser implementation registers mouse/pointer controls; it has no keyboard gameplay handler."
+      ],
+      "autonomous_processes": [
+        "None: no timer, animation loop, physics callback, or other task-state process runs while idle; body, contacts, stage, actuators, and motion remain unchanged between explicit actions."
+      ],
+      "grouped_control_modes": [
+        "One-step actuator adjustment via nudge_button for any leg's signed YAW, LIFT, or EXTEND channel.",
+        "Support/state transition via settle_button (SETTLE SUPPORT)."
+      ],
+      "delta_ms": null,
+      "window_ms": null,
+      "clause_i": {
+        "holds": false,
+        "reason": "Fails for every candidate grouped mode: during a no-action delay the generated world and task state remain unchanged, so a constant no-op (or an ineffective view/selection action) delivered at t+Delta preserves the possibility of observing later and completing the same task. That observation-free action is optimal for every history, so no state-dependent delayed choice is forced."
+      },
+      "clause_ii": {
+        "holds": true,
+        "reason": "Holds only in the formal non-real-time sense: a constant no-op is a bounded-window policy, and when an actuator action is eventually needed the current screenshot exposes the 3D pads, transfer banner, contacts, and channel values. No recent frame sequence is needed to predict a delayed state, and this clause is not joined to any autonomous process."
+      },
+      "clause_iii": {
+        "holds": false,
+        "reason": "Fails because no autonomous task-state change occurs for any 0 < tau < Delta after preparation. The JavaScript mutates body, stage, motion, contacts, and the action tick only inside explicit event handlers; the four-pose body path is precomputed data and advances only on SETTLE SUPPORT. Therefore no outcome-affecting action becomes unavailable or strictly less effective during a no-action delay."
+      },
+      "common_visible_process": "None. The generated terrain and walker state are static while idle; re-rendering and CSS transitions are presentation-only, and the precomputed body path advances only after an explicit SETTLE SUPPORT action.",
+      "pre_run": {
+        "threshold": 0.5,
+        "at_least_half": null,
+        "rate": null,
+        "basis": "not_applicable",
+        "reason": "The mathematical definition already fails clause (iii), so the pre-run threshold cannot change this No label; no pre-run percentage is inferred.",
+        "seed_probe": null
+      },
+      "files_read_completely": [
+        "AGENTS.md",
+        "weird_captcha_gym/docs/controllability/real-time.md",
+        "weird_captcha_gym/environments/crater_walker_env/controls.json",
+        "weird_captcha_gym/environments/crater_walker_env/env.json",
+        "weird_captcha_gym/environments/crater_walker_env/scripts/install_puzzle_runtime.sh",
+        "weird_captcha_gym/environments/crater_walker_env/scripts/setup_puzzle_runtime.sh",
+        "weird_captcha_gym/environments/crater_walker_env/tasks/crater_walker_seed_0001/export_result.sh",
+        "weird_captcha_gym/environments/crater_walker_env/tasks/crater_walker_seed_0001/setup_task.sh",
+        "weird_captcha_gym/environments/crater_walker_env/tasks/crater_walker_seed_0001/task.json",
+        "weird_captcha_gym/environments/crater_walker_env/tasks/crater_walker_seed_0001/verifier.py",
+        "weird_captcha_gym/shared_runtime/app/mechanics/crater_walker.css",
+        "weird_captcha_gym/shared_runtime/app/mechanics/crater_walker.js",
+        "weird_captcha_gym/shared_runtime/server/incubator_graders/crater_walker.py",
+        "weird_captcha_gym/shared_runtime/verifier_helpers.py",
+        "weird_captcha_gym/shared_scripts/incubator_generators/crater_walker.py",
+        "weird_captcha_gym/tools/incubator_solvers/crater_walker.py"
+      ],
+      "source_evidence": [
+        {
+          "path": "weird_captcha_gym/environments/crater_walker_env/controls.json",
+          "lines": "10-22",
+          "claim": "The supplied difficulty 1 profile has the exact active geometry and posture parameters recorded in controls_available."
+        },
+        {
+          "path": "weird_captcha_gym/environments/crater_walker_env/controls.json",
+          "lines": "4-7",
+          "claim": "The controls metadata declares the baseline real_time field as live; this declarative value is not used as behavior evidence because the mechanic implementation determines the audit."
+        },
+        {
+          "path": "weird_captcha_gym/environments/crater_walker_env/controls.json",
+          "lines": "81-94",
+          "claim": "The simplified interface is implemented with its mode-specific actuator surface, and the shared observation settings are 240 ms with 4 frames."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/crater_walker.py",
+          "lines": "139-149",
+          "claim": "The body transit is generated as a finite four-step kinematic path before play; generation does not install a runtime clock or autonomous process."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/crater_walker.py",
+          "lines": "251-266",
+          "claim": "The generated world stores terrain, pads, stages, a nominal tick_ms, and body_motion_steps as static data; camera motion is separate from world state."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/crater_walker.js",
+          "lines": "238-314",
+          "claim": "Actuator changes are explicit control events, and settle() is the only handler that increments the action tick, evaluates contacts, starts motion, or advances a body-path step."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/crater_walker.js",
+          "lines": "352-374",
+          "claim": "Rendering binds nudge_button to actuator changes, binds SETTLE to settle(), and binds orbit/pitch/canvas gestures to view redraws; no timer or animation callback is present."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/crater_walker.css",
+          "lines": "50-75",
+          "claim": "The only transition/filter styling affects card borders, backgrounds, and the passed canvas presentation; it does not mutate task state while idle."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/crater_walker.py",
+          "lines": "154-219",
+          "claim": "The independent replay applies all state-changing progression synchronously in apply_settle(), including body transit, support, posture, and completion."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/crater_walker.py",
+          "lines": "256-313",
+          "claim": "The grader replays only control and settle transcript events; its tick check is a monotonic action field, not elapsed-time progression."
+        },
+        {
+          "path": "weird_captcha_gym/tools/incubator_solvers/crater_walker.py",
+          "lines": "38-64",
+          "claim": "The wiring solver advances the task through explicit actuator operations and repeated SETTLE clicks, including the body-transit settles."
+        },
+        {
+          "path": "weird_captcha_gym/environments/crater_walker_env/tasks/crater_walker_seed_0001/verifier.py",
+          "lines": "22-35",
+          "claim": "The verifier only loads the exported result and invokes the independent grader; it adds no autonomous game-state evolution."
+        }
+      ],
+      "uncertainties": []
+    },
+    {
+      "case_index": 183,
+      "public_environment_name": "Crater Walker",
+      "environment_id": "crater_walker_env",
+      "difficulty": 2,
+      "interaction_mode": "full",
+      "label": "no",
+      "controls_available": [
+        "Difficulty 2 is configured with 3 stages, 1 decoy pad, contact tolerance 0.42, elevation step 0.40, lateral variation 0.11, terrain detail 4, posture limit 0.44.",
+        "Each of the four leg cards exposes signed YAW, LIFT, and EXTEND range sliders with integer values from -5 through 5.",
+        "Select leg cards with their visible name buttons; drag the canvas or use the orbit/pitch view buttons to inspect the 3D scene. These camera and selection controls do not change the success state.",
+        "Click SETTLE SUPPORT to evaluate contacts and, after a valid placement, advance one body-transit step. CERTIFY ESCAPE is administrative final submission and NEW ATTEMPT resets an attempt.",
+        "The mechanic-specific browser implementation registers mouse/pointer controls; it has no keyboard gameplay handler."
+      ],
+      "autonomous_processes": [
+        "None: no timer, animation loop, physics callback, or other task-state process runs while idle; body, contacts, stage, actuators, and motion remain unchanged between explicit actions."
+      ],
+      "grouped_control_modes": [
+        "Direct actuator adjustment via slider_drag for any leg's signed YAW, LIFT, or EXTEND channel.",
+        "Support/state transition via settle_button (SETTLE SUPPORT)."
+      ],
+      "delta_ms": null,
+      "window_ms": null,
+      "clause_i": {
+        "holds": false,
+        "reason": "Fails for every candidate grouped mode: during a no-action delay the generated world and task state remain unchanged, so a constant no-op (or an ineffective view/selection action) delivered at t+Delta preserves the possibility of observing later and completing the same task. That observation-free action is optimal for every history, so no state-dependent delayed choice is forced."
+      },
+      "clause_ii": {
+        "holds": true,
+        "reason": "Holds only in the formal non-real-time sense: a constant no-op is a bounded-window policy, and when an actuator action is eventually needed the current screenshot exposes the 3D pads, transfer banner, contacts, and channel values. No recent frame sequence is needed to predict a delayed state, and this clause is not joined to any autonomous process."
+      },
+      "clause_iii": {
+        "holds": false,
+        "reason": "Fails because no autonomous task-state change occurs for any 0 < tau < Delta after preparation. The JavaScript mutates body, stage, motion, contacts, and the action tick only inside explicit event handlers; the four-pose body path is precomputed data and advances only on SETTLE SUPPORT. Therefore no outcome-affecting action becomes unavailable or strictly less effective during a no-action delay."
+      },
+      "common_visible_process": "None. The generated terrain and walker state are static while idle; re-rendering and CSS transitions are presentation-only, and the precomputed body path advances only after an explicit SETTLE SUPPORT action.",
+      "pre_run": {
+        "threshold": 0.5,
+        "at_least_half": null,
+        "rate": null,
+        "basis": "not_applicable",
+        "reason": "The mathematical definition already fails clause (iii), so the pre-run threshold cannot change this No label; no pre-run percentage is inferred.",
+        "seed_probe": null
+      },
+      "files_read_completely": [
+        "AGENTS.md",
+        "weird_captcha_gym/docs/controllability/real-time.md",
+        "weird_captcha_gym/environments/crater_walker_env/controls.json",
+        "weird_captcha_gym/environments/crater_walker_env/env.json",
+        "weird_captcha_gym/environments/crater_walker_env/scripts/install_puzzle_runtime.sh",
+        "weird_captcha_gym/environments/crater_walker_env/scripts/setup_puzzle_runtime.sh",
+        "weird_captcha_gym/environments/crater_walker_env/tasks/crater_walker_seed_0001/export_result.sh",
+        "weird_captcha_gym/environments/crater_walker_env/tasks/crater_walker_seed_0001/setup_task.sh",
+        "weird_captcha_gym/environments/crater_walker_env/tasks/crater_walker_seed_0001/task.json",
+        "weird_captcha_gym/environments/crater_walker_env/tasks/crater_walker_seed_0001/verifier.py",
+        "weird_captcha_gym/shared_runtime/app/mechanics/crater_walker.css",
+        "weird_captcha_gym/shared_runtime/app/mechanics/crater_walker.js",
+        "weird_captcha_gym/shared_runtime/server/incubator_graders/crater_walker.py",
+        "weird_captcha_gym/shared_runtime/verifier_helpers.py",
+        "weird_captcha_gym/shared_scripts/incubator_generators/crater_walker.py",
+        "weird_captcha_gym/tools/incubator_solvers/crater_walker.py"
+      ],
+      "source_evidence": [
+        {
+          "path": "weird_captcha_gym/environments/crater_walker_env/controls.json",
+          "lines": "24-36",
+          "claim": "The supplied difficulty 2 profile has the exact active geometry and posture parameters recorded in controls_available."
+        },
+        {
+          "path": "weird_captcha_gym/environments/crater_walker_env/controls.json",
+          "lines": "4-7",
+          "claim": "The controls metadata declares the baseline real_time field as live; this declarative value is not used as behavior evidence because the mechanic implementation determines the audit."
+        },
+        {
+          "path": "weird_captcha_gym/environments/crater_walker_env/controls.json",
+          "lines": "81-94",
+          "claim": "The full interface is implemented with its mode-specific actuator surface, and the shared observation settings are 240 ms with 4 frames."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/crater_walker.py",
+          "lines": "139-149",
+          "claim": "The body transit is generated as a finite four-step kinematic path before play; generation does not install a runtime clock or autonomous process."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/crater_walker.py",
+          "lines": "251-266",
+          "claim": "The generated world stores terrain, pads, stages, a nominal tick_ms, and body_motion_steps as static data; camera motion is separate from world state."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/crater_walker.js",
+          "lines": "238-314",
+          "claim": "Actuator changes are explicit control events, and settle() is the only handler that increments the action tick, evaluates contacts, starts motion, or advances a body-path step."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/crater_walker.js",
+          "lines": "352-374",
+          "claim": "Rendering binds slider_drag to actuator changes, binds SETTLE to settle(), and binds orbit/pitch/canvas gestures to view redraws; no timer or animation callback is present."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/crater_walker.css",
+          "lines": "50-75",
+          "claim": "The only transition/filter styling affects card borders, backgrounds, and the passed canvas presentation; it does not mutate task state while idle."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/crater_walker.py",
+          "lines": "154-219",
+          "claim": "The independent replay applies all state-changing progression synchronously in apply_settle(), including body transit, support, posture, and completion."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/crater_walker.py",
+          "lines": "256-313",
+          "claim": "The grader replays only control and settle transcript events; its tick check is a monotonic action field, not elapsed-time progression."
+        },
+        {
+          "path": "weird_captcha_gym/tools/incubator_solvers/crater_walker.py",
+          "lines": "38-64",
+          "claim": "The wiring solver advances the task through explicit actuator operations and repeated SETTLE clicks, including the body-transit settles."
+        },
+        {
+          "path": "weird_captcha_gym/environments/crater_walker_env/tasks/crater_walker_seed_0001/verifier.py",
+          "lines": "22-35",
+          "claim": "The verifier only loads the exported result and invokes the independent grader; it adds no autonomous game-state evolution."
+        }
+      ],
+      "uncertainties": []
+    },
+    {
+      "case_index": 184,
+      "public_environment_name": "Crater Walker",
+      "environment_id": "crater_walker_env",
+      "difficulty": 2,
+      "interaction_mode": "simplified",
+      "label": "no",
+      "controls_available": [
+        "Difficulty 2 is configured with 3 stages, 1 decoy pad, contact tolerance 0.42, elevation step 0.40, lateral variation 0.11, terrain detail 4, posture limit 0.44.",
+        "Each of the four leg cards exposes visible minus/plus nudge buttons for signed YAW, LIFT, and EXTEND values; each click changes one integer step within -5 through 5.",
+        "Select leg cards with their visible name buttons; drag the canvas or use the orbit/pitch view buttons to inspect the 3D scene. These camera and selection controls do not change the success state.",
+        "Click SETTLE SUPPORT to evaluate contacts and, after a valid placement, advance one body-transit step. CERTIFY ESCAPE is administrative final submission and NEW ATTEMPT resets an attempt.",
+        "The mechanic-specific browser implementation registers mouse/pointer controls; it has no keyboard gameplay handler."
+      ],
+      "autonomous_processes": [
+        "None: no timer, animation loop, physics callback, or other task-state process runs while idle; body, contacts, stage, actuators, and motion remain unchanged between explicit actions."
+      ],
+      "grouped_control_modes": [
+        "One-step actuator adjustment via nudge_button for any leg's signed YAW, LIFT, or EXTEND channel.",
+        "Support/state transition via settle_button (SETTLE SUPPORT)."
+      ],
+      "delta_ms": null,
+      "window_ms": null,
+      "clause_i": {
+        "holds": false,
+        "reason": "Fails for every candidate grouped mode: during a no-action delay the generated world and task state remain unchanged, so a constant no-op (or an ineffective view/selection action) delivered at t+Delta preserves the possibility of observing later and completing the same task. That observation-free action is optimal for every history, so no state-dependent delayed choice is forced."
+      },
+      "clause_ii": {
+        "holds": true,
+        "reason": "Holds only in the formal non-real-time sense: a constant no-op is a bounded-window policy, and when an actuator action is eventually needed the current screenshot exposes the 3D pads, transfer banner, contacts, and channel values. No recent frame sequence is needed to predict a delayed state, and this clause is not joined to any autonomous process."
+      },
+      "clause_iii": {
+        "holds": false,
+        "reason": "Fails because no autonomous task-state change occurs for any 0 < tau < Delta after preparation. The JavaScript mutates body, stage, motion, contacts, and the action tick only inside explicit event handlers; the four-pose body path is precomputed data and advances only on SETTLE SUPPORT. Therefore no outcome-affecting action becomes unavailable or strictly less effective during a no-action delay."
+      },
+      "common_visible_process": "None. The generated terrain and walker state are static while idle; re-rendering and CSS transitions are presentation-only, and the precomputed body path advances only after an explicit SETTLE SUPPORT action.",
+      "pre_run": {
+        "threshold": 0.5,
+        "at_least_half": null,
+        "rate": null,
+        "basis": "not_applicable",
+        "reason": "The mathematical definition already fails clause (iii), so the pre-run threshold cannot change this No label; no pre-run percentage is inferred.",
+        "seed_probe": null
+      },
+      "files_read_completely": [
+        "AGENTS.md",
+        "weird_captcha_gym/docs/controllability/real-time.md",
+        "weird_captcha_gym/environments/crater_walker_env/controls.json",
+        "weird_captcha_gym/environments/crater_walker_env/env.json",
+        "weird_captcha_gym/environments/crater_walker_env/scripts/install_puzzle_runtime.sh",
+        "weird_captcha_gym/environments/crater_walker_env/scripts/setup_puzzle_runtime.sh",
+        "weird_captcha_gym/environments/crater_walker_env/tasks/crater_walker_seed_0001/export_result.sh",
+        "weird_captcha_gym/environments/crater_walker_env/tasks/crater_walker_seed_0001/setup_task.sh",
+        "weird_captcha_gym/environments/crater_walker_env/tasks/crater_walker_seed_0001/task.json",
+        "weird_captcha_gym/environments/crater_walker_env/tasks/crater_walker_seed_0001/verifier.py",
+        "weird_captcha_gym/shared_runtime/app/mechanics/crater_walker.css",
+        "weird_captcha_gym/shared_runtime/app/mechanics/crater_walker.js",
+        "weird_captcha_gym/shared_runtime/server/incubator_graders/crater_walker.py",
+        "weird_captcha_gym/shared_runtime/verifier_helpers.py",
+        "weird_captcha_gym/shared_scripts/incubator_generators/crater_walker.py",
+        "weird_captcha_gym/tools/incubator_solvers/crater_walker.py"
+      ],
+      "source_evidence": [
+        {
+          "path": "weird_captcha_gym/environments/crater_walker_env/controls.json",
+          "lines": "24-36",
+          "claim": "The supplied difficulty 2 profile has the exact active geometry and posture parameters recorded in controls_available."
+        },
+        {
+          "path": "weird_captcha_gym/environments/crater_walker_env/controls.json",
+          "lines": "4-7",
+          "claim": "The controls metadata declares the baseline real_time field as live; this declarative value is not used as behavior evidence because the mechanic implementation determines the audit."
+        },
+        {
+          "path": "weird_captcha_gym/environments/crater_walker_env/controls.json",
+          "lines": "81-94",
+          "claim": "The simplified interface is implemented with its mode-specific actuator surface, and the shared observation settings are 240 ms with 4 frames."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/crater_walker.py",
+          "lines": "139-149",
+          "claim": "The body transit is generated as a finite four-step kinematic path before play; generation does not install a runtime clock or autonomous process."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/crater_walker.py",
+          "lines": "251-266",
+          "claim": "The generated world stores terrain, pads, stages, a nominal tick_ms, and body_motion_steps as static data; camera motion is separate from world state."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/crater_walker.js",
+          "lines": "238-314",
+          "claim": "Actuator changes are explicit control events, and settle() is the only handler that increments the action tick, evaluates contacts, starts motion, or advances a body-path step."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/crater_walker.js",
+          "lines": "352-374",
+          "claim": "Rendering binds nudge_button to actuator changes, binds SETTLE to settle(), and binds orbit/pitch/canvas gestures to view redraws; no timer or animation callback is present."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/crater_walker.css",
+          "lines": "50-75",
+          "claim": "The only transition/filter styling affects card borders, backgrounds, and the passed canvas presentation; it does not mutate task state while idle."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/crater_walker.py",
+          "lines": "154-219",
+          "claim": "The independent replay applies all state-changing progression synchronously in apply_settle(), including body transit, support, posture, and completion."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/crater_walker.py",
+          "lines": "256-313",
+          "claim": "The grader replays only control and settle transcript events; its tick check is a monotonic action field, not elapsed-time progression."
+        },
+        {
+          "path": "weird_captcha_gym/tools/incubator_solvers/crater_walker.py",
+          "lines": "38-64",
+          "claim": "The wiring solver advances the task through explicit actuator operations and repeated SETTLE clicks, including the body-transit settles."
+        },
+        {
+          "path": "weird_captcha_gym/environments/crater_walker_env/tasks/crater_walker_seed_0001/verifier.py",
+          "lines": "22-35",
+          "claim": "The verifier only loads the exported result and invokes the independent grader; it adds no autonomous game-state evolution."
+        }
+      ],
+      "uncertainties": []
+    },
+    {
+      "case_index": 185,
+      "public_environment_name": "Crater Walker",
+      "environment_id": "crater_walker_env",
+      "difficulty": 3,
+      "interaction_mode": "full",
+      "label": "no",
+      "controls_available": [
+        "Difficulty 3 is configured with 4 stages, 2 decoy pads, contact tolerance 0.36, elevation step 0.48, lateral variation 0.17, terrain detail 5, posture limit 0.40.",
+        "Each of the four leg cards exposes signed YAW, LIFT, and EXTEND range sliders with integer values from -5 through 5.",
+        "Select leg cards with their visible name buttons; drag the canvas or use the orbit/pitch view buttons to inspect the 3D scene. These camera and selection controls do not change the success state.",
+        "Click SETTLE SUPPORT to evaluate contacts and, after a valid placement, advance one body-transit step. CERTIFY ESCAPE is administrative final submission and NEW ATTEMPT resets an attempt.",
+        "The mechanic-specific browser implementation registers mouse/pointer controls; it has no keyboard gameplay handler."
+      ],
+      "autonomous_processes": [
+        "None: no timer, animation loop, physics callback, or other task-state process runs while idle; body, contacts, stage, actuators, and motion remain unchanged between explicit actions."
+      ],
+      "grouped_control_modes": [
+        "Direct actuator adjustment via slider_drag for any leg's signed YAW, LIFT, or EXTEND channel.",
+        "Support/state transition via settle_button (SETTLE SUPPORT)."
+      ],
+      "delta_ms": null,
+      "window_ms": null,
+      "clause_i": {
+        "holds": false,
+        "reason": "Fails for every candidate grouped mode: during a no-action delay the generated world and task state remain unchanged, so a constant no-op (or an ineffective view/selection action) delivered at t+Delta preserves the possibility of observing later and completing the same task. That observation-free action is optimal for every history, so no state-dependent delayed choice is forced."
+      },
+      "clause_ii": {
+        "holds": true,
+        "reason": "Holds only in the formal non-real-time sense: a constant no-op is a bounded-window policy, and when an actuator action is eventually needed the current screenshot exposes the 3D pads, transfer banner, contacts, and channel values. No recent frame sequence is needed to predict a delayed state, and this clause is not joined to any autonomous process."
+      },
+      "clause_iii": {
+        "holds": false,
+        "reason": "Fails because no autonomous task-state change occurs for any 0 < tau < Delta after preparation. The JavaScript mutates body, stage, motion, contacts, and the action tick only inside explicit event handlers; the four-pose body path is precomputed data and advances only on SETTLE SUPPORT. Therefore no outcome-affecting action becomes unavailable or strictly less effective during a no-action delay."
+      },
+      "common_visible_process": "None. The generated terrain and walker state are static while idle; re-rendering and CSS transitions are presentation-only, and the precomputed body path advances only after an explicit SETTLE SUPPORT action.",
+      "pre_run": {
+        "threshold": 0.5,
+        "at_least_half": null,
+        "rate": null,
+        "basis": "not_applicable",
+        "reason": "The mathematical definition already fails clause (iii), so the pre-run threshold cannot change this No label; no pre-run percentage is inferred.",
+        "seed_probe": null
+      },
+      "files_read_completely": [
+        "AGENTS.md",
+        "weird_captcha_gym/docs/controllability/real-time.md",
+        "weird_captcha_gym/environments/crater_walker_env/controls.json",
+        "weird_captcha_gym/environments/crater_walker_env/env.json",
+        "weird_captcha_gym/environments/crater_walker_env/scripts/install_puzzle_runtime.sh",
+        "weird_captcha_gym/environments/crater_walker_env/scripts/setup_puzzle_runtime.sh",
+        "weird_captcha_gym/environments/crater_walker_env/tasks/crater_walker_seed_0001/export_result.sh",
+        "weird_captcha_gym/environments/crater_walker_env/tasks/crater_walker_seed_0001/setup_task.sh",
+        "weird_captcha_gym/environments/crater_walker_env/tasks/crater_walker_seed_0001/task.json",
+        "weird_captcha_gym/environments/crater_walker_env/tasks/crater_walker_seed_0001/verifier.py",
+        "weird_captcha_gym/shared_runtime/app/mechanics/crater_walker.css",
+        "weird_captcha_gym/shared_runtime/app/mechanics/crater_walker.js",
+        "weird_captcha_gym/shared_runtime/server/incubator_graders/crater_walker.py",
+        "weird_captcha_gym/shared_runtime/verifier_helpers.py",
+        "weird_captcha_gym/shared_scripts/incubator_generators/crater_walker.py",
+        "weird_captcha_gym/tools/incubator_solvers/crater_walker.py"
+      ],
+      "source_evidence": [
+        {
+          "path": "weird_captcha_gym/environments/crater_walker_env/controls.json",
+          "lines": "38-50",
+          "claim": "The supplied difficulty 3 profile has the exact active geometry and posture parameters recorded in controls_available."
+        },
+        {
+          "path": "weird_captcha_gym/environments/crater_walker_env/controls.json",
+          "lines": "4-7",
+          "claim": "The controls metadata declares the baseline real_time field as live; this declarative value is not used as behavior evidence because the mechanic implementation determines the audit."
+        },
+        {
+          "path": "weird_captcha_gym/environments/crater_walker_env/controls.json",
+          "lines": "81-94",
+          "claim": "The full interface is implemented with its mode-specific actuator surface, and the shared observation settings are 240 ms with 4 frames."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/crater_walker.py",
+          "lines": "139-149",
+          "claim": "The body transit is generated as a finite four-step kinematic path before play; generation does not install a runtime clock or autonomous process."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/crater_walker.py",
+          "lines": "251-266",
+          "claim": "The generated world stores terrain, pads, stages, a nominal tick_ms, and body_motion_steps as static data; camera motion is separate from world state."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/crater_walker.js",
+          "lines": "238-314",
+          "claim": "Actuator changes are explicit control events, and settle() is the only handler that increments the action tick, evaluates contacts, starts motion, or advances a body-path step."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/crater_walker.js",
+          "lines": "352-374",
+          "claim": "Rendering binds slider_drag to actuator changes, binds SETTLE to settle(), and binds orbit/pitch/canvas gestures to view redraws; no timer or animation callback is present."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/crater_walker.css",
+          "lines": "50-75",
+          "claim": "The only transition/filter styling affects card borders, backgrounds, and the passed canvas presentation; it does not mutate task state while idle."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/crater_walker.py",
+          "lines": "154-219",
+          "claim": "The independent replay applies all state-changing progression synchronously in apply_settle(), including body transit, support, posture, and completion."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/crater_walker.py",
+          "lines": "256-313",
+          "claim": "The grader replays only control and settle transcript events; its tick check is a monotonic action field, not elapsed-time progression."
+        },
+        {
+          "path": "weird_captcha_gym/tools/incubator_solvers/crater_walker.py",
+          "lines": "38-64",
+          "claim": "The wiring solver advances the task through explicit actuator operations and repeated SETTLE clicks, including the body-transit settles."
+        },
+        {
+          "path": "weird_captcha_gym/environments/crater_walker_env/tasks/crater_walker_seed_0001/verifier.py",
+          "lines": "22-35",
+          "claim": "The verifier only loads the exported result and invokes the independent grader; it adds no autonomous game-state evolution."
+        }
+      ],
+      "uncertainties": []
+    },
+    {
+      "case_index": 186,
+      "public_environment_name": "Crater Walker",
+      "environment_id": "crater_walker_env",
+      "difficulty": 3,
+      "interaction_mode": "simplified",
+      "label": "no",
+      "controls_available": [
+        "Difficulty 3 is configured with 4 stages, 2 decoy pads, contact tolerance 0.36, elevation step 0.48, lateral variation 0.17, terrain detail 5, posture limit 0.40.",
+        "Each of the four leg cards exposes visible minus/plus nudge buttons for signed YAW, LIFT, and EXTEND values; each click changes one integer step within -5 through 5.",
+        "Select leg cards with their visible name buttons; drag the canvas or use the orbit/pitch view buttons to inspect the 3D scene. These camera and selection controls do not change the success state.",
+        "Click SETTLE SUPPORT to evaluate contacts and, after a valid placement, advance one body-transit step. CERTIFY ESCAPE is administrative final submission and NEW ATTEMPT resets an attempt.",
+        "The mechanic-specific browser implementation registers mouse/pointer controls; it has no keyboard gameplay handler."
+      ],
+      "autonomous_processes": [
+        "None: no timer, animation loop, physics callback, or other task-state process runs while idle; body, contacts, stage, actuators, and motion remain unchanged between explicit actions."
+      ],
+      "grouped_control_modes": [
+        "One-step actuator adjustment via nudge_button for any leg's signed YAW, LIFT, or EXTEND channel.",
+        "Support/state transition via settle_button (SETTLE SUPPORT)."
+      ],
+      "delta_ms": null,
+      "window_ms": null,
+      "clause_i": {
+        "holds": false,
+        "reason": "Fails for every candidate grouped mode: during a no-action delay the generated world and task state remain unchanged, so a constant no-op (or an ineffective view/selection action) delivered at t+Delta preserves the possibility of observing later and completing the same task. That observation-free action is optimal for every history, so no state-dependent delayed choice is forced."
+      },
+      "clause_ii": {
+        "holds": true,
+        "reason": "Holds only in the formal non-real-time sense: a constant no-op is a bounded-window policy, and when an actuator action is eventually needed the current screenshot exposes the 3D pads, transfer banner, contacts, and channel values. No recent frame sequence is needed to predict a delayed state, and this clause is not joined to any autonomous process."
+      },
+      "clause_iii": {
+        "holds": false,
+        "reason": "Fails because no autonomous task-state change occurs for any 0 < tau < Delta after preparation. The JavaScript mutates body, stage, motion, contacts, and the action tick only inside explicit event handlers; the four-pose body path is precomputed data and advances only on SETTLE SUPPORT. Therefore no outcome-affecting action becomes unavailable or strictly less effective during a no-action delay."
+      },
+      "common_visible_process": "None. The generated terrain and walker state are static while idle; re-rendering and CSS transitions are presentation-only, and the precomputed body path advances only after an explicit SETTLE SUPPORT action.",
+      "pre_run": {
+        "threshold": 0.5,
+        "at_least_half": null,
+        "rate": null,
+        "basis": "not_applicable",
+        "reason": "The mathematical definition already fails clause (iii), so the pre-run threshold cannot change this No label; no pre-run percentage is inferred.",
+        "seed_probe": null
+      },
+      "files_read_completely": [
+        "AGENTS.md",
+        "weird_captcha_gym/docs/controllability/real-time.md",
+        "weird_captcha_gym/environments/crater_walker_env/controls.json",
+        "weird_captcha_gym/environments/crater_walker_env/env.json",
+        "weird_captcha_gym/environments/crater_walker_env/scripts/install_puzzle_runtime.sh",
+        "weird_captcha_gym/environments/crater_walker_env/scripts/setup_puzzle_runtime.sh",
+        "weird_captcha_gym/environments/crater_walker_env/tasks/crater_walker_seed_0001/export_result.sh",
+        "weird_captcha_gym/environments/crater_walker_env/tasks/crater_walker_seed_0001/setup_task.sh",
+        "weird_captcha_gym/environments/crater_walker_env/tasks/crater_walker_seed_0001/task.json",
+        "weird_captcha_gym/environments/crater_walker_env/tasks/crater_walker_seed_0001/verifier.py",
+        "weird_captcha_gym/shared_runtime/app/mechanics/crater_walker.css",
+        "weird_captcha_gym/shared_runtime/app/mechanics/crater_walker.js",
+        "weird_captcha_gym/shared_runtime/server/incubator_graders/crater_walker.py",
+        "weird_captcha_gym/shared_runtime/verifier_helpers.py",
+        "weird_captcha_gym/shared_scripts/incubator_generators/crater_walker.py",
+        "weird_captcha_gym/tools/incubator_solvers/crater_walker.py"
+      ],
+      "source_evidence": [
+        {
+          "path": "weird_captcha_gym/environments/crater_walker_env/controls.json",
+          "lines": "38-50",
+          "claim": "The supplied difficulty 3 profile has the exact active geometry and posture parameters recorded in controls_available."
+        },
+        {
+          "path": "weird_captcha_gym/environments/crater_walker_env/controls.json",
+          "lines": "4-7",
+          "claim": "The controls metadata declares the baseline real_time field as live; this declarative value is not used as behavior evidence because the mechanic implementation determines the audit."
+        },
+        {
+          "path": "weird_captcha_gym/environments/crater_walker_env/controls.json",
+          "lines": "81-94",
+          "claim": "The simplified interface is implemented with its mode-specific actuator surface, and the shared observation settings are 240 ms with 4 frames."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/crater_walker.py",
+          "lines": "139-149",
+          "claim": "The body transit is generated as a finite four-step kinematic path before play; generation does not install a runtime clock or autonomous process."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/crater_walker.py",
+          "lines": "251-266",
+          "claim": "The generated world stores terrain, pads, stages, a nominal tick_ms, and body_motion_steps as static data; camera motion is separate from world state."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/crater_walker.js",
+          "lines": "238-314",
+          "claim": "Actuator changes are explicit control events, and settle() is the only handler that increments the action tick, evaluates contacts, starts motion, or advances a body-path step."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/crater_walker.js",
+          "lines": "352-374",
+          "claim": "Rendering binds nudge_button to actuator changes, binds SETTLE to settle(), and binds orbit/pitch/canvas gestures to view redraws; no timer or animation callback is present."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/crater_walker.css",
+          "lines": "50-75",
+          "claim": "The only transition/filter styling affects card borders, backgrounds, and the passed canvas presentation; it does not mutate task state while idle."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/crater_walker.py",
+          "lines": "154-219",
+          "claim": "The independent replay applies all state-changing progression synchronously in apply_settle(), including body transit, support, posture, and completion."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/crater_walker.py",
+          "lines": "256-313",
+          "claim": "The grader replays only control and settle transcript events; its tick check is a monotonic action field, not elapsed-time progression."
+        },
+        {
+          "path": "weird_captcha_gym/tools/incubator_solvers/crater_walker.py",
+          "lines": "38-64",
+          "claim": "The wiring solver advances the task through explicit actuator operations and repeated SETTLE clicks, including the body-transit settles."
+        },
+        {
+          "path": "weird_captcha_gym/environments/crater_walker_env/tasks/crater_walker_seed_0001/verifier.py",
+          "lines": "22-35",
+          "claim": "The verifier only loads the exported result and invokes the independent grader; it adds no autonomous game-state evolution."
+        }
+      ],
+      "uncertainties": []
+    },
+    {
+      "case_index": 187,
+      "public_environment_name": "Crater Walker",
+      "environment_id": "crater_walker_env",
+      "difficulty": 4,
+      "interaction_mode": "full",
+      "label": "no",
+      "controls_available": [
+        "Difficulty 4 is configured with 5 stages, 3 decoy pads, contact tolerance 0.30, elevation step 0.56, lateral variation 0.23, terrain detail 6, posture limit 0.36.",
+        "Each of the four leg cards exposes signed YAW, LIFT, and EXTEND range sliders with integer values from -5 through 5.",
+        "Select leg cards with their visible name buttons; drag the canvas or use the orbit/pitch view buttons to inspect the 3D scene. These camera and selection controls do not change the success state.",
+        "Click SETTLE SUPPORT to evaluate contacts and, after a valid placement, advance one body-transit step. CERTIFY ESCAPE is administrative final submission and NEW ATTEMPT resets an attempt.",
+        "The mechanic-specific browser implementation registers mouse/pointer controls; it has no keyboard gameplay handler."
+      ],
+      "autonomous_processes": [
+        "None: no timer, animation loop, physics callback, or other task-state process runs while idle; body, contacts, stage, actuators, and motion remain unchanged between explicit actions."
+      ],
+      "grouped_control_modes": [
+        "Direct actuator adjustment via slider_drag for any leg's signed YAW, LIFT, or EXTEND channel.",
+        "Support/state transition via settle_button (SETTLE SUPPORT)."
+      ],
+      "delta_ms": null,
+      "window_ms": null,
+      "clause_i": {
+        "holds": false,
+        "reason": "Fails for every candidate grouped mode: during a no-action delay the generated world and task state remain unchanged, so a constant no-op (or an ineffective view/selection action) delivered at t+Delta preserves the possibility of observing later and completing the same task. That observation-free action is optimal for every history, so no state-dependent delayed choice is forced."
+      },
+      "clause_ii": {
+        "holds": true,
+        "reason": "Holds only in the formal non-real-time sense: a constant no-op is a bounded-window policy, and when an actuator action is eventually needed the current screenshot exposes the 3D pads, transfer banner, contacts, and channel values. No recent frame sequence is needed to predict a delayed state, and this clause is not joined to any autonomous process."
+      },
+      "clause_iii": {
+        "holds": false,
+        "reason": "Fails because no autonomous task-state change occurs for any 0 < tau < Delta after preparation. The JavaScript mutates body, stage, motion, contacts, and the action tick only inside explicit event handlers; the four-pose body path is precomputed data and advances only on SETTLE SUPPORT. Therefore no outcome-affecting action becomes unavailable or strictly less effective during a no-action delay."
+      },
+      "common_visible_process": "None. The generated terrain and walker state are static while idle; re-rendering and CSS transitions are presentation-only, and the precomputed body path advances only after an explicit SETTLE SUPPORT action.",
+      "pre_run": {
+        "threshold": 0.5,
+        "at_least_half": null,
+        "rate": null,
+        "basis": "not_applicable",
+        "reason": "The mathematical definition already fails clause (iii), so the pre-run threshold cannot change this No label; no pre-run percentage is inferred.",
+        "seed_probe": null
+      },
+      "files_read_completely": [
+        "AGENTS.md",
+        "weird_captcha_gym/docs/controllability/real-time.md",
+        "weird_captcha_gym/environments/crater_walker_env/controls.json",
+        "weird_captcha_gym/environments/crater_walker_env/env.json",
+        "weird_captcha_gym/environments/crater_walker_env/scripts/install_puzzle_runtime.sh",
+        "weird_captcha_gym/environments/crater_walker_env/scripts/setup_puzzle_runtime.sh",
+        "weird_captcha_gym/environments/crater_walker_env/tasks/crater_walker_seed_0001/export_result.sh",
+        "weird_captcha_gym/environments/crater_walker_env/tasks/crater_walker_seed_0001/setup_task.sh",
+        "weird_captcha_gym/environments/crater_walker_env/tasks/crater_walker_seed_0001/task.json",
+        "weird_captcha_gym/environments/crater_walker_env/tasks/crater_walker_seed_0001/verifier.py",
+        "weird_captcha_gym/shared_runtime/app/mechanics/crater_walker.css",
+        "weird_captcha_gym/shared_runtime/app/mechanics/crater_walker.js",
+        "weird_captcha_gym/shared_runtime/server/incubator_graders/crater_walker.py",
+        "weird_captcha_gym/shared_runtime/verifier_helpers.py",
+        "weird_captcha_gym/shared_scripts/incubator_generators/crater_walker.py",
+        "weird_captcha_gym/tools/incubator_solvers/crater_walker.py"
+      ],
+      "source_evidence": [
+        {
+          "path": "weird_captcha_gym/environments/crater_walker_env/controls.json",
+          "lines": "52-64",
+          "claim": "The supplied difficulty 4 profile has the exact active geometry and posture parameters recorded in controls_available."
+        },
+        {
+          "path": "weird_captcha_gym/environments/crater_walker_env/controls.json",
+          "lines": "4-7",
+          "claim": "The controls metadata declares the baseline real_time field as live; this declarative value is not used as behavior evidence because the mechanic implementation determines the audit."
+        },
+        {
+          "path": "weird_captcha_gym/environments/crater_walker_env/controls.json",
+          "lines": "81-94",
+          "claim": "The full interface is implemented with its mode-specific actuator surface, and the shared observation settings are 240 ms with 4 frames."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/crater_walker.py",
+          "lines": "139-149",
+          "claim": "The body transit is generated as a finite four-step kinematic path before play; generation does not install a runtime clock or autonomous process."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/crater_walker.py",
+          "lines": "251-266",
+          "claim": "The generated world stores terrain, pads, stages, a nominal tick_ms, and body_motion_steps as static data; camera motion is separate from world state."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/crater_walker.js",
+          "lines": "238-314",
+          "claim": "Actuator changes are explicit control events, and settle() is the only handler that increments the action tick, evaluates contacts, starts motion, or advances a body-path step."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/crater_walker.js",
+          "lines": "352-374",
+          "claim": "Rendering binds slider_drag to actuator changes, binds SETTLE to settle(), and binds orbit/pitch/canvas gestures to view redraws; no timer or animation callback is present."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/crater_walker.css",
+          "lines": "50-75",
+          "claim": "The only transition/filter styling affects card borders, backgrounds, and the passed canvas presentation; it does not mutate task state while idle."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/crater_walker.py",
+          "lines": "154-219",
+          "claim": "The independent replay applies all state-changing progression synchronously in apply_settle(), including body transit, support, posture, and completion."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/crater_walker.py",
+          "lines": "256-313",
+          "claim": "The grader replays only control and settle transcript events; its tick check is a monotonic action field, not elapsed-time progression."
+        },
+        {
+          "path": "weird_captcha_gym/tools/incubator_solvers/crater_walker.py",
+          "lines": "38-64",
+          "claim": "The wiring solver advances the task through explicit actuator operations and repeated SETTLE clicks, including the body-transit settles."
+        },
+        {
+          "path": "weird_captcha_gym/environments/crater_walker_env/tasks/crater_walker_seed_0001/verifier.py",
+          "lines": "22-35",
+          "claim": "The verifier only loads the exported result and invokes the independent grader; it adds no autonomous game-state evolution."
+        }
+      ],
+      "uncertainties": []
+    },
+    {
+      "case_index": 188,
+      "public_environment_name": "Crater Walker",
+      "environment_id": "crater_walker_env",
+      "difficulty": 4,
+      "interaction_mode": "simplified",
+      "label": "no",
+      "controls_available": [
+        "Difficulty 4 is configured with 5 stages, 3 decoy pads, contact tolerance 0.30, elevation step 0.56, lateral variation 0.23, terrain detail 6, posture limit 0.36.",
+        "Each of the four leg cards exposes visible minus/plus nudge buttons for signed YAW, LIFT, and EXTEND values; each click changes one integer step within -5 through 5.",
+        "Select leg cards with their visible name buttons; drag the canvas or use the orbit/pitch view buttons to inspect the 3D scene. These camera and selection controls do not change the success state.",
+        "Click SETTLE SUPPORT to evaluate contacts and, after a valid placement, advance one body-transit step. CERTIFY ESCAPE is administrative final submission and NEW ATTEMPT resets an attempt.",
+        "The mechanic-specific browser implementation registers mouse/pointer controls; it has no keyboard gameplay handler."
+      ],
+      "autonomous_processes": [
+        "None: no timer, animation loop, physics callback, or other task-state process runs while idle; body, contacts, stage, actuators, and motion remain unchanged between explicit actions."
+      ],
+      "grouped_control_modes": [
+        "One-step actuator adjustment via nudge_button for any leg's signed YAW, LIFT, or EXTEND channel.",
+        "Support/state transition via settle_button (SETTLE SUPPORT)."
+      ],
+      "delta_ms": null,
+      "window_ms": null,
+      "clause_i": {
+        "holds": false,
+        "reason": "Fails for every candidate grouped mode: during a no-action delay the generated world and task state remain unchanged, so a constant no-op (or an ineffective view/selection action) delivered at t+Delta preserves the possibility of observing later and completing the same task. That observation-free action is optimal for every history, so no state-dependent delayed choice is forced."
+      },
+      "clause_ii": {
+        "holds": true,
+        "reason": "Holds only in the formal non-real-time sense: a constant no-op is a bounded-window policy, and when an actuator action is eventually needed the current screenshot exposes the 3D pads, transfer banner, contacts, and channel values. No recent frame sequence is needed to predict a delayed state, and this clause is not joined to any autonomous process."
+      },
+      "clause_iii": {
+        "holds": false,
+        "reason": "Fails because no autonomous task-state change occurs for any 0 < tau < Delta after preparation. The JavaScript mutates body, stage, motion, contacts, and the action tick only inside explicit event handlers; the four-pose body path is precomputed data and advances only on SETTLE SUPPORT. Therefore no outcome-affecting action becomes unavailable or strictly less effective during a no-action delay."
+      },
+      "common_visible_process": "None. The generated terrain and walker state are static while idle; re-rendering and CSS transitions are presentation-only, and the precomputed body path advances only after an explicit SETTLE SUPPORT action.",
+      "pre_run": {
+        "threshold": 0.5,
+        "at_least_half": null,
+        "rate": null,
+        "basis": "not_applicable",
+        "reason": "The mathematical definition already fails clause (iii), so the pre-run threshold cannot change this No label; no pre-run percentage is inferred.",
+        "seed_probe": null
+      },
+      "files_read_completely": [
+        "AGENTS.md",
+        "weird_captcha_gym/docs/controllability/real-time.md",
+        "weird_captcha_gym/environments/crater_walker_env/controls.json",
+        "weird_captcha_gym/environments/crater_walker_env/env.json",
+        "weird_captcha_gym/environments/crater_walker_env/scripts/install_puzzle_runtime.sh",
+        "weird_captcha_gym/environments/crater_walker_env/scripts/setup_puzzle_runtime.sh",
+        "weird_captcha_gym/environments/crater_walker_env/tasks/crater_walker_seed_0001/export_result.sh",
+        "weird_captcha_gym/environments/crater_walker_env/tasks/crater_walker_seed_0001/setup_task.sh",
+        "weird_captcha_gym/environments/crater_walker_env/tasks/crater_walker_seed_0001/task.json",
+        "weird_captcha_gym/environments/crater_walker_env/tasks/crater_walker_seed_0001/verifier.py",
+        "weird_captcha_gym/shared_runtime/app/mechanics/crater_walker.css",
+        "weird_captcha_gym/shared_runtime/app/mechanics/crater_walker.js",
+        "weird_captcha_gym/shared_runtime/server/incubator_graders/crater_walker.py",
+        "weird_captcha_gym/shared_runtime/verifier_helpers.py",
+        "weird_captcha_gym/shared_scripts/incubator_generators/crater_walker.py",
+        "weird_captcha_gym/tools/incubator_solvers/crater_walker.py"
+      ],
+      "source_evidence": [
+        {
+          "path": "weird_captcha_gym/environments/crater_walker_env/controls.json",
+          "lines": "52-64",
+          "claim": "The supplied difficulty 4 profile has the exact active geometry and posture parameters recorded in controls_available."
+        },
+        {
+          "path": "weird_captcha_gym/environments/crater_walker_env/controls.json",
+          "lines": "4-7",
+          "claim": "The controls metadata declares the baseline real_time field as live; this declarative value is not used as behavior evidence because the mechanic implementation determines the audit."
+        },
+        {
+          "path": "weird_captcha_gym/environments/crater_walker_env/controls.json",
+          "lines": "81-94",
+          "claim": "The simplified interface is implemented with its mode-specific actuator surface, and the shared observation settings are 240 ms with 4 frames."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/crater_walker.py",
+          "lines": "139-149",
+          "claim": "The body transit is generated as a finite four-step kinematic path before play; generation does not install a runtime clock or autonomous process."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/crater_walker.py",
+          "lines": "251-266",
+          "claim": "The generated world stores terrain, pads, stages, a nominal tick_ms, and body_motion_steps as static data; camera motion is separate from world state."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/crater_walker.js",
+          "lines": "238-314",
+          "claim": "Actuator changes are explicit control events, and settle() is the only handler that increments the action tick, evaluates contacts, starts motion, or advances a body-path step."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/crater_walker.js",
+          "lines": "352-374",
+          "claim": "Rendering binds nudge_button to actuator changes, binds SETTLE to settle(), and binds orbit/pitch/canvas gestures to view redraws; no timer or animation callback is present."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/crater_walker.css",
+          "lines": "50-75",
+          "claim": "The only transition/filter styling affects card borders, backgrounds, and the passed canvas presentation; it does not mutate task state while idle."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/crater_walker.py",
+          "lines": "154-219",
+          "claim": "The independent replay applies all state-changing progression synchronously in apply_settle(), including body transit, support, posture, and completion."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/crater_walker.py",
+          "lines": "256-313",
+          "claim": "The grader replays only control and settle transcript events; its tick check is a monotonic action field, not elapsed-time progression."
+        },
+        {
+          "path": "weird_captcha_gym/tools/incubator_solvers/crater_walker.py",
+          "lines": "38-64",
+          "claim": "The wiring solver advances the task through explicit actuator operations and repeated SETTLE clicks, including the body-transit settles."
+        },
+        {
+          "path": "weird_captcha_gym/environments/crater_walker_env/tasks/crater_walker_seed_0001/verifier.py",
+          "lines": "22-35",
+          "claim": "The verifier only loads the exported result and invokes the independent grader; it adds no autonomous game-state evolution."
+        }
+      ],
+      "uncertainties": []
+    },
+    {
+      "case_index": 189,
+      "public_environment_name": "Crater Walker",
+      "environment_id": "crater_walker_env",
+      "difficulty": 5,
+      "interaction_mode": "full",
+      "label": "no",
+      "controls_available": [
+        "Difficulty 5 is configured with 6 stages, 5 decoy pads, contact tolerance 0.25, elevation step 0.64, lateral variation 0.30, terrain detail 7, posture limit 0.34.",
+        "Each of the four leg cards exposes signed YAW, LIFT, and EXTEND range sliders with integer values from -5 through 5.",
+        "Select leg cards with their visible name buttons; drag the canvas or use the orbit/pitch view buttons to inspect the 3D scene. These camera and selection controls do not change the success state.",
+        "Click SETTLE SUPPORT to evaluate contacts and, after a valid placement, advance one body-transit step. CERTIFY ESCAPE is administrative final submission and NEW ATTEMPT resets an attempt.",
+        "The mechanic-specific browser implementation registers mouse/pointer controls; it has no keyboard gameplay handler."
+      ],
+      "autonomous_processes": [
+        "None: no timer, animation loop, physics callback, or other task-state process runs while idle; body, contacts, stage, actuators, and motion remain unchanged between explicit actions."
+      ],
+      "grouped_control_modes": [
+        "Direct actuator adjustment via slider_drag for any leg's signed YAW, LIFT, or EXTEND channel.",
+        "Support/state transition via settle_button (SETTLE SUPPORT)."
+      ],
+      "delta_ms": null,
+      "window_ms": null,
+      "clause_i": {
+        "holds": false,
+        "reason": "Fails for every candidate grouped mode: during a no-action delay the generated world and task state remain unchanged, so a constant no-op (or an ineffective view/selection action) delivered at t+Delta preserves the possibility of observing later and completing the same task. That observation-free action is optimal for every history, so no state-dependent delayed choice is forced."
+      },
+      "clause_ii": {
+        "holds": true,
+        "reason": "Holds only in the formal non-real-time sense: a constant no-op is a bounded-window policy, and when an actuator action is eventually needed the current screenshot exposes the 3D pads, transfer banner, contacts, and channel values. No recent frame sequence is needed to predict a delayed state, and this clause is not joined to any autonomous process."
+      },
+      "clause_iii": {
+        "holds": false,
+        "reason": "Fails because no autonomous task-state change occurs for any 0 < tau < Delta after preparation. The JavaScript mutates body, stage, motion, contacts, and the action tick only inside explicit event handlers; the four-pose body path is precomputed data and advances only on SETTLE SUPPORT. Therefore no outcome-affecting action becomes unavailable or strictly less effective during a no-action delay."
+      },
+      "common_visible_process": "None. The generated terrain and walker state are static while idle; re-rendering and CSS transitions are presentation-only, and the precomputed body path advances only after an explicit SETTLE SUPPORT action.",
+      "pre_run": {
+        "threshold": 0.5,
+        "at_least_half": null,
+        "rate": null,
+        "basis": "not_applicable",
+        "reason": "The mathematical definition already fails clause (iii), so the pre-run threshold cannot change this No label; no pre-run percentage is inferred.",
+        "seed_probe": null
+      },
+      "files_read_completely": [
+        "AGENTS.md",
+        "weird_captcha_gym/docs/controllability/real-time.md",
+        "weird_captcha_gym/environments/crater_walker_env/controls.json",
+        "weird_captcha_gym/environments/crater_walker_env/env.json",
+        "weird_captcha_gym/environments/crater_walker_env/scripts/install_puzzle_runtime.sh",
+        "weird_captcha_gym/environments/crater_walker_env/scripts/setup_puzzle_runtime.sh",
+        "weird_captcha_gym/environments/crater_walker_env/tasks/crater_walker_seed_0001/export_result.sh",
+        "weird_captcha_gym/environments/crater_walker_env/tasks/crater_walker_seed_0001/setup_task.sh",
+        "weird_captcha_gym/environments/crater_walker_env/tasks/crater_walker_seed_0001/task.json",
+        "weird_captcha_gym/environments/crater_walker_env/tasks/crater_walker_seed_0001/verifier.py",
+        "weird_captcha_gym/shared_runtime/app/mechanics/crater_walker.css",
+        "weird_captcha_gym/shared_runtime/app/mechanics/crater_walker.js",
+        "weird_captcha_gym/shared_runtime/server/incubator_graders/crater_walker.py",
+        "weird_captcha_gym/shared_runtime/verifier_helpers.py",
+        "weird_captcha_gym/shared_scripts/incubator_generators/crater_walker.py",
+        "weird_captcha_gym/tools/incubator_solvers/crater_walker.py"
+      ],
+      "source_evidence": [
+        {
+          "path": "weird_captcha_gym/environments/crater_walker_env/controls.json",
+          "lines": "66-78",
+          "claim": "The supplied difficulty 5 profile has the exact active geometry and posture parameters recorded in controls_available."
+        },
+        {
+          "path": "weird_captcha_gym/environments/crater_walker_env/controls.json",
+          "lines": "4-7",
+          "claim": "The controls metadata declares the baseline real_time field as live; this declarative value is not used as behavior evidence because the mechanic implementation determines the audit."
+        },
+        {
+          "path": "weird_captcha_gym/environments/crater_walker_env/controls.json",
+          "lines": "81-94",
+          "claim": "The full interface is implemented with its mode-specific actuator surface, and the shared observation settings are 240 ms with 4 frames."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/crater_walker.py",
+          "lines": "139-149",
+          "claim": "The body transit is generated as a finite four-step kinematic path before play; generation does not install a runtime clock or autonomous process."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/crater_walker.py",
+          "lines": "251-266",
+          "claim": "The generated world stores terrain, pads, stages, a nominal tick_ms, and body_motion_steps as static data; camera motion is separate from world state."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/crater_walker.js",
+          "lines": "238-314",
+          "claim": "Actuator changes are explicit control events, and settle() is the only handler that increments the action tick, evaluates contacts, starts motion, or advances a body-path step."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/crater_walker.js",
+          "lines": "352-374",
+          "claim": "Rendering binds slider_drag to actuator changes, binds SETTLE to settle(), and binds orbit/pitch/canvas gestures to view redraws; no timer or animation callback is present."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/crater_walker.css",
+          "lines": "50-75",
+          "claim": "The only transition/filter styling affects card borders, backgrounds, and the passed canvas presentation; it does not mutate task state while idle."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/crater_walker.py",
+          "lines": "154-219",
+          "claim": "The independent replay applies all state-changing progression synchronously in apply_settle(), including body transit, support, posture, and completion."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/crater_walker.py",
+          "lines": "256-313",
+          "claim": "The grader replays only control and settle transcript events; its tick check is a monotonic action field, not elapsed-time progression."
+        },
+        {
+          "path": "weird_captcha_gym/tools/incubator_solvers/crater_walker.py",
+          "lines": "38-64",
+          "claim": "The wiring solver advances the task through explicit actuator operations and repeated SETTLE clicks, including the body-transit settles."
+        },
+        {
+          "path": "weird_captcha_gym/environments/crater_walker_env/tasks/crater_walker_seed_0001/verifier.py",
+          "lines": "22-35",
+          "claim": "The verifier only loads the exported result and invokes the independent grader; it adds no autonomous game-state evolution."
+        }
+      ],
+      "uncertainties": []
+    },
+    {
+      "case_index": 190,
+      "public_environment_name": "Crater Walker",
+      "environment_id": "crater_walker_env",
+      "difficulty": 5,
+      "interaction_mode": "simplified",
+      "label": "no",
+      "controls_available": [
+        "Difficulty 5 is configured with 6 stages, 5 decoy pads, contact tolerance 0.25, elevation step 0.64, lateral variation 0.30, terrain detail 7, posture limit 0.34.",
+        "Each of the four leg cards exposes visible minus/plus nudge buttons for signed YAW, LIFT, and EXTEND values; each click changes one integer step within -5 through 5.",
+        "Select leg cards with their visible name buttons; drag the canvas or use the orbit/pitch view buttons to inspect the 3D scene. These camera and selection controls do not change the success state.",
+        "Click SETTLE SUPPORT to evaluate contacts and, after a valid placement, advance one body-transit step. CERTIFY ESCAPE is administrative final submission and NEW ATTEMPT resets an attempt.",
+        "The mechanic-specific browser implementation registers mouse/pointer controls; it has no keyboard gameplay handler."
+      ],
+      "autonomous_processes": [
+        "None: no timer, animation loop, physics callback, or other task-state process runs while idle; body, contacts, stage, actuators, and motion remain unchanged between explicit actions."
+      ],
+      "grouped_control_modes": [
+        "One-step actuator adjustment via nudge_button for any leg's signed YAW, LIFT, or EXTEND channel.",
+        "Support/state transition via settle_button (SETTLE SUPPORT)."
+      ],
+      "delta_ms": null,
+      "window_ms": null,
+      "clause_i": {
+        "holds": false,
+        "reason": "Fails for every candidate grouped mode: during a no-action delay the generated world and task state remain unchanged, so a constant no-op (or an ineffective view/selection action) delivered at t+Delta preserves the possibility of observing later and completing the same task. That observation-free action is optimal for every history, so no state-dependent delayed choice is forced."
+      },
+      "clause_ii": {
+        "holds": true,
+        "reason": "Holds only in the formal non-real-time sense: a constant no-op is a bounded-window policy, and when an actuator action is eventually needed the current screenshot exposes the 3D pads, transfer banner, contacts, and channel values. No recent frame sequence is needed to predict a delayed state, and this clause is not joined to any autonomous process."
+      },
+      "clause_iii": {
+        "holds": false,
+        "reason": "Fails because no autonomous task-state change occurs for any 0 < tau < Delta after preparation. The JavaScript mutates body, stage, motion, contacts, and the action tick only inside explicit event handlers; the four-pose body path is precomputed data and advances only on SETTLE SUPPORT. Therefore no outcome-affecting action becomes unavailable or strictly less effective during a no-action delay."
+      },
+      "common_visible_process": "None. The generated terrain and walker state are static while idle; re-rendering and CSS transitions are presentation-only, and the precomputed body path advances only after an explicit SETTLE SUPPORT action.",
+      "pre_run": {
+        "threshold": 0.5,
+        "at_least_half": null,
+        "rate": null,
+        "basis": "not_applicable",
+        "reason": "The mathematical definition already fails clause (iii), so the pre-run threshold cannot change this No label; no pre-run percentage is inferred.",
+        "seed_probe": null
+      },
+      "files_read_completely": [
+        "AGENTS.md",
+        "weird_captcha_gym/docs/controllability/real-time.md",
+        "weird_captcha_gym/environments/crater_walker_env/controls.json",
+        "weird_captcha_gym/environments/crater_walker_env/env.json",
+        "weird_captcha_gym/environments/crater_walker_env/scripts/install_puzzle_runtime.sh",
+        "weird_captcha_gym/environments/crater_walker_env/scripts/setup_puzzle_runtime.sh",
+        "weird_captcha_gym/environments/crater_walker_env/tasks/crater_walker_seed_0001/export_result.sh",
+        "weird_captcha_gym/environments/crater_walker_env/tasks/crater_walker_seed_0001/setup_task.sh",
+        "weird_captcha_gym/environments/crater_walker_env/tasks/crater_walker_seed_0001/task.json",
+        "weird_captcha_gym/environments/crater_walker_env/tasks/crater_walker_seed_0001/verifier.py",
+        "weird_captcha_gym/shared_runtime/app/mechanics/crater_walker.css",
+        "weird_captcha_gym/shared_runtime/app/mechanics/crater_walker.js",
+        "weird_captcha_gym/shared_runtime/server/incubator_graders/crater_walker.py",
+        "weird_captcha_gym/shared_runtime/verifier_helpers.py",
+        "weird_captcha_gym/shared_scripts/incubator_generators/crater_walker.py",
+        "weird_captcha_gym/tools/incubator_solvers/crater_walker.py"
+      ],
+      "source_evidence": [
+        {
+          "path": "weird_captcha_gym/environments/crater_walker_env/controls.json",
+          "lines": "66-78",
+          "claim": "The supplied difficulty 5 profile has the exact active geometry and posture parameters recorded in controls_available."
+        },
+        {
+          "path": "weird_captcha_gym/environments/crater_walker_env/controls.json",
+          "lines": "4-7",
+          "claim": "The controls metadata declares the baseline real_time field as live; this declarative value is not used as behavior evidence because the mechanic implementation determines the audit."
+        },
+        {
+          "path": "weird_captcha_gym/environments/crater_walker_env/controls.json",
+          "lines": "81-94",
+          "claim": "The simplified interface is implemented with its mode-specific actuator surface, and the shared observation settings are 240 ms with 4 frames."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/crater_walker.py",
+          "lines": "139-149",
+          "claim": "The body transit is generated as a finite four-step kinematic path before play; generation does not install a runtime clock or autonomous process."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/crater_walker.py",
+          "lines": "251-266",
+          "claim": "The generated world stores terrain, pads, stages, a nominal tick_ms, and body_motion_steps as static data; camera motion is separate from world state."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/crater_walker.js",
+          "lines": "238-314",
+          "claim": "Actuator changes are explicit control events, and settle() is the only handler that increments the action tick, evaluates contacts, starts motion, or advances a body-path step."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/crater_walker.js",
+          "lines": "352-374",
+          "claim": "Rendering binds nudge_button to actuator changes, binds SETTLE to settle(), and binds orbit/pitch/canvas gestures to view redraws; no timer or animation callback is present."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/crater_walker.css",
+          "lines": "50-75",
+          "claim": "The only transition/filter styling affects card borders, backgrounds, and the passed canvas presentation; it does not mutate task state while idle."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/crater_walker.py",
+          "lines": "154-219",
+          "claim": "The independent replay applies all state-changing progression synchronously in apply_settle(), including body transit, support, posture, and completion."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/crater_walker.py",
+          "lines": "256-313",
+          "claim": "The grader replays only control and settle transcript events; its tick check is a monotonic action field, not elapsed-time progression."
+        },
+        {
+          "path": "weird_captcha_gym/tools/incubator_solvers/crater_walker.py",
+          "lines": "38-64",
+          "claim": "The wiring solver advances the task through explicit actuator operations and repeated SETTLE clicks, including the body-transit settles."
+        },
+        {
+          "path": "weird_captcha_gym/environments/crater_walker_env/tasks/crater_walker_seed_0001/verifier.py",
+          "lines": "22-35",
+          "claim": "The verifier only loads the exported result and invokes the independent grader; it adds no autonomous game-state evolution."
+        }
+      ],
+      "uncertainties": []
+    }
+  ]
+}

@@ -1,0 +1,1884 @@
+{
+  "case_index": 44,
+  "environment_id": "reveal_to_identify_env",
+  "public_environment_name": "Reveal to Identify",
+  "configuration_reports": [
+    {
+      "case_index": 431,
+      "public_environment_name": "Reveal to Identify",
+      "environment_id": "reveal_to_identify_env",
+      "difficulty": 1,
+      "interaction_mode": "full",
+      "label": "no",
+      "controls_available": [
+        {
+          "input_surface": "full",
+          "event_source": "plate_click",
+          "reveal_action": "Click directly on #reveal-plate to expose a permanent circular disc at the clicked plate coordinate.",
+          "active_parameters": {
+            "stage": {
+              "width": 900,
+              "height": 500
+            },
+            "object_pool": [
+              "bicycle",
+              "watering_can",
+              "telescope",
+              "camera",
+              "lighthouse",
+              "umbrella"
+            ],
+            "reveal_budget": 7,
+            "reveal_radius_px": 96,
+            "clutter_count": 4,
+            "foreground_marks": 0,
+            "rotation_max_deg": 4,
+            "scale_min": 0.98,
+            "scale_max": 1.08
+          }
+        },
+        {
+          "input_surface": "keyboard plus FILE IDENTIFICATION button",
+          "event_source": "identification_submission",
+          "action": "Type the hidden object's common English name and press FILE IDENTIFICATION.",
+          "constraints": {
+            "maximum_characters": 32,
+            "alphabetic_words_only": true
+          },
+          "effect": "Terminal identification grading; one wrong filing loads a fresh plate."
+        }
+      ],
+      "autonomous_processes": [
+        "Between any two agent inputs, no outcome-affecting task state changes: the generated scene and all previously exposed discs remain fixed, and neither the reveal control nor identification control becomes better or worse with idle time.",
+        "A reveal event and its disc are committed synchronously. The only subsequent visible interpolation is the 0.18-second CSS budget-meter transition; it is presentation-only and leaves the reveal/identification outcome unchanged."
+      ],
+      "grouped_control_modes": [
+        "plate_click: all direct canvas clicks across the run; each exposes one permanent disc and consumes one budget unit.",
+        "identification_submission: answer-field entry followed by FILE IDENTIFICATION; terminal certification after visual work, not an autonomous outcome phase."
+      ],
+      "delta_ms": null,
+      "window_ms": null,
+      "clause_i": {
+        "holds": true,
+        "reason": "For the static visual-information task, a history-only q cannot be optimal across histories with the same prior action transcript but different hidden objects or revealed pixels; it cannot choose the evidence-dependent next reveal or final name. This is observation dependence only and supplies no temporal effect."
+      },
+      "clause_ii": {
+        "holds": true,
+        "reason": "The current screenshot retains every permanent reveal disc and the visible controls, so a bounded endpoint view (the configured one-frame, 0 ms observation) can guide the next static reveal or identification. It predicts no future task-state change."
+      },
+      "clause_iii": {
+        "holds": false,
+        "reason": "No valid Delta > 0 exists: with no new action the scene, reveal records, answer target, and action effectiveness remain unchanged, so Q(H_t^tau,a)=Q(H_t,a) for every relevant action. A later deadline alone is excluded by the definition, and the CSS meter interpolation is not outcome-affecting task evolution."
+      },
+      "common_visible_process": "None. The visible reveal is caused synchronously by the agent's own action; the only idle-looking change is the presentation-only meter interpolation. No common visible autonomous process makes an action opportunity expire or degrade.",
+      "pre_run": {
+        "threshold": 0.5,
+        "at_least_half": null,
+        "rate": null,
+        "basis": "not_applicable",
+        "reason": "The mathematical test is already No at clause (iii). This mechanic has no autonomous outcome phase to start and wait through, so no pre-run percentage is asserted and the threshold cannot override the mathematical result.",
+        "seed_probe": null
+      },
+      "files_read_completely": [
+        "AGENTS.md",
+        "weird_captcha_gym/docs/controllability/real-time.md",
+        "weird_captcha_gym/environments/reveal_to_identify_env/controls.json",
+        "weird_captcha_gym/environments/reveal_to_identify_env/env.json",
+        "weird_captcha_gym/environments/reveal_to_identify_env/tasks/reveal_to_identify_seed_0001/task.json",
+        "weird_captcha_gym/environments/reveal_to_identify_env/tasks/reveal_to_identify_seed_0001/setup_task.sh",
+        "weird_captcha_gym/environments/reveal_to_identify_env/tasks/reveal_to_identify_seed_0001/export_result.sh",
+        "weird_captcha_gym/shared_scripts/incubator_generators/reveal_to_identify.py",
+        "weird_captcha_gym/shared_runtime/app/mechanics/reveal_to_identify.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/reveal_to_identify.css",
+        "weird_captcha_gym/shared_runtime/server/incubator_graders/reveal_to_identify.py",
+        "weird_captcha_gym/environments/reveal_to_identify_env/tasks/reveal_to_identify_seed_0001/verifier.py",
+        "weird_captcha_gym/tools/incubator_solvers/reveal_to_identify.py",
+        "weird_captcha_gym/shared_runtime/app/time_controller.js",
+        "weird_captcha_gym/shared_runtime/verifier_helpers.py"
+      ],
+      "source_evidence": [
+        {
+          "path": "weird_captcha_gym/environments/reveal_to_identify_env/controls.json",
+          "lines": "6-18",
+          "claim": "Difficulty 1 activates object_pool=[\"bicycle\",\"watering_can\",\"telescope\",\"camera\",\"lighthouse\",\"umbrella\"], reveal_budget=7, reveal_radius=96, clutter_count=4, foreground_marks=0, rotation_max_deg=4, and scale range 0.98-1.08."
+        },
+        {
+          "path": "weird_captcha_gym/environments/reveal_to_identify_env/controls.json",
+          "lines": "82-86",
+          "claim": "The full interaction surface is implemented; the shared runtime is configured with play_time_seconds=120, observation_window_ms=0, and frames_per_observation=1."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/reveal_to_identify.py",
+          "lines": "294-335",
+          "claim": "Generation chooses a label and constructs a finite scene, subject transform, decorations, and salient points from a seeded PRNG; it creates no gameplay clock, motion state, or autonomous update."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/reveal_to_identify.py",
+          "lines": "339-370",
+          "claim": "The public state and ground truth contain the static scene, reveal budget/radius, answer, and salient points; no temporal phase or changing task state is generated."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/reveal_to_identify.js",
+          "lines": "161-244",
+          "claim": "redraw() repaints fog plus already-recorded model.events and update() only derives the visible count, remaining budget, meter width, and canvas from that state."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/reveal_to_identify.js",
+          "lines": "265-309",
+          "claim": "The plate_click handler synchronously appends one reveal event, updates the readout/canvas, and settles beginAction; no timer, animation loop, or delayed task-state transition is started."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/reveal_to_identify.js",
+          "lines": "389-455",
+          "claim": "render() selects the full controls, binds the corresponding event listener, and labels the footer NO LIVE MOTION; the answer field and FILE IDENTIFICATION button are separate terminal controls."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/reveal_to_identify.css",
+          "lines": "106-107",
+          "claim": "The only CSS transition is the 0.18-second reveal-meter width interpolation, which is presentation of already-updated budget state."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/reveal_to_identify.css",
+          "lines": "127-140",
+          "claim": "The plate is a static canvas with a cursor-style distinction between Full and Simplified; CSS provides no moving or time-evolving task geometry."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/reveal_to_identify.py",
+          "lines": "44-110",
+          "claim": "The grader checks the selected interaction source, static radius/budget accounting, reveal points, and submitted answer; it has no task-time or motion-dependent criterion."
+        },
+        {
+          "path": "weird_captcha_gym/environments/reveal_to_identify_env/tasks/reveal_to_identify_seed_0001/verifier.py",
+          "lines": "61-128",
+          "claim": "The exported-bundle verifier independently replays the same static event list and accepted answer, with no timestamp, phase, or evolving-state check."
+        },
+        {
+          "path": "weird_captcha_gym/environments/reveal_to_identify_env/env.json",
+          "lines": "9-14",
+          "claim": "The environment declares mouse and keyboard actions, a synchronous runner, zero observation-window milliseconds, and one frame per observation."
+        },
+        {
+          "path": "weird_captcha_gym/environments/reveal_to_identify_env/tasks/reveal_to_identify_seed_0001/task.json",
+          "lines": "15-29",
+          "claim": "The task uses the program verifier and explicitly describes the initial opaque plate, finite screenshot-guided reveals, mode-specific input, and a static-between-actions task with no real-time component."
+        },
+        {
+          "path": "weird_captcha_gym/tools/incubator_solvers/reveal_to_identify.py",
+          "lines": "19-39",
+          "claim": "The canonical solver maps Full to a canvas click and Simplified to coordinate fields/button, then waits only for pending action bookkeeping to settle."
+        },
+        {
+          "path": "weird_captcha_gym/tools/incubator_solvers/reveal_to_identify.py",
+          "lines": "64-98",
+          "claim": "The solver performs a finite loop of reveal actions, records before/after status, then types the answer and submits; it has no autonomous outcome phase."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/time_controller.js",
+          "lines": "125-148",
+          "claim": "beginAction records and removes pending input bookkeeping and is explicitly independent of time mode; it does not advance or mutate the mechanic's task state."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/verifier_helpers.py",
+          "lines": "33-52",
+          "claim": "The shared verifier helper only copies and parses the exported result before dispatching grading; it does not introduce task evolution."
+        }
+      ],
+      "uncertainties": []
+    },
+    {
+      "case_index": 432,
+      "public_environment_name": "Reveal to Identify",
+      "environment_id": "reveal_to_identify_env",
+      "difficulty": 1,
+      "interaction_mode": "simplified",
+      "label": "no",
+      "controls_available": [
+        {
+          "input_surface": "simplified",
+          "event_source": "coordinate_reveal",
+          "reveal_action": "Set PLATE X and PLATE Y, then press REVEAL DISC to expose a permanent circular disc at the clamped coordinate.",
+          "active_parameters": {
+            "stage": {
+              "width": 900,
+              "height": 500
+            },
+            "object_pool": [
+              "bicycle",
+              "watering_can",
+              "telescope",
+              "camera",
+              "lighthouse",
+              "umbrella"
+            ],
+            "reveal_budget": 7,
+            "reveal_radius_px": 96,
+            "clutter_count": 4,
+            "foreground_marks": 0,
+            "rotation_max_deg": 4,
+            "scale_min": 0.98,
+            "scale_max": 1.08
+          }
+        },
+        {
+          "input_surface": "keyboard plus FILE IDENTIFICATION button",
+          "event_source": "identification_submission",
+          "action": "Type the hidden object's common English name and press FILE IDENTIFICATION.",
+          "constraints": {
+            "maximum_characters": 32,
+            "alphabetic_words_only": true
+          },
+          "effect": "Terminal identification grading; one wrong filing loads a fresh plate."
+        }
+      ],
+      "autonomous_processes": [
+        "Between any two agent inputs, no outcome-affecting task state changes: the generated scene and all previously exposed discs remain fixed, and neither the reveal control nor identification control becomes better or worse with idle time.",
+        "A reveal event and its disc are committed synchronously. The only subsequent visible interpolation is the 0.18-second CSS budget-meter transition; it is presentation-only and leaves the reveal/identification outcome unchanged."
+      ],
+      "grouped_control_modes": [
+        "coordinate_reveal: all coordinate-console reveal commands across the run; each exposes one permanent disc and consumes one budget unit.",
+        "identification_submission: answer-field entry followed by FILE IDENTIFICATION; terminal certification after visual work, not an autonomous outcome phase."
+      ],
+      "delta_ms": null,
+      "window_ms": null,
+      "clause_i": {
+        "holds": true,
+        "reason": "For the static visual-information task, a history-only q cannot be optimal across histories with the same prior action transcript but different hidden objects or revealed pixels; it cannot choose the evidence-dependent next reveal or final name. This is observation dependence only and supplies no temporal effect."
+      },
+      "clause_ii": {
+        "holds": true,
+        "reason": "The current screenshot retains every permanent reveal disc and the visible controls, so a bounded endpoint view (the configured one-frame, 0 ms observation) can guide the next static reveal or identification. It predicts no future task-state change."
+      },
+      "clause_iii": {
+        "holds": false,
+        "reason": "No valid Delta > 0 exists: with no new action the scene, reveal records, answer target, and action effectiveness remain unchanged, so Q(H_t^tau,a)=Q(H_t,a) for every relevant action. A later deadline alone is excluded by the definition, and the CSS meter interpolation is not outcome-affecting task evolution."
+      },
+      "common_visible_process": "None. The visible reveal is caused synchronously by the agent's own action; the only idle-looking change is the presentation-only meter interpolation. No common visible autonomous process makes an action opportunity expire or degrade.",
+      "pre_run": {
+        "threshold": 0.5,
+        "at_least_half": null,
+        "rate": null,
+        "basis": "not_applicable",
+        "reason": "The mathematical test is already No at clause (iii). This mechanic has no autonomous outcome phase to start and wait through, so no pre-run percentage is asserted and the threshold cannot override the mathematical result.",
+        "seed_probe": null
+      },
+      "files_read_completely": [
+        "AGENTS.md",
+        "weird_captcha_gym/docs/controllability/real-time.md",
+        "weird_captcha_gym/environments/reveal_to_identify_env/controls.json",
+        "weird_captcha_gym/environments/reveal_to_identify_env/env.json",
+        "weird_captcha_gym/environments/reveal_to_identify_env/tasks/reveal_to_identify_seed_0001/task.json",
+        "weird_captcha_gym/environments/reveal_to_identify_env/tasks/reveal_to_identify_seed_0001/setup_task.sh",
+        "weird_captcha_gym/environments/reveal_to_identify_env/tasks/reveal_to_identify_seed_0001/export_result.sh",
+        "weird_captcha_gym/shared_scripts/incubator_generators/reveal_to_identify.py",
+        "weird_captcha_gym/shared_runtime/app/mechanics/reveal_to_identify.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/reveal_to_identify.css",
+        "weird_captcha_gym/shared_runtime/server/incubator_graders/reveal_to_identify.py",
+        "weird_captcha_gym/environments/reveal_to_identify_env/tasks/reveal_to_identify_seed_0001/verifier.py",
+        "weird_captcha_gym/tools/incubator_solvers/reveal_to_identify.py",
+        "weird_captcha_gym/shared_runtime/app/time_controller.js",
+        "weird_captcha_gym/shared_runtime/verifier_helpers.py"
+      ],
+      "source_evidence": [
+        {
+          "path": "weird_captcha_gym/environments/reveal_to_identify_env/controls.json",
+          "lines": "6-18",
+          "claim": "Difficulty 1 activates object_pool=[\"bicycle\",\"watering_can\",\"telescope\",\"camera\",\"lighthouse\",\"umbrella\"], reveal_budget=7, reveal_radius=96, clutter_count=4, foreground_marks=0, rotation_max_deg=4, and scale range 0.98-1.08."
+        },
+        {
+          "path": "weird_captcha_gym/environments/reveal_to_identify_env/controls.json",
+          "lines": "82-86",
+          "claim": "The simplified interaction surface is implemented; the shared runtime is configured with play_time_seconds=120, observation_window_ms=0, and frames_per_observation=1."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/reveal_to_identify.py",
+          "lines": "294-335",
+          "claim": "Generation chooses a label and constructs a finite scene, subject transform, decorations, and salient points from a seeded PRNG; it creates no gameplay clock, motion state, or autonomous update."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/reveal_to_identify.py",
+          "lines": "339-370",
+          "claim": "The public state and ground truth contain the static scene, reveal budget/radius, answer, and salient points; no temporal phase or changing task state is generated."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/reveal_to_identify.js",
+          "lines": "161-244",
+          "claim": "redraw() repaints fog plus already-recorded model.events and update() only derives the visible count, remaining budget, meter width, and canvas from that state."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/reveal_to_identify.js",
+          "lines": "265-309",
+          "claim": "The coordinate_reveal handler synchronously appends one reveal event, updates the readout/canvas, and settles beginAction; no timer, animation loop, or delayed task-state transition is started."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/reveal_to_identify.js",
+          "lines": "389-455",
+          "claim": "render() selects the simplified controls, binds the corresponding event listener, and labels the footer NO LIVE MOTION; the answer field and FILE IDENTIFICATION button are separate terminal controls."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/reveal_to_identify.css",
+          "lines": "106-107",
+          "claim": "The only CSS transition is the 0.18-second reveal-meter width interpolation, which is presentation of already-updated budget state."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/reveal_to_identify.css",
+          "lines": "127-140",
+          "claim": "The plate is a static canvas with a cursor-style distinction between Full and Simplified; CSS provides no moving or time-evolving task geometry."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/reveal_to_identify.py",
+          "lines": "44-110",
+          "claim": "The grader checks the selected interaction source, static radius/budget accounting, reveal points, and submitted answer; it has no task-time or motion-dependent criterion."
+        },
+        {
+          "path": "weird_captcha_gym/environments/reveal_to_identify_env/tasks/reveal_to_identify_seed_0001/verifier.py",
+          "lines": "61-128",
+          "claim": "The exported-bundle verifier independently replays the same static event list and accepted answer, with no timestamp, phase, or evolving-state check."
+        },
+        {
+          "path": "weird_captcha_gym/environments/reveal_to_identify_env/env.json",
+          "lines": "9-14",
+          "claim": "The environment declares mouse and keyboard actions, a synchronous runner, zero observation-window milliseconds, and one frame per observation."
+        },
+        {
+          "path": "weird_captcha_gym/environments/reveal_to_identify_env/tasks/reveal_to_identify_seed_0001/task.json",
+          "lines": "15-29",
+          "claim": "The task uses the program verifier and explicitly describes the initial opaque plate, finite screenshot-guided reveals, mode-specific input, and a static-between-actions task with no real-time component."
+        },
+        {
+          "path": "weird_captcha_gym/tools/incubator_solvers/reveal_to_identify.py",
+          "lines": "19-39",
+          "claim": "The canonical solver maps Full to a canvas click and Simplified to coordinate fields/button, then waits only for pending action bookkeeping to settle."
+        },
+        {
+          "path": "weird_captcha_gym/tools/incubator_solvers/reveal_to_identify.py",
+          "lines": "64-98",
+          "claim": "The solver performs a finite loop of reveal actions, records before/after status, then types the answer and submits; it has no autonomous outcome phase."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/time_controller.js",
+          "lines": "125-148",
+          "claim": "beginAction records and removes pending input bookkeeping and is explicitly independent of time mode; it does not advance or mutate the mechanic's task state."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/verifier_helpers.py",
+          "lines": "33-52",
+          "claim": "The shared verifier helper only copies and parses the exported result before dispatching grading; it does not introduce task evolution."
+        }
+      ],
+      "uncertainties": []
+    },
+    {
+      "case_index": 433,
+      "public_environment_name": "Reveal to Identify",
+      "environment_id": "reveal_to_identify_env",
+      "difficulty": 2,
+      "interaction_mode": "full",
+      "label": "no",
+      "controls_available": [
+        {
+          "input_surface": "full",
+          "event_source": "plate_click",
+          "reveal_action": "Click directly on #reveal-plate to expose a permanent circular disc at the clicked plate coordinate.",
+          "active_parameters": {
+            "stage": {
+              "width": 900,
+              "height": 500
+            },
+            "object_pool": [
+              "bicycle",
+              "watering_can",
+              "teapot",
+              "telescope",
+              "camera",
+              "gramophone",
+              "lighthouse",
+              "umbrella",
+              "binoculars",
+              "lantern"
+            ],
+            "reveal_budget": 6,
+            "reveal_radius_px": 78,
+            "clutter_count": 8,
+            "foreground_marks": 0,
+            "rotation_max_deg": 7,
+            "scale_min": 0.94,
+            "scale_max": 1.05
+          }
+        },
+        {
+          "input_surface": "keyboard plus FILE IDENTIFICATION button",
+          "event_source": "identification_submission",
+          "action": "Type the hidden object's common English name and press FILE IDENTIFICATION.",
+          "constraints": {
+            "maximum_characters": 32,
+            "alphabetic_words_only": true
+          },
+          "effect": "Terminal identification grading; one wrong filing loads a fresh plate."
+        }
+      ],
+      "autonomous_processes": [
+        "Between any two agent inputs, no outcome-affecting task state changes: the generated scene and all previously exposed discs remain fixed, and neither the reveal control nor identification control becomes better or worse with idle time.",
+        "A reveal event and its disc are committed synchronously. The only subsequent visible interpolation is the 0.18-second CSS budget-meter transition; it is presentation-only and leaves the reveal/identification outcome unchanged."
+      ],
+      "grouped_control_modes": [
+        "plate_click: all direct canvas clicks across the run; each exposes one permanent disc and consumes one budget unit.",
+        "identification_submission: answer-field entry followed by FILE IDENTIFICATION; terminal certification after visual work, not an autonomous outcome phase."
+      ],
+      "delta_ms": null,
+      "window_ms": null,
+      "clause_i": {
+        "holds": true,
+        "reason": "For the static visual-information task, a history-only q cannot be optimal across histories with the same prior action transcript but different hidden objects or revealed pixels; it cannot choose the evidence-dependent next reveal or final name. This is observation dependence only and supplies no temporal effect."
+      },
+      "clause_ii": {
+        "holds": true,
+        "reason": "The current screenshot retains every permanent reveal disc and the visible controls, so a bounded endpoint view (the configured one-frame, 0 ms observation) can guide the next static reveal or identification. It predicts no future task-state change."
+      },
+      "clause_iii": {
+        "holds": false,
+        "reason": "No valid Delta > 0 exists: with no new action the scene, reveal records, answer target, and action effectiveness remain unchanged, so Q(H_t^tau,a)=Q(H_t,a) for every relevant action. A later deadline alone is excluded by the definition, and the CSS meter interpolation is not outcome-affecting task evolution."
+      },
+      "common_visible_process": "None. The visible reveal is caused synchronously by the agent's own action; the only idle-looking change is the presentation-only meter interpolation. No common visible autonomous process makes an action opportunity expire or degrade.",
+      "pre_run": {
+        "threshold": 0.5,
+        "at_least_half": null,
+        "rate": null,
+        "basis": "not_applicable",
+        "reason": "The mathematical test is already No at clause (iii). This mechanic has no autonomous outcome phase to start and wait through, so no pre-run percentage is asserted and the threshold cannot override the mathematical result.",
+        "seed_probe": null
+      },
+      "files_read_completely": [
+        "AGENTS.md",
+        "weird_captcha_gym/docs/controllability/real-time.md",
+        "weird_captcha_gym/environments/reveal_to_identify_env/controls.json",
+        "weird_captcha_gym/environments/reveal_to_identify_env/env.json",
+        "weird_captcha_gym/environments/reveal_to_identify_env/tasks/reveal_to_identify_seed_0001/task.json",
+        "weird_captcha_gym/environments/reveal_to_identify_env/tasks/reveal_to_identify_seed_0001/setup_task.sh",
+        "weird_captcha_gym/environments/reveal_to_identify_env/tasks/reveal_to_identify_seed_0001/export_result.sh",
+        "weird_captcha_gym/shared_scripts/incubator_generators/reveal_to_identify.py",
+        "weird_captcha_gym/shared_runtime/app/mechanics/reveal_to_identify.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/reveal_to_identify.css",
+        "weird_captcha_gym/shared_runtime/server/incubator_graders/reveal_to_identify.py",
+        "weird_captcha_gym/environments/reveal_to_identify_env/tasks/reveal_to_identify_seed_0001/verifier.py",
+        "weird_captcha_gym/tools/incubator_solvers/reveal_to_identify.py",
+        "weird_captcha_gym/shared_runtime/app/time_controller.js",
+        "weird_captcha_gym/shared_runtime/verifier_helpers.py"
+      ],
+      "source_evidence": [
+        {
+          "path": "weird_captcha_gym/environments/reveal_to_identify_env/controls.json",
+          "lines": "21-33",
+          "claim": "Difficulty 2 activates object_pool=[\"bicycle\",\"watering_can\",\"teapot\",\"telescope\",\"camera\",\"gramophone\",\"lighthouse\",\"umbrella\",\"binoculars\",\"lantern\"], reveal_budget=6, reveal_radius=78, clutter_count=8, foreground_marks=0, rotation_max_deg=7, and scale range 0.94-1.05."
+        },
+        {
+          "path": "weird_captcha_gym/environments/reveal_to_identify_env/controls.json",
+          "lines": "82-86",
+          "claim": "The full interaction surface is implemented; the shared runtime is configured with play_time_seconds=120, observation_window_ms=0, and frames_per_observation=1."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/reveal_to_identify.py",
+          "lines": "294-335",
+          "claim": "Generation chooses a label and constructs a finite scene, subject transform, decorations, and salient points from a seeded PRNG; it creates no gameplay clock, motion state, or autonomous update."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/reveal_to_identify.py",
+          "lines": "339-370",
+          "claim": "The public state and ground truth contain the static scene, reveal budget/radius, answer, and salient points; no temporal phase or changing task state is generated."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/reveal_to_identify.js",
+          "lines": "161-244",
+          "claim": "redraw() repaints fog plus already-recorded model.events and update() only derives the visible count, remaining budget, meter width, and canvas from that state."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/reveal_to_identify.js",
+          "lines": "265-309",
+          "claim": "The plate_click handler synchronously appends one reveal event, updates the readout/canvas, and settles beginAction; no timer, animation loop, or delayed task-state transition is started."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/reveal_to_identify.js",
+          "lines": "389-455",
+          "claim": "render() selects the full controls, binds the corresponding event listener, and labels the footer NO LIVE MOTION; the answer field and FILE IDENTIFICATION button are separate terminal controls."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/reveal_to_identify.css",
+          "lines": "106-107",
+          "claim": "The only CSS transition is the 0.18-second reveal-meter width interpolation, which is presentation of already-updated budget state."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/reveal_to_identify.css",
+          "lines": "127-140",
+          "claim": "The plate is a static canvas with a cursor-style distinction between Full and Simplified; CSS provides no moving or time-evolving task geometry."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/reveal_to_identify.py",
+          "lines": "44-110",
+          "claim": "The grader checks the selected interaction source, static radius/budget accounting, reveal points, and submitted answer; it has no task-time or motion-dependent criterion."
+        },
+        {
+          "path": "weird_captcha_gym/environments/reveal_to_identify_env/tasks/reveal_to_identify_seed_0001/verifier.py",
+          "lines": "61-128",
+          "claim": "The exported-bundle verifier independently replays the same static event list and accepted answer, with no timestamp, phase, or evolving-state check."
+        },
+        {
+          "path": "weird_captcha_gym/environments/reveal_to_identify_env/env.json",
+          "lines": "9-14",
+          "claim": "The environment declares mouse and keyboard actions, a synchronous runner, zero observation-window milliseconds, and one frame per observation."
+        },
+        {
+          "path": "weird_captcha_gym/environments/reveal_to_identify_env/tasks/reveal_to_identify_seed_0001/task.json",
+          "lines": "15-29",
+          "claim": "The task uses the program verifier and explicitly describes the initial opaque plate, finite screenshot-guided reveals, mode-specific input, and a static-between-actions task with no real-time component."
+        },
+        {
+          "path": "weird_captcha_gym/tools/incubator_solvers/reveal_to_identify.py",
+          "lines": "19-39",
+          "claim": "The canonical solver maps Full to a canvas click and Simplified to coordinate fields/button, then waits only for pending action bookkeeping to settle."
+        },
+        {
+          "path": "weird_captcha_gym/tools/incubator_solvers/reveal_to_identify.py",
+          "lines": "64-98",
+          "claim": "The solver performs a finite loop of reveal actions, records before/after status, then types the answer and submits; it has no autonomous outcome phase."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/time_controller.js",
+          "lines": "125-148",
+          "claim": "beginAction records and removes pending input bookkeeping and is explicitly independent of time mode; it does not advance or mutate the mechanic's task state."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/verifier_helpers.py",
+          "lines": "33-52",
+          "claim": "The shared verifier helper only copies and parses the exported result before dispatching grading; it does not introduce task evolution."
+        }
+      ],
+      "uncertainties": []
+    },
+    {
+      "case_index": 434,
+      "public_environment_name": "Reveal to Identify",
+      "environment_id": "reveal_to_identify_env",
+      "difficulty": 2,
+      "interaction_mode": "simplified",
+      "label": "no",
+      "controls_available": [
+        {
+          "input_surface": "simplified",
+          "event_source": "coordinate_reveal",
+          "reveal_action": "Set PLATE X and PLATE Y, then press REVEAL DISC to expose a permanent circular disc at the clamped coordinate.",
+          "active_parameters": {
+            "stage": {
+              "width": 900,
+              "height": 500
+            },
+            "object_pool": [
+              "bicycle",
+              "watering_can",
+              "teapot",
+              "telescope",
+              "camera",
+              "gramophone",
+              "lighthouse",
+              "umbrella",
+              "binoculars",
+              "lantern"
+            ],
+            "reveal_budget": 6,
+            "reveal_radius_px": 78,
+            "clutter_count": 8,
+            "foreground_marks": 0,
+            "rotation_max_deg": 7,
+            "scale_min": 0.94,
+            "scale_max": 1.05
+          }
+        },
+        {
+          "input_surface": "keyboard plus FILE IDENTIFICATION button",
+          "event_source": "identification_submission",
+          "action": "Type the hidden object's common English name and press FILE IDENTIFICATION.",
+          "constraints": {
+            "maximum_characters": 32,
+            "alphabetic_words_only": true
+          },
+          "effect": "Terminal identification grading; one wrong filing loads a fresh plate."
+        }
+      ],
+      "autonomous_processes": [
+        "Between any two agent inputs, no outcome-affecting task state changes: the generated scene and all previously exposed discs remain fixed, and neither the reveal control nor identification control becomes better or worse with idle time.",
+        "A reveal event and its disc are committed synchronously. The only subsequent visible interpolation is the 0.18-second CSS budget-meter transition; it is presentation-only and leaves the reveal/identification outcome unchanged."
+      ],
+      "grouped_control_modes": [
+        "coordinate_reveal: all coordinate-console reveal commands across the run; each exposes one permanent disc and consumes one budget unit.",
+        "identification_submission: answer-field entry followed by FILE IDENTIFICATION; terminal certification after visual work, not an autonomous outcome phase."
+      ],
+      "delta_ms": null,
+      "window_ms": null,
+      "clause_i": {
+        "holds": true,
+        "reason": "For the static visual-information task, a history-only q cannot be optimal across histories with the same prior action transcript but different hidden objects or revealed pixels; it cannot choose the evidence-dependent next reveal or final name. This is observation dependence only and supplies no temporal effect."
+      },
+      "clause_ii": {
+        "holds": true,
+        "reason": "The current screenshot retains every permanent reveal disc and the visible controls, so a bounded endpoint view (the configured one-frame, 0 ms observation) can guide the next static reveal or identification. It predicts no future task-state change."
+      },
+      "clause_iii": {
+        "holds": false,
+        "reason": "No valid Delta > 0 exists: with no new action the scene, reveal records, answer target, and action effectiveness remain unchanged, so Q(H_t^tau,a)=Q(H_t,a) for every relevant action. A later deadline alone is excluded by the definition, and the CSS meter interpolation is not outcome-affecting task evolution."
+      },
+      "common_visible_process": "None. The visible reveal is caused synchronously by the agent's own action; the only idle-looking change is the presentation-only meter interpolation. No common visible autonomous process makes an action opportunity expire or degrade.",
+      "pre_run": {
+        "threshold": 0.5,
+        "at_least_half": null,
+        "rate": null,
+        "basis": "not_applicable",
+        "reason": "The mathematical test is already No at clause (iii). This mechanic has no autonomous outcome phase to start and wait through, so no pre-run percentage is asserted and the threshold cannot override the mathematical result.",
+        "seed_probe": null
+      },
+      "files_read_completely": [
+        "AGENTS.md",
+        "weird_captcha_gym/docs/controllability/real-time.md",
+        "weird_captcha_gym/environments/reveal_to_identify_env/controls.json",
+        "weird_captcha_gym/environments/reveal_to_identify_env/env.json",
+        "weird_captcha_gym/environments/reveal_to_identify_env/tasks/reveal_to_identify_seed_0001/task.json",
+        "weird_captcha_gym/environments/reveal_to_identify_env/tasks/reveal_to_identify_seed_0001/setup_task.sh",
+        "weird_captcha_gym/environments/reveal_to_identify_env/tasks/reveal_to_identify_seed_0001/export_result.sh",
+        "weird_captcha_gym/shared_scripts/incubator_generators/reveal_to_identify.py",
+        "weird_captcha_gym/shared_runtime/app/mechanics/reveal_to_identify.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/reveal_to_identify.css",
+        "weird_captcha_gym/shared_runtime/server/incubator_graders/reveal_to_identify.py",
+        "weird_captcha_gym/environments/reveal_to_identify_env/tasks/reveal_to_identify_seed_0001/verifier.py",
+        "weird_captcha_gym/tools/incubator_solvers/reveal_to_identify.py",
+        "weird_captcha_gym/shared_runtime/app/time_controller.js",
+        "weird_captcha_gym/shared_runtime/verifier_helpers.py"
+      ],
+      "source_evidence": [
+        {
+          "path": "weird_captcha_gym/environments/reveal_to_identify_env/controls.json",
+          "lines": "21-33",
+          "claim": "Difficulty 2 activates object_pool=[\"bicycle\",\"watering_can\",\"teapot\",\"telescope\",\"camera\",\"gramophone\",\"lighthouse\",\"umbrella\",\"binoculars\",\"lantern\"], reveal_budget=6, reveal_radius=78, clutter_count=8, foreground_marks=0, rotation_max_deg=7, and scale range 0.94-1.05."
+        },
+        {
+          "path": "weird_captcha_gym/environments/reveal_to_identify_env/controls.json",
+          "lines": "82-86",
+          "claim": "The simplified interaction surface is implemented; the shared runtime is configured with play_time_seconds=120, observation_window_ms=0, and frames_per_observation=1."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/reveal_to_identify.py",
+          "lines": "294-335",
+          "claim": "Generation chooses a label and constructs a finite scene, subject transform, decorations, and salient points from a seeded PRNG; it creates no gameplay clock, motion state, or autonomous update."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/reveal_to_identify.py",
+          "lines": "339-370",
+          "claim": "The public state and ground truth contain the static scene, reveal budget/radius, answer, and salient points; no temporal phase or changing task state is generated."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/reveal_to_identify.js",
+          "lines": "161-244",
+          "claim": "redraw() repaints fog plus already-recorded model.events and update() only derives the visible count, remaining budget, meter width, and canvas from that state."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/reveal_to_identify.js",
+          "lines": "265-309",
+          "claim": "The coordinate_reveal handler synchronously appends one reveal event, updates the readout/canvas, and settles beginAction; no timer, animation loop, or delayed task-state transition is started."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/reveal_to_identify.js",
+          "lines": "389-455",
+          "claim": "render() selects the simplified controls, binds the corresponding event listener, and labels the footer NO LIVE MOTION; the answer field and FILE IDENTIFICATION button are separate terminal controls."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/reveal_to_identify.css",
+          "lines": "106-107",
+          "claim": "The only CSS transition is the 0.18-second reveal-meter width interpolation, which is presentation of already-updated budget state."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/reveal_to_identify.css",
+          "lines": "127-140",
+          "claim": "The plate is a static canvas with a cursor-style distinction between Full and Simplified; CSS provides no moving or time-evolving task geometry."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/reveal_to_identify.py",
+          "lines": "44-110",
+          "claim": "The grader checks the selected interaction source, static radius/budget accounting, reveal points, and submitted answer; it has no task-time or motion-dependent criterion."
+        },
+        {
+          "path": "weird_captcha_gym/environments/reveal_to_identify_env/tasks/reveal_to_identify_seed_0001/verifier.py",
+          "lines": "61-128",
+          "claim": "The exported-bundle verifier independently replays the same static event list and accepted answer, with no timestamp, phase, or evolving-state check."
+        },
+        {
+          "path": "weird_captcha_gym/environments/reveal_to_identify_env/env.json",
+          "lines": "9-14",
+          "claim": "The environment declares mouse and keyboard actions, a synchronous runner, zero observation-window milliseconds, and one frame per observation."
+        },
+        {
+          "path": "weird_captcha_gym/environments/reveal_to_identify_env/tasks/reveal_to_identify_seed_0001/task.json",
+          "lines": "15-29",
+          "claim": "The task uses the program verifier and explicitly describes the initial opaque plate, finite screenshot-guided reveals, mode-specific input, and a static-between-actions task with no real-time component."
+        },
+        {
+          "path": "weird_captcha_gym/tools/incubator_solvers/reveal_to_identify.py",
+          "lines": "19-39",
+          "claim": "The canonical solver maps Full to a canvas click and Simplified to coordinate fields/button, then waits only for pending action bookkeeping to settle."
+        },
+        {
+          "path": "weird_captcha_gym/tools/incubator_solvers/reveal_to_identify.py",
+          "lines": "64-98",
+          "claim": "The solver performs a finite loop of reveal actions, records before/after status, then types the answer and submits; it has no autonomous outcome phase."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/time_controller.js",
+          "lines": "125-148",
+          "claim": "beginAction records and removes pending input bookkeeping and is explicitly independent of time mode; it does not advance or mutate the mechanic's task state."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/verifier_helpers.py",
+          "lines": "33-52",
+          "claim": "The shared verifier helper only copies and parses the exported result before dispatching grading; it does not introduce task evolution."
+        }
+      ],
+      "uncertainties": []
+    },
+    {
+      "case_index": 435,
+      "public_environment_name": "Reveal to Identify",
+      "environment_id": "reveal_to_identify_env",
+      "difficulty": 3,
+      "interaction_mode": "full",
+      "label": "no",
+      "controls_available": [
+        {
+          "input_surface": "full",
+          "event_source": "plate_click",
+          "reveal_action": "Click directly on #reveal-plate to expose a permanent circular disc at the clicked plate coordinate.",
+          "active_parameters": {
+            "stage": {
+              "width": 900,
+              "height": 500
+            },
+            "object_pool": [
+              "bicycle",
+              "watering_can",
+              "teapot",
+              "telescope",
+              "camera",
+              "gramophone",
+              "windmill",
+              "umbrella",
+              "typewriter",
+              "sewing_machine",
+              "lighthouse",
+              "binoculars",
+              "lantern",
+              "violin"
+            ],
+            "reveal_budget": 5,
+            "reveal_radius_px": 62,
+            "clutter_count": 14,
+            "foreground_marks": 1,
+            "rotation_max_deg": 12,
+            "scale_min": 0.9,
+            "scale_max": 1.02
+          }
+        },
+        {
+          "input_surface": "keyboard plus FILE IDENTIFICATION button",
+          "event_source": "identification_submission",
+          "action": "Type the hidden object's common English name and press FILE IDENTIFICATION.",
+          "constraints": {
+            "maximum_characters": 32,
+            "alphabetic_words_only": true
+          },
+          "effect": "Terminal identification grading; one wrong filing loads a fresh plate."
+        }
+      ],
+      "autonomous_processes": [
+        "Between any two agent inputs, no outcome-affecting task state changes: the generated scene and all previously exposed discs remain fixed, and neither the reveal control nor identification control becomes better or worse with idle time.",
+        "A reveal event and its disc are committed synchronously. The only subsequent visible interpolation is the 0.18-second CSS budget-meter transition; it is presentation-only and leaves the reveal/identification outcome unchanged."
+      ],
+      "grouped_control_modes": [
+        "plate_click: all direct canvas clicks across the run; each exposes one permanent disc and consumes one budget unit.",
+        "identification_submission: answer-field entry followed by FILE IDENTIFICATION; terminal certification after visual work, not an autonomous outcome phase."
+      ],
+      "delta_ms": null,
+      "window_ms": null,
+      "clause_i": {
+        "holds": true,
+        "reason": "For the static visual-information task, a history-only q cannot be optimal across histories with the same prior action transcript but different hidden objects or revealed pixels; it cannot choose the evidence-dependent next reveal or final name. This is observation dependence only and supplies no temporal effect."
+      },
+      "clause_ii": {
+        "holds": true,
+        "reason": "The current screenshot retains every permanent reveal disc and the visible controls, so a bounded endpoint view (the configured one-frame, 0 ms observation) can guide the next static reveal or identification. It predicts no future task-state change."
+      },
+      "clause_iii": {
+        "holds": false,
+        "reason": "No valid Delta > 0 exists: with no new action the scene, reveal records, answer target, and action effectiveness remain unchanged, so Q(H_t^tau,a)=Q(H_t,a) for every relevant action. A later deadline alone is excluded by the definition, and the CSS meter interpolation is not outcome-affecting task evolution."
+      },
+      "common_visible_process": "None. The visible reveal is caused synchronously by the agent's own action; the only idle-looking change is the presentation-only meter interpolation. No common visible autonomous process makes an action opportunity expire or degrade.",
+      "pre_run": {
+        "threshold": 0.5,
+        "at_least_half": null,
+        "rate": null,
+        "basis": "not_applicable",
+        "reason": "The mathematical test is already No at clause (iii). This mechanic has no autonomous outcome phase to start and wait through, so no pre-run percentage is asserted and the threshold cannot override the mathematical result.",
+        "seed_probe": null
+      },
+      "files_read_completely": [
+        "AGENTS.md",
+        "weird_captcha_gym/docs/controllability/real-time.md",
+        "weird_captcha_gym/environments/reveal_to_identify_env/controls.json",
+        "weird_captcha_gym/environments/reveal_to_identify_env/env.json",
+        "weird_captcha_gym/environments/reveal_to_identify_env/tasks/reveal_to_identify_seed_0001/task.json",
+        "weird_captcha_gym/environments/reveal_to_identify_env/tasks/reveal_to_identify_seed_0001/setup_task.sh",
+        "weird_captcha_gym/environments/reveal_to_identify_env/tasks/reveal_to_identify_seed_0001/export_result.sh",
+        "weird_captcha_gym/shared_scripts/incubator_generators/reveal_to_identify.py",
+        "weird_captcha_gym/shared_runtime/app/mechanics/reveal_to_identify.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/reveal_to_identify.css",
+        "weird_captcha_gym/shared_runtime/server/incubator_graders/reveal_to_identify.py",
+        "weird_captcha_gym/environments/reveal_to_identify_env/tasks/reveal_to_identify_seed_0001/verifier.py",
+        "weird_captcha_gym/tools/incubator_solvers/reveal_to_identify.py",
+        "weird_captcha_gym/shared_runtime/app/time_controller.js",
+        "weird_captcha_gym/shared_runtime/verifier_helpers.py"
+      ],
+      "source_evidence": [
+        {
+          "path": "weird_captcha_gym/environments/reveal_to_identify_env/controls.json",
+          "lines": "36-48",
+          "claim": "Difficulty 3 activates object_pool=[\"bicycle\",\"watering_can\",\"teapot\",\"telescope\",\"camera\",\"gramophone\",\"windmill\",\"umbrella\",\"typewriter\",\"sewing_machine\",\"lighthouse\",\"binoculars\",\"lantern\",\"violin\"], reveal_budget=5, reveal_radius=62, clutter_count=14, foreground_marks=1, rotation_max_deg=12, and scale range 0.9-1.02."
+        },
+        {
+          "path": "weird_captcha_gym/environments/reveal_to_identify_env/controls.json",
+          "lines": "82-86",
+          "claim": "The full interaction surface is implemented; the shared runtime is configured with play_time_seconds=120, observation_window_ms=0, and frames_per_observation=1."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/reveal_to_identify.py",
+          "lines": "294-335",
+          "claim": "Generation chooses a label and constructs a finite scene, subject transform, decorations, and salient points from a seeded PRNG; it creates no gameplay clock, motion state, or autonomous update."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/reveal_to_identify.py",
+          "lines": "339-370",
+          "claim": "The public state and ground truth contain the static scene, reveal budget/radius, answer, and salient points; no temporal phase or changing task state is generated."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/reveal_to_identify.js",
+          "lines": "161-244",
+          "claim": "redraw() repaints fog plus already-recorded model.events and update() only derives the visible count, remaining budget, meter width, and canvas from that state."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/reveal_to_identify.js",
+          "lines": "265-309",
+          "claim": "The plate_click handler synchronously appends one reveal event, updates the readout/canvas, and settles beginAction; no timer, animation loop, or delayed task-state transition is started."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/reveal_to_identify.js",
+          "lines": "389-455",
+          "claim": "render() selects the full controls, binds the corresponding event listener, and labels the footer NO LIVE MOTION; the answer field and FILE IDENTIFICATION button are separate terminal controls."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/reveal_to_identify.css",
+          "lines": "106-107",
+          "claim": "The only CSS transition is the 0.18-second reveal-meter width interpolation, which is presentation of already-updated budget state."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/reveal_to_identify.css",
+          "lines": "127-140",
+          "claim": "The plate is a static canvas with a cursor-style distinction between Full and Simplified; CSS provides no moving or time-evolving task geometry."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/reveal_to_identify.py",
+          "lines": "44-110",
+          "claim": "The grader checks the selected interaction source, static radius/budget accounting, reveal points, and submitted answer; it has no task-time or motion-dependent criterion."
+        },
+        {
+          "path": "weird_captcha_gym/environments/reveal_to_identify_env/tasks/reveal_to_identify_seed_0001/verifier.py",
+          "lines": "61-128",
+          "claim": "The exported-bundle verifier independently replays the same static event list and accepted answer, with no timestamp, phase, or evolving-state check."
+        },
+        {
+          "path": "weird_captcha_gym/environments/reveal_to_identify_env/env.json",
+          "lines": "9-14",
+          "claim": "The environment declares mouse and keyboard actions, a synchronous runner, zero observation-window milliseconds, and one frame per observation."
+        },
+        {
+          "path": "weird_captcha_gym/environments/reveal_to_identify_env/tasks/reveal_to_identify_seed_0001/task.json",
+          "lines": "15-29",
+          "claim": "The task uses the program verifier and explicitly describes the initial opaque plate, finite screenshot-guided reveals, mode-specific input, and a static-between-actions task with no real-time component."
+        },
+        {
+          "path": "weird_captcha_gym/tools/incubator_solvers/reveal_to_identify.py",
+          "lines": "19-39",
+          "claim": "The canonical solver maps Full to a canvas click and Simplified to coordinate fields/button, then waits only for pending action bookkeeping to settle."
+        },
+        {
+          "path": "weird_captcha_gym/tools/incubator_solvers/reveal_to_identify.py",
+          "lines": "64-98",
+          "claim": "The solver performs a finite loop of reveal actions, records before/after status, then types the answer and submits; it has no autonomous outcome phase."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/time_controller.js",
+          "lines": "125-148",
+          "claim": "beginAction records and removes pending input bookkeeping and is explicitly independent of time mode; it does not advance or mutate the mechanic's task state."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/verifier_helpers.py",
+          "lines": "33-52",
+          "claim": "The shared verifier helper only copies and parses the exported result before dispatching grading; it does not introduce task evolution."
+        }
+      ],
+      "uncertainties": []
+    },
+    {
+      "case_index": 436,
+      "public_environment_name": "Reveal to Identify",
+      "environment_id": "reveal_to_identify_env",
+      "difficulty": 3,
+      "interaction_mode": "simplified",
+      "label": "no",
+      "controls_available": [
+        {
+          "input_surface": "simplified",
+          "event_source": "coordinate_reveal",
+          "reveal_action": "Set PLATE X and PLATE Y, then press REVEAL DISC to expose a permanent circular disc at the clamped coordinate.",
+          "active_parameters": {
+            "stage": {
+              "width": 900,
+              "height": 500
+            },
+            "object_pool": [
+              "bicycle",
+              "watering_can",
+              "teapot",
+              "telescope",
+              "camera",
+              "gramophone",
+              "windmill",
+              "umbrella",
+              "typewriter",
+              "sewing_machine",
+              "lighthouse",
+              "binoculars",
+              "lantern",
+              "violin"
+            ],
+            "reveal_budget": 5,
+            "reveal_radius_px": 62,
+            "clutter_count": 14,
+            "foreground_marks": 1,
+            "rotation_max_deg": 12,
+            "scale_min": 0.9,
+            "scale_max": 1.02
+          }
+        },
+        {
+          "input_surface": "keyboard plus FILE IDENTIFICATION button",
+          "event_source": "identification_submission",
+          "action": "Type the hidden object's common English name and press FILE IDENTIFICATION.",
+          "constraints": {
+            "maximum_characters": 32,
+            "alphabetic_words_only": true
+          },
+          "effect": "Terminal identification grading; one wrong filing loads a fresh plate."
+        }
+      ],
+      "autonomous_processes": [
+        "Between any two agent inputs, no outcome-affecting task state changes: the generated scene and all previously exposed discs remain fixed, and neither the reveal control nor identification control becomes better or worse with idle time.",
+        "A reveal event and its disc are committed synchronously. The only subsequent visible interpolation is the 0.18-second CSS budget-meter transition; it is presentation-only and leaves the reveal/identification outcome unchanged."
+      ],
+      "grouped_control_modes": [
+        "coordinate_reveal: all coordinate-console reveal commands across the run; each exposes one permanent disc and consumes one budget unit.",
+        "identification_submission: answer-field entry followed by FILE IDENTIFICATION; terminal certification after visual work, not an autonomous outcome phase."
+      ],
+      "delta_ms": null,
+      "window_ms": null,
+      "clause_i": {
+        "holds": true,
+        "reason": "For the static visual-information task, a history-only q cannot be optimal across histories with the same prior action transcript but different hidden objects or revealed pixels; it cannot choose the evidence-dependent next reveal or final name. This is observation dependence only and supplies no temporal effect."
+      },
+      "clause_ii": {
+        "holds": true,
+        "reason": "The current screenshot retains every permanent reveal disc and the visible controls, so a bounded endpoint view (the configured one-frame, 0 ms observation) can guide the next static reveal or identification. It predicts no future task-state change."
+      },
+      "clause_iii": {
+        "holds": false,
+        "reason": "No valid Delta > 0 exists: with no new action the scene, reveal records, answer target, and action effectiveness remain unchanged, so Q(H_t^tau,a)=Q(H_t,a) for every relevant action. A later deadline alone is excluded by the definition, and the CSS meter interpolation is not outcome-affecting task evolution."
+      },
+      "common_visible_process": "None. The visible reveal is caused synchronously by the agent's own action; the only idle-looking change is the presentation-only meter interpolation. No common visible autonomous process makes an action opportunity expire or degrade.",
+      "pre_run": {
+        "threshold": 0.5,
+        "at_least_half": null,
+        "rate": null,
+        "basis": "not_applicable",
+        "reason": "The mathematical test is already No at clause (iii). This mechanic has no autonomous outcome phase to start and wait through, so no pre-run percentage is asserted and the threshold cannot override the mathematical result.",
+        "seed_probe": null
+      },
+      "files_read_completely": [
+        "AGENTS.md",
+        "weird_captcha_gym/docs/controllability/real-time.md",
+        "weird_captcha_gym/environments/reveal_to_identify_env/controls.json",
+        "weird_captcha_gym/environments/reveal_to_identify_env/env.json",
+        "weird_captcha_gym/environments/reveal_to_identify_env/tasks/reveal_to_identify_seed_0001/task.json",
+        "weird_captcha_gym/environments/reveal_to_identify_env/tasks/reveal_to_identify_seed_0001/setup_task.sh",
+        "weird_captcha_gym/environments/reveal_to_identify_env/tasks/reveal_to_identify_seed_0001/export_result.sh",
+        "weird_captcha_gym/shared_scripts/incubator_generators/reveal_to_identify.py",
+        "weird_captcha_gym/shared_runtime/app/mechanics/reveal_to_identify.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/reveal_to_identify.css",
+        "weird_captcha_gym/shared_runtime/server/incubator_graders/reveal_to_identify.py",
+        "weird_captcha_gym/environments/reveal_to_identify_env/tasks/reveal_to_identify_seed_0001/verifier.py",
+        "weird_captcha_gym/tools/incubator_solvers/reveal_to_identify.py",
+        "weird_captcha_gym/shared_runtime/app/time_controller.js",
+        "weird_captcha_gym/shared_runtime/verifier_helpers.py"
+      ],
+      "source_evidence": [
+        {
+          "path": "weird_captcha_gym/environments/reveal_to_identify_env/controls.json",
+          "lines": "36-48",
+          "claim": "Difficulty 3 activates object_pool=[\"bicycle\",\"watering_can\",\"teapot\",\"telescope\",\"camera\",\"gramophone\",\"windmill\",\"umbrella\",\"typewriter\",\"sewing_machine\",\"lighthouse\",\"binoculars\",\"lantern\",\"violin\"], reveal_budget=5, reveal_radius=62, clutter_count=14, foreground_marks=1, rotation_max_deg=12, and scale range 0.9-1.02."
+        },
+        {
+          "path": "weird_captcha_gym/environments/reveal_to_identify_env/controls.json",
+          "lines": "82-86",
+          "claim": "The simplified interaction surface is implemented; the shared runtime is configured with play_time_seconds=120, observation_window_ms=0, and frames_per_observation=1."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/reveal_to_identify.py",
+          "lines": "294-335",
+          "claim": "Generation chooses a label and constructs a finite scene, subject transform, decorations, and salient points from a seeded PRNG; it creates no gameplay clock, motion state, or autonomous update."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/reveal_to_identify.py",
+          "lines": "339-370",
+          "claim": "The public state and ground truth contain the static scene, reveal budget/radius, answer, and salient points; no temporal phase or changing task state is generated."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/reveal_to_identify.js",
+          "lines": "161-244",
+          "claim": "redraw() repaints fog plus already-recorded model.events and update() only derives the visible count, remaining budget, meter width, and canvas from that state."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/reveal_to_identify.js",
+          "lines": "265-309",
+          "claim": "The coordinate_reveal handler synchronously appends one reveal event, updates the readout/canvas, and settles beginAction; no timer, animation loop, or delayed task-state transition is started."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/reveal_to_identify.js",
+          "lines": "389-455",
+          "claim": "render() selects the simplified controls, binds the corresponding event listener, and labels the footer NO LIVE MOTION; the answer field and FILE IDENTIFICATION button are separate terminal controls."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/reveal_to_identify.css",
+          "lines": "106-107",
+          "claim": "The only CSS transition is the 0.18-second reveal-meter width interpolation, which is presentation of already-updated budget state."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/reveal_to_identify.css",
+          "lines": "127-140",
+          "claim": "The plate is a static canvas with a cursor-style distinction between Full and Simplified; CSS provides no moving or time-evolving task geometry."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/reveal_to_identify.py",
+          "lines": "44-110",
+          "claim": "The grader checks the selected interaction source, static radius/budget accounting, reveal points, and submitted answer; it has no task-time or motion-dependent criterion."
+        },
+        {
+          "path": "weird_captcha_gym/environments/reveal_to_identify_env/tasks/reveal_to_identify_seed_0001/verifier.py",
+          "lines": "61-128",
+          "claim": "The exported-bundle verifier independently replays the same static event list and accepted answer, with no timestamp, phase, or evolving-state check."
+        },
+        {
+          "path": "weird_captcha_gym/environments/reveal_to_identify_env/env.json",
+          "lines": "9-14",
+          "claim": "The environment declares mouse and keyboard actions, a synchronous runner, zero observation-window milliseconds, and one frame per observation."
+        },
+        {
+          "path": "weird_captcha_gym/environments/reveal_to_identify_env/tasks/reveal_to_identify_seed_0001/task.json",
+          "lines": "15-29",
+          "claim": "The task uses the program verifier and explicitly describes the initial opaque plate, finite screenshot-guided reveals, mode-specific input, and a static-between-actions task with no real-time component."
+        },
+        {
+          "path": "weird_captcha_gym/tools/incubator_solvers/reveal_to_identify.py",
+          "lines": "19-39",
+          "claim": "The canonical solver maps Full to a canvas click and Simplified to coordinate fields/button, then waits only for pending action bookkeeping to settle."
+        },
+        {
+          "path": "weird_captcha_gym/tools/incubator_solvers/reveal_to_identify.py",
+          "lines": "64-98",
+          "claim": "The solver performs a finite loop of reveal actions, records before/after status, then types the answer and submits; it has no autonomous outcome phase."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/time_controller.js",
+          "lines": "125-148",
+          "claim": "beginAction records and removes pending input bookkeeping and is explicitly independent of time mode; it does not advance or mutate the mechanic's task state."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/verifier_helpers.py",
+          "lines": "33-52",
+          "claim": "The shared verifier helper only copies and parses the exported result before dispatching grading; it does not introduce task evolution."
+        }
+      ],
+      "uncertainties": []
+    },
+    {
+      "case_index": 437,
+      "public_environment_name": "Reveal to Identify",
+      "environment_id": "reveal_to_identify_env",
+      "difficulty": 4,
+      "interaction_mode": "full",
+      "label": "no",
+      "controls_available": [
+        {
+          "input_surface": "full",
+          "event_source": "plate_click",
+          "reveal_action": "Click directly on #reveal-plate to expose a permanent circular disc at the clicked plate coordinate.",
+          "active_parameters": {
+            "stage": {
+              "width": 900,
+              "height": 500
+            },
+            "object_pool": [
+              "bicycle",
+              "watering_can",
+              "teapot",
+              "telescope",
+              "camera",
+              "gramophone",
+              "windmill",
+              "umbrella",
+              "typewriter",
+              "sewing_machine",
+              "lighthouse",
+              "binoculars",
+              "lantern",
+              "violin"
+            ],
+            "reveal_budget": 5,
+            "reveal_radius_px": 50,
+            "clutter_count": 22,
+            "foreground_marks": 3,
+            "rotation_max_deg": 18,
+            "scale_min": 0.86,
+            "scale_max": 0.98
+          }
+        },
+        {
+          "input_surface": "keyboard plus FILE IDENTIFICATION button",
+          "event_source": "identification_submission",
+          "action": "Type the hidden object's common English name and press FILE IDENTIFICATION.",
+          "constraints": {
+            "maximum_characters": 32,
+            "alphabetic_words_only": true
+          },
+          "effect": "Terminal identification grading; one wrong filing loads a fresh plate."
+        }
+      ],
+      "autonomous_processes": [
+        "Between any two agent inputs, no outcome-affecting task state changes: the generated scene and all previously exposed discs remain fixed, and neither the reveal control nor identification control becomes better or worse with idle time.",
+        "A reveal event and its disc are committed synchronously. The only subsequent visible interpolation is the 0.18-second CSS budget-meter transition; it is presentation-only and leaves the reveal/identification outcome unchanged."
+      ],
+      "grouped_control_modes": [
+        "plate_click: all direct canvas clicks across the run; each exposes one permanent disc and consumes one budget unit.",
+        "identification_submission: answer-field entry followed by FILE IDENTIFICATION; terminal certification after visual work, not an autonomous outcome phase."
+      ],
+      "delta_ms": null,
+      "window_ms": null,
+      "clause_i": {
+        "holds": true,
+        "reason": "For the static visual-information task, a history-only q cannot be optimal across histories with the same prior action transcript but different hidden objects or revealed pixels; it cannot choose the evidence-dependent next reveal or final name. This is observation dependence only and supplies no temporal effect."
+      },
+      "clause_ii": {
+        "holds": true,
+        "reason": "The current screenshot retains every permanent reveal disc and the visible controls, so a bounded endpoint view (the configured one-frame, 0 ms observation) can guide the next static reveal or identification. It predicts no future task-state change."
+      },
+      "clause_iii": {
+        "holds": false,
+        "reason": "No valid Delta > 0 exists: with no new action the scene, reveal records, answer target, and action effectiveness remain unchanged, so Q(H_t^tau,a)=Q(H_t,a) for every relevant action. A later deadline alone is excluded by the definition, and the CSS meter interpolation is not outcome-affecting task evolution."
+      },
+      "common_visible_process": "None. The visible reveal is caused synchronously by the agent's own action; the only idle-looking change is the presentation-only meter interpolation. No common visible autonomous process makes an action opportunity expire or degrade.",
+      "pre_run": {
+        "threshold": 0.5,
+        "at_least_half": null,
+        "rate": null,
+        "basis": "not_applicable",
+        "reason": "The mathematical test is already No at clause (iii). This mechanic has no autonomous outcome phase to start and wait through, so no pre-run percentage is asserted and the threshold cannot override the mathematical result.",
+        "seed_probe": null
+      },
+      "files_read_completely": [
+        "AGENTS.md",
+        "weird_captcha_gym/docs/controllability/real-time.md",
+        "weird_captcha_gym/environments/reveal_to_identify_env/controls.json",
+        "weird_captcha_gym/environments/reveal_to_identify_env/env.json",
+        "weird_captcha_gym/environments/reveal_to_identify_env/tasks/reveal_to_identify_seed_0001/task.json",
+        "weird_captcha_gym/environments/reveal_to_identify_env/tasks/reveal_to_identify_seed_0001/setup_task.sh",
+        "weird_captcha_gym/environments/reveal_to_identify_env/tasks/reveal_to_identify_seed_0001/export_result.sh",
+        "weird_captcha_gym/shared_scripts/incubator_generators/reveal_to_identify.py",
+        "weird_captcha_gym/shared_runtime/app/mechanics/reveal_to_identify.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/reveal_to_identify.css",
+        "weird_captcha_gym/shared_runtime/server/incubator_graders/reveal_to_identify.py",
+        "weird_captcha_gym/environments/reveal_to_identify_env/tasks/reveal_to_identify_seed_0001/verifier.py",
+        "weird_captcha_gym/tools/incubator_solvers/reveal_to_identify.py",
+        "weird_captcha_gym/shared_runtime/app/time_controller.js",
+        "weird_captcha_gym/shared_runtime/verifier_helpers.py"
+      ],
+      "source_evidence": [
+        {
+          "path": "weird_captcha_gym/environments/reveal_to_identify_env/controls.json",
+          "lines": "51-63",
+          "claim": "Difficulty 4 activates object_pool=[\"bicycle\",\"watering_can\",\"teapot\",\"telescope\",\"camera\",\"gramophone\",\"windmill\",\"umbrella\",\"typewriter\",\"sewing_machine\",\"lighthouse\",\"binoculars\",\"lantern\",\"violin\"], reveal_budget=5, reveal_radius=50, clutter_count=22, foreground_marks=3, rotation_max_deg=18, and scale range 0.86-0.98."
+        },
+        {
+          "path": "weird_captcha_gym/environments/reveal_to_identify_env/controls.json",
+          "lines": "82-86",
+          "claim": "The full interaction surface is implemented; the shared runtime is configured with play_time_seconds=120, observation_window_ms=0, and frames_per_observation=1."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/reveal_to_identify.py",
+          "lines": "294-335",
+          "claim": "Generation chooses a label and constructs a finite scene, subject transform, decorations, and salient points from a seeded PRNG; it creates no gameplay clock, motion state, or autonomous update."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/reveal_to_identify.py",
+          "lines": "339-370",
+          "claim": "The public state and ground truth contain the static scene, reveal budget/radius, answer, and salient points; no temporal phase or changing task state is generated."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/reveal_to_identify.js",
+          "lines": "161-244",
+          "claim": "redraw() repaints fog plus already-recorded model.events and update() only derives the visible count, remaining budget, meter width, and canvas from that state."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/reveal_to_identify.js",
+          "lines": "265-309",
+          "claim": "The plate_click handler synchronously appends one reveal event, updates the readout/canvas, and settles beginAction; no timer, animation loop, or delayed task-state transition is started."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/reveal_to_identify.js",
+          "lines": "389-455",
+          "claim": "render() selects the full controls, binds the corresponding event listener, and labels the footer NO LIVE MOTION; the answer field and FILE IDENTIFICATION button are separate terminal controls."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/reveal_to_identify.css",
+          "lines": "106-107",
+          "claim": "The only CSS transition is the 0.18-second reveal-meter width interpolation, which is presentation of already-updated budget state."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/reveal_to_identify.css",
+          "lines": "127-140",
+          "claim": "The plate is a static canvas with a cursor-style distinction between Full and Simplified; CSS provides no moving or time-evolving task geometry."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/reveal_to_identify.py",
+          "lines": "44-110",
+          "claim": "The grader checks the selected interaction source, static radius/budget accounting, reveal points, and submitted answer; it has no task-time or motion-dependent criterion."
+        },
+        {
+          "path": "weird_captcha_gym/environments/reveal_to_identify_env/tasks/reveal_to_identify_seed_0001/verifier.py",
+          "lines": "61-128",
+          "claim": "The exported-bundle verifier independently replays the same static event list and accepted answer, with no timestamp, phase, or evolving-state check."
+        },
+        {
+          "path": "weird_captcha_gym/environments/reveal_to_identify_env/env.json",
+          "lines": "9-14",
+          "claim": "The environment declares mouse and keyboard actions, a synchronous runner, zero observation-window milliseconds, and one frame per observation."
+        },
+        {
+          "path": "weird_captcha_gym/environments/reveal_to_identify_env/tasks/reveal_to_identify_seed_0001/task.json",
+          "lines": "15-29",
+          "claim": "The task uses the program verifier and explicitly describes the initial opaque plate, finite screenshot-guided reveals, mode-specific input, and a static-between-actions task with no real-time component."
+        },
+        {
+          "path": "weird_captcha_gym/tools/incubator_solvers/reveal_to_identify.py",
+          "lines": "19-39",
+          "claim": "The canonical solver maps Full to a canvas click and Simplified to coordinate fields/button, then waits only for pending action bookkeeping to settle."
+        },
+        {
+          "path": "weird_captcha_gym/tools/incubator_solvers/reveal_to_identify.py",
+          "lines": "64-98",
+          "claim": "The solver performs a finite loop of reveal actions, records before/after status, then types the answer and submits; it has no autonomous outcome phase."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/time_controller.js",
+          "lines": "125-148",
+          "claim": "beginAction records and removes pending input bookkeeping and is explicitly independent of time mode; it does not advance or mutate the mechanic's task state."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/verifier_helpers.py",
+          "lines": "33-52",
+          "claim": "The shared verifier helper only copies and parses the exported result before dispatching grading; it does not introduce task evolution."
+        }
+      ],
+      "uncertainties": []
+    },
+    {
+      "case_index": 438,
+      "public_environment_name": "Reveal to Identify",
+      "environment_id": "reveal_to_identify_env",
+      "difficulty": 4,
+      "interaction_mode": "simplified",
+      "label": "no",
+      "controls_available": [
+        {
+          "input_surface": "simplified",
+          "event_source": "coordinate_reveal",
+          "reveal_action": "Set PLATE X and PLATE Y, then press REVEAL DISC to expose a permanent circular disc at the clamped coordinate.",
+          "active_parameters": {
+            "stage": {
+              "width": 900,
+              "height": 500
+            },
+            "object_pool": [
+              "bicycle",
+              "watering_can",
+              "teapot",
+              "telescope",
+              "camera",
+              "gramophone",
+              "windmill",
+              "umbrella",
+              "typewriter",
+              "sewing_machine",
+              "lighthouse",
+              "binoculars",
+              "lantern",
+              "violin"
+            ],
+            "reveal_budget": 5,
+            "reveal_radius_px": 50,
+            "clutter_count": 22,
+            "foreground_marks": 3,
+            "rotation_max_deg": 18,
+            "scale_min": 0.86,
+            "scale_max": 0.98
+          }
+        },
+        {
+          "input_surface": "keyboard plus FILE IDENTIFICATION button",
+          "event_source": "identification_submission",
+          "action": "Type the hidden object's common English name and press FILE IDENTIFICATION.",
+          "constraints": {
+            "maximum_characters": 32,
+            "alphabetic_words_only": true
+          },
+          "effect": "Terminal identification grading; one wrong filing loads a fresh plate."
+        }
+      ],
+      "autonomous_processes": [
+        "Between any two agent inputs, no outcome-affecting task state changes: the generated scene and all previously exposed discs remain fixed, and neither the reveal control nor identification control becomes better or worse with idle time.",
+        "A reveal event and its disc are committed synchronously. The only subsequent visible interpolation is the 0.18-second CSS budget-meter transition; it is presentation-only and leaves the reveal/identification outcome unchanged."
+      ],
+      "grouped_control_modes": [
+        "coordinate_reveal: all coordinate-console reveal commands across the run; each exposes one permanent disc and consumes one budget unit.",
+        "identification_submission: answer-field entry followed by FILE IDENTIFICATION; terminal certification after visual work, not an autonomous outcome phase."
+      ],
+      "delta_ms": null,
+      "window_ms": null,
+      "clause_i": {
+        "holds": true,
+        "reason": "For the static visual-information task, a history-only q cannot be optimal across histories with the same prior action transcript but different hidden objects or revealed pixels; it cannot choose the evidence-dependent next reveal or final name. This is observation dependence only and supplies no temporal effect."
+      },
+      "clause_ii": {
+        "holds": true,
+        "reason": "The current screenshot retains every permanent reveal disc and the visible controls, so a bounded endpoint view (the configured one-frame, 0 ms observation) can guide the next static reveal or identification. It predicts no future task-state change."
+      },
+      "clause_iii": {
+        "holds": false,
+        "reason": "No valid Delta > 0 exists: with no new action the scene, reveal records, answer target, and action effectiveness remain unchanged, so Q(H_t^tau,a)=Q(H_t,a) for every relevant action. A later deadline alone is excluded by the definition, and the CSS meter interpolation is not outcome-affecting task evolution."
+      },
+      "common_visible_process": "None. The visible reveal is caused synchronously by the agent's own action; the only idle-looking change is the presentation-only meter interpolation. No common visible autonomous process makes an action opportunity expire or degrade.",
+      "pre_run": {
+        "threshold": 0.5,
+        "at_least_half": null,
+        "rate": null,
+        "basis": "not_applicable",
+        "reason": "The mathematical test is already No at clause (iii). This mechanic has no autonomous outcome phase to start and wait through, so no pre-run percentage is asserted and the threshold cannot override the mathematical result.",
+        "seed_probe": null
+      },
+      "files_read_completely": [
+        "AGENTS.md",
+        "weird_captcha_gym/docs/controllability/real-time.md",
+        "weird_captcha_gym/environments/reveal_to_identify_env/controls.json",
+        "weird_captcha_gym/environments/reveal_to_identify_env/env.json",
+        "weird_captcha_gym/environments/reveal_to_identify_env/tasks/reveal_to_identify_seed_0001/task.json",
+        "weird_captcha_gym/environments/reveal_to_identify_env/tasks/reveal_to_identify_seed_0001/setup_task.sh",
+        "weird_captcha_gym/environments/reveal_to_identify_env/tasks/reveal_to_identify_seed_0001/export_result.sh",
+        "weird_captcha_gym/shared_scripts/incubator_generators/reveal_to_identify.py",
+        "weird_captcha_gym/shared_runtime/app/mechanics/reveal_to_identify.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/reveal_to_identify.css",
+        "weird_captcha_gym/shared_runtime/server/incubator_graders/reveal_to_identify.py",
+        "weird_captcha_gym/environments/reveal_to_identify_env/tasks/reveal_to_identify_seed_0001/verifier.py",
+        "weird_captcha_gym/tools/incubator_solvers/reveal_to_identify.py",
+        "weird_captcha_gym/shared_runtime/app/time_controller.js",
+        "weird_captcha_gym/shared_runtime/verifier_helpers.py"
+      ],
+      "source_evidence": [
+        {
+          "path": "weird_captcha_gym/environments/reveal_to_identify_env/controls.json",
+          "lines": "51-63",
+          "claim": "Difficulty 4 activates object_pool=[\"bicycle\",\"watering_can\",\"teapot\",\"telescope\",\"camera\",\"gramophone\",\"windmill\",\"umbrella\",\"typewriter\",\"sewing_machine\",\"lighthouse\",\"binoculars\",\"lantern\",\"violin\"], reveal_budget=5, reveal_radius=50, clutter_count=22, foreground_marks=3, rotation_max_deg=18, and scale range 0.86-0.98."
+        },
+        {
+          "path": "weird_captcha_gym/environments/reveal_to_identify_env/controls.json",
+          "lines": "82-86",
+          "claim": "The simplified interaction surface is implemented; the shared runtime is configured with play_time_seconds=120, observation_window_ms=0, and frames_per_observation=1."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/reveal_to_identify.py",
+          "lines": "294-335",
+          "claim": "Generation chooses a label and constructs a finite scene, subject transform, decorations, and salient points from a seeded PRNG; it creates no gameplay clock, motion state, or autonomous update."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/reveal_to_identify.py",
+          "lines": "339-370",
+          "claim": "The public state and ground truth contain the static scene, reveal budget/radius, answer, and salient points; no temporal phase or changing task state is generated."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/reveal_to_identify.js",
+          "lines": "161-244",
+          "claim": "redraw() repaints fog plus already-recorded model.events and update() only derives the visible count, remaining budget, meter width, and canvas from that state."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/reveal_to_identify.js",
+          "lines": "265-309",
+          "claim": "The coordinate_reveal handler synchronously appends one reveal event, updates the readout/canvas, and settles beginAction; no timer, animation loop, or delayed task-state transition is started."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/reveal_to_identify.js",
+          "lines": "389-455",
+          "claim": "render() selects the simplified controls, binds the corresponding event listener, and labels the footer NO LIVE MOTION; the answer field and FILE IDENTIFICATION button are separate terminal controls."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/reveal_to_identify.css",
+          "lines": "106-107",
+          "claim": "The only CSS transition is the 0.18-second reveal-meter width interpolation, which is presentation of already-updated budget state."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/reveal_to_identify.css",
+          "lines": "127-140",
+          "claim": "The plate is a static canvas with a cursor-style distinction between Full and Simplified; CSS provides no moving or time-evolving task geometry."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/reveal_to_identify.py",
+          "lines": "44-110",
+          "claim": "The grader checks the selected interaction source, static radius/budget accounting, reveal points, and submitted answer; it has no task-time or motion-dependent criterion."
+        },
+        {
+          "path": "weird_captcha_gym/environments/reveal_to_identify_env/tasks/reveal_to_identify_seed_0001/verifier.py",
+          "lines": "61-128",
+          "claim": "The exported-bundle verifier independently replays the same static event list and accepted answer, with no timestamp, phase, or evolving-state check."
+        },
+        {
+          "path": "weird_captcha_gym/environments/reveal_to_identify_env/env.json",
+          "lines": "9-14",
+          "claim": "The environment declares mouse and keyboard actions, a synchronous runner, zero observation-window milliseconds, and one frame per observation."
+        },
+        {
+          "path": "weird_captcha_gym/environments/reveal_to_identify_env/tasks/reveal_to_identify_seed_0001/task.json",
+          "lines": "15-29",
+          "claim": "The task uses the program verifier and explicitly describes the initial opaque plate, finite screenshot-guided reveals, mode-specific input, and a static-between-actions task with no real-time component."
+        },
+        {
+          "path": "weird_captcha_gym/tools/incubator_solvers/reveal_to_identify.py",
+          "lines": "19-39",
+          "claim": "The canonical solver maps Full to a canvas click and Simplified to coordinate fields/button, then waits only for pending action bookkeeping to settle."
+        },
+        {
+          "path": "weird_captcha_gym/tools/incubator_solvers/reveal_to_identify.py",
+          "lines": "64-98",
+          "claim": "The solver performs a finite loop of reveal actions, records before/after status, then types the answer and submits; it has no autonomous outcome phase."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/time_controller.js",
+          "lines": "125-148",
+          "claim": "beginAction records and removes pending input bookkeeping and is explicitly independent of time mode; it does not advance or mutate the mechanic's task state."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/verifier_helpers.py",
+          "lines": "33-52",
+          "claim": "The shared verifier helper only copies and parses the exported result before dispatching grading; it does not introduce task evolution."
+        }
+      ],
+      "uncertainties": []
+    },
+    {
+      "case_index": 439,
+      "public_environment_name": "Reveal to Identify",
+      "environment_id": "reveal_to_identify_env",
+      "difficulty": 5,
+      "interaction_mode": "full",
+      "label": "no",
+      "controls_available": [
+        {
+          "input_surface": "full",
+          "event_source": "plate_click",
+          "reveal_action": "Click directly on #reveal-plate to expose a permanent circular disc at the clicked plate coordinate.",
+          "active_parameters": {
+            "stage": {
+              "width": 900,
+              "height": 500
+            },
+            "object_pool": [
+              "bicycle",
+              "watering_can",
+              "teapot",
+              "telescope",
+              "camera",
+              "gramophone",
+              "windmill",
+              "umbrella",
+              "typewriter",
+              "sewing_machine",
+              "lighthouse",
+              "binoculars",
+              "lantern",
+              "violin"
+            ],
+            "reveal_budget": 4,
+            "reveal_radius_px": 43,
+            "clutter_count": 32,
+            "foreground_marks": 5,
+            "rotation_max_deg": 24,
+            "scale_min": 0.82,
+            "scale_max": 0.95
+          }
+        },
+        {
+          "input_surface": "keyboard plus FILE IDENTIFICATION button",
+          "event_source": "identification_submission",
+          "action": "Type the hidden object's common English name and press FILE IDENTIFICATION.",
+          "constraints": {
+            "maximum_characters": 32,
+            "alphabetic_words_only": true
+          },
+          "effect": "Terminal identification grading; one wrong filing loads a fresh plate."
+        }
+      ],
+      "autonomous_processes": [
+        "Between any two agent inputs, no outcome-affecting task state changes: the generated scene and all previously exposed discs remain fixed, and neither the reveal control nor identification control becomes better or worse with idle time.",
+        "A reveal event and its disc are committed synchronously. The only subsequent visible interpolation is the 0.18-second CSS budget-meter transition; it is presentation-only and leaves the reveal/identification outcome unchanged."
+      ],
+      "grouped_control_modes": [
+        "plate_click: all direct canvas clicks across the run; each exposes one permanent disc and consumes one budget unit.",
+        "identification_submission: answer-field entry followed by FILE IDENTIFICATION; terminal certification after visual work, not an autonomous outcome phase."
+      ],
+      "delta_ms": null,
+      "window_ms": null,
+      "clause_i": {
+        "holds": true,
+        "reason": "For the static visual-information task, a history-only q cannot be optimal across histories with the same prior action transcript but different hidden objects or revealed pixels; it cannot choose the evidence-dependent next reveal or final name. This is observation dependence only and supplies no temporal effect."
+      },
+      "clause_ii": {
+        "holds": true,
+        "reason": "The current screenshot retains every permanent reveal disc and the visible controls, so a bounded endpoint view (the configured one-frame, 0 ms observation) can guide the next static reveal or identification. It predicts no future task-state change."
+      },
+      "clause_iii": {
+        "holds": false,
+        "reason": "No valid Delta > 0 exists: with no new action the scene, reveal records, answer target, and action effectiveness remain unchanged, so Q(H_t^tau,a)=Q(H_t,a) for every relevant action. A later deadline alone is excluded by the definition, and the CSS meter interpolation is not outcome-affecting task evolution."
+      },
+      "common_visible_process": "None. The visible reveal is caused synchronously by the agent's own action; the only idle-looking change is the presentation-only meter interpolation. No common visible autonomous process makes an action opportunity expire or degrade.",
+      "pre_run": {
+        "threshold": 0.5,
+        "at_least_half": null,
+        "rate": null,
+        "basis": "not_applicable",
+        "reason": "The mathematical test is already No at clause (iii). This mechanic has no autonomous outcome phase to start and wait through, so no pre-run percentage is asserted and the threshold cannot override the mathematical result.",
+        "seed_probe": null
+      },
+      "files_read_completely": [
+        "AGENTS.md",
+        "weird_captcha_gym/docs/controllability/real-time.md",
+        "weird_captcha_gym/environments/reveal_to_identify_env/controls.json",
+        "weird_captcha_gym/environments/reveal_to_identify_env/env.json",
+        "weird_captcha_gym/environments/reveal_to_identify_env/tasks/reveal_to_identify_seed_0001/task.json",
+        "weird_captcha_gym/environments/reveal_to_identify_env/tasks/reveal_to_identify_seed_0001/setup_task.sh",
+        "weird_captcha_gym/environments/reveal_to_identify_env/tasks/reveal_to_identify_seed_0001/export_result.sh",
+        "weird_captcha_gym/shared_scripts/incubator_generators/reveal_to_identify.py",
+        "weird_captcha_gym/shared_runtime/app/mechanics/reveal_to_identify.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/reveal_to_identify.css",
+        "weird_captcha_gym/shared_runtime/server/incubator_graders/reveal_to_identify.py",
+        "weird_captcha_gym/environments/reveal_to_identify_env/tasks/reveal_to_identify_seed_0001/verifier.py",
+        "weird_captcha_gym/tools/incubator_solvers/reveal_to_identify.py",
+        "weird_captcha_gym/shared_runtime/app/time_controller.js",
+        "weird_captcha_gym/shared_runtime/verifier_helpers.py"
+      ],
+      "source_evidence": [
+        {
+          "path": "weird_captcha_gym/environments/reveal_to_identify_env/controls.json",
+          "lines": "66-78",
+          "claim": "Difficulty 5 activates object_pool=[\"bicycle\",\"watering_can\",\"teapot\",\"telescope\",\"camera\",\"gramophone\",\"windmill\",\"umbrella\",\"typewriter\",\"sewing_machine\",\"lighthouse\",\"binoculars\",\"lantern\",\"violin\"], reveal_budget=4, reveal_radius=43, clutter_count=32, foreground_marks=5, rotation_max_deg=24, and scale range 0.82-0.95."
+        },
+        {
+          "path": "weird_captcha_gym/environments/reveal_to_identify_env/controls.json",
+          "lines": "82-86",
+          "claim": "The full interaction surface is implemented; the shared runtime is configured with play_time_seconds=120, observation_window_ms=0, and frames_per_observation=1."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/reveal_to_identify.py",
+          "lines": "294-335",
+          "claim": "Generation chooses a label and constructs a finite scene, subject transform, decorations, and salient points from a seeded PRNG; it creates no gameplay clock, motion state, or autonomous update."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/reveal_to_identify.py",
+          "lines": "339-370",
+          "claim": "The public state and ground truth contain the static scene, reveal budget/radius, answer, and salient points; no temporal phase or changing task state is generated."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/reveal_to_identify.js",
+          "lines": "161-244",
+          "claim": "redraw() repaints fog plus already-recorded model.events and update() only derives the visible count, remaining budget, meter width, and canvas from that state."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/reveal_to_identify.js",
+          "lines": "265-309",
+          "claim": "The plate_click handler synchronously appends one reveal event, updates the readout/canvas, and settles beginAction; no timer, animation loop, or delayed task-state transition is started."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/reveal_to_identify.js",
+          "lines": "389-455",
+          "claim": "render() selects the full controls, binds the corresponding event listener, and labels the footer NO LIVE MOTION; the answer field and FILE IDENTIFICATION button are separate terminal controls."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/reveal_to_identify.css",
+          "lines": "106-107",
+          "claim": "The only CSS transition is the 0.18-second reveal-meter width interpolation, which is presentation of already-updated budget state."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/reveal_to_identify.css",
+          "lines": "127-140",
+          "claim": "The plate is a static canvas with a cursor-style distinction between Full and Simplified; CSS provides no moving or time-evolving task geometry."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/reveal_to_identify.py",
+          "lines": "44-110",
+          "claim": "The grader checks the selected interaction source, static radius/budget accounting, reveal points, and submitted answer; it has no task-time or motion-dependent criterion."
+        },
+        {
+          "path": "weird_captcha_gym/environments/reveal_to_identify_env/tasks/reveal_to_identify_seed_0001/verifier.py",
+          "lines": "61-128",
+          "claim": "The exported-bundle verifier independently replays the same static event list and accepted answer, with no timestamp, phase, or evolving-state check."
+        },
+        {
+          "path": "weird_captcha_gym/environments/reveal_to_identify_env/env.json",
+          "lines": "9-14",
+          "claim": "The environment declares mouse and keyboard actions, a synchronous runner, zero observation-window milliseconds, and one frame per observation."
+        },
+        {
+          "path": "weird_captcha_gym/environments/reveal_to_identify_env/tasks/reveal_to_identify_seed_0001/task.json",
+          "lines": "15-29",
+          "claim": "The task uses the program verifier and explicitly describes the initial opaque plate, finite screenshot-guided reveals, mode-specific input, and a static-between-actions task with no real-time component."
+        },
+        {
+          "path": "weird_captcha_gym/tools/incubator_solvers/reveal_to_identify.py",
+          "lines": "19-39",
+          "claim": "The canonical solver maps Full to a canvas click and Simplified to coordinate fields/button, then waits only for pending action bookkeeping to settle."
+        },
+        {
+          "path": "weird_captcha_gym/tools/incubator_solvers/reveal_to_identify.py",
+          "lines": "64-98",
+          "claim": "The solver performs a finite loop of reveal actions, records before/after status, then types the answer and submits; it has no autonomous outcome phase."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/time_controller.js",
+          "lines": "125-148",
+          "claim": "beginAction records and removes pending input bookkeeping and is explicitly independent of time mode; it does not advance or mutate the mechanic's task state."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/verifier_helpers.py",
+          "lines": "33-52",
+          "claim": "The shared verifier helper only copies and parses the exported result before dispatching grading; it does not introduce task evolution."
+        }
+      ],
+      "uncertainties": []
+    },
+    {
+      "case_index": 440,
+      "public_environment_name": "Reveal to Identify",
+      "environment_id": "reveal_to_identify_env",
+      "difficulty": 5,
+      "interaction_mode": "simplified",
+      "label": "no",
+      "controls_available": [
+        {
+          "input_surface": "simplified",
+          "event_source": "coordinate_reveal",
+          "reveal_action": "Set PLATE X and PLATE Y, then press REVEAL DISC to expose a permanent circular disc at the clamped coordinate.",
+          "active_parameters": {
+            "stage": {
+              "width": 900,
+              "height": 500
+            },
+            "object_pool": [
+              "bicycle",
+              "watering_can",
+              "teapot",
+              "telescope",
+              "camera",
+              "gramophone",
+              "windmill",
+              "umbrella",
+              "typewriter",
+              "sewing_machine",
+              "lighthouse",
+              "binoculars",
+              "lantern",
+              "violin"
+            ],
+            "reveal_budget": 4,
+            "reveal_radius_px": 43,
+            "clutter_count": 32,
+            "foreground_marks": 5,
+            "rotation_max_deg": 24,
+            "scale_min": 0.82,
+            "scale_max": 0.95
+          }
+        },
+        {
+          "input_surface": "keyboard plus FILE IDENTIFICATION button",
+          "event_source": "identification_submission",
+          "action": "Type the hidden object's common English name and press FILE IDENTIFICATION.",
+          "constraints": {
+            "maximum_characters": 32,
+            "alphabetic_words_only": true
+          },
+          "effect": "Terminal identification grading; one wrong filing loads a fresh plate."
+        }
+      ],
+      "autonomous_processes": [
+        "Between any two agent inputs, no outcome-affecting task state changes: the generated scene and all previously exposed discs remain fixed, and neither the reveal control nor identification control becomes better or worse with idle time.",
+        "A reveal event and its disc are committed synchronously. The only subsequent visible interpolation is the 0.18-second CSS budget-meter transition; it is presentation-only and leaves the reveal/identification outcome unchanged."
+      ],
+      "grouped_control_modes": [
+        "coordinate_reveal: all coordinate-console reveal commands across the run; each exposes one permanent disc and consumes one budget unit.",
+        "identification_submission: answer-field entry followed by FILE IDENTIFICATION; terminal certification after visual work, not an autonomous outcome phase."
+      ],
+      "delta_ms": null,
+      "window_ms": null,
+      "clause_i": {
+        "holds": true,
+        "reason": "For the static visual-information task, a history-only q cannot be optimal across histories with the same prior action transcript but different hidden objects or revealed pixels; it cannot choose the evidence-dependent next reveal or final name. This is observation dependence only and supplies no temporal effect."
+      },
+      "clause_ii": {
+        "holds": true,
+        "reason": "The current screenshot retains every permanent reveal disc and the visible controls, so a bounded endpoint view (the configured one-frame, 0 ms observation) can guide the next static reveal or identification. It predicts no future task-state change."
+      },
+      "clause_iii": {
+        "holds": false,
+        "reason": "No valid Delta > 0 exists: with no new action the scene, reveal records, answer target, and action effectiveness remain unchanged, so Q(H_t^tau,a)=Q(H_t,a) for every relevant action. A later deadline alone is excluded by the definition, and the CSS meter interpolation is not outcome-affecting task evolution."
+      },
+      "common_visible_process": "None. The visible reveal is caused synchronously by the agent's own action; the only idle-looking change is the presentation-only meter interpolation. No common visible autonomous process makes an action opportunity expire or degrade.",
+      "pre_run": {
+        "threshold": 0.5,
+        "at_least_half": null,
+        "rate": null,
+        "basis": "not_applicable",
+        "reason": "The mathematical test is already No at clause (iii). This mechanic has no autonomous outcome phase to start and wait through, so no pre-run percentage is asserted and the threshold cannot override the mathematical result.",
+        "seed_probe": null
+      },
+      "files_read_completely": [
+        "AGENTS.md",
+        "weird_captcha_gym/docs/controllability/real-time.md",
+        "weird_captcha_gym/environments/reveal_to_identify_env/controls.json",
+        "weird_captcha_gym/environments/reveal_to_identify_env/env.json",
+        "weird_captcha_gym/environments/reveal_to_identify_env/tasks/reveal_to_identify_seed_0001/task.json",
+        "weird_captcha_gym/environments/reveal_to_identify_env/tasks/reveal_to_identify_seed_0001/setup_task.sh",
+        "weird_captcha_gym/environments/reveal_to_identify_env/tasks/reveal_to_identify_seed_0001/export_result.sh",
+        "weird_captcha_gym/shared_scripts/incubator_generators/reveal_to_identify.py",
+        "weird_captcha_gym/shared_runtime/app/mechanics/reveal_to_identify.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/reveal_to_identify.css",
+        "weird_captcha_gym/shared_runtime/server/incubator_graders/reveal_to_identify.py",
+        "weird_captcha_gym/environments/reveal_to_identify_env/tasks/reveal_to_identify_seed_0001/verifier.py",
+        "weird_captcha_gym/tools/incubator_solvers/reveal_to_identify.py",
+        "weird_captcha_gym/shared_runtime/app/time_controller.js",
+        "weird_captcha_gym/shared_runtime/verifier_helpers.py"
+      ],
+      "source_evidence": [
+        {
+          "path": "weird_captcha_gym/environments/reveal_to_identify_env/controls.json",
+          "lines": "66-78",
+          "claim": "Difficulty 5 activates object_pool=[\"bicycle\",\"watering_can\",\"teapot\",\"telescope\",\"camera\",\"gramophone\",\"windmill\",\"umbrella\",\"typewriter\",\"sewing_machine\",\"lighthouse\",\"binoculars\",\"lantern\",\"violin\"], reveal_budget=4, reveal_radius=43, clutter_count=32, foreground_marks=5, rotation_max_deg=24, and scale range 0.82-0.95."
+        },
+        {
+          "path": "weird_captcha_gym/environments/reveal_to_identify_env/controls.json",
+          "lines": "82-86",
+          "claim": "The simplified interaction surface is implemented; the shared runtime is configured with play_time_seconds=120, observation_window_ms=0, and frames_per_observation=1."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/reveal_to_identify.py",
+          "lines": "294-335",
+          "claim": "Generation chooses a label and constructs a finite scene, subject transform, decorations, and salient points from a seeded PRNG; it creates no gameplay clock, motion state, or autonomous update."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/reveal_to_identify.py",
+          "lines": "339-370",
+          "claim": "The public state and ground truth contain the static scene, reveal budget/radius, answer, and salient points; no temporal phase or changing task state is generated."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/reveal_to_identify.js",
+          "lines": "161-244",
+          "claim": "redraw() repaints fog plus already-recorded model.events and update() only derives the visible count, remaining budget, meter width, and canvas from that state."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/reveal_to_identify.js",
+          "lines": "265-309",
+          "claim": "The coordinate_reveal handler synchronously appends one reveal event, updates the readout/canvas, and settles beginAction; no timer, animation loop, or delayed task-state transition is started."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/reveal_to_identify.js",
+          "lines": "389-455",
+          "claim": "render() selects the simplified controls, binds the corresponding event listener, and labels the footer NO LIVE MOTION; the answer field and FILE IDENTIFICATION button are separate terminal controls."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/reveal_to_identify.css",
+          "lines": "106-107",
+          "claim": "The only CSS transition is the 0.18-second reveal-meter width interpolation, which is presentation of already-updated budget state."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/reveal_to_identify.css",
+          "lines": "127-140",
+          "claim": "The plate is a static canvas with a cursor-style distinction between Full and Simplified; CSS provides no moving or time-evolving task geometry."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/reveal_to_identify.py",
+          "lines": "44-110",
+          "claim": "The grader checks the selected interaction source, static radius/budget accounting, reveal points, and submitted answer; it has no task-time or motion-dependent criterion."
+        },
+        {
+          "path": "weird_captcha_gym/environments/reveal_to_identify_env/tasks/reveal_to_identify_seed_0001/verifier.py",
+          "lines": "61-128",
+          "claim": "The exported-bundle verifier independently replays the same static event list and accepted answer, with no timestamp, phase, or evolving-state check."
+        },
+        {
+          "path": "weird_captcha_gym/environments/reveal_to_identify_env/env.json",
+          "lines": "9-14",
+          "claim": "The environment declares mouse and keyboard actions, a synchronous runner, zero observation-window milliseconds, and one frame per observation."
+        },
+        {
+          "path": "weird_captcha_gym/environments/reveal_to_identify_env/tasks/reveal_to_identify_seed_0001/task.json",
+          "lines": "15-29",
+          "claim": "The task uses the program verifier and explicitly describes the initial opaque plate, finite screenshot-guided reveals, mode-specific input, and a static-between-actions task with no real-time component."
+        },
+        {
+          "path": "weird_captcha_gym/tools/incubator_solvers/reveal_to_identify.py",
+          "lines": "19-39",
+          "claim": "The canonical solver maps Full to a canvas click and Simplified to coordinate fields/button, then waits only for pending action bookkeeping to settle."
+        },
+        {
+          "path": "weird_captcha_gym/tools/incubator_solvers/reveal_to_identify.py",
+          "lines": "64-98",
+          "claim": "The solver performs a finite loop of reveal actions, records before/after status, then types the answer and submits; it has no autonomous outcome phase."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/time_controller.js",
+          "lines": "125-148",
+          "claim": "beginAction records and removes pending input bookkeeping and is explicitly independent of time mode; it does not advance or mutate the mechanic's task state."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/verifier_helpers.py",
+          "lines": "33-52",
+          "claim": "The shared verifier helper only copies and parses the exported result before dispatching grading; it does not introduce task evolution."
+        }
+      ],
+      "uncertainties": []
+    }
+  ]
+}
+

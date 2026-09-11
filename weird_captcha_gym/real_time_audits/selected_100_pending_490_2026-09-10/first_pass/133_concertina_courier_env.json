@@ -1,0 +1,112 @@
+{
+  "case_index": 133,
+  "public_environment_name": "Concertina Courier",
+  "environment_id": "concertina_courier_env",
+  "difficulty": 2,
+  "interaction_mode": "full",
+  "label": "no",
+  "controls_available": [
+    "Full-mode pointer hold on the visible body arrows: slide left, morph taller, slide right, and morph wider.",
+    "Release the held pointer to set the control to coast [0, 0].",
+    "CERTIFY submits the current replay administratively; NEW ROOM abandons the attempt and starts a fresh room."
+  ],
+  "autonomous_processes": [
+    "Every 40 ms while active, four physics substeps apply the current control, horizontal drag, gravity, collision/landing, and seal-contact collection.",
+    "Between input events the current hold or coast control persists; the requestAnimationFrame loop advances the simulation from the task clock.",
+    "An unsupported parcel falls through the floor gap and can become terminal when its bottom exceeds 570; an active run also times out at 4500 ticks."
+  ],
+  "grouped_control_modes": [
+    "Full body-hold transport/morph control across all seeds, rounds, and attempts: slide left/right, morph taller/wider, and release to coast."
+  ],
+  "delta_ms": 80,
+  "window_ms": 80,
+  "clause_i": {
+    "holds": false,
+    "reason": "The exact L2 linear room admits an observation-free policy q driven only by its own tick schedule. A fixed full-mode sequence of 10 ticks wider, 90 right, 50 taller, 25 left, 25 right, 56 wider, 120 right, 56 taller, and 20 left (releasing and re-holding between nonzero controls) sweeps the bounded seed-dependent seal positions, passes the shelf, bridges the gap, and reaches the far seal. The L2 profile explicitly calls the route reusable, and the task notes preserve the known blind route. Thus visual history is not necessary to choose the delayed action for this control mode; choosing a different Delta or recent window cannot repair clause (i)."
+  },
+  "clause_ii": {
+    "holds": true,
+    "reason": "A bounded-window policy exists trivially by replaying the same clock-driven q while ignoring W. The three chronological frames over the configured 80 ms would also visibly expose parcel displacement, falling, and the static shelves, seals, and gap, but that information is not required for the blind L2 route."
+  },
+  "clause_iii": {
+    "holds": true,
+    "reason": "The same visible physics can make an action opportunity expire: with the parcel moving toward the 85-unit floor gap while its height is 80 (width 80), morph-wider can be applied while support is retained; after one or two 40 ms ticks without a new action, inertia and gravity move it into the unsupported interval, where falling and collision checks make that morph or braking action strictly less effective. A short delay can be chosen before terminal fall so another recovery remains possible. This is non-clock state evolution, not merely a deadline."
+  },
+  "common_visible_process": "The common process is the canvas-visible parcel trajectory under gravity and horizontal drag. Its position, shape, shelf/gap contact, and falling state change between frames, but for this fixed linear L2 configuration a precomputed hold/release schedule can cover the bounded geometry variation without using that evidence.",
+  "pre_run": {
+    "threshold": 0.5,
+    "at_least_half": false,
+    "rate": null,
+    "basis": "source_structural",
+    "reason": "The browser starts the simulation immediately and has no start/arm phase. After preparation, full mode can leave only one persistent control or coast; it cannot complete the required sequence of shape changes. The linear route must alternate approximately h=50 to clear the overhead shelf, h=200 to reach the high seal, h=32 to bridge the floor gap, and h=200 for the far seal. The source solver's linear branch explicitly performs the 50, 200, 32, 200 shape sequence. The fixed blind route above is an in-run sequence of outcome-affecting holds and releases, not a pre-run solution with no actions during the autonomous outcome phase.",
+    "seed_probe": null
+  },
+  "files_read_completely": [
+    "AGENTS.md",
+    "weird_captcha_gym/docs/controllability/real-time.md",
+    "weird_captcha_gym/environments/concertina_courier_env/controls.json",
+    "weird_captcha_gym/environments/concertina_courier_env/env.json",
+    "weird_captcha_gym/environments/concertina_courier_env/tasks/concertina_courier_seed_0001/task.json",
+    "weird_captcha_gym/shared_scripts/incubator_generators/concertina_courier.py",
+    "weird_captcha_gym/shared_runtime/app/mechanics/concertina_courier.js",
+    "weird_captcha_gym/shared_runtime/app/mechanics/concertina_courier.css",
+    "weird_captcha_gym/shared_runtime/app/time_controller.js",
+    "weird_captcha_gym/shared_runtime/server/incubator_graders/concertina_courier.py",
+    "weird_captcha_gym/environments/concertina_courier_env/tasks/concertina_courier_seed_0001/verifier.py",
+    "weird_captcha_gym/shared_runtime/verifier_helpers.py",
+    "weird_captcha_gym/tools/incubator_solvers/concertina_courier.py"
+  ],
+  "source_evidence": [
+    {
+      "path": "weird_captcha_gym/environments/concertina_courier_env/controls.json",
+      "lines": "21-30,93-104",
+      "claim": "Difficulty 2 is the linear profile with clearance 58, gap 85, reach 160, alcove 0, and drag 0.85; full interaction is implemented and the observation window is 80 ms with 3 frames."
+    },
+    {
+      "path": "weird_captcha_gym/shared_scripts/incubator_generators/concertina_courier.py",
+      "lines": "20-37",
+      "claim": "The L2 generator varies tunnel, shelf end, floor-gap position, and seal coordinates by seed, and sets tick_ms to 40 with the initial parcel at x=100, bottom=420, h=80."
+    },
+    {
+      "path": "weird_captcha_gym/shared_runtime/app/mechanics/concertina_courier.js",
+      "lines": "5-22",
+      "claim": "The browser physics preserves area, applies morphing and horizontal drag, advances gravity every substep, handles support/landing, collects visible seals, and marks an unsupported fall terminal."
+    },
+    {
+      "path": "weird_captcha_gym/shared_runtime/app/mechanics/concertina_courier.js",
+      "lines": "24-43",
+      "claim": "Full mode renders the four body arrows; the canvas renders all solids, seals, and parcel bounds; task ticks are derived from performance.now and controls are recorded as transitions."
+    },
+    {
+      "path": "weird_captcha_gym/shared_runtime/app/mechanics/concertina_courier.js",
+      "lines": "46-51",
+      "claim": "Full-mode pointerdown starts a body hold, pointerup releases to coast, and the requestAnimationFrame loop keeps advancing the simulation."
+    },
+    {
+      "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/concertina_courier.py",
+      "lines": "21-49,62-79",
+      "claim": "The authoritative replay applies the same four-substep gravity/drag/collision dynamics and persists the selected control between transcript events; full mode requires release before another nonzero hold."
+    },
+    {
+      "path": "weird_captcha_gym/tools/incubator_solvers/concertina_courier.py",
+      "lines": "10-38,53-69",
+      "claim": "The reference controller's mechanics are drive/brake/coast and receding two-tick prediction, while those computations are implementation evidence rather than grader truth."
+    },
+    {
+      "path": "weird_captcha_gym/tools/incubator_solvers/concertina_courier.py",
+      "lines": "125-144",
+      "claim": "The exact linear branch changes shape to clearance-8, moves under the shelf, changes to h=200 for the high seal, changes to h=32 for the gap crossing, then changes to h=200 for the far seal."
+    },
+    {
+      "path": "weird_captcha_gym/shared_runtime/app/time_controller.js",
+      "lines": "23-26,155-199",
+      "claim": "The shared clock distinguishes running live time from paused time and pauses/resumes the task clock and animation frames; the mechanic itself has no environment-specific real-time branch."
+    },
+    {
+      "path": "weird_captcha_gym/environments/concertina_courier_env/tasks/concertina_courier_seed_0001/verifier.py",
+      "lines": "36-49",
+      "claim": "Verification loads the exported result and independently replays the Concertina Courier grader rather than trusting client collection claims."
+    }
+  ],
+  "uncertainties": []
+}

@@ -1,0 +1,140 @@
+{
+  "case_index": 29,
+  "public_environment_name": "Apothecary Dead Reckoning",
+  "environment_id": "apothecary_dead_reckoning_env",
+  "difficulty": 5,
+  "interaction_mode": "full",
+  "label": "no",
+  "controls_available": [
+    "Six visible ingredient jars can be dragged into the mortar; the full interface records a jar-drag gesture for loading or replacing an ingredient.",
+    "The pestle is controlled by pointer down and release. While held, the selected ingredient advances through 15 grind notches at one notch per 240 ms, capped at the finest notch.",
+    "STIR PATH is a click control; each click advances the selected path by six of its 24 path intervals and route progress is accepted only at the five generated route gates.",
+    "WATER is a click control with a five-use budget and moves up to 30 px toward the origin; BELLOWS is a click control with a three-use budget and moves 19 px along the current heading.",
+    "SEAL is a click control that submits the current position and effect. The environment declares mouse and keyboard actions, but this mechanic installs no keyboard handler."
+  ],
+  "autonomous_processes": [
+    "During an active full-interface pestle hold, requestAnimationFrame repeatedly calls advanceGrinding; performance.now relative to the pointerdown advances grindStep at the fixed 240 ms tick.",
+    "The pestle has a repeating 0.24 s CSS pounding animation while data-grinding is true; it changes presentation only and does not change replay state.",
+    "After a failed seal and challenge rerender, a 1.8 s timeout hides the fresh-failure overlay; this is administrative presentation and not an outcome-affecting task process.",
+    "There is no autonomous route travel, hazard motion, vortex motion, fog progression, or effect movement. Stir, water, bellows, loading, and sealing update task state synchronously in their event handlers."
+  ],
+  "grouped_control_modes": [
+    "Full jar-drag loading/replacement: load_ingredient and replace_ingredient.",
+    "Full pestle duration control: grind_start, zero or more grind_tick events, and grind_release.",
+    "Ladle path advancement: repeated STIR PATH clicks producing stir events.",
+    "Water recovery: WATER button clicks producing water events.",
+    "Heading displacement and recovery: BELLOWS button clicks producing bellows events.",
+    "Final certification: one SEAL button click producing a seal event."
+  ],
+  "delta_ms": null,
+  "window_ms": 240,
+  "clause_i": {
+    "holds": false,
+    "reason": "The only candidate timed task-state change is the pestle hold. Once the target notch is chosen from the visible static route geometry, q can schedule release from the pointerdown using the fixed 240 ms notch clock, so visible temporal evidence is not required for that timing choice. Static variation in route geometry is a separate screenshot problem and is not the same autonomous phenomenon."
+  },
+  "clause_ii": {
+    "holds": true,
+    "reason": "A current screenshot contains the visible route ring, path preview, flask position, and grind indicator, so a bounded one-frame/240 ms observation window is sufficient for the ordinary visual route decisions. This sufficiency does not make the fixed-rate hold schedule depend on a recent visual window."
+  },
+  "clause_iii": {
+    "holds": false,
+    "reason": "No valid non-clock autonomous process makes an outcome-affecting action strictly less effective during a delay. The apparent degradation after a pestle hold is a fixed-duration release schedule driven by the agent's own action clock; the frozen interpretation explicitly excludes minimum-duration holds solvable that way. When no hold is active, waiting leaves position, route progress, hazards, fog, and effect geometry unchanged."
+  },
+  "common_visible_process": "None. Grind progression occurs only while the agent's pestle action is already held and follows a fixed action-clock schedule. The CSS pounding animation and failure-overlay timeout are unrelated presentation changes, while all other task-state transitions are synchronous. Therefore no single visibly evidenced autonomous process supplies clauses (i), (ii), and (iii).",
+  "pre_run": {
+    "threshold": 0.5,
+    "at_least_half": null,
+    "rate": null,
+    "basis": "not_applicable",
+    "reason": "The mathematical real-time definition already fails at clause (iii), so the pre-run threshold cannot change the No label. No instance percentage was inferred.",
+    "seed_probe": null
+  },
+  "files_read_completely": [
+    "AGENTS.md",
+    "weird_captcha_gym/docs/controllability/real-time.md",
+    "weird_captcha_gym/environments/apothecary_dead_reckoning_env/controls.json",
+    "weird_captcha_gym/environments/apothecary_dead_reckoning_env/env.json",
+    "weird_captcha_gym/environments/apothecary_dead_reckoning_env/scripts/install_puzzle_runtime.sh",
+    "weird_captcha_gym/environments/apothecary_dead_reckoning_env/scripts/setup_puzzle_runtime.sh",
+    "weird_captcha_gym/environments/apothecary_dead_reckoning_env/tasks/apothecary_dead_reckoning_seed_0001/task.json",
+    "weird_captcha_gym/environments/apothecary_dead_reckoning_env/tasks/apothecary_dead_reckoning_seed_0001/setup_task.sh",
+    "weird_captcha_gym/environments/apothecary_dead_reckoning_env/tasks/apothecary_dead_reckoning_seed_0001/export_result.sh",
+    "weird_captcha_gym/environments/apothecary_dead_reckoning_env/tasks/apothecary_dead_reckoning_seed_0001/verifier.py",
+    "weird_captcha_gym/shared_scripts/incubator_generators/apothecary_dead_reckoning.py",
+    "weird_captcha_gym/shared_runtime/app/mechanics/apothecary_dead_reckoning.js",
+    "weird_captcha_gym/shared_runtime/app/mechanics/apothecary_dead_reckoning.css",
+    "weird_captcha_gym/shared_runtime/server/incubator_graders/apothecary_dead_reckoning.py",
+    "weird_captcha_gym/shared_runtime/verifier_helpers.py",
+    "weird_captcha_gym/tools/incubator_solvers/apothecary_dead_reckoning.py"
+  ],
+  "source_evidence": [
+    {
+      "path": "weird_captcha_gym/environments/apothecary_dead_reckoning_env/controls.json",
+      "lines": "31-50",
+      "claim": "The assigned level-5 profile has six ingredients, five route commits, 15 grind notches, eight bones, three vortices, zero tolerated hazard contacts, and the full interface is jar drag plus duration-based pestle control; the configured observation window is 240 ms with one frame."
+    },
+    {
+      "path": "weird_captcha_gym/environments/apothecary_dead_reckoning_env/env.json",
+      "lines": "9-14",
+      "claim": "The environment exposes a 240 ms runner window, one configured frame per observation, mouse and keyboard actions, and synchronous execution."
+    },
+    {
+      "path": "weird_captcha_gym/docs/controllability/real-time.md",
+      "lines": "62-68, 82-86, 124",
+      "claim": "The frozen definition requires non-clock task-state evolution and one common visible process, and specifically classifies a minimum-duration hold with a fixed target as No because the agent's action clock supplies the release schedule."
+    },
+    {
+      "path": "weird_captcha_gym/shared_scripts/incubator_generators/apothecary_dead_reckoning.py",
+      "lines": "65-77, 525-755",
+      "claim": "Generation takes difficulty parameters from _control_condition, constructs static ingredient paths, route gates, hazards, vortices, effects, and interaction geometry, and exports grind_tick_ms=240 and stir_stride=6 without an autonomous task timer."
+    },
+    {
+      "path": "weird_captcha_gym/shared_runtime/app/mechanics/apothecary_dead_reckoning.js",
+      "lines": "418-446",
+      "claim": "The full pestle starts a performance.now-based loop on pointerdown; advanceGrinding increments grindStep according to elapsed fixed ticks and stops/records the value on pointerup."
+    },
+    {
+      "path": "weird_captcha_gym/shared_runtime/app/mechanics/apothecary_dead_reckoning.js",
+      "lines": "448-526",
+      "claim": "Stir, water, and bellows resolve their complete movement synchronously in the click handlers, immediately updating position, hazards, vortices, reveal, and route state."
+    },
+    {
+      "path": "weird_captcha_gym/shared_runtime/app/mechanics/apothecary_dead_reckoning.js",
+      "lines": "550-570, 630-701",
+      "claim": "Sealing is a button event; the only timeout is the 1.8 s fresh-failure overlay cleanup, and the full interface binds pointer events for jars and pestle plus click events for the task buttons."
+    },
+    {
+      "path": "weird_captcha_gym/shared_runtime/app/mechanics/apothecary_dead_reckoning.css",
+      "lines": "170-175",
+      "claim": "The only CSS animation is the visual pestle pounding animation while grinding."
+    },
+    {
+      "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/apothecary_dead_reckoning.py",
+      "lines": "406-476, 486-614, 620-654",
+      "claim": "The grader replays a sequential event transcript; grind ticks are legal only inside a full hold, movement is replayed from each stir or utensil event, and pass depends on final geometry, route progress, contacts, budgets, and one seal rather than elapsed time."
+    },
+    {
+      "path": "weird_captcha_gym/environments/apothecary_dead_reckoning_env/tasks/apothecary_dead_reckoning_seed_0001/verifier.py",
+      "lines": "22-42",
+      "claim": "The verifier loads the exported result and independent apothecary grader and returns its replay decision."
+    },
+    {
+      "path": "weird_captcha_gym/shared_runtime/verifier_helpers.py",
+      "lines": "33-52",
+      "claim": "The shared verifier helper only copies and parses /tmp/task_result.json; it adds no task-time or elapsed-time condition."
+    },
+    {
+      "path": "weird_captcha_gym/tools/incubator_solvers/apothecary_dead_reckoning.py",
+      "lines": "52-77",
+      "claim": "The full solver waits until the desired grind notch then releases the pestle and advances the path through repeated synchronous STIR PATH clicks, illustrating the fixed action-clock schedule."
+    },
+    {
+      "path": "weird_captcha_gym/environments/apothecary_dead_reckoning_env/tasks/apothecary_dead_reckoning_seed_0001/task.json",
+      "lines": "15-35",
+      "claim": "The checked-in seed artifact is an easy/difficulty-2 default, whereas this review follows the supplied difficulty-5/full configuration; the generator's condition-driven parameter path is used for the assigned configuration."
+    }
+  ],
+  "uncertainties": [
+    "The checked-in seed_0001 task artifact declares easy/difficulty 2, but the assignment explicitly supplies difficulty 5/full and controls.json contains that exact profile; this is a resolved configuration-source discrepancy, not a classification uncertainty."
+  ]
+}

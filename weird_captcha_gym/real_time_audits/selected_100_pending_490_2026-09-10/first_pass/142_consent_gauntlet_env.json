@@ -1,0 +1,155 @@
+{
+  "case_index": 142,
+  "public_environment_name": "Consent Gauntlet",
+  "environment_id": "consent_gauntlet_env",
+  "difficulty": 1,
+  "interaction_mode": "simplified",
+  "label": "no",
+  "controls_available": [
+    "Entry stage: one fixed simplified decision-proxy button for the generated manage action; the moving gateway card is non-interactive in simplified mode.",
+    "Preferences stage: one visible drawer with previous/next navigation controls; with one drawer, both navigation actions are ineffective.",
+    "Preferences stage: each of three purpose rows exposes explicit SET NO and SET YES buttons; the displayed switch rail is not interactive in simplified mode.",
+    "Preferences stage: REVIEW CURRENT CHOICES advances to final review.",
+    "Final stage: one fixed simplified decision-proxy button for the generated commit action; there are no reset traps or linked controls."
+  ],
+  "autonomous_processes": [
+    {
+      "period": "While an entry or final gateway is displayed",
+      "change": "A requestAnimationFrame loop repeatedly updates the visible packet timer and recomputes gateway positions.",
+      "outcome_affecting_control_remains_available": true,
+      "effect": "Because moving_gateways is false, currentPhase is constant and the gateway positions remain fixed; only the wall-clock readout changes."
+    },
+    {
+      "period": "While the preferences ledger is displayed",
+      "change": "There is no autonomous task-state mutation.",
+      "outcome_affecting_control_remains_available": true,
+      "effect": "Purpose states change only from SET NO/SET YES event handlers, and this configuration has no reset traps or links."
+    }
+  ],
+  "grouped_control_modes": [
+    {
+      "mode": "entry simplified decision proxy",
+      "outcome_affecting": true,
+      "description": "One generated option with the manage action opens the ledger."
+    },
+    {
+      "mode": "simplified purpose answer buttons",
+      "outcome_affecting": true,
+      "description": "SET NO or SET YES controls each of the three purpose rows."
+    },
+    {
+      "mode": "single-drawer navigator",
+      "outcome_affecting": false,
+      "description": "Previous/next both resolve to the only drawer and produce no state change."
+    },
+    {
+      "mode": "review button",
+      "outcome_affecting": true,
+      "description": "Review records the transition from preferences to final review."
+    },
+    {
+      "mode": "final simplified decision proxy",
+      "outcome_affecting": true,
+      "description": "One generated option with the commit action submits the current choices."
+    }
+  ],
+  "delta_ms": null,
+  "window_ms": null,
+  "clause_i": {
+    "holds": false,
+    "reason": "An observation-free policy can follow a fixed action schedule: choose the sole manage proxy, set each of the three purposes to NO (idempotently when already NO), review, and choose the sole commit proxy. Level 1 has no inverted purpose statements, so the optimal direction does not depend on the current screenshot or recent visual history."
+  },
+  "clause_ii": {
+    "holds": true,
+    "reason": "A bounded screenshot window is sufficient to select every action: the fixed proxies and the visible three-row ledger expose the available controls and current answers. The window is sufficient but unnecessary because no outcome-relevant state evolves autonomously."
+  },
+  "clause_iii": {
+    "holds": false,
+    "reason": "No autonomous non-clock task-state evolution makes an available action unavailable or less effective. The only autonomous update is the packet timer; stationary gateway geometry is unchanged, purpose state changes require an agent event, and waiting changes no action value apart from the excluded loss of remaining deadline."
+  },
+  "common_visible_process": "There is no common visible autonomous process witnessing clauses (i)-(iii). The requestAnimationFrame timer update is visible but unrelated to the outcome, while the gateway and ledger state remain unchanged between actions.",
+  "pre_run": {
+    "threshold": 0.5,
+    "at_least_half": null,
+    "rate": null,
+    "basis": "not_applicable",
+    "reason": "The exact configuration has no autonomous outcome phase: all outcome-relevant transitions are synchronous responses to visible controls, so the pre-run threshold does not apply. The mathematical classification is already No.",
+    "seed_probe": null
+  },
+  "files_read_completely": [
+    "AGENTS.md",
+    "weird_captcha_gym/docs/controllability/real-time.md",
+    "weird_captcha_gym/environments/consent_gauntlet_env/controls.json",
+    "weird_captcha_gym/environments/consent_gauntlet_env/env.json",
+    "weird_captcha_gym/environments/consent_gauntlet_env/tasks/consent_gauntlet_seed_0001/task.json",
+    "weird_captcha_gym/environments/consent_gauntlet_env/tasks/consent_gauntlet_seed_0001/setup_task.sh",
+    "weird_captcha_gym/environments/consent_gauntlet_env/tasks/consent_gauntlet_seed_0001/export_result.sh",
+    "weird_captcha_gym/environments/consent_gauntlet_env/scripts/setup_puzzle_runtime.sh",
+    "weird_captcha_gym/environments/consent_gauntlet_env/scripts/install_puzzle_runtime.sh",
+    "weird_captcha_gym/environments/consent_gauntlet_env/tasks/consent_gauntlet_seed_0001/verifier.py",
+    "weird_captcha_gym/shared_runtime/verifier_helpers.py",
+    "weird_captcha_gym/shared_scripts/incubator_generators/consent_gauntlet.py",
+    "weird_captcha_gym/shared_runtime/app/mechanics/consent_gauntlet.js",
+    "weird_captcha_gym/shared_runtime/app/mechanics/consent_gauntlet.css",
+    "weird_captcha_gym/shared_runtime/server/incubator_graders/consent_gauntlet.py",
+    "weird_captcha_gym/tools/incubator_solvers/consent_gauntlet.py"
+  ],
+  "source_evidence": [
+    {
+      "path": "weird_captcha_gym/environments/consent_gauntlet_env/controls.json",
+      "lines": "6-10",
+      "claim": "Difficulty 1 sets three purposes, zero negative-purpose statements, one drawer, one entry option, one final option, zero reset traps, zero links, stationary gateways, and zero orbit speed."
+    },
+    {
+      "path": "weird_captcha_gym/environments/consent_gauntlet_env/controls.json",
+      "lines": "37-41",
+      "claim": "Simplified mode uses fixed gateway proxies and explicit answer buttons; the configured observation window is 720 ms with five frames."
+    },
+    {
+      "path": "weird_captcha_gym/shared_scripts/incubator_generators/consent_gauntlet.py",
+      "lines": "162-176",
+      "claim": "Generated positive purposes receive target false, while only negative-purpose statements receive target true; level 1 therefore makes every target NO."
+    },
+    {
+      "path": "weird_captcha_gym/shared_scripts/incubator_generators/consent_gauntlet.py",
+      "lines": "136-149",
+      "claim": "Each gateway always contains one correct action and fills the remaining option slots with decoys; with one option, the entry and final actions are fixed manage and commit choices."
+    },
+    {
+      "path": "weird_captcha_gym/shared_runtime/app/mechanics/consent_gauntlet.js",
+      "lines": "136-160",
+      "claim": "The phase advances with elapsed time only when moving_gateways is true; the animation loop otherwise recomputes fixed positions while updating the visible packet timer."
+    },
+    {
+      "path": "weird_captcha_gym/shared_runtime/app/mechanics/consent_gauntlet.js",
+      "lines": "163-175",
+      "claim": "The gateway is marked stationary when movement is disabled, and simplified mode supplies the fixed consent proxy while rendering the orbit cards."
+    },
+    {
+      "path": "weird_captcha_gym/shared_runtime/app/mechanics/consent_gauntlet.js",
+      "lines": "185-214",
+      "claim": "The preferences view renders the current drawer and purpose answers; simplified mode adds SET NO/SET YES buttons and no reset markup exists when the reset list is empty."
+    },
+    {
+      "path": "weird_captcha_gym/shared_runtime/app/mechanics/consent_gauntlet.js",
+      "lines": "242-269,331-353",
+      "claim": "Purpose, drawer, review, and gateway state transitions are called by input event handlers; there is no autonomous purpose-state update."
+    },
+    {
+      "path": "weird_captcha_gym/shared_runtime/app/mechanics/consent_gauntlet.css",
+      "lines": "107-111,133-149",
+      "claim": "Simplified mode disables pointer interaction on orbit cards, drawer tabs, and physical switch rails while exposing the proxy buttons."
+    },
+    {
+      "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/consent_gauntlet.py",
+      "lines": "137-163,165-265",
+      "claim": "The grader binds the submitted interaction source to simplified controls, replays only submitted events, checks elapsed time only for ordering and the 180-second bound, and requires committed final state plus all target states and links."
+    },
+    {
+      "path": "weird_captcha_gym/tools/incubator_solvers/consent_gauntlet.py",
+      "lines": "111-163",
+      "claim": "The reference solver derives targets from negative wording, fixes all visible purposes, then reviews and commits; it contains no timing-dependent task action."
+    }
+  ],
+  "uncertainties": []
+}

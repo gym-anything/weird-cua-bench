@@ -1,0 +1,176 @@
+{
+  "case_index": 48,
+  "public_environment_name": "Bandaged Rose Window",
+  "environment_id": "bandaged_rose_window_env",
+  "difficulty": 4,
+  "interaction_mode": "simplified",
+  "label": "no",
+  "controls_available": [
+    {
+      "name": "NORTH counter-clockwise",
+      "input_source": "proxy_buttons",
+      "outcome_affecting": true,
+      "effect": "Requests one counter-clockwise sixth-turn of the north disc."
+    },
+    {
+      "name": "NORTH clockwise",
+      "input_source": "proxy_buttons",
+      "outcome_affecting": true,
+      "effect": "Requests one clockwise sixth-turn of the north disc."
+    },
+    {
+      "name": "SOUTHWEST counter-clockwise",
+      "input_source": "proxy_buttons",
+      "outcome_affecting": true,
+      "effect": "Requests one counter-clockwise sixth-turn of the southwest disc."
+    },
+    {
+      "name": "SOUTHWEST clockwise",
+      "input_source": "proxy_buttons",
+      "outcome_affecting": true,
+      "effect": "Requests one clockwise sixth-turn of the southwest disc."
+    },
+    {
+      "name": "SOUTHEAST counter-clockwise",
+      "input_source": "proxy_buttons",
+      "outcome_affecting": true,
+      "effect": "Requests one counter-clockwise sixth-turn of the southeast disc."
+    },
+    {
+      "name": "SOUTHEAST clockwise",
+      "input_source": "proxy_buttons",
+      "outcome_affecting": true,
+      "effect": "Requests one clockwise sixth-turn of the southeast disc."
+    },
+    {
+      "name": "SEAL",
+      "input_source": "button",
+      "outcome_affecting": false,
+      "effect": "Submits the current transcript for grading."
+    },
+    {
+      "name": "RETRY",
+      "input_source": "button",
+      "outcome_affecting": false,
+      "effect": "After a failed submission, requests a fresh rose challenge."
+    }
+  ],
+  "autonomous_processes": [
+    {
+      "period": "Initial render and every interval between outcome-affecting turn actions",
+      "task_state_change_without_action": false,
+      "description": "The rose and its legal-move state remain unchanged while idle. The shared live clock may advance toward the 180-second episode ceiling, but that deadline is not a non-clock task-state process."
+    }
+  ],
+  "grouped_control_modes": [
+    {
+      "name": "D_simplified_proxy_button_turns",
+      "members": [
+        "NORTH counter-clockwise",
+        "NORTH clockwise",
+        "SOUTHWEST counter-clockwise",
+        "SOUTHWEST clockwise",
+        "SOUTHEAST counter-clockwise",
+        "SOUTHEAST clockwise"
+      ],
+      "coverage": "All occurrences of the six proxy-button turn requests across generated states, seeds, and attempts.",
+      "outcome_affecting": true
+    }
+  ],
+  "delta_ms": null,
+  "window_ms": 0,
+  "clause_i": {
+    "holds": false,
+    "reason": "At the first decision I_t is empty. The seeded generator samples different depth-ten states, and legal shortest-path turns vary with that state. An exact in-memory probe found probe-0's optimal first action set was {SOUTHEAST clockwise}, while probe-1's was {NORTH counter-clockwise, NORTH clockwise}; no fixed q(I_t) can be optimal for both."
+  },
+  "clause_ii": {
+    "holds": true,
+    "reason": "The reference arrangement and current arrangement remain visible together, and the six labelled proxy buttons are visible. A bounded window of w=0 task milliseconds with the configured single frame is sufficient to read the current state and choose a state-dependent next turn; no temporal evidence is needed."
+  },
+  "clause_iii": {
+    "holds": false,
+    "reason": "For every positive waiting horizon that remains within the active episode, no-action intervals leave the task-relevant state unchanged: the browser mechanic calls attempt only from a proxy-button click, evaluates legality, and synchronously updates and redraws model.current. No mechanic timer, animation, or physics process changes the rose while idle, so legal-turn availability and action value do not strictly decrease. The 180-second deadline cannot witness this clause because deadline-only loss is excluded."
+  },
+  "common_visible_process": "None. The only rose-state evolution is synchronous and action-triggered: a proxy-button event may apply turn and immediately redraw the current rose. There is no visible autonomous process that can serve as the common phenomenon for clauses (i), (ii), and (iii).",
+  "pre_run": {
+    "threshold": 0.5,
+    "at_least_half": false,
+    "rate": null,
+    "basis": "source_structural",
+    "reason": "The source has no autonomous outcome phase. Reaching solved_state requires outcome-affecting turn actions; after the last turn, SEAL is only administrative. Therefore no generated instance admits the required no-further-action pre-run solution, so the at-least-half threshold is structurally not met. The mathematical definition already fails at clause (iii), independently fixing the label as no.",
+    "seed_probe": null
+  },
+  "files_read_completely": [
+    "AGENTS.md",
+    "weird_captcha_gym/docs/controllability/real-time.md",
+    "weird_captcha_gym/environments/bandaged_rose_window_env/controls.json",
+    "weird_captcha_gym/environments/bandaged_rose_window_env/env.json",
+    "weird_captcha_gym/environments/bandaged_rose_window_env/tasks/bandaged_rose_window_seed_0001/task.json",
+    "weird_captcha_gym/environments/bandaged_rose_window_env/tasks/bandaged_rose_window_seed_0001/verifier.py",
+    "weird_captcha_gym/environments/bandaged_rose_window_env/tasks/bandaged_rose_window_seed_0001/setup_task.sh",
+    "weird_captcha_gym/environments/bandaged_rose_window_env/tasks/bandaged_rose_window_seed_0001/export_result.sh",
+    "weird_captcha_gym/environments/bandaged_rose_window_env/scripts/install_puzzle_runtime.sh",
+    "weird_captcha_gym/environments/bandaged_rose_window_env/scripts/setup_puzzle_runtime.sh",
+    "weird_captcha_gym/shared_scripts/incubator_generators/bandaged_rose_window.py",
+    "weird_captcha_gym/shared_runtime/app/index.html",
+    "weird_captcha_gym/shared_runtime/app/time_controller.js",
+    "weird_captcha_gym/shared_runtime/app/mechanics/bandaged_rose_window.js",
+    "weird_captcha_gym/shared_runtime/app/mechanics/bandaged_rose_window.css",
+    "weird_captcha_gym/shared_runtime/server/incubator_graders/bandaged_rose_window.py",
+    "weird_captcha_gym/shared_runtime/verifier_helpers.py",
+    "weird_captcha_gym/tools/incubator_solvers/bandaged_rose_window.py"
+  ],
+  "source_evidence": [
+    {
+      "path": "weird_captcha_gym/environments/bandaged_rose_window_env/controls.json",
+      "lines": "28-54",
+      "claim": "Difficulty 4 uses scramble_depth 10; simplified interaction is implemented as six labelled clockwise/counter-clockwise proxy buttons; the configured observation window is 0 ms with one frame."
+    },
+    {
+      "path": "weird_captcha_gym/environments/bandaged_rose_window_env/env.json",
+      "lines": "5,9-14",
+      "claim": "The task is a three-disc rose restoration puzzle, uses a synchronous runner, and has a zero-ms observation window in runner options."
+    },
+    {
+      "path": "weird_captcha_gym/shared_scripts/incubator_generators/bandaged_rose_window.py",
+      "lines": "36-50,53-86,110-154",
+      "claim": "Disc legality and turns are pure state transformations; the generator samples a seeded initial state at the selected exact BFS depth and emits a finite solution move list, with no time-dependent state."
+    },
+    {
+      "path": "weird_captcha_gym/shared_runtime/app/mechanics/bandaged_rose_window.js",
+      "lines": "77-116,220-238",
+      "claim": "The simplified renderer creates exactly six proxy buttons, and attempt evaluates legality and changes model.current only in the synchronous input handler before redrawing; initial rendering installs the click listeners."
+    },
+    {
+      "path": "weird_captcha_gym/shared_runtime/app/mechanics/bandaged_rose_window.js",
+      "lines": "172-218",
+      "claim": "Retry and SEAL are event-triggered; SEAL only submits the transcript, while retry rerenders a fresh state after a failed submission. Neither is an autonomous puzzle evolution."
+    },
+    {
+      "path": "weird_captcha_gym/shared_runtime/app/mechanics/bandaged_rose_window.css",
+      "lines": "1-4",
+      "claim": "The mechanic stylesheet contains static layout, hover, and drag styling but no time-driven animation or transition for the rose state."
+    },
+    {
+      "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/bandaged_rose_window.py",
+      "lines": "45-100",
+      "claim": "The grader binds simplified interaction to proxy_buttons and grades by replaying the submitted turn events and pure legality/turn transitions; it has no timing or autonomous-state input."
+    },
+    {
+      "path": "weird_captcha_gym/environments/bandaged_rose_window_env/tasks/bandaged_rose_window_seed_0001/verifier.py",
+      "lines": "50-105",
+      "claim": "The verifier independently replays the event transcript to determine final completion and only reads the exported result; no elapsed-time or autonomous transition is graded."
+    },
+    {
+      "path": "weird_captcha_gym/tools/incubator_solvers/bandaged_rose_window.py",
+      "lines": "50-56,77-96",
+      "claim": "The solver selects the simplified proxy button for each finite solution move, waits for the synchronous successful-turn count, and submits only after restoration."
+    },
+    {
+      "path": "weird_captcha_gym/environments/bandaged_rose_window_env/tasks/bandaged_rose_window_seed_0001/task.json",
+      "lines": "23-29",
+      "claim": "The task notes exact breadth-first distance ten, refused turns with no visible state change, and replay-bound input surfaces, consistent with action-driven rather than autonomous evolution."
+    }
+  ],
+  "uncertainties": []
+}

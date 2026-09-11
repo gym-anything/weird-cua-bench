@@ -1,0 +1,1217 @@
+{
+  "case_index": 29,
+  "environment_id": "hearthlift_courier_env",
+  "public_environment_name": "Hearthlift Courier",
+  "configuration_reports": [
+    {
+      "case_index": 281,
+      "public_environment_name": "Hearthlift Courier",
+      "environment_id": "hearthlift_courier_env",
+      "difficulty": 1,
+      "interaction_mode": "full",
+      "label": "no",
+      "controls_available": [
+        "WASD or arrow keys: cardinal movement and helper-crate pushes",
+        "C key: climb an adjacent same-level helper crate",
+        "E key: pick up or drop the marked cargo",
+        "Pointer drag on the voxel garden: orbit the camera",
+        "CERTIFY DELIVERY and ABANDON ATTEMPT buttons"
+      ],
+      "autonomous_processes": [
+        "The active static profile is stage_count=2, decoy_count=0, turn_count=0, camera_obscurity=0.42, cargo_detour=0; these values determine the generated initial voxel world and route complexity, not an autonomous timer or physics process.",
+        "No avatar, box, camera-yaw, held-cargo, delivered, route, or hearth state advances without a new input; state transitions run synchronously in action handlers.",
+        "The marked cargo has a continuous 2.2-second infinite CSS hl-breathe opacity animation. It changes only presentation opacity and does not change geometry, hit testing, controls, or replay state."
+      ],
+      "grouped_control_modes": [
+        "D_move: all direct WASD/arrow-key cardinal-movement and helper-crate-push occurrences",
+        "D_climb: all direct CLIMB occurrences",
+        "D_cargo: all direct pickup/drop occurrences",
+        "Camera orbit is projection-only, so it is not an outcome-affecting D; certification is administrative"
+      ],
+      "delta_ms": null,
+      "window_ms": null,
+      "clause_i": {
+        "holds": false,
+        "reason": "False for this configuration. With stage_count=2, decoy_count=0, turn_count=0, camera_obscurity=0.42, cargo_detour=0, no seed-dependent route choice remains: an action-only q can count its own actions and issue the fixed camera-inspection, eastward push/climb, return, pickup, and carry sequence through the direct input surface. Visual observation is useful for normal play but is not necessary for q."
+      },
+      "clause_ii": {
+        "holds": true,
+        "reason": "True as a standalone clause: the static rendered cells, elevation labels, boxes, and hearth are visible, and a zero-width/latest frame would be sufficient; the visual window is unnecessary because the route is fixed."
+      },
+      "clause_iii": {
+        "holds": false,
+        "reason": "False. There is no autonomous non-clock task-state evolution during any positive wait. The only page-time change is the 2.2-second hl-breathe opacity animation on the cargo; it leaves model.current, camera/geometry, hit testing, and grader replay unchanged. Every useful change (box push, climb, pickup/drop, or camera orbit) occurs synchronously only after an action. Waiting can consume the overall deadline, but deadline-only loss is excluded by the definition, so no D, Delta, and w can produce the required strict Q loss."
+      },
+      "common_visible_process": "None. The only visible autonomous change is the unrelated cargo-opacity breathing animation; no autonomous visible process changes the route, box positions, courier state, or the effectiveness of an outcome-affecting action.",
+      "pre_run": {
+        "threshold": 0.5,
+        "at_least_half": null,
+        "rate": null,
+        "basis": "not_applicable",
+        "reason": "No autonomous outcome phase exists in any generated instance: the static world is solved by action-triggered box/courier transitions, followed by administrative certification. No pre-run rate is assigned; the configuration is already No because clause (iii) fails.",
+        "seed_probe": null
+      },
+      "files_read_completely": [
+        "weird_captcha_gym/environments/hearthlift_courier_env/controls.json",
+        "weird_captcha_gym/environments/hearthlift_courier_env/env.json",
+        "weird_captcha_gym/environments/hearthlift_courier_env/tasks/hearthlift_courier_seed_0001/task.json",
+        "weird_captcha_gym/environments/hearthlift_courier_env/tasks/hearthlift_courier_seed_0001/verifier.py",
+        "weird_captcha_gym/environments/hearthlift_courier_env/tasks/hearthlift_courier_seed_0001/setup_task.sh",
+        "weird_captcha_gym/environments/hearthlift_courier_env/tasks/hearthlift_courier_seed_0001/export_result.sh",
+        "weird_captcha_gym/shared_scripts/incubator_generators/hearthlift_courier.py",
+        "weird_captcha_gym/shared_runtime/app/mechanics/hearthlift_courier.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/hearthlift_courier.css",
+        "weird_captcha_gym/shared_runtime/server/incubator_graders/hearthlift_courier.py",
+        "weird_captcha_gym/shared_runtime/verifier_helpers.py",
+        "weird_captcha_gym/tools/incubator_solvers/hearthlift_courier.py"
+      ],
+      "source_evidence": [
+        {
+          "path": "weird_captcha_gym/environments/hearthlift_courier_env/controls.json",
+          "lines": "6-10",
+          "claim": "Difficulty 1 activates stage_count=2, decoy_count=0, turn_count=0, camera_obscurity=0.42, cargo_detour=0."
+        },
+        {
+          "path": "weird_captcha_gym/environments/hearthlift_courier_env/controls.json",
+          "lines": "37-41",
+          "claim": "The full profile exposes direct WASD/arrow movement, C, E, and pointer-drag orbit. The runtime is synchronous with observation_window_ms=0 and frames_per_observation=1; the controls file's live marker does not itself establish a real-time mechanic."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/hearthlift_courier.py",
+          "lines": "225-270",
+          "claim": "With the active turn_count=0 and decoy_count=0, the route construction has no seed-dependent lane turn; the profile's fixed cargo approach and eastward stage sequence are static."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/hearthlift_courier.py",
+          "lines": "296-319",
+          "claim": "The world contains real cells and pushable helper/decoy/cargo boxes; public state removes only construction-only cell_map, route, and stage tables, and the rules describe discrete push, climb, carry, and projection-only camera behavior."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/hearthlift_courier.js",
+          "lines": "34-119",
+          "claim": "The browser mutates avatar, boxes, held, and delivered state only in synchronous move, climb, pickup, and drop handlers; camera orbit is separate and changes projection/yaw only."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/hearthlift_courier.js",
+          "lines": "304-350",
+          "claim": "The full profile exposes direct WASD/arrow movement, C, E, and pointer-drag orbit. Pointer movement changes cameraYaw only while a direct-input drag is active; there is no autonomous timer, physics loop, or task-state tick."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/hearthlift_courier.css",
+          "lines": "40-48",
+          "claim": "The only autonomous visual change is hl-breathe, an infinite 2.2-second cargo opacity animation; no task-state variable or affordance is animated."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/hearthlift_courier.py",
+          "lines": "42-119",
+          "claim": "Independent replay applies only camera, move, climb, pickup, and drop events and contains no clock-driven evolution."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/hearthlift_courier.py",
+          "lines": "132-197",
+          "claim": "The grader binds the selected interaction source, replays visible-state snapshots synchronously, and checks final cargo delivery plus an administrative camera event."
+        },
+        {
+          "path": "weird_captcha_gym/environments/hearthlift_courier_env/tasks/hearthlift_courier_seed_0001/verifier.py",
+          "lines": "36-49",
+          "claim": "The task verifier loads the exported result and delegates the authoritative decision to the independent Hearthlift replay grader."
+        },
+        {
+          "path": "weird_captcha_gym/tools/incubator_solvers/hearthlift_courier.py",
+          "lines": "24-97",
+          "claim": "The ordinary-input solver maps the same generated action sequence to direct or proxy controls and merely waits 18 ms between actions; it does not rely on a task-time mechanic."
+        }
+      ],
+      "uncertainties": []
+    },
+    {
+      "case_index": 282,
+      "public_environment_name": "Hearthlift Courier",
+      "environment_id": "hearthlift_courier_env",
+      "difficulty": 1,
+      "interaction_mode": "simplified",
+      "label": "no",
+      "controls_available": [
+        "NORTH, WEST, EAST, and SOUTH buttons: cardinal movement and helper-crate pushes",
+        "CLIMB button: climb an adjacent same-level helper crate",
+        "PICK UP / DROP button: toggle marked-cargo pickup or drop",
+        "ORBIT LEFT and ORBIT RIGHT buttons: orbit the camera",
+        "CERTIFY DELIVERY and ABANDON ATTEMPT buttons"
+      ],
+      "autonomous_processes": [
+        "The active static profile is stage_count=2, decoy_count=0, turn_count=0, camera_obscurity=0.42, cargo_detour=0; these values determine the generated initial voxel world and route complexity, not an autonomous timer or physics process.",
+        "No avatar, box, camera-yaw, held-cargo, delivered, route, or hearth state advances without a new input; state transitions run synchronously in action handlers.",
+        "The marked cargo has a continuous 2.2-second infinite CSS hl-breathe opacity animation. It changes only presentation opacity and does not change geometry, hit testing, controls, or replay state."
+      ],
+      "grouped_control_modes": [
+        "D_move: all proxy cardinal-button cardinal-movement and helper-crate-push occurrences",
+        "D_climb: all proxy CLIMB occurrences",
+        "D_cargo: all proxy pickup/drop occurrences",
+        "Camera orbit is projection-only, so it is not an outcome-affecting D; certification is administrative"
+      ],
+      "delta_ms": null,
+      "window_ms": null,
+      "clause_i": {
+        "holds": false,
+        "reason": "False for this configuration. With stage_count=2, decoy_count=0, turn_count=0, camera_obscurity=0.42, cargo_detour=0, no seed-dependent route choice remains: an action-only q can count its own actions and issue the fixed camera-inspection, eastward push/climb, return, pickup, and carry sequence through the proxy input surface. Visual observation is useful for normal play but is not necessary for q."
+      },
+      "clause_ii": {
+        "holds": true,
+        "reason": "True as a standalone clause: the static rendered cells, elevation labels, boxes, and hearth are visible, and a zero-width/latest frame would be sufficient; the visual window is unnecessary because the route is fixed."
+      },
+      "clause_iii": {
+        "holds": false,
+        "reason": "False. There is no autonomous non-clock task-state evolution during any positive wait. The only page-time change is the 2.2-second hl-breathe opacity animation on the cargo; it leaves model.current, camera/geometry, hit testing, and grader replay unchanged. Every useful change (box push, climb, pickup/drop, or camera orbit) occurs synchronously only after an action. Waiting can consume the overall deadline, but deadline-only loss is excluded by the definition, so no D, Delta, and w can produce the required strict Q loss."
+      },
+      "common_visible_process": "None. The only visible autonomous change is the unrelated cargo-opacity breathing animation; no autonomous visible process changes the route, box positions, courier state, or the effectiveness of an outcome-affecting action.",
+      "pre_run": {
+        "threshold": 0.5,
+        "at_least_half": null,
+        "rate": null,
+        "basis": "not_applicable",
+        "reason": "No autonomous outcome phase exists in any generated instance: the static world is solved by action-triggered box/courier transitions, followed by administrative certification. No pre-run rate is assigned; the configuration is already No because clause (iii) fails.",
+        "seed_probe": null
+      },
+      "files_read_completely": [
+        "weird_captcha_gym/environments/hearthlift_courier_env/controls.json",
+        "weird_captcha_gym/environments/hearthlift_courier_env/env.json",
+        "weird_captcha_gym/environments/hearthlift_courier_env/tasks/hearthlift_courier_seed_0001/task.json",
+        "weird_captcha_gym/environments/hearthlift_courier_env/tasks/hearthlift_courier_seed_0001/verifier.py",
+        "weird_captcha_gym/environments/hearthlift_courier_env/tasks/hearthlift_courier_seed_0001/setup_task.sh",
+        "weird_captcha_gym/environments/hearthlift_courier_env/tasks/hearthlift_courier_seed_0001/export_result.sh",
+        "weird_captcha_gym/shared_scripts/incubator_generators/hearthlift_courier.py",
+        "weird_captcha_gym/shared_runtime/app/mechanics/hearthlift_courier.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/hearthlift_courier.css",
+        "weird_captcha_gym/shared_runtime/server/incubator_graders/hearthlift_courier.py",
+        "weird_captcha_gym/shared_runtime/verifier_helpers.py",
+        "weird_captcha_gym/tools/incubator_solvers/hearthlift_courier.py"
+      ],
+      "source_evidence": [
+        {
+          "path": "weird_captcha_gym/environments/hearthlift_courier_env/controls.json",
+          "lines": "6-10",
+          "claim": "Difficulty 1 activates stage_count=2, decoy_count=0, turn_count=0, camera_obscurity=0.42, cargo_detour=0."
+        },
+        {
+          "path": "weird_captcha_gym/environments/hearthlift_courier_env/controls.json",
+          "lines": "37-41",
+          "claim": "The simplified profile exposes proxy movement, CLIMB, cargo, and orbit buttons with the same discrete action effects. The runtime is synchronous with observation_window_ms=0 and frames_per_observation=1; the controls file's live marker does not itself establish a real-time mechanic."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/hearthlift_courier.py",
+          "lines": "225-270",
+          "claim": "With the active turn_count=0 and decoy_count=0, the route construction has no seed-dependent lane turn; the profile's fixed cargo approach and eastward stage sequence are static."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/hearthlift_courier.py",
+          "lines": "296-319",
+          "claim": "The world contains real cells and pushable helper/decoy/cargo boxes; public state removes only construction-only cell_map, route, and stage tables, and the rules describe discrete push, climb, carry, and projection-only camera behavior."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/hearthlift_courier.js",
+          "lines": "34-119",
+          "claim": "The browser mutates avatar, boxes, held, and delivered state only in synchronous move, climb, pickup, and drop handlers; camera orbit is separate and changes projection/yaw only."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/hearthlift_courier.js",
+          "lines": "304-350",
+          "claim": "The simplified profile exposes proxy movement, CLIMB, cargo, and orbit buttons with the same discrete action effects. Pointer movement changes cameraYaw only while a direct-input drag is active; there is no autonomous timer, physics loop, or task-state tick."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/hearthlift_courier.css",
+          "lines": "40-48",
+          "claim": "The only autonomous visual change is hl-breathe, an infinite 2.2-second cargo opacity animation; no task-state variable or affordance is animated."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/hearthlift_courier.py",
+          "lines": "42-119",
+          "claim": "Independent replay applies only camera, move, climb, pickup, and drop events and contains no clock-driven evolution."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/hearthlift_courier.py",
+          "lines": "132-197",
+          "claim": "The grader binds the selected interaction source, replays visible-state snapshots synchronously, and checks final cargo delivery plus an administrative camera event."
+        },
+        {
+          "path": "weird_captcha_gym/environments/hearthlift_courier_env/tasks/hearthlift_courier_seed_0001/verifier.py",
+          "lines": "36-49",
+          "claim": "The task verifier loads the exported result and delegates the authoritative decision to the independent Hearthlift replay grader."
+        },
+        {
+          "path": "weird_captcha_gym/tools/incubator_solvers/hearthlift_courier.py",
+          "lines": "24-97",
+          "claim": "The ordinary-input solver maps the same generated action sequence to direct or proxy controls and merely waits 18 ms between actions; it does not rely on a task-time mechanic."
+        }
+      ],
+      "uncertainties": []
+    },
+    {
+      "case_index": 283,
+      "public_environment_name": "Hearthlift Courier",
+      "environment_id": "hearthlift_courier_env",
+      "difficulty": 2,
+      "interaction_mode": "full",
+      "label": "no",
+      "controls_available": [
+        "WASD or arrow keys: cardinal movement and helper-crate pushes",
+        "C key: climb an adjacent same-level helper crate",
+        "E key: pick up or drop the marked cargo",
+        "Pointer drag on the voxel garden: orbit the camera",
+        "CERTIFY DELIVERY and ABANDON ATTEMPT buttons"
+      ],
+      "autonomous_processes": [
+        "The active static profile is stage_count=3, decoy_count=1, turn_count=1, camera_obscurity=0.52, cargo_detour=1; these values determine the generated initial voxel world and route complexity, not an autonomous timer or physics process.",
+        "No avatar, box, camera-yaw, held-cargo, delivered, route, or hearth state advances without a new input; state transitions run synchronously in action handlers.",
+        "The marked cargo has a continuous 2.2-second infinite CSS hl-breathe opacity animation. It changes only presentation opacity and does not change geometry, hit testing, controls, or replay state."
+      ],
+      "grouped_control_modes": [
+        "D_move: all direct WASD/arrow-key cardinal-movement and helper-crate-push occurrences",
+        "D_climb: all direct CLIMB occurrences",
+        "D_cargo: all direct pickup/drop occurrences",
+        "Camera orbit is projection-only, so it is not an outcome-affecting D; certification is administrative"
+      ],
+      "delta_ms": null,
+      "window_ms": null,
+      "clause_i": {
+        "holds": true,
+        "reason": "True for the grouped cardinal-movement mode. At the first active lane transition, rng.random() selects N or S and only the selected turn cell is added. Histories with identical I_t but opposite visible branches require opposite next movements for the best continuation, so no action-only q is optimal on all such histories. This establishes (i) only; it cannot repair the failed autonomous-evolution clause."
+      },
+      "clause_ii": {
+        "holds": true,
+        "reason": "True as a standalone clause: the current screenshot renders the branch cell, elevation, boxes, and hearth; full mode can orbit by drag and simplified mode can orbit with buttons. With no task-state evolution, w=0 (the configured one-frame, zero-ms observation) is sufficient to choose the visible branch for a delayed action. This is an observation/planning requirement, not a qualifying autonomous process."
+      },
+      "clause_iii": {
+        "holds": false,
+        "reason": "False. There is no autonomous non-clock task-state evolution during any positive wait. The only page-time change is the 2.2-second hl-breathe opacity animation on the cargo; it leaves model.current, camera/geometry, hit testing, and grader replay unchanged. Every useful change (box push, climb, pickup/drop, or camera orbit) occurs synchronously only after an action. Waiting can consume the overall deadline, but deadline-only loss is excluded by the definition, so no D, Delta, and w can produce the required strict Q loss."
+      },
+      "common_visible_process": "None. The only visible autonomous change is the unrelated cargo-opacity breathing animation; no autonomous visible process changes the route, box positions, courier state, or the effectiveness of an outcome-affecting action.",
+      "pre_run": {
+        "threshold": 0.5,
+        "at_least_half": null,
+        "rate": null,
+        "basis": "not_applicable",
+        "reason": "No autonomous outcome phase exists in any generated instance: the static world is solved by action-triggered box/courier transitions, followed by administrative certification. No pre-run rate is assigned; the configuration is already No because clause (iii) fails.",
+        "seed_probe": null
+      },
+      "files_read_completely": [
+        "weird_captcha_gym/environments/hearthlift_courier_env/controls.json",
+        "weird_captcha_gym/environments/hearthlift_courier_env/env.json",
+        "weird_captcha_gym/environments/hearthlift_courier_env/tasks/hearthlift_courier_seed_0001/task.json",
+        "weird_captcha_gym/environments/hearthlift_courier_env/tasks/hearthlift_courier_seed_0001/verifier.py",
+        "weird_captcha_gym/environments/hearthlift_courier_env/tasks/hearthlift_courier_seed_0001/setup_task.sh",
+        "weird_captcha_gym/environments/hearthlift_courier_env/tasks/hearthlift_courier_seed_0001/export_result.sh",
+        "weird_captcha_gym/shared_scripts/incubator_generators/hearthlift_courier.py",
+        "weird_captcha_gym/shared_runtime/app/mechanics/hearthlift_courier.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/hearthlift_courier.css",
+        "weird_captcha_gym/shared_runtime/server/incubator_graders/hearthlift_courier.py",
+        "weird_captcha_gym/shared_runtime/verifier_helpers.py",
+        "weird_captcha_gym/tools/incubator_solvers/hearthlift_courier.py"
+      ],
+      "source_evidence": [
+        {
+          "path": "weird_captcha_gym/environments/hearthlift_courier_env/controls.json",
+          "lines": "12-16",
+          "claim": "Difficulty 2 activates stage_count=3, decoy_count=1, turn_count=1, camera_obscurity=0.52, cargo_detour=1."
+        },
+        {
+          "path": "weird_captcha_gym/environments/hearthlift_courier_env/controls.json",
+          "lines": "37-41",
+          "claim": "The full profile exposes direct WASD/arrow movement, C, E, and pointer-drag orbit. The runtime is synchronous with observation_window_ms=0 and frames_per_observation=1; the controls file's live marker does not itself establish a real-time mechanic."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/hearthlift_courier.py",
+          "lines": "254-270",
+          "claim": "The route construction samples a seed-dependent N/S lane turn whenever index < turn_count; this profile has at least one such turn, while all turns are generated before play and then remain static."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/hearthlift_courier.py",
+          "lines": "296-319",
+          "claim": "The world contains real cells and pushable helper/decoy/cargo boxes; public state removes only construction-only cell_map, route, and stage tables, and the rules describe discrete push, climb, carry, and projection-only camera behavior."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/hearthlift_courier.js",
+          "lines": "34-119",
+          "claim": "The browser mutates avatar, boxes, held, and delivered state only in synchronous move, climb, pickup, and drop handlers; camera orbit is separate and changes projection/yaw only."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/hearthlift_courier.js",
+          "lines": "304-350",
+          "claim": "The full profile exposes direct WASD/arrow movement, C, E, and pointer-drag orbit. Pointer movement changes cameraYaw only while a direct-input drag is active; there is no autonomous timer, physics loop, or task-state tick."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/hearthlift_courier.css",
+          "lines": "40-48",
+          "claim": "The only autonomous visual change is hl-breathe, an infinite 2.2-second cargo opacity animation; no task-state variable or affordance is animated."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/hearthlift_courier.py",
+          "lines": "42-119",
+          "claim": "Independent replay applies only camera, move, climb, pickup, and drop events and contains no clock-driven evolution."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/hearthlift_courier.py",
+          "lines": "132-197",
+          "claim": "The grader binds the selected interaction source, replays visible-state snapshots synchronously, and checks final cargo delivery plus an administrative camera event."
+        },
+        {
+          "path": "weird_captcha_gym/environments/hearthlift_courier_env/tasks/hearthlift_courier_seed_0001/verifier.py",
+          "lines": "36-49",
+          "claim": "The task verifier loads the exported result and delegates the authoritative decision to the independent Hearthlift replay grader."
+        },
+        {
+          "path": "weird_captcha_gym/tools/incubator_solvers/hearthlift_courier.py",
+          "lines": "24-97",
+          "claim": "The ordinary-input solver maps the same generated action sequence to direct or proxy controls and merely waits 18 ms between actions; it does not rely on a task-time mechanic."
+        }
+      ],
+      "uncertainties": []
+    },
+    {
+      "case_index": 284,
+      "public_environment_name": "Hearthlift Courier",
+      "environment_id": "hearthlift_courier_env",
+      "difficulty": 2,
+      "interaction_mode": "simplified",
+      "label": "no",
+      "controls_available": [
+        "NORTH, WEST, EAST, and SOUTH buttons: cardinal movement and helper-crate pushes",
+        "CLIMB button: climb an adjacent same-level helper crate",
+        "PICK UP / DROP button: toggle marked-cargo pickup or drop",
+        "ORBIT LEFT and ORBIT RIGHT buttons: orbit the camera",
+        "CERTIFY DELIVERY and ABANDON ATTEMPT buttons"
+      ],
+      "autonomous_processes": [
+        "The active static profile is stage_count=3, decoy_count=1, turn_count=1, camera_obscurity=0.52, cargo_detour=1; these values determine the generated initial voxel world and route complexity, not an autonomous timer or physics process.",
+        "No avatar, box, camera-yaw, held-cargo, delivered, route, or hearth state advances without a new input; state transitions run synchronously in action handlers.",
+        "The marked cargo has a continuous 2.2-second infinite CSS hl-breathe opacity animation. It changes only presentation opacity and does not change geometry, hit testing, controls, or replay state."
+      ],
+      "grouped_control_modes": [
+        "D_move: all proxy cardinal-button cardinal-movement and helper-crate-push occurrences",
+        "D_climb: all proxy CLIMB occurrences",
+        "D_cargo: all proxy pickup/drop occurrences",
+        "Camera orbit is projection-only, so it is not an outcome-affecting D; certification is administrative"
+      ],
+      "delta_ms": null,
+      "window_ms": null,
+      "clause_i": {
+        "holds": true,
+        "reason": "True for the grouped cardinal-movement mode. At the first active lane transition, rng.random() selects N or S and only the selected turn cell is added. Histories with identical I_t but opposite visible branches require opposite next movements for the best continuation, so no action-only q is optimal on all such histories. This establishes (i) only; it cannot repair the failed autonomous-evolution clause."
+      },
+      "clause_ii": {
+        "holds": true,
+        "reason": "True as a standalone clause: the current screenshot renders the branch cell, elevation, boxes, and hearth; full mode can orbit by drag and simplified mode can orbit with buttons. With no task-state evolution, w=0 (the configured one-frame, zero-ms observation) is sufficient to choose the visible branch for a delayed action. This is an observation/planning requirement, not a qualifying autonomous process."
+      },
+      "clause_iii": {
+        "holds": false,
+        "reason": "False. There is no autonomous non-clock task-state evolution during any positive wait. The only page-time change is the 2.2-second hl-breathe opacity animation on the cargo; it leaves model.current, camera/geometry, hit testing, and grader replay unchanged. Every useful change (box push, climb, pickup/drop, or camera orbit) occurs synchronously only after an action. Waiting can consume the overall deadline, but deadline-only loss is excluded by the definition, so no D, Delta, and w can produce the required strict Q loss."
+      },
+      "common_visible_process": "None. The only visible autonomous change is the unrelated cargo-opacity breathing animation; no autonomous visible process changes the route, box positions, courier state, or the effectiveness of an outcome-affecting action.",
+      "pre_run": {
+        "threshold": 0.5,
+        "at_least_half": null,
+        "rate": null,
+        "basis": "not_applicable",
+        "reason": "No autonomous outcome phase exists in any generated instance: the static world is solved by action-triggered box/courier transitions, followed by administrative certification. No pre-run rate is assigned; the configuration is already No because clause (iii) fails.",
+        "seed_probe": null
+      },
+      "files_read_completely": [
+        "weird_captcha_gym/environments/hearthlift_courier_env/controls.json",
+        "weird_captcha_gym/environments/hearthlift_courier_env/env.json",
+        "weird_captcha_gym/environments/hearthlift_courier_env/tasks/hearthlift_courier_seed_0001/task.json",
+        "weird_captcha_gym/environments/hearthlift_courier_env/tasks/hearthlift_courier_seed_0001/verifier.py",
+        "weird_captcha_gym/environments/hearthlift_courier_env/tasks/hearthlift_courier_seed_0001/setup_task.sh",
+        "weird_captcha_gym/environments/hearthlift_courier_env/tasks/hearthlift_courier_seed_0001/export_result.sh",
+        "weird_captcha_gym/shared_scripts/incubator_generators/hearthlift_courier.py",
+        "weird_captcha_gym/shared_runtime/app/mechanics/hearthlift_courier.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/hearthlift_courier.css",
+        "weird_captcha_gym/shared_runtime/server/incubator_graders/hearthlift_courier.py",
+        "weird_captcha_gym/shared_runtime/verifier_helpers.py",
+        "weird_captcha_gym/tools/incubator_solvers/hearthlift_courier.py"
+      ],
+      "source_evidence": [
+        {
+          "path": "weird_captcha_gym/environments/hearthlift_courier_env/controls.json",
+          "lines": "12-16",
+          "claim": "Difficulty 2 activates stage_count=3, decoy_count=1, turn_count=1, camera_obscurity=0.52, cargo_detour=1."
+        },
+        {
+          "path": "weird_captcha_gym/environments/hearthlift_courier_env/controls.json",
+          "lines": "37-41",
+          "claim": "The simplified profile exposes proxy movement, CLIMB, cargo, and orbit buttons with the same discrete action effects. The runtime is synchronous with observation_window_ms=0 and frames_per_observation=1; the controls file's live marker does not itself establish a real-time mechanic."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/hearthlift_courier.py",
+          "lines": "254-270",
+          "claim": "The route construction samples a seed-dependent N/S lane turn whenever index < turn_count; this profile has at least one such turn, while all turns are generated before play and then remain static."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/hearthlift_courier.py",
+          "lines": "296-319",
+          "claim": "The world contains real cells and pushable helper/decoy/cargo boxes; public state removes only construction-only cell_map, route, and stage tables, and the rules describe discrete push, climb, carry, and projection-only camera behavior."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/hearthlift_courier.js",
+          "lines": "34-119",
+          "claim": "The browser mutates avatar, boxes, held, and delivered state only in synchronous move, climb, pickup, and drop handlers; camera orbit is separate and changes projection/yaw only."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/hearthlift_courier.js",
+          "lines": "304-350",
+          "claim": "The simplified profile exposes proxy movement, CLIMB, cargo, and orbit buttons with the same discrete action effects. Pointer movement changes cameraYaw only while a direct-input drag is active; there is no autonomous timer, physics loop, or task-state tick."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/hearthlift_courier.css",
+          "lines": "40-48",
+          "claim": "The only autonomous visual change is hl-breathe, an infinite 2.2-second cargo opacity animation; no task-state variable or affordance is animated."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/hearthlift_courier.py",
+          "lines": "42-119",
+          "claim": "Independent replay applies only camera, move, climb, pickup, and drop events and contains no clock-driven evolution."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/hearthlift_courier.py",
+          "lines": "132-197",
+          "claim": "The grader binds the selected interaction source, replays visible-state snapshots synchronously, and checks final cargo delivery plus an administrative camera event."
+        },
+        {
+          "path": "weird_captcha_gym/environments/hearthlift_courier_env/tasks/hearthlift_courier_seed_0001/verifier.py",
+          "lines": "36-49",
+          "claim": "The task verifier loads the exported result and delegates the authoritative decision to the independent Hearthlift replay grader."
+        },
+        {
+          "path": "weird_captcha_gym/tools/incubator_solvers/hearthlift_courier.py",
+          "lines": "24-97",
+          "claim": "The ordinary-input solver maps the same generated action sequence to direct or proxy controls and merely waits 18 ms between actions; it does not rely on a task-time mechanic."
+        }
+      ],
+      "uncertainties": []
+    },
+    {
+      "case_index": 285,
+      "public_environment_name": "Hearthlift Courier",
+      "environment_id": "hearthlift_courier_env",
+      "difficulty": 3,
+      "interaction_mode": "full",
+      "label": "no",
+      "controls_available": [
+        "WASD or arrow keys: cardinal movement and helper-crate pushes",
+        "C key: climb an adjacent same-level helper crate",
+        "E key: pick up or drop the marked cargo",
+        "Pointer drag on the voxel garden: orbit the camera",
+        "CERTIFY DELIVERY and ABANDON ATTEMPT buttons"
+      ],
+      "autonomous_processes": [
+        "The active static profile is stage_count=3, decoy_count=2, turn_count=2, camera_obscurity=0.62, cargo_detour=1; these values determine the generated initial voxel world and route complexity, not an autonomous timer or physics process.",
+        "No avatar, box, camera-yaw, held-cargo, delivered, route, or hearth state advances without a new input; state transitions run synchronously in action handlers.",
+        "The marked cargo has a continuous 2.2-second infinite CSS hl-breathe opacity animation. It changes only presentation opacity and does not change geometry, hit testing, controls, or replay state."
+      ],
+      "grouped_control_modes": [
+        "D_move: all direct WASD/arrow-key cardinal-movement and helper-crate-push occurrences",
+        "D_climb: all direct CLIMB occurrences",
+        "D_cargo: all direct pickup/drop occurrences",
+        "Camera orbit is projection-only, so it is not an outcome-affecting D; certification is administrative"
+      ],
+      "delta_ms": null,
+      "window_ms": null,
+      "clause_i": {
+        "holds": true,
+        "reason": "True for the grouped cardinal-movement mode. At the first active lane transition, rng.random() selects N or S and only the selected turn cell is added. Histories with identical I_t but opposite visible branches require opposite next movements for the best continuation, so no action-only q is optimal on all such histories. This establishes (i) only; it cannot repair the failed autonomous-evolution clause."
+      },
+      "clause_ii": {
+        "holds": true,
+        "reason": "True as a standalone clause: the current screenshot renders the branch cell, elevation, boxes, and hearth; full mode can orbit by drag and simplified mode can orbit with buttons. With no task-state evolution, w=0 (the configured one-frame, zero-ms observation) is sufficient to choose the visible branch for a delayed action. This is an observation/planning requirement, not a qualifying autonomous process."
+      },
+      "clause_iii": {
+        "holds": false,
+        "reason": "False. There is no autonomous non-clock task-state evolution during any positive wait. The only page-time change is the 2.2-second hl-breathe opacity animation on the cargo; it leaves model.current, camera/geometry, hit testing, and grader replay unchanged. Every useful change (box push, climb, pickup/drop, or camera orbit) occurs synchronously only after an action. Waiting can consume the overall deadline, but deadline-only loss is excluded by the definition, so no D, Delta, and w can produce the required strict Q loss."
+      },
+      "common_visible_process": "None. The only visible autonomous change is the unrelated cargo-opacity breathing animation; no autonomous visible process changes the route, box positions, courier state, or the effectiveness of an outcome-affecting action.",
+      "pre_run": {
+        "threshold": 0.5,
+        "at_least_half": null,
+        "rate": null,
+        "basis": "not_applicable",
+        "reason": "No autonomous outcome phase exists in any generated instance: the static world is solved by action-triggered box/courier transitions, followed by administrative certification. No pre-run rate is assigned; the configuration is already No because clause (iii) fails.",
+        "seed_probe": null
+      },
+      "files_read_completely": [
+        "weird_captcha_gym/environments/hearthlift_courier_env/controls.json",
+        "weird_captcha_gym/environments/hearthlift_courier_env/env.json",
+        "weird_captcha_gym/environments/hearthlift_courier_env/tasks/hearthlift_courier_seed_0001/task.json",
+        "weird_captcha_gym/environments/hearthlift_courier_env/tasks/hearthlift_courier_seed_0001/verifier.py",
+        "weird_captcha_gym/environments/hearthlift_courier_env/tasks/hearthlift_courier_seed_0001/setup_task.sh",
+        "weird_captcha_gym/environments/hearthlift_courier_env/tasks/hearthlift_courier_seed_0001/export_result.sh",
+        "weird_captcha_gym/shared_scripts/incubator_generators/hearthlift_courier.py",
+        "weird_captcha_gym/shared_runtime/app/mechanics/hearthlift_courier.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/hearthlift_courier.css",
+        "weird_captcha_gym/shared_runtime/server/incubator_graders/hearthlift_courier.py",
+        "weird_captcha_gym/shared_runtime/verifier_helpers.py",
+        "weird_captcha_gym/tools/incubator_solvers/hearthlift_courier.py"
+      ],
+      "source_evidence": [
+        {
+          "path": "weird_captcha_gym/environments/hearthlift_courier_env/controls.json",
+          "lines": "18-22",
+          "claim": "Difficulty 3 activates stage_count=3, decoy_count=2, turn_count=2, camera_obscurity=0.62, cargo_detour=1."
+        },
+        {
+          "path": "weird_captcha_gym/environments/hearthlift_courier_env/controls.json",
+          "lines": "37-41",
+          "claim": "The full profile exposes direct WASD/arrow movement, C, E, and pointer-drag orbit. The runtime is synchronous with observation_window_ms=0 and frames_per_observation=1; the controls file's live marker does not itself establish a real-time mechanic."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/hearthlift_courier.py",
+          "lines": "254-270",
+          "claim": "The route construction samples a seed-dependent N/S lane turn whenever index < turn_count; this profile has at least one such turn, while all turns are generated before play and then remain static."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/hearthlift_courier.py",
+          "lines": "296-319",
+          "claim": "The world contains real cells and pushable helper/decoy/cargo boxes; public state removes only construction-only cell_map, route, and stage tables, and the rules describe discrete push, climb, carry, and projection-only camera behavior."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/hearthlift_courier.js",
+          "lines": "34-119",
+          "claim": "The browser mutates avatar, boxes, held, and delivered state only in synchronous move, climb, pickup, and drop handlers; camera orbit is separate and changes projection/yaw only."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/hearthlift_courier.js",
+          "lines": "304-350",
+          "claim": "The full profile exposes direct WASD/arrow movement, C, E, and pointer-drag orbit. Pointer movement changes cameraYaw only while a direct-input drag is active; there is no autonomous timer, physics loop, or task-state tick."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/hearthlift_courier.css",
+          "lines": "40-48",
+          "claim": "The only autonomous visual change is hl-breathe, an infinite 2.2-second cargo opacity animation; no task-state variable or affordance is animated."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/hearthlift_courier.py",
+          "lines": "42-119",
+          "claim": "Independent replay applies only camera, move, climb, pickup, and drop events and contains no clock-driven evolution."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/hearthlift_courier.py",
+          "lines": "132-197",
+          "claim": "The grader binds the selected interaction source, replays visible-state snapshots synchronously, and checks final cargo delivery plus an administrative camera event."
+        },
+        {
+          "path": "weird_captcha_gym/environments/hearthlift_courier_env/tasks/hearthlift_courier_seed_0001/verifier.py",
+          "lines": "36-49",
+          "claim": "The task verifier loads the exported result and delegates the authoritative decision to the independent Hearthlift replay grader."
+        },
+        {
+          "path": "weird_captcha_gym/tools/incubator_solvers/hearthlift_courier.py",
+          "lines": "24-97",
+          "claim": "The ordinary-input solver maps the same generated action sequence to direct or proxy controls and merely waits 18 ms between actions; it does not rely on a task-time mechanic."
+        }
+      ],
+      "uncertainties": []
+    },
+    {
+      "case_index": 286,
+      "public_environment_name": "Hearthlift Courier",
+      "environment_id": "hearthlift_courier_env",
+      "difficulty": 3,
+      "interaction_mode": "simplified",
+      "label": "no",
+      "controls_available": [
+        "NORTH, WEST, EAST, and SOUTH buttons: cardinal movement and helper-crate pushes",
+        "CLIMB button: climb an adjacent same-level helper crate",
+        "PICK UP / DROP button: toggle marked-cargo pickup or drop",
+        "ORBIT LEFT and ORBIT RIGHT buttons: orbit the camera",
+        "CERTIFY DELIVERY and ABANDON ATTEMPT buttons"
+      ],
+      "autonomous_processes": [
+        "The active static profile is stage_count=3, decoy_count=2, turn_count=2, camera_obscurity=0.62, cargo_detour=1; these values determine the generated initial voxel world and route complexity, not an autonomous timer or physics process.",
+        "No avatar, box, camera-yaw, held-cargo, delivered, route, or hearth state advances without a new input; state transitions run synchronously in action handlers.",
+        "The marked cargo has a continuous 2.2-second infinite CSS hl-breathe opacity animation. It changes only presentation opacity and does not change geometry, hit testing, controls, or replay state."
+      ],
+      "grouped_control_modes": [
+        "D_move: all proxy cardinal-button cardinal-movement and helper-crate-push occurrences",
+        "D_climb: all proxy CLIMB occurrences",
+        "D_cargo: all proxy pickup/drop occurrences",
+        "Camera orbit is projection-only, so it is not an outcome-affecting D; certification is administrative"
+      ],
+      "delta_ms": null,
+      "window_ms": null,
+      "clause_i": {
+        "holds": true,
+        "reason": "True for the grouped cardinal-movement mode. At the first active lane transition, rng.random() selects N or S and only the selected turn cell is added. Histories with identical I_t but opposite visible branches require opposite next movements for the best continuation, so no action-only q is optimal on all such histories. This establishes (i) only; it cannot repair the failed autonomous-evolution clause."
+      },
+      "clause_ii": {
+        "holds": true,
+        "reason": "True as a standalone clause: the current screenshot renders the branch cell, elevation, boxes, and hearth; full mode can orbit by drag and simplified mode can orbit with buttons. With no task-state evolution, w=0 (the configured one-frame, zero-ms observation) is sufficient to choose the visible branch for a delayed action. This is an observation/planning requirement, not a qualifying autonomous process."
+      },
+      "clause_iii": {
+        "holds": false,
+        "reason": "False. There is no autonomous non-clock task-state evolution during any positive wait. The only page-time change is the 2.2-second hl-breathe opacity animation on the cargo; it leaves model.current, camera/geometry, hit testing, and grader replay unchanged. Every useful change (box push, climb, pickup/drop, or camera orbit) occurs synchronously only after an action. Waiting can consume the overall deadline, but deadline-only loss is excluded by the definition, so no D, Delta, and w can produce the required strict Q loss."
+      },
+      "common_visible_process": "None. The only visible autonomous change is the unrelated cargo-opacity breathing animation; no autonomous visible process changes the route, box positions, courier state, or the effectiveness of an outcome-affecting action.",
+      "pre_run": {
+        "threshold": 0.5,
+        "at_least_half": null,
+        "rate": null,
+        "basis": "not_applicable",
+        "reason": "No autonomous outcome phase exists in any generated instance: the static world is solved by action-triggered box/courier transitions, followed by administrative certification. No pre-run rate is assigned; the configuration is already No because clause (iii) fails.",
+        "seed_probe": null
+      },
+      "files_read_completely": [
+        "weird_captcha_gym/environments/hearthlift_courier_env/controls.json",
+        "weird_captcha_gym/environments/hearthlift_courier_env/env.json",
+        "weird_captcha_gym/environments/hearthlift_courier_env/tasks/hearthlift_courier_seed_0001/task.json",
+        "weird_captcha_gym/environments/hearthlift_courier_env/tasks/hearthlift_courier_seed_0001/verifier.py",
+        "weird_captcha_gym/environments/hearthlift_courier_env/tasks/hearthlift_courier_seed_0001/setup_task.sh",
+        "weird_captcha_gym/environments/hearthlift_courier_env/tasks/hearthlift_courier_seed_0001/export_result.sh",
+        "weird_captcha_gym/shared_scripts/incubator_generators/hearthlift_courier.py",
+        "weird_captcha_gym/shared_runtime/app/mechanics/hearthlift_courier.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/hearthlift_courier.css",
+        "weird_captcha_gym/shared_runtime/server/incubator_graders/hearthlift_courier.py",
+        "weird_captcha_gym/shared_runtime/verifier_helpers.py",
+        "weird_captcha_gym/tools/incubator_solvers/hearthlift_courier.py"
+      ],
+      "source_evidence": [
+        {
+          "path": "weird_captcha_gym/environments/hearthlift_courier_env/controls.json",
+          "lines": "18-22",
+          "claim": "Difficulty 3 activates stage_count=3, decoy_count=2, turn_count=2, camera_obscurity=0.62, cargo_detour=1."
+        },
+        {
+          "path": "weird_captcha_gym/environments/hearthlift_courier_env/controls.json",
+          "lines": "37-41",
+          "claim": "The simplified profile exposes proxy movement, CLIMB, cargo, and orbit buttons with the same discrete action effects. The runtime is synchronous with observation_window_ms=0 and frames_per_observation=1; the controls file's live marker does not itself establish a real-time mechanic."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/hearthlift_courier.py",
+          "lines": "254-270",
+          "claim": "The route construction samples a seed-dependent N/S lane turn whenever index < turn_count; this profile has at least one such turn, while all turns are generated before play and then remain static."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/hearthlift_courier.py",
+          "lines": "296-319",
+          "claim": "The world contains real cells and pushable helper/decoy/cargo boxes; public state removes only construction-only cell_map, route, and stage tables, and the rules describe discrete push, climb, carry, and projection-only camera behavior."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/hearthlift_courier.js",
+          "lines": "34-119",
+          "claim": "The browser mutates avatar, boxes, held, and delivered state only in synchronous move, climb, pickup, and drop handlers; camera orbit is separate and changes projection/yaw only."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/hearthlift_courier.js",
+          "lines": "304-350",
+          "claim": "The simplified profile exposes proxy movement, CLIMB, cargo, and orbit buttons with the same discrete action effects. Pointer movement changes cameraYaw only while a direct-input drag is active; there is no autonomous timer, physics loop, or task-state tick."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/hearthlift_courier.css",
+          "lines": "40-48",
+          "claim": "The only autonomous visual change is hl-breathe, an infinite 2.2-second cargo opacity animation; no task-state variable or affordance is animated."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/hearthlift_courier.py",
+          "lines": "42-119",
+          "claim": "Independent replay applies only camera, move, climb, pickup, and drop events and contains no clock-driven evolution."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/hearthlift_courier.py",
+          "lines": "132-197",
+          "claim": "The grader binds the selected interaction source, replays visible-state snapshots synchronously, and checks final cargo delivery plus an administrative camera event."
+        },
+        {
+          "path": "weird_captcha_gym/environments/hearthlift_courier_env/tasks/hearthlift_courier_seed_0001/verifier.py",
+          "lines": "36-49",
+          "claim": "The task verifier loads the exported result and delegates the authoritative decision to the independent Hearthlift replay grader."
+        },
+        {
+          "path": "weird_captcha_gym/tools/incubator_solvers/hearthlift_courier.py",
+          "lines": "24-97",
+          "claim": "The ordinary-input solver maps the same generated action sequence to direct or proxy controls and merely waits 18 ms between actions; it does not rely on a task-time mechanic."
+        }
+      ],
+      "uncertainties": []
+    },
+    {
+      "case_index": 287,
+      "public_environment_name": "Hearthlift Courier",
+      "environment_id": "hearthlift_courier_env",
+      "difficulty": 4,
+      "interaction_mode": "full",
+      "label": "no",
+      "controls_available": [
+        "WASD or arrow keys: cardinal movement and helper-crate pushes",
+        "C key: climb an adjacent same-level helper crate",
+        "E key: pick up or drop the marked cargo",
+        "Pointer drag on the voxel garden: orbit the camera",
+        "CERTIFY DELIVERY and ABANDON ATTEMPT buttons"
+      ],
+      "autonomous_processes": [
+        "The active static profile is stage_count=4, decoy_count=3, turn_count=3, camera_obscurity=0.72, cargo_detour=1; these values determine the generated initial voxel world and route complexity, not an autonomous timer or physics process.",
+        "No avatar, box, camera-yaw, held-cargo, delivered, route, or hearth state advances without a new input; state transitions run synchronously in action handlers.",
+        "The marked cargo has a continuous 2.2-second infinite CSS hl-breathe opacity animation. It changes only presentation opacity and does not change geometry, hit testing, controls, or replay state."
+      ],
+      "grouped_control_modes": [
+        "D_move: all direct WASD/arrow-key cardinal-movement and helper-crate-push occurrences",
+        "D_climb: all direct CLIMB occurrences",
+        "D_cargo: all direct pickup/drop occurrences",
+        "Camera orbit is projection-only, so it is not an outcome-affecting D; certification is administrative"
+      ],
+      "delta_ms": null,
+      "window_ms": null,
+      "clause_i": {
+        "holds": true,
+        "reason": "True for the grouped cardinal-movement mode. At the first active lane transition, rng.random() selects N or S and only the selected turn cell is added. Histories with identical I_t but opposite visible branches require opposite next movements for the best continuation, so no action-only q is optimal on all such histories. This establishes (i) only; it cannot repair the failed autonomous-evolution clause."
+      },
+      "clause_ii": {
+        "holds": true,
+        "reason": "True as a standalone clause: the current screenshot renders the branch cell, elevation, boxes, and hearth; full mode can orbit by drag and simplified mode can orbit with buttons. With no task-state evolution, w=0 (the configured one-frame, zero-ms observation) is sufficient to choose the visible branch for a delayed action. This is an observation/planning requirement, not a qualifying autonomous process."
+      },
+      "clause_iii": {
+        "holds": false,
+        "reason": "False. There is no autonomous non-clock task-state evolution during any positive wait. The only page-time change is the 2.2-second hl-breathe opacity animation on the cargo; it leaves model.current, camera/geometry, hit testing, and grader replay unchanged. Every useful change (box push, climb, pickup/drop, or camera orbit) occurs synchronously only after an action. Waiting can consume the overall deadline, but deadline-only loss is excluded by the definition, so no D, Delta, and w can produce the required strict Q loss."
+      },
+      "common_visible_process": "None. The only visible autonomous change is the unrelated cargo-opacity breathing animation; no autonomous visible process changes the route, box positions, courier state, or the effectiveness of an outcome-affecting action.",
+      "pre_run": {
+        "threshold": 0.5,
+        "at_least_half": null,
+        "rate": null,
+        "basis": "not_applicable",
+        "reason": "No autonomous outcome phase exists in any generated instance: the static world is solved by action-triggered box/courier transitions, followed by administrative certification. No pre-run rate is assigned; the configuration is already No because clause (iii) fails.",
+        "seed_probe": null
+      },
+      "files_read_completely": [
+        "weird_captcha_gym/environments/hearthlift_courier_env/controls.json",
+        "weird_captcha_gym/environments/hearthlift_courier_env/env.json",
+        "weird_captcha_gym/environments/hearthlift_courier_env/tasks/hearthlift_courier_seed_0001/task.json",
+        "weird_captcha_gym/environments/hearthlift_courier_env/tasks/hearthlift_courier_seed_0001/verifier.py",
+        "weird_captcha_gym/environments/hearthlift_courier_env/tasks/hearthlift_courier_seed_0001/setup_task.sh",
+        "weird_captcha_gym/environments/hearthlift_courier_env/tasks/hearthlift_courier_seed_0001/export_result.sh",
+        "weird_captcha_gym/shared_scripts/incubator_generators/hearthlift_courier.py",
+        "weird_captcha_gym/shared_runtime/app/mechanics/hearthlift_courier.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/hearthlift_courier.css",
+        "weird_captcha_gym/shared_runtime/server/incubator_graders/hearthlift_courier.py",
+        "weird_captcha_gym/shared_runtime/verifier_helpers.py",
+        "weird_captcha_gym/tools/incubator_solvers/hearthlift_courier.py"
+      ],
+      "source_evidence": [
+        {
+          "path": "weird_captcha_gym/environments/hearthlift_courier_env/controls.json",
+          "lines": "24-28",
+          "claim": "Difficulty 4 activates stage_count=4, decoy_count=3, turn_count=3, camera_obscurity=0.72, cargo_detour=1."
+        },
+        {
+          "path": "weird_captcha_gym/environments/hearthlift_courier_env/controls.json",
+          "lines": "37-41",
+          "claim": "The full profile exposes direct WASD/arrow movement, C, E, and pointer-drag orbit. The runtime is synchronous with observation_window_ms=0 and frames_per_observation=1; the controls file's live marker does not itself establish a real-time mechanic."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/hearthlift_courier.py",
+          "lines": "254-270",
+          "claim": "The route construction samples a seed-dependent N/S lane turn whenever index < turn_count; this profile has at least one such turn, while all turns are generated before play and then remain static."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/hearthlift_courier.py",
+          "lines": "296-319",
+          "claim": "The world contains real cells and pushable helper/decoy/cargo boxes; public state removes only construction-only cell_map, route, and stage tables, and the rules describe discrete push, climb, carry, and projection-only camera behavior."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/hearthlift_courier.js",
+          "lines": "34-119",
+          "claim": "The browser mutates avatar, boxes, held, and delivered state only in synchronous move, climb, pickup, and drop handlers; camera orbit is separate and changes projection/yaw only."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/hearthlift_courier.js",
+          "lines": "304-350",
+          "claim": "The full profile exposes direct WASD/arrow movement, C, E, and pointer-drag orbit. Pointer movement changes cameraYaw only while a direct-input drag is active; there is no autonomous timer, physics loop, or task-state tick."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/hearthlift_courier.css",
+          "lines": "40-48",
+          "claim": "The only autonomous visual change is hl-breathe, an infinite 2.2-second cargo opacity animation; no task-state variable or affordance is animated."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/hearthlift_courier.py",
+          "lines": "42-119",
+          "claim": "Independent replay applies only camera, move, climb, pickup, and drop events and contains no clock-driven evolution."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/hearthlift_courier.py",
+          "lines": "132-197",
+          "claim": "The grader binds the selected interaction source, replays visible-state snapshots synchronously, and checks final cargo delivery plus an administrative camera event."
+        },
+        {
+          "path": "weird_captcha_gym/environments/hearthlift_courier_env/tasks/hearthlift_courier_seed_0001/verifier.py",
+          "lines": "36-49",
+          "claim": "The task verifier loads the exported result and delegates the authoritative decision to the independent Hearthlift replay grader."
+        },
+        {
+          "path": "weird_captcha_gym/tools/incubator_solvers/hearthlift_courier.py",
+          "lines": "24-97",
+          "claim": "The ordinary-input solver maps the same generated action sequence to direct or proxy controls and merely waits 18 ms between actions; it does not rely on a task-time mechanic."
+        }
+      ],
+      "uncertainties": []
+    },
+    {
+      "case_index": 288,
+      "public_environment_name": "Hearthlift Courier",
+      "environment_id": "hearthlift_courier_env",
+      "difficulty": 4,
+      "interaction_mode": "simplified",
+      "label": "no",
+      "controls_available": [
+        "NORTH, WEST, EAST, and SOUTH buttons: cardinal movement and helper-crate pushes",
+        "CLIMB button: climb an adjacent same-level helper crate",
+        "PICK UP / DROP button: toggle marked-cargo pickup or drop",
+        "ORBIT LEFT and ORBIT RIGHT buttons: orbit the camera",
+        "CERTIFY DELIVERY and ABANDON ATTEMPT buttons"
+      ],
+      "autonomous_processes": [
+        "The active static profile is stage_count=4, decoy_count=3, turn_count=3, camera_obscurity=0.72, cargo_detour=1; these values determine the generated initial voxel world and route complexity, not an autonomous timer or physics process.",
+        "No avatar, box, camera-yaw, held-cargo, delivered, route, or hearth state advances without a new input; state transitions run synchronously in action handlers.",
+        "The marked cargo has a continuous 2.2-second infinite CSS hl-breathe opacity animation. It changes only presentation opacity and does not change geometry, hit testing, controls, or replay state."
+      ],
+      "grouped_control_modes": [
+        "D_move: all proxy cardinal-button cardinal-movement and helper-crate-push occurrences",
+        "D_climb: all proxy CLIMB occurrences",
+        "D_cargo: all proxy pickup/drop occurrences",
+        "Camera orbit is projection-only, so it is not an outcome-affecting D; certification is administrative"
+      ],
+      "delta_ms": null,
+      "window_ms": null,
+      "clause_i": {
+        "holds": true,
+        "reason": "True for the grouped cardinal-movement mode. At the first active lane transition, rng.random() selects N or S and only the selected turn cell is added. Histories with identical I_t but opposite visible branches require opposite next movements for the best continuation, so no action-only q is optimal on all such histories. This establishes (i) only; it cannot repair the failed autonomous-evolution clause."
+      },
+      "clause_ii": {
+        "holds": true,
+        "reason": "True as a standalone clause: the current screenshot renders the branch cell, elevation, boxes, and hearth; full mode can orbit by drag and simplified mode can orbit with buttons. With no task-state evolution, w=0 (the configured one-frame, zero-ms observation) is sufficient to choose the visible branch for a delayed action. This is an observation/planning requirement, not a qualifying autonomous process."
+      },
+      "clause_iii": {
+        "holds": false,
+        "reason": "False. There is no autonomous non-clock task-state evolution during any positive wait. The only page-time change is the 2.2-second hl-breathe opacity animation on the cargo; it leaves model.current, camera/geometry, hit testing, and grader replay unchanged. Every useful change (box push, climb, pickup/drop, or camera orbit) occurs synchronously only after an action. Waiting can consume the overall deadline, but deadline-only loss is excluded by the definition, so no D, Delta, and w can produce the required strict Q loss."
+      },
+      "common_visible_process": "None. The only visible autonomous change is the unrelated cargo-opacity breathing animation; no autonomous visible process changes the route, box positions, courier state, or the effectiveness of an outcome-affecting action.",
+      "pre_run": {
+        "threshold": 0.5,
+        "at_least_half": null,
+        "rate": null,
+        "basis": "not_applicable",
+        "reason": "No autonomous outcome phase exists in any generated instance: the static world is solved by action-triggered box/courier transitions, followed by administrative certification. No pre-run rate is assigned; the configuration is already No because clause (iii) fails.",
+        "seed_probe": null
+      },
+      "files_read_completely": [
+        "weird_captcha_gym/environments/hearthlift_courier_env/controls.json",
+        "weird_captcha_gym/environments/hearthlift_courier_env/env.json",
+        "weird_captcha_gym/environments/hearthlift_courier_env/tasks/hearthlift_courier_seed_0001/task.json",
+        "weird_captcha_gym/environments/hearthlift_courier_env/tasks/hearthlift_courier_seed_0001/verifier.py",
+        "weird_captcha_gym/environments/hearthlift_courier_env/tasks/hearthlift_courier_seed_0001/setup_task.sh",
+        "weird_captcha_gym/environments/hearthlift_courier_env/tasks/hearthlift_courier_seed_0001/export_result.sh",
+        "weird_captcha_gym/shared_scripts/incubator_generators/hearthlift_courier.py",
+        "weird_captcha_gym/shared_runtime/app/mechanics/hearthlift_courier.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/hearthlift_courier.css",
+        "weird_captcha_gym/shared_runtime/server/incubator_graders/hearthlift_courier.py",
+        "weird_captcha_gym/shared_runtime/verifier_helpers.py",
+        "weird_captcha_gym/tools/incubator_solvers/hearthlift_courier.py"
+      ],
+      "source_evidence": [
+        {
+          "path": "weird_captcha_gym/environments/hearthlift_courier_env/controls.json",
+          "lines": "24-28",
+          "claim": "Difficulty 4 activates stage_count=4, decoy_count=3, turn_count=3, camera_obscurity=0.72, cargo_detour=1."
+        },
+        {
+          "path": "weird_captcha_gym/environments/hearthlift_courier_env/controls.json",
+          "lines": "37-41",
+          "claim": "The simplified profile exposes proxy movement, CLIMB, cargo, and orbit buttons with the same discrete action effects. The runtime is synchronous with observation_window_ms=0 and frames_per_observation=1; the controls file's live marker does not itself establish a real-time mechanic."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/hearthlift_courier.py",
+          "lines": "254-270",
+          "claim": "The route construction samples a seed-dependent N/S lane turn whenever index < turn_count; this profile has at least one such turn, while all turns are generated before play and then remain static."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/hearthlift_courier.py",
+          "lines": "296-319",
+          "claim": "The world contains real cells and pushable helper/decoy/cargo boxes; public state removes only construction-only cell_map, route, and stage tables, and the rules describe discrete push, climb, carry, and projection-only camera behavior."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/hearthlift_courier.js",
+          "lines": "34-119",
+          "claim": "The browser mutates avatar, boxes, held, and delivered state only in synchronous move, climb, pickup, and drop handlers; camera orbit is separate and changes projection/yaw only."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/hearthlift_courier.js",
+          "lines": "304-350",
+          "claim": "The simplified profile exposes proxy movement, CLIMB, cargo, and orbit buttons with the same discrete action effects. Pointer movement changes cameraYaw only while a direct-input drag is active; there is no autonomous timer, physics loop, or task-state tick."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/hearthlift_courier.css",
+          "lines": "40-48",
+          "claim": "The only autonomous visual change is hl-breathe, an infinite 2.2-second cargo opacity animation; no task-state variable or affordance is animated."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/hearthlift_courier.py",
+          "lines": "42-119",
+          "claim": "Independent replay applies only camera, move, climb, pickup, and drop events and contains no clock-driven evolution."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/hearthlift_courier.py",
+          "lines": "132-197",
+          "claim": "The grader binds the selected interaction source, replays visible-state snapshots synchronously, and checks final cargo delivery plus an administrative camera event."
+        },
+        {
+          "path": "weird_captcha_gym/environments/hearthlift_courier_env/tasks/hearthlift_courier_seed_0001/verifier.py",
+          "lines": "36-49",
+          "claim": "The task verifier loads the exported result and delegates the authoritative decision to the independent Hearthlift replay grader."
+        },
+        {
+          "path": "weird_captcha_gym/tools/incubator_solvers/hearthlift_courier.py",
+          "lines": "24-97",
+          "claim": "The ordinary-input solver maps the same generated action sequence to direct or proxy controls and merely waits 18 ms between actions; it does not rely on a task-time mechanic."
+        }
+      ],
+      "uncertainties": []
+    },
+    {
+      "case_index": 289,
+      "public_environment_name": "Hearthlift Courier",
+      "environment_id": "hearthlift_courier_env",
+      "difficulty": 5,
+      "interaction_mode": "full",
+      "label": "no",
+      "controls_available": [
+        "WASD or arrow keys: cardinal movement and helper-crate pushes",
+        "C key: climb an adjacent same-level helper crate",
+        "E key: pick up or drop the marked cargo",
+        "Pointer drag on the voxel garden: orbit the camera",
+        "CERTIFY DELIVERY and ABANDON ATTEMPT buttons"
+      ],
+      "autonomous_processes": [
+        "The active static profile is stage_count=5, decoy_count=5, turn_count=4, camera_obscurity=0.82, cargo_detour=1; these values determine the generated initial voxel world and route complexity, not an autonomous timer or physics process.",
+        "No avatar, box, camera-yaw, held-cargo, delivered, route, or hearth state advances without a new input; state transitions run synchronously in action handlers.",
+        "The marked cargo has a continuous 2.2-second infinite CSS hl-breathe opacity animation. It changes only presentation opacity and does not change geometry, hit testing, controls, or replay state."
+      ],
+      "grouped_control_modes": [
+        "D_move: all direct WASD/arrow-key cardinal-movement and helper-crate-push occurrences",
+        "D_climb: all direct CLIMB occurrences",
+        "D_cargo: all direct pickup/drop occurrences",
+        "Camera orbit is projection-only, so it is not an outcome-affecting D; certification is administrative"
+      ],
+      "delta_ms": null,
+      "window_ms": null,
+      "clause_i": {
+        "holds": true,
+        "reason": "True for the grouped cardinal-movement mode. At the first active lane transition, rng.random() selects N or S and only the selected turn cell is added. Histories with identical I_t but opposite visible branches require opposite next movements for the best continuation, so no action-only q is optimal on all such histories. This establishes (i) only; it cannot repair the failed autonomous-evolution clause."
+      },
+      "clause_ii": {
+        "holds": true,
+        "reason": "True as a standalone clause: the current screenshot renders the branch cell, elevation, boxes, and hearth; full mode can orbit by drag and simplified mode can orbit with buttons. With no task-state evolution, w=0 (the configured one-frame, zero-ms observation) is sufficient to choose the visible branch for a delayed action. This is an observation/planning requirement, not a qualifying autonomous process."
+      },
+      "clause_iii": {
+        "holds": false,
+        "reason": "False. There is no autonomous non-clock task-state evolution during any positive wait. The only page-time change is the 2.2-second hl-breathe opacity animation on the cargo; it leaves model.current, camera/geometry, hit testing, and grader replay unchanged. Every useful change (box push, climb, pickup/drop, or camera orbit) occurs synchronously only after an action. Waiting can consume the overall deadline, but deadline-only loss is excluded by the definition, so no D, Delta, and w can produce the required strict Q loss."
+      },
+      "common_visible_process": "None. The only visible autonomous change is the unrelated cargo-opacity breathing animation; no autonomous visible process changes the route, box positions, courier state, or the effectiveness of an outcome-affecting action.",
+      "pre_run": {
+        "threshold": 0.5,
+        "at_least_half": null,
+        "rate": null,
+        "basis": "not_applicable",
+        "reason": "No autonomous outcome phase exists in any generated instance: the static world is solved by action-triggered box/courier transitions, followed by administrative certification. No pre-run rate is assigned; the configuration is already No because clause (iii) fails.",
+        "seed_probe": null
+      },
+      "files_read_completely": [
+        "weird_captcha_gym/environments/hearthlift_courier_env/controls.json",
+        "weird_captcha_gym/environments/hearthlift_courier_env/env.json",
+        "weird_captcha_gym/environments/hearthlift_courier_env/tasks/hearthlift_courier_seed_0001/task.json",
+        "weird_captcha_gym/environments/hearthlift_courier_env/tasks/hearthlift_courier_seed_0001/verifier.py",
+        "weird_captcha_gym/environments/hearthlift_courier_env/tasks/hearthlift_courier_seed_0001/setup_task.sh",
+        "weird_captcha_gym/environments/hearthlift_courier_env/tasks/hearthlift_courier_seed_0001/export_result.sh",
+        "weird_captcha_gym/shared_scripts/incubator_generators/hearthlift_courier.py",
+        "weird_captcha_gym/shared_runtime/app/mechanics/hearthlift_courier.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/hearthlift_courier.css",
+        "weird_captcha_gym/shared_runtime/server/incubator_graders/hearthlift_courier.py",
+        "weird_captcha_gym/shared_runtime/verifier_helpers.py",
+        "weird_captcha_gym/tools/incubator_solvers/hearthlift_courier.py"
+      ],
+      "source_evidence": [
+        {
+          "path": "weird_captcha_gym/environments/hearthlift_courier_env/controls.json",
+          "lines": "30-34",
+          "claim": "Difficulty 5 activates stage_count=5, decoy_count=5, turn_count=4, camera_obscurity=0.82, cargo_detour=1."
+        },
+        {
+          "path": "weird_captcha_gym/environments/hearthlift_courier_env/controls.json",
+          "lines": "37-41",
+          "claim": "The full profile exposes direct WASD/arrow movement, C, E, and pointer-drag orbit. The runtime is synchronous with observation_window_ms=0 and frames_per_observation=1; the controls file's live marker does not itself establish a real-time mechanic."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/hearthlift_courier.py",
+          "lines": "254-270",
+          "claim": "The route construction samples a seed-dependent N/S lane turn whenever index < turn_count; this profile has at least one such turn, while all turns are generated before play and then remain static."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/hearthlift_courier.py",
+          "lines": "296-319",
+          "claim": "The world contains real cells and pushable helper/decoy/cargo boxes; public state removes only construction-only cell_map, route, and stage tables, and the rules describe discrete push, climb, carry, and projection-only camera behavior."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/hearthlift_courier.js",
+          "lines": "34-119",
+          "claim": "The browser mutates avatar, boxes, held, and delivered state only in synchronous move, climb, pickup, and drop handlers; camera orbit is separate and changes projection/yaw only."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/hearthlift_courier.js",
+          "lines": "304-350",
+          "claim": "The full profile exposes direct WASD/arrow movement, C, E, and pointer-drag orbit. Pointer movement changes cameraYaw only while a direct-input drag is active; there is no autonomous timer, physics loop, or task-state tick."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/hearthlift_courier.css",
+          "lines": "40-48",
+          "claim": "The only autonomous visual change is hl-breathe, an infinite 2.2-second cargo opacity animation; no task-state variable or affordance is animated."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/hearthlift_courier.py",
+          "lines": "42-119",
+          "claim": "Independent replay applies only camera, move, climb, pickup, and drop events and contains no clock-driven evolution."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/hearthlift_courier.py",
+          "lines": "132-197",
+          "claim": "The grader binds the selected interaction source, replays visible-state snapshots synchronously, and checks final cargo delivery plus an administrative camera event."
+        },
+        {
+          "path": "weird_captcha_gym/environments/hearthlift_courier_env/tasks/hearthlift_courier_seed_0001/verifier.py",
+          "lines": "36-49",
+          "claim": "The task verifier loads the exported result and delegates the authoritative decision to the independent Hearthlift replay grader."
+        },
+        {
+          "path": "weird_captcha_gym/tools/incubator_solvers/hearthlift_courier.py",
+          "lines": "24-97",
+          "claim": "The ordinary-input solver maps the same generated action sequence to direct or proxy controls and merely waits 18 ms between actions; it does not rely on a task-time mechanic."
+        }
+      ],
+      "uncertainties": []
+    },
+    {
+      "case_index": 290,
+      "public_environment_name": "Hearthlift Courier",
+      "environment_id": "hearthlift_courier_env",
+      "difficulty": 5,
+      "interaction_mode": "simplified",
+      "label": "no",
+      "controls_available": [
+        "NORTH, WEST, EAST, and SOUTH buttons: cardinal movement and helper-crate pushes",
+        "CLIMB button: climb an adjacent same-level helper crate",
+        "PICK UP / DROP button: toggle marked-cargo pickup or drop",
+        "ORBIT LEFT and ORBIT RIGHT buttons: orbit the camera",
+        "CERTIFY DELIVERY and ABANDON ATTEMPT buttons"
+      ],
+      "autonomous_processes": [
+        "The active static profile is stage_count=5, decoy_count=5, turn_count=4, camera_obscurity=0.82, cargo_detour=1; these values determine the generated initial voxel world and route complexity, not an autonomous timer or physics process.",
+        "No avatar, box, camera-yaw, held-cargo, delivered, route, or hearth state advances without a new input; state transitions run synchronously in action handlers.",
+        "The marked cargo has a continuous 2.2-second infinite CSS hl-breathe opacity animation. It changes only presentation opacity and does not change geometry, hit testing, controls, or replay state."
+      ],
+      "grouped_control_modes": [
+        "D_move: all proxy cardinal-button cardinal-movement and helper-crate-push occurrences",
+        "D_climb: all proxy CLIMB occurrences",
+        "D_cargo: all proxy pickup/drop occurrences",
+        "Camera orbit is projection-only, so it is not an outcome-affecting D; certification is administrative"
+      ],
+      "delta_ms": null,
+      "window_ms": null,
+      "clause_i": {
+        "holds": true,
+        "reason": "True for the grouped cardinal-movement mode. At the first active lane transition, rng.random() selects N or S and only the selected turn cell is added. Histories with identical I_t but opposite visible branches require opposite next movements for the best continuation, so no action-only q is optimal on all such histories. This establishes (i) only; it cannot repair the failed autonomous-evolution clause."
+      },
+      "clause_ii": {
+        "holds": true,
+        "reason": "True as a standalone clause: the current screenshot renders the branch cell, elevation, boxes, and hearth; full mode can orbit by drag and simplified mode can orbit with buttons. With no task-state evolution, w=0 (the configured one-frame, zero-ms observation) is sufficient to choose the visible branch for a delayed action. This is an observation/planning requirement, not a qualifying autonomous process."
+      },
+      "clause_iii": {
+        "holds": false,
+        "reason": "False. There is no autonomous non-clock task-state evolution during any positive wait. The only page-time change is the 2.2-second hl-breathe opacity animation on the cargo; it leaves model.current, camera/geometry, hit testing, and grader replay unchanged. Every useful change (box push, climb, pickup/drop, or camera orbit) occurs synchronously only after an action. Waiting can consume the overall deadline, but deadline-only loss is excluded by the definition, so no D, Delta, and w can produce the required strict Q loss."
+      },
+      "common_visible_process": "None. The only visible autonomous change is the unrelated cargo-opacity breathing animation; no autonomous visible process changes the route, box positions, courier state, or the effectiveness of an outcome-affecting action.",
+      "pre_run": {
+        "threshold": 0.5,
+        "at_least_half": null,
+        "rate": null,
+        "basis": "not_applicable",
+        "reason": "No autonomous outcome phase exists in any generated instance: the static world is solved by action-triggered box/courier transitions, followed by administrative certification. No pre-run rate is assigned; the configuration is already No because clause (iii) fails.",
+        "seed_probe": null
+      },
+      "files_read_completely": [
+        "weird_captcha_gym/environments/hearthlift_courier_env/controls.json",
+        "weird_captcha_gym/environments/hearthlift_courier_env/env.json",
+        "weird_captcha_gym/environments/hearthlift_courier_env/tasks/hearthlift_courier_seed_0001/task.json",
+        "weird_captcha_gym/environments/hearthlift_courier_env/tasks/hearthlift_courier_seed_0001/verifier.py",
+        "weird_captcha_gym/environments/hearthlift_courier_env/tasks/hearthlift_courier_seed_0001/setup_task.sh",
+        "weird_captcha_gym/environments/hearthlift_courier_env/tasks/hearthlift_courier_seed_0001/export_result.sh",
+        "weird_captcha_gym/shared_scripts/incubator_generators/hearthlift_courier.py",
+        "weird_captcha_gym/shared_runtime/app/mechanics/hearthlift_courier.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/hearthlift_courier.css",
+        "weird_captcha_gym/shared_runtime/server/incubator_graders/hearthlift_courier.py",
+        "weird_captcha_gym/shared_runtime/verifier_helpers.py",
+        "weird_captcha_gym/tools/incubator_solvers/hearthlift_courier.py"
+      ],
+      "source_evidence": [
+        {
+          "path": "weird_captcha_gym/environments/hearthlift_courier_env/controls.json",
+          "lines": "30-34",
+          "claim": "Difficulty 5 activates stage_count=5, decoy_count=5, turn_count=4, camera_obscurity=0.82, cargo_detour=1."
+        },
+        {
+          "path": "weird_captcha_gym/environments/hearthlift_courier_env/controls.json",
+          "lines": "37-41",
+          "claim": "The simplified profile exposes proxy movement, CLIMB, cargo, and orbit buttons with the same discrete action effects. The runtime is synchronous with observation_window_ms=0 and frames_per_observation=1; the controls file's live marker does not itself establish a real-time mechanic."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/hearthlift_courier.py",
+          "lines": "254-270",
+          "claim": "The route construction samples a seed-dependent N/S lane turn whenever index < turn_count; this profile has at least one such turn, while all turns are generated before play and then remain static."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/hearthlift_courier.py",
+          "lines": "296-319",
+          "claim": "The world contains real cells and pushable helper/decoy/cargo boxes; public state removes only construction-only cell_map, route, and stage tables, and the rules describe discrete push, climb, carry, and projection-only camera behavior."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/hearthlift_courier.js",
+          "lines": "34-119",
+          "claim": "The browser mutates avatar, boxes, held, and delivered state only in synchronous move, climb, pickup, and drop handlers; camera orbit is separate and changes projection/yaw only."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/hearthlift_courier.js",
+          "lines": "304-350",
+          "claim": "The simplified profile exposes proxy movement, CLIMB, cargo, and orbit buttons with the same discrete action effects. Pointer movement changes cameraYaw only while a direct-input drag is active; there is no autonomous timer, physics loop, or task-state tick."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/hearthlift_courier.css",
+          "lines": "40-48",
+          "claim": "The only autonomous visual change is hl-breathe, an infinite 2.2-second cargo opacity animation; no task-state variable or affordance is animated."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/hearthlift_courier.py",
+          "lines": "42-119",
+          "claim": "Independent replay applies only camera, move, climb, pickup, and drop events and contains no clock-driven evolution."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/hearthlift_courier.py",
+          "lines": "132-197",
+          "claim": "The grader binds the selected interaction source, replays visible-state snapshots synchronously, and checks final cargo delivery plus an administrative camera event."
+        },
+        {
+          "path": "weird_captcha_gym/environments/hearthlift_courier_env/tasks/hearthlift_courier_seed_0001/verifier.py",
+          "lines": "36-49",
+          "claim": "The task verifier loads the exported result and delegates the authoritative decision to the independent Hearthlift replay grader."
+        },
+        {
+          "path": "weird_captcha_gym/tools/incubator_solvers/hearthlift_courier.py",
+          "lines": "24-97",
+          "claim": "The ordinary-input solver maps the same generated action sequence to direct or proxy controls and merely waits 18 ms between actions; it does not rely on a task-time mechanic."
+        }
+      ],
+      "uncertainties": []
+    }
+  ]
+}

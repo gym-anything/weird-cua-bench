@@ -1,0 +1,138 @@
+{
+  "case_index": 2,
+  "public_environment_name": "After Hours at the Reliquary",
+  "environment_id": "after_hours_at_the_reliquary_env",
+  "difficulty": 1,
+  "interaction_mode": "simplified",
+  "label": "no",
+  "controls_available": [
+    "Three fixed views: door, desk, and cabinet.",
+    "Simplified TURN LEFT and TURN RIGHT buttons navigate the views.",
+    "Visible scene hotspot clicks reveal the label, collect the empty frame, open the lens drawer, collect the lens, and use the completed loupe on the label; the door handle is the final exit control.",
+    "Select a tray object and then click a second tray object to combine them, or click a visible scene destination to use the selected object.",
+    "One three-digit digit ward with digit-wheel buttons and SET DIAL; the ward seizes after three wrong entries.",
+    "Runner settings are observation_window_ms=0, frames_per_observation=1, and play_time_seconds=240."
+  ],
+  "autonomous_processes": [
+    "No outcome-affecting autonomous task-state process occurs before terminal submission: the mechanic registers no task timer, interval, physics update, motion loop, or random update.",
+    "Scene, inventory, combination, and lock state changes happen synchronously in response to the agent's input and immediately rerender.",
+    "After the successful door click, the CSS vault-door transform transitions for 0.8 seconds while the result is submitted; this is post-outcome presentation and cannot change the available action opportunity.",
+    "A result response after a failed three-strike submission can install a fresh state, but that reset follows the agent's submission action and is not autonomous evolution during an active delay."
+  ],
+  "grouped_control_modes": [
+    "turn_button: simplified left/right view buttons",
+    "scene_click: visible room-object and final door-handle clicks",
+    "inventory_select_pair: select two tray cards to combine",
+    "inventory_select_scene: select a tray card and click a scene destination",
+    "digit_controls: open the digit ward, increment digit wheels, and submit SET DIAL"
+  ],
+  "delta_ms": null,
+  "window_ms": null,
+  "clause_i": {
+    "holds": true,
+    "reason": "For the candidate digit-controls mode, the required three-digit answer is a seed-dependent static clue revealed on the desk. Prior actions and task times alone do not contain the observed digits, so no observation-free q can choose the optimal digit submission across generated seeds."
+  },
+  "clause_ii": {
+    "holds": false,
+    "reason": "Under the configured zero-millisecond observation window, the current door frame shows the digit ward but not the previously revealed desk inscription. A bounded recent window therefore cannot supply the static clue; a normal solution must retain it across view changes. This is a memory limitation, not evidence of a changing task state."
+  },
+  "clause_iii": {
+    "holds": false,
+    "reason": "No legitimate grouped control mode has an autonomous state change H_t to H_t^tau for 0 < tau < Delta while success remains possible. Waiting leaves the views, targets, flags, inventory, clue, and digit-entry value unchanged, so no available action loses value or advantage. The only visible transition is the post-success door animation."
+  },
+  "common_visible_process": "None. Before terminal submission, the visible world changes only after an agent click or selection; the post-success door transition is outside the active outcome opportunity.",
+  "pre_run": {
+    "threshold": 0.5,
+    "at_least_half": null,
+    "rate": null,
+    "basis": "not_applicable",
+    "reason": "The source has no autonomous outcome phase: success is reached through discrete input-triggered state changes, and the final result submission is administrative. No pre-run percentage is defined, and this cannot alter the mathematical No from clause (iii).",
+    "seed_probe": null
+  },
+  "files_read_completely": [
+    "AGENTS.md",
+    "weird_captcha_gym/docs/controllability/real-time.md",
+    "weird_captcha_gym/environments/after_hours_at_the_reliquary_env/controls.json",
+    "weird_captcha_gym/environments/after_hours_at_the_reliquary_env/env.json",
+    "weird_captcha_gym/shared_scripts/incubator_generators/after_hours_at_the_reliquary.py",
+    "weird_captcha_gym/shared_runtime/app/mechanics/after_hours_at_the_reliquary.js",
+    "weird_captcha_gym/shared_runtime/app/mechanics/after_hours_at_the_reliquary.css",
+    "weird_captcha_gym/shared_runtime/server/incubator_graders/after_hours_at_the_reliquary.py",
+    "weird_captcha_gym/environments/after_hours_at_the_reliquary_env/tasks/after_hours_at_the_reliquary_seed_0001/verifier.py",
+    "weird_captcha_gym/shared_runtime/verifier_helpers.py",
+    "weird_captcha_gym/tools/incubator_solvers/after_hours_at_the_reliquary.py",
+    "weird_captcha_gym/environments/after_hours_at_the_reliquary_env/tasks/after_hours_at_the_reliquary_seed_0001/task.json",
+    "weird_captcha_gym/environments/after_hours_at_the_reliquary_env/tasks/after_hours_at_the_reliquary_seed_0001/setup_task.sh",
+    "weird_captcha_gym/environments/after_hours_at_the_reliquary_env/tasks/after_hours_at_the_reliquary_seed_0001/export_result.sh",
+    "weird_captcha_gym/environments/after_hours_at_the_reliquary_env/scripts/setup_puzzle_runtime.sh",
+    "weird_captcha_gym/environments/after_hours_at_the_reliquary_env/scripts/install_puzzle_runtime.sh"
+  ],
+  "source_evidence": [
+    {
+      "path": "weird_captcha_gym/environments/after_hours_at_the_reliquary_env/controls.json",
+      "lines": "6-10",
+      "claim": "Difficulty 1 selects three views, only the digit lock, a three-digit clue, no colour lock, no hook chain, no decoys, clear cues, and three allowed wrong entries."
+    },
+    {
+      "path": "weird_captcha_gym/environments/after_hours_at_the_reliquary_env/controls.json",
+      "lines": "37-41",
+      "claim": "The simplified surface uses turn buttons plus select-then-click object interactions; the configured observation window is 0 ms with one frame and a 240-second play allowance."
+    },
+    {
+      "path": "weird_captcha_gym/environments/after_hours_at_the_reliquary_env/env.json",
+      "lines": "9-14",
+      "claim": "The runner repeats the zero-millisecond, one-frame observation settings and marks the task synchronous."
+    },
+    {
+      "path": "weird_captcha_gym/shared_scripts/incubator_generators/after_hours_at_the_reliquary.py",
+      "lines": "52-61,143-167",
+      "claim": "The controlled difficulty parameters are copied into generation; the seed is used to create a fixed challenge and static digit answer, with no task-time update."
+    },
+    {
+      "path": "weird_captcha_gym/shared_scripts/incubator_generators/after_hours_at_the_reliquary.py",
+      "lines": "169-188,190-237",
+      "claim": "The level-1 topology has door/desk/cabinet and only the label, frame, lens drawer, lens, and loupe path; colour and key targets and the second recipe are gated off by the inactive parameters."
+    },
+    {
+      "path": "weird_captcha_gym/shared_runtime/app/mechanics/after_hours_at_the_reliquary.js",
+      "lines": "14-25,174-203",
+      "claim": "The browser reads the selected interaction mode, renders simplified turn buttons, and changes view state only in the synchronous navigate handler."
+    },
+    {
+      "path": "weird_captcha_gym/shared_runtime/app/mechanics/after_hours_at_the_reliquary.js",
+      "lines": "214-242,244-310",
+      "claim": "Scene discoveries, item combination, and item use mutate flags/inventory immediately and rerender; no autonomous update is scheduled."
+    },
+    {
+      "path": "weird_captcha_gym/shared_runtime/app/mechanics/after_hours_at_the_reliquary.js",
+      "lines": "313-335,442-472",
+      "claim": "The digit wheel and SET DIAL are ordinary click handlers, and simplified tray selection dispatches only select-pair or select-scene actions."
+    },
+    {
+      "path": "weird_captcha_gym/shared_runtime/app/mechanics/after_hours_at_the_reliquary.js",
+      "lines": "359-393,480-498",
+      "claim": "The only asynchronous fetch is result handling after completion or seizure; rendering initializes a static local model and contains no timer or animation loop."
+    },
+    {
+      "path": "weird_captcha_gym/shared_runtime/app/mechanics/after_hours_at_the_reliquary.css",
+      "lines": "157-159",
+      "claim": "The sole task-specific transition is the 0.8-second vault-door transform applied after the door is marked open."
+    },
+    {
+      "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/after_hours_at_the_reliquary.py",
+      "lines": "278-335,393-416,482-498",
+      "claim": "The grader replays a finite ordered event transcript from an initial state, checks synchronous control sources and lock answers, and computes the terminal result without timestamps or elapsed-time state."
+    },
+    {
+      "path": "weird_captcha_gym/environments/after_hours_at_the_reliquary_env/tasks/after_hours_at_the_reliquary_seed_0001/verifier.py",
+      "lines": "22-42",
+      "claim": "The verifier only loads the exported result and delegates to the independent grader."
+    },
+    {
+      "path": "weird_captcha_gym/tools/incubator_solvers/after_hours_at_the_reliquary.py",
+      "lines": "77-91,117-155",
+      "claim": "The visible solver performs the clue/object sequence with clicks and selection, submits the digit answer, and waits only for the terminal pass indicator; it has no timed or motion-dependent action."
+    }
+  ],
+  "uncertainties": []
+}

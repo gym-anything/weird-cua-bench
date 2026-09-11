@@ -1,0 +1,131 @@
+{
+  "case_index": 57,
+  "public_environment_name": "Branch Repair",
+  "environment_id": "branch_repair_env",
+  "difficulty": 4,
+  "interaction_mode": "full",
+  "label": "no",
+  "controls_available": [
+    "Mouse-wheel scrolling on each visible XY, XZ, or YZ linked slice canvas changes the corresponding x, y, or z focus.",
+    "Dragging empty mesh glass with the mouse orbits the three-dimensional reconstruction.",
+    "Dragging from one visible mesh node to another with the mouse adds a merge edge.",
+    "Clicking RED SEED or GREEN SEED selects the active split-seed colour, and clicking a visible slice node places that seed.",
+    "Clicking CUT BETWEEN SEEDS removes the edge between the two placed seeds.",
+    "Clicking CERTIFY REPAIRED BRANCH submits the repair."
+  ],
+  "autonomous_processes": [
+    {
+      "period": "Every interval with no new agent input during active repair",
+      "state_change": "None: nodes, edges, linked-slice focus, seeds, camera, and topology remain unchanged.",
+      "visible_evidence": "The mechanic only mutates model state from wheel, pointer, and click handlers; the branch-specific CSS has no animation."
+    }
+  ],
+  "grouped_control_modes": [
+    {
+      "mode": "full mesh-node merge drag",
+      "outcome_affecting": true,
+      "actions": ["drag from one visible mesh node to another"],
+      "effect": "adds one candidate topology edge"
+    },
+    {
+      "mode": "full two-colour slice-seed cut",
+      "outcome_affecting": true,
+      "actions": ["select red or green seed", "click visible slice nodes", "click CUT BETWEEN SEEDS"],
+      "effect": "removes one candidate topology edge"
+    }
+  ],
+  "delta_ms": null,
+  "window_ms": 0,
+  "clause_i": {
+    "holds": true,
+    "reason": "For a grouped merge-drag mode, no action-only q(I_t) can choose the optimal endpoints across all seeded occurrences: the generator varies the target fibre and missing endpoints, and its public node identifiers are opaque. The grader accepts only the seed-specific missing edges. The same observation dependence applies to the false-edge split mode."
+  },
+  "clause_ii": {
+    "holds": true,
+    "reason": "A single current screenshot is a bounded window here because observation_window_ms is 0. It shows the mesh, labels, three linked slice canvases, current edges, and current focus, so a reactive screenshot-only policy can choose the next navigation, seed, or merge action. Multiple chronological frames are not needed to predict a delayed state because the task state does not advance autonomously."
+  },
+  "clause_iii": {
+    "holds": false,
+    "reason": "There is no H_t to H_t^tau with 0 < tau < Delta in which non-clock task state evolves without an agent action. Merges, cuts, slice changes, camera changes, and seed placement are synchronous event-handler effects; waiting does not remove or reduce the value of any repair action. The post-edit inspection lock is itself set by the preceding edit and is cleared by a later slice action, not by elapsed time."
+  },
+  "common_visible_process": "None. The visible autonomous process required to connect clauses (i), (ii), and (iii) is absent; the only relevant state changes are agent-triggered edits/navigation and an action-triggered certification response.",
+  "pre_run": {
+    "threshold": 0.5,
+    "at_least_half": false,
+    "rate": null,
+    "basis": "source_structural",
+    "reason": "No instance has an autonomous outcome phase. At difficulty 4 the generator always creates two missing joins and two false joins, and successful grading requires four outcome-affecting topology edits, with linked-view inspections between them; certification is only administrative.",
+    "seed_probe": null
+  },
+  "files_read_completely": [
+    "AGENTS.md",
+    "weird_captcha_gym/docs/controllability/real-time.md",
+    "weird_captcha_gym/environments/branch_repair_env/controls.json",
+    "weird_captcha_gym/environments/branch_repair_env/env.json",
+    "weird_captcha_gym/environments/branch_repair_env/tasks/branch_repair_seed_0001/task.json",
+    "weird_captcha_gym/environments/branch_repair_env/tasks/branch_repair_seed_0001/setup_task.sh",
+    "weird_captcha_gym/environments/branch_repair_env/tasks/branch_repair_seed_0001/export_result.sh",
+    "weird_captcha_gym/environments/branch_repair_env/tasks/branch_repair_seed_0001/verifier.py",
+    "weird_captcha_gym/environments/branch_repair_env/scripts/install_puzzle_runtime.sh",
+    "weird_captcha_gym/environments/branch_repair_env/scripts/setup_puzzle_runtime.sh",
+    "weird_captcha_gym/shared_scripts/setup_task.py",
+    "weird_captcha_gym/shared_scripts/open_puzzle_browser.sh",
+    "weird_captcha_gym/shared_scripts/export_result.sh",
+    "weird_captcha_gym/shared_scripts/incubator_generators/branch_repair.py",
+    "weird_captcha_gym/shared_runtime/app/index.html",
+    "weird_captcha_gym/shared_runtime/app/time_controller.js",
+    "weird_captcha_gym/shared_runtime/app/mechanics/branch_repair.js",
+    "weird_captcha_gym/shared_runtime/app/mechanics/branch_repair.css",
+    "weird_captcha_gym/shared_runtime/verifier_helpers.py",
+    "weird_captcha_gym/shared_runtime/server/incubator_graders/branch_repair.py",
+    "weird_captcha_gym/tools/incubator_solvers/branch_repair.py"
+  ],
+  "source_evidence": [
+    {
+      "path": "weird_captcha_gym/environments/branch_repair_env/controls.json",
+      "lines": "59-73,92-105",
+      "claim": "The exact profile is difficulty 4 with four fibres, nine segments per fibre, two missing joins, two false joins, eleven slices, and full interaction; the configured observation window is 0 ms with one frame."
+    },
+    {
+      "path": "weird_captcha_gym/environments/branch_repair_env/env.json",
+      "lines": "9-14",
+      "claim": "The runner repeats the 0 ms, one-frame observation configuration and uses synchronous task execution."
+    },
+    {
+      "path": "weird_captcha_gym/shared_scripts/incubator_generators/branch_repair.py",
+      "lines": "79-140,154-200",
+      "claim": "Generation is deterministic from the seed, constructs static node coordinates and initial edges, varies the target and opaque node identifiers, and stores true/missing/false topology only in the grading truth."
+    },
+    {
+      "path": "weird_captcha_gym/shared_runtime/app/mechanics/branch_repair.js",
+      "lines": "194-250,268-313,324-386",
+      "claim": "The browser creates the static model and changes focus, edges, seeds, or camera only in explicit input handlers; merges and splits set an inspection flag, while certification is the only fetch/action-settlement path."
+    },
+    {
+      "path": "weird_captcha_gym/shared_runtime/app/mechanics/branch_repair.css",
+      "lines": "58-101,103-108",
+      "claim": "The branch-specific visual surface consists of canvases and controls, with no branch animation or time-driven visual rule."
+    },
+    {
+      "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/branch_repair.py",
+      "lines": "137-193,228-316",
+      "claim": "Grading replays the submitted event sequence, requires source-correct full-mode actions, requires four exact repairs and a post-edit inspection after each, and checks final topology; it has no timing or waiting requirement."
+    },
+    {
+      "path": "weird_captcha_gym/environments/branch_repair_env/tasks/branch_repair_seed_0001/verifier.py",
+      "lines": "21-36",
+      "claim": "The task verifier loads the exported UI result and invokes the Branch Repair grader, so the outcome is the replayed topology/transcript."
+    },
+    {
+      "path": "weird_captcha_gym/tools/incubator_solvers/branch_repair.py",
+      "lines": "119-200",
+      "claim": "The implementation solver completes the repair through a finite sequence of linked-view observations, one orbit, merge drags, seeded cuts, inspections, and certification; its short waits are browser synchronization waits rather than task mechanics."
+    },
+    {
+      "path": "weird_captcha_gym/shared_runtime/app/time_controller.js",
+      "lines": "301-339",
+      "claim": "The shared clock can drain timers and animation callbacks when running, but the complete Branch Repair mechanic registers no such task timer or animation callback."
+    }
+  ],
+  "uncertainties": []
+}

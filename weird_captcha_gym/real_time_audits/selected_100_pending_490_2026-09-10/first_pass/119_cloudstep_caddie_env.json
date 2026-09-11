@@ -1,0 +1,131 @@
+{
+  "case_index": 119,
+  "public_environment_name": "Cloudstep Caddie",
+  "environment_id": "cloudstep_caddie_env",
+  "difficulty": 5,
+  "interaction_mode": "full",
+  "label": "no",
+  "controls_available": [
+    "Drag an unused pictured roll or chip card with the mouse onto one of the four compass directions and release to deliver a stroke.",
+    "Click CERTIFY SUNKEN BALL with the mouse to submit the transcript; certification is administrative.",
+    "Compass-button clicks are present but, in full mode, only display the drag instruction; no keyboard handler changes the puzzle."
+  ],
+  "autonomous_processes": [
+    "None affecting task outcome: after initial render and between stroke releases, the generated course, hand, ball, and used-card set have no clock-driven or autonomous update.",
+    "Hover and drag CSS transitions may change presentation, but they do not change task state, legal moves, or action value."
+  ],
+  "grouped_control_modes": [
+    "D = full-mode card_drag_to_compass stroke delivery, grouped across every unused-card/current-position occurrence for this difficulty and all seeds or attempts; certify_button is administrative and excluded."
+  ],
+  "delta_ms": null,
+  "window_ms": 0,
+  "clause_i": {
+    "holds": true,
+    "reason": "For the grouped full-drag mode, an observation-free q cannot choose an optimal first card and direction across the generated instances: the generator applies a seed-dependent board reflection and direction transform and shuffles the visible hand, while I_t is identical before any action. This is static visual dependence, not a real-time process."
+  },
+  "clause_ii": {
+    "holds": true,
+    "reason": "With the configured w bound of 0 ms, one current screenshot exposes the static isometric course, surfaces, elevations, cup, ball, and dealt card types/distances. A screenshot-only policy can derive the next legal card/direction from that frame and repeat after each action; no chronological frame sequence is needed."
+  },
+  "clause_iii": {
+    "holds": false,
+    "reason": "There is no H_t to H_t^tau autonomous task-state evolution for any positive delay. The ball and used-card set change only synchronously in dispatch after pointerup, and certification only posts the already-built transcript. The CSS transition is presentation-only, so no outcome-affecting action becomes unavailable or strictly less effective during a no-action interval."
+  },
+  "common_visible_process": "None. The visible course and hand are static after generation; the only visible changes are action-caused ball/card updates and presentation-only hover/drag styling, so no common autonomous process can witness clauses (i)-(iii).",
+  "pre_run": {
+    "threshold": 0.5,
+    "at_least_half": null,
+    "rate": null,
+    "basis": "not_applicable",
+    "reason": "The mathematical definition already fails clause (iii), so the pre-run threshold cannot change the configuration-level label and was not needed.",
+    "seed_probe": null
+  },
+  "files_read_completely": [
+    "AGENTS.md",
+    "weird_captcha_gym/docs/controllability/real-time.md",
+    "weird_captcha_gym/environments/cloudstep_caddie_env/controls.json",
+    "weird_captcha_gym/environments/cloudstep_caddie_env/env.json",
+    "weird_captcha_gym/environments/cloudstep_caddie_env/tasks/cloudstep_caddie_seed_0001/task.json",
+    "weird_captcha_gym/environments/cloudstep_caddie_env/tasks/cloudstep_caddie_seed_0001/setup_task.sh",
+    "weird_captcha_gym/environments/cloudstep_caddie_env/tasks/cloudstep_caddie_seed_0001/export_result.sh",
+    "weird_captcha_gym/environments/cloudstep_caddie_env/tasks/cloudstep_caddie_seed_0001/verifier.py",
+    "weird_captcha_gym/environments/cloudstep_caddie_env/scripts/install_puzzle_runtime.sh",
+    "weird_captcha_gym/environments/cloudstep_caddie_env/scripts/setup_puzzle_runtime.sh",
+    "weird_captcha_gym/shared_scripts/incubator_generators/cloudstep_caddie.py",
+    "weird_captcha_gym/shared_runtime/app/index.html",
+    "weird_captcha_gym/shared_runtime/app/time_controller.js",
+    "weird_captcha_gym/shared_runtime/app/mechanics/cloudstep_caddie.js",
+    "weird_captcha_gym/shared_runtime/app/mechanics/cloudstep_caddie.css",
+    "weird_captcha_gym/shared_runtime/server/incubator_graders/cloudstep_caddie.py",
+    "weird_captcha_gym/shared_runtime/verifier_helpers.py",
+    "weird_captcha_gym/tools/incubator_solvers/cloudstep_caddie.py"
+  ],
+  "source_evidence": [
+    {
+      "path": "weird_captcha_gym/environments/cloudstep_caddie_env/controls.json",
+      "lines": "30-41",
+      "claim": "Difficulty 5 is the nine-stroke, 12-by-9 profile; full interaction is a direct card drag onto a compass direction; observation_window_ms is 0 and frames_per_observation is 1."
+    },
+    {
+      "path": "weird_captcha_gym/shared_scripts/incubator_generators/cloudstep_caddie.py",
+      "lines": "131-150",
+      "claim": "The exact difficulty-5 profile contains a fixed nine-card action plan and fixed counts for sand, water, ramps, decoys, and chip clearance."
+    },
+    {
+      "path": "weird_captcha_gym/shared_scripts/incubator_generators/cloudstep_caddie.py",
+      "lines": "204-217",
+      "claim": "Generation consumes the supplied control condition and creates the course from a deterministic seed-local RNG, with no runtime clock or evolving state."
+    },
+    {
+      "path": "weird_captcha_gym/shared_scripts/incubator_generators/cloudstep_caddie.py",
+      "lines": "225-253",
+      "claim": "The route tiles and cards are constructed synchronously from the fixed plan, and the solution is recorded as card/direction pairs."
+    },
+    {
+      "path": "weird_captcha_gym/shared_scripts/incubator_generators/cloudstep_caddie.py",
+      "lines": "255-287",
+      "claim": "Decoy tiles, reflection-transformed coordinates/directions, and shuffled card presentation vary the static visible instance; no later process mutates them."
+    },
+    {
+      "path": "weird_captcha_gym/shared_runtime/app/mechanics/cloudstep_caddie.js",
+      "lines": "129-168",
+      "claim": "Full-mode pointerdown/pointerup handles a card drag, and dispatch synchronously validates the transition, appends the event, updates the ball and used-card set, and redraws."
+    },
+    {
+      "path": "weird_captcha_gym/shared_runtime/app/mechanics/cloudstep_caddie.js",
+      "lines": "177-199",
+      "claim": "Certification posts the accumulated transcript; direct compass clicks are explicitly non-operative in full mode."
+    },
+    {
+      "path": "weird_captcha_gym/shared_runtime/app/mechanics/cloudstep_caddie.js",
+      "lines": "202-214",
+      "claim": "Rendering initializes the ball at the static course start and installs the hand, compass, canvas, and certification controls; the mechanic has no timer, interval, or animation-loop registration."
+    },
+    {
+      "path": "weird_captcha_gym/shared_runtime/app/mechanics/cloudstep_caddie.css",
+      "lines": "58-66",
+      "claim": "The only timing-related styling is a short card hover/drag transition and submit/hover presentation; it does not implement task-state motion."
+    },
+    {
+      "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/cloudstep_caddie.py",
+      "lines": "113-173",
+      "claim": "The grader independently replays the submitted stroke events from the static start state, enforcing card legality, surfaces, heights, and exact card use before certification."
+    },
+    {
+      "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/cloudstep_caddie.py",
+      "lines": "176-208",
+      "claim": "Grading checks the interaction-specific input source and the synchronously replayed final state; it has no elapsed-time or deadline condition."
+    },
+    {
+      "path": "weird_captcha_gym/environments/cloudstep_caddie_env/tasks/cloudstep_caddie_seed_0001/verifier.py",
+      "lines": "21-37",
+      "claim": "The task verifier only loads the exported result and invokes the Cloudstep Caddie grader."
+    },
+    {
+      "path": "weird_captcha_gym/tools/incubator_solvers/cloudstep_caddie.py",
+      "lines": "47-85",
+      "claim": "The normal scripted interaction performs every solution stroke before the administrative certification; its 120 ms waits do not invoke any task transition."
+    }
+  ],
+  "uncertainties": []
+}

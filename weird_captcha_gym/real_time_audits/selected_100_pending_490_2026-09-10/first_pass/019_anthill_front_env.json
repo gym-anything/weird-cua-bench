@@ -1,0 +1,114 @@
+{
+  "case_index": 19,
+  "public_environment_name": "Anthill Front",
+  "environment_id": "anthill_front_env",
+  "difficulty": 5,
+  "interaction_mode": "full",
+  "label": "yes",
+  "controls_available": [
+    "Select workers or soldiers directly on the battlefield canvas by click or marquee; Shift modifies the selection.",
+    "In full mode, press G for GATHER, S for SCOUT, D for DIG, M for MARCH, or R for RAISE; G/S/D/M are followed by clicking a visible destination on the map.",
+    "MARCH can target the NORTH or SOUTH tunnel during an intercept band, or the rival queen after all raids clear.",
+    "Pan with the left/right arrow keys, the minimap, or the visible left/right pan buttons.",
+    "Use the CERTIFY FRONT button after the terminal outcome; certification is administrative."
+  ],
+  "autonomous_processes": [
+    "The live clock advances the simulation in 100 ms ticks without new input; the animation loop repeatedly advances to the current clock.",
+    "A selected scout travels to the listening front for 44 ticks, then contact is revealed and that worker automatically changes to GATHER.",
+    "Exactly two dig workers add two brood-progress units per tick until the 86-unit brood requirement is complete, then they automatically change to GATHER.",
+    "Gathering workers move on an 18-tick round trip and add one seed per completed cycle; each RAISE queues a soldier that becomes available after 14 ticks.",
+    "The two level-5 rival outposts build autonomously, then formations spawn at ticks 155 and 175, move toward the colony while their vertical position oscillates, and resolve at ticks 245 and 265.",
+    "At raid impact, the current defense commitment determines stopped attackers, soldier losses, and queen damage; soldiers ordered to the rival queen travel for 45 ticks and then deal assault damage.",
+    "The match ends in failure at tick 860 if it has not already terminated. The CSS pulse animation is presentation-only and does not change task state."
+  ],
+  "grouped_control_modes": [
+    "GATHER: assign one or more workers to the seed pile.",
+    "SCOUT: assign exactly one worker to the listening front while contact is hidden.",
+    "DIG: assign exactly two workers to the brood chamber.",
+    "RAISE: spend two seeds to queue one soldier when brood is ready.",
+    "MARCH tunnel interception: commit a selected soldier group NORTH or SOUTH for any uncommitted raid during its response band; this is the common grouped mode across both waves and all seeds.",
+    "MARCH assault: send surviving soldiers to the rival queen after all raids are cleared."
+  ],
+  "delta_ms": 400,
+  "window_ms": 800,
+  "clause_i": {
+    "holds": true,
+    "reason": "For the grouped MARCH tunnel-interception mode, the same prior action/timing history can occur across seeds with different random first lanes and motion phase offsets. An observation-free q must choose one tunnel for those indistinguishable I_t histories, but the delayed-optimal tunnel differs with the hidden phase and lane, so no q is optimal for every still-salvageable history."
+  },
+  "clause_ii": {
+    "holds": true,
+    "reason": "The configured six chronological frames cover 800 ms (eight 100 ms ticks). The canvas visibly shows the red formation's recent vertical trajectory, and its movement-direction sign is the same signed cosine used by the tunnel predicate. A bounded-window policy can estimate the current phase, predict it four ticks ahead, and choose NORTH or SOUTH while its prior action history supplies the available soldier group."
+  },
+  "clause_iii": {
+    "holds": true,
+    "reason": "The same formation keeps moving autonomously after the response band opens. For a possible instance with a south first lane and phase offset 0, at tick 202 MARCH SOUTH is correct; by tick 205 (300 ms later) the cosine changes sign, so the same MARCH SOUTH commitment is wrong, while the wave remains actionable through tick 234 and NORTH can still succeed. Thus the action's value strictly drops because the visible non-clock formation state changes, not merely because the deadline is later."
+  },
+  "common_visible_process": "The red raid formation is drawn moving from its outpost toward the colony. After each response window opens, its vertical coordinate follows a signed sinusoid; the derivative visible across recent frames determines the NORTH/SOUTH intercept choice through the same phase used by the verifier. Level 5 has overlapping response bands (wave 1: ticks 194-234; wave 2: ticks 214-254), so disjoint soldier groups must be committed while both formations move.",
+  "pre_run": {
+    "threshold": 0.5,
+    "at_least_half": false,
+    "rate": null,
+    "basis": "source_structural",
+    "reason": "Every instance starts with no defense commitments, and a successful outcome requires every raid to be recorded as a successful intercept. The only action that creates a tunnel commitment is MARCH, and it is accepted only when that raid is inside its response_open_tick through response_deadline_tick interval, after the autonomous formation has spawned and begun moving. Therefore every successful instance requires outcome-affecting actions during the autonomous raid phase; no instance admits the required no-more-actions pre-run solution.",
+    "seed_probe": null
+  },
+  "files_read_completely": [
+    "AGENTS.md",
+    "weird_captcha_gym/docs/controllability/real-time.md",
+    "weird_captcha_gym/environments/anthill_front_env/controls.json",
+    "weird_captcha_gym/environments/anthill_front_env/env.json",
+    "weird_captcha_gym/shared_scripts/incubator_generators/anthill_front.py",
+    "weird_captcha_gym/shared_runtime/app/mechanics/anthill_front.js",
+    "weird_captcha_gym/shared_runtime/app/mechanics/anthill_front.css",
+    "weird_captcha_gym/shared_runtime/server/incubator_graders/anthill_front.py",
+    "weird_captcha_gym/tools/incubator_solvers/anthill_front.py"
+  ],
+  "source_evidence": [
+    {
+      "path": "weird_captcha_gym/environments/anthill_front_env/controls.json",
+      "lines": "4-16",
+      "claim": "Difficulty 5 sets two opposite-lane raids with counts 3 and 4, spawn ticks 155 and 175, impact ticks 245 and 265, hidden opening, six workers, exact two-worker excavation, and an 800 ms/6-frame observation window; full mode uses map selection and direct keyboard/map commands."
+    },
+    {
+      "path": "weird_captcha_gym/shared_scripts/incubator_generators/anthill_front.py",
+      "lines": "12-28, 48-60, 97-120, 134-160",
+      "claim": "The generator randomizes the first lane and per-raid motion phase offset, derives response bands from spawn/impact times, and sets the 100 ms tick, two raids, and level-5 world parameters."
+    },
+    {
+      "path": "weird_captcha_gym/shared_runtime/app/mechanics/anthill_front.js",
+      "lines": "16-20",
+      "claim": "The browser's interceptLane predicate chooses the tunnel from the signed cosine of the raid phase."
+    },
+    {
+      "path": "weird_captcha_gym/shared_runtime/app/mechanics/anthill_front.js",
+      "lines": "55-138, 263-279, 357-374",
+      "claim": "The simulation advances autonomously; raids visibly move in x and signed sinusoidal y motion, are drawn as red formations with an intercept marker, and resolve commitments at impact with losses and queen damage."
+    },
+    {
+      "path": "weird_captcha_gym/shared_runtime/app/mechanics/anthill_front.js",
+      "lines": "172-203",
+      "claim": "MARCH NORTH/SOUTH is accepted only for an uncommitted raid inside its response band, records the phase-dependent correctness, and assigns the selected soldiers to that tunnel."
+    },
+    {
+      "path": "weird_captcha_gym/shared_runtime/app/mechanics/anthill_front.js",
+      "lines": "477-501, 517-557",
+      "claim": "Full interaction uses direct canvas selection, keyboard command arming, visible map destinations, minimap/pan controls, and a live requestAnimationFrame clock."
+    },
+    {
+      "path": "weird_captcha_gym/shared_runtime/app/mechanics/anthill_front.css",
+      "lines": "67-88",
+      "claim": "The visible task surface contains the live battlefield canvas, minimap, tunnel stage, and scout/rival wave readout."
+    },
+    {
+      "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/anthill_front.py",
+      "lines": "221-262, 344-350",
+      "claim": "The verifier applies the same response-band and phase-dependent MARCH rule, and passes only when the own queen survives, the rival queen is destroyed, and every raid is successfully intercepted."
+    },
+    {
+      "path": "weird_captcha_gym/tools/incubator_solvers/anthill_front.py",
+      "lines": "198-218, 300-343",
+      "claim": "The normal UI solver samples visible formation pixels over successive screenshots to infer movement direction and commits disjoint groups during the overlapping level-5 response bands."
+    }
+  ],
+  "uncertainties": []
+}

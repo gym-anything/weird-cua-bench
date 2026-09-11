@@ -1,0 +1,907 @@
+{
+  "case_index": 40,
+  "environment_id": "pocket_locksmith_env",
+  "public_environment_name": "Pocket Locksmith",
+  "configuration_reports": [
+    {
+      "case_index": 391,
+      "public_environment_name": "Pocket Locksmith",
+      "environment_id": "pocket_locksmith_env",
+      "difficulty": 1,
+      "interaction_mode": "full",
+      "label": "no",
+      "controls_available": [
+        "Difficulty 1: one rotatable bond, 2 obstacles, 1 marked contact, 30 degree torsion steps, contact tolerance 0.30, clearance margin 0.03, no handle occlusion, and 24 degree camera steps in bounds [3.35, 2.45, 2.35].",
+        "Full input: drag the canvas to orbit; drag a visible curved bond handle to apply one torsion step. A hidden handle requires another view.",
+        "CERTIFY FIT and ABANDON / FRESH POCKET are visible submission controls; no keyboard handler is implemented for the mechanic."
+      ],
+      "autonomous_processes": [
+        "None during the active fit: key torsions, camera, handles, sites, obstacles, and bounds remain unchanged until an input handler runs.",
+        "After certification only, the result overlay has a 0.28 second entrance animation; after a failed certification its overlay is removed after 2100 ms. This is submission UI and does not alter the fit state."
+      ],
+      "grouped_control_modes": [
+        "full-orbit-drag: a canvas drag away from a visible handle changes the camera yaw/pitch.",
+        "full-torsion-drag: a drag beginning on a visible curved handle changes one rotatable bond by one 30 degree step."
+      ],
+      "delta_ms": null,
+      "window_ms": null,
+      "clause_i": {
+        "holds": true,
+        "reason": "Across generated seeds, the useful orbit or torsion action depends on the visible key and pocket geometry, so no policy using only prior actions and task times can choose an optimal next action for every occurrence of this mode. This is static spatial dependence, not temporal dependence."
+      },
+      "clause_ii": {
+        "holds": true,
+        "reason": "The current screenshot exposes the static pocket, contacts, key, and visible-handle status; a bounded current-frame observation is sufficient to choose the next visible control. No change across frames is required."
+      },
+      "clause_iii": {
+        "holds": false,
+        "reason": "With no new action for any positive delay, the active geometry and available controls do not evolve, so there is no non-clock task-state change that makes an action less effective. The only timed behavior is the post-certification verdict UI, which is not an active fit opportunity."
+      },
+      "common_visible_process": "None in the active task. The key and pocket are stationary between input events; orbit and torsion handlers synchronously recompute the pose. The post-certification verdict animation/removal is unrelated presentation and cannot witness clause (iii).",
+      "pre_run": {
+        "threshold": 0.5,
+        "at_least_half": null,
+        "rate": null,
+        "basis": "not_applicable",
+        "reason": "The mathematical definition already fails clause (iii) for every seed because there is no autonomous outcome phase or expiring action opportunity; a pre-run rate cannot change this No label.",
+        "seed_probe": null
+      },
+      "files_read_completely": [
+        "AGENTS.md",
+        "weird_captcha_gym/docs/controllability/real-time.md",
+        "weird_captcha_gym/environments/pocket_locksmith_env/controls.json",
+        "weird_captcha_gym/environments/pocket_locksmith_env/env.json",
+        "weird_captcha_gym/environments/pocket_locksmith_env/tasks/pocket_locksmith_seed_0001/task.json",
+        "weird_captcha_gym/environments/pocket_locksmith_env/tasks/pocket_locksmith_seed_0001/verifier.py",
+        "weird_captcha_gym/shared_scripts/incubator_generators/pocket_locksmith.py",
+        "weird_captcha_gym/shared_runtime/app/mechanics/pocket_locksmith.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/pocket_locksmith.css",
+        "weird_captcha_gym/shared_runtime/server/incubator_graders/pocket_locksmith.py",
+        "weird_captcha_gym/tools/incubator_solvers/pocket_locksmith.py"
+      ],
+      "source_evidence": [
+        {
+          "path": "weird_captcha_gym/environments/pocket_locksmith_env/controls.json",
+          "lines": "10-29, 116-129",
+          "claim": "Difficulty 1 fixes the spatial parameters and the two implemented input modes; the shared settings use a 0 ms observation window and one frame, not a moving task process."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/pocket_locksmith.py",
+          "lines": "172-207, 295-361",
+          "claim": "Generation uses the seed and selected parameters to construct fixed base points, initial/target torsions, obstacles, sites, camera, and public/truth state; no timer or autonomous state is generated."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/pocket_locksmith.js",
+          "lines": "124-148, 173-197, 219-273",
+          "claim": "The browser renders the initial state, changes it only in orbit/torsion/certify/abandon handlers, and recomputes synchronously; the full-mode pointer branch is the only direct manipulation path."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/pocket_locksmith.css",
+          "lines": "179-198, 264-304",
+          "claim": "Button transitions and the pl-arrive animation are presentation effects; the only keyframe is on the post-result verdict overlay."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/pocket_locksmith.py",
+          "lines": "198-321",
+          "claim": "The independent grader replays submitted orbit/torsion events and checks static geometry, contacts, bounds, and clashes; it has no elapsed-time or evolving-world predicate."
+        },
+        {
+          "path": "weird_captcha_gym/environments/pocket_locksmith_env/tasks/pocket_locksmith_seed_0001/verifier.py",
+          "lines": "22-35",
+          "claim": "Verification loads the exported result and invokes the independent grader, with no additional active-time mechanic."
+        }
+      ],
+      "uncertainties": []
+    },
+    {
+      "case_index": 392,
+      "public_environment_name": "Pocket Locksmith",
+      "environment_id": "pocket_locksmith_env",
+      "difficulty": 1,
+      "interaction_mode": "simplified",
+      "label": "no",
+      "controls_available": [
+        "Difficulty 1: one rotatable bond, 2 obstacles, 1 marked contact, 30 degree torsion steps, contact tolerance 0.30, clearance margin 0.03, no handle occlusion, and 24 degree camera steps in bounds [3.35, 2.45, 2.35].",
+        "Simplified input: labelled YAW/PITCH buttons and one-step minus/plus torsion buttons for the same generated key and pocket.",
+        "CERTIFY FIT and ABANDON / FRESH POCKET are visible submission controls; no keyboard handler is implemented for the mechanic."
+      ],
+      "autonomous_processes": [
+        "None during the active fit: key torsions, camera, handles, sites, obstacles, and bounds remain unchanged until an input handler runs.",
+        "After certification only, the result overlay has a 0.28 second entrance animation; after a failed certification its overlay is removed after 2100 ms. This is submission UI and does not alter the fit state."
+      ],
+      "grouped_control_modes": [
+        "simplified-orbit-button: four labelled buttons change camera yaw or pitch by one 24 degree step.",
+        "simplified-torsion-button: a labelled minus/plus button changes the single rotatable bond by one 30 degree step."
+      ],
+      "delta_ms": null,
+      "window_ms": null,
+      "clause_i": {
+        "holds": true,
+        "reason": "Across generated seeds, the useful orbit or torsion action depends on the visible key and pocket geometry, so no policy using only prior actions and task times can choose an optimal next action for every occurrence of this mode. This is static spatial dependence, not temporal dependence."
+      },
+      "clause_ii": {
+        "holds": true,
+        "reason": "The current screenshot exposes the static pocket, contacts, key, and labelled buttons; a bounded current-frame observation is sufficient to choose the next visible control. No change across frames is required."
+      },
+      "clause_iii": {
+        "holds": false,
+        "reason": "With no new action for any positive delay, the active geometry and available controls do not evolve, so there is no non-clock task-state change that makes an action less effective. The only timed behavior is the post-certification verdict UI, which is not an active fit opportunity."
+      },
+      "common_visible_process": "None in the active task. The key and pocket are stationary between input events; button handlers synchronously recompute the pose. The post-certification verdict animation/removal is unrelated presentation and cannot witness clause (iii).",
+      "pre_run": {
+        "threshold": 0.5,
+        "at_least_half": null,
+        "rate": null,
+        "basis": "not_applicable",
+        "reason": "The mathematical definition already fails clause (iii) for every seed because there is no autonomous outcome phase or expiring action opportunity; a pre-run rate cannot change this No label.",
+        "seed_probe": null
+      },
+      "files_read_completely": [
+        "AGENTS.md",
+        "weird_captcha_gym/docs/controllability/real-time.md",
+        "weird_captcha_gym/environments/pocket_locksmith_env/controls.json",
+        "weird_captcha_gym/environments/pocket_locksmith_env/env.json",
+        "weird_captcha_gym/environments/pocket_locksmith_env/tasks/pocket_locksmith_seed_0001/task.json",
+        "weird_captcha_gym/environments/pocket_locksmith_env/tasks/pocket_locksmith_seed_0001/verifier.py",
+        "weird_captcha_gym/shared_scripts/incubator_generators/pocket_locksmith.py",
+        "weird_captcha_gym/shared_runtime/app/mechanics/pocket_locksmith.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/pocket_locksmith.css",
+        "weird_captcha_gym/shared_runtime/server/incubator_graders/pocket_locksmith.py",
+        "weird_captcha_gym/tools/incubator_solvers/pocket_locksmith.py"
+      ],
+      "source_evidence": [
+        {
+          "path": "weird_captcha_gym/environments/pocket_locksmith_env/controls.json",
+          "lines": "10-29, 116-129",
+          "claim": "Difficulty 1 fixes the spatial parameters and the two implemented input modes; the shared settings use a 0 ms observation window and one frame, not a moving task process."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/pocket_locksmith.py",
+          "lines": "172-207, 295-361",
+          "claim": "Generation uses the seed and selected parameters to construct fixed base points, initial/target torsions, obstacles, sites, camera, and public/truth state; no timer or autonomous state is generated."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/pocket_locksmith.js",
+          "lines": "124-148, 219-235, 266-273",
+          "claim": "Simplified buttons are wired to synchronous orbit/torsion updates, while certify/abandon submit the transcript; no loop advances the active fit without an input."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/pocket_locksmith.css",
+          "lines": "179-198, 264-304",
+          "claim": "Button transitions and the pl-arrive animation are presentation effects; the only keyframe is on the post-result verdict overlay."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/pocket_locksmith.py",
+          "lines": "198-321",
+          "claim": "The independent grader replays submitted orbit/torsion events and checks static geometry, contacts, bounds, and clashes; it has no elapsed-time or evolving-world predicate."
+        },
+        {
+          "path": "weird_captcha_gym/environments/pocket_locksmith_env/tasks/pocket_locksmith_seed_0001/verifier.py",
+          "lines": "22-35",
+          "claim": "Verification loads the exported result and invokes the independent grader, with no additional active-time mechanic."
+        }
+      ],
+      "uncertainties": []
+    },
+    {
+      "case_index": 393,
+      "public_environment_name": "Pocket Locksmith",
+      "environment_id": "pocket_locksmith_env",
+      "difficulty": 2,
+      "interaction_mode": "full",
+      "label": "no",
+      "controls_available": [
+        "Difficulty 2: two rotatable bonds, 3 obstacles, 2 marked contacts, 20 degree torsion steps, contact tolerance 0.27, clearance margin 0.035, handle occlusion enabled, and 22 degree camera steps in bounds [3.35, 2.45, 2.35].",
+        "Full input: drag the canvas to orbit; drag a visible curved bond handle to apply one torsion step. Occlusion can require another view before a handle is draggable.",
+        "CERTIFY FIT and ABANDON / FRESH POCKET are visible submission controls; no keyboard handler is implemented for the mechanic."
+      ],
+      "autonomous_processes": [
+        "None during the active fit: key torsions, camera, handles, sites, obstacles, and bounds remain unchanged until an input handler runs.",
+        "After certification only, the result overlay has a 0.28 second entrance animation; after a failed certification its overlay is removed after 2100 ms. This is submission UI and does not alter the fit state."
+      ],
+      "grouped_control_modes": [
+        "full-orbit-drag: a canvas drag away from a visible handle changes the camera yaw/pitch.",
+        "full-torsion-drag: a drag beginning on a visible curved handle changes one rotatable bond by one 20 degree step; hidden handles cannot be dragged."
+      ],
+      "delta_ms": null,
+      "window_ms": null,
+      "clause_i": {
+        "holds": true,
+        "reason": "Across generated seeds, the useful orbit or torsion action depends on the visible key and pocket geometry, so no policy using only prior actions and task times can choose an optimal next action for every occurrence of this mode. This is static spatial dependence, not temporal dependence."
+      },
+      "clause_ii": {
+        "holds": true,
+        "reason": "The current screenshot exposes the static pocket, contacts, key, and current handle visibility; a bounded current-frame observation is sufficient to choose whether to orbit or drag a visible handle. No change across frames is required."
+      },
+      "clause_iii": {
+        "holds": false,
+        "reason": "With no new action for any positive delay, the active geometry and available controls do not evolve, so there is no non-clock task-state change that makes an action less effective. The only timed behavior is the post-certification verdict UI, which is not an active fit opportunity."
+      },
+      "common_visible_process": "None in the active task. The key and pocket are stationary between input events; orbit and torsion handlers synchronously recompute the pose and handle occlusion. The post-certification verdict animation/removal is unrelated presentation and cannot witness clause (iii).",
+      "pre_run": {
+        "threshold": 0.5,
+        "at_least_half": null,
+        "rate": null,
+        "basis": "not_applicable",
+        "reason": "The mathematical definition already fails clause (iii) for every seed because there is no autonomous outcome phase or expiring action opportunity; a pre-run rate cannot change this No label.",
+        "seed_probe": null
+      },
+      "files_read_completely": [
+        "AGENTS.md",
+        "weird_captcha_gym/docs/controllability/real-time.md",
+        "weird_captcha_gym/environments/pocket_locksmith_env/controls.json",
+        "weird_captcha_gym/environments/pocket_locksmith_env/env.json",
+        "weird_captcha_gym/environments/pocket_locksmith_env/tasks/pocket_locksmith_seed_0001/task.json",
+        "weird_captcha_gym/environments/pocket_locksmith_env/tasks/pocket_locksmith_seed_0001/verifier.py",
+        "weird_captcha_gym/shared_scripts/incubator_generators/pocket_locksmith.py",
+        "weird_captcha_gym/shared_runtime/app/mechanics/pocket_locksmith.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/pocket_locksmith.css",
+        "weird_captcha_gym/shared_runtime/server/incubator_graders/pocket_locksmith.py",
+        "weird_captcha_gym/tools/incubator_solvers/pocket_locksmith.py"
+      ],
+      "source_evidence": [
+        {
+          "path": "weird_captcha_gym/environments/pocket_locksmith_env/controls.json",
+          "lines": "31-50, 116-129",
+          "claim": "Difficulty 2 changes torsion/obstacle/contact/occlusion parameters while retaining the same static full and simplified input modes and 0 ms/one-frame observation settings."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/pocket_locksmith.py",
+          "lines": "172-207, 295-361",
+          "claim": "Generation uses the seed and selected parameters to construct fixed base points, initial/target torsions, obstacles, sites, camera, and public/truth state; no timer or autonomous state is generated."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/pocket_locksmith.js",
+          "lines": "124-148, 219-229, 238-264",
+          "claim": "The full-mode pointer branch either orbits or applies a torsion step to a currently visible handle, and update is called synchronously after those inputs."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/pocket_locksmith.css",
+          "lines": "179-198, 264-304",
+          "claim": "Button transitions and the pl-arrive animation are presentation effects; the only keyframe is on the post-result verdict overlay."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/pocket_locksmith.py",
+          "lines": "198-321",
+          "claim": "The independent grader replays submitted orbit/torsion events and checks static geometry, contacts, bounds, and clashes; it has no elapsed-time or evolving-world predicate."
+        },
+        {
+          "path": "weird_captcha_gym/environments/pocket_locksmith_env/tasks/pocket_locksmith_seed_0001/verifier.py",
+          "lines": "22-35",
+          "claim": "Verification loads the exported result and invokes the independent grader, with no additional active-time mechanic."
+        }
+      ],
+      "uncertainties": []
+    },
+    {
+      "case_index": 394,
+      "public_environment_name": "Pocket Locksmith",
+      "environment_id": "pocket_locksmith_env",
+      "difficulty": 2,
+      "interaction_mode": "simplified",
+      "label": "no",
+      "controls_available": [
+        "Difficulty 2: two rotatable bonds, 3 obstacles, 2 marked contacts, 20 degree torsion steps, contact tolerance 0.27, clearance margin 0.035, handle occlusion enabled, and 22 degree camera steps in bounds [3.35, 2.45, 2.35].",
+        "Simplified input: labelled YAW/PITCH buttons and one-step minus/plus torsion buttons for the same generated key and pocket.",
+        "CERTIFY FIT and ABANDON / FRESH POCKET are visible submission controls; no keyboard handler is implemented for the mechanic."
+      ],
+      "autonomous_processes": [
+        "None during the active fit: key torsions, camera, handles, sites, obstacles, and bounds remain unchanged until an input handler runs.",
+        "After certification only, the result overlay has a 0.28 second entrance animation; after a failed certification its overlay is removed after 2100 ms. This is submission UI and does not alter the fit state."
+      ],
+      "grouped_control_modes": [
+        "simplified-orbit-button: four labelled buttons change camera yaw or pitch by one 22 degree step.",
+        "simplified-torsion-button: a labelled minus/plus button changes one of two rotatable bonds by one 20 degree step."
+      ],
+      "delta_ms": null,
+      "window_ms": null,
+      "clause_i": {
+        "holds": true,
+        "reason": "Across generated seeds, the useful orbit or torsion action depends on the visible key and pocket geometry, so no policy using only prior actions and task times can choose an optimal next action for every occurrence of this mode. This is static spatial dependence, not temporal dependence."
+      },
+      "clause_ii": {
+        "holds": true,
+        "reason": "The current screenshot exposes the static pocket, contacts, key, and labelled buttons; a bounded current-frame observation is sufficient to choose the next visible control. No change across frames is required."
+      },
+      "clause_iii": {
+        "holds": false,
+        "reason": "With no new action for any positive delay, the active geometry and available controls do not evolve, so there is no non-clock task-state change that makes an action less effective. The only timed behavior is the post-certification verdict UI, which is not an active fit opportunity."
+      },
+      "common_visible_process": "None in the active task. The key and pocket are stationary between input events; button handlers synchronously recompute the pose. The post-certification verdict animation/removal is unrelated presentation and cannot witness clause (iii).",
+      "pre_run": {
+        "threshold": 0.5,
+        "at_least_half": null,
+        "rate": null,
+        "basis": "not_applicable",
+        "reason": "The mathematical definition already fails clause (iii) for every seed because there is no autonomous outcome phase or expiring action opportunity; a pre-run rate cannot change this No label.",
+        "seed_probe": null
+      },
+      "files_read_completely": [
+        "AGENTS.md",
+        "weird_captcha_gym/docs/controllability/real-time.md",
+        "weird_captcha_gym/environments/pocket_locksmith_env/controls.json",
+        "weird_captcha_gym/environments/pocket_locksmith_env/env.json",
+        "weird_captcha_gym/environments/pocket_locksmith_env/tasks/pocket_locksmith_seed_0001/task.json",
+        "weird_captcha_gym/environments/pocket_locksmith_env/tasks/pocket_locksmith_seed_0001/verifier.py",
+        "weird_captcha_gym/shared_scripts/incubator_generators/pocket_locksmith.py",
+        "weird_captcha_gym/shared_runtime/app/mechanics/pocket_locksmith.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/pocket_locksmith.css",
+        "weird_captcha_gym/shared_runtime/server/incubator_graders/pocket_locksmith.py",
+        "weird_captcha_gym/tools/incubator_solvers/pocket_locksmith.py"
+      ],
+      "source_evidence": [
+        {
+          "path": "weird_captcha_gym/environments/pocket_locksmith_env/controls.json",
+          "lines": "31-50, 116-129",
+          "claim": "Difficulty 2 changes torsion/obstacle/contact/occlusion parameters while retaining the same static full and simplified input modes and 0 ms/one-frame observation settings."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/pocket_locksmith.py",
+          "lines": "172-207, 295-361",
+          "claim": "Generation uses the seed and selected parameters to construct fixed base points, initial/target torsions, obstacles, sites, camera, and public/truth state; no timer or autonomous state is generated."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/pocket_locksmith.js",
+          "lines": "124-148, 219-235, 266-273",
+          "claim": "Simplified buttons are wired to synchronous orbit/torsion updates, while certify/abandon submit the transcript; no loop advances the active fit without an input."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/pocket_locksmith.css",
+          "lines": "179-198, 264-304",
+          "claim": "Button transitions and the pl-arrive animation are presentation effects; the only keyframe is on the post-result verdict overlay."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/pocket_locksmith.py",
+          "lines": "198-321",
+          "claim": "The independent grader replays submitted orbit/torsion events and checks static geometry, contacts, bounds, and clashes; it has no elapsed-time or evolving-world predicate."
+        },
+        {
+          "path": "weird_captcha_gym/environments/pocket_locksmith_env/tasks/pocket_locksmith_seed_0001/verifier.py",
+          "lines": "22-35",
+          "claim": "Verification loads the exported result and invokes the independent grader, with no additional active-time mechanic."
+        }
+      ],
+      "uncertainties": []
+    },
+    {
+      "case_index": 395,
+      "public_environment_name": "Pocket Locksmith",
+      "environment_id": "pocket_locksmith_env",
+      "difficulty": 3,
+      "interaction_mode": "full",
+      "label": "no",
+      "controls_available": [
+        "Difficulty 3: two rotatable bonds, 4 obstacles, 2 marked contacts, 15 degree torsion steps, contact tolerance 0.24, clearance margin 0.04, handle occlusion enabled, and 20 degree camera steps in bounds [3.35, 2.45, 2.35].",
+        "Full input: drag the canvas to orbit; drag a visible curved bond handle to apply one torsion step. Occlusion can require another view before a handle is draggable.",
+        "CERTIFY FIT and ABANDON / FRESH POCKET are visible submission controls; no keyboard handler is implemented for the mechanic."
+      ],
+      "autonomous_processes": [
+        "None during the active fit: key torsions, camera, handles, sites, obstacles, and bounds remain unchanged until an input handler runs.",
+        "After certification only, the result overlay has a 0.28 second entrance animation; after a failed certification its overlay is removed after 2100 ms. This is submission UI and does not alter the fit state."
+      ],
+      "grouped_control_modes": [
+        "full-orbit-drag: a canvas drag away from a visible handle changes the camera yaw/pitch.",
+        "full-torsion-drag: a drag beginning on a visible curved handle changes one rotatable bond by one 15 degree step; hidden handles cannot be dragged."
+      ],
+      "delta_ms": null,
+      "window_ms": null,
+      "clause_i": {
+        "holds": true,
+        "reason": "Across generated seeds, the useful orbit or torsion action depends on the visible key and pocket geometry, so no policy using only prior actions and task times can choose an optimal next action for every occurrence of this mode. This is static spatial dependence, not temporal dependence."
+      },
+      "clause_ii": {
+        "holds": true,
+        "reason": "The current screenshot exposes the static pocket, contacts, key, and current handle visibility; a bounded current-frame observation is sufficient to choose whether to orbit or drag a visible handle. No change across frames is required."
+      },
+      "clause_iii": {
+        "holds": false,
+        "reason": "With no new action for any positive delay, the active geometry and available controls do not evolve, so there is no non-clock task-state change that makes an action less effective. The only timed behavior is the post-certification verdict UI, which is not an active fit opportunity."
+      },
+      "common_visible_process": "None in the active task. The key and pocket are stationary between input events; orbit and torsion handlers synchronously recompute the pose and handle occlusion. The post-certification verdict animation/removal is unrelated presentation and cannot witness clause (iii).",
+      "pre_run": {
+        "threshold": 0.5,
+        "at_least_half": null,
+        "rate": null,
+        "basis": "not_applicable",
+        "reason": "The mathematical definition already fails clause (iii) for every seed because there is no autonomous outcome phase or expiring action opportunity; a pre-run rate cannot change this No label.",
+        "seed_probe": null
+      },
+      "files_read_completely": [
+        "AGENTS.md",
+        "weird_captcha_gym/docs/controllability/real-time.md",
+        "weird_captcha_gym/environments/pocket_locksmith_env/controls.json",
+        "weird_captcha_gym/environments/pocket_locksmith_env/env.json",
+        "weird_captcha_gym/environments/pocket_locksmith_env/tasks/pocket_locksmith_seed_0001/task.json",
+        "weird_captcha_gym/environments/pocket_locksmith_env/tasks/pocket_locksmith_seed_0001/verifier.py",
+        "weird_captcha_gym/shared_scripts/incubator_generators/pocket_locksmith.py",
+        "weird_captcha_gym/shared_runtime/app/mechanics/pocket_locksmith.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/pocket_locksmith.css",
+        "weird_captcha_gym/shared_runtime/server/incubator_graders/pocket_locksmith.py",
+        "weird_captcha_gym/tools/incubator_solvers/pocket_locksmith.py"
+      ],
+      "source_evidence": [
+        {
+          "path": "weird_captcha_gym/environments/pocket_locksmith_env/controls.json",
+          "lines": "52-71, 116-129",
+          "claim": "Difficulty 3 narrows the static spatial fit parameters while retaining the same full and simplified input modes and 0 ms/one-frame observation settings."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/pocket_locksmith.py",
+          "lines": "172-207, 295-361",
+          "claim": "Generation uses the seed and selected parameters to construct fixed base points, initial/target torsions, obstacles, sites, camera, and public/truth state; no timer or autonomous state is generated."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/pocket_locksmith.js",
+          "lines": "124-148, 219-229, 238-264",
+          "claim": "The full-mode pointer branch either orbits or applies a torsion step to a currently visible handle, and update is called synchronously after those inputs."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/pocket_locksmith.css",
+          "lines": "179-198, 264-304",
+          "claim": "Button transitions and the pl-arrive animation are presentation effects; the only keyframe is on the post-result verdict overlay."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/pocket_locksmith.py",
+          "lines": "198-321",
+          "claim": "The independent grader replays submitted orbit/torsion events and checks static geometry, contacts, bounds, and clashes; it has no elapsed-time or evolving-world predicate."
+        },
+        {
+          "path": "weird_captcha_gym/environments/pocket_locksmith_env/tasks/pocket_locksmith_seed_0001/verifier.py",
+          "lines": "22-35",
+          "claim": "Verification loads the exported result and invokes the independent grader, with no additional active-time mechanic."
+        }
+      ],
+      "uncertainties": []
+    },
+    {
+      "case_index": 396,
+      "public_environment_name": "Pocket Locksmith",
+      "environment_id": "pocket_locksmith_env",
+      "difficulty": 3,
+      "interaction_mode": "simplified",
+      "label": "no",
+      "controls_available": [
+        "Difficulty 3: two rotatable bonds, 4 obstacles, 2 marked contacts, 15 degree torsion steps, contact tolerance 0.24, clearance margin 0.04, handle occlusion enabled, and 20 degree camera steps in bounds [3.35, 2.45, 2.35].",
+        "Simplified input: labelled YAW/PITCH buttons and one-step minus/plus torsion buttons for the same generated key and pocket.",
+        "CERTIFY FIT and ABANDON / FRESH POCKET are visible submission controls; no keyboard handler is implemented for the mechanic."
+      ],
+      "autonomous_processes": [
+        "None during the active fit: key torsions, camera, handles, sites, obstacles, and bounds remain unchanged until an input handler runs.",
+        "After certification only, the result overlay has a 0.28 second entrance animation; after a failed certification its overlay is removed after 2100 ms. This is submission UI and does not alter the fit state."
+      ],
+      "grouped_control_modes": [
+        "simplified-orbit-button: four labelled buttons change camera yaw or pitch by one 20 degree step.",
+        "simplified-torsion-button: a labelled minus/plus button changes one of two rotatable bonds by one 15 degree step."
+      ],
+      "delta_ms": null,
+      "window_ms": null,
+      "clause_i": {
+        "holds": true,
+        "reason": "Across generated seeds, the useful orbit or torsion action depends on the visible key and pocket geometry, so no policy using only prior actions and task times can choose an optimal next action for every occurrence of this mode. This is static spatial dependence, not temporal dependence."
+      },
+      "clause_ii": {
+        "holds": true,
+        "reason": "The current screenshot exposes the static pocket, contacts, key, and labelled buttons; a bounded current-frame observation is sufficient to choose the next visible control. No change across frames is required."
+      },
+      "clause_iii": {
+        "holds": false,
+        "reason": "With no new action for any positive delay, the active geometry and available controls do not evolve, so there is no non-clock task-state change that makes an action less effective. The only timed behavior is the post-certification verdict UI, which is not an active fit opportunity."
+      },
+      "common_visible_process": "None in the active task. The key and pocket are stationary between input events; button handlers synchronously recompute the pose. The post-certification verdict animation/removal is unrelated presentation and cannot witness clause (iii).",
+      "pre_run": {
+        "threshold": 0.5,
+        "at_least_half": null,
+        "rate": null,
+        "basis": "not_applicable",
+        "reason": "The mathematical definition already fails clause (iii) for every seed because there is no autonomous outcome phase or expiring action opportunity; a pre-run rate cannot change this No label.",
+        "seed_probe": null
+      },
+      "files_read_completely": [
+        "AGENTS.md",
+        "weird_captcha_gym/docs/controllability/real-time.md",
+        "weird_captcha_gym/environments/pocket_locksmith_env/controls.json",
+        "weird_captcha_gym/environments/pocket_locksmith_env/env.json",
+        "weird_captcha_gym/environments/pocket_locksmith_env/tasks/pocket_locksmith_seed_0001/task.json",
+        "weird_captcha_gym/environments/pocket_locksmith_env/tasks/pocket_locksmith_seed_0001/verifier.py",
+        "weird_captcha_gym/shared_scripts/incubator_generators/pocket_locksmith.py",
+        "weird_captcha_gym/shared_runtime/app/mechanics/pocket_locksmith.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/pocket_locksmith.css",
+        "weird_captcha_gym/shared_runtime/server/incubator_graders/pocket_locksmith.py",
+        "weird_captcha_gym/tools/incubator_solvers/pocket_locksmith.py"
+      ],
+      "source_evidence": [
+        {
+          "path": "weird_captcha_gym/environments/pocket_locksmith_env/controls.json",
+          "lines": "52-71, 116-129",
+          "claim": "Difficulty 3 narrows the static spatial fit parameters while retaining the same full and simplified input modes and 0 ms/one-frame observation settings."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/pocket_locksmith.py",
+          "lines": "172-207, 295-361",
+          "claim": "Generation uses the seed and selected parameters to construct fixed base points, initial/target torsions, obstacles, sites, camera, and public/truth state; no timer or autonomous state is generated."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/pocket_locksmith.js",
+          "lines": "124-148, 219-235, 266-273",
+          "claim": "Simplified buttons are wired to synchronous orbit/torsion updates, while certify/abandon submit the transcript; no loop advances the active fit without an input."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/pocket_locksmith.css",
+          "lines": "179-198, 264-304",
+          "claim": "Button transitions and the pl-arrive animation are presentation effects; the only keyframe is on the post-result verdict overlay."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/pocket_locksmith.py",
+          "lines": "198-321",
+          "claim": "The independent grader replays submitted orbit/torsion events and checks static geometry, contacts, bounds, and clashes; it has no elapsed-time or evolving-world predicate."
+        },
+        {
+          "path": "weird_captcha_gym/environments/pocket_locksmith_env/tasks/pocket_locksmith_seed_0001/verifier.py",
+          "lines": "22-35",
+          "claim": "Verification loads the exported result and invokes the independent grader, with no additional active-time mechanic."
+        }
+      ],
+      "uncertainties": []
+    },
+    {
+      "case_index": 397,
+      "public_environment_name": "Pocket Locksmith",
+      "environment_id": "pocket_locksmith_env",
+      "difficulty": 4,
+      "interaction_mode": "full",
+      "label": "no",
+      "controls_available": [
+        "Difficulty 4: three rotatable bonds, 5 obstacles, 3 marked contacts, 15 degree torsion steps, contact tolerance 0.22, clearance margin 0.04, handle occlusion enabled, and 18 degree camera steps in bounds [3.35, 2.45, 2.35].",
+        "Full input: drag the canvas to orbit; drag a visible curved bond handle to apply one torsion step. Occlusion can require alternating camera access before a handle is draggable.",
+        "CERTIFY FIT and ABANDON / FRESH POCKET are visible submission controls; no keyboard handler is implemented for the mechanic."
+      ],
+      "autonomous_processes": [
+        "None during the active fit: key torsions, camera, handles, sites, obstacles, and bounds remain unchanged until an input handler runs.",
+        "After certification only, the result overlay has a 0.28 second entrance animation; after a failed certification its overlay is removed after 2100 ms. This is submission UI and does not alter the fit state."
+      ],
+      "grouped_control_modes": [
+        "full-orbit-drag: a canvas drag away from a visible handle changes the camera yaw/pitch.",
+        "full-torsion-drag: a drag beginning on a visible curved handle changes one rotatable bond by one 15 degree step; hidden handles cannot be dragged."
+      ],
+      "delta_ms": null,
+      "window_ms": null,
+      "clause_i": {
+        "holds": true,
+        "reason": "Across generated seeds, the useful orbit or torsion action depends on the visible key and pocket geometry, so no policy using only prior actions and task times can choose an optimal next action for every occurrence of this mode. This is static spatial dependence, not temporal dependence."
+      },
+      "clause_ii": {
+        "holds": true,
+        "reason": "The current screenshot exposes the static pocket, contacts, key, and current handle visibility; a bounded current-frame observation is sufficient to choose whether to orbit or drag a visible handle. No change across frames is required."
+      },
+      "clause_iii": {
+        "holds": false,
+        "reason": "With no new action for any positive delay, the active geometry and available controls do not evolve, so there is no non-clock task-state change that makes an action less effective. The only timed behavior is the post-certification verdict UI, which is not an active fit opportunity."
+      },
+      "common_visible_process": "None in the active task. The key and pocket are stationary between input events; orbit and torsion handlers synchronously recompute the pose and handle occlusion. The post-certification verdict animation/removal is unrelated presentation and cannot witness clause (iii).",
+      "pre_run": {
+        "threshold": 0.5,
+        "at_least_half": null,
+        "rate": null,
+        "basis": "not_applicable",
+        "reason": "The mathematical definition already fails clause (iii) for every seed because there is no autonomous outcome phase or expiring action opportunity; a pre-run rate cannot change this No label.",
+        "seed_probe": null
+      },
+      "files_read_completely": [
+        "AGENTS.md",
+        "weird_captcha_gym/docs/controllability/real-time.md",
+        "weird_captcha_gym/environments/pocket_locksmith_env/controls.json",
+        "weird_captcha_gym/environments/pocket_locksmith_env/env.json",
+        "weird_captcha_gym/environments/pocket_locksmith_env/tasks/pocket_locksmith_seed_0001/task.json",
+        "weird_captcha_gym/environments/pocket_locksmith_env/tasks/pocket_locksmith_seed_0001/verifier.py",
+        "weird_captcha_gym/shared_scripts/incubator_generators/pocket_locksmith.py",
+        "weird_captcha_gym/shared_runtime/app/mechanics/pocket_locksmith.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/pocket_locksmith.css",
+        "weird_captcha_gym/shared_runtime/server/incubator_graders/pocket_locksmith.py",
+        "weird_captcha_gym/tools/incubator_solvers/pocket_locksmith.py"
+      ],
+      "source_evidence": [
+        {
+          "path": "weird_captcha_gym/environments/pocket_locksmith_env/controls.json",
+          "lines": "73-92, 116-129",
+          "claim": "Difficulty 4 adds the third torsion, three contacts, five obstacles, tighter tolerance, and occlusion but retains the same static full/simplified controls and 0 ms/one-frame observation settings."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/pocket_locksmith.py",
+          "lines": "172-207, 295-361",
+          "claim": "Generation uses the seed and selected parameters to construct fixed base points, initial/target torsions, obstacles, sites, camera, and public/truth state; no timer or autonomous state is generated."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/pocket_locksmith.js",
+          "lines": "124-148, 219-229, 238-264",
+          "claim": "The full-mode pointer branch either orbits or applies a torsion step to a currently visible handle, and update is called synchronously after those inputs."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/pocket_locksmith.css",
+          "lines": "179-198, 264-304",
+          "claim": "Button transitions and the pl-arrive animation are presentation effects; the only keyframe is on the post-result verdict overlay."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/pocket_locksmith.py",
+          "lines": "198-321",
+          "claim": "The independent grader replays submitted orbit/torsion events and checks static geometry, contacts, bounds, and clashes; it has no elapsed-time or evolving-world predicate."
+        },
+        {
+          "path": "weird_captcha_gym/environments/pocket_locksmith_env/tasks/pocket_locksmith_seed_0001/verifier.py",
+          "lines": "22-35",
+          "claim": "Verification loads the exported result and invokes the independent grader, with no additional active-time mechanic."
+        }
+      ],
+      "uncertainties": []
+    },
+    {
+      "case_index": 398,
+      "public_environment_name": "Pocket Locksmith",
+      "environment_id": "pocket_locksmith_env",
+      "difficulty": 4,
+      "interaction_mode": "simplified",
+      "label": "no",
+      "controls_available": [
+        "Difficulty 4: three rotatable bonds, 5 obstacles, 3 marked contacts, 15 degree torsion steps, contact tolerance 0.22, clearance margin 0.04, handle occlusion enabled, and 18 degree camera steps in bounds [3.35, 2.45, 2.35].",
+        "Simplified input: labelled YAW/PITCH buttons and one-step minus/plus torsion buttons for the same generated key and pocket.",
+        "CERTIFY FIT and ABANDON / FRESH POCKET are visible submission controls; no keyboard handler is implemented for the mechanic."
+      ],
+      "autonomous_processes": [
+        "None during the active fit: key torsions, camera, handles, sites, obstacles, and bounds remain unchanged until an input handler runs.",
+        "After certification only, the result overlay has a 0.28 second entrance animation; after a failed certification its overlay is removed after 2100 ms. This is submission UI and does not alter the fit state."
+      ],
+      "grouped_control_modes": [
+        "simplified-orbit-button: four labelled buttons change camera yaw or pitch by one 18 degree step.",
+        "simplified-torsion-button: a labelled minus/plus button changes one of three rotatable bonds by one 15 degree step."
+      ],
+      "delta_ms": null,
+      "window_ms": null,
+      "clause_i": {
+        "holds": true,
+        "reason": "Across generated seeds, the useful orbit or torsion action depends on the visible key and pocket geometry, so no policy using only prior actions and task times can choose an optimal next action for every occurrence of this mode. This is static spatial dependence, not temporal dependence."
+      },
+      "clause_ii": {
+        "holds": true,
+        "reason": "The current screenshot exposes the static pocket, contacts, key, and labelled buttons; a bounded current-frame observation is sufficient to choose the next visible control. No change across frames is required."
+      },
+      "clause_iii": {
+        "holds": false,
+        "reason": "With no new action for any positive delay, the active geometry and available controls do not evolve, so there is no non-clock task-state change that makes an action less effective. The only timed behavior is the post-certification verdict UI, which is not an active fit opportunity."
+      },
+      "common_visible_process": "None in the active task. The key and pocket are stationary between input events; button handlers synchronously recompute the pose. The post-certification verdict animation/removal is unrelated presentation and cannot witness clause (iii).",
+      "pre_run": {
+        "threshold": 0.5,
+        "at_least_half": null,
+        "rate": null,
+        "basis": "not_applicable",
+        "reason": "The mathematical definition already fails clause (iii) for every seed because there is no autonomous outcome phase or expiring action opportunity; a pre-run rate cannot change this No label.",
+        "seed_probe": null
+      },
+      "files_read_completely": [
+        "AGENTS.md",
+        "weird_captcha_gym/docs/controllability/real-time.md",
+        "weird_captcha_gym/environments/pocket_locksmith_env/controls.json",
+        "weird_captcha_gym/environments/pocket_locksmith_env/env.json",
+        "weird_captcha_gym/environments/pocket_locksmith_env/tasks/pocket_locksmith_seed_0001/task.json",
+        "weird_captcha_gym/environments/pocket_locksmith_env/tasks/pocket_locksmith_seed_0001/verifier.py",
+        "weird_captcha_gym/shared_scripts/incubator_generators/pocket_locksmith.py",
+        "weird_captcha_gym/shared_runtime/app/mechanics/pocket_locksmith.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/pocket_locksmith.css",
+        "weird_captcha_gym/shared_runtime/server/incubator_graders/pocket_locksmith.py",
+        "weird_captcha_gym/tools/incubator_solvers/pocket_locksmith.py"
+      ],
+      "source_evidence": [
+        {
+          "path": "weird_captcha_gym/environments/pocket_locksmith_env/controls.json",
+          "lines": "73-92, 116-129",
+          "claim": "Difficulty 4 adds the third torsion, three contacts, five obstacles, tighter tolerance, and occlusion but retains the same static full/simplified controls and 0 ms/one-frame observation settings."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/pocket_locksmith.py",
+          "lines": "172-207, 295-361",
+          "claim": "Generation uses the seed and selected parameters to construct fixed base points, initial/target torsions, obstacles, sites, camera, and public/truth state; no timer or autonomous state is generated."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/pocket_locksmith.js",
+          "lines": "124-148, 219-235, 266-273",
+          "claim": "Simplified buttons are wired to synchronous orbit/torsion updates, while certify/abandon submit the transcript; no loop advances the active fit without an input."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/pocket_locksmith.css",
+          "lines": "179-198, 264-304",
+          "claim": "Button transitions and the pl-arrive animation are presentation effects; the only keyframe is on the post-result verdict overlay."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/pocket_locksmith.py",
+          "lines": "198-321",
+          "claim": "The independent grader replays submitted orbit/torsion events and checks static geometry, contacts, bounds, and clashes; it has no elapsed-time or evolving-world predicate."
+        },
+        {
+          "path": "weird_captcha_gym/environments/pocket_locksmith_env/tasks/pocket_locksmith_seed_0001/verifier.py",
+          "lines": "22-35",
+          "claim": "Verification loads the exported result and invokes the independent grader, with no additional active-time mechanic."
+        }
+      ],
+      "uncertainties": []
+    },
+    {
+      "case_index": 399,
+      "public_environment_name": "Pocket Locksmith",
+      "environment_id": "pocket_locksmith_env",
+      "difficulty": 5,
+      "interaction_mode": "full",
+      "label": "no",
+      "controls_available": [
+        "Difficulty 5: four rotatable bonds, 7 obstacles, 4 marked contacts, 10 degree torsion steps, contact tolerance 0.19, clearance margin 0.05, handle occlusion enabled, and 14 degree camera steps in bounds [3.35, 2.45, 2.35].",
+        "Full input: drag the canvas to orbit; drag a visible curved bond handle to apply one torsion step. Occlusion can require another view before a handle is draggable.",
+        "CERTIFY FIT and ABANDON / FRESH POCKET are visible submission controls; no keyboard handler is implemented for the mechanic."
+      ],
+      "autonomous_processes": [
+        "None during the active fit: key torsions, camera, handles, sites, obstacles, and bounds remain unchanged until an input handler runs.",
+        "After certification only, the result overlay has a 0.28 second entrance animation; after a failed certification its overlay is removed after 2100 ms. This is submission UI and does not alter the fit state."
+      ],
+      "grouped_control_modes": [
+        "full-orbit-drag: a canvas drag away from a visible handle changes the camera yaw/pitch.",
+        "full-torsion-drag: a drag beginning on a visible curved handle changes one rotatable bond by one 10 degree step; hidden handles cannot be dragged."
+      ],
+      "delta_ms": null,
+      "window_ms": null,
+      "clause_i": {
+        "holds": true,
+        "reason": "Across generated seeds, the useful orbit or torsion action depends on the visible key and pocket geometry, so no policy using only prior actions and task times can choose an optimal next action for every occurrence of this mode. This is static spatial dependence, not temporal dependence."
+      },
+      "clause_ii": {
+        "holds": true,
+        "reason": "The current screenshot exposes the static pocket, contacts, key, and current handle visibility; a bounded current-frame observation is sufficient to choose whether to orbit or drag a visible handle. No change across frames is required."
+      },
+      "clause_iii": {
+        "holds": false,
+        "reason": "With no new action for any positive delay, the active geometry and available controls do not evolve, so there is no non-clock task-state change that makes an action less effective. The only timed behavior is the post-certification verdict UI, which is not an active fit opportunity."
+      },
+      "common_visible_process": "None in the active task. The key and pocket are stationary between input events; orbit and torsion handlers synchronously recompute the pose and handle occlusion. The post-certification verdict animation/removal is unrelated presentation and cannot witness clause (iii).",
+      "pre_run": {
+        "threshold": 0.5,
+        "at_least_half": null,
+        "rate": null,
+        "basis": "not_applicable",
+        "reason": "The mathematical definition already fails clause (iii) for every seed because there is no autonomous outcome phase or expiring action opportunity; a pre-run rate cannot change this No label.",
+        "seed_probe": null
+      },
+      "files_read_completely": [
+        "AGENTS.md",
+        "weird_captcha_gym/docs/controllability/real-time.md",
+        "weird_captcha_gym/environments/pocket_locksmith_env/controls.json",
+        "weird_captcha_gym/environments/pocket_locksmith_env/env.json",
+        "weird_captcha_gym/environments/pocket_locksmith_env/tasks/pocket_locksmith_seed_0001/task.json",
+        "weird_captcha_gym/environments/pocket_locksmith_env/tasks/pocket_locksmith_seed_0001/verifier.py",
+        "weird_captcha_gym/shared_scripts/incubator_generators/pocket_locksmith.py",
+        "weird_captcha_gym/shared_runtime/app/mechanics/pocket_locksmith.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/pocket_locksmith.css",
+        "weird_captcha_gym/shared_runtime/server/incubator_graders/pocket_locksmith.py",
+        "weird_captcha_gym/tools/incubator_solvers/pocket_locksmith.py"
+      ],
+      "source_evidence": [
+        {
+          "path": "weird_captcha_gym/environments/pocket_locksmith_env/controls.json",
+          "lines": "94-113, 116-129",
+          "claim": "Difficulty 5 increases the static torsion/obstacle/contact complexity and decreases step/tolerance values while retaining the same full/simplified controls and 0 ms/one-frame observation settings."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/pocket_locksmith.py",
+          "lines": "172-207, 295-361",
+          "claim": "Generation uses the seed and selected parameters to construct fixed base points, initial/target torsions, obstacles, sites, camera, and public/truth state; no timer or autonomous state is generated."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/pocket_locksmith.js",
+          "lines": "124-148, 219-229, 238-264",
+          "claim": "The full-mode pointer branch either orbits or applies a torsion step to a currently visible handle, and update is called synchronously after those inputs."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/pocket_locksmith.css",
+          "lines": "179-198, 264-304",
+          "claim": "Button transitions and the pl-arrive animation are presentation effects; the only keyframe is on the post-result verdict overlay."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/pocket_locksmith.py",
+          "lines": "198-321",
+          "claim": "The independent grader replays submitted orbit/torsion events and checks static geometry, contacts, bounds, and clashes; it has no elapsed-time or evolving-world predicate."
+        },
+        {
+          "path": "weird_captcha_gym/environments/pocket_locksmith_env/tasks/pocket_locksmith_seed_0001/verifier.py",
+          "lines": "22-35",
+          "claim": "Verification loads the exported result and invokes the independent grader, with no additional active-time mechanic."
+        }
+      ],
+      "uncertainties": []
+    },
+    {
+      "case_index": 400,
+      "public_environment_name": "Pocket Locksmith",
+      "environment_id": "pocket_locksmith_env",
+      "difficulty": 5,
+      "interaction_mode": "simplified",
+      "label": "no",
+      "controls_available": [
+        "Difficulty 5: four rotatable bonds, 7 obstacles, 4 marked contacts, 10 degree torsion steps, contact tolerance 0.19, clearance margin 0.05, handle occlusion enabled, and 14 degree camera steps in bounds [3.35, 2.45, 2.35].",
+        "Simplified input: labelled YAW/PITCH buttons and one-step minus/plus torsion buttons for the same generated key and pocket.",
+        "CERTIFY FIT and ABANDON / FRESH POCKET are visible submission controls; no keyboard handler is implemented for the mechanic."
+      ],
+      "autonomous_processes": [
+        "None during the active fit: key torsions, camera, handles, sites, obstacles, and bounds remain unchanged until an input handler runs.",
+        "After certification only, the result overlay has a 0.28 second entrance animation; after a failed certification its overlay is removed after 2100 ms. This is submission UI and does not alter the fit state."
+      ],
+      "grouped_control_modes": [
+        "simplified-orbit-button: four labelled buttons change camera yaw or pitch by one 14 degree step.",
+        "simplified-torsion-button: a labelled minus/plus button changes one of four rotatable bonds by one 10 degree step."
+      ],
+      "delta_ms": null,
+      "window_ms": null,
+      "clause_i": {
+        "holds": true,
+        "reason": "Across generated seeds, the useful orbit or torsion action depends on the visible key and pocket geometry, so no policy using only prior actions and task times can choose an optimal next action for every occurrence of this mode. This is static spatial dependence, not temporal dependence."
+      },
+      "clause_ii": {
+        "holds": true,
+        "reason": "The current screenshot exposes the static pocket, contacts, key, and labelled buttons; a bounded current-frame observation is sufficient to choose the next visible control. No change across frames is required."
+      },
+      "clause_iii": {
+        "holds": false,
+        "reason": "With no new action for any positive delay, the active geometry and available controls do not evolve, so there is no non-clock task-state change that makes an action less effective. The only timed behavior is the post-certification verdict UI, which is not an active fit opportunity."
+      },
+      "common_visible_process": "None in the active task. The key and pocket are stationary between input events; button handlers synchronously recompute the pose. The post-certification verdict animation/removal is unrelated presentation and cannot witness clause (iii).",
+      "pre_run": {
+        "threshold": 0.5,
+        "at_least_half": null,
+        "rate": null,
+        "basis": "not_applicable",
+        "reason": "The mathematical definition already fails clause (iii) for every seed because there is no autonomous outcome phase or expiring action opportunity; a pre-run rate cannot change this No label.",
+        "seed_probe": null
+      },
+      "files_read_completely": [
+        "AGENTS.md",
+        "weird_captcha_gym/docs/controllability/real-time.md",
+        "weird_captcha_gym/environments/pocket_locksmith_env/controls.json",
+        "weird_captcha_gym/environments/pocket_locksmith_env/env.json",
+        "weird_captcha_gym/environments/pocket_locksmith_env/tasks/pocket_locksmith_seed_0001/task.json",
+        "weird_captcha_gym/environments/pocket_locksmith_env/tasks/pocket_locksmith_seed_0001/verifier.py",
+        "weird_captcha_gym/shared_scripts/incubator_generators/pocket_locksmith.py",
+        "weird_captcha_gym/shared_runtime/app/mechanics/pocket_locksmith.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/pocket_locksmith.css",
+        "weird_captcha_gym/shared_runtime/server/incubator_graders/pocket_locksmith.py",
+        "weird_captcha_gym/tools/incubator_solvers/pocket_locksmith.py"
+      ],
+      "source_evidence": [
+        {
+          "path": "weird_captcha_gym/environments/pocket_locksmith_env/controls.json",
+          "lines": "94-113, 116-129",
+          "claim": "Difficulty 5 increases the static torsion/obstacle/contact complexity and decreases step/tolerance values while retaining the same full/simplified controls and 0 ms/one-frame observation settings."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/pocket_locksmith.py",
+          "lines": "172-207, 295-361",
+          "claim": "Generation uses the seed and selected parameters to construct fixed base points, initial/target torsions, obstacles, sites, camera, and public/truth state; no timer or autonomous state is generated."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/pocket_locksmith.js",
+          "lines": "124-148, 219-235, 266-273",
+          "claim": "Simplified buttons are wired to synchronous orbit/torsion updates, while certify/abandon submit the transcript; no loop advances the active fit without an input."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/pocket_locksmith.css",
+          "lines": "179-198, 264-304",
+          "claim": "Button transitions and the pl-arrive animation are presentation effects; the only keyframe is on the post-result verdict overlay."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/pocket_locksmith.py",
+          "lines": "198-321",
+          "claim": "The independent grader replays submitted orbit/torsion events and checks static geometry, contacts, bounds, and clashes; it has no elapsed-time or evolving-world predicate."
+        },
+        {
+          "path": "weird_captcha_gym/environments/pocket_locksmith_env/tasks/pocket_locksmith_seed_0001/verifier.py",
+          "lines": "22-35",
+          "claim": "Verification loads the exported result and invokes the independent grader, with no additional active-time mechanic."
+        }
+      ],
+      "uncertainties": []
+    }
+  ]
+}

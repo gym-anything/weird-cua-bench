@@ -1,0 +1,140 @@
+{
+  "case_index": 126,
+  "public_environment_name": "Collision Chimes",
+  "environment_id": "collision_chimes_env",
+  "difficulty": 3,
+  "interaction_mode": "simplified",
+  "label": "no",
+  "controls_available": [
+    "Difficulty 3 uses an 8x8 board, 4 solution arrows, at most 5 arrows, and a 14-beat film with 280 ms beats.",
+    "In the simplified edit phase, click an empty square to arm it, click ADD TO ARMED SQUARE to place an up arrow, select a placed arrow, and click ROTATE SELECTED ARROW to cycle its direction.",
+    "RUN 14 BEATS starts the automatic film; STEP ONE BEAT advances one beat synchronously; CLEAR CONFIGURATION resets the starting board.",
+    "After a film completes, REVISE STARTING ARROWS returns to editing for a future run and CHECK SEQUENCE submits the completed ledger.",
+    "The configured observation window is 600 ms with 5 chronological frames and a 120 s play allowance."
+  ],
+  "autonomous_processes": [
+    "After RUN, the first beat is applied on the start action, then a timer applies one beat every 280 ms until beat 14 without new agent input.",
+    "Each automatic beat updates arrow positions, reverses an arrow at a wall, turns an arrow clockwise for an occupied or duplicate destination, appends wall events, and re-renders the board and visible event ledger.",
+    "A wall-flash class clears after min(480, 280*0.85) = 238 ms; this is visible presentation state and does not affect the graded outcome.",
+    "At the end of beat 14, the film changes to the complete phase."
+  ],
+  "grouped_control_modes": [
+    "D1: simplified starting-configuration editing (arm square, ADD, select arrow, ROTATE, and CLEAR), available only in edit phase.",
+    "D2: film launch (RUN 14 BEATS), which starts the autonomous outcome phase from the configured cells.",
+    "D3: manual beat stepping (STEP ONE BEAT), where each state transition occurs synchronously in the action handler rather than while waiting.",
+    "D4: post-film revision and submission (REVISE STARTING ARROWS and CHECK SEQUENCE); revision affects a future run and checking is administrative."
+  ],
+  "delta_ms": null,
+  "window_ms": null,
+  "clause_i": {
+    "holds": false,
+    "reason": "An observation-free q can wait during configuration: before the film starts, the starting cells and directions remain editable after any finite delay, so no-op followed by later editing and RUN is optimal whenever success remains possible. During the running film, edit, step, and reset actions are disabled or ignored, leaving no-op as the only effective outcome-affecting choice. Thus no common grouped mode has the required failure of an I_t-only policy."
+  },
+  "clause_ii": {
+    "holds": true,
+    "reason": "A bounded-window policy can use no-op, which is sufficient for the same delayed histories because the configuration can be edited later before RUN and the running film accepts no effective intervention. The 600 ms, 5-frame window is therefore sufficient but not necessary; it does not create an observation-dependent delayed action."
+  },
+  "clause_iii": {
+    "holds": false,
+    "reason": "The film's arrows, wall events, and flashes evolve autonomously, but while that evolution is running all outcome-affecting configuration and stepping controls are unavailable or ineffective. Before RUN, the task has no autonomous film evolution and edits do not expire. Therefore no available action has a strict Q loss caused by task-state evolution within a delay."
+  },
+  "common_visible_process": "The only candidate is the visible 14-beat film: every 280 ms the arrow state and wall-event ledger change, with wall flashes showing impacts. It is visibly evidenced, but it begins only after RUN and then locks out the actions that could change the outcome, so it cannot be the common process witnessing clauses (i), (ii), and (iii).",
+  "pre_run": {
+    "threshold": 0.5,
+    "at_least_half": true,
+    "rate": null,
+    "basis": "source_structural",
+    "reason": "For difficulty 3, the generator always returns a concrete solution list of 4 cells (or its deterministic fallback) and constructs target_events by simulating that same list; 4 cells fit within max_cells 5. The simplified UI can place and rotate all starting arrows before RUN, and the solver's sequence configures them, clicks RUN, waits for phase complete, and only then submits. The run phase rejects or disables outcome-affecting edits, so every generated instance admits a successful pre-run solution; no numeric percentage is asserted.",
+    "seed_probe": null
+  },
+  "files_read_completely": [
+    "AGENTS.md",
+    "weird_captcha_gym/docs/controllability/real-time.md",
+    "weird_captcha_gym/environments/collision_chimes_env/controls.json",
+    "weird_captcha_gym/environments/collision_chimes_env/env.json",
+    "weird_captcha_gym/environments/collision_chimes_env/tasks/collision_chimes_seed_0001/task.json",
+    "weird_captcha_gym/environments/collision_chimes_env/tasks/collision_chimes_seed_0001/setup_task.sh",
+    "weird_captcha_gym/environments/collision_chimes_env/tasks/collision_chimes_seed_0001/export_result.sh",
+    "weird_captcha_gym/environments/collision_chimes_env/scripts/resolve_collision_chimes_task.py",
+    "weird_captcha_gym/shared_scripts/incubator_generators/collision_chimes.py",
+    "weird_captcha_gym/shared_runtime/app/mechanics/collision_chimes.js",
+    "weird_captcha_gym/shared_runtime/app/mechanics/collision_chimes.css",
+    "weird_captcha_gym/shared_runtime/server/incubator_graders/collision_chimes.py",
+    "weird_captcha_gym/environments/collision_chimes_env/tasks/collision_chimes_seed_0001/verifier.py",
+    "weird_captcha_gym/tools/incubator_solvers/collision_chimes.py",
+    "weird_captcha_gym/shared_runtime/verifier_helpers.py"
+  ],
+  "source_evidence": [
+    {
+      "path": "weird_captcha_gym/environments/collision_chimes_env/controls.json",
+      "lines": "42-56",
+      "claim": "Difficulty 3 is the medium profile with grid_size 8, solution_cells 4, max_cells 5, beats 14, beat_ms 280, and its stated minimum-event parameters."
+    },
+    {
+      "path": "weird_captcha_gym/environments/collision_chimes_env/controls.json",
+      "lines": "91-104",
+      "claim": "The simplified interaction is click-to-arm plus ADD and ROTATE controls; the configured observation window is 600 ms with 5 frames and 120 s play time."
+    },
+    {
+      "path": "weird_captcha_gym/shared_scripts/incubator_generators/collision_chimes.py",
+      "lines": "53-91",
+      "claim": "The visible simulation advances one square per beat, records wall impacts, reverses at walls, and turns clockwise on occupied or duplicate destinations."
+    },
+    {
+      "path": "weird_captcha_gym/shared_scripts/incubator_generators/collision_chimes.py",
+      "lines": "141-157",
+      "claim": "Candidate generation returns a solution cell list and simulates it into target events; the deterministic fallback also returns cells and their simulation."
+    },
+    {
+      "path": "weird_captcha_gym/shared_scripts/incubator_generators/collision_chimes.py",
+      "lines": "172-200",
+      "claim": "The supplied difficulty parameters are used to build the contract, including beats and beat_ms, and target_events are copied from the generated solution simulation."
+    },
+    {
+      "path": "weird_captcha_gym/shared_runtime/app/mechanics/collision_chimes.js",
+      "lines": "65-92,112-140",
+      "claim": "Adding and rotating are guarded by phase === edit; simplified input uses the add_button and cycle_button path, while board clicks and placed-arrow clicks do nothing outside edit."
+    },
+    {
+      "path": "weird_captcha_gym/shared_runtime/app/mechanics/collision_chimes.js",
+      "lines": "160-217",
+      "claim": "Wall flashes and the visible event ledger are updated as applyStep autonomously changes simulation state."
+    },
+    {
+      "path": "weird_captcha_gym/shared_runtime/app/mechanics/collision_chimes.js",
+      "lines": "229-260",
+      "claim": "scheduleNext uses a beat_ms timer while phase is running; RUN starts the running phase and immediately applies the first beat."
+    },
+    {
+      "path": "weird_captcha_gym/shared_runtime/app/mechanics/collision_chimes.js",
+      "lines": "262-295,345-360",
+      "claim": "Manual stepping advances only in its action handler, reset is blocked while running, and add/cycle/step/submit controls are disabled according to phase, leaving no effective edit during the film."
+    },
+    {
+      "path": "weird_captcha_gym/shared_runtime/app/mechanics/collision_chimes.js",
+      "lines": "397-421",
+      "claim": "The visible UI renders the target wall ledger, the live board, and the explicit text that all edits happen before a film."
+    },
+    {
+      "path": "weird_captcha_gym/shared_runtime/app/mechanics/collision_chimes.css",
+      "lines": "33-41",
+      "claim": "The board renders changing placed cells and wall-rail.is-flashing / wall-slot.is-hit states, making the film's impacts visible."
+    },
+    {
+      "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/collision_chimes.py",
+      "lines": "182-214",
+      "claim": "The grader binds the simplified interaction to add_button/cycle_button, requires the full requested beat run, replays the submitted cells, and compares the resulting wall events with the target."
+    },
+    {
+      "path": "weird_captcha_gym/tools/incubator_solvers/collision_chimes.py",
+      "lines": "28-55,86-103",
+      "claim": "The simplified solver configures each solution cell before clicking RUN, waits for phase complete, and submits only after the autonomous film has finished."
+    },
+    {
+      "path": "weird_captcha_gym/environments/collision_chimes_env/tasks/collision_chimes_seed_0001/verifier.py",
+      "lines": "34-53",
+      "claim": "The verifier loads the shared export helper, invokes the Collision Chimes grader, and checks the replayed result rather than accepting an unverified claim."
+    }
+  ],
+  "uncertainties": []
+}

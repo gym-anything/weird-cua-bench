@@ -1,0 +1,157 @@
+{
+  "case_index": 134,
+  "public_environment_name": "Concertina Courier",
+  "environment_id": "concertina_courier_env",
+  "difficulty": 2,
+  "interaction_mode": "simplified",
+  "label": "no",
+  "controls_available": [
+    "Simplified console latch buttons: Slide left, Slide right, TALLER, WIDER, and COAST.",
+    "Each console click sets a persistent control until another console click; CERTIFY is administrative.",
+    "The full-mode body-arrow hold surface is hidden in simplified mode."
+  ],
+  "autonomous_processes": [
+    "Each 40 ms task tick runs four physics substeps: morphing changes height, horizontal input updates capped velocity with drag, gravity updates vertical velocity, collision checks land or stop motion, and seal contact is collected.",
+    "Between console clicks the current latch remains active; after COAST, residual horizontal velocity decays while gravity, landing, and seal checks continue.",
+    "The render loop advances the simulation to elapsed task time and redraws the parcel, platforms, seals, and collected-seal count."
+  ],
+  "grouped_control_modes": [
+    "D_console_latch: all active simplified-mode outcome-affecting console clicks (left, right, taller, wider, and COAST) across all seeds and occurrences; CERTIFY and NEW ROOM are administrative."
+  ],
+  "delta_ms": 80,
+  "window_ms": 80,
+  "clause_i": {
+    "holds": false,
+    "reason": "At difficulty 2 the supplied parameters omit the island layout, so generation uses one left-to-right linear room with only bounded positional offsets. The source task records a known simplified blind route, and the replay dynamics support a fixed phase schedule chosen only from the agent's own action times (WIDER, RIGHT, TALLER, braking LEFT/RIGHT, WIDER, RIGHT, TALLER, LEFT, then COAST). Thus q can select the route-stage latch from I_t without the visible window; the several mid-run latches make this an observation-free interactive route, not a pre-run solution. No choice of D, Delta, or w makes visual evidence necessary for this exact grouped mode."
+  },
+  "clause_ii": {
+    "holds": true,
+    "reason": "The canvas visibly renders the solids, gold-seal locations, parcel position, parcel height/width, and collected count. Three chronological frames over the configured 80 ms window can additionally reveal recent parcel motion, so a bounded-window policy g can choose an action from the visible room and trajectory (or simply ignore the window and follow q). This clause alone does not repair the failed conjunction."
+  },
+  "clause_iii": {
+    "holds": true,
+    "reason": "The same active parcel physics creates a local degrading opportunity at the unsupported gap. For example, when a narrow, right-moving parcel is still salvageable near the gap, delivering WIDER immediately can widen it and preserve support; waiting while the current control and gravity advance moves it farther into the gap, leaving success possible for an interior delayed state but reducing WIDER's success value/advantage. The loss is caused by visible non-clock motion and falling, not by a deadline or later completion."
+  },
+  "common_visible_process": "The candidate common process for clauses (ii) and (iii) is the rendered parcel's inertial slide, shape morphing, gravity, and support loss while it traverses the overhead shelf and the 85-unit gap. It is visibly observable and can make a delayed intervention valuable, but clause (i) fails because this L2 simplified route admits an observation-free time-scheduled latch policy.",
+  "pre_run": {
+    "threshold": 0.5,
+    "at_least_half": false,
+    "rate": null,
+    "basis": "source_structural",
+    "reason": "There is no separate startable autonomous outcome phase in this implementation: the parcel is active as soon as it is rendered, and each latch remains an outcome-affecting control. A successful linear-room route must change shape during the run: the overhead shelf requires a short/wide parcel (clearance 58), the upper seal is at reach 160 and requires a tall parcel, the gap requires the parcel to become wide enough to bridge or otherwise cross safely, and the final seal again requires greater height. Therefore no generated instance admits a solution that, after preparation, sends no more outcome-affecting actions until the outcome phase ends. The documented blind route uses multiple mid-run latches and does not meet the frozen pre-run criterion.",
+    "seed_probe": null
+  },
+  "files_read_completely": [
+    "AGENTS.md",
+    "weird_captcha_gym/docs/controllability/real-time.md",
+    "weird_captcha_gym/environments/concertina_courier_env/controls.json",
+    "weird_captcha_gym/environments/concertina_courier_env/env.json",
+    "weird_captcha_gym/environments/concertina_courier_env/tasks/concertina_courier_seed_0001/setup_task.sh",
+    "weird_captcha_gym/environments/concertina_courier_env/tasks/concertina_courier_seed_0001/task.json",
+    "weird_captcha_gym/environments/concertina_courier_env/tasks/concertina_courier_seed_0001/verifier.py",
+    "weird_captcha_gym/shared_runtime/app/index.html",
+    "weird_captcha_gym/shared_runtime/app/time_controller.js",
+    "weird_captcha_gym/shared_runtime/app/mechanics/concertina_courier.js",
+    "weird_captcha_gym/shared_runtime/app/mechanics/concertina_courier.css",
+    "weird_captcha_gym/shared_runtime/server/incubator_graders/concertina_courier.py",
+    "weird_captcha_gym/shared_runtime/verifier_helpers.py",
+    "weird_captcha_gym/shared_scripts/incubator_generators/concertina_courier.py",
+    "weird_captcha_gym/tools/incubator_solvers/concertina_courier.py"
+  ],
+  "source_evidence": [
+    {
+      "path": "weird_captcha_gym/environments/concertina_courier_env/controls.json",
+      "lines": "21-30",
+      "claim": "Difficulty 2 is the easy profile with clearance 58, gap 85, reach 160, alcove 0, and drag 0.85; it contains no island layout parameter."
+    },
+    {
+      "path": "weird_captcha_gym/environments/concertina_courier_env/controls.json",
+      "lines": "93-104",
+      "claim": "Both full and simplified interactions are implemented, and the exact runtime settings are an 80 ms observation window with three frames."
+    },
+    {
+      "path": "weird_captcha_gym/shared_scripts/incubator_generators/concertina_courier.py",
+      "lines": "14-30",
+      "claim": "The generator uses the supplied difficulty parameters; without layout=island it builds the linear room, randomizing only bounded tunnel, shelf length, gap-start, and seal positions while preserving the same route structure."
+    },
+    {
+      "path": "weird_captcha_gym/shared_scripts/incubator_generators/concertina_courier.py",
+      "lines": "36-42",
+      "claim": "The linear world has area 6400, height bounds 32-200, 40 ms ticks, 4500 max ticks, and an active initial parcel at x=100, bottom=420, height=80; the control condition is exported to public state and truth."
+    },
+    {
+      "path": "weird_captcha_gym/shared_runtime/app/mechanics/concertina_courier.js",
+      "lines": "5-23",
+      "claim": "The browser physics changes height, velocity, position, gravity, support/landing, seal collection, and terminal status autonomously on every tick."
+    },
+    {
+      "path": "weird_captcha_gym/shared_runtime/app/mechanics/concertina_courier.js",
+      "lines": "24-43",
+      "claim": "Simplified mode is selected from the condition; the canvas visibly draws solids, seals, and parcel geometry, and tick advances to elapsed performance.now time before redrawing."
+    },
+    {
+      "path": "weird_captcha_gym/shared_runtime/app/mechanics/concertina_courier.js",
+      "lines": "48-51",
+      "claim": "Simplified console clicks call set with the selected latch control, while the animation frame loop continues to tick the active simulation."
+    },
+    {
+      "path": "weird_captcha_gym/shared_runtime/app/mechanics/concertina_courier.css",
+      "lines": "1",
+      "claim": "The visible body-control and console surfaces use the hidden attribute, so the simplified render can expose only the console controls."
+    },
+    {
+      "path": "weird_captcha_gym/environments/concertina_courier_env/env.json",
+      "lines": "40-46",
+      "claim": "The runner configuration confirms play_time_seconds 180, observation_window_ms 80, frames_per_observation 3, and an 80 ms step cycle."
+    },
+    {
+      "path": "weird_captcha_gym/shared_runtime/app/time_controller.js",
+      "lines": "55-62",
+      "claim": "The browser exposes a virtual task clock through elapsed time and performance.now, distinct from native wall time."
+    },
+    {
+      "path": "weird_captcha_gym/shared_runtime/app/time_controller.js",
+      "lines": "548-576",
+      "claim": "The shared clock can run a bounded task-time observation window and pause at its exact task-time endpoint, so the 80 ms setting is task progress rather than provider latency."
+    },
+    {
+      "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/concertina_courier.py",
+      "lines": "21-49",
+      "claim": "The grader independently replays the same four-substep morphing, inertial, gravity, collision, and seal-collection dynamics and marks falling/timeout/solved outcomes."
+    },
+    {
+      "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/concertina_courier.py",
+      "lines": "52-85",
+      "claim": "Grading binds the transcript to the exact condition and simplified console_latch input source, replays every event at its task tick, and requires the replayed state to be solved."
+    },
+    {
+      "path": "weird_captcha_gym/environments/concertina_courier_env/tasks/concertina_courier_seed_0001/verifier.py",
+      "lines": "36-49",
+      "claim": "The verifier loads the exported result and delegates outcome verification to the independent Concertina Courier grader."
+    },
+    {
+      "path": "weird_captcha_gym/tools/incubator_solvers/concertina_courier.py",
+      "lines": "53-69",
+      "claim": "The reference controller uses short prediction/coast commands, showing that physical control is about current motion; this solver's private state access is not treated as policy information."
+    },
+    {
+      "path": "weird_captcha_gym/tools/incubator_solvers/concertina_courier.py",
+      "lines": "125-147",
+      "claim": "The linear branch follows a reusable sequence of shape and movement phases, while the island branch is the one that needs a different layout; the solver is implementation evidence only."
+    },
+    {
+      "path": "weird_captcha_gym/environments/concertina_courier_env/tasks/concertina_courier_seed_0001/task.json",
+      "lines": "6-8,43",
+      "claim": "The visible task describes morphing, unsupported falling, and simplified click/COAST controls, and its source note explicitly identifies the L2 linear configuration as having a simplified blind route."
+    },
+    {
+      "path": "weird_captcha_gym/shared_runtime/verifier_helpers.py",
+      "lines": "15-30,33-48",
+      "claim": "The shared verifier helper loads the mechanic grader and reads the exported task result; it does not replace the physical replay."
+    }
+  ],
+  "uncertainties": [
+    "task.json retains default L3/full capability metadata, so the supplied case condition and controls.json L2/simplified profile were used for this classification.",
+    "The reference solver reads private browser state for wiring tests; that implementation detail was not treated as information available to a screenshot-only policy."
+  ]
+}

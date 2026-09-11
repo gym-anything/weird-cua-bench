@@ -1,0 +1,1418 @@
+{
+  "case_index": 49,
+  "environment_id": "unwatched_wing_env",
+  "public_environment_name": "The Unwatched Wing",
+  "configuration_reports": [
+    {
+      "case_index": 481,
+      "public_environment_name": "The Unwatched Wing",
+      "environment_id": "unwatched_wing_env",
+      "difficulty": 1,
+      "interaction_mode": "full",
+      "label": "no",
+      "controls_available": [
+        "W/A/S/D keydown: walk one quantized move step",
+        "viewport drag: rotate the first-person view",
+        "viewport click: deploy the probe at the aimed plinth",
+        "F key: toggle the hand lamp",
+        "V key: toggle the live probe viewer",
+        "R key: recall the deployed probe",
+        "E key: toggle the nearby isolator",
+        "ABORT / FRESH WING button: abandon the attempt and request a fresh challenge"
+      ],
+      "autonomous_processes": [
+        "None in the game mechanic: while no new input is delivered, pose, target_cursor, equipment, wall lights, and dock occupancy do not change.",
+        "The shared live/paused clock and rendering loop are infrastructure only; this mechanic registers no timer, interval, requestAnimationFrame state update, physics loop, or CSS animation. The configured observation window is 0 ms with one frame."
+      ],
+      "grouped_control_modes": [
+        "movement: full-mode WASD changes pose and then synchronously settles observation",
+        "view rotation: full-mode viewport drag changes angle and then synchronously settles observation",
+        "observation/equipment: full-mode viewport probe click and F/V/R/E actions change observation, equipment, or light state and then synchronously settle observation",
+        "terminal/admin: dock auto-submit and ABORT / FRESH WING are terminal controls; they are not an autonomous task-state process"
+      ],
+      "delta_ms": null,
+      "window_ms": null,
+      "clause_i": {
+        "holds": false,
+        "reason": "For this full introductory configuration, when C_Delta is nonempty, an observation-free q can choose wait/no-op for every I_t: because the museum does not evolve without input, success remains possible after the delay and the no-op remains delayed-optimal. Seed-dependent three target plinths with no decoys, probe thresholds, or wall lights can make a screenshot useful for choosing an efficient next action, but it does not force the next action to depend on the current observation."
+      },
+      "clause_ii": {
+        "holds": true,
+        "reason": "A bounded current screenshot is sufficient for ordinary screenshot-only control: it shows the first-person scene, dossier, plinths, probe feed, and visible equipment controls, and the configured window is the one endpoint frame at 0 ms. In the bare existential clause, a wait/no-op policy also supplies g. No recent window predicts a future autonomous state change."
+      },
+      "clause_iii": {
+        "holds": false,
+        "reason": "For every Delta > 0 and every legitimate grouped mode, no-input state is unchanged: the mechanic has no timer, interval, animation-frame, physics, or CSS state-update path, and settleObservation is called only synchronously after an action. Thus H_t^tau equals H_t and neither Q(H_t^tau,a) nor the advantage over no-op strictly decreases. The exhibit jumps and handoff rejections happen at the action boundary, not during the delay."
+      },
+      "common_visible_process": "No common visible autonomous process exists. The visible target/plinth, probe, lamp, viewer, and isolator state can change immediately after a delivered input through afterAction -> settleObservation, but remains fixed during a no-action interval; the visible UI therefore provides no temporal evidence that predicts a degrading opportunity.",
+      "pre_run": {
+        "threshold": 0.5,
+        "at_least_half": null,
+        "rate": null,
+        "basis": "not_applicable",
+        "reason": "No autonomous outcome phase exists in this configuration: all museum progress and the final darkness transition are caused by explicit input events. A pre-run fraction is therefore not applicable and no percentage is asserted; this cannot change the label because clauses (i) and (iii) fail.",
+        "seed_probe": null
+      },
+      "files_read_completely": [
+        "AGENTS.md",
+        "weird_captcha_gym/docs/controllability/real-time.md",
+        "weird_captcha_gym/environments/unwatched_wing_env/controls.json",
+        "weird_captcha_gym/environments/unwatched_wing_env/env.json",
+        "weird_captcha_gym/environments/unwatched_wing_env/tasks/unwatched_wing_seed_0001/task.json",
+        "weird_captcha_gym/environments/unwatched_wing_env/tasks/unwatched_wing_seed_0001/setup_task.sh",
+        "weird_captcha_gym/environments/unwatched_wing_env/tasks/unwatched_wing_seed_0001/export_result.sh",
+        "weird_captcha_gym/environments/unwatched_wing_env/tasks/unwatched_wing_seed_0001/verifier.py",
+        "weird_captcha_gym/shared_scripts/incubator_generators/unwatched_wing.py",
+        "weird_captcha_gym/shared_runtime/app/mechanics/unwatched_wing.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/unwatched_wing.css",
+        "weird_captcha_gym/shared_runtime/server/incubator_graders/unwatched_wing.py",
+        "weird_captcha_gym/tools/incubator_solvers/unwatched_wing.py",
+        "weird_captcha_gym/shared_runtime/app/time_controller.js",
+        "weird_captcha_gym/shared_runtime/verifier_helpers.py"
+      ],
+      "source_evidence": [
+        {
+          "path": "weird_captcha_gym/environments/unwatched_wing_env/controls.json",
+          "lines": "10-24",
+          "claim": "Difficulty 1 is the introductory profile: 3 target positions, 0 decoys, no required probe handoffs, no ambient lights, field of view 94 degrees, hand-lamp range 2.6, probe range 7.0, and move step 0.42."
+        },
+        {
+          "path": "weird_captcha_gym/environments/unwatched_wing_env/controls.json",
+          "lines": "91-105",
+          "claim": "Both interaction modes are implemented; the shared profile sets play_time_seconds to 180, observation_window_ms to 0, and frames_per_observation to 1."
+        },
+        {
+          "path": "weird_captcha_gym/environments/unwatched_wing_env/env.json",
+          "lines": "5-15",
+          "claim": "The environment is a first-person observer-effect museum with a frame_window observation and mouse/keyboard action surfaces; runner_options repeat a zero-ms observation window and one frame."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/unwatched_wing.py",
+          "lines": "196-259",
+          "claim": "The generator applies the exact difficulty parameters, then uses seeded randomness and a spatial transform to place the three target plinths with no decoys, probe thresholds, or wall lights; these are static contract inputs, not a timed process."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/unwatched_wing.py",
+          "lines": "324-385",
+          "claim": "The generated rules say the unstable exhibit changes plinth when viewport, probe viewer, and lights release it, and the dock opens in darkness; the rules contain no autonomous clock phase."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/unwatched_wing.js",
+          "lines": "154-223",
+          "claim": "settleObservation computes observation and target jumps, while afterAction calls it and redraws; no no-input callback invokes this state transition."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/unwatched_wing.js",
+          "lines": "225-329",
+          "claim": "Movement, look, lamp, viewer, probe, recall, and breaker handlers all update state synchronously and call afterAction; the only outcome-affecting progression is input-triggered."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/unwatched_wing.js",
+          "lines": "571-611",
+          "claim": "Full mode binds WASD to movement, viewport drag to look, viewport click to deploy the probe, and F/V/R/E to lamp/viewer/recall/isolator actions."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/unwatched_wing.css",
+          "lines": "148-167",
+          "claim": "The probe feed is shown immediately by the data-viewer attribute; the CSS has no timed animation that changes museum state."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/time_controller.js",
+          "lines": "250-339",
+          "claim": "The shared clock can schedule timers and flush animation-frame callbacks, but it only runs callbacks registered by a mechanic; Unwatched Wing registers none."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/unwatched_wing.py",
+          "lines": "345-449",
+          "claim": "The grader binds the full input-source transcript and replays each event, invoking _settle only after nonterminal events; it does not advance state by event time."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/unwatched_wing.py",
+          "lines": "478-500",
+          "claim": "Pass/fail depends on the replayed final museum state, equipment, and darkness sample, with no timing or deadline predicate."
+        },
+        {
+          "path": "weird_captcha_gym/tools/incubator_solvers/unwatched_wing.py",
+          "lines": "254-406",
+          "claim": "The solver's route is a sequence of explicit movement, observation, equipment, probe, and final-darkness actions; its waits are Playwright synchronization, not an autonomous game phase."
+        },
+        {
+          "path": "weird_captcha_gym/environments/unwatched_wing_env/tasks/unwatched_wing_seed_0001/verifier.py",
+          "lines": "21-34",
+          "claim": "The task verifier loads the independent Unwatched Wing grader and grades the exported result replay."
+        }
+      ],
+      "uncertainties": []
+    },
+    {
+      "case_index": 482,
+      "public_environment_name": "The Unwatched Wing",
+      "environment_id": "unwatched_wing_env",
+      "difficulty": 1,
+      "interaction_mode": "simplified",
+      "label": "no",
+      "controls_available": [
+        "labelled forward/back/left/right step buttons: walk one quantized move step",
+        "left/right turn buttons: rotate the first-person view by 15000 mdeg",
+        "LAMP button: toggle the hand lamp",
+        "VIEWER button: toggle the live probe viewer",
+        "PROBE button: deploy the probe at the aimed plinth",
+        "RECALL button: recall the deployed probe",
+        "ISOLATOR button: toggle the nearby isolator",
+        "ABORT / FRESH WING button: abandon the attempt and request a fresh challenge"
+      ],
+      "autonomous_processes": [
+        "None in the game mechanic: while no new input is delivered, pose, target_cursor, equipment, wall lights, and dock occupancy do not change.",
+        "The shared live/paused clock and rendering loop are infrastructure only; this mechanic registers no timer, interval, requestAnimationFrame state update, physics loop, or CSS animation. The configured observation window is 0 ms with one frame."
+      ],
+      "grouped_control_modes": [
+        "movement: simplified step buttons change pose and then synchronously settle observation",
+        "view rotation: simplified turn buttons change angle and then synchronously settle observation",
+        "observation/equipment: simplified PROBE, LAMP, VIEWER, RECALL, and ISOLATOR buttons change observation, equipment, or light state and then synchronously settle observation",
+        "terminal/admin: dock auto-submit and ABORT / FRESH WING are terminal controls; they are not an autonomous task-state process"
+      ],
+      "delta_ms": null,
+      "window_ms": null,
+      "clause_i": {
+        "holds": false,
+        "reason": "For this simplified introductory configuration, when C_Delta is nonempty, an observation-free q can choose wait/no-op for every I_t: because the museum does not evolve without input, success remains possible after the delay and the no-op remains delayed-optimal. Seed-dependent three target plinths with no decoys, probe thresholds, or wall lights can make a screenshot useful for choosing an efficient next action, but it does not force the next action to depend on the current observation."
+      },
+      "clause_ii": {
+        "holds": true,
+        "reason": "A bounded current screenshot is sufficient for ordinary screenshot-only control: it shows the first-person scene, dossier, plinths, probe feed, and visible equipment controls, and the configured window is the one endpoint frame at 0 ms. In the bare existential clause, a wait/no-op policy also supplies g. No recent window predicts a future autonomous state change."
+      },
+      "clause_iii": {
+        "holds": false,
+        "reason": "For every Delta > 0 and every legitimate grouped mode, no-input state is unchanged: the mechanic has no timer, interval, animation-frame, physics, or CSS state-update path, and settleObservation is called only synchronously after an action. Thus H_t^tau equals H_t and neither Q(H_t^tau,a) nor the advantage over no-op strictly decreases. The exhibit jumps and handoff rejections happen at the action boundary, not during the delay."
+      },
+      "common_visible_process": "No common visible autonomous process exists. The visible target/plinth, probe, lamp, viewer, and isolator state can change immediately after a delivered input through afterAction -> settleObservation, but remains fixed during a no-action interval; the visible UI therefore provides no temporal evidence that predicts a degrading opportunity.",
+      "pre_run": {
+        "threshold": 0.5,
+        "at_least_half": null,
+        "rate": null,
+        "basis": "not_applicable",
+        "reason": "No autonomous outcome phase exists in this configuration: all museum progress and the final darkness transition are caused by explicit input events. A pre-run fraction is therefore not applicable and no percentage is asserted; this cannot change the label because clauses (i) and (iii) fail.",
+        "seed_probe": null
+      },
+      "files_read_completely": [
+        "AGENTS.md",
+        "weird_captcha_gym/docs/controllability/real-time.md",
+        "weird_captcha_gym/environments/unwatched_wing_env/controls.json",
+        "weird_captcha_gym/environments/unwatched_wing_env/env.json",
+        "weird_captcha_gym/environments/unwatched_wing_env/tasks/unwatched_wing_seed_0001/task.json",
+        "weird_captcha_gym/environments/unwatched_wing_env/tasks/unwatched_wing_seed_0001/setup_task.sh",
+        "weird_captcha_gym/environments/unwatched_wing_env/tasks/unwatched_wing_seed_0001/export_result.sh",
+        "weird_captcha_gym/environments/unwatched_wing_env/tasks/unwatched_wing_seed_0001/verifier.py",
+        "weird_captcha_gym/shared_scripts/incubator_generators/unwatched_wing.py",
+        "weird_captcha_gym/shared_runtime/app/mechanics/unwatched_wing.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/unwatched_wing.css",
+        "weird_captcha_gym/shared_runtime/server/incubator_graders/unwatched_wing.py",
+        "weird_captcha_gym/tools/incubator_solvers/unwatched_wing.py",
+        "weird_captcha_gym/shared_runtime/app/time_controller.js",
+        "weird_captcha_gym/shared_runtime/verifier_helpers.py"
+      ],
+      "source_evidence": [
+        {
+          "path": "weird_captcha_gym/environments/unwatched_wing_env/controls.json",
+          "lines": "10-24",
+          "claim": "Difficulty 1 is the introductory profile: 3 target positions, 0 decoys, no required probe handoffs, no ambient lights, field of view 94 degrees, hand-lamp range 2.6, probe range 7.0, and move step 0.42."
+        },
+        {
+          "path": "weird_captcha_gym/environments/unwatched_wing_env/controls.json",
+          "lines": "91-105",
+          "claim": "Both interaction modes are implemented; the shared profile sets play_time_seconds to 180, observation_window_ms to 0, and frames_per_observation to 1."
+        },
+        {
+          "path": "weird_captcha_gym/environments/unwatched_wing_env/env.json",
+          "lines": "5-15",
+          "claim": "The environment is a first-person observer-effect museum with a frame_window observation and mouse/keyboard action surfaces; runner_options repeat a zero-ms observation window and one frame."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/unwatched_wing.py",
+          "lines": "196-259",
+          "claim": "The generator applies the exact difficulty parameters, then uses seeded randomness and a spatial transform to place the three target plinths with no decoys, probe thresholds, or wall lights; these are static contract inputs, not a timed process."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/unwatched_wing.py",
+          "lines": "324-385",
+          "claim": "The generated rules say the unstable exhibit changes plinth when viewport, probe viewer, and lights release it, and the dock opens in darkness; the rules contain no autonomous clock phase."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/unwatched_wing.js",
+          "lines": "154-223",
+          "claim": "settleObservation computes observation and target jumps, while afterAction calls it and redraws; no no-input callback invokes this state transition."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/unwatched_wing.js",
+          "lines": "225-329",
+          "claim": "Movement, look, lamp, viewer, probe, recall, and breaker handlers all update state synchronously and call afterAction; the only outcome-affecting progression is input-triggered."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/unwatched_wing.js",
+          "lines": "613-624",
+          "claim": "Simplified mode binds labelled step and turn buttons plus LAMP, VIEWER, PROBE, RECALL, and ISOLATOR buttons to the same museum actions."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/unwatched_wing.css",
+          "lines": "148-167",
+          "claim": "The probe feed is shown immediately by the data-viewer attribute; the CSS has no timed animation that changes museum state."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/time_controller.js",
+          "lines": "250-339",
+          "claim": "The shared clock can schedule timers and flush animation-frame callbacks, but it only runs callbacks registered by a mechanic; Unwatched Wing registers none."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/unwatched_wing.py",
+          "lines": "345-449",
+          "claim": "The grader binds the simplified input-source transcript and replays each event, invoking _settle only after nonterminal events; it does not advance state by event time."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/unwatched_wing.py",
+          "lines": "478-500",
+          "claim": "Pass/fail depends on the replayed final museum state, equipment, and darkness sample, with no timing or deadline predicate."
+        },
+        {
+          "path": "weird_captcha_gym/tools/incubator_solvers/unwatched_wing.py",
+          "lines": "254-406",
+          "claim": "The solver's route is a sequence of explicit movement, observation, equipment, probe, and final-darkness actions; its waits are Playwright synchronization, not an autonomous game phase."
+        },
+        {
+          "path": "weird_captcha_gym/environments/unwatched_wing_env/tasks/unwatched_wing_seed_0001/verifier.py",
+          "lines": "21-34",
+          "claim": "The task verifier loads the independent Unwatched Wing grader and grades the exported result replay."
+        }
+      ],
+      "uncertainties": []
+    },
+    {
+      "case_index": 483,
+      "public_environment_name": "The Unwatched Wing",
+      "environment_id": "unwatched_wing_env",
+      "difficulty": 2,
+      "interaction_mode": "full",
+      "label": "no",
+      "controls_available": [
+        "W/A/S/D keydown: walk one quantized move step",
+        "viewport drag: rotate the first-person view",
+        "viewport click: deploy the probe at the aimed plinth",
+        "F key: toggle the hand lamp",
+        "V key: toggle the live probe viewer",
+        "R key: recall the deployed probe",
+        "E key: toggle the nearby isolator",
+        "ABORT / FRESH WING button: abandon the attempt and request a fresh challenge"
+      ],
+      "autonomous_processes": [
+        "None in the game mechanic: while no new input is delivered, pose, target_cursor, equipment, wall lights, and dock occupancy do not change.",
+        "The shared live/paused clock and rendering loop are infrastructure only; this mechanic registers no timer, interval, requestAnimationFrame state update, physics loop, or CSS animation. The configured observation window is 0 ms with one frame."
+      ],
+      "grouped_control_modes": [
+        "movement: full-mode WASD changes pose and then synchronously settles observation",
+        "view rotation: full-mode viewport drag changes angle and then synchronously settles observation",
+        "observation/equipment: full-mode viewport probe click and F/V/R/E actions change observation, equipment, or light state and then synchronously settle observation",
+        "terminal/admin: dock auto-submit and ABORT / FRESH WING are terminal controls; they are not an autonomous task-state process"
+      ],
+      "delta_ms": null,
+      "window_ms": null,
+      "clause_i": {
+        "holds": false,
+        "reason": "For this full elbow configuration, when C_Delta is nonempty, an observation-free q can choose wait/no-op for every I_t: because the museum does not evolve without input, success remains possible after the delay and the no-op remains delayed-optimal. Seed-dependent four target plinths, one decoy, and one action-triggered probe handoff can make a screenshot useful for choosing an efficient next action, but it does not force the next action to depend on the current observation."
+      },
+      "clause_ii": {
+        "holds": true,
+        "reason": "A bounded current screenshot is sufficient for ordinary screenshot-only control: it shows the first-person scene, dossier, plinths, probe feed, and visible equipment controls, and the configured window is the one endpoint frame at 0 ms. In the bare existential clause, a wait/no-op policy also supplies g. No recent window predicts a future autonomous state change."
+      },
+      "clause_iii": {
+        "holds": false,
+        "reason": "For every Delta > 0 and every legitimate grouped mode, no-input state is unchanged: the mechanic has no timer, interval, animation-frame, physics, or CSS state-update path, and settleObservation is called only synchronously after an action. Thus H_t^tau equals H_t and neither Q(H_t^tau,a) nor the advantage over no-op strictly decreases. The exhibit jumps and handoff rejections happen at the action boundary, not during the delay."
+      },
+      "common_visible_process": "No common visible autonomous process exists. The visible target/plinth, probe, lamp, viewer, and isolator state can change immediately after a delivered input through afterAction -> settleObservation, but remains fixed during a no-action interval; the visible UI therefore provides no temporal evidence that predicts a degrading opportunity.",
+      "pre_run": {
+        "threshold": 0.5,
+        "at_least_half": null,
+        "rate": null,
+        "basis": "not_applicable",
+        "reason": "No autonomous outcome phase exists in this configuration: all museum progress and the final darkness transition are caused by explicit input events. A pre-run fraction is therefore not applicable and no percentage is asserted; this cannot change the label because clauses (i) and (iii) fail.",
+        "seed_probe": null
+      },
+      "files_read_completely": [
+        "AGENTS.md",
+        "weird_captcha_gym/docs/controllability/real-time.md",
+        "weird_captcha_gym/environments/unwatched_wing_env/controls.json",
+        "weird_captcha_gym/environments/unwatched_wing_env/env.json",
+        "weird_captcha_gym/environments/unwatched_wing_env/tasks/unwatched_wing_seed_0001/task.json",
+        "weird_captcha_gym/environments/unwatched_wing_env/tasks/unwatched_wing_seed_0001/setup_task.sh",
+        "weird_captcha_gym/environments/unwatched_wing_env/tasks/unwatched_wing_seed_0001/export_result.sh",
+        "weird_captcha_gym/environments/unwatched_wing_env/tasks/unwatched_wing_seed_0001/verifier.py",
+        "weird_captcha_gym/shared_scripts/incubator_generators/unwatched_wing.py",
+        "weird_captcha_gym/shared_runtime/app/mechanics/unwatched_wing.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/unwatched_wing.css",
+        "weird_captcha_gym/shared_runtime/server/incubator_graders/unwatched_wing.py",
+        "weird_captcha_gym/tools/incubator_solvers/unwatched_wing.py",
+        "weird_captcha_gym/shared_runtime/app/time_controller.js",
+        "weird_captcha_gym/shared_runtime/verifier_helpers.py"
+      ],
+      "source_evidence": [
+        {
+          "path": "weird_captcha_gym/environments/unwatched_wing_env/controls.json",
+          "lines": "26-40",
+          "claim": "Difficulty 2 is the elbow profile: 4 target positions, 1 decoy, required probe handoff at step 1, no ambient lights, field of view 88 degrees, hand-lamp range 2.2, probe range 6.5, and move step 0.40."
+        },
+        {
+          "path": "weird_captcha_gym/environments/unwatched_wing_env/controls.json",
+          "lines": "91-105",
+          "claim": "Both interaction modes are implemented; the shared profile sets play_time_seconds to 180, observation_window_ms to 0, and frames_per_observation to 1."
+        },
+        {
+          "path": "weird_captcha_gym/environments/unwatched_wing_env/env.json",
+          "lines": "5-15",
+          "claim": "The environment is a first-person observer-effect museum with a frame_window observation and mouse/keyboard action surfaces; runner_options repeat a zero-ms observation window and one frame."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/unwatched_wing.py",
+          "lines": "196-259",
+          "claim": "The generator applies the exact difficulty parameters, then uses seeded randomness and a spatial transform to place the four target plinths, one decoy, and one action-triggered probe handoff; these are static contract inputs, not a timed process."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/unwatched_wing.py",
+          "lines": "324-385",
+          "claim": "The generated rules say the unstable exhibit changes plinth when viewport, probe viewer, and lights release it, and the dock opens in darkness; the rules contain no autonomous clock phase."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/unwatched_wing.js",
+          "lines": "154-223",
+          "claim": "settleObservation computes observation and target jumps, while afterAction calls it and redraws; no no-input callback invokes this state transition."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/unwatched_wing.js",
+          "lines": "225-329",
+          "claim": "Movement, look, lamp, viewer, probe, recall, and breaker handlers all update state synchronously and call afterAction; the only outcome-affecting progression is input-triggered."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/unwatched_wing.js",
+          "lines": "571-611",
+          "claim": "Full mode binds WASD to movement, viewport drag to look, viewport click to deploy the probe, and F/V/R/E to lamp/viewer/recall/isolator actions."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/unwatched_wing.css",
+          "lines": "148-167",
+          "claim": "The probe feed is shown immediately by the data-viewer attribute; the CSS has no timed animation that changes museum state."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/time_controller.js",
+          "lines": "250-339",
+          "claim": "The shared clock can schedule timers and flush animation-frame callbacks, but it only runs callbacks registered by a mechanic; Unwatched Wing registers none."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/unwatched_wing.py",
+          "lines": "345-449",
+          "claim": "The grader binds the full input-source transcript and replays each event, invoking _settle only after nonterminal events; it does not advance state by event time."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/unwatched_wing.py",
+          "lines": "478-500",
+          "claim": "Pass/fail depends on the replayed final museum state, equipment, and darkness sample, with no timing or deadline predicate."
+        },
+        {
+          "path": "weird_captcha_gym/tools/incubator_solvers/unwatched_wing.py",
+          "lines": "254-406",
+          "claim": "The solver's route is a sequence of explicit movement, observation, equipment, probe, and final-darkness actions; its waits are Playwright synchronization, not an autonomous game phase."
+        },
+        {
+          "path": "weird_captcha_gym/environments/unwatched_wing_env/tasks/unwatched_wing_seed_0001/verifier.py",
+          "lines": "21-34",
+          "claim": "The task verifier loads the independent Unwatched Wing grader and grades the exported result replay."
+        }
+      ],
+      "uncertainties": []
+    },
+    {
+      "case_index": 484,
+      "public_environment_name": "The Unwatched Wing",
+      "environment_id": "unwatched_wing_env",
+      "difficulty": 2,
+      "interaction_mode": "simplified",
+      "label": "no",
+      "controls_available": [
+        "labelled forward/back/left/right step buttons: walk one quantized move step",
+        "left/right turn buttons: rotate the first-person view by 15000 mdeg",
+        "LAMP button: toggle the hand lamp",
+        "VIEWER button: toggle the live probe viewer",
+        "PROBE button: deploy the probe at the aimed plinth",
+        "RECALL button: recall the deployed probe",
+        "ISOLATOR button: toggle the nearby isolator",
+        "ABORT / FRESH WING button: abandon the attempt and request a fresh challenge"
+      ],
+      "autonomous_processes": [
+        "None in the game mechanic: while no new input is delivered, pose, target_cursor, equipment, wall lights, and dock occupancy do not change.",
+        "The shared live/paused clock and rendering loop are infrastructure only; this mechanic registers no timer, interval, requestAnimationFrame state update, physics loop, or CSS animation. The configured observation window is 0 ms with one frame."
+      ],
+      "grouped_control_modes": [
+        "movement: simplified step buttons change pose and then synchronously settle observation",
+        "view rotation: simplified turn buttons change angle and then synchronously settle observation",
+        "observation/equipment: simplified PROBE, LAMP, VIEWER, RECALL, and ISOLATOR buttons change observation, equipment, or light state and then synchronously settle observation",
+        "terminal/admin: dock auto-submit and ABORT / FRESH WING are terminal controls; they are not an autonomous task-state process"
+      ],
+      "delta_ms": null,
+      "window_ms": null,
+      "clause_i": {
+        "holds": false,
+        "reason": "For this simplified elbow configuration, when C_Delta is nonempty, an observation-free q can choose wait/no-op for every I_t: because the museum does not evolve without input, success remains possible after the delay and the no-op remains delayed-optimal. Seed-dependent four target plinths, one decoy, and one action-triggered probe handoff can make a screenshot useful for choosing an efficient next action, but it does not force the next action to depend on the current observation."
+      },
+      "clause_ii": {
+        "holds": true,
+        "reason": "A bounded current screenshot is sufficient for ordinary screenshot-only control: it shows the first-person scene, dossier, plinths, probe feed, and visible equipment controls, and the configured window is the one endpoint frame at 0 ms. In the bare existential clause, a wait/no-op policy also supplies g. No recent window predicts a future autonomous state change."
+      },
+      "clause_iii": {
+        "holds": false,
+        "reason": "For every Delta > 0 and every legitimate grouped mode, no-input state is unchanged: the mechanic has no timer, interval, animation-frame, physics, or CSS state-update path, and settleObservation is called only synchronously after an action. Thus H_t^tau equals H_t and neither Q(H_t^tau,a) nor the advantage over no-op strictly decreases. The exhibit jumps and handoff rejections happen at the action boundary, not during the delay."
+      },
+      "common_visible_process": "No common visible autonomous process exists. The visible target/plinth, probe, lamp, viewer, and isolator state can change immediately after a delivered input through afterAction -> settleObservation, but remains fixed during a no-action interval; the visible UI therefore provides no temporal evidence that predicts a degrading opportunity.",
+      "pre_run": {
+        "threshold": 0.5,
+        "at_least_half": null,
+        "rate": null,
+        "basis": "not_applicable",
+        "reason": "No autonomous outcome phase exists in this configuration: all museum progress and the final darkness transition are caused by explicit input events. A pre-run fraction is therefore not applicable and no percentage is asserted; this cannot change the label because clauses (i) and (iii) fail.",
+        "seed_probe": null
+      },
+      "files_read_completely": [
+        "AGENTS.md",
+        "weird_captcha_gym/docs/controllability/real-time.md",
+        "weird_captcha_gym/environments/unwatched_wing_env/controls.json",
+        "weird_captcha_gym/environments/unwatched_wing_env/env.json",
+        "weird_captcha_gym/environments/unwatched_wing_env/tasks/unwatched_wing_seed_0001/task.json",
+        "weird_captcha_gym/environments/unwatched_wing_env/tasks/unwatched_wing_seed_0001/setup_task.sh",
+        "weird_captcha_gym/environments/unwatched_wing_env/tasks/unwatched_wing_seed_0001/export_result.sh",
+        "weird_captcha_gym/environments/unwatched_wing_env/tasks/unwatched_wing_seed_0001/verifier.py",
+        "weird_captcha_gym/shared_scripts/incubator_generators/unwatched_wing.py",
+        "weird_captcha_gym/shared_runtime/app/mechanics/unwatched_wing.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/unwatched_wing.css",
+        "weird_captcha_gym/shared_runtime/server/incubator_graders/unwatched_wing.py",
+        "weird_captcha_gym/tools/incubator_solvers/unwatched_wing.py",
+        "weird_captcha_gym/shared_runtime/app/time_controller.js",
+        "weird_captcha_gym/shared_runtime/verifier_helpers.py"
+      ],
+      "source_evidence": [
+        {
+          "path": "weird_captcha_gym/environments/unwatched_wing_env/controls.json",
+          "lines": "26-40",
+          "claim": "Difficulty 2 is the elbow profile: 4 target positions, 1 decoy, required probe handoff at step 1, no ambient lights, field of view 88 degrees, hand-lamp range 2.2, probe range 6.5, and move step 0.40."
+        },
+        {
+          "path": "weird_captcha_gym/environments/unwatched_wing_env/controls.json",
+          "lines": "91-105",
+          "claim": "Both interaction modes are implemented; the shared profile sets play_time_seconds to 180, observation_window_ms to 0, and frames_per_observation to 1."
+        },
+        {
+          "path": "weird_captcha_gym/environments/unwatched_wing_env/env.json",
+          "lines": "5-15",
+          "claim": "The environment is a first-person observer-effect museum with a frame_window observation and mouse/keyboard action surfaces; runner_options repeat a zero-ms observation window and one frame."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/unwatched_wing.py",
+          "lines": "196-259",
+          "claim": "The generator applies the exact difficulty parameters, then uses seeded randomness and a spatial transform to place the four target plinths, one decoy, and one action-triggered probe handoff; these are static contract inputs, not a timed process."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/unwatched_wing.py",
+          "lines": "324-385",
+          "claim": "The generated rules say the unstable exhibit changes plinth when viewport, probe viewer, and lights release it, and the dock opens in darkness; the rules contain no autonomous clock phase."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/unwatched_wing.js",
+          "lines": "154-223",
+          "claim": "settleObservation computes observation and target jumps, while afterAction calls it and redraws; no no-input callback invokes this state transition."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/unwatched_wing.js",
+          "lines": "225-329",
+          "claim": "Movement, look, lamp, viewer, probe, recall, and breaker handlers all update state synchronously and call afterAction; the only outcome-affecting progression is input-triggered."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/unwatched_wing.js",
+          "lines": "613-624",
+          "claim": "Simplified mode binds labelled step and turn buttons plus LAMP, VIEWER, PROBE, RECALL, and ISOLATOR buttons to the same museum actions."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/unwatched_wing.css",
+          "lines": "148-167",
+          "claim": "The probe feed is shown immediately by the data-viewer attribute; the CSS has no timed animation that changes museum state."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/time_controller.js",
+          "lines": "250-339",
+          "claim": "The shared clock can schedule timers and flush animation-frame callbacks, but it only runs callbacks registered by a mechanic; Unwatched Wing registers none."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/unwatched_wing.py",
+          "lines": "345-449",
+          "claim": "The grader binds the simplified input-source transcript and replays each event, invoking _settle only after nonterminal events; it does not advance state by event time."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/unwatched_wing.py",
+          "lines": "478-500",
+          "claim": "Pass/fail depends on the replayed final museum state, equipment, and darkness sample, with no timing or deadline predicate."
+        },
+        {
+          "path": "weird_captcha_gym/tools/incubator_solvers/unwatched_wing.py",
+          "lines": "254-406",
+          "claim": "The solver's route is a sequence of explicit movement, observation, equipment, probe, and final-darkness actions; its waits are Playwright synchronization, not an autonomous game phase."
+        },
+        {
+          "path": "weird_captcha_gym/environments/unwatched_wing_env/tasks/unwatched_wing_seed_0001/verifier.py",
+          "lines": "21-34",
+          "claim": "The task verifier loads the independent Unwatched Wing grader and grades the exported result replay."
+        }
+      ],
+      "uncertainties": []
+    },
+    {
+      "case_index": 485,
+      "public_environment_name": "The Unwatched Wing",
+      "environment_id": "unwatched_wing_env",
+      "difficulty": 3,
+      "interaction_mode": "full",
+      "label": "no",
+      "controls_available": [
+        "W/A/S/D keydown: walk one quantized move step",
+        "viewport drag: rotate the first-person view",
+        "viewport click: deploy the probe at the aimed plinth",
+        "F key: toggle the hand lamp",
+        "V key: toggle the live probe viewer",
+        "R key: recall the deployed probe",
+        "E key: toggle the nearby isolator",
+        "ABORT / FRESH WING button: abandon the attempt and request a fresh challenge"
+      ],
+      "autonomous_processes": [
+        "None in the game mechanic: while no new input is delivered, pose, target_cursor, equipment, wall lights, and dock occupancy do not change.",
+        "The shared live/paused clock and rendering loop are infrastructure only; this mechanic registers no timer, interval, requestAnimationFrame state update, physics loop, or CSS animation. The configured observation window is 0 ms with one frame."
+      ],
+      "grouped_control_modes": [
+        "movement: full-mode WASD changes pose and then synchronously settles observation",
+        "view rotation: full-mode viewport drag changes angle and then synchronously settles observation",
+        "observation/equipment: full-mode viewport probe click and F/V/R/E actions change observation, equipment, or light state and then synchronously settle observation",
+        "terminal/admin: dock auto-submit and ABORT / FRESH WING are terminal controls; they are not an autonomous task-state process"
+      ],
+      "delta_ms": null,
+      "window_ms": null,
+      "clause_i": {
+        "holds": false,
+        "reason": "For this full zigzag configuration, when C_Delta is nonempty, an observation-free q can choose wait/no-op for every I_t: because the museum does not evolve without input, success remains possible after the delay and the no-op remains delayed-optimal. Seed-dependent five target plinths, one decoy, one action-triggered probe handoff, and one action-triggered wall-light state can make a screenshot useful for choosing an efficient next action, but it does not force the next action to depend on the current observation."
+      },
+      "clause_ii": {
+        "holds": true,
+        "reason": "A bounded current screenshot is sufficient for ordinary screenshot-only control: it shows the first-person scene, dossier, plinths, probe feed, and visible equipment controls, and the configured window is the one endpoint frame at 0 ms. In the bare existential clause, a wait/no-op policy also supplies g. No recent window predicts a future autonomous state change."
+      },
+      "clause_iii": {
+        "holds": false,
+        "reason": "For every Delta > 0 and every legitimate grouped mode, no-input state is unchanged: the mechanic has no timer, interval, animation-frame, physics, or CSS state-update path, and settleObservation is called only synchronously after an action. Thus H_t^tau equals H_t and neither Q(H_t^tau,a) nor the advantage over no-op strictly decreases. The exhibit jumps and handoff rejections happen at the action boundary, not during the delay."
+      },
+      "common_visible_process": "No common visible autonomous process exists. The visible target/plinth, probe, lamp, viewer, and isolator state can change immediately after a delivered input through afterAction -> settleObservation, but remains fixed during a no-action interval; the visible UI therefore provides no temporal evidence that predicts a degrading opportunity.",
+      "pre_run": {
+        "threshold": 0.5,
+        "at_least_half": null,
+        "rate": null,
+        "basis": "not_applicable",
+        "reason": "No autonomous outcome phase exists in this configuration: all museum progress and the final darkness transition are caused by explicit input events. A pre-run fraction is therefore not applicable and no percentage is asserted; this cannot change the label because clauses (i) and (iii) fail.",
+        "seed_probe": null
+      },
+      "files_read_completely": [
+        "AGENTS.md",
+        "weird_captcha_gym/docs/controllability/real-time.md",
+        "weird_captcha_gym/environments/unwatched_wing_env/controls.json",
+        "weird_captcha_gym/environments/unwatched_wing_env/env.json",
+        "weird_captcha_gym/environments/unwatched_wing_env/tasks/unwatched_wing_seed_0001/task.json",
+        "weird_captcha_gym/environments/unwatched_wing_env/tasks/unwatched_wing_seed_0001/setup_task.sh",
+        "weird_captcha_gym/environments/unwatched_wing_env/tasks/unwatched_wing_seed_0001/export_result.sh",
+        "weird_captcha_gym/environments/unwatched_wing_env/tasks/unwatched_wing_seed_0001/verifier.py",
+        "weird_captcha_gym/shared_scripts/incubator_generators/unwatched_wing.py",
+        "weird_captcha_gym/shared_runtime/app/mechanics/unwatched_wing.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/unwatched_wing.css",
+        "weird_captcha_gym/shared_runtime/server/incubator_graders/unwatched_wing.py",
+        "weird_captcha_gym/tools/incubator_solvers/unwatched_wing.py",
+        "weird_captcha_gym/shared_runtime/app/time_controller.js",
+        "weird_captcha_gym/shared_runtime/verifier_helpers.py"
+      ],
+      "source_evidence": [
+        {
+          "path": "weird_captcha_gym/environments/unwatched_wing_env/controls.json",
+          "lines": "42-55",
+          "claim": "Difficulty 3 is the zigzag profile: 5 target positions, 1 decoy, required probe handoff at step 1, ambient light at step 2, field of view 84 degrees, hand-lamp range 2.0, probe range 6.0, and move step 0.37."
+        },
+        {
+          "path": "weird_captcha_gym/environments/unwatched_wing_env/controls.json",
+          "lines": "91-105",
+          "claim": "Both interaction modes are implemented; the shared profile sets play_time_seconds to 180, observation_window_ms to 0, and frames_per_observation to 1."
+        },
+        {
+          "path": "weird_captcha_gym/environments/unwatched_wing_env/env.json",
+          "lines": "5-15",
+          "claim": "The environment is a first-person observer-effect museum with a frame_window observation and mouse/keyboard action surfaces; runner_options repeat a zero-ms observation window and one frame."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/unwatched_wing.py",
+          "lines": "196-259",
+          "claim": "The generator applies the exact difficulty parameters, then uses seeded randomness and a spatial transform to place the five target plinths, one decoy, one action-triggered probe handoff, and one action-triggered wall-light state; these are static contract inputs, not a timed process."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/unwatched_wing.py",
+          "lines": "324-385",
+          "claim": "The generated rules say the unstable exhibit changes plinth when viewport, probe viewer, and lights release it, and the dock opens in darkness; the rules contain no autonomous clock phase."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/unwatched_wing.js",
+          "lines": "154-223",
+          "claim": "settleObservation computes observation and target jumps, while afterAction calls it and redraws; no no-input callback invokes this state transition."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/unwatched_wing.js",
+          "lines": "225-329",
+          "claim": "Movement, look, lamp, viewer, probe, recall, and breaker handlers all update state synchronously and call afterAction; the only outcome-affecting progression is input-triggered."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/unwatched_wing.js",
+          "lines": "571-611",
+          "claim": "Full mode binds WASD to movement, viewport drag to look, viewport click to deploy the probe, and F/V/R/E to lamp/viewer/recall/isolator actions."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/unwatched_wing.css",
+          "lines": "148-167",
+          "claim": "The probe feed is shown immediately by the data-viewer attribute; the CSS has no timed animation that changes museum state."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/time_controller.js",
+          "lines": "250-339",
+          "claim": "The shared clock can schedule timers and flush animation-frame callbacks, but it only runs callbacks registered by a mechanic; Unwatched Wing registers none."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/unwatched_wing.py",
+          "lines": "345-449",
+          "claim": "The grader binds the full input-source transcript and replays each event, invoking _settle only after nonterminal events; it does not advance state by event time."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/unwatched_wing.py",
+          "lines": "478-500",
+          "claim": "Pass/fail depends on the replayed final museum state, equipment, and darkness sample, with no timing or deadline predicate."
+        },
+        {
+          "path": "weird_captcha_gym/tools/incubator_solvers/unwatched_wing.py",
+          "lines": "254-406",
+          "claim": "The solver's route is a sequence of explicit movement, observation, equipment, probe, and final-darkness actions; its waits are Playwright synchronization, not an autonomous game phase."
+        },
+        {
+          "path": "weird_captcha_gym/environments/unwatched_wing_env/tasks/unwatched_wing_seed_0001/verifier.py",
+          "lines": "21-34",
+          "claim": "The task verifier loads the independent Unwatched Wing grader and grades the exported result replay."
+        }
+      ],
+      "uncertainties": []
+    },
+    {
+      "case_index": 486,
+      "public_environment_name": "The Unwatched Wing",
+      "environment_id": "unwatched_wing_env",
+      "difficulty": 3,
+      "interaction_mode": "simplified",
+      "label": "no",
+      "controls_available": [
+        "labelled forward/back/left/right step buttons: walk one quantized move step",
+        "left/right turn buttons: rotate the first-person view by 15000 mdeg",
+        "LAMP button: toggle the hand lamp",
+        "VIEWER button: toggle the live probe viewer",
+        "PROBE button: deploy the probe at the aimed plinth",
+        "RECALL button: recall the deployed probe",
+        "ISOLATOR button: toggle the nearby isolator",
+        "ABORT / FRESH WING button: abandon the attempt and request a fresh challenge"
+      ],
+      "autonomous_processes": [
+        "None in the game mechanic: while no new input is delivered, pose, target_cursor, equipment, wall lights, and dock occupancy do not change.",
+        "The shared live/paused clock and rendering loop are infrastructure only; this mechanic registers no timer, interval, requestAnimationFrame state update, physics loop, or CSS animation. The configured observation window is 0 ms with one frame."
+      ],
+      "grouped_control_modes": [
+        "movement: simplified step buttons change pose and then synchronously settle observation",
+        "view rotation: simplified turn buttons change angle and then synchronously settle observation",
+        "observation/equipment: simplified PROBE, LAMP, VIEWER, RECALL, and ISOLATOR buttons change observation, equipment, or light state and then synchronously settle observation",
+        "terminal/admin: dock auto-submit and ABORT / FRESH WING are terminal controls; they are not an autonomous task-state process"
+      ],
+      "delta_ms": null,
+      "window_ms": null,
+      "clause_i": {
+        "holds": false,
+        "reason": "For this simplified zigzag configuration, when C_Delta is nonempty, an observation-free q can choose wait/no-op for every I_t: because the museum does not evolve without input, success remains possible after the delay and the no-op remains delayed-optimal. Seed-dependent five target plinths, one decoy, one action-triggered probe handoff, and one action-triggered wall-light state can make a screenshot useful for choosing an efficient next action, but it does not force the next action to depend on the current observation."
+      },
+      "clause_ii": {
+        "holds": true,
+        "reason": "A bounded current screenshot is sufficient for ordinary screenshot-only control: it shows the first-person scene, dossier, plinths, probe feed, and visible equipment controls, and the configured window is the one endpoint frame at 0 ms. In the bare existential clause, a wait/no-op policy also supplies g. No recent window predicts a future autonomous state change."
+      },
+      "clause_iii": {
+        "holds": false,
+        "reason": "For every Delta > 0 and every legitimate grouped mode, no-input state is unchanged: the mechanic has no timer, interval, animation-frame, physics, or CSS state-update path, and settleObservation is called only synchronously after an action. Thus H_t^tau equals H_t and neither Q(H_t^tau,a) nor the advantage over no-op strictly decreases. The exhibit jumps and handoff rejections happen at the action boundary, not during the delay."
+      },
+      "common_visible_process": "No common visible autonomous process exists. The visible target/plinth, probe, lamp, viewer, and isolator state can change immediately after a delivered input through afterAction -> settleObservation, but remains fixed during a no-action interval; the visible UI therefore provides no temporal evidence that predicts a degrading opportunity.",
+      "pre_run": {
+        "threshold": 0.5,
+        "at_least_half": null,
+        "rate": null,
+        "basis": "not_applicable",
+        "reason": "No autonomous outcome phase exists in this configuration: all museum progress and the final darkness transition are caused by explicit input events. A pre-run fraction is therefore not applicable and no percentage is asserted; this cannot change the label because clauses (i) and (iii) fail.",
+        "seed_probe": null
+      },
+      "files_read_completely": [
+        "AGENTS.md",
+        "weird_captcha_gym/docs/controllability/real-time.md",
+        "weird_captcha_gym/environments/unwatched_wing_env/controls.json",
+        "weird_captcha_gym/environments/unwatched_wing_env/env.json",
+        "weird_captcha_gym/environments/unwatched_wing_env/tasks/unwatched_wing_seed_0001/task.json",
+        "weird_captcha_gym/environments/unwatched_wing_env/tasks/unwatched_wing_seed_0001/setup_task.sh",
+        "weird_captcha_gym/environments/unwatched_wing_env/tasks/unwatched_wing_seed_0001/export_result.sh",
+        "weird_captcha_gym/environments/unwatched_wing_env/tasks/unwatched_wing_seed_0001/verifier.py",
+        "weird_captcha_gym/shared_scripts/incubator_generators/unwatched_wing.py",
+        "weird_captcha_gym/shared_runtime/app/mechanics/unwatched_wing.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/unwatched_wing.css",
+        "weird_captcha_gym/shared_runtime/server/incubator_graders/unwatched_wing.py",
+        "weird_captcha_gym/tools/incubator_solvers/unwatched_wing.py",
+        "weird_captcha_gym/shared_runtime/app/time_controller.js",
+        "weird_captcha_gym/shared_runtime/verifier_helpers.py"
+      ],
+      "source_evidence": [
+        {
+          "path": "weird_captcha_gym/environments/unwatched_wing_env/controls.json",
+          "lines": "42-55",
+          "claim": "Difficulty 3 is the zigzag profile: 5 target positions, 1 decoy, required probe handoff at step 1, ambient light at step 2, field of view 84 degrees, hand-lamp range 2.0, probe range 6.0, and move step 0.37."
+        },
+        {
+          "path": "weird_captcha_gym/environments/unwatched_wing_env/controls.json",
+          "lines": "91-105",
+          "claim": "Both interaction modes are implemented; the shared profile sets play_time_seconds to 180, observation_window_ms to 0, and frames_per_observation to 1."
+        },
+        {
+          "path": "weird_captcha_gym/environments/unwatched_wing_env/env.json",
+          "lines": "5-15",
+          "claim": "The environment is a first-person observer-effect museum with a frame_window observation and mouse/keyboard action surfaces; runner_options repeat a zero-ms observation window and one frame."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/unwatched_wing.py",
+          "lines": "196-259",
+          "claim": "The generator applies the exact difficulty parameters, then uses seeded randomness and a spatial transform to place the five target plinths, one decoy, one action-triggered probe handoff, and one action-triggered wall-light state; these are static contract inputs, not a timed process."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/unwatched_wing.py",
+          "lines": "324-385",
+          "claim": "The generated rules say the unstable exhibit changes plinth when viewport, probe viewer, and lights release it, and the dock opens in darkness; the rules contain no autonomous clock phase."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/unwatched_wing.js",
+          "lines": "154-223",
+          "claim": "settleObservation computes observation and target jumps, while afterAction calls it and redraws; no no-input callback invokes this state transition."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/unwatched_wing.js",
+          "lines": "225-329",
+          "claim": "Movement, look, lamp, viewer, probe, recall, and breaker handlers all update state synchronously and call afterAction; the only outcome-affecting progression is input-triggered."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/unwatched_wing.js",
+          "lines": "613-624",
+          "claim": "Simplified mode binds labelled step and turn buttons plus LAMP, VIEWER, PROBE, RECALL, and ISOLATOR buttons to the same museum actions."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/unwatched_wing.css",
+          "lines": "148-167",
+          "claim": "The probe feed is shown immediately by the data-viewer attribute; the CSS has no timed animation that changes museum state."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/time_controller.js",
+          "lines": "250-339",
+          "claim": "The shared clock can schedule timers and flush animation-frame callbacks, but it only runs callbacks registered by a mechanic; Unwatched Wing registers none."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/unwatched_wing.py",
+          "lines": "345-449",
+          "claim": "The grader binds the simplified input-source transcript and replays each event, invoking _settle only after nonterminal events; it does not advance state by event time."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/unwatched_wing.py",
+          "lines": "478-500",
+          "claim": "Pass/fail depends on the replayed final museum state, equipment, and darkness sample, with no timing or deadline predicate."
+        },
+        {
+          "path": "weird_captcha_gym/tools/incubator_solvers/unwatched_wing.py",
+          "lines": "254-406",
+          "claim": "The solver's route is a sequence of explicit movement, observation, equipment, probe, and final-darkness actions; its waits are Playwright synchronization, not an autonomous game phase."
+        },
+        {
+          "path": "weird_captcha_gym/environments/unwatched_wing_env/tasks/unwatched_wing_seed_0001/verifier.py",
+          "lines": "21-34",
+          "claim": "The task verifier loads the independent Unwatched Wing grader and grades the exported result replay."
+        }
+      ],
+      "uncertainties": []
+    },
+    {
+      "case_index": 487,
+      "public_environment_name": "The Unwatched Wing",
+      "environment_id": "unwatched_wing_env",
+      "difficulty": 4,
+      "interaction_mode": "full",
+      "label": "no",
+      "controls_available": [
+        "W/A/S/D keydown: walk one quantized move step",
+        "viewport drag: rotate the first-person view",
+        "viewport click: deploy the probe at the aimed plinth",
+        "F key: toggle the hand lamp",
+        "V key: toggle the live probe viewer",
+        "R key: recall the deployed probe",
+        "E key: toggle the nearby isolator",
+        "ABORT / FRESH WING button: abandon the attempt and request a fresh challenge"
+      ],
+      "autonomous_processes": [
+        "None in the game mechanic: while no new input is delivered, pose, target_cursor, equipment, wall lights, and dock occupancy do not change.",
+        "The shared live/paused clock and rendering loop are infrastructure only; this mechanic registers no timer, interval, requestAnimationFrame state update, physics loop, or CSS animation. The configured observation window is 0 ms with one frame."
+      ],
+      "grouped_control_modes": [
+        "movement: full-mode WASD changes pose and then synchronously settles observation",
+        "view rotation: full-mode viewport drag changes angle and then synchronously settles observation",
+        "observation/equipment: full-mode viewport probe click and F/V/R/E actions change observation, equipment, or light state and then synchronously settle observation",
+        "terminal/admin: dock auto-submit and ABORT / FRESH WING are terminal controls; they are not an autonomous task-state process"
+      ],
+      "delta_ms": null,
+      "window_ms": null,
+      "clause_i": {
+        "holds": false,
+        "reason": "For this full current configuration, when C_Delta is nonempty, an observation-free q can choose wait/no-op for every I_t: because the museum does not evolve without input, success remains possible after the delay and the no-op remains delayed-optimal. Seed-dependent six target plinths, two decoys, two action-triggered probe handoffs, and two action-triggered wall-light states can make a screenshot useful for choosing an efficient next action, but it does not force the next action to depend on the current observation."
+      },
+      "clause_ii": {
+        "holds": true,
+        "reason": "A bounded current screenshot is sufficient for ordinary screenshot-only control: it shows the first-person scene, dossier, plinths, probe feed, and visible equipment controls, and the configured window is the one endpoint frame at 0 ms. In the bare existential clause, a wait/no-op policy also supplies g. No recent window predicts a future autonomous state change."
+      },
+      "clause_iii": {
+        "holds": false,
+        "reason": "For every Delta > 0 and every legitimate grouped mode, no-input state is unchanged: the mechanic has no timer, interval, animation-frame, physics, or CSS state-update path, and settleObservation is called only synchronously after an action. Thus H_t^tau equals H_t and neither Q(H_t^tau,a) nor the advantage over no-op strictly decreases. The exhibit jumps and handoff rejections happen at the action boundary, not during the delay."
+      },
+      "common_visible_process": "No common visible autonomous process exists. The visible target/plinth, probe, lamp, viewer, and isolator state can change immediately after a delivered input through afterAction -> settleObservation, but remains fixed during a no-action interval; the visible UI therefore provides no temporal evidence that predicts a degrading opportunity.",
+      "pre_run": {
+        "threshold": 0.5,
+        "at_least_half": null,
+        "rate": null,
+        "basis": "not_applicable",
+        "reason": "No autonomous outcome phase exists in this configuration: all museum progress and the final darkness transition are caused by explicit input events. A pre-run fraction is therefore not applicable and no percentage is asserted; this cannot change the label because clauses (i) and (iii) fail.",
+        "seed_probe": null
+      },
+      "files_read_completely": [
+        "AGENTS.md",
+        "weird_captcha_gym/docs/controllability/real-time.md",
+        "weird_captcha_gym/environments/unwatched_wing_env/controls.json",
+        "weird_captcha_gym/environments/unwatched_wing_env/env.json",
+        "weird_captcha_gym/environments/unwatched_wing_env/tasks/unwatched_wing_seed_0001/task.json",
+        "weird_captcha_gym/environments/unwatched_wing_env/tasks/unwatched_wing_seed_0001/setup_task.sh",
+        "weird_captcha_gym/environments/unwatched_wing_env/tasks/unwatched_wing_seed_0001/export_result.sh",
+        "weird_captcha_gym/environments/unwatched_wing_env/tasks/unwatched_wing_seed_0001/verifier.py",
+        "weird_captcha_gym/shared_scripts/incubator_generators/unwatched_wing.py",
+        "weird_captcha_gym/shared_runtime/app/mechanics/unwatched_wing.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/unwatched_wing.css",
+        "weird_captcha_gym/shared_runtime/server/incubator_graders/unwatched_wing.py",
+        "weird_captcha_gym/tools/incubator_solvers/unwatched_wing.py",
+        "weird_captcha_gym/shared_runtime/app/time_controller.js",
+        "weird_captcha_gym/shared_runtime/verifier_helpers.py"
+      ],
+      "source_evidence": [
+        {
+          "path": "weird_captcha_gym/environments/unwatched_wing_env/controls.json",
+          "lines": "58-71",
+          "claim": "Difficulty 4 is the current profile: 6 target positions, 2 decoys, required probe handoffs at steps 1 and 3, ambient lights at steps 2 and 5, field of view 78 degrees, hand-lamp range 1.7, probe range 5.5, and move step 0.34."
+        },
+        {
+          "path": "weird_captcha_gym/environments/unwatched_wing_env/controls.json",
+          "lines": "91-105",
+          "claim": "Both interaction modes are implemented; the shared profile sets play_time_seconds to 180, observation_window_ms to 0, and frames_per_observation to 1."
+        },
+        {
+          "path": "weird_captcha_gym/environments/unwatched_wing_env/env.json",
+          "lines": "5-15",
+          "claim": "The environment is a first-person observer-effect museum with a frame_window observation and mouse/keyboard action surfaces; runner_options repeat a zero-ms observation window and one frame."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/unwatched_wing.py",
+          "lines": "196-259",
+          "claim": "The generator applies the exact difficulty parameters, then uses seeded randomness and a spatial transform to place the six target plinths, two decoys, two action-triggered probe handoffs, and two action-triggered wall-light states; these are static contract inputs, not a timed process."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/unwatched_wing.py",
+          "lines": "324-385",
+          "claim": "The generated rules say the unstable exhibit changes plinth when viewport, probe viewer, and lights release it, and the dock opens in darkness; the rules contain no autonomous clock phase."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/unwatched_wing.js",
+          "lines": "154-223",
+          "claim": "settleObservation computes observation and target jumps, while afterAction calls it and redraws; no no-input callback invokes this state transition."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/unwatched_wing.js",
+          "lines": "225-329",
+          "claim": "Movement, look, lamp, viewer, probe, recall, and breaker handlers all update state synchronously and call afterAction; the only outcome-affecting progression is input-triggered."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/unwatched_wing.js",
+          "lines": "571-611",
+          "claim": "Full mode binds WASD to movement, viewport drag to look, viewport click to deploy the probe, and F/V/R/E to lamp/viewer/recall/isolator actions."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/unwatched_wing.css",
+          "lines": "148-167",
+          "claim": "The probe feed is shown immediately by the data-viewer attribute; the CSS has no timed animation that changes museum state."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/time_controller.js",
+          "lines": "250-339",
+          "claim": "The shared clock can schedule timers and flush animation-frame callbacks, but it only runs callbacks registered by a mechanic; Unwatched Wing registers none."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/unwatched_wing.py",
+          "lines": "345-449",
+          "claim": "The grader binds the full input-source transcript and replays each event, invoking _settle only after nonterminal events; it does not advance state by event time."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/unwatched_wing.py",
+          "lines": "478-500",
+          "claim": "Pass/fail depends on the replayed final museum state, equipment, and darkness sample, with no timing or deadline predicate."
+        },
+        {
+          "path": "weird_captcha_gym/tools/incubator_solvers/unwatched_wing.py",
+          "lines": "254-406",
+          "claim": "The solver's route is a sequence of explicit movement, observation, equipment, probe, and final-darkness actions; its waits are Playwright synchronization, not an autonomous game phase."
+        },
+        {
+          "path": "weird_captcha_gym/environments/unwatched_wing_env/tasks/unwatched_wing_seed_0001/verifier.py",
+          "lines": "21-34",
+          "claim": "The task verifier loads the independent Unwatched Wing grader and grades the exported result replay."
+        }
+      ],
+      "uncertainties": []
+    },
+    {
+      "case_index": 488,
+      "public_environment_name": "The Unwatched Wing",
+      "environment_id": "unwatched_wing_env",
+      "difficulty": 4,
+      "interaction_mode": "simplified",
+      "label": "no",
+      "controls_available": [
+        "labelled forward/back/left/right step buttons: walk one quantized move step",
+        "left/right turn buttons: rotate the first-person view by 15000 mdeg",
+        "LAMP button: toggle the hand lamp",
+        "VIEWER button: toggle the live probe viewer",
+        "PROBE button: deploy the probe at the aimed plinth",
+        "RECALL button: recall the deployed probe",
+        "ISOLATOR button: toggle the nearby isolator",
+        "ABORT / FRESH WING button: abandon the attempt and request a fresh challenge"
+      ],
+      "autonomous_processes": [
+        "None in the game mechanic: while no new input is delivered, pose, target_cursor, equipment, wall lights, and dock occupancy do not change.",
+        "The shared live/paused clock and rendering loop are infrastructure only; this mechanic registers no timer, interval, requestAnimationFrame state update, physics loop, or CSS animation. The configured observation window is 0 ms with one frame."
+      ],
+      "grouped_control_modes": [
+        "movement: simplified step buttons change pose and then synchronously settle observation",
+        "view rotation: simplified turn buttons change angle and then synchronously settle observation",
+        "observation/equipment: simplified PROBE, LAMP, VIEWER, RECALL, and ISOLATOR buttons change observation, equipment, or light state and then synchronously settle observation",
+        "terminal/admin: dock auto-submit and ABORT / FRESH WING are terminal controls; they are not an autonomous task-state process"
+      ],
+      "delta_ms": null,
+      "window_ms": null,
+      "clause_i": {
+        "holds": false,
+        "reason": "For this simplified current configuration, when C_Delta is nonempty, an observation-free q can choose wait/no-op for every I_t: because the museum does not evolve without input, success remains possible after the delay and the no-op remains delayed-optimal. Seed-dependent six target plinths, two decoys, two action-triggered probe handoffs, and two action-triggered wall-light states can make a screenshot useful for choosing an efficient next action, but it does not force the next action to depend on the current observation."
+      },
+      "clause_ii": {
+        "holds": true,
+        "reason": "A bounded current screenshot is sufficient for ordinary screenshot-only control: it shows the first-person scene, dossier, plinths, probe feed, and visible equipment controls, and the configured window is the one endpoint frame at 0 ms. In the bare existential clause, a wait/no-op policy also supplies g. No recent window predicts a future autonomous state change."
+      },
+      "clause_iii": {
+        "holds": false,
+        "reason": "For every Delta > 0 and every legitimate grouped mode, no-input state is unchanged: the mechanic has no timer, interval, animation-frame, physics, or CSS state-update path, and settleObservation is called only synchronously after an action. Thus H_t^tau equals H_t and neither Q(H_t^tau,a) nor the advantage over no-op strictly decreases. The exhibit jumps and handoff rejections happen at the action boundary, not during the delay."
+      },
+      "common_visible_process": "No common visible autonomous process exists. The visible target/plinth, probe, lamp, viewer, and isolator state can change immediately after a delivered input through afterAction -> settleObservation, but remains fixed during a no-action interval; the visible UI therefore provides no temporal evidence that predicts a degrading opportunity.",
+      "pre_run": {
+        "threshold": 0.5,
+        "at_least_half": null,
+        "rate": null,
+        "basis": "not_applicable",
+        "reason": "No autonomous outcome phase exists in this configuration: all museum progress and the final darkness transition are caused by explicit input events. A pre-run fraction is therefore not applicable and no percentage is asserted; this cannot change the label because clauses (i) and (iii) fail.",
+        "seed_probe": null
+      },
+      "files_read_completely": [
+        "AGENTS.md",
+        "weird_captcha_gym/docs/controllability/real-time.md",
+        "weird_captcha_gym/environments/unwatched_wing_env/controls.json",
+        "weird_captcha_gym/environments/unwatched_wing_env/env.json",
+        "weird_captcha_gym/environments/unwatched_wing_env/tasks/unwatched_wing_seed_0001/task.json",
+        "weird_captcha_gym/environments/unwatched_wing_env/tasks/unwatched_wing_seed_0001/setup_task.sh",
+        "weird_captcha_gym/environments/unwatched_wing_env/tasks/unwatched_wing_seed_0001/export_result.sh",
+        "weird_captcha_gym/environments/unwatched_wing_env/tasks/unwatched_wing_seed_0001/verifier.py",
+        "weird_captcha_gym/shared_scripts/incubator_generators/unwatched_wing.py",
+        "weird_captcha_gym/shared_runtime/app/mechanics/unwatched_wing.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/unwatched_wing.css",
+        "weird_captcha_gym/shared_runtime/server/incubator_graders/unwatched_wing.py",
+        "weird_captcha_gym/tools/incubator_solvers/unwatched_wing.py",
+        "weird_captcha_gym/shared_runtime/app/time_controller.js",
+        "weird_captcha_gym/shared_runtime/verifier_helpers.py"
+      ],
+      "source_evidence": [
+        {
+          "path": "weird_captcha_gym/environments/unwatched_wing_env/controls.json",
+          "lines": "58-71",
+          "claim": "Difficulty 4 is the current profile: 6 target positions, 2 decoys, required probe handoffs at steps 1 and 3, ambient lights at steps 2 and 5, field of view 78 degrees, hand-lamp range 1.7, probe range 5.5, and move step 0.34."
+        },
+        {
+          "path": "weird_captcha_gym/environments/unwatched_wing_env/controls.json",
+          "lines": "91-105",
+          "claim": "Both interaction modes are implemented; the shared profile sets play_time_seconds to 180, observation_window_ms to 0, and frames_per_observation to 1."
+        },
+        {
+          "path": "weird_captcha_gym/environments/unwatched_wing_env/env.json",
+          "lines": "5-15",
+          "claim": "The environment is a first-person observer-effect museum with a frame_window observation and mouse/keyboard action surfaces; runner_options repeat a zero-ms observation window and one frame."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/unwatched_wing.py",
+          "lines": "196-259",
+          "claim": "The generator applies the exact difficulty parameters, then uses seeded randomness and a spatial transform to place the six target plinths, two decoys, two action-triggered probe handoffs, and two action-triggered wall-light states; these are static contract inputs, not a timed process."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/unwatched_wing.py",
+          "lines": "324-385",
+          "claim": "The generated rules say the unstable exhibit changes plinth when viewport, probe viewer, and lights release it, and the dock opens in darkness; the rules contain no autonomous clock phase."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/unwatched_wing.js",
+          "lines": "154-223",
+          "claim": "settleObservation computes observation and target jumps, while afterAction calls it and redraws; no no-input callback invokes this state transition."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/unwatched_wing.js",
+          "lines": "225-329",
+          "claim": "Movement, look, lamp, viewer, probe, recall, and breaker handlers all update state synchronously and call afterAction; the only outcome-affecting progression is input-triggered."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/unwatched_wing.js",
+          "lines": "613-624",
+          "claim": "Simplified mode binds labelled step and turn buttons plus LAMP, VIEWER, PROBE, RECALL, and ISOLATOR buttons to the same museum actions."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/unwatched_wing.css",
+          "lines": "148-167",
+          "claim": "The probe feed is shown immediately by the data-viewer attribute; the CSS has no timed animation that changes museum state."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/time_controller.js",
+          "lines": "250-339",
+          "claim": "The shared clock can schedule timers and flush animation-frame callbacks, but it only runs callbacks registered by a mechanic; Unwatched Wing registers none."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/unwatched_wing.py",
+          "lines": "345-449",
+          "claim": "The grader binds the simplified input-source transcript and replays each event, invoking _settle only after nonterminal events; it does not advance state by event time."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/unwatched_wing.py",
+          "lines": "478-500",
+          "claim": "Pass/fail depends on the replayed final museum state, equipment, and darkness sample, with no timing or deadline predicate."
+        },
+        {
+          "path": "weird_captcha_gym/tools/incubator_solvers/unwatched_wing.py",
+          "lines": "254-406",
+          "claim": "The solver's route is a sequence of explicit movement, observation, equipment, probe, and final-darkness actions; its waits are Playwright synchronization, not an autonomous game phase."
+        },
+        {
+          "path": "weird_captcha_gym/environments/unwatched_wing_env/tasks/unwatched_wing_seed_0001/verifier.py",
+          "lines": "21-34",
+          "claim": "The task verifier loads the independent Unwatched Wing grader and grades the exported result replay."
+        }
+      ],
+      "uncertainties": []
+    },
+    {
+      "case_index": 489,
+      "public_environment_name": "The Unwatched Wing",
+      "environment_id": "unwatched_wing_env",
+      "difficulty": 5,
+      "interaction_mode": "full",
+      "label": "no",
+      "controls_available": [
+        "W/A/S/D keydown: walk one quantized move step",
+        "viewport drag: rotate the first-person view",
+        "viewport click: deploy the probe at the aimed plinth",
+        "F key: toggle the hand lamp",
+        "V key: toggle the live probe viewer",
+        "R key: recall the deployed probe",
+        "E key: toggle the nearby isolator",
+        "ABORT / FRESH WING button: abandon the attempt and request a fresh challenge"
+      ],
+      "autonomous_processes": [
+        "None in the game mechanic: while no new input is delivered, pose, target_cursor, equipment, wall lights, and dock occupancy do not change.",
+        "The shared live/paused clock and rendering loop are infrastructure only; this mechanic registers no timer, interval, requestAnimationFrame state update, physics loop, or CSS animation. The configured observation window is 0 ms with one frame."
+      ],
+      "grouped_control_modes": [
+        "movement: full-mode WASD changes pose and then synchronously settles observation",
+        "view rotation: full-mode viewport drag changes angle and then synchronously settles observation",
+        "observation/equipment: full-mode viewport probe click and F/V/R/E actions change observation, equipment, or light state and then synchronously settle observation",
+        "terminal/admin: dock auto-submit and ABORT / FRESH WING are terminal controls; they are not an autonomous task-state process"
+      ],
+      "delta_ms": null,
+      "window_ms": null,
+      "clause_i": {
+        "holds": false,
+        "reason": "For this full labyrinth configuration, when C_Delta is nonempty, an observation-free q can choose wait/no-op for every I_t: because the museum does not evolve without input, success remains possible after the delay and the no-op remains delayed-optimal. Seed-dependent seven target plinths, three decoys, three action-triggered probe handoffs, and three action-triggered wall-light states can make a screenshot useful for choosing an efficient next action, but it does not force the next action to depend on the current observation."
+      },
+      "clause_ii": {
+        "holds": true,
+        "reason": "A bounded current screenshot is sufficient for ordinary screenshot-only control: it shows the first-person scene, dossier, plinths, probe feed, and visible equipment controls, and the configured window is the one endpoint frame at 0 ms. In the bare existential clause, a wait/no-op policy also supplies g. No recent window predicts a future autonomous state change."
+      },
+      "clause_iii": {
+        "holds": false,
+        "reason": "For every Delta > 0 and every legitimate grouped mode, no-input state is unchanged: the mechanic has no timer, interval, animation-frame, physics, or CSS state-update path, and settleObservation is called only synchronously after an action. Thus H_t^tau equals H_t and neither Q(H_t^tau,a) nor the advantage over no-op strictly decreases. The exhibit jumps and handoff rejections happen at the action boundary, not during the delay."
+      },
+      "common_visible_process": "No common visible autonomous process exists. The visible target/plinth, probe, lamp, viewer, and isolator state can change immediately after a delivered input through afterAction -> settleObservation, but remains fixed during a no-action interval; the visible UI therefore provides no temporal evidence that predicts a degrading opportunity.",
+      "pre_run": {
+        "threshold": 0.5,
+        "at_least_half": null,
+        "rate": null,
+        "basis": "not_applicable",
+        "reason": "No autonomous outcome phase exists in this configuration: all museum progress and the final darkness transition are caused by explicit input events. A pre-run fraction is therefore not applicable and no percentage is asserted; this cannot change the label because clauses (i) and (iii) fail.",
+        "seed_probe": null
+      },
+      "files_read_completely": [
+        "AGENTS.md",
+        "weird_captcha_gym/docs/controllability/real-time.md",
+        "weird_captcha_gym/environments/unwatched_wing_env/controls.json",
+        "weird_captcha_gym/environments/unwatched_wing_env/env.json",
+        "weird_captcha_gym/environments/unwatched_wing_env/tasks/unwatched_wing_seed_0001/task.json",
+        "weird_captcha_gym/environments/unwatched_wing_env/tasks/unwatched_wing_seed_0001/setup_task.sh",
+        "weird_captcha_gym/environments/unwatched_wing_env/tasks/unwatched_wing_seed_0001/export_result.sh",
+        "weird_captcha_gym/environments/unwatched_wing_env/tasks/unwatched_wing_seed_0001/verifier.py",
+        "weird_captcha_gym/shared_scripts/incubator_generators/unwatched_wing.py",
+        "weird_captcha_gym/shared_runtime/app/mechanics/unwatched_wing.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/unwatched_wing.css",
+        "weird_captcha_gym/shared_runtime/server/incubator_graders/unwatched_wing.py",
+        "weird_captcha_gym/tools/incubator_solvers/unwatched_wing.py",
+        "weird_captcha_gym/shared_runtime/app/time_controller.js",
+        "weird_captcha_gym/shared_runtime/verifier_helpers.py"
+      ],
+      "source_evidence": [
+        {
+          "path": "weird_captcha_gym/environments/unwatched_wing_env/controls.json",
+          "lines": "74-87",
+          "claim": "Difficulty 5 is the labyrinth profile: 7 target positions, 3 decoys, required probe handoffs at steps 1, 3, and 4, ambient lights at steps 2, 4, and 6, field of view 68 degrees, hand-lamp range 1.45, probe range 4.6, and move step 0.30."
+        },
+        {
+          "path": "weird_captcha_gym/environments/unwatched_wing_env/controls.json",
+          "lines": "91-105",
+          "claim": "Both interaction modes are implemented; the shared profile sets play_time_seconds to 180, observation_window_ms to 0, and frames_per_observation to 1."
+        },
+        {
+          "path": "weird_captcha_gym/environments/unwatched_wing_env/env.json",
+          "lines": "5-15",
+          "claim": "The environment is a first-person observer-effect museum with a frame_window observation and mouse/keyboard action surfaces; runner_options repeat a zero-ms observation window and one frame."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/unwatched_wing.py",
+          "lines": "196-259",
+          "claim": "The generator applies the exact difficulty parameters, then uses seeded randomness and a spatial transform to place the seven target plinths, three decoys, three action-triggered probe handoffs, and three action-triggered wall-light states; these are static contract inputs, not a timed process."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/unwatched_wing.py",
+          "lines": "324-385",
+          "claim": "The generated rules say the unstable exhibit changes plinth when viewport, probe viewer, and lights release it, and the dock opens in darkness; the rules contain no autonomous clock phase."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/unwatched_wing.js",
+          "lines": "154-223",
+          "claim": "settleObservation computes observation and target jumps, while afterAction calls it and redraws; no no-input callback invokes this state transition."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/unwatched_wing.js",
+          "lines": "225-329",
+          "claim": "Movement, look, lamp, viewer, probe, recall, and breaker handlers all update state synchronously and call afterAction; the only outcome-affecting progression is input-triggered."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/unwatched_wing.js",
+          "lines": "571-611",
+          "claim": "Full mode binds WASD to movement, viewport drag to look, viewport click to deploy the probe, and F/V/R/E to lamp/viewer/recall/isolator actions."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/unwatched_wing.css",
+          "lines": "148-167",
+          "claim": "The probe feed is shown immediately by the data-viewer attribute; the CSS has no timed animation that changes museum state."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/time_controller.js",
+          "lines": "250-339",
+          "claim": "The shared clock can schedule timers and flush animation-frame callbacks, but it only runs callbacks registered by a mechanic; Unwatched Wing registers none."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/unwatched_wing.py",
+          "lines": "345-449",
+          "claim": "The grader binds the full input-source transcript and replays each event, invoking _settle only after nonterminal events; it does not advance state by event time."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/unwatched_wing.py",
+          "lines": "478-500",
+          "claim": "Pass/fail depends on the replayed final museum state, equipment, and darkness sample, with no timing or deadline predicate."
+        },
+        {
+          "path": "weird_captcha_gym/tools/incubator_solvers/unwatched_wing.py",
+          "lines": "254-406",
+          "claim": "The solver's route is a sequence of explicit movement, observation, equipment, probe, and final-darkness actions; its waits are Playwright synchronization, not an autonomous game phase."
+        },
+        {
+          "path": "weird_captcha_gym/environments/unwatched_wing_env/tasks/unwatched_wing_seed_0001/verifier.py",
+          "lines": "21-34",
+          "claim": "The task verifier loads the independent Unwatched Wing grader and grades the exported result replay."
+        }
+      ],
+      "uncertainties": []
+    },
+    {
+      "case_index": 490,
+      "public_environment_name": "The Unwatched Wing",
+      "environment_id": "unwatched_wing_env",
+      "difficulty": 5,
+      "interaction_mode": "simplified",
+      "label": "no",
+      "controls_available": [
+        "labelled forward/back/left/right step buttons: walk one quantized move step",
+        "left/right turn buttons: rotate the first-person view by 15000 mdeg",
+        "LAMP button: toggle the hand lamp",
+        "VIEWER button: toggle the live probe viewer",
+        "PROBE button: deploy the probe at the aimed plinth",
+        "RECALL button: recall the deployed probe",
+        "ISOLATOR button: toggle the nearby isolator",
+        "ABORT / FRESH WING button: abandon the attempt and request a fresh challenge"
+      ],
+      "autonomous_processes": [
+        "None in the game mechanic: while no new input is delivered, pose, target_cursor, equipment, wall lights, and dock occupancy do not change.",
+        "The shared live/paused clock and rendering loop are infrastructure only; this mechanic registers no timer, interval, requestAnimationFrame state update, physics loop, or CSS animation. The configured observation window is 0 ms with one frame."
+      ],
+      "grouped_control_modes": [
+        "movement: simplified step buttons change pose and then synchronously settle observation",
+        "view rotation: simplified turn buttons change angle and then synchronously settle observation",
+        "observation/equipment: simplified PROBE, LAMP, VIEWER, RECALL, and ISOLATOR buttons change observation, equipment, or light state and then synchronously settle observation",
+        "terminal/admin: dock auto-submit and ABORT / FRESH WING are terminal controls; they are not an autonomous task-state process"
+      ],
+      "delta_ms": null,
+      "window_ms": null,
+      "clause_i": {
+        "holds": false,
+        "reason": "For this simplified labyrinth configuration, when C_Delta is nonempty, an observation-free q can choose wait/no-op for every I_t: because the museum does not evolve without input, success remains possible after the delay and the no-op remains delayed-optimal. Seed-dependent seven target plinths, three decoys, three action-triggered probe handoffs, and three action-triggered wall-light states can make a screenshot useful for choosing an efficient next action, but it does not force the next action to depend on the current observation."
+      },
+      "clause_ii": {
+        "holds": true,
+        "reason": "A bounded current screenshot is sufficient for ordinary screenshot-only control: it shows the first-person scene, dossier, plinths, probe feed, and visible equipment controls, and the configured window is the one endpoint frame at 0 ms. In the bare existential clause, a wait/no-op policy also supplies g. No recent window predicts a future autonomous state change."
+      },
+      "clause_iii": {
+        "holds": false,
+        "reason": "For every Delta > 0 and every legitimate grouped mode, no-input state is unchanged: the mechanic has no timer, interval, animation-frame, physics, or CSS state-update path, and settleObservation is called only synchronously after an action. Thus H_t^tau equals H_t and neither Q(H_t^tau,a) nor the advantage over no-op strictly decreases. The exhibit jumps and handoff rejections happen at the action boundary, not during the delay."
+      },
+      "common_visible_process": "No common visible autonomous process exists. The visible target/plinth, probe, lamp, viewer, and isolator state can change immediately after a delivered input through afterAction -> settleObservation, but remains fixed during a no-action interval; the visible UI therefore provides no temporal evidence that predicts a degrading opportunity.",
+      "pre_run": {
+        "threshold": 0.5,
+        "at_least_half": null,
+        "rate": null,
+        "basis": "not_applicable",
+        "reason": "No autonomous outcome phase exists in this configuration: all museum progress and the final darkness transition are caused by explicit input events. A pre-run fraction is therefore not applicable and no percentage is asserted; this cannot change the label because clauses (i) and (iii) fail.",
+        "seed_probe": null
+      },
+      "files_read_completely": [
+        "AGENTS.md",
+        "weird_captcha_gym/docs/controllability/real-time.md",
+        "weird_captcha_gym/environments/unwatched_wing_env/controls.json",
+        "weird_captcha_gym/environments/unwatched_wing_env/env.json",
+        "weird_captcha_gym/environments/unwatched_wing_env/tasks/unwatched_wing_seed_0001/task.json",
+        "weird_captcha_gym/environments/unwatched_wing_env/tasks/unwatched_wing_seed_0001/setup_task.sh",
+        "weird_captcha_gym/environments/unwatched_wing_env/tasks/unwatched_wing_seed_0001/export_result.sh",
+        "weird_captcha_gym/environments/unwatched_wing_env/tasks/unwatched_wing_seed_0001/verifier.py",
+        "weird_captcha_gym/shared_scripts/incubator_generators/unwatched_wing.py",
+        "weird_captcha_gym/shared_runtime/app/mechanics/unwatched_wing.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/unwatched_wing.css",
+        "weird_captcha_gym/shared_runtime/server/incubator_graders/unwatched_wing.py",
+        "weird_captcha_gym/tools/incubator_solvers/unwatched_wing.py",
+        "weird_captcha_gym/shared_runtime/app/time_controller.js",
+        "weird_captcha_gym/shared_runtime/verifier_helpers.py"
+      ],
+      "source_evidence": [
+        {
+          "path": "weird_captcha_gym/environments/unwatched_wing_env/controls.json",
+          "lines": "74-87",
+          "claim": "Difficulty 5 is the labyrinth profile: 7 target positions, 3 decoys, required probe handoffs at steps 1, 3, and 4, ambient lights at steps 2, 4, and 6, field of view 68 degrees, hand-lamp range 1.45, probe range 4.6, and move step 0.30."
+        },
+        {
+          "path": "weird_captcha_gym/environments/unwatched_wing_env/controls.json",
+          "lines": "91-105",
+          "claim": "Both interaction modes are implemented; the shared profile sets play_time_seconds to 180, observation_window_ms to 0, and frames_per_observation to 1."
+        },
+        {
+          "path": "weird_captcha_gym/environments/unwatched_wing_env/env.json",
+          "lines": "5-15",
+          "claim": "The environment is a first-person observer-effect museum with a frame_window observation and mouse/keyboard action surfaces; runner_options repeat a zero-ms observation window and one frame."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/unwatched_wing.py",
+          "lines": "196-259",
+          "claim": "The generator applies the exact difficulty parameters, then uses seeded randomness and a spatial transform to place the seven target plinths, three decoys, three action-triggered probe handoffs, and three action-triggered wall-light states; these are static contract inputs, not a timed process."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/unwatched_wing.py",
+          "lines": "324-385",
+          "claim": "The generated rules say the unstable exhibit changes plinth when viewport, probe viewer, and lights release it, and the dock opens in darkness; the rules contain no autonomous clock phase."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/unwatched_wing.js",
+          "lines": "154-223",
+          "claim": "settleObservation computes observation and target jumps, while afterAction calls it and redraws; no no-input callback invokes this state transition."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/unwatched_wing.js",
+          "lines": "225-329",
+          "claim": "Movement, look, lamp, viewer, probe, recall, and breaker handlers all update state synchronously and call afterAction; the only outcome-affecting progression is input-triggered."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/unwatched_wing.js",
+          "lines": "613-624",
+          "claim": "Simplified mode binds labelled step and turn buttons plus LAMP, VIEWER, PROBE, RECALL, and ISOLATOR buttons to the same museum actions."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/unwatched_wing.css",
+          "lines": "148-167",
+          "claim": "The probe feed is shown immediately by the data-viewer attribute; the CSS has no timed animation that changes museum state."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/time_controller.js",
+          "lines": "250-339",
+          "claim": "The shared clock can schedule timers and flush animation-frame callbacks, but it only runs callbacks registered by a mechanic; Unwatched Wing registers none."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/unwatched_wing.py",
+          "lines": "345-449",
+          "claim": "The grader binds the simplified input-source transcript and replays each event, invoking _settle only after nonterminal events; it does not advance state by event time."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/unwatched_wing.py",
+          "lines": "478-500",
+          "claim": "Pass/fail depends on the replayed final museum state, equipment, and darkness sample, with no timing or deadline predicate."
+        },
+        {
+          "path": "weird_captcha_gym/tools/incubator_solvers/unwatched_wing.py",
+          "lines": "254-406",
+          "claim": "The solver's route is a sequence of explicit movement, observation, equipment, probe, and final-darkness actions; its waits are Playwright synchronization, not an autonomous game phase."
+        },
+        {
+          "path": "weird_captcha_gym/environments/unwatched_wing_env/tasks/unwatched_wing_seed_0001/verifier.py",
+          "lines": "21-34",
+          "claim": "The task verifier loads the independent Unwatched Wing grader and grades the exported result replay."
+        }
+      ],
+      "uncertainties": []
+    }
+  ]
+}
+

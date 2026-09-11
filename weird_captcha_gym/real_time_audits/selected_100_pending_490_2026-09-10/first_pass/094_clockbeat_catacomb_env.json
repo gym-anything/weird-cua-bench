@@ -1,0 +1,105 @@
+{
+  "case_index": 94,
+  "public_environment_name": "Clockbeat Catacomb",
+  "environment_id": "clockbeat_catacomb_env",
+  "difficulty": 2,
+  "interaction_mode": "simplified",
+  "label": "yes",
+  "controls_available": [
+    "The agent clicks WIND THE CLOCK to start the autonomous clock; start and SUBMIT EXPEDITION are administrative controls.",
+    "The simplified outcome-affecting surface is five visible buttons: UP, RIGHT, DOWN, LEFT, and WAIT. Keyboard input is not the configured surface.",
+    "At most one direction or wait action is accepted in each 1800 ms beat, during its first 1150 ms gold window. A press after the gold window is off-beat and has no movement or attack effect."
+  ],
+  "autonomous_processes": [
+    "After the clock starts, elapsed task time advances continuously and the browser synchronizes the simulation at each 1800 ms beat boundary, even when there has been no new agent action.",
+    "At a beat boundary, each living crawler chases one tile or damages the player on contact; the difficulty-2 hopper either rests in phase 0 or chases in phase 1. The beat then increments and the action slot resets.",
+    "Within each beat the visible clock progresses from the 1150 ms gold/open interval to the closed LISTEN interval; off-beat input is ineffective while later beat-boundary sentry updates still occur.",
+    "A 50 ms browser timer redraws the clock, board, sentry positions and phases, player health, and terminal state; the clock also stops at 100 beats or on death/victory."
+  ],
+  "grouped_control_modes": [
+    "D = the simplified direction-button/wait control mode, containing every UP, RIGHT, DOWN, LEFT, or WAIT opportunity across beats, seeds, rounds, and attempts for this difficulty and configuration. Start and submission are administrative and are not in D."
+  ],
+  "delta_ms": 1800,
+  "window_ms": 300,
+  "clause_i": {
+    "holds": true,
+    "reason": "An observation-free q receives only its prior actions and task times. The seeded generator changes the connected wall layout, start, exit, enemy positions, and hopper phase offset across instances, so the same I_t can require different direction or wait actions at the delayed endpoint. No fixed button schedule is optimal across all histories in C_Delta(D); the visible board state is necessary."
+  },
+  "clause_ii": {
+    "holds": true,
+    "reason": "A bounded g can use the 300 ms, three-frame window and its latest frame: the board visibly gives walls, exit, player and sentry positions and hit points; the roster gives sentry type and hopper REST / OPEN versus SHIELD + CHASE phase; the beat label and pulse give action-slot progress. The next beat transition is deterministic from that visible state, so g can predict the state at t+1800 ms and select the delayed-optimal button. Near a beat boundary the same window also visibly captures the sentry transition itself; a single current frame is sufficient for other states."
+  },
+  "clause_iii": {
+    "holds": true,
+    "reason": "Use a history just after a beat boundary, still inside the gold window, with a living hopper adjacent to the player in REST / OPEN phase and success still salvageable. Let a be the direction button into that hopper. At H_t, act(a) damages the hopper and, because difficulty 2 gives it one hit point, can return defeated. If no action is supplied until the next 1800 ms boundary, the autonomous phase changes to SHIELD + CHASE; the same adjacent a returns shield and does not damage the hopper, so its action advantage over no-op is strictly smaller. The player can remain alive and success remains possible. This is a non-clock state transition, not merely a later deadline or completion time."
+  },
+  "common_visible_process": "The common witness is the beat-boundary hopper phase transition and its visible spatial state: the chronological window can show the hopper's board position and roster state changing into the next REST / OPEN or SHIELD + CHASE phase, while the pulse shows where the action will land. That same visible sentry evolution determines which direction or wait action is optimal after the delay and turns an immediate adjacent attack into a shielded, less valuable attempt.",
+  "pre_run": {
+    "threshold": 0.5,
+    "at_least_half": false,
+    "rate": 0.0,
+    "basis": "source_structural",
+    "reason": "At difficulty 2 the generator always creates a crawler and hopper with positive hit points, samples the exit and enemy locations separately from the start, and supplies no pre-start movement. After WIND THE CLOCK, a pre-run solution sends no outcome-affecting action, so no act call can lower enemy hit points or move the player. advance only moves or attacks with sentries; it never kills a sentry or sets won. The verifier requires won with all sentries defeated and the player on the exit, so no generated instance admits a successful pre-run solution.",
+    "seed_probe": null
+  },
+  "files_read_completely": [
+    "AGENTS.md",
+    "weird_captcha_gym/docs/controllability/real-time.md",
+    "weird_captcha_gym/environments/clockbeat_catacomb_env/controls.json",
+    "weird_captcha_gym/environments/clockbeat_catacomb_env/env.json",
+    "weird_captcha_gym/environments/clockbeat_catacomb_env/tasks/clockbeat_catacomb_seed_0001/task.json",
+    "weird_captcha_gym/environments/clockbeat_catacomb_env/tasks/clockbeat_catacomb_seed_0001/setup_task.sh",
+    "weird_captcha_gym/environments/clockbeat_catacomb_env/tasks/clockbeat_catacomb_seed_0001/verifier.py",
+    "weird_captcha_gym/environments/clockbeat_catacomb_env/scripts/install_puzzle_runtime.sh",
+    "weird_captcha_gym/environments/clockbeat_catacomb_env/scripts/setup_puzzle_runtime.sh",
+    "weird_captcha_gym/shared_scripts/incubator_generators/clockbeat_catacomb.py",
+    "weird_captcha_gym/shared_runtime/app/mechanics/clockbeat_catacomb.js",
+    "weird_captcha_gym/shared_runtime/app/mechanics/clockbeat_catacomb.css",
+    "weird_captcha_gym/shared_runtime/server/incubator_graders/clockbeat_catacomb.py",
+    "weird_captcha_gym/shared_runtime/verifier_helpers.py",
+    "weird_captcha_gym/tools/incubator_solvers/clockbeat_catacomb.py"
+  ],
+  "source_evidence": [
+    {
+      "path": "weird_captcha_gym/environments/clockbeat_catacomb_env/controls.json",
+      "lines": "28-45; 109-122",
+      "claim": "Difficulty 2 is size 7 with three walls, crawler and hopper, one hit point each, and four health; simplified mode uses direction/wait buttons; the configured observation window is 300 ms with three frames."
+    },
+    {
+      "path": "weird_captcha_gym/shared_scripts/incubator_generators/clockbeat_catacomb.py",
+      "lines": "15-18; 21-32; 34-41",
+      "claim": "The control condition overrides the default profile, generation randomizes connected walls, start, exit, enemy positions and phase offsets, and every board uses beat_ms 1800, open_ms 1150, and max_beats 100."
+    },
+    {
+      "path": "weird_captcha_gym/shared_runtime/app/mechanics/clockbeat_catacomb.js",
+      "lines": "12-20; 22-40",
+      "claim": "Actions use visible direction/wait semantics; hopper phase controls shielding, and beat-boundary step updates autonomously move or damage sentries before incrementing the beat."
+    },
+    {
+      "path": "weird_captcha_gym/shared_runtime/app/mechanics/clockbeat_catacomb.js",
+      "lines": "42-58; 60-68",
+      "claim": "The visible UI renders the board, health, beat/open status, pulse position, roster phase text, enemy positions and the simplified direction buttons; input is off-beat gated and records direction_buttons."
+    },
+    {
+      "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/clockbeat_catacomb.py",
+      "lines": "7-49",
+      "claim": "The independent replay gives the player and sentries the same beat-gated transitions: hopper phase 0 rests, phase 1 chases, attacks can be shielded, and advance resets the action slot after each beat."
+    },
+    {
+      "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/clockbeat_catacomb.py",
+      "lines": "51-78",
+      "claim": "The grader enforces direction_buttons for simplified conditions, replays every timestamp against the beat/open boundary, and requires a defeated-sentry, escaped final state rather than trusting the client."
+    },
+    {
+      "path": "weird_captcha_gym/environments/clockbeat_catacomb_env/tasks/clockbeat_catacomb_seed_0001/verifier.py",
+      "lines": "22-34",
+      "claim": "Task verification loads the exported result and the independent clockbeat replay grader."
+    },
+    {
+      "path": "weird_captcha_gym/docs/controllability/real-time.md",
+      "lines": "36-68; 70-88; 112-114",
+      "claim": "The frozen diagnostic requires one common grouped mode, bounded visible evidence that predicts a delayed action, and a strict loss of action value or advantage from autonomous non-clock state evolution; the pre-run threshold overrides only when at least half of instances are pre-run solvable."
+    }
+  ],
+  "uncertainties": []
+}

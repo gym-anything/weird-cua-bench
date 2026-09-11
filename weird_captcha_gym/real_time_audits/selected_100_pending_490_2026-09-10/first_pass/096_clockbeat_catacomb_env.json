@@ -1,0 +1,107 @@
+{
+  "case_index": 96,
+  "public_environment_name": "Clockbeat Catacomb",
+  "environment_id": "clockbeat_catacomb_env",
+  "difficulty": 3,
+  "interaction_mode": "simplified",
+  "label": "yes",
+  "controls_available": [
+    "WIND THE CLOCK starts the task-active clock.",
+    "The simplified outcome-affecting surface is five visible direction/wait buttons: UP, RIGHT, DOWN, LEFT, and WAIT. At most one is accepted per beat during the 1,150 ms gold interval; off-beat clicks are no-ops.",
+    "The task state visibly includes the 8x8 board, five walls, player, exit, one crawler, two hoppers, enemy health, player health, beat/phase roster, and beat progress. SUBMIT EXPEDITION is administrative."
+  ],
+  "autonomous_processes": [
+    "After the clock starts, elapsed task time is synchronized to 1,800 ms beat boundaries.",
+    "At each boundary, live crawlers and phase-active hoppers chase the stationary player one tile when possible; contact can reduce player health, then the beat becomes available again.",
+    "Hoppers alternate visibly between REST / OPEN and SHIELD + CHASE phases. The gold action interval closes at 1,150 ms, while sentries still advance at the next beat boundary."
+  ],
+  "grouped_control_modes": [
+    "simplified direction_buttons: every UP/RIGHT/DOWN/LEFT/WAIT click opportunity in every gold beat window across generated seeds, rounds, and attempts"
+  ],
+  "delta_ms": 1800,
+  "window_ms": 300,
+  "clause_i": {
+    "holds": true,
+    "reason": "I_t contains only the agent's prior button choices and task times, not the seed-specific board or current enemy positions/phases. The generator varies walls, start, exit, enemy positions, and hopper offsets, so histories with the same I_t can require different next buttons for an optimal delayed continuation. No observation-free q(I_t) can be optimal across the grouped beat-window mode."
+  },
+  "clause_ii": {
+    "holds": true,
+    "reason": "The 300 ms bounded window contains the latest full board and up to three chronological frames. The visible player, walls, exit, enemy positions/health, hopper phase/shield styling, beat label, and gold-bar progress identify the deterministic state and its recent beat transition. A window policy can predict the state at t+1,800 ms and choose the appropriate visible button; a single latest frame is sufficient when no boundary falls inside the window."
+  },
+  "clause_iii": {
+    "holds": true,
+    "reason": "Use a 1,800 ms witness horizon beginning just after a beat boundary while the gold control opportunity is active, with tau at the next boundary (for example, 1,700 ms when t is 100 ms into the beat). If an adjacent hopper is visibly REST / OPEN, the direction into it immediately defeats its one health point. With no new action, the autonomous boundary changes that hopper to SHIELD + CHASE while success remains possible; the same direction then returns shield and spends the beat instead of defeating it. The strict loss is caused by enemy phase/state evolution, not merely by a later deadline."
+  },
+  "common_visible_process": "The common witness is the beat-boundary enemy update together with hopper phase alternation. The board and roster visibly change across the captured boundary frames, and that recent visible state predicts whether the delayed direction will hit an open hopper or be blocked by its shield.",
+  "pre_run": {
+    "threshold": 0.5,
+    "at_least_half": false,
+    "rate": null,
+    "basis": "source_structural",
+    "reason": "After WIND THE CLOCK, sending no outcome-affecting actions leaves the player at the generated start and leaves every enemy's health unchanged: the autonomous step only moves or attacks the player and increments the beat. The generator places the exit and all enemies at Manhattan distance at least three from the start, so no generated instance can reach the win condition during a no-action outcome phase. The threshold is therefore not met; no percentage is asserted.",
+    "seed_probe": null
+  },
+  "files_read_completely": [
+    "AGENTS.md",
+    "weird_captcha_gym/docs/controllability/real-time.md",
+    "weird_captcha_gym/environments/clockbeat_catacomb_env/controls.json",
+    "weird_captcha_gym/environments/clockbeat_catacomb_env/env.json",
+    "weird_captcha_gym/environments/clockbeat_catacomb_env/tasks/clockbeat_catacomb_seed_0001/task.json",
+    "weird_captcha_gym/environments/clockbeat_catacomb_env/tasks/clockbeat_catacomb_seed_0001/setup_task.sh",
+    "weird_captcha_gym/environments/clockbeat_catacomb_env/tasks/clockbeat_catacomb_seed_0001/verifier.py",
+    "weird_captcha_gym/shared_scripts/incubator_generators/clockbeat_catacomb.py",
+    "weird_captcha_gym/shared_runtime/app/mechanics/clockbeat_catacomb.js",
+    "weird_captcha_gym/shared_runtime/app/mechanics/clockbeat_catacomb.css",
+    "weird_captcha_gym/shared_runtime/server/incubator_graders/clockbeat_catacomb.py",
+    "weird_captcha_gym/shared_runtime/verifier_helpers.py",
+    "weird_captcha_gym/tools/incubator_solvers/clockbeat_catacomb.py"
+  ],
+  "source_evidence": [
+    {
+      "path": "weird_captcha_gym/environments/clockbeat_catacomb_env/controls.json",
+      "lines": "47-63, 109-122",
+      "claim": "Difficulty 3 is size 8 with five walls, crawler/hopper/hopper, one health per enemy, and three player health; simplified mode uses direction/wait clicks; the configured observation window is 300 ms with three frames."
+    },
+    {
+      "path": "weird_captcha_gym/shared_scripts/incubator_generators/clockbeat_catacomb.py",
+      "lines": "15-18, 30-41",
+      "claim": "The control condition supplies the active difficulty profile; seeded generation varies layouts, positions, and offsets, places exit/enemies at least three Manhattan steps from start, and creates 1,800 ms beats with 1,150 ms open time."
+    },
+    {
+      "path": "weird_captcha_gym/shared_runtime/app/mechanics/clockbeat_catacomb.js",
+      "lines": "9-20, 22-40",
+      "claim": "The browser uses the selected interaction mode, attacks or moves on visible inputs, and autonomously advances crawler/hopper state at elapsed beat boundaries."
+    },
+    {
+      "path": "weird_captcha_gym/shared_runtime/app/mechanics/clockbeat_catacomb.js",
+      "lines": "44-68",
+      "claim": "The UI visibly renders board entities, phase/SHIELD roster text, beat status, gold-bar progress, and simplified direction buttons; off-beat input is recorded as offbeat while beat state still advances."
+    },
+    {
+      "path": "weird_captcha_gym/shared_runtime/app/mechanics/clockbeat_catacomb.css",
+      "lines": "1-3",
+      "claim": "The visible CSS styles the board, enemy/player states, shield styling, and gold/closed beat bar used by the screenshot-only policy."
+    },
+    {
+      "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/clockbeat_catacomb.py",
+      "lines": "7-49",
+      "claim": "The independent replay defines crawler/hopper phases, one action per beat, hopper shield behavior, and autonomous enemy movement/contact damage."
+    },
+    {
+      "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/clockbeat_catacomb.py",
+      "lines": "59-77",
+      "claim": "The grader binds simplified transcripts to direction_buttons, applies the same beat/open timing, and requires an independently replayed win with positive health."
+    },
+    {
+      "path": "weird_captcha_gym/environments/clockbeat_catacomb_env/tasks/clockbeat_catacomb_seed_0001/verifier.py",
+      "lines": "22-35",
+      "claim": "Verification loads the exported result and independent clockbeat grader rather than trusting client outcome state."
+    },
+    {
+      "path": "weird_captcha_gym/tools/incubator_solvers/clockbeat_catacomb.py",
+      "lines": "20-34",
+      "claim": "The wiring solver starts the clock, waits for each beat, sends ordinary visible keyboard or direction-button inputs, and does not use a hidden clock mutation."
+    }
+  ],
+  "uncertainties": []
+}

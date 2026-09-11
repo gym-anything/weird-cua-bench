@@ -1,0 +1,123 @@
+{
+  "case_index": 104,
+  "public_environment_name": "Cloudpost Circuit",
+  "environment_id": "cloudpost_circuit_env",
+  "difficulty": 2,
+  "interaction_mode": "simplified",
+  "label": "yes",
+  "controls_available": [
+    "The exact level-2 profile has three delivery seals, 112 units of route spacing, 46 units of lateral span, 34 units of vertical span, flight speed 1.78, turn step 0.30, and contact radius 16.",
+    "Simplified mode exposes five visible buttons: TURN LEFT, TURN RIGHT, CLIMB, DIVE, and LEVEL.",
+    "TURN LEFT/RIGHT change the persistent normalized yaw control by 0.12, CLIMB/DIVE change pitch by 0.10, and LEVEL resets both controls to zero; the simplified surface does not install the full pointer-steering handler."
+  ],
+  "autonomous_processes": [
+    "Rendering initializes the plane at (0, 0, 0) with zero control and starts the animation loop immediately; the loop advances physics every 40 ms without a new agent action.",
+    "Each physics tick moves the plane in 3D while yaw and pitch approach the persistent trim vector, so position, heading, and depth change autonomously during a response delay.",
+    "Seals remain fixed in world space, but their camera projection, apparent depth/size, and screen trajectory change as the plane advances. Contact is a finite-radius world-space event, and the forward z motion makes a missed seal's contact opportunity expire as the plane passes it."
+  ],
+  "grouped_control_modes": [
+    "D_trim_button: every outcome-affecting simplified trim-button occurrence (TURN LEFT, TURN RIGHT, CLIMB, DIVE, or LEVEL) across seeds and all route corrections; all use the trim_button input source."
+  ],
+  "delta_ms": 600,
+  "window_ms": 600,
+  "clause_i": {
+    "holds": true,
+    "reason": "At an initial salvageable history, identical I_t can occur for seeds with opposite first-seal lateral sides and different vertical offsets. The generator randomizes the first seal and guarantees its absolute lateral offset is at least 46*0.62 = 28.52 units (or replaces it with 46*0.86), while the contact radius is 16. A q based only on prior actions and task times must choose the same delayed trim for those histories, although the delayed-optimal lateral/vertical correction differs."
+  },
+  "clause_ii": {
+    "holds": true,
+    "reason": "The same six chronological frames over the 600 ms window visibly show the seal's projected displacement, apparent depth/size, and changing relation to the fixed cockpit marker as the plane flies. That recent trajectory supplies the lateral/elevation error and approach trend needed to choose the corresponding trim button for delivery at t+Delta. The policy need not use private target coordinates or an unbounded visual history."
+  },
+  "clause_iii": {
+    "holds": true,
+    "reason": "For a reachable history inside a seal's approach corridor, let a be the currently appropriate directional trim (or LEVEL when an accumulated turn must be arrested). With no new action, the plane advances about 1.78 units per 40 ms tick and its heading continues evolving; after some 0 < tau < 600 ms it has traversed part of the seal's finite z-localized contact interval and changed lateral/elevation pose. The same trim can then be too late or less effective before the 16-unit sphere is passed, while a different corrective trim can still salvage the route. The strict loss is caused by autonomous flight/contact-state evolution, not by a deadline or later completion."
+  },
+  "common_visible_process": "Autonomous 3D flight past fixed world-space seals: the plane's visible projected motion and depth change are the evidence used to select a delayed trim, and the same forward motion consumes the seal's finite world-space contact opportunity.",
+  "pre_run": {
+    "threshold": 0.5,
+    "at_least_half": false,
+    "rate": null,
+    "basis": "source_structural",
+    "reason": "The browser has no separate visible start or arming phase: render sets control to [0, 0] and immediately schedules the autonomous loop. Thus a pre-run solution would have to send no outcome-affecting trim during the flight. With zero control, the plane remains on x=0 and y=0, while every level-2 first seal has absolute x at least 28.52 and contact radius 16, so the first seal cannot be collected in any instance. The 50% override is therefore not met; no percentage is claimed.",
+    "seed_probe": null
+  },
+  "files_read_completely": [
+    "AGENTS.md",
+    "weird_captcha_gym/docs/controllability/real-time.md",
+    "weird_captcha_gym/environments/cloudpost_circuit_env/controls.json",
+    "weird_captcha_gym/environments/cloudpost_circuit_env/env.json",
+    "weird_captcha_gym/environments/cloudpost_circuit_env/tasks/cloudpost_circuit_seed_0001/task.json",
+    "weird_captcha_gym/environments/cloudpost_circuit_env/tasks/cloudpost_circuit_seed_0001/setup_task.sh",
+    "weird_captcha_gym/environments/cloudpost_circuit_env/tasks/cloudpost_circuit_seed_0001/export_result.sh",
+    "weird_captcha_gym/shared_scripts/incubator_generators/cloudpost_circuit.py",
+    "weird_captcha_gym/shared_runtime/app/mechanics/cloudpost_circuit.js",
+    "weird_captcha_gym/shared_runtime/app/mechanics/cloudpost_circuit.css",
+    "weird_captcha_gym/shared_runtime/server/incubator_graders/cloudpost_circuit.py",
+    "weird_captcha_gym/environments/cloudpost_circuit_env/tasks/cloudpost_circuit_seed_0001/verifier.py",
+    "weird_captcha_gym/shared_runtime/verifier_helpers.py",
+    "weird_captcha_gym/tools/incubator_solvers/cloudpost_circuit.py"
+  ],
+  "source_evidence": [
+    {
+      "path": "weird_captcha_gym/environments/cloudpost_circuit_env/controls.json",
+      "lines": "5-16",
+      "claim": "Level 2 has three targets and the stated speed, turn step, contact radius, while simplified mode is trim-button steering and the observation window is 600 ms with six frames."
+    },
+    {
+      "path": "weird_captcha_gym/shared_scripts/incubator_generators/cloudpost_circuit.py",
+      "lines": "26-35, 82-93",
+      "claim": "The generator's level-2 profile and control-condition selection are active for the exact difficulty and interaction configuration."
+    },
+    {
+      "path": "weird_captcha_gym/shared_scripts/incubator_generators/cloudpost_circuit.py",
+      "lines": "102-119",
+      "claim": "Each target is a fixed generated world-space point; the first target has randomized lateral/vertical placement and its lateral magnitude is forced to at least 62% of the level-2 span."
+    },
+    {
+      "path": "weird_captcha_gym/shared_scripts/incubator_generators/cloudpost_circuit.py",
+      "lines": "162-172, 188-192",
+      "claim": "The authoritative physics uses a 40 ms tick, level-2 flight speed/turn step/contact radius, a finite corridor, and a fixed initial plane."
+    },
+    {
+      "path": "weird_captcha_gym/shared_runtime/app/mechanics/cloudpost_circuit.js",
+      "lines": "89-95, 316-344",
+      "claim": "Simplified button handlers adjust persistent trim controls, and rendering initializes the state and starts the animation loop immediately."
+    },
+    {
+      "path": "weird_captcha_gym/shared_runtime/app/mechanics/cloudpost_circuit.js",
+      "lines": "127-159",
+      "claim": "Every physics step changes yaw, pitch, x, y, and z, checks finite-radius world-space contacts, and terminates when the plane leaves the corridor."
+    },
+    {
+      "path": "weird_captcha_gym/shared_runtime/app/mechanics/cloudpost_circuit.js",
+      "lines": "64-86, 161-180, 244-249",
+      "claim": "The visible scene projects targets from the changing camera pose, renders depth-scaled seal geometry, and omits targets outside the current camera-frustum bounds."
+    },
+    {
+      "path": "weird_captcha_gym/shared_runtime/app/mechanics/cloudpost_circuit.js",
+      "lines": "262-274",
+      "claim": "The requestAnimationFrame loop accumulates elapsed time and calls the autonomous 40 ms physics step without input."
+    },
+    {
+      "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/cloudpost_circuit.py",
+      "lines": "60-66, 105-112, 122-164, 176-188",
+      "claim": "The grader binds the exact interaction surface, replays the plane trajectory from trim events and physics, and accepts only world-space seal contacts in the replay."
+    },
+    {
+      "path": "weird_captcha_gym/environments/cloudpost_circuit_env/tasks/cloudpost_circuit_seed_0001/verifier.py",
+      "lines": "21-34",
+      "claim": "The verifier loads the exported result and applies the independent Cloudpost Circuit replay grader; the submitted trajectory is not accepted by declaration alone."
+    },
+    {
+      "path": "weird_captcha_gym/tools/incubator_solvers/cloudpost_circuit.py",
+      "lines": "64-85",
+      "claim": "The privileged construction solver reads the current flight pose, applies simplified trims, and re-observes after each trim because live ticks can elapse between clicks; this is corroborating implementation evidence, not policy information."
+    },
+    {
+      "path": "weird_captcha_gym/docs/controllability/real-time.md",
+      "lines": "36-68, 70-76",
+      "claim": "The applied diagnostic requires one common visible process satisfying all three clauses and separately applies the 50% pre-run override."
+    }
+  ],
+  "uncertainties": []
+}

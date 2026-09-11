@@ -1,0 +1,158 @@
+{
+  "case_index": 156,
+  "public_environment_name": "Coordinates by Another Name",
+  "environment_id": "coordinates_by_another_name_env",
+  "difficulty": 3,
+  "interaction_mode": "simplified",
+  "label": "no",
+  "controls_available": [
+    "Simplified selector controls: click explicit value buttons for Band (five generated band labels), Block (A/B/C), and Count (1-8 plus *).",
+    "Fire button submits the currently displayed band, block, and count designation; * consumes one of two sweep charges.",
+    "End Attempt / Certify Fleet is an administrative submission control."
+  ],
+  "autonomous_processes": [
+    {
+      "period": "Initial display and every idle interval between actions",
+      "process": "None; the seeded chart and hidden fleet are already materialized and remain unchanged.",
+      "outcome_affecting_control": "Fire remains available."
+    },
+    {
+      "period": "After a simplified selector click and before Fire",
+      "process": "The selected index, readout, and redraw change synchronously in the click handler; there is no autonomous evolution.",
+      "outcome_affecting_control": "Fire remains available."
+    },
+    {
+      "period": "After Fire and before the next action",
+      "process": "Hit, miss, seen, shot, sweep, and sunk state are updated synchronously by Fire; nothing continues changing afterward.",
+      "outcome_affecting_control": "Selectors and Fire remain available unless all vessels are sunk."
+    },
+    {
+      "period": "After End Attempt / Certify Fleet",
+      "process": "A server response may render PASS or issue a fresh chart, but that transition is triggered by the administrative certification action and is not an autonomous outcome phase.",
+      "outcome_affecting_control": "Not a candidate autonomous control period."
+    }
+  ],
+  "grouped_control_modes": [
+    "D_fire: every simplified-mode Fire action across all seeds, rounds, and attempts, with the designation formed by the three value-button selectors.",
+    "Selector value-button clicks are preparatory actions that alter the pending designation but have no immediate shot outcome; certification is administrative and excluded from outcome-affecting D."
+  ],
+  "delta_ms": null,
+  "window_ms": 0,
+  "clause_i": {
+    "holds": true,
+    "reason": "For D_fire, an observation-free q sees only I_t. Identical prior actions can lead to different visible charts and different hit or miss evidence because the generator varies bands, irregular boundaries, local count directions, and hidden fleet placement. A fixed next designation therefore cannot be delayed-optimal for every such history, even though a fixed enumeration can eventually search the chart."
+  },
+  "clause_ii": {
+    "holds": true,
+    "reason": "A bounded endpoint screenshot is sufficient for the static search state: it shows the chart topology, band/block/count arrows, and persistent hit, miss, and sunk marks. With w=0 (the configured single-frame, zero-length observation window), a screenshot-only policy can choose the next designation from that visible evidence and its prior actions; no older frame sequence is needed."
+  },
+  "clause_iii": {
+    "holds": false,
+    "reason": "There is no H_t^tau with a non-clock task-state change for any positive Delta: the generator creates the world once, the CSS has no animation, and the mechanic has no timer, physics, or autonomous update. Selector and Fire changes are synchronous consequences of agent actions. Waiting leaves the Fire opportunity and its value unchanged; the 600-second allowance is only a deadline and cannot supply the required strict loss. No legitimate D, Delta, or w repairs this failure."
+  },
+  "common_visible_process": "None. The visible chart and persistent shot marks are static between actions; the only changes are action-triggered selector or Fire updates, so no single autonomous visible process can witness clauses (i)-(iii).",
+  "pre_run": {
+    "threshold": 0.5,
+    "at_least_half": false,
+    "rate": null,
+    "basis": "source_structural",
+    "reason": "Every generated instance has a nonempty fleet [3, 3, 2], and the grader passes only when all fleet entries are sunk. Since the fleet is generated before interaction and every successful result requires one or more outcome-affecting Fire events, no instance can start an autonomous outcome phase and remain free of outcome-affecting actions. The at-least-half threshold is therefore false; no percentage is asserted.",
+    "seed_probe": null
+  },
+  "files_read_completely": [
+    "AGENTS.md",
+    "weird_captcha_gym/docs/controllability/real-time.md",
+    "weird_captcha_gym/environments/coordinates_by_another_name_env/controls.json",
+    "weird_captcha_gym/environments/coordinates_by_another_name_env/env.json",
+    "weird_captcha_gym/environments/coordinates_by_another_name_env/tasks/coordinates_by_another_name_seed_0001/task.json",
+    "weird_captcha_gym/environments/coordinates_by_another_name_env/tasks/coordinates_by_another_name_seed_0001/setup_task.sh",
+    "weird_captcha_gym/environments/coordinates_by_another_name_env/tasks/coordinates_by_another_name_seed_0001/export_result.sh",
+    "weird_captcha_gym/environments/coordinates_by_another_name_env/scripts/install_puzzle_runtime.sh",
+    "weird_captcha_gym/environments/coordinates_by_another_name_env/scripts/setup_puzzle_runtime.sh",
+    "weird_captcha_gym/environments/coordinates_by_another_name_env/tasks/coordinates_by_another_name_seed_0001/verifier.py",
+    "weird_captcha_gym/shared_scripts/incubator_generators/coordinates_by_another_name.py",
+    "weird_captcha_gym/shared_runtime/app/mechanics/coordinates_by_another_name.js",
+    "weird_captcha_gym/shared_runtime/app/mechanics/coordinates_by_another_name.css",
+    "weird_captcha_gym/shared_runtime/server/incubator_graders/coordinates_by_another_name.py",
+    "weird_captcha_gym/shared_runtime/verifier_helpers.py",
+    "weird_captcha_gym/tools/incubator_solvers/coordinates_by_another_name.py"
+  ],
+  "source_evidence": [
+    {
+      "path": "weird_captcha_gym/docs/controllability/real-time.md",
+      "lines": "37-96",
+      "claim": "The frozen diagnostic requires one common visible autonomous process, a bounded window, and an action whose value strictly degrades during the positive delay; clock/deadline-only effects do not qualify."
+    },
+    {
+      "path": "weird_captcha_gym/environments/coordinates_by_another_name_env/controls.json",
+      "lines": "47-64",
+      "claim": "The active difficulty-3 profile is rows=5, columns=8, irregular=true, reverse_counts=true, orientation_feedback=true, touching=false, holes=0, fleet_lengths=[3,3,2], and sweeps=2."
+    },
+    {
+      "path": "weird_captcha_gym/environments/coordinates_by_another_name_env/controls.json",
+      "lines": "106-119",
+      "claim": "Simplified mode is explicit band/block/count buttons followed by Fire; the configured runtime has play_time_seconds=600, observation_window_ms=0, and frames_per_observation=1."
+    },
+    {
+      "path": "weird_captcha_gym/environments/coordinates_by_another_name_env/env.json",
+      "lines": "39-46",
+      "claim": "The environment uses the synchronous weird_captcha runner with the same 600-second, zero-window, one-frame settings."
+    },
+    {
+      "path": "weird_captcha_gym/shared_scripts/incubator_generators/coordinates_by_another_name.py",
+      "lines": "15-39",
+      "claim": "The difficulty condition is merged once into the baseline, then seeded bands, runs, cells, local count directions, and chart topology are constructed without a time-driven loop."
+    },
+    {
+      "path": "weird_captcha_gym/shared_scripts/incubator_generators/coordinates_by_another_name.py",
+      "lines": "52-70",
+      "claim": "The hidden fleet is placed once during generation before the generated state is returned."
+    },
+    {
+      "path": "weird_captcha_gym/shared_scripts/incubator_generators/coordinates_by_another_name.py",
+      "lines": "96-112",
+      "claim": "The public world and ground truth are materialized at generation time; runtime_fleet is copied into state for synchronous local feedback, not evolved autonomously."
+    },
+    {
+      "path": "weird_captcha_gym/shared_runtime/app/mechanics/coordinates_by_another_name.js",
+      "lines": "9-47",
+      "claim": "Simplified mode renders value buttons, and selector clicks synchronously append an event, change the selected index, update the readout, and redraw."
+    },
+    {
+      "path": "weird_captcha_gym/shared_runtime/app/mechanics/coordinates_by_another_name.js",
+      "lines": "49-85",
+      "claim": "Board rendering is derived from current state, while Fire synchronously resolves a designation and updates shots, sweeps, seen cells, hits, and sunk vessels."
+    },
+    {
+      "path": "weird_captcha_gym/shared_runtime/app/mechanics/coordinates_by_another_name.js",
+      "lines": "87-118",
+      "claim": "Certification is an administrative fetch/submission path and initial render only initializes state and draws the chart; the complete mechanic file contains no task timer, animation loop, or autonomous state update."
+    },
+    {
+      "path": "weird_captcha_gym/shared_runtime/app/mechanics/coordinates_by_another_name.css",
+      "lines": "1-10",
+      "claim": "The complete mechanic stylesheet contains static layout, color, hover, and media-query rules but no animation or transition that changes task state."
+    },
+    {
+      "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/coordinates_by_another_name.py",
+      "lines": "31-76",
+      "claim": "The independent grader replays only selector and Fire events, requires all fleet entries to be sunk, and computes efficiency from shot count; it reads no action timing or autonomous trajectory."
+    },
+    {
+      "path": "weird_captcha_gym/environments/coordinates_by_another_name_env/tasks/coordinates_by_another_name_seed_0001/verifier.py",
+      "lines": "35-51",
+      "claim": "The verifier loads the exported result and the independent designation grader, then bases pass/fail on that replay."
+    },
+    {
+      "path": "weird_captcha_gym/shared_runtime/verifier_helpers.py",
+      "lines": "33-52",
+      "claim": "The verifier helper only copies and parses the exported result file; it introduces no task-state evolution."
+    },
+    {
+      "path": "weird_captcha_gym/tools/incubator_solvers/coordinates_by_another_name.py",
+      "lines": "54-90",
+      "claim": "The solver repeatedly reads rendered hit/miss/sunk feedback, chooses a next designation, fires, and stops only when all vessels are sunk; its private-state access is implementation evidence rather than the classified screenshot policy."
+    }
+  ],
+  "uncertainties": []
+}

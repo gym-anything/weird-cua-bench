@@ -1,0 +1,84 @@
+{
+  "case_index": 32,
+  "public_environment_name": "Ballast Lantern",
+  "environment_id": "ballast_lantern_env",
+  "difficulty": 1,
+  "interaction_mode": "simplified",
+  "label": "yes",
+  "controls_available": [
+    "The simplified surface has fixed HAUL and COAST buttons; clicking HAUL sets the persistent winch state to engaged, and clicking COAST sets it to disengaged.",
+    "The selected winch state remains active until the opposite button is clicked. HAUL applies upward acceleration and COAST applies downward acceleration while the cage retains its current momentum.",
+    "NEW SHAFT abandons the attempt and is administrative; it is not an outcome-affecting solution action. The buttons remain available while the simulation is active and are disabled only at terminal/submission state."
+  ],
+  "autonomous_processes": [
+    "Every 50 ms while active, the cage advances with acceleration determined by the last HAUL/COAST setting, drag, retained velocity, and shaft-boundary restitution.",
+    "The difficulty-1 specimen uses the singleton oscillator law: it moves at its generated constant signed velocity of 18-22 track units per tick and reverses at the visible track limits.",
+    "Every tick recomputes cage/specimen overlap. The specimen capture meter gains 34 while inside and loses 6 while outside; success remains possible while the meter is nonterminal.",
+    "A stationary crate appears at a generated tick from 70 through 80 and its meter gains 60 per tick while the cage overlaps it. Its appearance is a delayed target introduction, not the expiring process used for the witness.",
+    "The browser continuously redraws the cage, specimen, crate, wake, and direction beacon as task time advances without new input."
+  ],
+  "grouped_control_modes": [
+    "D = all active post-spawn simplified target-service opportunities across seeds and attempts: one persistent binary winch channel controlled through the HAUL/COAST buttons, including both specimen maintenance and crate servicing. Administrative NEW SHAFT/RETRY controls are excluded."
+  ],
+  "delta_ms": 600,
+  "window_ms": 600,
+  "clause_i": {
+    "holds": true,
+    "reason": "The same prior action/timing history can occur in generated oscillator worlds whose specimen is moving upward or downward, because the generator randomizes the initial direction and position. At a boundary-near overlap, the delayed-optimal corrective setting is HAUL for an upward-moving specimen and COAST for the mirrored downward case. A policy q using only I_t must choose the same setting for both histories and therefore cannot be optimal throughout C_Delta(D)."
+  },
+  "clause_ii": {
+    "holds": true,
+    "reason": "For difficulty 1 the active motion-law pool is only oscillator. The bounded 600 ms, six-frame window visibly supplies consecutive specimen positions through the wake and the current direction through the trend beacon; it also shows cage displacement, target positions, overlap state, meters, and the crate after spawn. From I_t and this window, a policy g can estimate the current specimen/cage motion and choose the HAUL or COAST setting that is optimal when delivered 600 ms later. No hidden future random motion is needed after the generated oscillator world is visible."
+  },
+  "clause_iii": {
+    "holds": true,
+    "reason": "Use an active post-spawn history with an upward-moving specimen just inside the upper capture boundary, a nonterminal capture reserve, and HAUL as the corrective action. With no new action for 0 < tau < 600 ms, the autonomous oscillator motion moves the specimen farther upward while the cage continues under its retained state; the specimen can leave the overlap band although success remains recoverable. Delivering HAUL after that drift starts from a larger spatial error and yields fewer immediate overlap/capture ticks, so its Q value or its advantage over no-op is strictly lower. The downward mirror uses COAST. This loss is caused by the visible specimen/cage state evolution, not merely by a later deadline or completion time."
+  },
+  "common_visible_process": "The common witness is the specimen's autonomous oscillating vertical drift together with the single inertial cage's ongoing motion. The wake dots and direction beacon visibly evidence the drift; that same drift changes which HAUL/COAST action predicts overlap at the delayed delivery and can carry the specimen out of the useful capture band during the delay.",
+  "pre_run": {
+    "threshold": 0.5,
+    "at_least_half": false,
+    "rate": 0.009,
+    "basis": "seeded_probe",
+    "reason": "The source has no separate start or preparation control: the simulation is active as soon as it renders, so the only action-free outcome phase available from the initial state is to leave the default COAST setting or set HAUL once and send no further outcome-affecting actions. A deterministic exact-configuration replay of both fixed settings on 1000 generated seeds secured 9 instances total (HAUL 9, COAST 0), which is below the 50% override threshold.",
+    "seed_probe": {
+      "seeds": "realtime-pre-run-0000 through realtime-pre-run-0999",
+      "numerator": 9,
+      "denominator": 1000,
+      "successful_fixed_settings": {"haul": 9, "coast": 0},
+      "tested_solution": "One initial persistent setting followed by no outcome-affecting actions until the simulation terminates.",
+      "code": "PYTHONDONTWRITEBYTECODE=1 python3 - <<'PY'\nimport importlib.util, json\nfrom pathlib import Path\nroot = Path('/private/tmp/weird-cua-realtime-source-20260910.ObhAQg')\ncontrols = json.loads((root/'weird_captcha_gym/environments/ballast_lantern_env/controls.json').read_text())\nspec = importlib.util.spec_from_file_location('ballast_probe_generator', root/'weird_captcha_gym/shared_scripts/incubator_generators/ballast_lantern.py')\nmod = importlib.util.module_from_spec(spec); spec.loader.exec_module(mod)\np = controls['difficulty']['1']['parameters']\ncondition = {'difficulty': 1, 'interaction': 'simplified', 'difficulty_parameters': p}\ndef fixed(world, engaged):\n    sim = mod.initial_simulation(world['parameters'], world['motion'], world['crate'])\n    while sim['status'] == 'active':\n        mod.advance_tick(sim, engaged, world['parameters'], world['motion'], world['crate'])\n    return sim['status'] == 'secured'\nhaul = coast = either = 0\nfor i in range(1000):\n    _, truth = mod.generate({'id': f'probe-{i}@0.1', '_control_condition': condition}, f'realtime-pre-run-{i:04d}')\n    h, c = fixed(truth, True), fixed(truth, False)\n    haul += h; coast += c; either += h or c\nprint({'haul': haul, 'coast': coast, 'either': either, 'denominator': 1000})\nPY"
+    }
+  },
+  "files_read_completely": [
+    "AGENTS.md",
+    "weird_captcha_gym/docs/controllability/real-time.md",
+    "weird_captcha_gym/environments/ballast_lantern_env/controls.json",
+    "weird_captcha_gym/environments/ballast_lantern_env/env.json",
+    "weird_captcha_gym/environments/ballast_lantern_env/tasks/ballast_lantern_seed_0001/task.json",
+    "weird_captcha_gym/environments/ballast_lantern_env/tasks/ballast_lantern_seed_0001/setup_task.sh",
+    "weird_captcha_gym/environments/ballast_lantern_env/tasks/ballast_lantern_seed_0001/export_result.sh",
+    "weird_captcha_gym/environments/ballast_lantern_env/tasks/ballast_lantern_seed_0001/verifier.py",
+    "weird_captcha_gym/shared_scripts/incubator_generators/ballast_lantern.py",
+    "weird_captcha_gym/shared_runtime/app/mechanics/ballast_lantern.js",
+    "weird_captcha_gym/shared_runtime/app/mechanics/ballast_lantern.css",
+    "weird_captcha_gym/shared_runtime/server/incubator_graders/ballast_lantern.py",
+    "weird_captcha_gym/shared_runtime/verifier_helpers.py",
+    "weird_captcha_gym/tools/incubator_solvers/ballast_lantern.py"
+  ],
+  "source_evidence": [
+    {"path": "weird_captcha_gym/environments/ballast_lantern_env/controls.json", "lines": "6-11, 42-46", "claim": "Difficulty 1 is the oscillator-only, broad-cage profile with 50 ms ticks, 800 maximum ticks, 18-22 specimen speed, 4800 initial capture, 34/6 fill-drain rates, 70-80 crate spawn, six trail samples, and a visible trend beacon; simplified interaction is fixed HAUL/COAST buttons and the observation bound is 600 ms with six frames."},
+    {"path": "weird_captcha_gym/shared_scripts/incubator_generators/ballast_lantern.py", "lines": "130-164", "claim": "Generated oscillator motion has a random initial direction, a visible track, and a signed starting velocity; the motion record is deterministic once generated."},
+    {"path": "weird_captcha_gym/shared_scripts/incubator_generators/ballast_lantern.py", "lines": "183-250", "claim": "Each tick advances the specimen and inertial cage, applies boundary behavior, computes overlap, updates both meters, and can terminate the outcome."},
+    {"path": "weird_captcha_gym/shared_scripts/incubator_generators/ballast_lantern.py", "lines": "253-260", "claim": "The control policy explicitly predicts target position from recent target velocity and compares it with cage velocity, showing why state/motion rather than action clock selects HAUL versus COAST."},
+    {"path": "weird_captcha_gym/shared_scripts/incubator_generators/ballast_lantern.py", "lines": "262-319, 363-387", "claim": "The certified generator uses one command per 600 ms window, requires multiple control transitions, requires successful two-target reference allocation, and rejects a specimen-only run."},
+    {"path": "weird_captcha_gym/shared_runtime/app/mechanics/ballast_lantern.js", "lines": "35-67", "claim": "The visible runtime performs the same autonomous cage/specimen/meter update and keeps the crate stationary after its spawn tick."},
+    {"path": "weird_captcha_gym/shared_runtime/app/mechanics/ballast_lantern.js", "lines": "69-85, 211-220", "claim": "Winch changes are outcome-affecting HAUL/COAST transitions, while requestAnimationFrame advances task ticks from elapsed time and redraws until terminal."},
+    {"path": "weird_captcha_gym/shared_runtime/app/mechanics/ballast_lantern.js", "lines": "180-220, 241-327", "claim": "The runtime renders cage/specimen/crate positions, wake dots, and the direction beacon; difficulty 1 creates the two fixed simplified buttons and updates the simulation continuously."},
+    {"path": "weird_captcha_gym/shared_runtime/app/mechanics/ballast_lantern.css", "lines": "180-247, 277-292", "claim": "The visible cage, specimen, crate, wake dots, direction arrow, and HAUL/COAST button states are rendered in the task UI."},
+    {"path": "weird_captcha_gym/shared_runtime/server/incubator_graders/ballast_lantern.py", "lines": "138-168, 178-250", "claim": "The authoritative replay advances the same state tick by tick under the submitted winch transcript and grades secured specimen plus crate outcome, rather than an action-clock schedule."},
+    {"path": "weird_captcha_gym/environments/ballast_lantern_env/tasks/ballast_lantern_seed_0001/verifier.py", "lines": "22-34", "claim": "The verifier loads the independent Ballast Lantern grader and grades the exported replay result."},
+    {"path": "weird_captcha_gym/tools/incubator_solvers/ballast_lantern.py", "lines": "47-105", "claim": "The reference solver selects the target from current meters/spawn state and uses predicted specimen motion at observation cadence before issuing simplified button actions; this is implementation evidence for the normal visible-control solution."}
+  ],
+  "uncertainties": []
+}

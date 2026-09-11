@@ -1,0 +1,139 @@
+{
+  "case_index": 28,
+  "public_environment_name": "Apothecary Dead Reckoning",
+  "environment_id": "apothecary_dead_reckoning_env",
+  "difficulty": 4,
+  "interaction_mode": "simplified",
+  "label": "no",
+  "controls_available": [
+    "Select or replace an ingredient by clicking one of six visible jars; the difficulty-4 ingredient budget is 8.",
+    "Set the selected ingredient's grind notch with one of 13 visible discrete curve-notch buttons.",
+    "Click STIR PATH to advance the selected path synchronously by the six-point stir stride; repeat until the path ends.",
+    "Click WATER, up to five times, to move toward the origin when the mortar is empty.",
+    "Click BELLOWS, up to three times, to move along the current heading when the mortar is empty.",
+    "Click SEAL to submit the current position and route state."
+  ],
+  "autonomous_processes": [
+    "No outcome-affecting autonomous process runs in simplified mode: the mechanic model changes only inside jar, notch, stir, water, bellows, and seal event handlers.",
+    "The shared live clock can advance observation windows, but no simplified-mode timer, interval, physics loop, or requestAnimationFrame callback mutates the task model between actions.",
+    "After a failed seal, the asynchronous result response can rerender a fresh challenge, and a 1.8-second timer then hides its fresh-failure banner; this is a post-submission attempt reset/administrative display change, not an active opportunity that becomes less effective."
+  ],
+  "grouped_control_modes": [
+    "Jar selection/load and replacement (jar_select)",
+    "Discrete curve-notch selection (grind_set)",
+    "Route-path advancement (ladle_click / STIR PATH)",
+    "Water recovery (water_button)",
+    "Bellows displacement (bellows_button)",
+    "Final certification/submission (seal_button)"
+  ],
+  "delta_ms": null,
+  "window_ms": null,
+  "clause_i": {
+    "holds": true,
+    "reason": "For the grouped route-commit mode, the generator makes the route and unique ingredient/notch matches seed-dependent. Histories with the same prior actions and task times can therefore require clicking STIR PATH or continuing preparation differently; an action-history-only q cannot be optimal across all such occurrences."
+  },
+  "clause_ii": {
+    "holds": true,
+    "reason": "Independently of any delay, a bounded endpoint screenshot is sufficient for the current static decision: the visible route ring and active dashed path preview expose the geometry needed to choose the next visible control. No unbounded memory or future randomness is needed. This does not form a real-time witness because clause iii fails."
+  },
+  "clause_iii": {
+    "holds": false,
+    "reason": "With no new action during an active attempt, the simplified model's position, route progress, selected ingredient, notch, budgets, and hazard contacts do not change. Jar selection, grind_set, stir, recovery, and seal mutations are synchronous event-handler effects. A failed seal can later trigger a fresh-challenge rerender, but only after the attempted submission and therefore after that attempt's outcome-affecting opportunity has ended; its 1.8-second banner timeout is administrative. No positive Delta contains non-clock evolution that makes an available action strictly less effective, so no choice of D or bounded window repairs this failure."
+  },
+  "common_visible_process": "None. The map, fog, route ring, and path preview are redrawn synchronously after input. The only CSS pounding animation is gated on full-mode grinding, while simplified mode uses discrete buttons and disables the pestle; the failed-seal rerender and failure-banner timeout happen after submission and are unrelated to an expiring route opportunity.",
+  "pre_run": {
+    "threshold": 0.5,
+    "at_least_half": null,
+    "rate": null,
+    "basis": "not_applicable",
+    "reason": "There is no autonomous outcome phase in this configuration: all outcome-affecting route and recovery transitions require visible input, and final sealing is administrative submission. The mathematical definition already fails clause iii, so no pre-run percentage is invented.",
+    "seed_probe": null
+  },
+  "files_read_completely": [
+    "AGENTS.md",
+    "weird_captcha_gym/docs/controllability/real-time.md",
+    "weird_captcha_gym/environments/apothecary_dead_reckoning_env/controls.json",
+    "weird_captcha_gym/environments/apothecary_dead_reckoning_env/env.json",
+    "weird_captcha_gym/environments/apothecary_dead_reckoning_env/tasks/apothecary_dead_reckoning_seed_0001/export_result.sh",
+    "weird_captcha_gym/environments/apothecary_dead_reckoning_env/tasks/apothecary_dead_reckoning_seed_0001/setup_task.sh",
+    "weird_captcha_gym/environments/apothecary_dead_reckoning_env/tasks/apothecary_dead_reckoning_seed_0001/task.json",
+    "weird_captcha_gym/environments/apothecary_dead_reckoning_env/tasks/apothecary_dead_reckoning_seed_0001/verifier.py",
+    "weird_captcha_gym/shared_runtime/app/mechanics/apothecary_dead_reckoning.css",
+    "weird_captcha_gym/shared_runtime/app/mechanics/apothecary_dead_reckoning.js",
+    "weird_captcha_gym/shared_runtime/app/time_controller.js",
+    "weird_captcha_gym/shared_runtime/server/incubator_graders/apothecary_dead_reckoning.py",
+    "weird_captcha_gym/shared_runtime/verifier_helpers.py",
+    "weird_captcha_gym/shared_scripts/incubator_generators/apothecary_dead_reckoning.py",
+    "weird_captcha_gym/tools/incubator_solvers/apothecary_dead_reckoning.py"
+  ],
+  "source_evidence": [
+    {
+      "path": "weird_captcha_gym/environments/apothecary_dead_reckoning_env/controls.json",
+      "lines": "25-50",
+      "claim": "Difficulty 4 supplies six ingredients, five route commits, thirteen grind notches, two vortices, and the listed recovery budgets; simplified interaction is jar selection plus discrete curve-notch buttons, with a 240 ms observation window and one frame."
+    },
+    {
+      "path": "weird_captcha_gym/shared_scripts/incubator_generators/apothecary_dead_reckoning.py",
+      "lines": "525-755",
+      "claim": "Generation is a deterministic seed-based construction of static ingredients, route gates, hazards, vortices, effects, and mechanics; it emits no timer or autonomous task loop."
+    },
+    {
+      "path": "weird_captcha_gym/shared_scripts/incubator_generators/apothecary_dead_reckoning.py",
+      "lines": "314-347",
+      "claim": "Route schedules are shuffled during generation and each gate is required to uniquely identify the intended ingredient/notch pair; this creates seed-dependent visual decisions but not autonomous evolution."
+    },
+    {
+      "path": "weird_captcha_gym/shared_runtime/app/mechanics/apothecary_dead_reckoning.js",
+      "lines": "394-490",
+      "claim": "Loading, synchronous grind state, and each six-point STIR PATH advance happen in direct event-handler code; route progress changes only when a stir path finishes."
+    },
+    {
+      "path": "weird_captcha_gym/shared_runtime/app/mechanics/apothecary_dead_reckoning.js",
+      "lines": "492-526",
+      "claim": "Water and bellows displacement, collision resolution, spend counters, and map reveal are synchronous consequences of their button handlers."
+    },
+    {
+      "path": "weird_captcha_gym/shared_runtime/app/mechanics/apothecary_dead_reckoning.js",
+      "lines": "583-706",
+      "claim": "Simplified mode binds jar clicks and discrete grind buttons, rejects full-mode pestle interaction, binds STIR/WATER/BELLOWS/SEAL to clicks, and uses the only mechanic timeout solely to clear a fresh-failure banner."
+    },
+    {
+      "path": "weird_captcha_gym/shared_runtime/app/mechanics/apothecary_dead_reckoning.js",
+      "lines": "550-580",
+      "claim": "Seal submits the current payload; only a failed server response rerenders a fresh challenge, which occurs after the submitted attempt rather than as autonomous evolution during its route-control window."
+    },
+    {
+      "path": "weird_captcha_gym/shared_runtime/app/mechanics/apothecary_dead_reckoning.css",
+      "lines": "170-175",
+      "claim": "The only pounding animation is enabled by data-grinding=true, while the simplified pestle is disabled and visually inactive."
+    },
+    {
+      "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/apothecary_dead_reckoning.py",
+      "lines": "302-387",
+      "claim": "The grader validates static movement mechanics and replays the hidden route synchronously from submitted events, including unique route-gate matches and obstacle/vortex resolution."
+    },
+    {
+      "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/apothecary_dead_reckoning.py",
+      "lines": "406-676",
+      "claim": "The authoritative grader consumes an ordered event transcript and updates all state only while processing load, grind, stir, water, bellows, and seal events; it has no task-time evolution."
+    },
+    {
+      "path": "weird_captcha_gym/environments/apothecary_dead_reckoning_env/tasks/apothecary_dead_reckoning_seed_0001/verifier.py",
+      "lines": "22-43",
+      "claim": "The verifier loads the exported result and invokes the independent apothecary grader; it adds no autonomous mechanic behavior."
+    },
+    {
+      "path": "weird_captcha_gym/tools/incubator_solvers/apothecary_dead_reckoning.py",
+      "lines": "39-78",
+      "claim": "The solver's simplified branch uses jar clicks, discrete notch-button clicks, and repeated STIR PATH clicks rather than duration control; private truth access is treated only as implementation evidence."
+    },
+    {
+      "path": "weird_captcha_gym/shared_runtime/app/time_controller.js",
+      "lines": "250-339",
+      "claim": "The shared clock drains timers and animation frames only while task time is running, but the simplified mechanic does not schedule an outcome-affecting timer or animation frame."
+    }
+  ],
+  "uncertainties": [
+    "The checked seed task fixture retains baseline easy/full metadata, while the assigned exact configuration is difficulty 4/simplified from controls.json; the explicit simplified guards in the browser implementation make the clause-iii result unaffected."
+  ]
+}

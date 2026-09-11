@@ -1,0 +1,216 @@
+{
+  "case_index": 71,
+  "public_environment_name": "Charter of the Nine Cantons",
+  "environment_id": "charter_of_the_nine_cantons_env",
+  "difficulty": 1,
+  "interaction_mode": "full",
+  "label": "no",
+  "controls_available": [
+    {
+      "control": "Canton seal buttons I-IX",
+      "effect": "Select the canton used by the brush; selecting a seal alone does not reassign a parcel.",
+      "outcome_affecting": false
+    },
+    {
+      "control": "Map parcel pointer drag",
+      "effect": "Brush through adjacent parcels and synchronously assign crossed parcels to the selected canton; the profile allows 6 changes and requires a stroke through at least 2 joined parcels that repaints at least 1 parcel.",
+      "outcome_affecting": true
+    },
+    {
+      "control": "UNDO",
+      "effect": "Restore the prior assignment and refund that action's change cost.",
+      "outcome_affecting": true
+    },
+    {
+      "control": "CERTIFY CHARTER",
+      "effect": "Submit the current assignment for grading.",
+      "outcome_affecting": false,
+      "administrative": true
+    },
+    {
+      "control": "Keyboard action channel",
+      "effect": "Declared by the environment action schema, but this mechanic installs no keyboard handler.",
+      "outcome_affecting": false
+    }
+  ],
+  "autonomous_processes": [
+    {
+      "period": "Initial render and idle gaps between agent actions",
+      "autonomous": false,
+      "task_state_changes_without_new_action": false,
+      "outcome_affecting_control_remains_available": true,
+      "description": "The generated parcel assignment, guilds, controls, and goal remain unchanged while idle."
+    },
+    {
+      "period": "During a full brush drag",
+      "autonomous": false,
+      "task_state_changes_without_new_action": false,
+      "outcome_affecting_control_remains_available": true,
+      "description": "Assignment changes occur synchronously from the agent's pointerdown/pointermove/pointerup gesture, not autonomously between actions."
+    },
+    {
+      "period": "After a parcel repaint",
+      "autonomous": true,
+      "task_state_changes_without_new_action": false,
+      "visible_presentation_change": "A CSS fill interpolation lasts 100 ms.",
+      "outcome_affecting_control_remains_available": true,
+      "description": "The assignment is already committed before the presentation transition; no action becomes unavailable or less effective."
+    },
+    {
+      "period": "Live virtual-clock progress",
+      "autonomous": true,
+      "task_state_changes_without_new_action": false,
+      "outcome_affecting_control_remains_available": true,
+      "description": "The shared controller can advance task time and drain registered timers or animation frames, but this mechanic registers no such task callback; controller polling/status work does not change the charter."
+    },
+    {
+      "period": "Asynchronous response after CERTIFY",
+      "autonomous": false,
+      "task_state_changes_without_new_action": true,
+      "outcome_affecting_control_remains_available": false,
+      "description": "PASS/FAIL or a fresh failed state follows the already delivered administrative submission, so it is not an autonomous active-task process."
+    }
+  ],
+  "grouped_control_modes": [
+    {
+      "id": "map_brush_drag",
+      "scope": "All full-mode map strokes across seeds, rounds, and attempts",
+      "outcome_affecting": true,
+      "description": "Select a seal and deliver a contiguous pointer stroke that repaints zero or more parcels."
+    },
+    {
+      "id": "undo_button",
+      "scope": "All undo events",
+      "outcome_affecting": true,
+      "description": "Revert the most recent assignment or stroke."
+    },
+    {
+      "id": "canton_seal_selection",
+      "scope": "All canton seal clicks",
+      "outcome_affecting": false,
+      "description": "Changes the selected brush canton but not the assignment by itself."
+    },
+    {
+      "id": "certify_charter",
+      "scope": "All certification clicks",
+      "outcome_affecting": false,
+      "description": "Administrative terminal submission, excluded from an active outcome-control witness."
+    }
+  ],
+  "delta_ms": null,
+  "window_ms": 0,
+  "clause_i": {
+    "holds": true,
+    "reason": "For the map-brush mode across generated seeds, the same action history does not identify the seed-dependent displaced boundary parcel or canton pair, so an action-only q(I_t) cannot generally select the visible repair. This is static screenshot dependence only and supplies no changing task state."
+  },
+  "clause_ii": {
+    "holds": true,
+    "reason": "A bounded window of 0 ms containing the current screenshot is sufficient in principle: the map visibly contains parcel geometry, current canton colors, guild marks, and joined borders, while the ledger exposes the population, holding, budget, and brush rules. No prior frame is needed; this is an ordinary static visual planner."
+  },
+  "clause_iii": {
+    "holds": false,
+    "reason": "No autonomous outcome-relevant task-state evolution occurs during an idle delay. Parcel assignment changes only in pointer event handlers, and the 100 ms CSS fill transition is action-triggered presentation after the assignment is committed. The shared clock or 240-second play allowance alone cannot create the required strict loss in Q or action advantage, so no Delta > 0 and legitimate D can satisfy this clause."
+  },
+  "common_visible_process": "None. The only visible change after an outcome-affecting action is a short CSS fill interpolation; it does not alter assignment, connectivity, population, holdings, action availability, or action value. The global virtual clock has no charter-specific callback to evolve the task.",
+  "pre_run": {
+    "threshold": 0.5,
+    "at_least_half": null,
+    "rate": null,
+    "basis": "not_applicable",
+    "reason": "The mathematical definition already fails clause (iii), so the pre-run threshold cannot change the label. This task has no autonomous outcome phase to defer actions into.",
+    "seed_probe": null
+  },
+  "files_read_completely": [
+    "AGENTS.md",
+    "weird_captcha_gym/docs/controllability/real-time.md",
+    "weird_captcha_gym/environments/charter_of_the_nine_cantons_env/controls.json",
+    "weird_captcha_gym/environments/charter_of_the_nine_cantons_env/env.json",
+    "weird_captcha_gym/environments/charter_of_the_nine_cantons_env/scripts/install_puzzle_runtime.sh",
+    "weird_captcha_gym/environments/charter_of_the_nine_cantons_env/scripts/setup_task.sh",
+    "weird_captcha_gym/environments/charter_of_the_nine_cantons_env/tasks/charter_of_the_nine_cantons_seed_0001/task.json",
+    "weird_captcha_gym/environments/charter_of_the_nine_cantons_env/tasks/charter_of_the_nine_cantons_seed_0001/setup_task.sh",
+    "weird_captcha_gym/environments/charter_of_the_nine_cantons_env/tasks/charter_of_the_nine_cantons_seed_0001/export_result.sh",
+    "weird_captcha_gym/environments/charter_of_the_nine_cantons_env/tasks/charter_of_the_nine_cantons_seed_0001/verifier.py",
+    "weird_captcha_gym/shared_scripts/incubator_generators/charter_of_the_nine_cantons.py",
+    "weird_captcha_gym/shared_runtime/app/index.html",
+    "weird_captcha_gym/shared_runtime/app/time_controller.js",
+    "weird_captcha_gym/shared_runtime/app/mechanics/charter_of_the_nine_cantons.js",
+    "weird_captcha_gym/shared_runtime/app/mechanics/charter_of_the_nine_cantons.css",
+    "weird_captcha_gym/shared_runtime/server/incubator_graders/charter_of_the_nine_cantons.py",
+    "weird_captcha_gym/shared_runtime/verifier_helpers.py",
+    "weird_captcha_gym/tools/incubator_solvers/charter_of_the_nine_cantons.py"
+  ],
+  "source_evidence": [
+    {
+      "path": "weird_captcha_gym/environments/charter_of_the_nine_cantons_env/controls.json",
+      "lines": "6-13",
+      "claim": "The assigned difficulty-1 profile has 9 columns by 6 rows (54 parcels), one balanced singleton exchange, a 6-change budget, and population tolerance 1; its full natural-language control requires a 2-parcel joined stroke with at least 1 repaint."
+    },
+    {
+      "path": "weird_captcha_gym/environments/charter_of_the_nine_cantons_env/controls.json",
+      "lines": "52-56",
+      "claim": "Full interaction is implemented as a canton-seal selection plus direct adjacent-parcel brushing, and the configured observation window is 0 ms with one frame."
+    },
+    {
+      "path": "weird_captcha_gym/environments/charter_of_the_nine_cantons_env/env.json",
+      "lines": "9-14",
+      "claim": "The runtime exposes one-frame observations, a 0 ms observation window, a 240-second play allowance, and mouse/keyboard action channels."
+    },
+    {
+      "path": "weird_captcha_gym/shared_scripts/incubator_generators/charter_of_the_nine_cantons.py",
+      "lines": "500-528",
+      "claim": "Generation constructs the warped target, initial displaced assignment, polygons, and guild assignments once from a seeded random generator; there is no episode-time update loop."
+    },
+    {
+      "path": "weird_captcha_gym/shared_scripts/incubator_generators/charter_of_the_nine_cantons.py",
+      "lines": "531-583",
+      "claim": "The generator returns a static public state containing parcels, adjacency, initial assignment, guilds, and parameters, while target assignment remains in ground truth."
+    },
+    {
+      "path": "weird_captcha_gym/shared_runtime/app/mechanics/charter_of_the_nine_cantons.js",
+      "lines": "65-105",
+      "claim": "The browser renders a fixed SVG parcel map, visible parcel colors/guild marks, boundaries, and nine canton seal buttons from the loaded state."
+    },
+    {
+      "path": "weird_captcha_gym/shared_runtime/app/mechanics/charter_of_the_nine_cantons.js",
+      "lines": "140-208",
+      "claim": "Assignment and brush changes are performed synchronously by recordAssignment/brushParcel during event handling; brush paths are restricted to adjacent parcels and then committed on pointerup."
+    },
+    {
+      "path": "weird_captcha_gym/shared_runtime/app/mechanics/charter_of_the_nine_cantons.js",
+      "lines": "211-303",
+      "claim": "Full mode binds only pointer drag events and seal clicks for gameplay, while undo synchronously restores history and certification submits the current transcript; no mechanic timer or animation-frame callback is scheduled."
+    },
+    {
+      "path": "weird_captcha_gym/shared_runtime/app/mechanics/charter_of_the_nine_cantons.css",
+      "lines": "179-189",
+      "claim": "The only timed visual effect for parcels is a 0.1 s fill/fill-opacity CSS transition, with no task-state movement or changing hit geometry."
+    },
+    {
+      "path": "weird_captcha_gym/shared_runtime/app/time_controller.js",
+      "lines": "250-339",
+      "claim": "The shared controller virtualizes timers and requestAnimationFrame and drains only callbacks registered by page code; its generic polling/animation loop does not itself mutate a mechanic."
+    },
+    {
+      "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/charter_of_the_nine_cantons.py",
+      "lines": "200-301",
+      "claim": "The grader replays the visible event transcript, assignment changes, undo history, geometry, budget, connectivity, population, and guild split; it has no task-time or timestamp-based outcome rule."
+    },
+    {
+      "path": "weird_captcha_gym/environments/charter_of_the_nine_cantons_env/tasks/charter_of_the_nine_cantons_seed_0001/verifier.py",
+      "lines": "22-35",
+      "claim": "The verifier only loads the exported result and invokes the independent replay grader, then reports its pass/fail result."
+    },
+    {
+      "path": "weird_captcha_gym/shared_runtime/verifier_helpers.py",
+      "lines": "15-30",
+      "claim": "The used shared helper loads the mechanic grader and grades the exported result; it contributes no autonomous task behavior."
+    },
+    {
+      "path": "weird_captcha_gym/tools/incubator_solvers/charter_of_the_nine_cantons.py",
+      "lines": "225-267",
+      "claim": "The implementation solver reads the static initial/target assignments, computes a finite repair list, performs the required brush, and certifies; its private target access is implementation evidence rather than policy information."
+    }
+  ],
+  "uncertainties": []
+}

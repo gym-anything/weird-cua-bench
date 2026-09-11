@@ -1,0 +1,143 @@
+{
+  "case_index": 159,
+  "public_environment_name": "Coordinates by Another Name",
+  "environment_id": "coordinates_by_another_name_env",
+  "difficulty": 5,
+  "interaction_mode": "full",
+  "label": "no",
+  "controls_available": [
+    "A visible irregular 6-by-9 chart with six band labels, three block labels, directional brackets, valid cells, and five missing cells; the chart and fleet manifest are informational rather than directly clickable controls.",
+    "Three full-mode SVG rotary selectors for Band, Block, and Count; the agent drags each knob to a labeled detent. Band values are the six seeded labels, Block values are A/B/C, and Count values are 1 through 9 plus *.",
+    "The FIRE button submits the currently selected band/block/count designation; * consumes one of the two sweep charges and covers a whole band/block run.",
+    "The END ATTEMPT button becomes CERTIFY FLEET after all vessels are sunk; certification and the post-failure CONTINUE control are administrative controls."
+  ],
+  "autonomous_processes": [
+    "None in the puzzle mechanic: the generated chart, hidden fleet placement, and selector options remain fixed between agent actions.",
+    "Selector changes and Fire resolve synchronously in the pointer or click handler; hit, miss, sunk, shot, and sweep state changes occur only inside those handlers.",
+    "The 600-second allowance and shared clock are deadline/runtime machinery, not a task-state process; certification performs asynchronous result I/O only after an administrative action."
+  ],
+  "grouped_control_modes": [
+    "D_fire: every fire_button shot across seeds, rounds, and attempts, parameterized by the currently selected band/block/count designation, including * sweeps.",
+    "D_rotary_drag: every full-mode rotary_drag on a Band, Block, or Count selector; it synchronously changes the next designation but does not itself fire.",
+    "END ATTEMPT/CERTIFY is administrative and is excluded from an outcome-affecting real-time witness."
+  ],
+  "delta_ms": null,
+  "window_ms": 0,
+  "clause_i": {
+    "holds": true,
+    "reason": "For the efficiency-bearing terminal outcome, no policy using only its own action history can be optimal across different seeded chart topologies and different persistent hit/miss states: the best next designation can depend on the visible chart and evidence. A fixed enumeration can still eventually pass, but the grader explicitly gives fewer-shot completions a higher efficiency score, so that observation-free enumeration is not the optimal low-shot action in every such history."
+  },
+  "clause_ii": {
+    "holds": true,
+    "reason": "A single current screenshot is sufficient: it contains the chart topology, band/block/count direction labels, persistent hit/miss/sunk marks, fleet manifest, shot count, and remaining sweeps. Because shot evidence is rendered persistently, a bounded window of 0 ms with its one endpoint frame can support the adaptive next-designation policy; no older frame is required."
+  },
+  "clause_iii": {
+    "holds": false,
+    "reason": "With no new action, the visible chart and all outcome-affecting state remain unchanged for every positive delay within the task allowance. Waiting cannot make a rotary detent or Fire designation unavailable or less effective; any chart change follows Fire or administrative certification, not autonomous non-clock evolution. Thus for no valid D, Delta, and 0 < tau < Delta is there a strict Q loss caused by task-state evolution."
+  },
+  "common_visible_process": "None. Persistent chart evidence supports visual search, but there is no autonomous visible process whose evolution could both determine a delayed action and degrade that action opportunity.",
+  "pre_run": {
+    "threshold": 0.5,
+    "at_least_half": null,
+    "rate": null,
+    "basis": "not_applicable",
+    "reason": "There is no autonomous outcome phase to start: the outcome-affecting Fire actions are the phase, and the world does not advance on its own between them. The mathematical classification is already No because clause (iii) fails, so the pre-run threshold cannot change the label.",
+    "seed_probe": null
+  },
+  "files_read_completely": [
+    "AGENTS.md",
+    "weird_captcha_gym/docs/controllability/real-time.md",
+    "weird_captcha_gym/environments/coordinates_by_another_name_env/controls.json",
+    "weird_captcha_gym/environments/coordinates_by_another_name_env/env.json",
+    "weird_captcha_gym/environments/coordinates_by_another_name_env/tasks/coordinates_by_another_name_seed_0001/task.json",
+    "weird_captcha_gym/environments/coordinates_by_another_name_env/tasks/coordinates_by_another_name_seed_0001/setup_task.sh",
+    "weird_captcha_gym/environments/coordinates_by_another_name_env/tasks/coordinates_by_another_name_seed_0001/export_result.sh",
+    "weird_captcha_gym/environments/coordinates_by_another_name_env/tasks/coordinates_by_another_name_seed_0001/verifier.py",
+    "weird_captcha_gym/environments/coordinates_by_another_name_env/scripts/install_puzzle_runtime.sh",
+    "weird_captcha_gym/environments/coordinates_by_another_name_env/scripts/setup_puzzle_runtime.sh",
+    "weird_captcha_gym/shared_scripts/incubator_generators/coordinates_by_another_name.py",
+    "weird_captcha_gym/shared_runtime/app/mechanics/coordinates_by_another_name.js",
+    "weird_captcha_gym/shared_runtime/app/mechanics/coordinates_by_another_name.css",
+    "weird_captcha_gym/shared_runtime/app/index.html",
+    "weird_captcha_gym/shared_runtime/app/time_controller.js",
+    "weird_captcha_gym/shared_scripts/setup_task.py",
+    "weird_captcha_gym/shared_scripts/open_puzzle_browser.sh",
+    "weird_captcha_gym/shared_scripts/export_result.sh",
+    "weird_captcha_gym/shared_runtime/verifier_helpers.py",
+    "weird_captcha_gym/shared_runtime/server/incubator_graders/coordinates_by_another_name.py",
+    "weird_captcha_gym/tools/incubator_solvers/coordinates_by_another_name.py"
+  ],
+  "source_evidence": [
+    {
+      "path": "weird_captcha_gym/environments/coordinates_by_another_name_env/controls.json",
+      "lines": "85-119",
+      "claim": "Difficulty 5 is the 6-by-9 irregular, reverse-count, no-orientation, touching-vessel, five-hole profile with fleet lengths 4/3/3/2 and two sweeps; full mode uses rotary detent drags, and the configured observation window is 0 ms with one frame."
+    },
+    {
+      "path": "weird_captcha_gym/shared_scripts/incubator_generators/coordinates_by_another_name.py",
+      "lines": "15-45, 52-112",
+      "claim": "Generation builds a seeded static chart and fleet, samples holes and block boundaries once, computes fixed cell designations, and exports the world and runtime fleet; no timer, motion, or autonomous update is generated."
+    },
+    {
+      "path": "weird_captcha_gym/environments/coordinates_by_another_name_env/tasks/coordinates_by_another_name_seed_0001/task.json",
+      "lines": "5-8, 20-27, 42-47",
+      "claim": "The task describes an unknown fleet whose shots reveal a persistent evidence chart, routes completion through verifier.py, and explicitly notes that persistent evidence removes a temporal-memory requirement."
+    },
+    {
+      "path": "weird_captcha_gym/shared_runtime/app/app.js",
+      "lines": "149-218, 3934-4050",
+      "claim": "The shared browser shell loads the mechanic's JS and CSS and invokes its render function; an unknown external mechanic falls through to that loader, with no Coordinates-specific animation or update loop added by the shell."
+    },
+    {
+      "path": "weird_captcha_gym/shared_runtime/app/mechanics/coordinates_by_another_name.js",
+      "lines": "9-48",
+      "claim": "Full mode renders three SVG rotary selectors and records synchronous rotary_drag selections after pointerdown/pointerup geometry checks."
+    },
+    {
+      "path": "weird_captcha_gym/shared_runtime/app/mechanics/coordinates_by_another_name.js",
+      "lines": "49-86, 110-118",
+      "claim": "The board renders the fixed chart and persistent marks; Fire synchronously resolves the current designation, updates seen/hits/sunk/shots/sweeps, and redraws, while render installs only event handlers and no timer or animation callback."
+    },
+    {
+      "path": "weird_captcha_gym/shared_runtime/app/mechanics/coordinates_by_another_name.js",
+      "lines": "87-109",
+      "claim": "Certification posts the already-collected event tape and handles the server response after the administrative button action; it is not an autonomous task evolution."
+    },
+    {
+      "path": "weird_captcha_gym/shared_runtime/app/mechanics/coordinates_by_another_name.css",
+      "lines": "1-10",
+      "claim": "The relevant CSS is static layout and styling for the chart, selectors, buttons, and verdict; it declares no animation or transition that changes task state."
+    },
+    {
+      "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/coordinates_by_another_name.py",
+      "lines": "31-76",
+      "claim": "The grader replays selector and Fire events synchronously, derives outcomes from the fixed world and fleet, and passes only when all vessels are sunk; efficiency is a separate fewer-shot score."
+    },
+    {
+      "path": "weird_captcha_gym/environments/coordinates_by_another_name_env/tasks/coordinates_by_another_name_seed_0001/verifier.py",
+      "lines": "35-51",
+      "claim": "The task verifier loads the exported result and independent grader and returns the replay pass/fail result, with no clock or elapsed-time condition."
+    },
+    {
+      "path": "weird_captcha_gym/tools/incubator_solvers/coordinates_by_another_name.py",
+      "lines": "49-91",
+      "claim": "The ordinary-input solver uses rendered cell classes for persistent hit/miss/sunk feedback and computes straight-vessel candidates before choosing the next designation, supporting a normal screenshot-only adaptive search rather than continuous observation."
+    },
+    {
+      "path": "weird_captcha_gym/shared_runtime/app/time_controller.js",
+      "lines": "250-345, 559-579, 644-653",
+      "claim": "The shared clock advances registered timers and animation frames only while a run window is active; this mechanic registers none, and its configured zero-length observation window supplies no autonomous task progress."
+    },
+    {
+      "path": "weird_captcha_gym/shared_scripts/setup_task.py",
+      "lines": "39-51, 184-220",
+      "claim": "Task setup injects the selected control condition into the generator and treats real_time as run identity while keeping state generation time-agnostic."
+    },
+    {
+      "path": "weird_captcha_gym/shared_runtime/verifier_helpers.py",
+      "lines": "27-48",
+      "claim": "The shared verifier helper only copies and parses the exported result before the mechanic-specific replay; it introduces no task-state evolution."
+    }
+  ],
+  "uncertainties": []
+}

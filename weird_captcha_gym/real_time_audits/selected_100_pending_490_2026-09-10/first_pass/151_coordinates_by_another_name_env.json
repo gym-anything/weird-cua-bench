@@ -1,0 +1,112 @@
+{
+  "case_index": 151,
+  "public_environment_name": "Coordinates by Another Name",
+  "environment_id": "coordinates_by_another_name_env",
+  "difficulty": 1,
+  "interaction_mode": "full",
+  "label": "no",
+  "controls_available": [
+    "Mouse drag on the Band rotary selector to choose one of the four sorted band labels.",
+    "Mouse drag on the Block rotary selector to choose A, B, or C.",
+    "Mouse drag on the Count rotary selector to choose 1 through 6 or *.",
+    "FIRE button to submit the composed band/block/count designation; * consumes one of two sweep charges and covers a whole band/block run.",
+    "END ATTEMPT or CERTIFY FLEET for administrative submission; this mechanic has no active keyboard handler."
+  ],
+  "autonomous_processes": [
+    "None during active play: between agent pointer events the chart, selector state, shot count, sweep count, hit/miss marks, and sunk statuses remain unchanged.",
+    "A /result response after END ATTEMPT or CERTIFY FLEET can show a verdict or render a fresh chart, but this is an administrative response caused by the prior submission and not an autonomous outcome phase."
+  ],
+  "grouped_control_modes": [
+    "D_full: all full-mode rotary_drag operations on the Band, Block, and Count selectors and all fire_button shots across seeds and attempts; administrative certification is excluded as non-outcome-affecting."
+  ],
+  "delta_ms": null,
+  "window_ms": 0,
+  "clause_i": {
+    "holds": true,
+    "reason": "The active search is state-dependent: the same prior action history can occur on different seeds with different hidden fleets and therefore different visible hit, miss, or sunk evidence. The next designation that maximizes expected completion and efficiency can differ, so no policy using only I_t can be optimal for every such visible history."
+  },
+  "clause_ii": {
+    "holds": true,
+    "reason": "The endpoint screenshot contains the static band/block/count chart, persistent hit/miss/sunk marks, orientation arrows for this difficulty, the vessel manifest, and remaining sweep charges. Those visible marks are sufficient for a bounded-window policy to choose the next designation; the configured bound is w=0 ms with one frame, so no longer temporal sequence is required."
+  },
+  "clause_iii": {
+    "holds": false,
+    "reason": "There is no autonomous task-state evolution to witness. The generator creates a fixed seeded world and fleet, while the browser mechanic changes selectors only in select handlers and changes shots, evidence, and sunk status synchronously in fire. The mechanic registers no timer, animation loop, physics, or movement, and the CSS has no animation. During any no-action interval, waiting cannot make an active shot or selector opportunity strictly less effective; only generic deadline passage occurs, which the definition excludes."
+  },
+  "common_visible_process": "None. Visible changes are agent-triggered selector updates and synchronous shot feedback, plus administrative certification output; no autonomous visible process predicts a delayed state or degrades an action opportunity.",
+  "pre_run": {
+    "threshold": 0.5,
+    "at_least_half": false,
+    "rate": null,
+    "basis": "source_structural",
+    "reason": "Every seed uses the same static-world mechanic: generation fixes the chart and fleet, and every outcome-affecting change requires selector or fire input. There is no autonomous outcome phase that a solution can start and then leave untouched, so a successful pre-run solution as defined does not exist and the at-least-half threshold is not met. No percentage is invented; certification remains administrative.",
+    "seed_probe": null
+  },
+  "files_read_completely": [
+    "AGENTS.md",
+    "weird_captcha_gym/docs/controllability/real-time.md",
+    "weird_captcha_gym/environments/coordinates_by_another_name_env/controls.json",
+    "weird_captcha_gym/environments/coordinates_by_another_name_env/env.json",
+    "weird_captcha_gym/environments/coordinates_by_another_name_env/tasks/coordinates_by_another_name_seed_0001/task.json",
+    "weird_captcha_gym/environments/coordinates_by_another_name_env/tasks/coordinates_by_another_name_seed_0001/setup_task.sh",
+    "weird_captcha_gym/environments/coordinates_by_another_name_env/tasks/coordinates_by_another_name_seed_0001/export_result.sh",
+    "weird_captcha_gym/environments/coordinates_by_another_name_env/scripts/setup_puzzle_runtime.sh",
+    "weird_captcha_gym/environments/coordinates_by_another_name_env/scripts/install_puzzle_runtime.sh",
+    "weird_captcha_gym/shared_scripts/incubator_generators/coordinates_by_another_name.py",
+    "weird_captcha_gym/shared_runtime/app/mechanics/coordinates_by_another_name.js",
+    "weird_captcha_gym/shared_runtime/app/mechanics/coordinates_by_another_name.css",
+    "weird_captcha_gym/shared_runtime/app/time_controller.js",
+    "weird_captcha_gym/shared_runtime/server/incubator_graders/coordinates_by_another_name.py",
+    "weird_captcha_gym/environments/coordinates_by_another_name_env/tasks/coordinates_by_another_name_seed_0001/verifier.py",
+    "weird_captcha_gym/shared_runtime/verifier_helpers.py",
+    "weird_captcha_gym/tools/incubator_solvers/coordinates_by_another_name.py"
+  ],
+  "source_evidence": [
+    {
+      "path": "weird_captcha_gym/environments/coordinates_by_another_name_env/controls.json",
+      "lines": "10-25,106-119",
+      "claim": "Difficulty 1 is a regular 4x6 chart with forward counts, orientation feedback, no holes, separated vessels of lengths 3 and 2, and two sweeps; full mode uses rotary drags and the configured observation window is 0 ms with one frame."
+    },
+    {
+      "path": "weird_captcha_gym/shared_scripts/incubator_generators/coordinates_by_another_name.py",
+      "lines": "15-24,27-45,52-70,96-112",
+      "claim": "The difficulty condition overrides the baseline at generation, then deterministically constructs static cells, runs, and a fixed fleet for the seed and exports that world as public/truth state; there is no runtime clock or autonomous update."
+    },
+    {
+      "path": "weird_captcha_gym/shared_runtime/app/mechanics/coordinates_by_another_name.js",
+      "lines": "16-47",
+      "claim": "Full-mode selectors are controlled by pointer drag and selector state changes synchronously in the select handler."
+    },
+    {
+      "path": "weird_captcha_gym/shared_runtime/app/mechanics/coordinates_by_another_name.js",
+      "lines": "49-85,110-114",
+      "claim": "The board renders persistent shot marks and orientation feedback; fire synchronously computes targets, updates shots/sweeps/seen/sunk, and redraws, while render only initializes the static UI and installs event handlers."
+    },
+    {
+      "path": "weird_captcha_gym/shared_runtime/app/mechanics/coordinates_by_another_name.css",
+      "lines": "1-10",
+      "claim": "The complete mechanic stylesheet contains presentation, hover/focus, and layout rules but no animation or movement rule."
+    },
+    {
+      "path": "weird_captcha_gym/shared_runtime/app/time_controller.js",
+      "lines": "250-339,626-652",
+      "claim": "The shared clock executes only timers and animation frames that a mechanic registers while task time runs; the Coordinates mechanic registers none, so clock progression alone does not mutate its task state."
+    },
+    {
+      "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/coordinates_by_another_name.py",
+      "lines": "31-76",
+      "claim": "The grader replays selector and fire events, computes synchronous shot feedback, and grades completion/efficiency from the event tape without any timing field or delayed-state rule."
+    },
+    {
+      "path": "weird_captcha_gym/environments/coordinates_by_another_name_env/tasks/coordinates_by_another_name_seed_0001/verifier.py",
+      "lines": "35-51",
+      "claim": "The verifier loads the exported result and delegates to the independent event-replay grader; it adds no autonomous or time-dependent task behavior."
+    },
+    {
+      "path": "weird_captcha_gym/tools/incubator_solvers/coordinates_by_another_name.py",
+      "lines": "49-91",
+      "claim": "The solver adapts from rendered cell classes and fleet status after each shot and treats any pacing delay as optional, supporting persistent visible feedback rather than autonomous motion."
+    }
+  ],
+  "uncertainties": []
+}

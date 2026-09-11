@@ -1,0 +1,153 @@
+{
+  "case_index": 89,
+  "public_environment_name": "Circle Limit Twist",
+  "environment_id": "circle_limit_twist_env",
+  "difficulty": 5,
+  "interaction_mode": "full",
+  "label": "no",
+  "controls_available": [
+    "The difficulty-5 puzzle has 15 heptagonal faces, an 8-twist scramble, and a 10-twist budget.",
+    "Full-mode mouse drag on the Poincare disc pans the view with a Mobius translation.",
+    "A short full-mode left-click on a face inside the central activation aperture applies a counter-clockwise twist; a short right-click applies a clockwise twist.",
+    "RESET SCRAMBLE synchronously restores the initial scramble and clears the local event and twist counters.",
+    "CERTIFY submits the current replay and is administrative; no outcome-affecting keyboard control is wired by this mechanic."
+  ],
+  "autonomous_processes": [
+    {
+      "period": "After render and between any two agent inputs",
+      "change": "None: the sticker state, Mobius view, and twist count remain fixed; there is no timer, physics tick, idle animation, or background random update.",
+      "outcome_affecting_control": "A valid full-mode canvas twist remains available until an explicit action, the move budget, submission, or the runner deadline."
+    },
+    {
+      "period": "The configured 180-second episode allowance",
+      "change": "Only clock-based runner termination can occur; it is not a non-clock task-state evolution.",
+      "outcome_affecting_control": "Not a qualifying expiring opportunity under the frozen definition."
+    }
+  ],
+  "grouped_control_modes": [
+    {
+      "name": "full_canvas_twist",
+      "scope": "Every valid full-mode canvas-click twist, for either direction and every face, across seeds and attempts.",
+      "outcome_affecting": true
+    },
+    {
+      "name": "full_mobius_pan",
+      "scope": "Every full-mode Mobius drag that changes the visible projection.",
+      "outcome_affecting": false
+    },
+    {
+      "name": "reset_scramble",
+      "scope": "The explicit restart control, which synchronously returns to the generated initial state.",
+      "outcome_affecting": true,
+      "role": "restart control, not an autonomous opportunity"
+    },
+    {
+      "name": "certify",
+      "scope": "The final submission control.",
+      "outcome_affecting": false,
+      "role": "administrative"
+    }
+  ],
+  "delta_ms": null,
+  "window_ms": 0,
+  "clause_i": {
+    "holds": true,
+    "reason": "For the candidate full_canvas_twist mode at an early solvable state, the optimal next face and direction vary with the generated scramble, so an observation-free policy over only its prior action history cannot choose one optimal action across those histories. The generator enforces an exact eight-move minimum and the visible state determines the restoration move. This is static visual dependence, not dependence on autonomous change."
+  },
+  "clause_ii": {
+    "holds": true,
+    "reason": "A zero-width current screenshot contains the colored sticker state and the visible projected geometry. A screenshot-only solver can determine the next full-mode pan or centered twist, and waiting does not alter that state, so a bounded-window policy exists. The policy does not need to observe any autonomous process."
+  },
+  "clause_iii": {
+    "holds": false,
+    "reason": "No legitimate grouped mode has a qualifying autonomous evolution for any Delta greater than zero. Between inputs, the browser has no timer, animation loop, physics, or random updater; all view and sticker mutations occur synchronously in drag, click, or reset handlers. Thus a valid action remains equally effective after the delay and its advantage over no-op does not strictly decrease. Deadline-only loss is excluded by the definition."
+  },
+  "common_visible_process": "None. The only visible changes are synchronous consequences of the agent's own drag or click: dragging changes the view and clicking a centered face changes the sticker permutation. There is no visible autonomous process that could make a delayed action observation-dependent and simultaneously degrade its value.",
+  "pre_run": {
+    "threshold": 0.5,
+    "at_least_half": null,
+    "rate": null,
+    "basis": "not_applicable",
+    "reason": "The source implements no autonomous outcome phase. The configuration already fails the mathematical definition at clause (iii), so the pre-run threshold cannot override the No label.",
+    "seed_probe": null
+  },
+  "files_read_completely": [
+    "AGENTS.md",
+    "weird_captcha_gym/docs/controllability/real-time.md",
+    "weird_captcha_gym/environments/circle_limit_twist_env/controls.json",
+    "weird_captcha_gym/environments/circle_limit_twist_env/env.json",
+    "weird_captcha_gym/environments/circle_limit_twist_env/tasks/circle_limit_twist_seed_0001/task.json",
+    "weird_captcha_gym/environments/circle_limit_twist_env/tasks/circle_limit_twist_seed_0001/setup_task.sh",
+    "weird_captcha_gym/environments/circle_limit_twist_env/tasks/circle_limit_twist_seed_0001/export_result.sh",
+    "weird_captcha_gym/shared_scripts/incubator_generators/circle_limit_twist.py",
+    "weird_captcha_gym/shared_runtime/app/mechanics/circle_limit_twist.js",
+    "weird_captcha_gym/shared_runtime/app/mechanics/circle_limit_twist.css",
+    "weird_captcha_gym/shared_runtime/server/incubator_graders/circle_limit_twist.py",
+    "weird_captcha_gym/environments/circle_limit_twist_env/tasks/circle_limit_twist_seed_0001/verifier.py",
+    "weird_captcha_gym/shared_runtime/verifier_helpers.py",
+    "weird_captcha_gym/tools/incubator_solvers/circle_limit_twist.py"
+  ],
+  "source_evidence": [
+    {
+      "path": "weird_captcha_gym/environments/circle_limit_twist_env/controls.json",
+      "lines": "34-54",
+      "claim": "Difficulty 5 selects face_count 15, scramble_length 8, and move_budget 10; full interaction is a Mobius drag plus left/right canvas twist, with observation_window_ms 0 and one frame."
+    },
+    {
+      "path": "weird_captcha_gym/shared_scripts/incubator_generators/circle_limit_twist.py",
+      "lines": "308-363",
+      "claim": "Generation consumes the control parameters to create a seeded initial scramble, fixed geometry, sticker cycles, and a static puzzle contract; it does not define a runtime clock or autonomous update."
+    },
+    {
+      "path": "weird_captcha_gym/shared_scripts/incubator_generators/circle_limit_twist.py",
+      "lines": "331-350",
+      "claim": "The scramble is applied during generation and the solution is the reversed inverse scramble; the random source is used while generating the challenge, not between browser actions."
+    },
+    {
+      "path": "weird_captcha_gym/shared_runtime/app/mechanics/circle_limit_twist.js",
+      "lines": "199-233",
+      "claim": "applyTwist synchronously checks the move budget, computes the permutation, increments twists, replaces model.current, redraws, and updates the panel."
+    },
+    {
+      "path": "weird_captcha_gym/shared_runtime/app/mechanics/circle_limit_twist.js",
+      "lines": "235-299",
+      "claim": "Full-mode pointer handlers synchronously update the Mobius view during an agent drag and apply a twist on pointer release; there is no autonomous handler."
+    },
+    {
+      "path": "weird_captcha_gym/shared_runtime/app/mechanics/circle_limit_twist.js",
+      "lines": "301-355",
+      "claim": "Reset synchronously restores the initial state, while submission only packages the current replay for /result."
+    },
+    {
+      "path": "weird_captcha_gym/shared_runtime/app/mechanics/circle_limit_twist.js",
+      "lines": "368-434",
+      "claim": "Rendering initializes a fixed current state and identity view, installs event listeners, and calls draw; the complete mechanic contains no timer or animation loop."
+    },
+    {
+      "path": "weird_captcha_gym/shared_runtime/app/mechanics/circle_limit_twist.css",
+      "lines": "1",
+      "claim": "The relevant CSS provides static layout, background, cursor, and overlay styling without an animation or transition declaration."
+    },
+    {
+      "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/circle_limit_twist.py",
+      "lines": "121-208",
+      "claim": "The grader replays pan and twist events, checks the visible interaction source, permutation, aperture, budget, and final monochrome state; it uses no elapsed-time or autonomous-state field."
+    },
+    {
+      "path": "weird_captcha_gym/environments/circle_limit_twist_env/tasks/circle_limit_twist_seed_0001/verifier.py",
+      "lines": "123-196",
+      "claim": "The verifier independently replays the event transcript and validates only the resulting view/sticker state, counts, and solved condition."
+    },
+    {
+      "path": "weird_captcha_gym/tools/incubator_solvers/circle_limit_twist.py",
+      "lines": "144-175",
+      "claim": "The scripted solver computes a fixed solution sequence, focuses each target through the selected interaction surface, twists, and certifies without waiting for a task-state process."
+    },
+    {
+      "path": "weird_captcha_gym/shared_runtime/verifier_helpers.py",
+      "lines": "33-52",
+      "claim": "The verifier helper only loads the exported JSON result from the task container; it contributes no task-time evolution."
+    }
+  ],
+  "uncertainties": []
+}

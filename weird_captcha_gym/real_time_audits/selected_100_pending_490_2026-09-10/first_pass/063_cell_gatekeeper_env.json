@@ -1,0 +1,191 @@
+{
+  "case_index": 63,
+  "public_environment_name": "Cell Gatekeeper",
+  "environment_id": "cell_gatekeeper_env",
+  "difficulty": 2,
+  "interaction_mode": "full",
+  "label": "no",
+  "controls_available": [
+    "Drag protein cards into empty membrane slots to install them.",
+    "Drag an installed membrane protein to the eject dock to remove it.",
+    "Drag a visible solute +1 or -1 token into the OUTSIDE or INSIDE compartment; each adjustment changes one particle.",
+    "Drag an ATP burst of +3 units into the fuel well.",
+    "Click LOCK GRADIENT to certify the current state; NEW CELL is an administrative retry control. The mechanic binds no keyboard handler."
+  ],
+  "autonomous_processes": [
+    {
+      "process": "Discrete task-clock tick",
+      "cadence": "100 ms of task time",
+      "effect": "Increments sim.tick and runs the passive-transport, active-transport, timeout, and stable-hold checks.",
+      "visible_evidence": "The header and canvas show the task tick, and the bars/ledger are refreshed."
+    },
+    {
+      "process": "Installed selective leak",
+      "cadence": "Every 5 ticks (500 ms), phase-shifted by its membrane slot",
+      "effect": "Moves one particle of the leak species from the currently higher-count compartment to the lower-count compartment and increments the passive crossing ledger.",
+      "visible_evidence": "Concentration bars, the crossing trace, the crossing ledger, and the rendered particles change."
+    },
+    {
+      "process": "Installed ATP-pump cohort",
+      "cadence": "Every 4 ticks (400 ms) when the shared ATP reservoir can service all installed pumps",
+      "effect": "At difficulty 2, the two pumps each move one particle in their fixed direction and consume one ATP unit per pump.",
+      "visible_evidence": "Bars, ATP readout/gauge, active crossing ledger, and transport trace change."
+    },
+    {
+      "process": "Stable-hold counter",
+      "cadence": "Every tick",
+      "effect": "Increments while all base obligations and target bands hold; otherwise resets to zero. Six stable ticks are required.",
+      "visible_evidence": "The TARGET LOCK status shows HOLD n/6 or READY TO LOCK."
+    },
+    {
+      "process": "Canvas particle drift",
+      "cadence": "Every rendered tick",
+      "effect": "Changes particle positions using sim.tick without changing counts or grading state.",
+      "visible_evidence": "Particle positions visibly drift in the membrane canvas; this is decorative with respect to the outcome."
+    },
+    {
+      "process": "Configured timeout",
+      "cadence": "At 190 ticks",
+      "effect": "Sets the simulation status to timeout.",
+      "visible_evidence": "The task clock reaches the configured limit.",
+      "real_time_relevance": "This is only a remaining-clock/deadline effect and cannot supply clause (iii)."
+    }
+  ],
+  "grouped_control_modes": [
+    {
+      "mode": "full protein-install drag",
+      "scope": "Any protein card dragged to any empty membrane slot",
+      "outcome_effect": "Installs the selected protein and starts its later transport behavior."
+    },
+    {
+      "mode": "full protein-eject drag",
+      "scope": "Any occupied membrane slot dragged to the eject dock",
+      "outcome_effect": "Removes the selected installed protein."
+    },
+    {
+      "mode": "full solute-adjust drag",
+      "scope": "Either sign token for either species dropped in either compartment",
+      "outcome_effect": "Adds or removes one visible particle, subject to the capacity bounds."
+    },
+    {
+      "mode": "full ATP-supply drag",
+      "scope": "The ATP burst token dropped into the fuel well",
+      "outcome_effect": "Adds the configured three-unit ATP burst."
+    },
+    {
+      "mode": "lock/certify click",
+      "scope": "LOCK GRADIENT (with NEW CELL as a forced-failure retry)",
+      "outcome_effect": "Submits the replay; certification itself is administrative."
+    }
+  ],
+  "delta_ms": null,
+  "window_ms": 600,
+  "clause_i": {
+    "holds": false,
+    "reason": "For the common autonomous transport portion, the leak phase, pump period, required crossing counts, ATP amount, and six-tick hold are fixed and can be scheduled from prior actions and task times. A policy q can wait through the fixed phases after visually selecting the correct cards during preparation. Randomized catalog order can make static preparation require a screenshot, but that is not a delayed choice caused by the autonomous transport process and cannot form the required common witness."
+  },
+  "clause_ii": {
+    "holds": true,
+    "reason": "The bounded current display exposes numeric counts at difficulty 2, amber target bands, installed slots, the task tick, ATP, and passive/active crossing trace and ledger. The configured 600 ms observation window contains six chronological frames, so a visual policy can read the changing transport state; this does not rescue the failed common-witness conjunction."
+  },
+  "clause_iii": {
+    "holds": false,
+    "reason": "Leak and pump transfers do change visible counts autonomously, but no useful action opportunity irreversibly expires. Leak removal remains available, pump activity is finite when no further ATP is supplied and can also be stopped by ejection, and the full interface provides +/-1 solute corrections. The grader requires at least one leak crossing and at least three pump crossings, not exact upper bounds, so extra transfers can be corrected before locking. Any loss from waiting to tick 190 is only the excluded remaining-clock effect."
+  },
+  "common_visible_process": "The only outcome-affecting autonomous process is the fixed-period membrane transport: an installed leak moves one particle every five ticks and an ATP-funded pump cohort moves particles every four ticks. The bars, tick, trace, ATP display, and ledger visibly expose it, while the canvas also has unrelated particle drift. The transport state is recoverable with ejection and +/-1 calibration and its schedule is predictable from the agent's own actions, so it supplies neither a valid observation-dependent delayed action nor a strictly expiring opportunity.",
+  "pre_run": {
+    "threshold": 0.5,
+    "at_least_half": true,
+    "rate": null,
+    "basis": "source_structural",
+    "reason": "Every generated difficulty-2 instance has one required sodium leak, two pumps, passive period 5, pump period 4, pump_cycles 3, ATP batch 3, capacity 30, and six stable ticks. During preparation, place the leak in visible slot 1, wait for its fixed fifth-tick passive crossing, eject it, place both pumps, and supply two +3 ATP bursts. Starting from the resulting task state, no more outcome-affecting actions are needed: the pumps cross at the next three pump ticks, ATP reaches zero, the target bands hold for six ticks, and LOCK GRADIENT is administrative. The generator's initial counts stay within 4-6 and 11-14 and computes the target bands from exactly one leak credit plus three pump transfers, so this route is structurally seed-independent."
+    ,
+    "seed_probe": null
+  },
+  "files_read_completely": [
+    "AGENTS.md",
+    "weird_captcha_gym/docs/controllability/real-time.md",
+    "weird_captcha_gym/environments/cell_gatekeeper_env/controls.json",
+    "weird_captcha_gym/environments/cell_gatekeeper_env/env.json",
+    "weird_captcha_gym/environments/cell_gatekeeper_env/tasks/cell_gatekeeper_seed_0001/task.json",
+    "weird_captcha_gym/environments/cell_gatekeeper_env/tasks/cell_gatekeeper_seed_0001/verifier.py",
+    "weird_captcha_gym/environments/cell_gatekeeper_env/tasks/cell_gatekeeper_seed_0001/setup_task.sh",
+    "weird_captcha_gym/environments/cell_gatekeeper_env/tasks/cell_gatekeeper_seed_0001/export_result.sh",
+    "weird_captcha_gym/shared_runtime/app/index.html",
+    "weird_captcha_gym/shared_runtime/app/time_controller.js",
+    "weird_captcha_gym/shared_runtime/app/mechanics/cell_gatekeeper.js",
+    "weird_captcha_gym/shared_runtime/app/mechanics/cell_gatekeeper.css",
+    "weird_captcha_gym/shared_runtime/verifier_helpers.py",
+    "weird_captcha_gym/shared_runtime/server/incubator_graders/cell_gatekeeper.py",
+    "weird_captcha_gym/shared_scripts/incubator_generators/cell_gatekeeper.py",
+    "weird_captcha_gym/tools/incubator_solvers/cell_gatekeeper.py"
+  ],
+  "source_evidence": [
+    {
+      "path": "weird_captcha_gym/environments/cell_gatekeeper_env/controls.json",
+      "lines": "29-45",
+      "claim": "Difficulty 2 is the exact two-species, three-slot, one-leak profile with three pump cycles, goal width 3, passive period 5, pump period 4, ATP batch 3, six-tick hold, max_ticks 190, and numeric readout enabled."
+    },
+    {
+      "path": "weird_captcha_gym/environments/cell_gatekeeper_env/controls.json",
+      "lines": "111-119",
+      "claim": "Full interaction is drag-to-slot, drag-to-eject, drag solute tokens to compartments, and drag ATP bursts to the fuel well; the configured observation window is 600 ms with six frames."
+    },
+    {
+      "path": "weird_captcha_gym/shared_scripts/incubator_generators/cell_gatekeeper.py",
+      "lines": "71-75,121-162",
+      "claim": "The selected control condition supplies the exact profile; two species are initialized with low counts 4-6 and high counts 11-14, and goals are computed from exactly the pump-cycle count plus one passive credit for sodium."
+    },
+    {
+      "path": "weird_captcha_gym/shared_scripts/incubator_generators/cell_gatekeeper.py",
+      "lines": "78-112,164-194,213-223",
+      "claim": "The catalog contains leak and pump proteins, shuffles their visible order, and the initial simulation starts active with empty slots, zero ATP, and no crossings."
+    },
+    {
+      "path": "weird_captcha_gym/shared_runtime/app/mechanics/cell_gatekeeper.js",
+      "lines": "18-65",
+      "claim": "Each task tick applies five-period passive leak movement and four-period ATP pump-cohort movement; both alter counts and crossing ledgers, while max_ticks sets timeout."
+    },
+    {
+      "path": "weird_captcha_gym/shared_runtime/app/mechanics/cell_gatekeeper.js",
+      "lines": "67-90,247-335",
+      "claim": "The target check requires the visible count bands, all required crossings, removal of the required leak, and six stable ticks; the UI renders counts, target bands, tick, ATP, trace, and ledger."
+    },
+    {
+      "path": "weird_captcha_gym/shared_runtime/app/mechanics/cell_gatekeeper.js",
+      "lines": "394-424,428-457",
+      "claim": "Lock submits the replay, full mode records protein/solute/ATP drag sources, and animation-frame sync advances the simulation from performance.now."
+    },
+    {
+      "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/cell_gatekeeper.py",
+      "lines": "29-79,141-172",
+      "claim": "The independent replay uses the same five-period leak and four-period pump rules, treats pump/leak crossing counts as lower bounds, requires leak removal, and accepts any in-band six-tick hold."
+    },
+    {
+      "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/cell_gatekeeper.py",
+      "lines": "81-138,189-251",
+      "claim": "The grader preserves the selected interaction source, allows +/-1 solute corrections and exact ATP bursts, and replays events through the submitted terminal tick before checking the final state."
+    },
+    {
+      "path": "weird_captcha_gym/tools/incubator_solvers/cell_gatekeeper.py",
+      "lines": "151-187",
+      "claim": "The visible-input solver places and removes the leak, places both pumps, supplies the total ATP requirement, waits for crossings, calibrates with visible +/-1 controls, waits for the hold, and then locks."
+    },
+    {
+      "path": "weird_captcha_gym/shared_runtime/app/time_controller.js",
+      "lines": "55-77,267-339,548-601",
+      "claim": "The shared clock makes performance.now task-time based, freezes it while paused, and advances it only during configured run windows; this confirms the 600 ms setting is observation progress rather than a new mechanic."
+    },
+    {
+      "path": "weird_captcha_gym/shared_runtime/app/mechanics/cell_gatekeeper.css",
+      "lines": "46-66,68-95",
+      "claim": "The relevant CSS exposes membrane slots, compartment drop zones, visible target bars, draggable protein/solute/ATP controls, and the ATP/ledger panels; its transitions are presentation effects."
+    },
+    {
+      "path": "weird_captcha_gym/environments/cell_gatekeeper_env/tasks/cell_gatekeeper_seed_0001/verifier.py",
+      "lines": "21-50",
+      "claim": "The task verifier loads the exported state and independent Cell Gatekeeper replay grader, so the outcome is determined by the replay contract rather than a private solver."
+    }
+  ],
+  "uncertainties": []
+}

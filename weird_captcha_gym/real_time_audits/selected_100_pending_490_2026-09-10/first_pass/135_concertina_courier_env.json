@@ -1,0 +1,116 @@
+{
+  "case_index": 135,
+  "public_environment_name": "Concertina Courier",
+  "environment_id": "concertina_courier_env",
+  "difficulty": 3,
+  "interaction_mode": "full",
+  "label": "yes",
+  "controls_available": [
+    "Full-mode mouse pointerdown on the visible body arrows: slide left, slide right, morph taller, and morph wider.",
+    "Pointerup, pointercancel, or window blur releases the body hold to neutral COAST; the target mechanic has no keyboard handler.",
+    "CERTIFY and NEW ROOM are administrative controls; they are not outcome-affecting puzzle controls."
+  ],
+  "autonomous_processes": [
+    "The requestAnimationFrame loop advances the simulation to elapsed 40 ms ticks even when no new agent event arrives.",
+    "Each tick applies gravity to vy and bottom, resolves solid collisions and landings, and marks the parcel fallen when it passes the room floor.",
+    "Horizontal velocity persists between input events and is damped by drag while x continues to move; morphology and contact with shelves change which states remain clear, and visible seal contact changes the collected set."
+  ],
+  "grouped_control_modes": [
+    "full body_hold: all visible directional body holds, with slide-left/slide-right and morph-taller/morph-wider as the action choices",
+    "full release/coast: the neutral [0, 0] state after pointer release or cancellation",
+    "administrative certify/new-room actions, excluded from outcome-affecting D"
+  ],
+  "delta_ms": 160,
+  "window_ms": 80,
+  "clause_i": {
+    "holds": true,
+    "reason": "Take D to be all full body_hold occurrences, not a hand-picked interval. The L3 island generator randomizes center, gap, opening, and well and independently mirrors the entire room. Thus two histories can have the same I_t (same prior controls and task times) while the visible landing/opening is on opposite sides or the parcel has different contact-derived x, h, and vx. The delayed-optimal slide or morph choice differs, so no policy q using only I_t can be optimal for every history in C_Delta(D)."
+  },
+  "clause_ii": {
+    "holds": true,
+    "reason": "The canvas visibly renders every solid, seal, and the current parcel rectangle, including its x, bottom, and area-preserving width/height; the three chronological frames across the configured 80 ms window expose the parcel's displacement and direction. Together with I_t's current hold/release, that bounded trajectory window is sufficient to estimate momentum, project the state four ticks (160 ms) ahead, and choose the appropriate body arrow or brake/release action."
+  },
+  "clause_iii": {
+    "holds": true,
+    "reason": "The same coasting/momentum process supplies the strict loss. In an exact seed-0 replay, a reachable under-shelf state is approximately x=871.6, bottom=420, h=89, vx=4 with the first three seals collected. A=[0,1] (morph taller) can then unfold through the opening and collect the last seal. With no new action for tau=120 ms (three ticks), the parcel coasts to approximately x=881 and the next height substep is blocked by the right shelf; the same A loses its immediate action advantage. The state is still active and can be rescued by braking left and re-entering the opening, so C_Delta remains nonempty. This loss is caused by visible spatial/contact evolution, not by a deadline or merely by waiting for an enabling animation."
+  },
+  "common_visible_process": "Use D=full body_hold with the parcel coasting between a release and the next body-arrow action, Delta=160 ms (four 40 ms physics ticks), and w=80 ms (the configured three-frame window). The visible parcel trajectory under drag, together with gravity and shelf/gap contact, predicts whether a delayed slide or morph will still fit. In the under-shelf receiving opening, rightward drift moves the parcel out of the clearance needed to morph taller; at the supported-to-unsupported crossing, the same drift can also remove the horizontal bridge and lead to an irreversible fall. Recent frames reveal this process, q cannot reconstruct it from its own action clock, and g can select the delayed control from the visible trajectory.",
+  "pre_run": {
+    "threshold": 0.5,
+    "at_least_half": false,
+    "rate": null,
+    "basis": "source_structural",
+    "reason": "The exact L3 generator has no separate prepare/start boundary: every instance starts active at x=center, bottom=420, h=80, vx=vy=0 with no seals collected. A neutral autonomous run leaves the parcel on the starting island at h=80; seal 0 is at y=420-reach=260 above its initial top y=340, while the other seals are displaced across the gap, landing, and opening. Reaching all four therefore requires outcome-affecting slide or morph controls during the run. The defined pre-run threshold is not met; no percentage is asserted.",
+    "seed_probe": null
+  },
+  "files_read_completely": [
+    "AGENTS.md",
+    "weird_captcha_gym/docs/controllability/real-time.md",
+    "weird_captcha_gym/environments/concertina_courier_env/controls.json",
+    "weird_captcha_gym/environments/concertina_courier_env/env.json",
+    "weird_captcha_gym/environments/concertina_courier_env/scripts/install_puzzle_runtime.sh",
+    "weird_captcha_gym/environments/concertina_courier_env/scripts/setup_puzzle_runtime.sh",
+    "weird_captcha_gym/environments/concertina_courier_env/tasks/concertina_courier_seed_0001/setup_task.sh",
+    "weird_captcha_gym/environments/concertina_courier_env/tasks/concertina_courier_seed_0001/export_result.sh",
+    "weird_captcha_gym/environments/concertina_courier_env/tasks/concertina_courier_seed_0001/task.json",
+    "weird_captcha_gym/environments/concertina_courier_env/tasks/concertina_courier_seed_0001/verifier.py",
+    "weird_captcha_gym/shared_scripts/incubator_generators/concertina_courier.py",
+    "weird_captcha_gym/shared_runtime/app/mechanics/concertina_courier.js",
+    "weird_captcha_gym/shared_runtime/app/mechanics/concertina_courier.css",
+    "weird_captcha_gym/shared_runtime/server/incubator_graders/concertina_courier.py",
+    "weird_captcha_gym/tools/incubator_solvers/concertina_courier.py"
+  ],
+  "source_evidence": [
+    {
+      "path": "weird_captcha_gym/environments/concertina_courier_env/controls.json",
+      "lines": "32-50, 93-104",
+      "claim": "Difficulty 3 is the island profile with 240-unit island, 80-120 gap, 100-120 opening, 80 clearance, 160 reach, drag 0.85, and 90 well clearance; full interaction is implemented and the observation window is 80 ms with three frames."
+    },
+    {
+      "path": "weird_captcha_gym/environments/concertina_courier_env/env.json",
+      "lines": "20-46",
+      "claim": "The environment exposes a frame window and mouse/keyboard action types, with the runner using 180 seconds, 80 ms steps, and three frames."
+    },
+    {
+      "path": "weird_captcha_gym/shared_scripts/incubator_generators/concertina_courier.py",
+      "lines": "14-19, 46-78",
+      "claim": "The selected condition supplies the difficulty parameters; L3 generates a randomized and optionally mirrored island, gap, shelves, opening, four seals, and an active zero-velocity initial parcel."
+    },
+    {
+      "path": "weird_captcha_gym/shared_runtime/app/mechanics/concertina_courier.js",
+      "lines": "5-22",
+      "claim": "The visible simulation preserves area, applies morphology, drag-based horizontal velocity, gravity, collision/landing, seal contact, falling, and solved/timeout status."
+    },
+    {
+      "path": "weird_captcha_gym/shared_runtime/app/mechanics/concertina_courier.js",
+      "lines": "24-43, 46-52",
+      "claim": "The browser renders solids, seals, and the parcel on canvas; tick advances from elapsed time; body controls set visible full-mode holds; release sets neutral coast; and requestAnimationFrame keeps ticking."
+    },
+    {
+      "path": "weird_captcha_gym/shared_runtime/app/mechanics/concertina_courier.css",
+      "lines": "1",
+      "claim": "The full-mode body controls are a visible positioned button grid over the canvas, and the interaction buttons are native visible controls."
+    },
+    {
+      "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/concertina_courier.py",
+      "lines": "21-49, 52-86",
+      "claim": "The authoritative replay uses the same substepped physics, validates the full interaction source and transcript, and accepts only a solved replay with matching final physical state."
+    },
+    {
+      "path": "weird_captcha_gym/environments/concertina_courier_env/tasks/concertina_courier_seed_0001/verifier.py",
+      "lines": "36-49",
+      "claim": "Verification loads the exported result and the Concertina Courier independent grader, so the outcome is based on the replay rather than client collection claims."
+    },
+    {
+      "path": "weird_captcha_gym/tools/incubator_solvers/concertina_courier.py",
+      "lines": "87-124, 125-146",
+      "claim": "The reference controller repeatedly reads the visible simulation state, predicts short-horizon motion, and changes shape/position for the L3 island, under-shelf, and opening sequence."
+    },
+    {
+      "path": "weird_captcha_gym/docs/controllability/real-time.md",
+      "lines": "36-68, 70-86",
+      "claim": "The frozen definition requires one common visible autonomous process satisfying clauses (i)-(iii), and the pre-run threshold overrides only when at least half of generated instances can finish after preparation without further outcome-affecting actions."
+    }
+  ],
+  "uncertainties": []
+}

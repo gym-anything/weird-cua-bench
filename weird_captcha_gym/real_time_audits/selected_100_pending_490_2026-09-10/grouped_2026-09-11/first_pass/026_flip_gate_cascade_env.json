@@ -1,0 +1,1113 @@
+{
+  "case_index": 26,
+  "environment_id": "flip_gate_cascade_env",
+  "public_environment_name": "Flip-Gate Cascade",
+  "configuration_reports": [
+    {
+      "case_index": 251,
+      "public_environment_name": "Flip-Gate Cascade",
+      "environment_id": "flip_gate_cascade_env",
+      "difficulty": 1,
+      "interaction_mode": "full",
+      "label": "no",
+      "controls_available": [
+        "Difficulty 1: 2 top chutes, 2 rows, 5 visible vanes, exact target depth 2, and drop budget 4.",
+        "Full interaction: hover or focus a chute to inspect its inlet, then pointer-down/move/up the feed marble to a chute; only a release within the 72 px acceptance radius starts a marble drop.",
+        "Timing controls: 1000 ms observation window, 6 chronological frames per observation, and 150 s maximum task-active time."
+      ],
+      "autonomous_processes": [
+        "While settled and idle, no timer, random process, or physics loop changes the machine without a new action.",
+        "The feed-marble pointer drag is agent-controlled; the task does not start a drop or change a gate until pointerup selects a chute.",
+        "After an accepted marble_drag, a fixed 900 ms requestAnimationFrame transit moves the marble along the precomputed path, flips each visited vane, updates the current state, and shows a transient path.",
+        "During that transit model.busy rejects new drops and CSS .is-dropping disables the chute and feed-marble input; at settlement the event is recorded, the marble/path is hidden, and the next drag is enabled.",
+        "Inspection highlighting and its fade are caused by pointer/focus events; they do not autonomously change outcome state."
+      ],
+      "grouped_control_modes": [
+        {
+          "id": "full_marble_drag",
+          "input_source": "marble_drag",
+          "outcome_affecting_action": "Drag the feed marble into a selected chute and release within the acceptance radius.",
+          "scope": "Every accepted drop in this difficulty/mode across seeds, rounds, and attempts."
+        }
+      ],
+      "delta_ms": null,
+      "window_ms": null,
+      "clause_i": {
+        "holds": true,
+        "reason": "Across generated seeds the initial vane bits, target state, and non-identity inlet permutation vary, while I_t contains only the agent's prior actions and task times. An action-only q therefore cannot generally choose the optimal chute. This is a static visual/planning dependency, not a changing pre-action opportunity."
+      },
+      "clause_ii": {
+        "holds": false,
+        "reason": "The machine and target are visible and the 900 ms path can be seen in a frame window, but the inlet trace is only shown while a chute is hovered or focused and is cleared on leave/blur; the information needed to map every later chute can therefore lie outside any bounded recent window. In any event, the transit trace does not make a drop opportunity expire."
+      },
+      "clause_iii": {
+        "holds": false,
+        "reason": "No valid D, Delta, and action satisfy the strict-loss condition. During idle waits the machine is unchanged; during the only autonomous transit, the drag has already selected the chute and model.busy plus .is-dropping make all further drops ineffective. Once settled, the next drag remains available until the separate overall deadline, whose loss is explicitly excluded."
+      },
+      "common_visible_process": "No common real-time witness exists. The only autonomous visible process is the fixed 900 ms, action-triggered marble transit and sequential vane flips; it is not present during an idle no-action delay, and it locks the outcome-affecting control until settlement instead of degrading a selectable action.",
+      "pre_run": {
+        "threshold": 0.5,
+        "at_least_half": null,
+        "rate": null,
+        "basis": "not_applicable",
+        "reason": "The mathematical definition already yields No because clause iii fails; the pre-run override is therefore not applicable and no rate is asserted.",
+        "seed_probe": null
+      },
+      "files_read_completely": [
+        "AGENTS.md",
+        "weird_captcha_gym/docs/controllability/real-time.md",
+        "weird_captcha_gym/environments/flip_gate_cascade_env/controls.json",
+        "weird_captcha_gym/environments/flip_gate_cascade_env/env.json",
+        "weird_captcha_gym/environments/flip_gate_cascade_env/tasks/flip_gate_cascade_seed_0001/task.json",
+        "weird_captcha_gym/environments/flip_gate_cascade_env/tasks/flip_gate_cascade_seed_0001/setup_task.sh",
+        "weird_captcha_gym/environments/flip_gate_cascade_env/tasks/flip_gate_cascade_seed_0001/export_result.sh",
+        "weird_captcha_gym/shared_scripts/incubator_generators/flip_gate_cascade.py",
+        "weird_captcha_gym/shared_runtime/app/index.html",
+        "weird_captcha_gym/shared_runtime/app/time_controller.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/flip_gate_cascade.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/flip_gate_cascade.css",
+        "weird_captcha_gym/shared_runtime/server/incubator_graders/flip_gate_cascade.py",
+        "weird_captcha_gym/environments/flip_gate_cascade_env/tasks/flip_gate_cascade_seed_0001/verifier.py",
+        "weird_captcha_gym/tools/incubator_solvers/flip_gate_cascade.py"
+      ],
+      "source_evidence": [
+        {
+          "path": "weird_captcha_gym/environments/flip_gate_cascade_env/controls.json",
+          "lines": "10-14, 41-54",
+          "claim": "Full exposes the configured profile and uses a feed-marble drag as the outcome-affecting input; the shared task window is 1000 ms with 6 frames and 150 s play allowance."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/flip_gate_cascade.py",
+          "lines": "12-18, 40-60, 193-247",
+          "claim": "Difficulty parameters select 2 top chutes, 2 rows, 2 target depth, and 4 drops; generation randomizes static machine state/target and the transition flips visited gates. The animation duration is fixed at 900 ms."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/flip_gate_cascade.js",
+          "lines": "58-68, 137-160, 187-269, 321-380",
+          "claim": "Full mode renders a draggable feed marble; pointerup near a chute calls startDrop with input source marble_drag, while focus/hover still inspects an inlet. The accepted drag starts the same 900 ms transit, flips gates as the marble crosses the precomputed path, settles an event, and rejects further drops while busy."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/flip_gate_cascade.css",
+          "lines": "39-64, 69-72",
+          "claim": "Gate rotation/pulse, the inspection trace, and the active marble trace are visual effects; .is-dropping removes chute pointer events and disables the feed marble during transit."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/time_controller.js",
+          "lines": "124-148, 155-201, 267-336",
+          "claim": "The shared clock registers the already accepted transition as a pending action, keeps requestAnimationFrame callbacks queued while paused, and waits for pending actions to settle; the clock changes evaluation scheduling rather than adding a game-specific expiring choice."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/flip_gate_cascade.py",
+          "lines": "99-149",
+          "claim": "The grader requires the mode-specific input source and replays each settled transition from the prior state; it grades the final state and budget, not transit timing."
+        },
+        {
+          "path": "weird_captcha_gym/environments/flip_gate_cascade_env/tasks/flip_gate_cascade_seed_0001/verifier.py",
+          "lines": "91-139",
+          "claim": "The verifier independently enforces the selected input source, settled physics, and final replay claims, with no timing-sensitive acceptance condition."
+        },
+        {
+          "path": "weird_captcha_gym/tools/incubator_solvers/flip_gate_cascade.py",
+          "lines": "43-69, 105-124",
+          "claim": "The reference solver sends a click or drag, waits for the event count to advance, and verifies the machine is no longer busy before the next drop; this confirms sequential settlement rather than a timed action window."
+        }
+      ],
+      "uncertainties": []
+    },
+    {
+      "case_index": 252,
+      "public_environment_name": "Flip-Gate Cascade",
+      "environment_id": "flip_gate_cascade_env",
+      "difficulty": 1,
+      "interaction_mode": "simplified",
+      "label": "no",
+      "controls_available": [
+        "Difficulty 1: 2 top chutes, 2 rows, 5 visible vanes, exact target depth 2, and drop budget 4.",
+        "Simplified interaction: hover or focus a chute to inspect its inlet, then click it or press Enter/Space while focused to start a marble drop.",
+        "Timing controls: 1000 ms observation window, 6 chronological frames per observation, and 150 s maximum task-active time."
+      ],
+      "autonomous_processes": [
+        "While settled and idle, no timer, random process, or physics loop changes the machine without a new action.",
+        "After an accepted chute_click (or focused Enter/Space activation), a fixed 900 ms requestAnimationFrame transit moves the marble along the precomputed path, flips each visited vane, updates the current state, and shows a transient path.",
+        "During that transit model.busy rejects new drops and CSS .is-dropping disables the chutes; at settlement the event is recorded, the marble/path is hidden, and the next click is enabled.",
+        "Inspection highlighting and its fade are caused by pointer/focus events; they do not autonomously change outcome state."
+      ],
+      "grouped_control_modes": [
+        {
+          "id": "simplified_chute_click",
+          "input_source": "chute_click",
+          "outcome_affecting_action": "Click a chute, or activate its focused control with Enter/Space.",
+          "scope": "Every accepted drop in this difficulty/mode across seeds, rounds, and attempts."
+        }
+      ],
+      "delta_ms": null,
+      "window_ms": null,
+      "clause_i": {
+        "holds": true,
+        "reason": "Across generated seeds the initial vane bits, target state, and non-identity inlet permutation vary, while I_t contains only the agent's prior actions and task times. An action-only q therefore cannot generally choose the optimal chute. This is a static visual/planning dependency, not a changing pre-action opportunity."
+      },
+      "clause_ii": {
+        "holds": false,
+        "reason": "The machine and target are visible and the 900 ms path can be seen in a frame window, but the inlet trace is only shown while a chute is hovered or focused and is cleared on leave/blur; the information needed to map every later chute can therefore lie outside any bounded recent window. In any event, the transit trace does not make a drop opportunity expire."
+      },
+      "clause_iii": {
+        "holds": false,
+        "reason": "No valid D, Delta, and action satisfy the strict-loss condition. During idle waits the machine is unchanged; during the only autonomous transit, the click has already selected the chute and model.busy plus .is-dropping make all further drops ineffective. Once settled, the next click remains available until the separate overall deadline, whose loss is explicitly excluded."
+      },
+      "common_visible_process": "No common real-time witness exists. The only autonomous visible process is the fixed 900 ms, action-triggered marble transit and sequential vane flips; it is not present during an idle no-action delay, and it locks the outcome-affecting control until settlement instead of degrading a selectable action.",
+      "pre_run": {
+        "threshold": 0.5,
+        "at_least_half": null,
+        "rate": null,
+        "basis": "not_applicable",
+        "reason": "The mathematical definition already yields No because clause iii fails; the pre-run override is therefore not applicable and no rate is asserted.",
+        "seed_probe": null
+      },
+      "files_read_completely": [
+        "AGENTS.md",
+        "weird_captcha_gym/docs/controllability/real-time.md",
+        "weird_captcha_gym/environments/flip_gate_cascade_env/controls.json",
+        "weird_captcha_gym/environments/flip_gate_cascade_env/env.json",
+        "weird_captcha_gym/environments/flip_gate_cascade_env/tasks/flip_gate_cascade_seed_0001/task.json",
+        "weird_captcha_gym/environments/flip_gate_cascade_env/tasks/flip_gate_cascade_seed_0001/setup_task.sh",
+        "weird_captcha_gym/environments/flip_gate_cascade_env/tasks/flip_gate_cascade_seed_0001/export_result.sh",
+        "weird_captcha_gym/shared_scripts/incubator_generators/flip_gate_cascade.py",
+        "weird_captcha_gym/shared_runtime/app/index.html",
+        "weird_captcha_gym/shared_runtime/app/time_controller.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/flip_gate_cascade.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/flip_gate_cascade.css",
+        "weird_captcha_gym/shared_runtime/server/incubator_graders/flip_gate_cascade.py",
+        "weird_captcha_gym/environments/flip_gate_cascade_env/tasks/flip_gate_cascade_seed_0001/verifier.py",
+        "weird_captcha_gym/tools/incubator_solvers/flip_gate_cascade.py"
+      ],
+      "source_evidence": [
+        {
+          "path": "weird_captcha_gym/environments/flip_gate_cascade_env/controls.json",
+          "lines": "10-14, 41-54",
+          "claim": "Simplified exposes the configured profile and uses chute click/Enter/Space as the outcome-affecting input; the shared task window is 1000 ms with 6 frames and 150 s play allowance."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/flip_gate_cascade.py",
+          "lines": "12-18, 40-60, 193-247",
+          "claim": "Difficulty parameters select 2 top chutes, 2 rows, 2 target depth, and 4 drops; generation randomizes static machine state/target and the transition flips visited gates. The animation duration is fixed at 900 ms."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/flip_gate_cascade.js",
+          "lines": "58-68, 137-160, 187-269, 321-380",
+          "claim": "Chutes are clickable in simplified mode and focus/hover inspects an inlet; the click path calls startDrop with input source chute_click. The accepted click starts the 900 ms transit, flips gates as the marble crosses the precomputed path, settles an event, and rejects further drops while busy."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/flip_gate_cascade.css",
+          "lines": "39-64, 69-72",
+          "claim": "Gate rotation/pulse, the inspection trace, and the active marble trace are visual effects; .is-dropping removes chute pointer events and disables the feed marble during transit."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/time_controller.js",
+          "lines": "124-148, 155-201, 267-336",
+          "claim": "The shared clock registers the already accepted transition as a pending action, keeps requestAnimationFrame callbacks queued while paused, and waits for pending actions to settle; the clock changes evaluation scheduling rather than adding a game-specific expiring choice."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/flip_gate_cascade.py",
+          "lines": "99-149",
+          "claim": "The grader requires the mode-specific input source and replays each settled transition from the prior state; it grades the final state and budget, not transit timing."
+        },
+        {
+          "path": "weird_captcha_gym/environments/flip_gate_cascade_env/tasks/flip_gate_cascade_seed_0001/verifier.py",
+          "lines": "91-139",
+          "claim": "The verifier independently enforces the selected input source, settled physics, and final replay claims, with no timing-sensitive acceptance condition."
+        },
+        {
+          "path": "weird_captcha_gym/tools/incubator_solvers/flip_gate_cascade.py",
+          "lines": "43-69, 105-124",
+          "claim": "The reference solver sends a click or drag, waits for the event count to advance, and verifies the machine is no longer busy before the next drop; this confirms sequential settlement rather than a timed action window."
+        }
+      ],
+      "uncertainties": []
+    },
+    {
+      "case_index": 253,
+      "public_environment_name": "Flip-Gate Cascade",
+      "environment_id": "flip_gate_cascade_env",
+      "difficulty": 2,
+      "interaction_mode": "full",
+      "label": "no",
+      "controls_available": [
+        "Difficulty 2: 3 top chutes, 2 rows, 7 visible vanes, exact target depth 3, and drop budget 5.",
+        "Full interaction: hover or focus a chute to inspect its inlet, then pointer-down/move/up the feed marble to a chute; only a release within the 72 px acceptance radius starts a marble drop.",
+        "Timing controls: 1000 ms observation window, 6 chronological frames per observation, and 150 s maximum task-active time."
+      ],
+      "autonomous_processes": [
+        "While settled and idle, no timer, random process, or physics loop changes the machine without a new action.",
+        "The feed-marble pointer drag is agent-controlled; the task does not start a drop or change a gate until pointerup selects a chute.",
+        "After an accepted marble_drag, a fixed 900 ms requestAnimationFrame transit moves the marble along the precomputed path, flips each visited vane, updates the current state, and shows a transient path.",
+        "During that transit model.busy rejects new drops and CSS .is-dropping disables the chute and feed-marble input; at settlement the event is recorded, the marble/path is hidden, and the next drag is enabled.",
+        "Inspection highlighting and its fade are caused by pointer/focus events; they do not autonomously change outcome state."
+      ],
+      "grouped_control_modes": [
+        {
+          "id": "full_marble_drag",
+          "input_source": "marble_drag",
+          "outcome_affecting_action": "Drag the feed marble into a selected chute and release within the acceptance radius.",
+          "scope": "Every accepted drop in this difficulty/mode across seeds, rounds, and attempts."
+        }
+      ],
+      "delta_ms": null,
+      "window_ms": null,
+      "clause_i": {
+        "holds": true,
+        "reason": "Across generated seeds the initial vane bits, target state, and non-identity inlet permutation vary, while I_t contains only the agent's prior actions and task times. An action-only q therefore cannot generally choose the optimal chute. This is a static visual/planning dependency, not a changing pre-action opportunity."
+      },
+      "clause_ii": {
+        "holds": false,
+        "reason": "The machine and target are visible and the 900 ms path can be seen in a frame window, but the inlet trace is only shown while a chute is hovered or focused and is cleared on leave/blur; the information needed to map every later chute can therefore lie outside any bounded recent window. In any event, the transit trace does not make a drop opportunity expire."
+      },
+      "clause_iii": {
+        "holds": false,
+        "reason": "No valid D, Delta, and action satisfy the strict-loss condition. During idle waits the machine is unchanged; during the only autonomous transit, the drag has already selected the chute and model.busy plus .is-dropping make all further drops ineffective. Once settled, the next drag remains available until the separate overall deadline, whose loss is explicitly excluded."
+      },
+      "common_visible_process": "No common real-time witness exists. The only autonomous visible process is the fixed 900 ms, action-triggered marble transit and sequential vane flips; it is not present during an idle no-action delay, and it locks the outcome-affecting control until settlement instead of degrading a selectable action.",
+      "pre_run": {
+        "threshold": 0.5,
+        "at_least_half": null,
+        "rate": null,
+        "basis": "not_applicable",
+        "reason": "The mathematical definition already yields No because clause iii fails; the pre-run override is therefore not applicable and no rate is asserted.",
+        "seed_probe": null
+      },
+      "files_read_completely": [
+        "AGENTS.md",
+        "weird_captcha_gym/docs/controllability/real-time.md",
+        "weird_captcha_gym/environments/flip_gate_cascade_env/controls.json",
+        "weird_captcha_gym/environments/flip_gate_cascade_env/env.json",
+        "weird_captcha_gym/environments/flip_gate_cascade_env/tasks/flip_gate_cascade_seed_0001/task.json",
+        "weird_captcha_gym/environments/flip_gate_cascade_env/tasks/flip_gate_cascade_seed_0001/setup_task.sh",
+        "weird_captcha_gym/environments/flip_gate_cascade_env/tasks/flip_gate_cascade_seed_0001/export_result.sh",
+        "weird_captcha_gym/shared_scripts/incubator_generators/flip_gate_cascade.py",
+        "weird_captcha_gym/shared_runtime/app/index.html",
+        "weird_captcha_gym/shared_runtime/app/time_controller.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/flip_gate_cascade.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/flip_gate_cascade.css",
+        "weird_captcha_gym/shared_runtime/server/incubator_graders/flip_gate_cascade.py",
+        "weird_captcha_gym/environments/flip_gate_cascade_env/tasks/flip_gate_cascade_seed_0001/verifier.py",
+        "weird_captcha_gym/tools/incubator_solvers/flip_gate_cascade.py"
+      ],
+      "source_evidence": [
+        {
+          "path": "weird_captcha_gym/environments/flip_gate_cascade_env/controls.json",
+          "lines": "16-20, 41-54",
+          "claim": "Full exposes the configured profile and uses a feed-marble drag as the outcome-affecting input; the shared task window is 1000 ms with 6 frames and 150 s play allowance."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/flip_gate_cascade.py",
+          "lines": "12-18, 40-60, 193-247",
+          "claim": "Difficulty parameters select 3 top chutes, 2 rows, 3 target depth, and 5 drops; generation randomizes static machine state/target and the transition flips visited gates. The animation duration is fixed at 900 ms."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/flip_gate_cascade.js",
+          "lines": "58-68, 137-160, 187-269, 321-380",
+          "claim": "Full mode renders a draggable feed marble; pointerup near a chute calls startDrop with input source marble_drag, while focus/hover still inspects an inlet. The accepted drag starts the same 900 ms transit, flips gates as the marble crosses the precomputed path, settles an event, and rejects further drops while busy."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/flip_gate_cascade.css",
+          "lines": "39-64, 69-72",
+          "claim": "Gate rotation/pulse, the inspection trace, and the active marble trace are visual effects; .is-dropping removes chute pointer events and disables the feed marble during transit."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/time_controller.js",
+          "lines": "124-148, 155-201, 267-336",
+          "claim": "The shared clock registers the already accepted transition as a pending action, keeps requestAnimationFrame callbacks queued while paused, and waits for pending actions to settle; the clock changes evaluation scheduling rather than adding a game-specific expiring choice."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/flip_gate_cascade.py",
+          "lines": "99-149",
+          "claim": "The grader requires the mode-specific input source and replays each settled transition from the prior state; it grades the final state and budget, not transit timing."
+        },
+        {
+          "path": "weird_captcha_gym/environments/flip_gate_cascade_env/tasks/flip_gate_cascade_seed_0001/verifier.py",
+          "lines": "91-139",
+          "claim": "The verifier independently enforces the selected input source, settled physics, and final replay claims, with no timing-sensitive acceptance condition."
+        },
+        {
+          "path": "weird_captcha_gym/tools/incubator_solvers/flip_gate_cascade.py",
+          "lines": "43-69, 105-124",
+          "claim": "The reference solver sends a click or drag, waits for the event count to advance, and verifies the machine is no longer busy before the next drop; this confirms sequential settlement rather than a timed action window."
+        }
+      ],
+      "uncertainties": []
+    },
+    {
+      "case_index": 254,
+      "public_environment_name": "Flip-Gate Cascade",
+      "environment_id": "flip_gate_cascade_env",
+      "difficulty": 2,
+      "interaction_mode": "simplified",
+      "label": "no",
+      "controls_available": [
+        "Difficulty 2: 3 top chutes, 2 rows, 7 visible vanes, exact target depth 3, and drop budget 5.",
+        "Simplified interaction: hover or focus a chute to inspect its inlet, then click it or press Enter/Space while focused to start a marble drop.",
+        "Timing controls: 1000 ms observation window, 6 chronological frames per observation, and 150 s maximum task-active time."
+      ],
+      "autonomous_processes": [
+        "While settled and idle, no timer, random process, or physics loop changes the machine without a new action.",
+        "After an accepted chute_click (or focused Enter/Space activation), a fixed 900 ms requestAnimationFrame transit moves the marble along the precomputed path, flips each visited vane, updates the current state, and shows a transient path.",
+        "During that transit model.busy rejects new drops and CSS .is-dropping disables the chutes; at settlement the event is recorded, the marble/path is hidden, and the next click is enabled.",
+        "Inspection highlighting and its fade are caused by pointer/focus events; they do not autonomously change outcome state."
+      ],
+      "grouped_control_modes": [
+        {
+          "id": "simplified_chute_click",
+          "input_source": "chute_click",
+          "outcome_affecting_action": "Click a chute, or activate its focused control with Enter/Space.",
+          "scope": "Every accepted drop in this difficulty/mode across seeds, rounds, and attempts."
+        }
+      ],
+      "delta_ms": null,
+      "window_ms": null,
+      "clause_i": {
+        "holds": true,
+        "reason": "Across generated seeds the initial vane bits, target state, and non-identity inlet permutation vary, while I_t contains only the agent's prior actions and task times. An action-only q therefore cannot generally choose the optimal chute. This is a static visual/planning dependency, not a changing pre-action opportunity."
+      },
+      "clause_ii": {
+        "holds": false,
+        "reason": "The machine and target are visible and the 900 ms path can be seen in a frame window, but the inlet trace is only shown while a chute is hovered or focused and is cleared on leave/blur; the information needed to map every later chute can therefore lie outside any bounded recent window. In any event, the transit trace does not make a drop opportunity expire."
+      },
+      "clause_iii": {
+        "holds": false,
+        "reason": "No valid D, Delta, and action satisfy the strict-loss condition. During idle waits the machine is unchanged; during the only autonomous transit, the click has already selected the chute and model.busy plus .is-dropping make all further drops ineffective. Once settled, the next click remains available until the separate overall deadline, whose loss is explicitly excluded."
+      },
+      "common_visible_process": "No common real-time witness exists. The only autonomous visible process is the fixed 900 ms, action-triggered marble transit and sequential vane flips; it is not present during an idle no-action delay, and it locks the outcome-affecting control until settlement instead of degrading a selectable action.",
+      "pre_run": {
+        "threshold": 0.5,
+        "at_least_half": null,
+        "rate": null,
+        "basis": "not_applicable",
+        "reason": "The mathematical definition already yields No because clause iii fails; the pre-run override is therefore not applicable and no rate is asserted.",
+        "seed_probe": null
+      },
+      "files_read_completely": [
+        "AGENTS.md",
+        "weird_captcha_gym/docs/controllability/real-time.md",
+        "weird_captcha_gym/environments/flip_gate_cascade_env/controls.json",
+        "weird_captcha_gym/environments/flip_gate_cascade_env/env.json",
+        "weird_captcha_gym/environments/flip_gate_cascade_env/tasks/flip_gate_cascade_seed_0001/task.json",
+        "weird_captcha_gym/environments/flip_gate_cascade_env/tasks/flip_gate_cascade_seed_0001/setup_task.sh",
+        "weird_captcha_gym/environments/flip_gate_cascade_env/tasks/flip_gate_cascade_seed_0001/export_result.sh",
+        "weird_captcha_gym/shared_scripts/incubator_generators/flip_gate_cascade.py",
+        "weird_captcha_gym/shared_runtime/app/index.html",
+        "weird_captcha_gym/shared_runtime/app/time_controller.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/flip_gate_cascade.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/flip_gate_cascade.css",
+        "weird_captcha_gym/shared_runtime/server/incubator_graders/flip_gate_cascade.py",
+        "weird_captcha_gym/environments/flip_gate_cascade_env/tasks/flip_gate_cascade_seed_0001/verifier.py",
+        "weird_captcha_gym/tools/incubator_solvers/flip_gate_cascade.py"
+      ],
+      "source_evidence": [
+        {
+          "path": "weird_captcha_gym/environments/flip_gate_cascade_env/controls.json",
+          "lines": "16-20, 41-54",
+          "claim": "Simplified exposes the configured profile and uses chute click/Enter/Space as the outcome-affecting input; the shared task window is 1000 ms with 6 frames and 150 s play allowance."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/flip_gate_cascade.py",
+          "lines": "12-18, 40-60, 193-247",
+          "claim": "Difficulty parameters select 3 top chutes, 2 rows, 3 target depth, and 5 drops; generation randomizes static machine state/target and the transition flips visited gates. The animation duration is fixed at 900 ms."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/flip_gate_cascade.js",
+          "lines": "58-68, 137-160, 187-269, 321-380",
+          "claim": "Chutes are clickable in simplified mode and focus/hover inspects an inlet; the click path calls startDrop with input source chute_click. The accepted click starts the 900 ms transit, flips gates as the marble crosses the precomputed path, settles an event, and rejects further drops while busy."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/flip_gate_cascade.css",
+          "lines": "39-64, 69-72",
+          "claim": "Gate rotation/pulse, the inspection trace, and the active marble trace are visual effects; .is-dropping removes chute pointer events and disables the feed marble during transit."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/time_controller.js",
+          "lines": "124-148, 155-201, 267-336",
+          "claim": "The shared clock registers the already accepted transition as a pending action, keeps requestAnimationFrame callbacks queued while paused, and waits for pending actions to settle; the clock changes evaluation scheduling rather than adding a game-specific expiring choice."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/flip_gate_cascade.py",
+          "lines": "99-149",
+          "claim": "The grader requires the mode-specific input source and replays each settled transition from the prior state; it grades the final state and budget, not transit timing."
+        },
+        {
+          "path": "weird_captcha_gym/environments/flip_gate_cascade_env/tasks/flip_gate_cascade_seed_0001/verifier.py",
+          "lines": "91-139",
+          "claim": "The verifier independently enforces the selected input source, settled physics, and final replay claims, with no timing-sensitive acceptance condition."
+        },
+        {
+          "path": "weird_captcha_gym/tools/incubator_solvers/flip_gate_cascade.py",
+          "lines": "43-69, 105-124",
+          "claim": "The reference solver sends a click or drag, waits for the event count to advance, and verifies the machine is no longer busy before the next drop; this confirms sequential settlement rather than a timed action window."
+        }
+      ],
+      "uncertainties": []
+    },
+    {
+      "case_index": 255,
+      "public_environment_name": "Flip-Gate Cascade",
+      "environment_id": "flip_gate_cascade_env",
+      "difficulty": 3,
+      "interaction_mode": "full",
+      "label": "no",
+      "controls_available": [
+        "Difficulty 3: 3 top chutes, 3 rows, 12 visible vanes, exact target depth 5, and drop budget 7.",
+        "Full interaction: hover or focus a chute to inspect its inlet, then pointer-down/move/up the feed marble to a chute; only a release within the 72 px acceptance radius starts a marble drop.",
+        "Timing controls: 1000 ms observation window, 6 chronological frames per observation, and 150 s maximum task-active time."
+      ],
+      "autonomous_processes": [
+        "While settled and idle, no timer, random process, or physics loop changes the machine without a new action.",
+        "The feed-marble pointer drag is agent-controlled; the task does not start a drop or change a gate until pointerup selects a chute.",
+        "After an accepted marble_drag, a fixed 900 ms requestAnimationFrame transit moves the marble along the precomputed path, flips each visited vane, updates the current state, and shows a transient path.",
+        "During that transit model.busy rejects new drops and CSS .is-dropping disables the chute and feed-marble input; at settlement the event is recorded, the marble/path is hidden, and the next drag is enabled.",
+        "Inspection highlighting and its fade are caused by pointer/focus events; they do not autonomously change outcome state."
+      ],
+      "grouped_control_modes": [
+        {
+          "id": "full_marble_drag",
+          "input_source": "marble_drag",
+          "outcome_affecting_action": "Drag the feed marble into a selected chute and release within the acceptance radius.",
+          "scope": "Every accepted drop in this difficulty/mode across seeds, rounds, and attempts."
+        }
+      ],
+      "delta_ms": null,
+      "window_ms": null,
+      "clause_i": {
+        "holds": true,
+        "reason": "Across generated seeds the initial vane bits, target state, and non-identity inlet permutation vary, while I_t contains only the agent's prior actions and task times. An action-only q therefore cannot generally choose the optimal chute. This is a static visual/planning dependency, not a changing pre-action opportunity."
+      },
+      "clause_ii": {
+        "holds": false,
+        "reason": "The machine and target are visible and the 900 ms path can be seen in a frame window, but the inlet trace is only shown while a chute is hovered or focused and is cleared on leave/blur; the information needed to map every later chute can therefore lie outside any bounded recent window. In any event, the transit trace does not make a drop opportunity expire."
+      },
+      "clause_iii": {
+        "holds": false,
+        "reason": "No valid D, Delta, and action satisfy the strict-loss condition. During idle waits the machine is unchanged; during the only autonomous transit, the drag has already selected the chute and model.busy plus .is-dropping make all further drops ineffective. Once settled, the next drag remains available until the separate overall deadline, whose loss is explicitly excluded."
+      },
+      "common_visible_process": "No common real-time witness exists. The only autonomous visible process is the fixed 900 ms, action-triggered marble transit and sequential vane flips; it is not present during an idle no-action delay, and it locks the outcome-affecting control until settlement instead of degrading a selectable action.",
+      "pre_run": {
+        "threshold": 0.5,
+        "at_least_half": null,
+        "rate": null,
+        "basis": "not_applicable",
+        "reason": "The mathematical definition already yields No because clause iii fails; the pre-run override is therefore not applicable and no rate is asserted.",
+        "seed_probe": null
+      },
+      "files_read_completely": [
+        "AGENTS.md",
+        "weird_captcha_gym/docs/controllability/real-time.md",
+        "weird_captcha_gym/environments/flip_gate_cascade_env/controls.json",
+        "weird_captcha_gym/environments/flip_gate_cascade_env/env.json",
+        "weird_captcha_gym/environments/flip_gate_cascade_env/tasks/flip_gate_cascade_seed_0001/task.json",
+        "weird_captcha_gym/environments/flip_gate_cascade_env/tasks/flip_gate_cascade_seed_0001/setup_task.sh",
+        "weird_captcha_gym/environments/flip_gate_cascade_env/tasks/flip_gate_cascade_seed_0001/export_result.sh",
+        "weird_captcha_gym/shared_scripts/incubator_generators/flip_gate_cascade.py",
+        "weird_captcha_gym/shared_runtime/app/index.html",
+        "weird_captcha_gym/shared_runtime/app/time_controller.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/flip_gate_cascade.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/flip_gate_cascade.css",
+        "weird_captcha_gym/shared_runtime/server/incubator_graders/flip_gate_cascade.py",
+        "weird_captcha_gym/environments/flip_gate_cascade_env/tasks/flip_gate_cascade_seed_0001/verifier.py",
+        "weird_captcha_gym/tools/incubator_solvers/flip_gate_cascade.py"
+      ],
+      "source_evidence": [
+        {
+          "path": "weird_captcha_gym/environments/flip_gate_cascade_env/controls.json",
+          "lines": "22-26, 41-54",
+          "claim": "Full exposes the configured profile and uses a feed-marble drag as the outcome-affecting input; the shared task window is 1000 ms with 6 frames and 150 s play allowance."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/flip_gate_cascade.py",
+          "lines": "12-18, 40-60, 193-247",
+          "claim": "Difficulty parameters select 3 top chutes, 3 rows, 5 target depth, and 7 drops; generation randomizes static machine state/target and the transition flips visited gates. The animation duration is fixed at 900 ms."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/flip_gate_cascade.js",
+          "lines": "58-68, 137-160, 187-269, 321-380",
+          "claim": "Full mode renders a draggable feed marble; pointerup near a chute calls startDrop with input source marble_drag, while focus/hover still inspects an inlet. The accepted drag starts the same 900 ms transit, flips gates as the marble crosses the precomputed path, settles an event, and rejects further drops while busy."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/flip_gate_cascade.css",
+          "lines": "39-64, 69-72",
+          "claim": "Gate rotation/pulse, the inspection trace, and the active marble trace are visual effects; .is-dropping removes chute pointer events and disables the feed marble during transit."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/time_controller.js",
+          "lines": "124-148, 155-201, 267-336",
+          "claim": "The shared clock registers the already accepted transition as a pending action, keeps requestAnimationFrame callbacks queued while paused, and waits for pending actions to settle; the clock changes evaluation scheduling rather than adding a game-specific expiring choice."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/flip_gate_cascade.py",
+          "lines": "99-149",
+          "claim": "The grader requires the mode-specific input source and replays each settled transition from the prior state; it grades the final state and budget, not transit timing."
+        },
+        {
+          "path": "weird_captcha_gym/environments/flip_gate_cascade_env/tasks/flip_gate_cascade_seed_0001/verifier.py",
+          "lines": "91-139",
+          "claim": "The verifier independently enforces the selected input source, settled physics, and final replay claims, with no timing-sensitive acceptance condition."
+        },
+        {
+          "path": "weird_captcha_gym/tools/incubator_solvers/flip_gate_cascade.py",
+          "lines": "43-69, 105-124",
+          "claim": "The reference solver sends a click or drag, waits for the event count to advance, and verifies the machine is no longer busy before the next drop; this confirms sequential settlement rather than a timed action window."
+        }
+      ],
+      "uncertainties": []
+    },
+    {
+      "case_index": 256,
+      "public_environment_name": "Flip-Gate Cascade",
+      "environment_id": "flip_gate_cascade_env",
+      "difficulty": 3,
+      "interaction_mode": "simplified",
+      "label": "no",
+      "controls_available": [
+        "Difficulty 3: 3 top chutes, 3 rows, 12 visible vanes, exact target depth 5, and drop budget 7.",
+        "Simplified interaction: hover or focus a chute to inspect its inlet, then click it or press Enter/Space while focused to start a marble drop.",
+        "Timing controls: 1000 ms observation window, 6 chronological frames per observation, and 150 s maximum task-active time."
+      ],
+      "autonomous_processes": [
+        "While settled and idle, no timer, random process, or physics loop changes the machine without a new action.",
+        "After an accepted chute_click (or focused Enter/Space activation), a fixed 900 ms requestAnimationFrame transit moves the marble along the precomputed path, flips each visited vane, updates the current state, and shows a transient path.",
+        "During that transit model.busy rejects new drops and CSS .is-dropping disables the chutes; at settlement the event is recorded, the marble/path is hidden, and the next click is enabled.",
+        "Inspection highlighting and its fade are caused by pointer/focus events; they do not autonomously change outcome state."
+      ],
+      "grouped_control_modes": [
+        {
+          "id": "simplified_chute_click",
+          "input_source": "chute_click",
+          "outcome_affecting_action": "Click a chute, or activate its focused control with Enter/Space.",
+          "scope": "Every accepted drop in this difficulty/mode across seeds, rounds, and attempts."
+        }
+      ],
+      "delta_ms": null,
+      "window_ms": null,
+      "clause_i": {
+        "holds": true,
+        "reason": "Across generated seeds the initial vane bits, target state, and non-identity inlet permutation vary, while I_t contains only the agent's prior actions and task times. An action-only q therefore cannot generally choose the optimal chute. This is a static visual/planning dependency, not a changing pre-action opportunity."
+      },
+      "clause_ii": {
+        "holds": false,
+        "reason": "The machine and target are visible and the 900 ms path can be seen in a frame window, but the inlet trace is only shown while a chute is hovered or focused and is cleared on leave/blur; the information needed to map every later chute can therefore lie outside any bounded recent window. In any event, the transit trace does not make a drop opportunity expire."
+      },
+      "clause_iii": {
+        "holds": false,
+        "reason": "No valid D, Delta, and action satisfy the strict-loss condition. During idle waits the machine is unchanged; during the only autonomous transit, the click has already selected the chute and model.busy plus .is-dropping make all further drops ineffective. Once settled, the next click remains available until the separate overall deadline, whose loss is explicitly excluded."
+      },
+      "common_visible_process": "No common real-time witness exists. The only autonomous visible process is the fixed 900 ms, action-triggered marble transit and sequential vane flips; it is not present during an idle no-action delay, and it locks the outcome-affecting control until settlement instead of degrading a selectable action.",
+      "pre_run": {
+        "threshold": 0.5,
+        "at_least_half": null,
+        "rate": null,
+        "basis": "not_applicable",
+        "reason": "The mathematical definition already yields No because clause iii fails; the pre-run override is therefore not applicable and no rate is asserted.",
+        "seed_probe": null
+      },
+      "files_read_completely": [
+        "AGENTS.md",
+        "weird_captcha_gym/docs/controllability/real-time.md",
+        "weird_captcha_gym/environments/flip_gate_cascade_env/controls.json",
+        "weird_captcha_gym/environments/flip_gate_cascade_env/env.json",
+        "weird_captcha_gym/environments/flip_gate_cascade_env/tasks/flip_gate_cascade_seed_0001/task.json",
+        "weird_captcha_gym/environments/flip_gate_cascade_env/tasks/flip_gate_cascade_seed_0001/setup_task.sh",
+        "weird_captcha_gym/environments/flip_gate_cascade_env/tasks/flip_gate_cascade_seed_0001/export_result.sh",
+        "weird_captcha_gym/shared_scripts/incubator_generators/flip_gate_cascade.py",
+        "weird_captcha_gym/shared_runtime/app/index.html",
+        "weird_captcha_gym/shared_runtime/app/time_controller.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/flip_gate_cascade.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/flip_gate_cascade.css",
+        "weird_captcha_gym/shared_runtime/server/incubator_graders/flip_gate_cascade.py",
+        "weird_captcha_gym/environments/flip_gate_cascade_env/tasks/flip_gate_cascade_seed_0001/verifier.py",
+        "weird_captcha_gym/tools/incubator_solvers/flip_gate_cascade.py"
+      ],
+      "source_evidence": [
+        {
+          "path": "weird_captcha_gym/environments/flip_gate_cascade_env/controls.json",
+          "lines": "22-26, 41-54",
+          "claim": "Simplified exposes the configured profile and uses chute click/Enter/Space as the outcome-affecting input; the shared task window is 1000 ms with 6 frames and 150 s play allowance."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/flip_gate_cascade.py",
+          "lines": "12-18, 40-60, 193-247",
+          "claim": "Difficulty parameters select 3 top chutes, 3 rows, 5 target depth, and 7 drops; generation randomizes static machine state/target and the transition flips visited gates. The animation duration is fixed at 900 ms."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/flip_gate_cascade.js",
+          "lines": "58-68, 137-160, 187-269, 321-380",
+          "claim": "Chutes are clickable in simplified mode and focus/hover inspects an inlet; the click path calls startDrop with input source chute_click. The accepted click starts the 900 ms transit, flips gates as the marble crosses the precomputed path, settles an event, and rejects further drops while busy."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/flip_gate_cascade.css",
+          "lines": "39-64, 69-72",
+          "claim": "Gate rotation/pulse, the inspection trace, and the active marble trace are visual effects; .is-dropping removes chute pointer events and disables the feed marble during transit."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/time_controller.js",
+          "lines": "124-148, 155-201, 267-336",
+          "claim": "The shared clock registers the already accepted transition as a pending action, keeps requestAnimationFrame callbacks queued while paused, and waits for pending actions to settle; the clock changes evaluation scheduling rather than adding a game-specific expiring choice."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/flip_gate_cascade.py",
+          "lines": "99-149",
+          "claim": "The grader requires the mode-specific input source and replays each settled transition from the prior state; it grades the final state and budget, not transit timing."
+        },
+        {
+          "path": "weird_captcha_gym/environments/flip_gate_cascade_env/tasks/flip_gate_cascade_seed_0001/verifier.py",
+          "lines": "91-139",
+          "claim": "The verifier independently enforces the selected input source, settled physics, and final replay claims, with no timing-sensitive acceptance condition."
+        },
+        {
+          "path": "weird_captcha_gym/tools/incubator_solvers/flip_gate_cascade.py",
+          "lines": "43-69, 105-124",
+          "claim": "The reference solver sends a click or drag, waits for the event count to advance, and verifies the machine is no longer busy before the next drop; this confirms sequential settlement rather than a timed action window."
+        }
+      ],
+      "uncertainties": []
+    },
+    {
+      "case_index": 257,
+      "public_environment_name": "Flip-Gate Cascade",
+      "environment_id": "flip_gate_cascade_env",
+      "difficulty": 4,
+      "interaction_mode": "full",
+      "label": "no",
+      "controls_available": [
+        "Difficulty 4: 4 top chutes, 3 rows, 15 visible vanes, exact target depth 7, and drop budget 10.",
+        "Full interaction: hover or focus a chute to inspect its inlet, then pointer-down/move/up the feed marble to a chute; only a release within the 72 px acceptance radius starts a marble drop.",
+        "Timing controls: 1000 ms observation window, 6 chronological frames per observation, and 150 s maximum task-active time."
+      ],
+      "autonomous_processes": [
+        "While settled and idle, no timer, random process, or physics loop changes the machine without a new action.",
+        "The feed-marble pointer drag is agent-controlled; the task does not start a drop or change a gate until pointerup selects a chute.",
+        "After an accepted marble_drag, a fixed 900 ms requestAnimationFrame transit moves the marble along the precomputed path, flips each visited vane, updates the current state, and shows a transient path.",
+        "During that transit model.busy rejects new drops and CSS .is-dropping disables the chute and feed-marble input; at settlement the event is recorded, the marble/path is hidden, and the next drag is enabled.",
+        "Inspection highlighting and its fade are caused by pointer/focus events; they do not autonomously change outcome state."
+      ],
+      "grouped_control_modes": [
+        {
+          "id": "full_marble_drag",
+          "input_source": "marble_drag",
+          "outcome_affecting_action": "Drag the feed marble into a selected chute and release within the acceptance radius.",
+          "scope": "Every accepted drop in this difficulty/mode across seeds, rounds, and attempts."
+        }
+      ],
+      "delta_ms": null,
+      "window_ms": null,
+      "clause_i": {
+        "holds": true,
+        "reason": "Across generated seeds the initial vane bits, target state, and non-identity inlet permutation vary, while I_t contains only the agent's prior actions and task times. An action-only q therefore cannot generally choose the optimal chute. This is a static visual/planning dependency, not a changing pre-action opportunity."
+      },
+      "clause_ii": {
+        "holds": false,
+        "reason": "The machine and target are visible and the 900 ms path can be seen in a frame window, but the inlet trace is only shown while a chute is hovered or focused and is cleared on leave/blur; the information needed to map every later chute can therefore lie outside any bounded recent window. In any event, the transit trace does not make a drop opportunity expire."
+      },
+      "clause_iii": {
+        "holds": false,
+        "reason": "No valid D, Delta, and action satisfy the strict-loss condition. During idle waits the machine is unchanged; during the only autonomous transit, the drag has already selected the chute and model.busy plus .is-dropping make all further drops ineffective. Once settled, the next drag remains available until the separate overall deadline, whose loss is explicitly excluded."
+      },
+      "common_visible_process": "No common real-time witness exists. The only autonomous visible process is the fixed 900 ms, action-triggered marble transit and sequential vane flips; it is not present during an idle no-action delay, and it locks the outcome-affecting control until settlement instead of degrading a selectable action.",
+      "pre_run": {
+        "threshold": 0.5,
+        "at_least_half": null,
+        "rate": null,
+        "basis": "not_applicable",
+        "reason": "The mathematical definition already yields No because clause iii fails; the pre-run override is therefore not applicable and no rate is asserted.",
+        "seed_probe": null
+      },
+      "files_read_completely": [
+        "AGENTS.md",
+        "weird_captcha_gym/docs/controllability/real-time.md",
+        "weird_captcha_gym/environments/flip_gate_cascade_env/controls.json",
+        "weird_captcha_gym/environments/flip_gate_cascade_env/env.json",
+        "weird_captcha_gym/environments/flip_gate_cascade_env/tasks/flip_gate_cascade_seed_0001/task.json",
+        "weird_captcha_gym/environments/flip_gate_cascade_env/tasks/flip_gate_cascade_seed_0001/setup_task.sh",
+        "weird_captcha_gym/environments/flip_gate_cascade_env/tasks/flip_gate_cascade_seed_0001/export_result.sh",
+        "weird_captcha_gym/shared_scripts/incubator_generators/flip_gate_cascade.py",
+        "weird_captcha_gym/shared_runtime/app/index.html",
+        "weird_captcha_gym/shared_runtime/app/time_controller.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/flip_gate_cascade.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/flip_gate_cascade.css",
+        "weird_captcha_gym/shared_runtime/server/incubator_graders/flip_gate_cascade.py",
+        "weird_captcha_gym/environments/flip_gate_cascade_env/tasks/flip_gate_cascade_seed_0001/verifier.py",
+        "weird_captcha_gym/tools/incubator_solvers/flip_gate_cascade.py"
+      ],
+      "source_evidence": [
+        {
+          "path": "weird_captcha_gym/environments/flip_gate_cascade_env/controls.json",
+          "lines": "28-32, 41-54",
+          "claim": "Full exposes the configured profile and uses a feed-marble drag as the outcome-affecting input; the shared task window is 1000 ms with 6 frames and 150 s play allowance."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/flip_gate_cascade.py",
+          "lines": "12-18, 40-60, 193-247",
+          "claim": "Difficulty parameters select 4 top chutes, 3 rows, 7 target depth, and 10 drops; generation randomizes static machine state/target and the transition flips visited gates. The animation duration is fixed at 900 ms."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/flip_gate_cascade.js",
+          "lines": "58-68, 137-160, 187-269, 321-380",
+          "claim": "Full mode renders a draggable feed marble; pointerup near a chute calls startDrop with input source marble_drag, while focus/hover still inspects an inlet. The accepted drag starts the same 900 ms transit, flips gates as the marble crosses the precomputed path, settles an event, and rejects further drops while busy."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/flip_gate_cascade.css",
+          "lines": "39-64, 69-72",
+          "claim": "Gate rotation/pulse, the inspection trace, and the active marble trace are visual effects; .is-dropping removes chute pointer events and disables the feed marble during transit."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/time_controller.js",
+          "lines": "124-148, 155-201, 267-336",
+          "claim": "The shared clock registers the already accepted transition as a pending action, keeps requestAnimationFrame callbacks queued while paused, and waits for pending actions to settle; the clock changes evaluation scheduling rather than adding a game-specific expiring choice."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/flip_gate_cascade.py",
+          "lines": "99-149",
+          "claim": "The grader requires the mode-specific input source and replays each settled transition from the prior state; it grades the final state and budget, not transit timing."
+        },
+        {
+          "path": "weird_captcha_gym/environments/flip_gate_cascade_env/tasks/flip_gate_cascade_seed_0001/verifier.py",
+          "lines": "91-139",
+          "claim": "The verifier independently enforces the selected input source, settled physics, and final replay claims, with no timing-sensitive acceptance condition."
+        },
+        {
+          "path": "weird_captcha_gym/tools/incubator_solvers/flip_gate_cascade.py",
+          "lines": "43-69, 105-124",
+          "claim": "The reference solver sends a click or drag, waits for the event count to advance, and verifies the machine is no longer busy before the next drop; this confirms sequential settlement rather than a timed action window."
+        }
+      ],
+      "uncertainties": []
+    },
+    {
+      "case_index": 258,
+      "public_environment_name": "Flip-Gate Cascade",
+      "environment_id": "flip_gate_cascade_env",
+      "difficulty": 4,
+      "interaction_mode": "simplified",
+      "label": "no",
+      "controls_available": [
+        "Difficulty 4: 4 top chutes, 3 rows, 15 visible vanes, exact target depth 7, and drop budget 10.",
+        "Simplified interaction: hover or focus a chute to inspect its inlet, then click it or press Enter/Space while focused to start a marble drop.",
+        "Timing controls: 1000 ms observation window, 6 chronological frames per observation, and 150 s maximum task-active time."
+      ],
+      "autonomous_processes": [
+        "While settled and idle, no timer, random process, or physics loop changes the machine without a new action.",
+        "After an accepted chute_click (or focused Enter/Space activation), a fixed 900 ms requestAnimationFrame transit moves the marble along the precomputed path, flips each visited vane, updates the current state, and shows a transient path.",
+        "During that transit model.busy rejects new drops and CSS .is-dropping disables the chutes; at settlement the event is recorded, the marble/path is hidden, and the next click is enabled.",
+        "Inspection highlighting and its fade are caused by pointer/focus events; they do not autonomously change outcome state."
+      ],
+      "grouped_control_modes": [
+        {
+          "id": "simplified_chute_click",
+          "input_source": "chute_click",
+          "outcome_affecting_action": "Click a chute, or activate its focused control with Enter/Space.",
+          "scope": "Every accepted drop in this difficulty/mode across seeds, rounds, and attempts."
+        }
+      ],
+      "delta_ms": null,
+      "window_ms": null,
+      "clause_i": {
+        "holds": true,
+        "reason": "Across generated seeds the initial vane bits, target state, and non-identity inlet permutation vary, while I_t contains only the agent's prior actions and task times. An action-only q therefore cannot generally choose the optimal chute. This is a static visual/planning dependency, not a changing pre-action opportunity."
+      },
+      "clause_ii": {
+        "holds": false,
+        "reason": "The machine and target are visible and the 900 ms path can be seen in a frame window, but the inlet trace is only shown while a chute is hovered or focused and is cleared on leave/blur; the information needed to map every later chute can therefore lie outside any bounded recent window. In any event, the transit trace does not make a drop opportunity expire."
+      },
+      "clause_iii": {
+        "holds": false,
+        "reason": "No valid D, Delta, and action satisfy the strict-loss condition. During idle waits the machine is unchanged; during the only autonomous transit, the click has already selected the chute and model.busy plus .is-dropping make all further drops ineffective. Once settled, the next click remains available until the separate overall deadline, whose loss is explicitly excluded."
+      },
+      "common_visible_process": "No common real-time witness exists. The only autonomous visible process is the fixed 900 ms, action-triggered marble transit and sequential vane flips; it is not present during an idle no-action delay, and it locks the outcome-affecting control until settlement instead of degrading a selectable action.",
+      "pre_run": {
+        "threshold": 0.5,
+        "at_least_half": null,
+        "rate": null,
+        "basis": "not_applicable",
+        "reason": "The mathematical definition already yields No because clause iii fails; the pre-run override is therefore not applicable and no rate is asserted.",
+        "seed_probe": null
+      },
+      "files_read_completely": [
+        "AGENTS.md",
+        "weird_captcha_gym/docs/controllability/real-time.md",
+        "weird_captcha_gym/environments/flip_gate_cascade_env/controls.json",
+        "weird_captcha_gym/environments/flip_gate_cascade_env/env.json",
+        "weird_captcha_gym/environments/flip_gate_cascade_env/tasks/flip_gate_cascade_seed_0001/task.json",
+        "weird_captcha_gym/environments/flip_gate_cascade_env/tasks/flip_gate_cascade_seed_0001/setup_task.sh",
+        "weird_captcha_gym/environments/flip_gate_cascade_env/tasks/flip_gate_cascade_seed_0001/export_result.sh",
+        "weird_captcha_gym/shared_scripts/incubator_generators/flip_gate_cascade.py",
+        "weird_captcha_gym/shared_runtime/app/index.html",
+        "weird_captcha_gym/shared_runtime/app/time_controller.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/flip_gate_cascade.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/flip_gate_cascade.css",
+        "weird_captcha_gym/shared_runtime/server/incubator_graders/flip_gate_cascade.py",
+        "weird_captcha_gym/environments/flip_gate_cascade_env/tasks/flip_gate_cascade_seed_0001/verifier.py",
+        "weird_captcha_gym/tools/incubator_solvers/flip_gate_cascade.py"
+      ],
+      "source_evidence": [
+        {
+          "path": "weird_captcha_gym/environments/flip_gate_cascade_env/controls.json",
+          "lines": "28-32, 41-54",
+          "claim": "Simplified exposes the configured profile and uses chute click/Enter/Space as the outcome-affecting input; the shared task window is 1000 ms with 6 frames and 150 s play allowance."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/flip_gate_cascade.py",
+          "lines": "12-18, 40-60, 193-247",
+          "claim": "Difficulty parameters select 4 top chutes, 3 rows, 7 target depth, and 10 drops; generation randomizes static machine state/target and the transition flips visited gates. The animation duration is fixed at 900 ms."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/flip_gate_cascade.js",
+          "lines": "58-68, 137-160, 187-269, 321-380",
+          "claim": "Chutes are clickable in simplified mode and focus/hover inspects an inlet; the click path calls startDrop with input source chute_click. The accepted click starts the 900 ms transit, flips gates as the marble crosses the precomputed path, settles an event, and rejects further drops while busy."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/flip_gate_cascade.css",
+          "lines": "39-64, 69-72",
+          "claim": "Gate rotation/pulse, the inspection trace, and the active marble trace are visual effects; .is-dropping removes chute pointer events and disables the feed marble during transit."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/time_controller.js",
+          "lines": "124-148, 155-201, 267-336",
+          "claim": "The shared clock registers the already accepted transition as a pending action, keeps requestAnimationFrame callbacks queued while paused, and waits for pending actions to settle; the clock changes evaluation scheduling rather than adding a game-specific expiring choice."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/flip_gate_cascade.py",
+          "lines": "99-149",
+          "claim": "The grader requires the mode-specific input source and replays each settled transition from the prior state; it grades the final state and budget, not transit timing."
+        },
+        {
+          "path": "weird_captcha_gym/environments/flip_gate_cascade_env/tasks/flip_gate_cascade_seed_0001/verifier.py",
+          "lines": "91-139",
+          "claim": "The verifier independently enforces the selected input source, settled physics, and final replay claims, with no timing-sensitive acceptance condition."
+        },
+        {
+          "path": "weird_captcha_gym/tools/incubator_solvers/flip_gate_cascade.py",
+          "lines": "43-69, 105-124",
+          "claim": "The reference solver sends a click or drag, waits for the event count to advance, and verifies the machine is no longer busy before the next drop; this confirms sequential settlement rather than a timed action window."
+        }
+      ],
+      "uncertainties": []
+    },
+    {
+      "case_index": 259,
+      "public_environment_name": "Flip-Gate Cascade",
+      "environment_id": "flip_gate_cascade_env",
+      "difficulty": 5,
+      "interaction_mode": "full",
+      "label": "no",
+      "controls_available": [
+        "Difficulty 5: 4 top chutes, 4 rows, 22 visible vanes, exact target depth 9, and drop budget 12.",
+        "Full interaction: hover or focus a chute to inspect its inlet, then pointer-down/move/up the feed marble to a chute; only a release within the 72 px acceptance radius starts a marble drop.",
+        "Timing controls: 1000 ms observation window, 6 chronological frames per observation, and 150 s maximum task-active time."
+      ],
+      "autonomous_processes": [
+        "While settled and idle, no timer, random process, or physics loop changes the machine without a new action.",
+        "The feed-marble pointer drag is agent-controlled; the task does not start a drop or change a gate until pointerup selects a chute.",
+        "After an accepted marble_drag, a fixed 900 ms requestAnimationFrame transit moves the marble along the precomputed path, flips each visited vane, updates the current state, and shows a transient path.",
+        "During that transit model.busy rejects new drops and CSS .is-dropping disables the chute and feed-marble input; at settlement the event is recorded, the marble/path is hidden, and the next drag is enabled.",
+        "Inspection highlighting and its fade are caused by pointer/focus events; they do not autonomously change outcome state."
+      ],
+      "grouped_control_modes": [
+        {
+          "id": "full_marble_drag",
+          "input_source": "marble_drag",
+          "outcome_affecting_action": "Drag the feed marble into a selected chute and release within the acceptance radius.",
+          "scope": "Every accepted drop in this difficulty/mode across seeds, rounds, and attempts."
+        }
+      ],
+      "delta_ms": null,
+      "window_ms": null,
+      "clause_i": {
+        "holds": true,
+        "reason": "Across generated seeds the initial vane bits, target state, and non-identity inlet permutation vary, while I_t contains only the agent's prior actions and task times. An action-only q therefore cannot generally choose the optimal chute. This is a static visual/planning dependency, not a changing pre-action opportunity."
+      },
+      "clause_ii": {
+        "holds": false,
+        "reason": "The machine and target are visible and the 900 ms path can be seen in a frame window, but the inlet trace is only shown while a chute is hovered or focused and is cleared on leave/blur; the information needed to map every later chute can therefore lie outside any bounded recent window. In any event, the transit trace does not make a drop opportunity expire."
+      },
+      "clause_iii": {
+        "holds": false,
+        "reason": "No valid D, Delta, and action satisfy the strict-loss condition. During idle waits the machine is unchanged; during the only autonomous transit, the drag has already selected the chute and model.busy plus .is-dropping make all further drops ineffective. Once settled, the next drag remains available until the separate overall deadline, whose loss is explicitly excluded."
+      },
+      "common_visible_process": "No common real-time witness exists. The only autonomous visible process is the fixed 900 ms, action-triggered marble transit and sequential vane flips; it is not present during an idle no-action delay, and it locks the outcome-affecting control until settlement instead of degrading a selectable action.",
+      "pre_run": {
+        "threshold": 0.5,
+        "at_least_half": null,
+        "rate": null,
+        "basis": "not_applicable",
+        "reason": "The mathematical definition already yields No because clause iii fails; the pre-run override is therefore not applicable and no rate is asserted.",
+        "seed_probe": null
+      },
+      "files_read_completely": [
+        "AGENTS.md",
+        "weird_captcha_gym/docs/controllability/real-time.md",
+        "weird_captcha_gym/environments/flip_gate_cascade_env/controls.json",
+        "weird_captcha_gym/environments/flip_gate_cascade_env/env.json",
+        "weird_captcha_gym/environments/flip_gate_cascade_env/tasks/flip_gate_cascade_seed_0001/task.json",
+        "weird_captcha_gym/environments/flip_gate_cascade_env/tasks/flip_gate_cascade_seed_0001/setup_task.sh",
+        "weird_captcha_gym/environments/flip_gate_cascade_env/tasks/flip_gate_cascade_seed_0001/export_result.sh",
+        "weird_captcha_gym/shared_scripts/incubator_generators/flip_gate_cascade.py",
+        "weird_captcha_gym/shared_runtime/app/index.html",
+        "weird_captcha_gym/shared_runtime/app/time_controller.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/flip_gate_cascade.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/flip_gate_cascade.css",
+        "weird_captcha_gym/shared_runtime/server/incubator_graders/flip_gate_cascade.py",
+        "weird_captcha_gym/environments/flip_gate_cascade_env/tasks/flip_gate_cascade_seed_0001/verifier.py",
+        "weird_captcha_gym/tools/incubator_solvers/flip_gate_cascade.py"
+      ],
+      "source_evidence": [
+        {
+          "path": "weird_captcha_gym/environments/flip_gate_cascade_env/controls.json",
+          "lines": "34-38, 41-54",
+          "claim": "Full exposes the configured profile and uses a feed-marble drag as the outcome-affecting input; the shared task window is 1000 ms with 6 frames and 150 s play allowance."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/flip_gate_cascade.py",
+          "lines": "12-18, 40-60, 193-247",
+          "claim": "Difficulty parameters select 4 top chutes, 4 rows, 9 target depth, and 12 drops; generation randomizes static machine state/target and the transition flips visited gates. The animation duration is fixed at 900 ms."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/flip_gate_cascade.js",
+          "lines": "58-68, 137-160, 187-269, 321-380",
+          "claim": "Full mode renders a draggable feed marble; pointerup near a chute calls startDrop with input source marble_drag, while focus/hover still inspects an inlet. The accepted drag starts the same 900 ms transit, flips gates as the marble crosses the precomputed path, settles an event, and rejects further drops while busy."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/flip_gate_cascade.css",
+          "lines": "39-64, 69-72",
+          "claim": "Gate rotation/pulse, the inspection trace, and the active marble trace are visual effects; .is-dropping removes chute pointer events and disables the feed marble during transit."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/time_controller.js",
+          "lines": "124-148, 155-201, 267-336",
+          "claim": "The shared clock registers the already accepted transition as a pending action, keeps requestAnimationFrame callbacks queued while paused, and waits for pending actions to settle; the clock changes evaluation scheduling rather than adding a game-specific expiring choice."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/flip_gate_cascade.py",
+          "lines": "99-149",
+          "claim": "The grader requires the mode-specific input source and replays each settled transition from the prior state; it grades the final state and budget, not transit timing."
+        },
+        {
+          "path": "weird_captcha_gym/environments/flip_gate_cascade_env/tasks/flip_gate_cascade_seed_0001/verifier.py",
+          "lines": "91-139",
+          "claim": "The verifier independently enforces the selected input source, settled physics, and final replay claims, with no timing-sensitive acceptance condition."
+        },
+        {
+          "path": "weird_captcha_gym/tools/incubator_solvers/flip_gate_cascade.py",
+          "lines": "43-69, 105-124",
+          "claim": "The reference solver sends a click or drag, waits for the event count to advance, and verifies the machine is no longer busy before the next drop; this confirms sequential settlement rather than a timed action window."
+        }
+      ],
+      "uncertainties": []
+    },
+    {
+      "case_index": 260,
+      "public_environment_name": "Flip-Gate Cascade",
+      "environment_id": "flip_gate_cascade_env",
+      "difficulty": 5,
+      "interaction_mode": "simplified",
+      "label": "no",
+      "controls_available": [
+        "Difficulty 5: 4 top chutes, 4 rows, 22 visible vanes, exact target depth 9, and drop budget 12.",
+        "Simplified interaction: hover or focus a chute to inspect its inlet, then click it or press Enter/Space while focused to start a marble drop.",
+        "Timing controls: 1000 ms observation window, 6 chronological frames per observation, and 150 s maximum task-active time."
+      ],
+      "autonomous_processes": [
+        "While settled and idle, no timer, random process, or physics loop changes the machine without a new action.",
+        "After an accepted chute_click (or focused Enter/Space activation), a fixed 900 ms requestAnimationFrame transit moves the marble along the precomputed path, flips each visited vane, updates the current state, and shows a transient path.",
+        "During that transit model.busy rejects new drops and CSS .is-dropping disables the chutes; at settlement the event is recorded, the marble/path is hidden, and the next click is enabled.",
+        "Inspection highlighting and its fade are caused by pointer/focus events; they do not autonomously change outcome state."
+      ],
+      "grouped_control_modes": [
+        {
+          "id": "simplified_chute_click",
+          "input_source": "chute_click",
+          "outcome_affecting_action": "Click a chute, or activate its focused control with Enter/Space.",
+          "scope": "Every accepted drop in this difficulty/mode across seeds, rounds, and attempts."
+        }
+      ],
+      "delta_ms": null,
+      "window_ms": null,
+      "clause_i": {
+        "holds": true,
+        "reason": "Across generated seeds the initial vane bits, target state, and non-identity inlet permutation vary, while I_t contains only the agent's prior actions and task times. An action-only q therefore cannot generally choose the optimal chute. This is a static visual/planning dependency, not a changing pre-action opportunity."
+      },
+      "clause_ii": {
+        "holds": false,
+        "reason": "The machine and target are visible and the 900 ms path can be seen in a frame window, but the inlet trace is only shown while a chute is hovered or focused and is cleared on leave/blur; the information needed to map every later chute can therefore lie outside any bounded recent window. In any event, the transit trace does not make a drop opportunity expire."
+      },
+      "clause_iii": {
+        "holds": false,
+        "reason": "No valid D, Delta, and action satisfy the strict-loss condition. During idle waits the machine is unchanged; during the only autonomous transit, the click has already selected the chute and model.busy plus .is-dropping make all further drops ineffective. Once settled, the next click remains available until the separate overall deadline, whose loss is explicitly excluded."
+      },
+      "common_visible_process": "No common real-time witness exists. The only autonomous visible process is the fixed 900 ms, action-triggered marble transit and sequential vane flips; it is not present during an idle no-action delay, and it locks the outcome-affecting control until settlement instead of degrading a selectable action.",
+      "pre_run": {
+        "threshold": 0.5,
+        "at_least_half": null,
+        "rate": null,
+        "basis": "not_applicable",
+        "reason": "The mathematical definition already yields No because clause iii fails; the pre-run override is therefore not applicable and no rate is asserted.",
+        "seed_probe": null
+      },
+      "files_read_completely": [
+        "AGENTS.md",
+        "weird_captcha_gym/docs/controllability/real-time.md",
+        "weird_captcha_gym/environments/flip_gate_cascade_env/controls.json",
+        "weird_captcha_gym/environments/flip_gate_cascade_env/env.json",
+        "weird_captcha_gym/environments/flip_gate_cascade_env/tasks/flip_gate_cascade_seed_0001/task.json",
+        "weird_captcha_gym/environments/flip_gate_cascade_env/tasks/flip_gate_cascade_seed_0001/setup_task.sh",
+        "weird_captcha_gym/environments/flip_gate_cascade_env/tasks/flip_gate_cascade_seed_0001/export_result.sh",
+        "weird_captcha_gym/shared_scripts/incubator_generators/flip_gate_cascade.py",
+        "weird_captcha_gym/shared_runtime/app/index.html",
+        "weird_captcha_gym/shared_runtime/app/time_controller.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/flip_gate_cascade.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/flip_gate_cascade.css",
+        "weird_captcha_gym/shared_runtime/server/incubator_graders/flip_gate_cascade.py",
+        "weird_captcha_gym/environments/flip_gate_cascade_env/tasks/flip_gate_cascade_seed_0001/verifier.py",
+        "weird_captcha_gym/tools/incubator_solvers/flip_gate_cascade.py"
+      ],
+      "source_evidence": [
+        {
+          "path": "weird_captcha_gym/environments/flip_gate_cascade_env/controls.json",
+          "lines": "34-38, 41-54",
+          "claim": "Simplified exposes the configured profile and uses chute click/Enter/Space as the outcome-affecting input; the shared task window is 1000 ms with 6 frames and 150 s play allowance."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/flip_gate_cascade.py",
+          "lines": "12-18, 40-60, 193-247",
+          "claim": "Difficulty parameters select 4 top chutes, 4 rows, 9 target depth, and 12 drops; generation randomizes static machine state/target and the transition flips visited gates. The animation duration is fixed at 900 ms."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/flip_gate_cascade.js",
+          "lines": "58-68, 137-160, 187-269, 321-380",
+          "claim": "Chutes are clickable in simplified mode and focus/hover inspects an inlet; the click path calls startDrop with input source chute_click. The accepted click starts the 900 ms transit, flips gates as the marble crosses the precomputed path, settles an event, and rejects further drops while busy."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/flip_gate_cascade.css",
+          "lines": "39-64, 69-72",
+          "claim": "Gate rotation/pulse, the inspection trace, and the active marble trace are visual effects; .is-dropping removes chute pointer events and disables the feed marble during transit."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/time_controller.js",
+          "lines": "124-148, 155-201, 267-336",
+          "claim": "The shared clock registers the already accepted transition as a pending action, keeps requestAnimationFrame callbacks queued while paused, and waits for pending actions to settle; the clock changes evaluation scheduling rather than adding a game-specific expiring choice."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/flip_gate_cascade.py",
+          "lines": "99-149",
+          "claim": "The grader requires the mode-specific input source and replays each settled transition from the prior state; it grades the final state and budget, not transit timing."
+        },
+        {
+          "path": "weird_captcha_gym/environments/flip_gate_cascade_env/tasks/flip_gate_cascade_seed_0001/verifier.py",
+          "lines": "91-139",
+          "claim": "The verifier independently enforces the selected input source, settled physics, and final replay claims, with no timing-sensitive acceptance condition."
+        },
+        {
+          "path": "weird_captcha_gym/tools/incubator_solvers/flip_gate_cascade.py",
+          "lines": "43-69, 105-124",
+          "claim": "The reference solver sends a click or drag, waits for the event count to advance, and verifies the machine is no longer busy before the next drop; this confirms sequential settlement rather than a timed action window."
+        }
+      ],
+      "uncertainties": []
+    }
+  ]
+}
+

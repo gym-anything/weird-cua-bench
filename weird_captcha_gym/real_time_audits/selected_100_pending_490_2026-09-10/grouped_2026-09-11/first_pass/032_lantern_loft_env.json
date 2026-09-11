@@ -1,0 +1,967 @@
+{
+  "case_index": 32,
+  "environment_id": "lantern_loft_env",
+  "public_environment_name": "Lantern Loft",
+  "configuration_reports": [
+    {
+      "case_index": 311,
+      "public_environment_name": "Lantern Loft",
+      "environment_id": "lantern_loft_env",
+      "difficulty": 1,
+      "interaction_mode": "full",
+      "label": "no",
+      "controls_available": [
+        "Direct mouse drag of a visible non-carrier module into the adjacent empty rail on the canvas.",
+        "Direct mouse click on a visible surface to attempt a carrier step; only matching openings and valid elevation or stair connections are accepted.",
+        "ABANDON LOFT button, which terminates the attempt as a failure.",
+        "Active L1 profile: 3 route surfaces, 1 initial scramble slide, 1 elevation change, and 0 decoy openings."
+      ],
+      "autonomous_processes": [
+        "None changes the task state between inputs: the board, empty rail, carrier, and completion state are static until a handler accepts an action.",
+        "performance.now is used only to stamp submitted events with t_ms; it does not advance the loft state.",
+        "The verdict CSS transition and result fetch occur only after exit contact and are terminal presentation or certification, not an expiring task opportunity."
+      ],
+      "grouped_control_modes": [
+        "drag / input_source=drag: direct canvas module slide",
+        "surface_click / input_source=surface_click: direct canvas carrier step",
+        "route_button / input_source=route_button: abandon control, not a useful solving mode"
+      ],
+      "delta_ms": null,
+      "window_ms": 0,
+      "clause_i": {
+        "holds": true,
+        "reason": "At the start of the slide phase, histories can have the same I_t while seed-dependent rotation, mirror, module arrangement, elevations, and scramble choice produce different optimal module-to-rail actions. An observation-free q cannot select the optimal action for all such histories."
+      },
+      "clause_ii": {
+        "holds": true,
+        "reason": "A current screenshot exposes the isometric board, empty rail, module openings, visible Z levels and stairs, carrier, and exit. With no autonomous evolution, one endpoint frame (the configured zero-length window) plus I_t is sufficient to choose the same static slide or step action."
+      },
+      "clause_iii": {
+        "holds": false,
+        "reason": "For every positive delay there is no autonomous task-state change at an intermediate tau: board and carrier mutations occur only inside performSlide or performStep after an input. Therefore no useful action becomes unavailable or strictly less effective because of task-state evolution. Elapsed deadlines, event timestamps, and the post-pass CSS transition do not satisfy this clause."
+      },
+      "common_visible_process": "None. The visible loft is static between actions; only the terminal pass verdict fades after successful exit contact.",
+      "pre_run": {
+        "threshold": 0.5,
+        "at_least_half": null,
+        "rate": null,
+        "basis": "not_applicable",
+        "reason": "The mathematical definition already fails clause (iii), so the pre-run threshold does not affect this No label.",
+        "seed_probe": null
+      },
+      "files_read_completely": [
+        "AGENTS.md",
+        "weird_captcha_gym/docs/controllability/real-time.md",
+        "weird_captcha_gym/environments/lantern_loft_env/controls.json",
+        "weird_captcha_gym/environments/lantern_loft_env/env.json",
+        "weird_captcha_gym/environments/lantern_loft_env/tasks/lantern_loft_seed_0001/task.json",
+        "weird_captcha_gym/environments/lantern_loft_env/tasks/lantern_loft_seed_0001/verifier.py",
+        "weird_captcha_gym/shared_scripts/incubator_generators/lantern_loft.py",
+        "weird_captcha_gym/shared_scripts/setup_task.py",
+        "weird_captcha_gym/shared_runtime/app/mechanics/lantern_loft.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/lantern_loft.css",
+        "weird_captcha_gym/shared_runtime/server/incubator_graders/lantern_loft.py",
+        "weird_captcha_gym/shared_runtime/verifier_helpers.py",
+        "weird_captcha_gym/tools/incubator_solvers/lantern_loft.py"
+      ],
+      "source_evidence": [
+        {
+          "path": "weird_captcha_gym/environments/lantern_loft_env/controls.json",
+          "lines": "6-16",
+          "claim": "L1 parameters, both interaction surfaces, and observation_window_ms=0 with frames_per_observation=1 are explicitly configured."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/lantern_loft.py",
+          "lines": "16-46,161-186",
+          "claim": "L1 has a three-surface route and one scramble; generation applies the control condition and precomputes palette, orientation, mirror, heights, and route geometry before rendering."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/lantern_loft.py",
+          "lines": "205-248",
+          "claim": "The board and solution slides are constructed as a static target board plus a finite pre-run scramble; no elapsed-time or autonomous update is generated."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/lantern_loft.js",
+          "lines": "73-76,171-183",
+          "claim": "Elapsed time is recorded only in event metadata, while board, emptySlot, carrierSlot, and completion mutate only in input handlers."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/lantern_loft.js",
+          "lines": "204-212",
+          "claim": "Full mode installs pointer drag and canvas click handlers; abandon is the only other route button, and there is no timer or physics loop."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/lantern_loft.py",
+          "lines": "82-150,153-188",
+          "claim": "The grader validates a finite event transcript and replays only slide, step, finish, or abandon events, with timestamps checked for ordering and bounds but not used to evolve the world."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/lantern_loft.css",
+          "lines": "39-43",
+          "claim": "The only declared transition is the terminal verdict shown after the loft is passed."
+        }
+      ],
+      "uncertainties": []
+    },
+    {
+      "case_index": 312,
+      "public_environment_name": "Lantern Loft",
+      "environment_id": "lantern_loft_env",
+      "difficulty": 1,
+      "interaction_mode": "simplified",
+      "label": "no",
+      "controls_available": [
+        "SLIDE PROXY buttons for each currently occupied module, attempting a slide into the adjacent empty rail.",
+        "STEP PROXY buttons for surfaces 1 through 9, attempting a carrier step; illegal connections are blocked.",
+        "ABANDON LOFT button, which terminates the attempt as a failure.",
+        "Active L1 profile: 3 route surfaces, 1 initial scramble slide, 1 elevation change, and 0 decoy openings."
+      ],
+      "autonomous_processes": [
+        "None changes the task state between inputs: the board, empty rail, carrier, and completion state are static until a proxy handler accepts an action.",
+        "performance.now is used only to stamp submitted events with t_ms; it does not advance the loft state.",
+        "The verdict CSS transition and result fetch occur only after exit contact and are terminal presentation or certification, not an expiring task opportunity."
+      ],
+      "grouped_control_modes": [
+        "proxy_slide / input_source=proxy_slide: simplified module slide button",
+        "proxy_step / input_source=proxy_step: simplified carrier step button",
+        "route_button / input_source=route_button: abandon control, not a useful solving mode"
+      ],
+      "delta_ms": null,
+      "window_ms": 0,
+      "clause_i": {
+        "holds": true,
+        "reason": "At the start of the proxy slide phase, histories can have the same I_t while seed-dependent rotation, mirror, module arrangement, elevations, and scramble choice produce different optimal module-to-rail buttons. An observation-free q cannot select the optimal action for all such histories."
+      },
+      "clause_ii": {
+        "holds": true,
+        "reason": "A current screenshot exposes the isometric board, empty rail, module openings, visible Z levels and stairs, carrier, exit, and the proxy buttons. With no autonomous evolution, one endpoint frame (the configured zero-length window) plus I_t is sufficient to choose the same static proxy action."
+      },
+      "clause_iii": {
+        "holds": false,
+        "reason": "For every positive delay there is no autonomous task-state change at an intermediate tau: board and carrier mutations occur only inside performSlide or performStep after a proxy input. Therefore no useful action becomes unavailable or strictly less effective because of task-state evolution. Elapsed deadlines, event timestamps, and the post-pass CSS transition do not satisfy this clause."
+      },
+      "common_visible_process": "None. The visible loft is static between actions; only the terminal pass verdict fades after successful exit contact.",
+      "pre_run": {
+        "threshold": 0.5,
+        "at_least_half": null,
+        "rate": null,
+        "basis": "not_applicable",
+        "reason": "The mathematical definition already fails clause (iii), so the pre-run threshold does not affect this No label.",
+        "seed_probe": null
+      },
+      "files_read_completely": [
+        "AGENTS.md",
+        "weird_captcha_gym/docs/controllability/real-time.md",
+        "weird_captcha_gym/environments/lantern_loft_env/controls.json",
+        "weird_captcha_gym/environments/lantern_loft_env/env.json",
+        "weird_captcha_gym/environments/lantern_loft_env/tasks/lantern_loft_seed_0001/task.json",
+        "weird_captcha_gym/environments/lantern_loft_env/tasks/lantern_loft_seed_0001/verifier.py",
+        "weird_captcha_gym/shared_scripts/incubator_generators/lantern_loft.py",
+        "weird_captcha_gym/shared_scripts/setup_task.py",
+        "weird_captcha_gym/shared_runtime/app/mechanics/lantern_loft.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/lantern_loft.css",
+        "weird_captcha_gym/shared_runtime/server/incubator_graders/lantern_loft.py",
+        "weird_captcha_gym/shared_runtime/verifier_helpers.py",
+        "weird_captcha_gym/tools/incubator_solvers/lantern_loft.py"
+      ],
+      "source_evidence": [
+        {
+          "path": "weird_captcha_gym/environments/lantern_loft_env/controls.json",
+          "lines": "6-7,12-16",
+          "claim": "L1 parameters, the simplified proxy contract, and observation_window_ms=0 with frames_per_observation=1 are explicitly configured."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/lantern_loft.py",
+          "lines": "16-46,161-186",
+          "claim": "L1 has a three-surface route and one scramble; generation applies the control condition and precomputes palette, orientation, mirror, heights, and route geometry before rendering."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/lantern_loft.py",
+          "lines": "205-248",
+          "claim": "The board and solution slides are constructed as a static target board plus a finite pre-run scramble; no elapsed-time or autonomous update is generated."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/lantern_loft.js",
+          "lines": "73-76,83-97,171-183",
+          "claim": "Proxy buttons invoke handlers, and elapsed time is only event metadata; board, emptySlot, carrierSlot, and completion mutate only on accepted inputs."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/lantern_loft.js",
+          "lines": "202-212",
+          "claim": "Simplified mode renders slide and step proxies and attaches their click handlers; abandon is the only other route button, with no timer or physics loop."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/lantern_loft.py",
+          "lines": "82-150,153-188",
+          "claim": "The grader validates a finite event transcript and replays only slide, step, finish, or abandon events, with timestamps checked for ordering and bounds but not used to evolve the world."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/lantern_loft.css",
+          "lines": "39-43",
+          "claim": "The only declared transition is the terminal verdict shown after the loft is passed."
+        }
+      ],
+      "uncertainties": []
+    },
+    {
+      "case_index": 313,
+      "public_environment_name": "Lantern Loft",
+      "environment_id": "lantern_loft_env",
+      "difficulty": 2,
+      "interaction_mode": "full",
+      "label": "no",
+      "controls_available": [
+        "Direct mouse drag of a visible non-carrier module into the adjacent empty rail on the canvas.",
+        "Direct mouse click on a visible surface to attempt a carrier step; only matching openings and valid elevation or stair connections are accepted.",
+        "ABANDON LOFT button, which terminates the attempt as a failure.",
+        "Active L2 profile: 4 route surfaces, 2 initial scramble slides, 1 elevation change, and 1 decoy opening."
+      ],
+      "autonomous_processes": [
+        "None changes the task state between inputs: the board, empty rail, carrier, and completion state are static until a handler accepts an action.",
+        "performance.now is used only to stamp submitted events with t_ms; it does not advance the loft state.",
+        "The verdict CSS transition and result fetch occur only after exit contact and are terminal presentation or certification, not an expiring task opportunity."
+      ],
+      "grouped_control_modes": [
+        "drag / input_source=drag: direct canvas module slide",
+        "surface_click / input_source=surface_click: direct canvas carrier step",
+        "route_button / input_source=route_button: abandon control, not a useful solving mode"
+      ],
+      "delta_ms": null,
+      "window_ms": 0,
+      "clause_i": {
+        "holds": true,
+        "reason": "At the start of the slide phase, histories can have the same I_t while seed-dependent orientation, module arrangement, elevations, decoy opening, and two-move scramble produce different optimal module-to-rail actions. An observation-free q cannot select the optimal action for all such histories."
+      },
+      "clause_ii": {
+        "holds": true,
+        "reason": "A current screenshot exposes the isometric board, empty rail, module openings, visible Z levels and stairs, carrier, and exit. With no autonomous evolution, one endpoint frame (the configured zero-length window) plus I_t is sufficient to choose the same static slide or step action."
+      },
+      "clause_iii": {
+        "holds": false,
+        "reason": "For every positive delay there is no autonomous task-state change at an intermediate tau: board and carrier mutations occur only inside performSlide or performStep after an input. Therefore no useful action becomes unavailable or strictly less effective because of task-state evolution. Elapsed deadlines, event timestamps, and the post-pass CSS transition do not satisfy this clause."
+      },
+      "common_visible_process": "None. The visible loft is static between actions; only the terminal pass verdict fades after successful exit contact.",
+      "pre_run": {
+        "threshold": 0.5,
+        "at_least_half": null,
+        "rate": null,
+        "basis": "not_applicable",
+        "reason": "The mathematical definition already fails clause (iii), so the pre-run threshold does not affect this No label.",
+        "seed_probe": null
+      },
+      "files_read_completely": [
+        "AGENTS.md",
+        "weird_captcha_gym/docs/controllability/real-time.md",
+        "weird_captcha_gym/environments/lantern_loft_env/controls.json",
+        "weird_captcha_gym/environments/lantern_loft_env/env.json",
+        "weird_captcha_gym/environments/lantern_loft_env/tasks/lantern_loft_seed_0001/task.json",
+        "weird_captcha_gym/environments/lantern_loft_env/tasks/lantern_loft_seed_0001/verifier.py",
+        "weird_captcha_gym/shared_scripts/incubator_generators/lantern_loft.py",
+        "weird_captcha_gym/shared_scripts/setup_task.py",
+        "weird_captcha_gym/shared_runtime/app/mechanics/lantern_loft.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/lantern_loft.css",
+        "weird_captcha_gym/shared_runtime/server/incubator_graders/lantern_loft.py",
+        "weird_captcha_gym/shared_runtime/verifier_helpers.py",
+        "weird_captcha_gym/tools/incubator_solvers/lantern_loft.py"
+      ],
+      "source_evidence": [
+        {
+          "path": "weird_captcha_gym/environments/lantern_loft_env/controls.json",
+          "lines": "7,12-16",
+          "claim": "L2 parameters, both interaction surfaces, and observation_window_ms=0 with frames_per_observation=1 are explicitly configured."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/lantern_loft.py",
+          "lines": "16-46,161-186",
+          "claim": "L2 has four route surfaces, two scramble moves, one elevation change, and one decoy opening; these are precomputed during generation."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/lantern_loft.py",
+          "lines": "205-248",
+          "claim": "The board and solution slides are constructed as a static target board plus a finite pre-run scramble; no elapsed-time or autonomous update is generated."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/lantern_loft.js",
+          "lines": "73-76,171-183,204-212",
+          "claim": "Full-mode drag and click handlers are the only state-changing paths; elapsed time is event metadata and there is no timer or physics loop."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/lantern_loft.py",
+          "lines": "82-150,153-188",
+          "claim": "The grader replays finite slide, step, finish, or abandon events and does not evolve the world from event timing."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/lantern_loft.css",
+          "lines": "39-43",
+          "claim": "The only declared transition is the terminal verdict shown after the loft is passed."
+        }
+      ],
+      "uncertainties": []
+    },
+    {
+      "case_index": 314,
+      "public_environment_name": "Lantern Loft",
+      "environment_id": "lantern_loft_env",
+      "difficulty": 2,
+      "interaction_mode": "simplified",
+      "label": "no",
+      "controls_available": [
+        "SLIDE PROXY buttons for each currently occupied module, attempting a slide into the adjacent empty rail.",
+        "STEP PROXY buttons for surfaces 1 through 9, attempting a carrier step; illegal connections are blocked.",
+        "ABANDON LOFT button, which terminates the attempt as a failure.",
+        "Active L2 profile: 4 route surfaces, 2 initial scramble slides, 1 elevation change, and 1 decoy opening."
+      ],
+      "autonomous_processes": [
+        "None changes the task state between inputs: the board, empty rail, carrier, and completion state are static until a proxy handler accepts an action.",
+        "performance.now is used only to stamp submitted events with t_ms; it does not advance the loft state.",
+        "The verdict CSS transition and result fetch occur only after exit contact and are terminal presentation or certification, not an expiring task opportunity."
+      ],
+      "grouped_control_modes": [
+        "proxy_slide / input_source=proxy_slide: simplified module slide button",
+        "proxy_step / input_source=proxy_step: simplified carrier step button",
+        "route_button / input_source=route_button: abandon control, not a useful solving mode"
+      ],
+      "delta_ms": null,
+      "window_ms": 0,
+      "clause_i": {
+        "holds": true,
+        "reason": "At the start of the proxy slide phase, histories can have the same I_t while seed-dependent orientation, module arrangement, elevations, decoy opening, and two-move scramble produce different optimal module-to-rail buttons. An observation-free q cannot select the optimal action for all such histories."
+      },
+      "clause_ii": {
+        "holds": true,
+        "reason": "A current screenshot exposes the isometric board, empty rail, module openings, visible Z levels and stairs, carrier, exit, and the proxy buttons. With no autonomous evolution, one endpoint frame (the configured zero-length window) plus I_t is sufficient to choose the same static proxy action."
+      },
+      "clause_iii": {
+        "holds": false,
+        "reason": "For every positive delay there is no autonomous task-state change at an intermediate tau: board and carrier mutations occur only inside performSlide or performStep after a proxy input. Therefore no useful action becomes unavailable or strictly less effective because of task-state evolution. Elapsed deadlines, event timestamps, and the post-pass CSS transition do not satisfy this clause."
+      },
+      "common_visible_process": "None. The visible loft is static between actions; only the terminal pass verdict fades after successful exit contact.",
+      "pre_run": {
+        "threshold": 0.5,
+        "at_least_half": null,
+        "rate": null,
+        "basis": "not_applicable",
+        "reason": "The mathematical definition already fails clause (iii), so the pre-run threshold does not affect this No label.",
+        "seed_probe": null
+      },
+      "files_read_completely": [
+        "AGENTS.md",
+        "weird_captcha_gym/docs/controllability/real-time.md",
+        "weird_captcha_gym/environments/lantern_loft_env/controls.json",
+        "weird_captcha_gym/environments/lantern_loft_env/env.json",
+        "weird_captcha_gym/environments/lantern_loft_env/tasks/lantern_loft_seed_0001/task.json",
+        "weird_captcha_gym/environments/lantern_loft_env/tasks/lantern_loft_seed_0001/verifier.py",
+        "weird_captcha_gym/shared_scripts/incubator_generators/lantern_loft.py",
+        "weird_captcha_gym/shared_scripts/setup_task.py",
+        "weird_captcha_gym/shared_runtime/app/mechanics/lantern_loft.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/lantern_loft.css",
+        "weird_captcha_gym/shared_runtime/server/incubator_graders/lantern_loft.py",
+        "weird_captcha_gym/shared_runtime/verifier_helpers.py",
+        "weird_captcha_gym/tools/incubator_solvers/lantern_loft.py"
+      ],
+      "source_evidence": [
+        {
+          "path": "weird_captcha_gym/environments/lantern_loft_env/controls.json",
+          "lines": "7,12-16",
+          "claim": "L2 parameters, the simplified proxy contract, and observation_window_ms=0 with frames_per_observation=1 are explicitly configured."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/lantern_loft.py",
+          "lines": "16-46,161-186",
+          "claim": "L2 has four route surfaces, two scramble moves, one elevation change, and one decoy opening; these are precomputed during generation."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/lantern_loft.py",
+          "lines": "205-248",
+          "claim": "The board and solution slides are constructed as a static target board plus a finite pre-run scramble; no elapsed-time or autonomous update is generated."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/lantern_loft.js",
+          "lines": "73-76,83-97,171-183,202-212",
+          "claim": "Simplified proxy clicks invoke the only state-changing handlers; elapsed time is event metadata and there is no timer or physics loop."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/lantern_loft.py",
+          "lines": "82-150,153-188",
+          "claim": "The grader replays finite slide, step, finish, or abandon events and does not evolve the world from event timing."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/lantern_loft.css",
+          "lines": "39-43",
+          "claim": "The only declared transition is the terminal verdict shown after the loft is passed."
+        }
+      ],
+      "uncertainties": []
+    },
+    {
+      "case_index": 315,
+      "public_environment_name": "Lantern Loft",
+      "environment_id": "lantern_loft_env",
+      "difficulty": 3,
+      "interaction_mode": "full",
+      "label": "no",
+      "controls_available": [
+        "Direct mouse drag of a visible non-carrier module into the adjacent empty rail on the canvas.",
+        "Direct mouse click on a visible surface to attempt a carrier step; only matching openings and valid elevation or stair connections are accepted.",
+        "ABANDON LOFT button, which terminates the attempt as a failure.",
+        "Active L3 profile: 5 route surfaces, 3 initial scramble slides, 2 elevation changes, and 1 decoy opening."
+      ],
+      "autonomous_processes": [
+        "None changes the task state between inputs: the board, empty rail, carrier, and completion state are static until a handler accepts an action.",
+        "performance.now is used only to stamp submitted events with t_ms; it does not advance the loft state.",
+        "The verdict CSS transition and result fetch occur only after exit contact and are terminal presentation or certification, not an expiring task opportunity."
+      ],
+      "grouped_control_modes": [
+        "drag / input_source=drag: direct canvas module slide",
+        "surface_click / input_source=surface_click: direct canvas carrier step",
+        "route_button / input_source=route_button: abandon control, not a useful solving mode"
+      ],
+      "delta_ms": null,
+      "window_ms": 0,
+      "clause_i": {
+        "holds": true,
+        "reason": "At the start of the slide phase, histories can have the same I_t while seed-dependent orientation, module arrangement, elevations, decoy opening, and three-move scramble produce different optimal module-to-rail actions. An observation-free q cannot select the optimal action for all such histories."
+      },
+      "clause_ii": {
+        "holds": true,
+        "reason": "A current screenshot exposes the isometric board, empty rail, module openings, visible Z levels and stairs, carrier, and exit. With no autonomous evolution, one endpoint frame (the configured zero-length window) plus I_t is sufficient to choose the same static slide or step action."
+      },
+      "clause_iii": {
+        "holds": false,
+        "reason": "For every positive delay there is no autonomous task-state change at an intermediate tau: board and carrier mutations occur only inside performSlide or performStep after an input. Therefore no useful action becomes unavailable or strictly less effective because of task-state evolution. Elapsed deadlines, event timestamps, and the post-pass CSS transition do not satisfy this clause."
+      },
+      "common_visible_process": "None. The visible loft is static between actions; only the terminal pass verdict fades after successful exit contact.",
+      "pre_run": {
+        "threshold": 0.5,
+        "at_least_half": null,
+        "rate": null,
+        "basis": "not_applicable",
+        "reason": "The mathematical definition already fails clause (iii), so the pre-run threshold does not affect this No label.",
+        "seed_probe": null
+      },
+      "files_read_completely": [
+        "AGENTS.md",
+        "weird_captcha_gym/docs/controllability/real-time.md",
+        "weird_captcha_gym/environments/lantern_loft_env/controls.json",
+        "weird_captcha_gym/environments/lantern_loft_env/env.json",
+        "weird_captcha_gym/environments/lantern_loft_env/tasks/lantern_loft_seed_0001/task.json",
+        "weird_captcha_gym/environments/lantern_loft_env/tasks/lantern_loft_seed_0001/verifier.py",
+        "weird_captcha_gym/shared_scripts/incubator_generators/lantern_loft.py",
+        "weird_captcha_gym/shared_scripts/setup_task.py",
+        "weird_captcha_gym/shared_runtime/app/mechanics/lantern_loft.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/lantern_loft.css",
+        "weird_captcha_gym/shared_runtime/server/incubator_graders/lantern_loft.py",
+        "weird_captcha_gym/shared_runtime/verifier_helpers.py",
+        "weird_captcha_gym/tools/incubator_solvers/lantern_loft.py"
+      ],
+      "source_evidence": [
+        {
+          "path": "weird_captcha_gym/environments/lantern_loft_env/controls.json",
+          "lines": "8,12-16",
+          "claim": "L3 parameters, both interaction surfaces, and observation_window_ms=0 with frames_per_observation=1 are explicitly configured."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/lantern_loft.py",
+          "lines": "16-46,161-186",
+          "claim": "L3 has five route surfaces, three scramble moves, two elevation changes, and one decoy opening; these are precomputed during generation."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/lantern_loft.py",
+          "lines": "205-248",
+          "claim": "The board and solution slides are constructed as a static target board plus a finite pre-run scramble; no elapsed-time or autonomous update is generated."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/lantern_loft.js",
+          "lines": "73-76,171-183,204-212",
+          "claim": "Full-mode drag and click handlers are the only state-changing paths; elapsed time is event metadata and there is no timer or physics loop."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/lantern_loft.py",
+          "lines": "82-150,153-188",
+          "claim": "The grader replays finite slide, step, finish, or abandon events and does not evolve the world from event timing."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/lantern_loft.css",
+          "lines": "39-43",
+          "claim": "The only declared transition is the terminal verdict shown after the loft is passed."
+        }
+      ],
+      "uncertainties": []
+    },
+    {
+      "case_index": 316,
+      "public_environment_name": "Lantern Loft",
+      "environment_id": "lantern_loft_env",
+      "difficulty": 3,
+      "interaction_mode": "simplified",
+      "label": "no",
+      "controls_available": [
+        "SLIDE PROXY buttons for each currently occupied module, attempting a slide into the adjacent empty rail.",
+        "STEP PROXY buttons for surfaces 1 through 9, attempting a carrier step; illegal connections are blocked.",
+        "ABANDON LOFT button, which terminates the attempt as a failure.",
+        "Active L3 profile: 5 route surfaces, 3 initial scramble slides, 2 elevation changes, and 1 decoy opening."
+      ],
+      "autonomous_processes": [
+        "None changes the task state between inputs: the board, empty rail, carrier, and completion state are static until a proxy handler accepts an action.",
+        "performance.now is used only to stamp submitted events with t_ms; it does not advance the loft state.",
+        "The verdict CSS transition and result fetch occur only after exit contact and are terminal presentation or certification, not an expiring task opportunity."
+      ],
+      "grouped_control_modes": [
+        "proxy_slide / input_source=proxy_slide: simplified module slide button",
+        "proxy_step / input_source=proxy_step: simplified carrier step button",
+        "route_button / input_source=route_button: abandon control, not a useful solving mode"
+      ],
+      "delta_ms": null,
+      "window_ms": 0,
+      "clause_i": {
+        "holds": true,
+        "reason": "At the start of the proxy slide phase, histories can have the same I_t while seed-dependent orientation, module arrangement, elevations, decoy opening, and three-move scramble produce different optimal module-to-rail buttons. An observation-free q cannot select the optimal action for all such histories."
+      },
+      "clause_ii": {
+        "holds": true,
+        "reason": "A current screenshot exposes the isometric board, empty rail, module openings, visible Z levels and stairs, carrier, exit, and the proxy buttons. With no autonomous evolution, one endpoint frame (the configured zero-length window) plus I_t is sufficient to choose the same static proxy action."
+      },
+      "clause_iii": {
+        "holds": false,
+        "reason": "For every positive delay there is no autonomous task-state change at an intermediate tau: board and carrier mutations occur only inside performSlide or performStep after a proxy input. Therefore no useful action becomes unavailable or strictly less effective because of task-state evolution. Elapsed deadlines, event timestamps, and the post-pass CSS transition do not satisfy this clause."
+      },
+      "common_visible_process": "None. The visible loft is static between actions; only the terminal pass verdict fades after successful exit contact.",
+      "pre_run": {
+        "threshold": 0.5,
+        "at_least_half": null,
+        "rate": null,
+        "basis": "not_applicable",
+        "reason": "The mathematical definition already fails clause (iii), so the pre-run threshold does not affect this No label.",
+        "seed_probe": null
+      },
+      "files_read_completely": [
+        "AGENTS.md",
+        "weird_captcha_gym/docs/controllability/real-time.md",
+        "weird_captcha_gym/environments/lantern_loft_env/controls.json",
+        "weird_captcha_gym/environments/lantern_loft_env/env.json",
+        "weird_captcha_gym/environments/lantern_loft_env/tasks/lantern_loft_seed_0001/task.json",
+        "weird_captcha_gym/environments/lantern_loft_env/tasks/lantern_loft_seed_0001/verifier.py",
+        "weird_captcha_gym/shared_scripts/incubator_generators/lantern_loft.py",
+        "weird_captcha_gym/shared_scripts/setup_task.py",
+        "weird_captcha_gym/shared_runtime/app/mechanics/lantern_loft.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/lantern_loft.css",
+        "weird_captcha_gym/shared_runtime/server/incubator_graders/lantern_loft.py",
+        "weird_captcha_gym/shared_runtime/verifier_helpers.py",
+        "weird_captcha_gym/tools/incubator_solvers/lantern_loft.py"
+      ],
+      "source_evidence": [
+        {
+          "path": "weird_captcha_gym/environments/lantern_loft_env/controls.json",
+          "lines": "8,12-16",
+          "claim": "L3 parameters, the simplified proxy contract, and observation_window_ms=0 with frames_per_observation=1 are explicitly configured."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/lantern_loft.py",
+          "lines": "16-46,161-186",
+          "claim": "L3 has five route surfaces, three scramble moves, two elevation changes, and one decoy opening; these are precomputed during generation."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/lantern_loft.py",
+          "lines": "205-248",
+          "claim": "The board and solution slides are constructed as a static target board plus a finite pre-run scramble; no elapsed-time or autonomous update is generated."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/lantern_loft.js",
+          "lines": "73-76,83-97,171-183,202-212",
+          "claim": "Simplified proxy clicks invoke the only state-changing handlers; elapsed time is event metadata and there is no timer or physics loop."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/lantern_loft.py",
+          "lines": "82-150,153-188",
+          "claim": "The grader replays finite slide, step, finish, or abandon events and does not evolve the world from event timing."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/lantern_loft.css",
+          "lines": "39-43",
+          "claim": "The only declared transition is the terminal verdict shown after the loft is passed."
+        }
+      ],
+      "uncertainties": []
+    },
+    {
+      "case_index": 317,
+      "public_environment_name": "Lantern Loft",
+      "environment_id": "lantern_loft_env",
+      "difficulty": 4,
+      "interaction_mode": "full",
+      "label": "no",
+      "controls_available": [
+        "Direct mouse drag of a visible non-carrier module into the adjacent empty rail on the canvas.",
+        "Direct mouse click on a visible surface to attempt a carrier step; only matching openings and valid elevation or stair connections are accepted.",
+        "ABANDON LOFT button, which terminates the attempt as a failure.",
+        "Active L4 profile: 7 route surfaces, 4 initial scramble slides, 3 elevation changes, and 2 decoy openings."
+      ],
+      "autonomous_processes": [
+        "None changes the task state between inputs: the board, empty rail, carrier, and completion state are static until a handler accepts an action.",
+        "performance.now is used only to stamp submitted events with t_ms; it does not advance the loft state.",
+        "The verdict CSS transition and result fetch occur only after exit contact and are terminal presentation or certification, not an expiring task opportunity."
+      ],
+      "grouped_control_modes": [
+        "drag / input_source=drag: direct canvas module slide",
+        "surface_click / input_source=surface_click: direct canvas carrier step",
+        "route_button / input_source=route_button: abandon control, not a useful solving mode"
+      ],
+      "delta_ms": null,
+      "window_ms": 0,
+      "clause_i": {
+        "holds": true,
+        "reason": "At the start of the slide phase, histories can have the same I_t while seed-dependent orientation, module arrangement, elevations, decoy openings, and four-move scramble produce different optimal module-to-rail actions. An observation-free q cannot select the optimal action for all such histories."
+      },
+      "clause_ii": {
+        "holds": true,
+        "reason": "A current screenshot exposes the isometric board, empty rail, module openings, visible Z levels and stairs, carrier, and exit. With no autonomous evolution, one endpoint frame (the configured zero-length window) plus I_t is sufficient to choose the same static slide or step action."
+      },
+      "clause_iii": {
+        "holds": false,
+        "reason": "For every positive delay there is no autonomous task-state change at an intermediate tau: board and carrier mutations occur only inside performSlide or performStep after an input. Therefore no useful action becomes unavailable or strictly less effective because of task-state evolution. Elapsed deadlines, event timestamps, and the post-pass CSS transition do not satisfy this clause."
+      },
+      "common_visible_process": "None. The visible loft is static between actions; only the terminal pass verdict fades after successful exit contact.",
+      "pre_run": {
+        "threshold": 0.5,
+        "at_least_half": null,
+        "rate": null,
+        "basis": "not_applicable",
+        "reason": "The mathematical definition already fails clause (iii), so the pre-run threshold does not affect this No label.",
+        "seed_probe": null
+      },
+      "files_read_completely": [
+        "AGENTS.md",
+        "weird_captcha_gym/docs/controllability/real-time.md",
+        "weird_captcha_gym/environments/lantern_loft_env/controls.json",
+        "weird_captcha_gym/environments/lantern_loft_env/env.json",
+        "weird_captcha_gym/environments/lantern_loft_env/tasks/lantern_loft_seed_0001/task.json",
+        "weird_captcha_gym/environments/lantern_loft_env/tasks/lantern_loft_seed_0001/verifier.py",
+        "weird_captcha_gym/shared_scripts/incubator_generators/lantern_loft.py",
+        "weird_captcha_gym/shared_scripts/setup_task.py",
+        "weird_captcha_gym/shared_runtime/app/mechanics/lantern_loft.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/lantern_loft.css",
+        "weird_captcha_gym/shared_runtime/server/incubator_graders/lantern_loft.py",
+        "weird_captcha_gym/shared_runtime/verifier_helpers.py",
+        "weird_captcha_gym/tools/incubator_solvers/lantern_loft.py"
+      ],
+      "source_evidence": [
+        {
+          "path": "weird_captcha_gym/environments/lantern_loft_env/controls.json",
+          "lines": "9,12-16",
+          "claim": "L4 parameters, both interaction surfaces, and observation_window_ms=0 with frames_per_observation=1 are explicitly configured."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/lantern_loft.py",
+          "lines": "16-46,161-186",
+          "claim": "L4 has seven route surfaces, four scramble moves, three elevation changes, and two decoy openings; these are precomputed during generation."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/lantern_loft.py",
+          "lines": "205-248",
+          "claim": "The board and solution slides are constructed as a static target board plus a finite pre-run scramble; no elapsed-time or autonomous update is generated."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/lantern_loft.js",
+          "lines": "73-76,171-183,204-212",
+          "claim": "Full-mode drag and click handlers are the only state-changing paths; elapsed time is event metadata and there is no timer or physics loop."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/lantern_loft.py",
+          "lines": "82-150,153-188",
+          "claim": "The grader replays finite slide, step, finish, or abandon events and does not evolve the world from event timing."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/lantern_loft.css",
+          "lines": "39-43",
+          "claim": "The only declared transition is the terminal verdict shown after the loft is passed."
+        }
+      ],
+      "uncertainties": []
+    },
+    {
+      "case_index": 318,
+      "public_environment_name": "Lantern Loft",
+      "environment_id": "lantern_loft_env",
+      "difficulty": 4,
+      "interaction_mode": "simplified",
+      "label": "no",
+      "controls_available": [
+        "SLIDE PROXY buttons for each currently occupied module, attempting a slide into the adjacent empty rail.",
+        "STEP PROXY buttons for surfaces 1 through 9, attempting a carrier step; illegal connections are blocked.",
+        "ABANDON LOFT button, which terminates the attempt as a failure.",
+        "Active L4 profile: 7 route surfaces, 4 initial scramble slides, 3 elevation changes, and 2 decoy openings."
+      ],
+      "autonomous_processes": [
+        "None changes the task state between inputs: the board, empty rail, carrier, and completion state are static until a proxy handler accepts an action.",
+        "performance.now is used only to stamp submitted events with t_ms; it does not advance the loft state.",
+        "The verdict CSS transition and result fetch occur only after exit contact and are terminal presentation or certification, not an expiring task opportunity."
+      ],
+      "grouped_control_modes": [
+        "proxy_slide / input_source=proxy_slide: simplified module slide button",
+        "proxy_step / input_source=proxy_step: simplified carrier step button",
+        "route_button / input_source=route_button: abandon control, not a useful solving mode"
+      ],
+      "delta_ms": null,
+      "window_ms": 0,
+      "clause_i": {
+        "holds": true,
+        "reason": "At the start of the proxy slide phase, histories can have the same I_t while seed-dependent orientation, module arrangement, elevations, decoy openings, and four-move scramble produce different optimal module-to-rail buttons. An observation-free q cannot select the optimal action for all such histories."
+      },
+      "clause_ii": {
+        "holds": true,
+        "reason": "A current screenshot exposes the isometric board, empty rail, module openings, visible Z levels and stairs, carrier, exit, and the proxy buttons. With no autonomous evolution, one endpoint frame (the configured zero-length window) plus I_t is sufficient to choose the same static proxy action."
+      },
+      "clause_iii": {
+        "holds": false,
+        "reason": "For every positive delay there is no autonomous task-state change at an intermediate tau: board and carrier mutations occur only inside performSlide or performStep after a proxy input. Therefore no useful action becomes unavailable or strictly less effective because of task-state evolution. Elapsed deadlines, event timestamps, and the post-pass CSS transition do not satisfy this clause."
+      },
+      "common_visible_process": "None. The visible loft is static between actions; only the terminal pass verdict fades after successful exit contact.",
+      "pre_run": {
+        "threshold": 0.5,
+        "at_least_half": null,
+        "rate": null,
+        "basis": "not_applicable",
+        "reason": "The mathematical definition already fails clause (iii), so the pre-run threshold does not affect this No label.",
+        "seed_probe": null
+      },
+      "files_read_completely": [
+        "AGENTS.md",
+        "weird_captcha_gym/docs/controllability/real-time.md",
+        "weird_captcha_gym/environments/lantern_loft_env/controls.json",
+        "weird_captcha_gym/environments/lantern_loft_env/env.json",
+        "weird_captcha_gym/environments/lantern_loft_env/tasks/lantern_loft_seed_0001/task.json",
+        "weird_captcha_gym/environments/lantern_loft_env/tasks/lantern_loft_seed_0001/verifier.py",
+        "weird_captcha_gym/shared_scripts/incubator_generators/lantern_loft.py",
+        "weird_captcha_gym/shared_scripts/setup_task.py",
+        "weird_captcha_gym/shared_runtime/app/mechanics/lantern_loft.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/lantern_loft.css",
+        "weird_captcha_gym/shared_runtime/server/incubator_graders/lantern_loft.py",
+        "weird_captcha_gym/shared_runtime/verifier_helpers.py",
+        "weird_captcha_gym/tools/incubator_solvers/lantern_loft.py"
+      ],
+      "source_evidence": [
+        {
+          "path": "weird_captcha_gym/environments/lantern_loft_env/controls.json",
+          "lines": "9,12-16",
+          "claim": "L4 parameters, the simplified proxy contract, and observation_window_ms=0 with frames_per_observation=1 are explicitly configured."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/lantern_loft.py",
+          "lines": "16-46,161-186",
+          "claim": "L4 has seven route surfaces, four scramble moves, three elevation changes, and two decoy openings; these are precomputed during generation."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/lantern_loft.py",
+          "lines": "205-248",
+          "claim": "The board and solution slides are constructed as a static target board plus a finite pre-run scramble; no elapsed-time or autonomous update is generated."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/lantern_loft.js",
+          "lines": "73-76,83-97,171-183,202-212",
+          "claim": "Simplified proxy clicks invoke the only state-changing handlers; elapsed time is event metadata and there is no timer or physics loop."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/lantern_loft.py",
+          "lines": "82-150,153-188",
+          "claim": "The grader replays finite slide, step, finish, or abandon events and does not evolve the world from event timing."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/lantern_loft.css",
+          "lines": "39-43",
+          "claim": "The only declared transition is the terminal verdict shown after the loft is passed."
+        }
+      ],
+      "uncertainties": []
+    },
+    {
+      "case_index": 319,
+      "public_environment_name": "Lantern Loft",
+      "environment_id": "lantern_loft_env",
+      "difficulty": 5,
+      "interaction_mode": "full",
+      "label": "no",
+      "controls_available": [
+        "Direct mouse drag of a visible non-carrier module into the adjacent empty rail on the canvas.",
+        "Direct mouse click on a visible surface to attempt a carrier step; only matching openings and valid elevation or stair connections are accepted.",
+        "ABANDON LOFT button, which terminates the attempt as a failure.",
+        "Active L5 profile: 8 route surfaces, 6 initial scramble slides, 5 elevation changes, and 3 decoy openings."
+      ],
+      "autonomous_processes": [
+        "None changes the task state between inputs: the board, empty rail, carrier, and completion state are static until a handler accepts an action.",
+        "performance.now is used only to stamp submitted events with t_ms; it does not advance the loft state.",
+        "The verdict CSS transition and result fetch occur only after exit contact and are terminal presentation or certification, not an expiring task opportunity."
+      ],
+      "grouped_control_modes": [
+        "drag / input_source=drag: direct canvas module slide",
+        "surface_click / input_source=surface_click: direct canvas carrier step",
+        "route_button / input_source=route_button: abandon control, not a useful solving mode"
+      ],
+      "delta_ms": null,
+      "window_ms": 0,
+      "clause_i": {
+        "holds": true,
+        "reason": "At the start of the slide phase, histories can have the same I_t while seed-dependent orientation, module arrangement, elevations, decoy openings, and six-move scramble produce different optimal module-to-rail actions. An observation-free q cannot select the optimal action for all such histories."
+      },
+      "clause_ii": {
+        "holds": true,
+        "reason": "A current screenshot exposes the isometric board, empty rail, module openings, visible Z levels and stairs, carrier, and exit. With no autonomous evolution, one endpoint frame (the configured zero-length window) plus I_t is sufficient to choose the same static slide or step action."
+      },
+      "clause_iii": {
+        "holds": false,
+        "reason": "For every positive delay there is no autonomous task-state change at an intermediate tau: board and carrier mutations occur only inside performSlide or performStep after an input. Therefore no useful action becomes unavailable or strictly less effective because of task-state evolution. Elapsed deadlines, event timestamps, and the post-pass CSS transition do not satisfy this clause."
+      },
+      "common_visible_process": "None. The visible loft is static between actions; only the terminal pass verdict fades after successful exit contact.",
+      "pre_run": {
+        "threshold": 0.5,
+        "at_least_half": null,
+        "rate": null,
+        "basis": "not_applicable",
+        "reason": "The mathematical definition already fails clause (iii), so the pre-run threshold does not affect this No label.",
+        "seed_probe": null
+      },
+      "files_read_completely": [
+        "AGENTS.md",
+        "weird_captcha_gym/docs/controllability/real-time.md",
+        "weird_captcha_gym/environments/lantern_loft_env/controls.json",
+        "weird_captcha_gym/environments/lantern_loft_env/env.json",
+        "weird_captcha_gym/environments/lantern_loft_env/tasks/lantern_loft_seed_0001/task.json",
+        "weird_captcha_gym/environments/lantern_loft_env/tasks/lantern_loft_seed_0001/verifier.py",
+        "weird_captcha_gym/shared_scripts/incubator_generators/lantern_loft.py",
+        "weird_captcha_gym/shared_scripts/setup_task.py",
+        "weird_captcha_gym/shared_runtime/app/mechanics/lantern_loft.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/lantern_loft.css",
+        "weird_captcha_gym/shared_runtime/server/incubator_graders/lantern_loft.py",
+        "weird_captcha_gym/shared_runtime/verifier_helpers.py",
+        "weird_captcha_gym/tools/incubator_solvers/lantern_loft.py"
+      ],
+      "source_evidence": [
+        {
+          "path": "weird_captcha_gym/environments/lantern_loft_env/controls.json",
+          "lines": "10,12-16",
+          "claim": "L5 parameters, both interaction surfaces, and observation_window_ms=0 with frames_per_observation=1 are explicitly configured."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/lantern_loft.py",
+          "lines": "16-46,161-186",
+          "claim": "L5 has eight route surfaces, six scramble moves, five elevation changes, and three decoy openings; these are precomputed during generation."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/lantern_loft.py",
+          "lines": "205-248",
+          "claim": "The board and solution slides are constructed as a static target board plus a finite pre-run scramble; no elapsed-time or autonomous update is generated."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/lantern_loft.js",
+          "lines": "73-76,171-183,204-212",
+          "claim": "Full-mode drag and click handlers are the only state-changing paths; elapsed time is event metadata and there is no timer or physics loop."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/lantern_loft.py",
+          "lines": "82-150,153-188",
+          "claim": "The grader replays finite slide, step, finish, or abandon events and does not evolve the world from event timing."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/lantern_loft.css",
+          "lines": "39-43",
+          "claim": "The only declared transition is the terminal verdict shown after the loft is passed."
+        }
+      ],
+      "uncertainties": []
+    },
+    {
+      "case_index": 320,
+      "public_environment_name": "Lantern Loft",
+      "environment_id": "lantern_loft_env",
+      "difficulty": 5,
+      "interaction_mode": "simplified",
+      "label": "no",
+      "controls_available": [
+        "SLIDE PROXY buttons for each currently occupied module, attempting a slide into the adjacent empty rail.",
+        "STEP PROXY buttons for surfaces 1 through 9, attempting a carrier step; illegal connections are blocked.",
+        "ABANDON LOFT button, which terminates the attempt as a failure.",
+        "Active L5 profile: 8 route surfaces, 6 initial scramble slides, 5 elevation changes, and 3 decoy openings."
+      ],
+      "autonomous_processes": [
+        "None changes the task state between inputs: the board, empty rail, carrier, and completion state are static until a proxy handler accepts an action.",
+        "performance.now is used only to stamp submitted events with t_ms; it does not advance the loft state.",
+        "The verdict CSS transition and result fetch occur only after exit contact and are terminal presentation or certification, not an expiring task opportunity."
+      ],
+      "grouped_control_modes": [
+        "proxy_slide / input_source=proxy_slide: simplified module slide button",
+        "proxy_step / input_source=proxy_step: simplified carrier step button",
+        "route_button / input_source=route_button: abandon control, not a useful solving mode"
+      ],
+      "delta_ms": null,
+      "window_ms": 0,
+      "clause_i": {
+        "holds": true,
+        "reason": "At the start of the proxy slide phase, histories can have the same I_t while seed-dependent orientation, module arrangement, elevations, decoy openings, and six-move scramble produce different optimal module-to-rail buttons. An observation-free q cannot select the optimal action for all such histories."
+      },
+      "clause_ii": {
+        "holds": true,
+        "reason": "A current screenshot exposes the isometric board, empty rail, module openings, visible Z levels and stairs, carrier, exit, and the proxy buttons. With no autonomous evolution, one endpoint frame (the configured zero-length window) plus I_t is sufficient to choose the same static proxy action."
+      },
+      "clause_iii": {
+        "holds": false,
+        "reason": "For every positive delay there is no autonomous task-state change at an intermediate tau: board and carrier mutations occur only inside performSlide or performStep after a proxy input. Therefore no useful action becomes unavailable or strictly less effective because of task-state evolution. Elapsed deadlines, event timestamps, and the post-pass CSS transition do not satisfy this clause."
+      },
+      "common_visible_process": "None. The visible loft is static between actions; only the terminal pass verdict fades after successful exit contact.",
+      "pre_run": {
+        "threshold": 0.5,
+        "at_least_half": null,
+        "rate": null,
+        "basis": "not_applicable",
+        "reason": "The mathematical definition already fails clause (iii), so the pre-run threshold does not affect this No label.",
+        "seed_probe": null
+      },
+      "files_read_completely": [
+        "AGENTS.md",
+        "weird_captcha_gym/docs/controllability/real-time.md",
+        "weird_captcha_gym/environments/lantern_loft_env/controls.json",
+        "weird_captcha_gym/environments/lantern_loft_env/env.json",
+        "weird_captcha_gym/environments/lantern_loft_env/tasks/lantern_loft_seed_0001/task.json",
+        "weird_captcha_gym/environments/lantern_loft_env/tasks/lantern_loft_seed_0001/verifier.py",
+        "weird_captcha_gym/shared_scripts/incubator_generators/lantern_loft.py",
+        "weird_captcha_gym/shared_scripts/setup_task.py",
+        "weird_captcha_gym/shared_runtime/app/mechanics/lantern_loft.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/lantern_loft.css",
+        "weird_captcha_gym/shared_runtime/server/incubator_graders/lantern_loft.py",
+        "weird_captcha_gym/shared_runtime/verifier_helpers.py",
+        "weird_captcha_gym/tools/incubator_solvers/lantern_loft.py"
+      ],
+      "source_evidence": [
+        {
+          "path": "weird_captcha_gym/environments/lantern_loft_env/controls.json",
+          "lines": "10,12-16",
+          "claim": "L5 parameters, the simplified proxy contract, and observation_window_ms=0 with frames_per_observation=1 are explicitly configured."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/lantern_loft.py",
+          "lines": "16-46,161-186",
+          "claim": "L5 has eight route surfaces, six scramble moves, five elevation changes, and three decoy openings; these are precomputed during generation."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/lantern_loft.py",
+          "lines": "205-248",
+          "claim": "The board and solution slides are constructed as a static target board plus a finite pre-run scramble; no elapsed-time or autonomous update is generated."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/lantern_loft.js",
+          "lines": "73-76,83-97,171-183,202-212",
+          "claim": "Simplified proxy clicks invoke the only state-changing handlers; elapsed time is event metadata and there is no timer or physics loop."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/lantern_loft.py",
+          "lines": "82-150,153-188",
+          "claim": "The grader replays finite slide, step, finish, or abandon events and does not evolve the world from event timing."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/lantern_loft.css",
+          "lines": "39-43",
+          "claim": "The only declared transition is the terminal verdict shown after the loft is passed."
+        }
+      ],
+      "uncertainties": []
+    }
+  ]
+}

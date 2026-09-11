@@ -1,0 +1,103 @@
+{
+  "case_index": 113,
+  "public_environment_name": "Cloudstep Caddie",
+  "environment_id": "cloudstep_caddie_env",
+  "difficulty": 2,
+  "interaction_mode": "full",
+  "label": "no",
+  "controls_available": [
+    "Difficulty 2 presents four exact-use cards: ROLL 2, ROLL 1, CHIP 1, and ROLL 1, on an 8 by 7 visible course with sand, water, a ramp, and a cup.",
+    "Full interaction is a mouse drag of an unused pictured card directly onto one of the four visible compass directions; the stroke is dispatched on release.",
+    "The screenshot exposes the isometric tile surfaces, elevations, ramp arrows, ball, cup, card hand, and used-card state needed to plan each next stroke.",
+    "The CERTIFY SUNKEN BALL button submits the completed transcript and is administrative rather than a movement control."
+  ],
+  "autonomous_processes": [
+    "There is no outcome-affecting autonomous process during any no-input interval before certification: the course, ball, available cards, and stroke transcript remain unchanged.",
+    "The CSS hover and dragging transition changes only card presentation while the pointer is being used; it does not change course state, action availability, or grading state.",
+    "The asynchronous verifier response occurs only after the certification action and does not create an expiring stroke opportunity."
+  ],
+  "grouped_control_modes": [
+    "D = all full-mode card_drag_to_compass stroke opportunities across every seed, round, attempt, unused card, and compass direction; certification is excluded as administrative."
+  ],
+  "delta_ms": null,
+  "window_ms": null,
+  "clause_i": {
+    "holds": true,
+    "reason": "At the first stroke, identical prior-action histories can occur across seeds while generation applies a random board transform and shuffles the visible cards. The required card and transformed direction therefore differ, so no policy using only I_t can be optimal for every history in D."
+  },
+  "clause_ii": {
+    "holds": true,
+    "reason": "The current screenshot contains the complete static course and hand, including the ball, cup, surfaces, elevations, ramp arrows, and card labels. A bounded endpoint observation (the configured observation window is 0 ms with one frame) is sufficient to choose the next legal card and direction; no motion history is needed."
+  },
+  "clause_iii": {
+    "holds": false,
+    "reason": "The browser changes task state only synchronously in dispatch after pointerup: it validates the stroke, appends an event, updates the ball and used-card list, and redraws. The mechanic has no timer, physics loop, autonomous animation, or deadline that changes the outcome state while idle. The grader replays event order and settled positions without task times, so waiting leaves every still-available stroke's Q and action advantage unchanged; no Delta and tau can witness strict degradation."
+  },
+  "common_visible_process": "None. No visible autonomous task-state process both determines a delayed-optimal stroke and makes that stroke expire or lose value.",
+  "pre_run": {
+    "threshold": 0.5,
+    "at_least_half": null,
+    "rate": null,
+    "basis": "not_applicable",
+    "reason": "The mathematical diagnostic is already No because clause (iii) fails, so the pre-run threshold cannot change the label and no percentage is asserted. The source also has no autonomous outcome phase: strokes perform their transitions synchronously, followed only by the administrative certification request.",
+    "seed_probe": null
+  },
+  "files_read_completely": [
+    "AGENTS.md",
+    "weird_captcha_gym/docs/controllability/real-time.md",
+    "weird_captcha_gym/environments/cloudstep_caddie_env/controls.json",
+    "weird_captcha_gym/environments/cloudstep_caddie_env/env.json",
+    "weird_captcha_gym/environments/cloudstep_caddie_env/tasks/cloudstep_caddie_seed_0001/task.json",
+    "weird_captcha_gym/environments/cloudstep_caddie_env/tasks/cloudstep_caddie_seed_0001/verifier.py",
+    "weird_captcha_gym/shared_scripts/incubator_generators/cloudstep_caddie.py",
+    "weird_captcha_gym/shared_runtime/app/mechanics/cloudstep_caddie.js",
+    "weird_captcha_gym/shared_runtime/app/mechanics/cloudstep_caddie.css",
+    "weird_captcha_gym/shared_runtime/app/time_controller.js",
+    "weird_captcha_gym/shared_runtime/server/incubator_graders/cloudstep_caddie.py",
+    "weird_captcha_gym/shared_runtime/verifier_helpers.py",
+    "weird_captcha_gym/tools/incubator_solvers/cloudstep_caddie.py"
+  ],
+  "source_evidence": [
+    {
+      "path": "weird_captcha_gym/environments/cloudstep_caddie_env/controls.json",
+      "lines": "12-16; 37-41",
+      "claim": "The assigned difficulty-2 profile is a four-stroke easy course; full mode is card-to-compass dragging; the configured observation window is 0 ms with one frame."
+    },
+    {
+      "path": "weird_captcha_gym/shared_scripts/incubator_generators/cloudstep_caddie.py",
+      "lines": "204-217; 225-253; 268-285",
+      "claim": "Generation reads the selected control difficulty, constructs the fixed action plan and visible tiles, then applies a seed-dependent transform and card shuffle; it has no clock-driven state."
+    },
+    {
+      "path": "weird_captcha_gym/shared_runtime/app/mechanics/cloudstep_caddie.js",
+      "lines": "129-168",
+      "claim": "Full input is handled by pointerdown/pointerup card dragging, and dispatch synchronously validates the transition, appends the stroke event, updates the ball and used cards, and redraws."
+    },
+    {
+      "path": "weird_captcha_gym/shared_runtime/app/mechanics/cloudstep_caddie.js",
+      "lines": "177-210",
+      "claim": "Certification submits the already-built event transcript, while initial rendering draws the static course and installs handlers; no autonomous task loop is defined in the complete mechanic file."
+    },
+    {
+      "path": "weird_captcha_gym/shared_runtime/app/mechanics/cloudstep_caddie.css",
+      "lines": "58-59",
+      "claim": "The only card motion is a hover/drag CSS transform and opacity transition, which is presentation-only."
+    },
+    {
+      "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/cloudstep_caddie.py",
+      "lines": "113-173; 176-208",
+      "claim": "The authoritative grader checks the expected full-mode input source, event sequence, visible before/after positions, exact hand, cup position, and certificate; it has no timing or expiration rule."
+    },
+    {
+      "path": "weird_captcha_gym/environments/cloudstep_caddie_env/tasks/cloudstep_caddie_seed_0001/verifier.py",
+      "lines": "21-37",
+      "claim": "The verifier loads the exported UI result and delegates it to the Cloudstep Caddie replay grader."
+    },
+    {
+      "path": "weird_captcha_gym/tools/incubator_solvers/cloudstep_caddie.py",
+      "lines": "47-57; 60-85",
+      "claim": "The full solver uses the same visible card-to-compass drag path and only inserts a fixed 120 ms test wait between strokes; the wait is not used by the mechanic or grader."
+    }
+  ],
+  "uncertainties": []
+}

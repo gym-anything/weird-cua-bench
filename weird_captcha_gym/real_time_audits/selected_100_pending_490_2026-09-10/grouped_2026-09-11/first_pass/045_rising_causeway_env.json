@@ -1,0 +1,1317 @@
+{
+  "case_index": 45,
+  "environment_id": "rising_causeway_env",
+  "public_environment_name": "Rising Causeway",
+  "configuration_reports": [
+    {
+      "case_index": 441,
+      "public_environment_name": "Rising Causeway",
+      "environment_id": "rising_causeway_env",
+      "difficulty": 1,
+      "interaction_mode": "full",
+      "label": "no",
+      "controls_available": [
+        "Difficulty 1 profile: red_stage_target=1, chamber_length=13.5, stair_height=0.65, corridor_half_width=2.35, launcher_count=1, decoy_actuator_count=0, terminal_radius=0.8, move_speed=4.8.",
+        "Full input surface: direct viewport clicks on the visible red extension actuator, either endpoint of the yellow triple stair, the selected blue launcher, and the reached terminal.",
+        "Full movement/look surface: hold WASD or arrow keys for movement and strafing; drag the viewport for mouse-look.",
+        "The route requires configuring the red stage, stair high end, and launcher, then contacting the primed launcher and walking to the terminal."
+      ],
+      "autonomous_processes": [
+        "A 40 ms interval tick runs continuously. With no held movement input it records a physics tick and redraws without changing the route; with a held movement control it advances the avatar deterministically at the profile's fixed move_speed and applies collision/support checks.",
+        "On contact with the primed launcher, the browser starts a fixed 840 ms inFlight ballistic arc. Ticks update the visible trajectory under fixed gravity, then land at the precomputed platform and re-enable movement; new outcome-affecting controls are blocked during the flight.",
+        "Red extension, stair-end selection, and launcher priming are synchronous actions. Terminal activation remains available after landing whenever the avatar is within the fixed terminal radius; there is no autonomous countdown, moving target, or expiring actuator state."
+      ],
+      "grouped_control_modes": [
+        "viewport-click actuator mode: red extension, stair endpoint, and launcher prime",
+        "held keyboard movement mode: WASD/arrow key-down and key-up transitions",
+        "viewport-drag look mode",
+        "viewport-click terminal activation mode"
+      ],
+      "delta_ms": null,
+      "window_ms": null,
+      "clause_i": {
+        "holds": true,
+        "reason": "Across seeded chambers, the visible mirror changes the required stair end and the launcher gallery/landing geometry varies. The agent's own action history I_t does not contain those world facts, so an observation-free schedule q cannot be optimal for all ordinary route-choice histories."
+      },
+      "clause_ii": {
+        "holds": true,
+        "reason": "The visible chamber, stair heights, launcher orientations, terminal, and current position provide the information needed for the ordinary next screenshot action; a bounded current/recent frame window is sufficient for that static route reading. This is visual dependence on geometry and pose, not evidence of an autonomous opportunity expiring."
+      },
+      "clause_iii": {
+        "holds": false,
+        "reason": "No valid H_t in C_Delta supplies the required strict non-clock loss. Held movement is caused by an already-held agent input and is predictable from its action timing; before an irreversible collision, release/reverse/configure remains effective. Crossing a gap, wrong stair, or outer ledge makes success unsalvageable and is therefore excluded from C_Delta. During the 840 ms launch, all outcome-affecting controls are disabled and later re-enabled, so waiting only traverses a fixed animation. Actuator and terminal actions do not expire."
+      },
+      "common_visible_process": "No common qualifying process exists. The visible 40 ms movement ticks and 840 ms launch arc either follow the agent's held input and remain schedulable/recoverable while success is possible, or form a fixed input-blocking animation that later enables controls. The static 3D geometry supplies route information independently, and any autonomous collision that removes an action also removes the possibility of success.",
+      "pre_run": {
+        "threshold": 0.5,
+        "at_least_half": null,
+        "rate": null,
+        "basis": "not_applicable",
+        "reason": "The mathematical definition already fails at clause (iii), so the pre-run threshold cannot change this configuration's No label; no rate is inferred.",
+        "seed_probe": null
+      },
+      "files_read_completely": [
+        "AGENTS.md",
+        "weird_captcha_gym/docs/controllability/real-time.md",
+        "weird_captcha_gym/environments/rising_causeway_env/controls.json",
+        "weird_captcha_gym/environments/rising_causeway_env/env.json",
+        "weird_captcha_gym/environments/rising_causeway_env/tasks/rising_causeway_seed_0001/task.json",
+        "weird_captcha_gym/environments/rising_causeway_env/tasks/rising_causeway_seed_0001/setup_task.sh",
+        "weird_captcha_gym/environments/rising_causeway_env/tasks/rising_causeway_seed_0001/verifier.py",
+        "weird_captcha_gym/shared_scripts/incubator_generators/rising_causeway.py",
+        "weird_captcha_gym/shared_runtime/app/mechanics/rising_causeway.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/rising_causeway.css",
+        "weird_captcha_gym/shared_runtime/server/incubator_graders/rising_causeway.py",
+        "weird_captcha_gym/shared_runtime/verifier_helpers.py",
+        "weird_captcha_gym/tools/incubator_solvers/rising_causeway.py"
+      ],
+      "source_evidence": [
+        {
+          "path": "weird_captcha_gym/environments/rising_causeway_env/controls.json",
+          "lines": "10-24",
+          "claim": "Difficulty 1 activates the exact profile red_stage_target=1, chamber_length=13.5, stair_height=0.65, corridor_half_width=2.35, launcher_count=1, decoy_actuator_count=0, terminal_radius=0.8, move_speed=4.8."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/rising_causeway.py",
+          "lines": "19-25",
+          "claim": "The generator's PROFILES contains the same five difficulty profiles and selects the requested difficulty."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/rising_causeway.py",
+          "lines": "66-80",
+          "claim": "The generated chamber derives contiguous red extensions, three stair steps, the launcher gallery, and a fixed 840 ms launch duration from the selected profile."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/rising_causeway.js",
+          "lines": "350-419",
+          "claim": "The only continuing task updates are 40 ms ticks: held movement with collision/support checks or a fixed-gravity in-flight arc that lands after flight_duration_ms."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/rising_causeway.js",
+          "lines": "447-490",
+          "claim": "Red/stair/launcher actions apply synchronously, launcher prime has no countdown, and terminal activation checks only landed state and fixed radius."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/rising_causeway.js",
+          "lines": "421-445",
+          "claim": "Full mode accepts movement only from keyboard and look only from viewport drag; the same model state is changed by those direct inputs."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/rising_causeway.js",
+          "lines": "516-524",
+          "claim": "Full viewport clicks dispatch to the red actuator, stair endpoints, launcher prime, or terminal activation."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/rising_causeway.js",
+          "lines": "634-684",
+          "claim": "Full mode binds native key and pointer events and starts the fixed 40 ms tick interval."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/rising_causeway.py",
+          "lines": "231-350",
+          "claim": "The authoritative replay applies the same deterministic ticks, contact launch, landing, configuration choices, and terminal-radius check; it has no timing deadline or decay rule."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/rising_causeway.css",
+          "lines": "41-45",
+          "claim": "The only CSS transition is the post-pass verdict; there is no task-state animation supplying an independent moving target."
+        },
+        {
+          "path": "weird_captcha_gym/tools/incubator_solvers/rising_causeway.py",
+          "lines": "119-184",
+          "claim": "The solver configures the visible route and uses short held movement pulses with re-observation, showing ordinary control of the static geometry rather than a timed expiry."
+        },
+        {
+          "path": "weird_captcha_gym/tools/incubator_solvers/rising_causeway.py",
+          "lines": "206-275",
+          "claim": "The solver waits for the fixed contact launch to land, then walks to and activates the terminal; the launch wait only settles a fixed animation."
+        },
+        {
+          "path": "weird_captcha_gym/environments/rising_causeway_env/tasks/rising_causeway_seed_0001/verifier.py",
+          "lines": "23-44",
+          "claim": "Verification loads the exported replay and shared grader; it does not add a separate real-time rule."
+        }
+      ],
+      "uncertainties": []
+    },
+    {
+      "case_index": 442,
+      "public_environment_name": "Rising Causeway",
+      "environment_id": "rising_causeway_env",
+      "difficulty": 1,
+      "interaction_mode": "simplified",
+      "label": "no",
+      "controls_available": [
+        "Difficulty 1 profile: red_stage_target=1, chamber_length=13.5, stair_height=0.65, corridor_half_width=2.35, launcher_count=1, decoy_actuator_count=0, terminal_radius=0.8, move_speed=4.8.",
+        "Simplified input surface: labelled proxy buttons for red extension, stair-left/right selection, launcher priming, look steps, and terminal activation; the chamber and action effects are unchanged.",
+        "Simplified movement surface: hold the visible d-pad control buttons for forward/back/strafe; use the visible look-step buttons for view changes.",
+        "The route still requires configuring the red stage, stair high end, and launcher, then contacting the primed launcher and walking to the terminal."
+      ],
+      "autonomous_processes": [
+        "A 40 ms interval tick runs continuously. With no held movement input it records a physics tick and redraws without changing the route; with a held movement control it advances the avatar deterministically at the profile's fixed move_speed and applies collision/support checks.",
+        "On contact with the primed launcher, the browser starts a fixed 840 ms inFlight ballistic arc. Ticks update the visible trajectory under fixed gravity, then land at the precomputed platform and re-enable movement; new outcome-affecting controls are blocked during the flight.",
+        "Red extension, stair-end selection, and launcher priming are synchronous actions. Terminal activation remains available after landing whenever the avatar is within the fixed terminal radius; there is no autonomous countdown, moving target, or expiring actuator state."
+      ],
+      "grouped_control_modes": [
+        "proxy-button actuator mode: red extension, stair endpoint, and launcher prime",
+        "held control-button movement mode: d-pad pointer holds",
+        "look-button mode: discrete look-step buttons",
+        "proxy-button terminal activation mode"
+      ],
+      "delta_ms": null,
+      "window_ms": null,
+      "clause_i": {
+        "holds": true,
+        "reason": "Across seeded chambers, the visible mirror changes the required stair end and the launcher gallery/landing geometry varies. The agent's own action history I_t does not contain those world facts, so an observation-free schedule q cannot be optimal for all ordinary route-choice histories."
+      },
+      "clause_ii": {
+        "holds": true,
+        "reason": "The visible chamber, stair heights, launcher orientations, terminal, and current position provide the information needed for the ordinary next screenshot action; a bounded current/recent frame window is sufficient for that static route reading. This is visual dependence on geometry and pose, not evidence of an autonomous opportunity expiring."
+      },
+      "clause_iii": {
+        "holds": false,
+        "reason": "No valid H_t in C_Delta supplies the required strict non-clock loss. Held movement is caused by an already-held agent input and is predictable from its action timing; before an irreversible collision, release/reverse/configure remains effective. Crossing a gap, wrong stair, or outer ledge makes success unsalvageable and is therefore excluded from C_Delta. During the 840 ms launch, all outcome-affecting controls are disabled and later re-enabled, so waiting only traverses a fixed animation. Actuator and terminal actions do not expire."
+      },
+      "common_visible_process": "No common qualifying process exists. The visible 40 ms movement ticks and 840 ms launch arc either follow the agent's held input and remain schedulable/recoverable while success is possible, or form a fixed input-blocking animation that later enables controls. The static 3D geometry supplies route information independently, and any autonomous collision that removes an action also removes the possibility of success.",
+      "pre_run": {
+        "threshold": 0.5,
+        "at_least_half": null,
+        "rate": null,
+        "basis": "not_applicable",
+        "reason": "The mathematical definition already fails at clause (iii), so the pre-run threshold cannot change this configuration's No label; no rate is inferred.",
+        "seed_probe": null
+      },
+      "files_read_completely": [
+        "AGENTS.md",
+        "weird_captcha_gym/docs/controllability/real-time.md",
+        "weird_captcha_gym/environments/rising_causeway_env/controls.json",
+        "weird_captcha_gym/environments/rising_causeway_env/env.json",
+        "weird_captcha_gym/environments/rising_causeway_env/tasks/rising_causeway_seed_0001/task.json",
+        "weird_captcha_gym/environments/rising_causeway_env/tasks/rising_causeway_seed_0001/setup_task.sh",
+        "weird_captcha_gym/environments/rising_causeway_env/tasks/rising_causeway_seed_0001/verifier.py",
+        "weird_captcha_gym/shared_scripts/incubator_generators/rising_causeway.py",
+        "weird_captcha_gym/shared_runtime/app/mechanics/rising_causeway.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/rising_causeway.css",
+        "weird_captcha_gym/shared_runtime/server/incubator_graders/rising_causeway.py",
+        "weird_captcha_gym/shared_runtime/verifier_helpers.py",
+        "weird_captcha_gym/tools/incubator_solvers/rising_causeway.py"
+      ],
+      "source_evidence": [
+        {
+          "path": "weird_captcha_gym/environments/rising_causeway_env/controls.json",
+          "lines": "10-24",
+          "claim": "Difficulty 1 activates the exact profile red_stage_target=1, chamber_length=13.5, stair_height=0.65, corridor_half_width=2.35, launcher_count=1, decoy_actuator_count=0, terminal_radius=0.8, move_speed=4.8."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/rising_causeway.py",
+          "lines": "19-25",
+          "claim": "The generator's PROFILES contains the same five difficulty profiles and selects the requested difficulty."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/rising_causeway.py",
+          "lines": "66-80",
+          "claim": "The generated chamber derives contiguous red extensions, three stair steps, the launcher gallery, and a fixed 840 ms launch duration from the selected profile."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/rising_causeway.js",
+          "lines": "350-419",
+          "claim": "The only continuing task updates are 40 ms ticks: held movement with collision/support checks or a fixed-gravity in-flight arc that lands after flight_duration_ms."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/rising_causeway.js",
+          "lines": "447-490",
+          "claim": "Red/stair/launcher actions apply synchronously, launcher prime has no countdown, and terminal activation checks only landed state and fixed radius."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/rising_causeway.js",
+          "lines": "570-592",
+          "claim": "Simplified mode binds proxy action buttons and held control buttons, with look buttons routed through the same model."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/rising_causeway.js",
+          "lines": "594-626",
+          "claim": "The simplified UI exposes labelled red/stair/launcher/terminal actions, a held movement d-pad, and look-step buttons while rendering the same chamber."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/rising_causeway.js",
+          "lines": "421-445",
+          "claim": "Source checks keep simplified movement, look, and full-mode inputs separate while applying the same state transitions."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/rising_causeway.py",
+          "lines": "231-350",
+          "claim": "The authoritative replay applies the same deterministic ticks, contact launch, landing, configuration choices, and terminal-radius check; it has no timing deadline or decay rule."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/rising_causeway.css",
+          "lines": "41-45",
+          "claim": "The only CSS transition is the post-pass verdict; there is no task-state animation supplying an independent moving target."
+        },
+        {
+          "path": "weird_captcha_gym/tools/incubator_solvers/rising_causeway.py",
+          "lines": "119-184",
+          "claim": "The solver configures the visible route and uses short held movement pulses with re-observation, showing ordinary control of the static geometry rather than a timed expiry."
+        },
+        {
+          "path": "weird_captcha_gym/tools/incubator_solvers/rising_causeway.py",
+          "lines": "206-275",
+          "claim": "The solver waits for the fixed contact launch to land, then walks to and activates the terminal; the launch wait only settles a fixed animation."
+        },
+        {
+          "path": "weird_captcha_gym/environments/rising_causeway_env/tasks/rising_causeway_seed_0001/verifier.py",
+          "lines": "23-44",
+          "claim": "Verification loads the exported replay and shared grader; it does not add a separate real-time rule."
+        }
+      ],
+      "uncertainties": []
+    },
+    {
+      "case_index": 443,
+      "public_environment_name": "Rising Causeway",
+      "environment_id": "rising_causeway_env",
+      "difficulty": 2,
+      "interaction_mode": "full",
+      "label": "no",
+      "controls_available": [
+        "Difficulty 2 profile: red_stage_target=2, chamber_length=15.0, stair_height=0.8, corridor_half_width=2.15, launcher_count=1, decoy_actuator_count=1, terminal_radius=0.75, move_speed=4.7.",
+        "Full input surface: direct viewport clicks on the visible red extension actuator, either endpoint of the yellow triple stair, the selected blue launcher, and the reached terminal.",
+        "Full movement/look surface: hold WASD or arrow keys for movement and strafing; drag the viewport for mouse-look.",
+        "The route requires configuring the red stage, stair high end, and launcher, then contacting the primed launcher and walking to the terminal."
+      ],
+      "autonomous_processes": [
+        "A 40 ms interval tick runs continuously. With no held movement input it records a physics tick and redraws without changing the route; with a held movement control it advances the avatar deterministically at the profile's fixed move_speed and applies collision/support checks.",
+        "On contact with the primed launcher, the browser starts a fixed 840 ms inFlight ballistic arc. Ticks update the visible trajectory under fixed gravity, then land at the precomputed platform and re-enable movement; new outcome-affecting controls are blocked during the flight.",
+        "Red extension, stair-end selection, and launcher priming are synchronous actions. Terminal activation remains available after landing whenever the avatar is within the fixed terminal radius; there is no autonomous countdown, moving target, or expiring actuator state."
+      ],
+      "grouped_control_modes": [
+        "viewport-click actuator mode: red extension, stair endpoint, and launcher prime",
+        "held keyboard movement mode: WASD/arrow key-down and key-up transitions",
+        "viewport-drag look mode",
+        "viewport-click terminal activation mode"
+      ],
+      "delta_ms": null,
+      "window_ms": null,
+      "clause_i": {
+        "holds": true,
+        "reason": "Across seeded chambers, the visible mirror changes the required stair end and the launcher gallery/landing geometry varies. The agent's own action history I_t does not contain those world facts, so an observation-free schedule q cannot be optimal for all ordinary route-choice histories."
+      },
+      "clause_ii": {
+        "holds": true,
+        "reason": "The visible chamber, stair heights, launcher orientations, terminal, and current position provide the information needed for the ordinary next screenshot action; a bounded current/recent frame window is sufficient for that static route reading. This is visual dependence on geometry and pose, not evidence of an autonomous opportunity expiring."
+      },
+      "clause_iii": {
+        "holds": false,
+        "reason": "No valid H_t in C_Delta supplies the required strict non-clock loss. Held movement is caused by an already-held agent input and is predictable from its action timing; before an irreversible collision, release/reverse/configure remains effective. Crossing a gap, wrong stair, or outer ledge makes success unsalvageable and is therefore excluded from C_Delta. During the 840 ms launch, all outcome-affecting controls are disabled and later re-enabled, so waiting only traverses a fixed animation. Actuator and terminal actions do not expire."
+      },
+      "common_visible_process": "No common qualifying process exists. The visible 40 ms movement ticks and 840 ms launch arc either follow the agent's held input and remain schedulable/recoverable while success is possible, or form a fixed input-blocking animation that later enables controls. The static 3D geometry supplies route information independently, and any autonomous collision that removes an action also removes the possibility of success.",
+      "pre_run": {
+        "threshold": 0.5,
+        "at_least_half": null,
+        "rate": null,
+        "basis": "not_applicable",
+        "reason": "The mathematical definition already fails at clause (iii), so the pre-run threshold cannot change this configuration's No label; no rate is inferred.",
+        "seed_probe": null
+      },
+      "files_read_completely": [
+        "AGENTS.md",
+        "weird_captcha_gym/docs/controllability/real-time.md",
+        "weird_captcha_gym/environments/rising_causeway_env/controls.json",
+        "weird_captcha_gym/environments/rising_causeway_env/env.json",
+        "weird_captcha_gym/environments/rising_causeway_env/tasks/rising_causeway_seed_0001/task.json",
+        "weird_captcha_gym/environments/rising_causeway_env/tasks/rising_causeway_seed_0001/setup_task.sh",
+        "weird_captcha_gym/environments/rising_causeway_env/tasks/rising_causeway_seed_0001/verifier.py",
+        "weird_captcha_gym/shared_scripts/incubator_generators/rising_causeway.py",
+        "weird_captcha_gym/shared_runtime/app/mechanics/rising_causeway.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/rising_causeway.css",
+        "weird_captcha_gym/shared_runtime/server/incubator_graders/rising_causeway.py",
+        "weird_captcha_gym/shared_runtime/verifier_helpers.py",
+        "weird_captcha_gym/tools/incubator_solvers/rising_causeway.py"
+      ],
+      "source_evidence": [
+        {
+          "path": "weird_captcha_gym/environments/rising_causeway_env/controls.json",
+          "lines": "26-40",
+          "claim": "Difficulty 2 activates the exact profile red_stage_target=2, chamber_length=15.0, stair_height=0.8, corridor_half_width=2.15, launcher_count=1, decoy_actuator_count=1, terminal_radius=0.75, move_speed=4.7."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/rising_causeway.py",
+          "lines": "19-25",
+          "claim": "The generator's PROFILES contains the same five difficulty profiles and selects the requested difficulty."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/rising_causeway.py",
+          "lines": "66-80",
+          "claim": "The generated chamber derives contiguous red extensions, three stair steps, the launcher gallery, and a fixed 840 ms launch duration from the selected profile."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/rising_causeway.js",
+          "lines": "350-419",
+          "claim": "The only continuing task updates are 40 ms ticks: held movement with collision/support checks or a fixed-gravity in-flight arc that lands after flight_duration_ms."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/rising_causeway.js",
+          "lines": "447-490",
+          "claim": "Red/stair/launcher actions apply synchronously, launcher prime has no countdown, and terminal activation checks only landed state and fixed radius."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/rising_causeway.js",
+          "lines": "421-445",
+          "claim": "Full mode accepts movement only from keyboard and look only from viewport drag; the same model state is changed by those direct inputs."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/rising_causeway.js",
+          "lines": "516-524",
+          "claim": "Full viewport clicks dispatch to the red actuator, stair endpoints, launcher prime, or terminal activation."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/rising_causeway.js",
+          "lines": "634-684",
+          "claim": "Full mode binds native key and pointer events and starts the fixed 40 ms tick interval."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/rising_causeway.py",
+          "lines": "231-350",
+          "claim": "The authoritative replay applies the same deterministic ticks, contact launch, landing, configuration choices, and terminal-radius check; it has no timing deadline or decay rule."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/rising_causeway.css",
+          "lines": "41-45",
+          "claim": "The only CSS transition is the post-pass verdict; there is no task-state animation supplying an independent moving target."
+        },
+        {
+          "path": "weird_captcha_gym/tools/incubator_solvers/rising_causeway.py",
+          "lines": "119-184",
+          "claim": "The solver configures the visible route and uses short held movement pulses with re-observation, showing ordinary control of the static geometry rather than a timed expiry."
+        },
+        {
+          "path": "weird_captcha_gym/tools/incubator_solvers/rising_causeway.py",
+          "lines": "206-275",
+          "claim": "The solver waits for the fixed contact launch to land, then walks to and activates the terminal; the launch wait only settles a fixed animation."
+        },
+        {
+          "path": "weird_captcha_gym/environments/rising_causeway_env/tasks/rising_causeway_seed_0001/verifier.py",
+          "lines": "23-44",
+          "claim": "Verification loads the exported replay and shared grader; it does not add a separate real-time rule."
+        }
+      ],
+      "uncertainties": []
+    },
+    {
+      "case_index": 444,
+      "public_environment_name": "Rising Causeway",
+      "environment_id": "rising_causeway_env",
+      "difficulty": 2,
+      "interaction_mode": "simplified",
+      "label": "no",
+      "controls_available": [
+        "Difficulty 2 profile: red_stage_target=2, chamber_length=15.0, stair_height=0.8, corridor_half_width=2.15, launcher_count=1, decoy_actuator_count=1, terminal_radius=0.75, move_speed=4.7.",
+        "Simplified input surface: labelled proxy buttons for red extension, stair-left/right selection, launcher priming, look steps, and terminal activation; the chamber and action effects are unchanged.",
+        "Simplified movement surface: hold the visible d-pad control buttons for forward/back/strafe; use the visible look-step buttons for view changes.",
+        "The route still requires configuring the red stage, stair high end, and launcher, then contacting the primed launcher and walking to the terminal."
+      ],
+      "autonomous_processes": [
+        "A 40 ms interval tick runs continuously. With no held movement input it records a physics tick and redraws without changing the route; with a held movement control it advances the avatar deterministically at the profile's fixed move_speed and applies collision/support checks.",
+        "On contact with the primed launcher, the browser starts a fixed 840 ms inFlight ballistic arc. Ticks update the visible trajectory under fixed gravity, then land at the precomputed platform and re-enable movement; new outcome-affecting controls are blocked during the flight.",
+        "Red extension, stair-end selection, and launcher priming are synchronous actions. Terminal activation remains available after landing whenever the avatar is within the fixed terminal radius; there is no autonomous countdown, moving target, or expiring actuator state."
+      ],
+      "grouped_control_modes": [
+        "proxy-button actuator mode: red extension, stair endpoint, and launcher prime",
+        "held control-button movement mode: d-pad pointer holds",
+        "look-button mode: discrete look-step buttons",
+        "proxy-button terminal activation mode"
+      ],
+      "delta_ms": null,
+      "window_ms": null,
+      "clause_i": {
+        "holds": true,
+        "reason": "Across seeded chambers, the visible mirror changes the required stair end and the launcher gallery/landing geometry varies. The agent's own action history I_t does not contain those world facts, so an observation-free schedule q cannot be optimal for all ordinary route-choice histories."
+      },
+      "clause_ii": {
+        "holds": true,
+        "reason": "The visible chamber, stair heights, launcher orientations, terminal, and current position provide the information needed for the ordinary next screenshot action; a bounded current/recent frame window is sufficient for that static route reading. This is visual dependence on geometry and pose, not evidence of an autonomous opportunity expiring."
+      },
+      "clause_iii": {
+        "holds": false,
+        "reason": "No valid H_t in C_Delta supplies the required strict non-clock loss. Held movement is caused by an already-held agent input and is predictable from its action timing; before an irreversible collision, release/reverse/configure remains effective. Crossing a gap, wrong stair, or outer ledge makes success unsalvageable and is therefore excluded from C_Delta. During the 840 ms launch, all outcome-affecting controls are disabled and later re-enabled, so waiting only traverses a fixed animation. Actuator and terminal actions do not expire."
+      },
+      "common_visible_process": "No common qualifying process exists. The visible 40 ms movement ticks and 840 ms launch arc either follow the agent's held input and remain schedulable/recoverable while success is possible, or form a fixed input-blocking animation that later enables controls. The static 3D geometry supplies route information independently, and any autonomous collision that removes an action also removes the possibility of success.",
+      "pre_run": {
+        "threshold": 0.5,
+        "at_least_half": null,
+        "rate": null,
+        "basis": "not_applicable",
+        "reason": "The mathematical definition already fails at clause (iii), so the pre-run threshold cannot change this configuration's No label; no rate is inferred.",
+        "seed_probe": null
+      },
+      "files_read_completely": [
+        "AGENTS.md",
+        "weird_captcha_gym/docs/controllability/real-time.md",
+        "weird_captcha_gym/environments/rising_causeway_env/controls.json",
+        "weird_captcha_gym/environments/rising_causeway_env/env.json",
+        "weird_captcha_gym/environments/rising_causeway_env/tasks/rising_causeway_seed_0001/task.json",
+        "weird_captcha_gym/environments/rising_causeway_env/tasks/rising_causeway_seed_0001/setup_task.sh",
+        "weird_captcha_gym/environments/rising_causeway_env/tasks/rising_causeway_seed_0001/verifier.py",
+        "weird_captcha_gym/shared_scripts/incubator_generators/rising_causeway.py",
+        "weird_captcha_gym/shared_runtime/app/mechanics/rising_causeway.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/rising_causeway.css",
+        "weird_captcha_gym/shared_runtime/server/incubator_graders/rising_causeway.py",
+        "weird_captcha_gym/shared_runtime/verifier_helpers.py",
+        "weird_captcha_gym/tools/incubator_solvers/rising_causeway.py"
+      ],
+      "source_evidence": [
+        {
+          "path": "weird_captcha_gym/environments/rising_causeway_env/controls.json",
+          "lines": "26-40",
+          "claim": "Difficulty 2 activates the exact profile red_stage_target=2, chamber_length=15.0, stair_height=0.8, corridor_half_width=2.15, launcher_count=1, decoy_actuator_count=1, terminal_radius=0.75, move_speed=4.7."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/rising_causeway.py",
+          "lines": "19-25",
+          "claim": "The generator's PROFILES contains the same five difficulty profiles and selects the requested difficulty."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/rising_causeway.py",
+          "lines": "66-80",
+          "claim": "The generated chamber derives contiguous red extensions, three stair steps, the launcher gallery, and a fixed 840 ms launch duration from the selected profile."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/rising_causeway.js",
+          "lines": "350-419",
+          "claim": "The only continuing task updates are 40 ms ticks: held movement with collision/support checks or a fixed-gravity in-flight arc that lands after flight_duration_ms."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/rising_causeway.js",
+          "lines": "447-490",
+          "claim": "Red/stair/launcher actions apply synchronously, launcher prime has no countdown, and terminal activation checks only landed state and fixed radius."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/rising_causeway.js",
+          "lines": "570-592",
+          "claim": "Simplified mode binds proxy action buttons and held control buttons, with look buttons routed through the same model."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/rising_causeway.js",
+          "lines": "594-626",
+          "claim": "The simplified UI exposes labelled red/stair/launcher/terminal actions, a held movement d-pad, and look-step buttons while rendering the same chamber."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/rising_causeway.js",
+          "lines": "421-445",
+          "claim": "Source checks keep simplified movement, look, and full-mode inputs separate while applying the same state transitions."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/rising_causeway.py",
+          "lines": "231-350",
+          "claim": "The authoritative replay applies the same deterministic ticks, contact launch, landing, configuration choices, and terminal-radius check; it has no timing deadline or decay rule."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/rising_causeway.css",
+          "lines": "41-45",
+          "claim": "The only CSS transition is the post-pass verdict; there is no task-state animation supplying an independent moving target."
+        },
+        {
+          "path": "weird_captcha_gym/tools/incubator_solvers/rising_causeway.py",
+          "lines": "119-184",
+          "claim": "The solver configures the visible route and uses short held movement pulses with re-observation, showing ordinary control of the static geometry rather than a timed expiry."
+        },
+        {
+          "path": "weird_captcha_gym/tools/incubator_solvers/rising_causeway.py",
+          "lines": "206-275",
+          "claim": "The solver waits for the fixed contact launch to land, then walks to and activates the terminal; the launch wait only settles a fixed animation."
+        },
+        {
+          "path": "weird_captcha_gym/environments/rising_causeway_env/tasks/rising_causeway_seed_0001/verifier.py",
+          "lines": "23-44",
+          "claim": "Verification loads the exported replay and shared grader; it does not add a separate real-time rule."
+        }
+      ],
+      "uncertainties": []
+    },
+    {
+      "case_index": 445,
+      "public_environment_name": "Rising Causeway",
+      "environment_id": "rising_causeway_env",
+      "difficulty": 3,
+      "interaction_mode": "full",
+      "label": "no",
+      "controls_available": [
+        "Difficulty 3 profile: red_stage_target=2, chamber_length=16.5, stair_height=0.9, corridor_half_width=1.95, launcher_count=2, decoy_actuator_count=2, terminal_radius=0.7, move_speed=4.6.",
+        "Full input surface: direct viewport clicks on the visible red extension actuator, either endpoint of the yellow triple stair, the selected blue launcher, and the reached terminal.",
+        "Full movement/look surface: hold WASD or arrow keys for movement and strafing; drag the viewport for mouse-look.",
+        "The route requires configuring the red stage, stair high end, and launcher, then contacting the primed launcher and walking to the terminal."
+      ],
+      "autonomous_processes": [
+        "A 40 ms interval tick runs continuously. With no held movement input it records a physics tick and redraws without changing the route; with a held movement control it advances the avatar deterministically at the profile's fixed move_speed and applies collision/support checks.",
+        "On contact with the primed launcher, the browser starts a fixed 840 ms inFlight ballistic arc. Ticks update the visible trajectory under fixed gravity, then land at the precomputed platform and re-enable movement; new outcome-affecting controls are blocked during the flight.",
+        "Red extension, stair-end selection, and launcher priming are synchronous actions. Terminal activation remains available after landing whenever the avatar is within the fixed terminal radius; there is no autonomous countdown, moving target, or expiring actuator state."
+      ],
+      "grouped_control_modes": [
+        "viewport-click actuator mode: red extension, stair endpoint, and launcher prime",
+        "held keyboard movement mode: WASD/arrow key-down and key-up transitions",
+        "viewport-drag look mode",
+        "viewport-click terminal activation mode"
+      ],
+      "delta_ms": null,
+      "window_ms": null,
+      "clause_i": {
+        "holds": true,
+        "reason": "Across seeded chambers, the visible mirror changes the required stair end and the launcher gallery/landing geometry varies. The agent's own action history I_t does not contain those world facts, so an observation-free schedule q cannot be optimal for all ordinary route-choice histories."
+      },
+      "clause_ii": {
+        "holds": true,
+        "reason": "The visible chamber, stair heights, launcher orientations, terminal, and current position provide the information needed for the ordinary next screenshot action; a bounded current/recent frame window is sufficient for that static route reading. This is visual dependence on geometry and pose, not evidence of an autonomous opportunity expiring."
+      },
+      "clause_iii": {
+        "holds": false,
+        "reason": "No valid H_t in C_Delta supplies the required strict non-clock loss. Held movement is caused by an already-held agent input and is predictable from its action timing; before an irreversible collision, release/reverse/configure remains effective. Crossing a gap, wrong stair, or outer ledge makes success unsalvageable and is therefore excluded from C_Delta. During the 840 ms launch, all outcome-affecting controls are disabled and later re-enabled, so waiting only traverses a fixed animation. Actuator and terminal actions do not expire."
+      },
+      "common_visible_process": "No common qualifying process exists. The visible 40 ms movement ticks and 840 ms launch arc either follow the agent's held input and remain schedulable/recoverable while success is possible, or form a fixed input-blocking animation that later enables controls. The static 3D geometry supplies route information independently, and any autonomous collision that removes an action also removes the possibility of success.",
+      "pre_run": {
+        "threshold": 0.5,
+        "at_least_half": null,
+        "rate": null,
+        "basis": "not_applicable",
+        "reason": "The mathematical definition already fails at clause (iii), so the pre-run threshold cannot change this configuration's No label; no rate is inferred.",
+        "seed_probe": null
+      },
+      "files_read_completely": [
+        "AGENTS.md",
+        "weird_captcha_gym/docs/controllability/real-time.md",
+        "weird_captcha_gym/environments/rising_causeway_env/controls.json",
+        "weird_captcha_gym/environments/rising_causeway_env/env.json",
+        "weird_captcha_gym/environments/rising_causeway_env/tasks/rising_causeway_seed_0001/task.json",
+        "weird_captcha_gym/environments/rising_causeway_env/tasks/rising_causeway_seed_0001/setup_task.sh",
+        "weird_captcha_gym/environments/rising_causeway_env/tasks/rising_causeway_seed_0001/verifier.py",
+        "weird_captcha_gym/shared_scripts/incubator_generators/rising_causeway.py",
+        "weird_captcha_gym/shared_runtime/app/mechanics/rising_causeway.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/rising_causeway.css",
+        "weird_captcha_gym/shared_runtime/server/incubator_graders/rising_causeway.py",
+        "weird_captcha_gym/shared_runtime/verifier_helpers.py",
+        "weird_captcha_gym/tools/incubator_solvers/rising_causeway.py"
+      ],
+      "source_evidence": [
+        {
+          "path": "weird_captcha_gym/environments/rising_causeway_env/controls.json",
+          "lines": "42-56",
+          "claim": "Difficulty 3 activates the exact profile red_stage_target=2, chamber_length=16.5, stair_height=0.9, corridor_half_width=1.95, launcher_count=2, decoy_actuator_count=2, terminal_radius=0.7, move_speed=4.6."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/rising_causeway.py",
+          "lines": "19-25",
+          "claim": "The generator's PROFILES contains the same five difficulty profiles and selects the requested difficulty."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/rising_causeway.py",
+          "lines": "66-80",
+          "claim": "The generated chamber derives contiguous red extensions, three stair steps, the launcher gallery, and a fixed 840 ms launch duration from the selected profile."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/rising_causeway.js",
+          "lines": "350-419",
+          "claim": "The only continuing task updates are 40 ms ticks: held movement with collision/support checks or a fixed-gravity in-flight arc that lands after flight_duration_ms."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/rising_causeway.js",
+          "lines": "447-490",
+          "claim": "Red/stair/launcher actions apply synchronously, launcher prime has no countdown, and terminal activation checks only landed state and fixed radius."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/rising_causeway.js",
+          "lines": "421-445",
+          "claim": "Full mode accepts movement only from keyboard and look only from viewport drag; the same model state is changed by those direct inputs."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/rising_causeway.js",
+          "lines": "516-524",
+          "claim": "Full viewport clicks dispatch to the red actuator, stair endpoints, launcher prime, or terminal activation."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/rising_causeway.js",
+          "lines": "634-684",
+          "claim": "Full mode binds native key and pointer events and starts the fixed 40 ms tick interval."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/rising_causeway.py",
+          "lines": "231-350",
+          "claim": "The authoritative replay applies the same deterministic ticks, contact launch, landing, configuration choices, and terminal-radius check; it has no timing deadline or decay rule."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/rising_causeway.css",
+          "lines": "41-45",
+          "claim": "The only CSS transition is the post-pass verdict; there is no task-state animation supplying an independent moving target."
+        },
+        {
+          "path": "weird_captcha_gym/tools/incubator_solvers/rising_causeway.py",
+          "lines": "119-184",
+          "claim": "The solver configures the visible route and uses short held movement pulses with re-observation, showing ordinary control of the static geometry rather than a timed expiry."
+        },
+        {
+          "path": "weird_captcha_gym/tools/incubator_solvers/rising_causeway.py",
+          "lines": "206-275",
+          "claim": "The solver waits for the fixed contact launch to land, then walks to and activates the terminal; the launch wait only settles a fixed animation."
+        },
+        {
+          "path": "weird_captcha_gym/environments/rising_causeway_env/tasks/rising_causeway_seed_0001/verifier.py",
+          "lines": "23-44",
+          "claim": "Verification loads the exported replay and shared grader; it does not add a separate real-time rule."
+        }
+      ],
+      "uncertainties": []
+    },
+    {
+      "case_index": 446,
+      "public_environment_name": "Rising Causeway",
+      "environment_id": "rising_causeway_env",
+      "difficulty": 3,
+      "interaction_mode": "simplified",
+      "label": "no",
+      "controls_available": [
+        "Difficulty 3 profile: red_stage_target=2, chamber_length=16.5, stair_height=0.9, corridor_half_width=1.95, launcher_count=2, decoy_actuator_count=2, terminal_radius=0.7, move_speed=4.6.",
+        "Simplified input surface: labelled proxy buttons for red extension, stair-left/right selection, launcher priming, look steps, and terminal activation; the chamber and action effects are unchanged.",
+        "Simplified movement surface: hold the visible d-pad control buttons for forward/back/strafe; use the visible look-step buttons for view changes.",
+        "The route still requires configuring the red stage, stair high end, and launcher, then contacting the primed launcher and walking to the terminal."
+      ],
+      "autonomous_processes": [
+        "A 40 ms interval tick runs continuously. With no held movement input it records a physics tick and redraws without changing the route; with a held movement control it advances the avatar deterministically at the profile's fixed move_speed and applies collision/support checks.",
+        "On contact with the primed launcher, the browser starts a fixed 840 ms inFlight ballistic arc. Ticks update the visible trajectory under fixed gravity, then land at the precomputed platform and re-enable movement; new outcome-affecting controls are blocked during the flight.",
+        "Red extension, stair-end selection, and launcher priming are synchronous actions. Terminal activation remains available after landing whenever the avatar is within the fixed terminal radius; there is no autonomous countdown, moving target, or expiring actuator state."
+      ],
+      "grouped_control_modes": [
+        "proxy-button actuator mode: red extension, stair endpoint, and launcher prime",
+        "held control-button movement mode: d-pad pointer holds",
+        "look-button mode: discrete look-step buttons",
+        "proxy-button terminal activation mode"
+      ],
+      "delta_ms": null,
+      "window_ms": null,
+      "clause_i": {
+        "holds": true,
+        "reason": "Across seeded chambers, the visible mirror changes the required stair end and the launcher gallery/landing geometry varies. The agent's own action history I_t does not contain those world facts, so an observation-free schedule q cannot be optimal for all ordinary route-choice histories."
+      },
+      "clause_ii": {
+        "holds": true,
+        "reason": "The visible chamber, stair heights, launcher orientations, terminal, and current position provide the information needed for the ordinary next screenshot action; a bounded current/recent frame window is sufficient for that static route reading. This is visual dependence on geometry and pose, not evidence of an autonomous opportunity expiring."
+      },
+      "clause_iii": {
+        "holds": false,
+        "reason": "No valid H_t in C_Delta supplies the required strict non-clock loss. Held movement is caused by an already-held agent input and is predictable from its action timing; before an irreversible collision, release/reverse/configure remains effective. Crossing a gap, wrong stair, or outer ledge makes success unsalvageable and is therefore excluded from C_Delta. During the 840 ms launch, all outcome-affecting controls are disabled and later re-enabled, so waiting only traverses a fixed animation. Actuator and terminal actions do not expire."
+      },
+      "common_visible_process": "No common qualifying process exists. The visible 40 ms movement ticks and 840 ms launch arc either follow the agent's held input and remain schedulable/recoverable while success is possible, or form a fixed input-blocking animation that later enables controls. The static 3D geometry supplies route information independently, and any autonomous collision that removes an action also removes the possibility of success.",
+      "pre_run": {
+        "threshold": 0.5,
+        "at_least_half": null,
+        "rate": null,
+        "basis": "not_applicable",
+        "reason": "The mathematical definition already fails at clause (iii), so the pre-run threshold cannot change this configuration's No label; no rate is inferred.",
+        "seed_probe": null
+      },
+      "files_read_completely": [
+        "AGENTS.md",
+        "weird_captcha_gym/docs/controllability/real-time.md",
+        "weird_captcha_gym/environments/rising_causeway_env/controls.json",
+        "weird_captcha_gym/environments/rising_causeway_env/env.json",
+        "weird_captcha_gym/environments/rising_causeway_env/tasks/rising_causeway_seed_0001/task.json",
+        "weird_captcha_gym/environments/rising_causeway_env/tasks/rising_causeway_seed_0001/setup_task.sh",
+        "weird_captcha_gym/environments/rising_causeway_env/tasks/rising_causeway_seed_0001/verifier.py",
+        "weird_captcha_gym/shared_scripts/incubator_generators/rising_causeway.py",
+        "weird_captcha_gym/shared_runtime/app/mechanics/rising_causeway.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/rising_causeway.css",
+        "weird_captcha_gym/shared_runtime/server/incubator_graders/rising_causeway.py",
+        "weird_captcha_gym/shared_runtime/verifier_helpers.py",
+        "weird_captcha_gym/tools/incubator_solvers/rising_causeway.py"
+      ],
+      "source_evidence": [
+        {
+          "path": "weird_captcha_gym/environments/rising_causeway_env/controls.json",
+          "lines": "42-56",
+          "claim": "Difficulty 3 activates the exact profile red_stage_target=2, chamber_length=16.5, stair_height=0.9, corridor_half_width=1.95, launcher_count=2, decoy_actuator_count=2, terminal_radius=0.7, move_speed=4.6."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/rising_causeway.py",
+          "lines": "19-25",
+          "claim": "The generator's PROFILES contains the same five difficulty profiles and selects the requested difficulty."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/rising_causeway.py",
+          "lines": "66-80",
+          "claim": "The generated chamber derives contiguous red extensions, three stair steps, the launcher gallery, and a fixed 840 ms launch duration from the selected profile."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/rising_causeway.js",
+          "lines": "350-419",
+          "claim": "The only continuing task updates are 40 ms ticks: held movement with collision/support checks or a fixed-gravity in-flight arc that lands after flight_duration_ms."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/rising_causeway.js",
+          "lines": "447-490",
+          "claim": "Red/stair/launcher actions apply synchronously, launcher prime has no countdown, and terminal activation checks only landed state and fixed radius."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/rising_causeway.js",
+          "lines": "570-592",
+          "claim": "Simplified mode binds proxy action buttons and held control buttons, with look buttons routed through the same model."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/rising_causeway.js",
+          "lines": "594-626",
+          "claim": "The simplified UI exposes labelled red/stair/launcher/terminal actions, a held movement d-pad, and look-step buttons while rendering the same chamber."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/rising_causeway.js",
+          "lines": "421-445",
+          "claim": "Source checks keep simplified movement, look, and full-mode inputs separate while applying the same state transitions."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/rising_causeway.py",
+          "lines": "231-350",
+          "claim": "The authoritative replay applies the same deterministic ticks, contact launch, landing, configuration choices, and terminal-radius check; it has no timing deadline or decay rule."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/rising_causeway.css",
+          "lines": "41-45",
+          "claim": "The only CSS transition is the post-pass verdict; there is no task-state animation supplying an independent moving target."
+        },
+        {
+          "path": "weird_captcha_gym/tools/incubator_solvers/rising_causeway.py",
+          "lines": "119-184",
+          "claim": "The solver configures the visible route and uses short held movement pulses with re-observation, showing ordinary control of the static geometry rather than a timed expiry."
+        },
+        {
+          "path": "weird_captcha_gym/tools/incubator_solvers/rising_causeway.py",
+          "lines": "206-275",
+          "claim": "The solver waits for the fixed contact launch to land, then walks to and activates the terminal; the launch wait only settles a fixed animation."
+        },
+        {
+          "path": "weird_captcha_gym/environments/rising_causeway_env/tasks/rising_causeway_seed_0001/verifier.py",
+          "lines": "23-44",
+          "claim": "Verification loads the exported replay and shared grader; it does not add a separate real-time rule."
+        }
+      ],
+      "uncertainties": []
+    },
+    {
+      "case_index": 447,
+      "public_environment_name": "Rising Causeway",
+      "environment_id": "rising_causeway_env",
+      "difficulty": 4,
+      "interaction_mode": "full",
+      "label": "no",
+      "controls_available": [
+        "Difficulty 4 profile: red_stage_target=3, chamber_length=18.0, stair_height=1.05, corridor_half_width=1.75, launcher_count=3, decoy_actuator_count=3, terminal_radius=0.62, move_speed=4.5.",
+        "Full input surface: direct viewport clicks on the visible red extension actuator, either endpoint of the yellow triple stair, the selected blue launcher, and the reached terminal.",
+        "Full movement/look surface: hold WASD or arrow keys for movement and strafing; drag the viewport for mouse-look.",
+        "The route requires configuring the red stage, stair high end, and launcher, then contacting the primed launcher and walking to the terminal."
+      ],
+      "autonomous_processes": [
+        "A 40 ms interval tick runs continuously. With no held movement input it records a physics tick and redraws without changing the route; with a held movement control it advances the avatar deterministically at the profile's fixed move_speed and applies collision/support checks.",
+        "On contact with the primed launcher, the browser starts a fixed 840 ms inFlight ballistic arc. Ticks update the visible trajectory under fixed gravity, then land at the precomputed platform and re-enable movement; new outcome-affecting controls are blocked during the flight.",
+        "Red extension, stair-end selection, and launcher priming are synchronous actions. Terminal activation remains available after landing whenever the avatar is within the fixed terminal radius; there is no autonomous countdown, moving target, or expiring actuator state."
+      ],
+      "grouped_control_modes": [
+        "viewport-click actuator mode: red extension, stair endpoint, and launcher prime",
+        "held keyboard movement mode: WASD/arrow key-down and key-up transitions",
+        "viewport-drag look mode",
+        "viewport-click terminal activation mode"
+      ],
+      "delta_ms": null,
+      "window_ms": null,
+      "clause_i": {
+        "holds": true,
+        "reason": "Across seeded chambers, the visible mirror changes the required stair end and the launcher gallery/landing geometry varies. The agent's own action history I_t does not contain those world facts, so an observation-free schedule q cannot be optimal for all ordinary route-choice histories."
+      },
+      "clause_ii": {
+        "holds": true,
+        "reason": "The visible chamber, stair heights, launcher orientations, terminal, and current position provide the information needed for the ordinary next screenshot action; a bounded current/recent frame window is sufficient for that static route reading. This is visual dependence on geometry and pose, not evidence of an autonomous opportunity expiring."
+      },
+      "clause_iii": {
+        "holds": false,
+        "reason": "No valid H_t in C_Delta supplies the required strict non-clock loss. Held movement is caused by an already-held agent input and is predictable from its action timing; before an irreversible collision, release/reverse/configure remains effective. Crossing a gap, wrong stair, or outer ledge makes success unsalvageable and is therefore excluded from C_Delta. During the 840 ms launch, all outcome-affecting controls are disabled and later re-enabled, so waiting only traverses a fixed animation. Actuator and terminal actions do not expire."
+      },
+      "common_visible_process": "No common qualifying process exists. The visible 40 ms movement ticks and 840 ms launch arc either follow the agent's held input and remain schedulable/recoverable while success is possible, or form a fixed input-blocking animation that later enables controls. The static 3D geometry supplies route information independently, and any autonomous collision that removes an action also removes the possibility of success.",
+      "pre_run": {
+        "threshold": 0.5,
+        "at_least_half": null,
+        "rate": null,
+        "basis": "not_applicable",
+        "reason": "The mathematical definition already fails at clause (iii), so the pre-run threshold cannot change this configuration's No label; no rate is inferred.",
+        "seed_probe": null
+      },
+      "files_read_completely": [
+        "AGENTS.md",
+        "weird_captcha_gym/docs/controllability/real-time.md",
+        "weird_captcha_gym/environments/rising_causeway_env/controls.json",
+        "weird_captcha_gym/environments/rising_causeway_env/env.json",
+        "weird_captcha_gym/environments/rising_causeway_env/tasks/rising_causeway_seed_0001/task.json",
+        "weird_captcha_gym/environments/rising_causeway_env/tasks/rising_causeway_seed_0001/setup_task.sh",
+        "weird_captcha_gym/environments/rising_causeway_env/tasks/rising_causeway_seed_0001/verifier.py",
+        "weird_captcha_gym/shared_scripts/incubator_generators/rising_causeway.py",
+        "weird_captcha_gym/shared_runtime/app/mechanics/rising_causeway.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/rising_causeway.css",
+        "weird_captcha_gym/shared_runtime/server/incubator_graders/rising_causeway.py",
+        "weird_captcha_gym/shared_runtime/verifier_helpers.py",
+        "weird_captcha_gym/tools/incubator_solvers/rising_causeway.py"
+      ],
+      "source_evidence": [
+        {
+          "path": "weird_captcha_gym/environments/rising_causeway_env/controls.json",
+          "lines": "58-72",
+          "claim": "Difficulty 4 activates the exact profile red_stage_target=3, chamber_length=18.0, stair_height=1.05, corridor_half_width=1.75, launcher_count=3, decoy_actuator_count=3, terminal_radius=0.62, move_speed=4.5."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/rising_causeway.py",
+          "lines": "19-25",
+          "claim": "The generator's PROFILES contains the same five difficulty profiles and selects the requested difficulty."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/rising_causeway.py",
+          "lines": "66-80",
+          "claim": "The generated chamber derives contiguous red extensions, three stair steps, the launcher gallery, and a fixed 840 ms launch duration from the selected profile."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/rising_causeway.js",
+          "lines": "350-419",
+          "claim": "The only continuing task updates are 40 ms ticks: held movement with collision/support checks or a fixed-gravity in-flight arc that lands after flight_duration_ms."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/rising_causeway.js",
+          "lines": "447-490",
+          "claim": "Red/stair/launcher actions apply synchronously, launcher prime has no countdown, and terminal activation checks only landed state and fixed radius."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/rising_causeway.js",
+          "lines": "421-445",
+          "claim": "Full mode accepts movement only from keyboard and look only from viewport drag; the same model state is changed by those direct inputs."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/rising_causeway.js",
+          "lines": "516-524",
+          "claim": "Full viewport clicks dispatch to the red actuator, stair endpoints, launcher prime, or terminal activation."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/rising_causeway.js",
+          "lines": "634-684",
+          "claim": "Full mode binds native key and pointer events and starts the fixed 40 ms tick interval."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/rising_causeway.py",
+          "lines": "231-350",
+          "claim": "The authoritative replay applies the same deterministic ticks, contact launch, landing, configuration choices, and terminal-radius check; it has no timing deadline or decay rule."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/rising_causeway.css",
+          "lines": "41-45",
+          "claim": "The only CSS transition is the post-pass verdict; there is no task-state animation supplying an independent moving target."
+        },
+        {
+          "path": "weird_captcha_gym/tools/incubator_solvers/rising_causeway.py",
+          "lines": "119-184",
+          "claim": "The solver configures the visible route and uses short held movement pulses with re-observation, showing ordinary control of the static geometry rather than a timed expiry."
+        },
+        {
+          "path": "weird_captcha_gym/tools/incubator_solvers/rising_causeway.py",
+          "lines": "206-275",
+          "claim": "The solver waits for the fixed contact launch to land, then walks to and activates the terminal; the launch wait only settles a fixed animation."
+        },
+        {
+          "path": "weird_captcha_gym/environments/rising_causeway_env/tasks/rising_causeway_seed_0001/verifier.py",
+          "lines": "23-44",
+          "claim": "Verification loads the exported replay and shared grader; it does not add a separate real-time rule."
+        }
+      ],
+      "uncertainties": []
+    },
+    {
+      "case_index": 448,
+      "public_environment_name": "Rising Causeway",
+      "environment_id": "rising_causeway_env",
+      "difficulty": 4,
+      "interaction_mode": "simplified",
+      "label": "no",
+      "controls_available": [
+        "Difficulty 4 profile: red_stage_target=3, chamber_length=18.0, stair_height=1.05, corridor_half_width=1.75, launcher_count=3, decoy_actuator_count=3, terminal_radius=0.62, move_speed=4.5.",
+        "Simplified input surface: labelled proxy buttons for red extension, stair-left/right selection, launcher priming, look steps, and terminal activation; the chamber and action effects are unchanged.",
+        "Simplified movement surface: hold the visible d-pad control buttons for forward/back/strafe; use the visible look-step buttons for view changes.",
+        "The route still requires configuring the red stage, stair high end, and launcher, then contacting the primed launcher and walking to the terminal."
+      ],
+      "autonomous_processes": [
+        "A 40 ms interval tick runs continuously. With no held movement input it records a physics tick and redraws without changing the route; with a held movement control it advances the avatar deterministically at the profile's fixed move_speed and applies collision/support checks.",
+        "On contact with the primed launcher, the browser starts a fixed 840 ms inFlight ballistic arc. Ticks update the visible trajectory under fixed gravity, then land at the precomputed platform and re-enable movement; new outcome-affecting controls are blocked during the flight.",
+        "Red extension, stair-end selection, and launcher priming are synchronous actions. Terminal activation remains available after landing whenever the avatar is within the fixed terminal radius; there is no autonomous countdown, moving target, or expiring actuator state."
+      ],
+      "grouped_control_modes": [
+        "proxy-button actuator mode: red extension, stair endpoint, and launcher prime",
+        "held control-button movement mode: d-pad pointer holds",
+        "look-button mode: discrete look-step buttons",
+        "proxy-button terminal activation mode"
+      ],
+      "delta_ms": null,
+      "window_ms": null,
+      "clause_i": {
+        "holds": true,
+        "reason": "Across seeded chambers, the visible mirror changes the required stair end and the launcher gallery/landing geometry varies. The agent's own action history I_t does not contain those world facts, so an observation-free schedule q cannot be optimal for all ordinary route-choice histories."
+      },
+      "clause_ii": {
+        "holds": true,
+        "reason": "The visible chamber, stair heights, launcher orientations, terminal, and current position provide the information needed for the ordinary next screenshot action; a bounded current/recent frame window is sufficient for that static route reading. This is visual dependence on geometry and pose, not evidence of an autonomous opportunity expiring."
+      },
+      "clause_iii": {
+        "holds": false,
+        "reason": "No valid H_t in C_Delta supplies the required strict non-clock loss. Held movement is caused by an already-held agent input and is predictable from its action timing; before an irreversible collision, release/reverse/configure remains effective. Crossing a gap, wrong stair, or outer ledge makes success unsalvageable and is therefore excluded from C_Delta. During the 840 ms launch, all outcome-affecting controls are disabled and later re-enabled, so waiting only traverses a fixed animation. Actuator and terminal actions do not expire."
+      },
+      "common_visible_process": "No common qualifying process exists. The visible 40 ms movement ticks and 840 ms launch arc either follow the agent's held input and remain schedulable/recoverable while success is possible, or form a fixed input-blocking animation that later enables controls. The static 3D geometry supplies route information independently, and any autonomous collision that removes an action also removes the possibility of success.",
+      "pre_run": {
+        "threshold": 0.5,
+        "at_least_half": null,
+        "rate": null,
+        "basis": "not_applicable",
+        "reason": "The mathematical definition already fails at clause (iii), so the pre-run threshold cannot change this configuration's No label; no rate is inferred.",
+        "seed_probe": null
+      },
+      "files_read_completely": [
+        "AGENTS.md",
+        "weird_captcha_gym/docs/controllability/real-time.md",
+        "weird_captcha_gym/environments/rising_causeway_env/controls.json",
+        "weird_captcha_gym/environments/rising_causeway_env/env.json",
+        "weird_captcha_gym/environments/rising_causeway_env/tasks/rising_causeway_seed_0001/task.json",
+        "weird_captcha_gym/environments/rising_causeway_env/tasks/rising_causeway_seed_0001/setup_task.sh",
+        "weird_captcha_gym/environments/rising_causeway_env/tasks/rising_causeway_seed_0001/verifier.py",
+        "weird_captcha_gym/shared_scripts/incubator_generators/rising_causeway.py",
+        "weird_captcha_gym/shared_runtime/app/mechanics/rising_causeway.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/rising_causeway.css",
+        "weird_captcha_gym/shared_runtime/server/incubator_graders/rising_causeway.py",
+        "weird_captcha_gym/shared_runtime/verifier_helpers.py",
+        "weird_captcha_gym/tools/incubator_solvers/rising_causeway.py"
+      ],
+      "source_evidence": [
+        {
+          "path": "weird_captcha_gym/environments/rising_causeway_env/controls.json",
+          "lines": "58-72",
+          "claim": "Difficulty 4 activates the exact profile red_stage_target=3, chamber_length=18.0, stair_height=1.05, corridor_half_width=1.75, launcher_count=3, decoy_actuator_count=3, terminal_radius=0.62, move_speed=4.5."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/rising_causeway.py",
+          "lines": "19-25",
+          "claim": "The generator's PROFILES contains the same five difficulty profiles and selects the requested difficulty."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/rising_causeway.py",
+          "lines": "66-80",
+          "claim": "The generated chamber derives contiguous red extensions, three stair steps, the launcher gallery, and a fixed 840 ms launch duration from the selected profile."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/rising_causeway.js",
+          "lines": "350-419",
+          "claim": "The only continuing task updates are 40 ms ticks: held movement with collision/support checks or a fixed-gravity in-flight arc that lands after flight_duration_ms."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/rising_causeway.js",
+          "lines": "447-490",
+          "claim": "Red/stair/launcher actions apply synchronously, launcher prime has no countdown, and terminal activation checks only landed state and fixed radius."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/rising_causeway.js",
+          "lines": "570-592",
+          "claim": "Simplified mode binds proxy action buttons and held control buttons, with look buttons routed through the same model."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/rising_causeway.js",
+          "lines": "594-626",
+          "claim": "The simplified UI exposes labelled red/stair/launcher/terminal actions, a held movement d-pad, and look-step buttons while rendering the same chamber."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/rising_causeway.js",
+          "lines": "421-445",
+          "claim": "Source checks keep simplified movement, look, and full-mode inputs separate while applying the same state transitions."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/rising_causeway.py",
+          "lines": "231-350",
+          "claim": "The authoritative replay applies the same deterministic ticks, contact launch, landing, configuration choices, and terminal-radius check; it has no timing deadline or decay rule."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/rising_causeway.css",
+          "lines": "41-45",
+          "claim": "The only CSS transition is the post-pass verdict; there is no task-state animation supplying an independent moving target."
+        },
+        {
+          "path": "weird_captcha_gym/tools/incubator_solvers/rising_causeway.py",
+          "lines": "119-184",
+          "claim": "The solver configures the visible route and uses short held movement pulses with re-observation, showing ordinary control of the static geometry rather than a timed expiry."
+        },
+        {
+          "path": "weird_captcha_gym/tools/incubator_solvers/rising_causeway.py",
+          "lines": "206-275",
+          "claim": "The solver waits for the fixed contact launch to land, then walks to and activates the terminal; the launch wait only settles a fixed animation."
+        },
+        {
+          "path": "weird_captcha_gym/environments/rising_causeway_env/tasks/rising_causeway_seed_0001/verifier.py",
+          "lines": "23-44",
+          "claim": "Verification loads the exported replay and shared grader; it does not add a separate real-time rule."
+        }
+      ],
+      "uncertainties": []
+    },
+    {
+      "case_index": 449,
+      "public_environment_name": "Rising Causeway",
+      "environment_id": "rising_causeway_env",
+      "difficulty": 5,
+      "interaction_mode": "full",
+      "label": "no",
+      "controls_available": [
+        "Difficulty 5 profile: red_stage_target=3, chamber_length=20.0, stair_height=1.2, corridor_half_width=1.55, launcher_count=4, decoy_actuator_count=4, terminal_radius=0.55, move_speed=4.35.",
+        "Full input surface: direct viewport clicks on the visible red extension actuator, either endpoint of the yellow triple stair, the selected blue launcher, and the reached terminal.",
+        "Full movement/look surface: hold WASD or arrow keys for movement and strafing; drag the viewport for mouse-look.",
+        "The route requires configuring the red stage, stair high end, and launcher, then contacting the primed launcher and walking to the terminal."
+      ],
+      "autonomous_processes": [
+        "A 40 ms interval tick runs continuously. With no held movement input it records a physics tick and redraws without changing the route; with a held movement control it advances the avatar deterministically at the profile's fixed move_speed and applies collision/support checks.",
+        "On contact with the primed launcher, the browser starts a fixed 840 ms inFlight ballistic arc. Ticks update the visible trajectory under fixed gravity, then land at the precomputed platform and re-enable movement; new outcome-affecting controls are blocked during the flight.",
+        "Red extension, stair-end selection, and launcher priming are synchronous actions. Terminal activation remains available after landing whenever the avatar is within the fixed terminal radius; there is no autonomous countdown, moving target, or expiring actuator state."
+      ],
+      "grouped_control_modes": [
+        "viewport-click actuator mode: red extension, stair endpoint, and launcher prime",
+        "held keyboard movement mode: WASD/arrow key-down and key-up transitions",
+        "viewport-drag look mode",
+        "viewport-click terminal activation mode"
+      ],
+      "delta_ms": null,
+      "window_ms": null,
+      "clause_i": {
+        "holds": true,
+        "reason": "Across seeded chambers, the visible mirror changes the required stair end and the launcher gallery/landing geometry varies. The agent's own action history I_t does not contain those world facts, so an observation-free schedule q cannot be optimal for all ordinary route-choice histories."
+      },
+      "clause_ii": {
+        "holds": true,
+        "reason": "The visible chamber, stair heights, launcher orientations, terminal, and current position provide the information needed for the ordinary next screenshot action; a bounded current/recent frame window is sufficient for that static route reading. This is visual dependence on geometry and pose, not evidence of an autonomous opportunity expiring."
+      },
+      "clause_iii": {
+        "holds": false,
+        "reason": "No valid H_t in C_Delta supplies the required strict non-clock loss. Held movement is caused by an already-held agent input and is predictable from its action timing; before an irreversible collision, release/reverse/configure remains effective. Crossing a gap, wrong stair, or outer ledge makes success unsalvageable and is therefore excluded from C_Delta. During the 840 ms launch, all outcome-affecting controls are disabled and later re-enabled, so waiting only traverses a fixed animation. Actuator and terminal actions do not expire."
+      },
+      "common_visible_process": "No common qualifying process exists. The visible 40 ms movement ticks and 840 ms launch arc either follow the agent's held input and remain schedulable/recoverable while success is possible, or form a fixed input-blocking animation that later enables controls. The static 3D geometry supplies route information independently, and any autonomous collision that removes an action also removes the possibility of success.",
+      "pre_run": {
+        "threshold": 0.5,
+        "at_least_half": null,
+        "rate": null,
+        "basis": "not_applicable",
+        "reason": "The mathematical definition already fails at clause (iii), so the pre-run threshold cannot change this configuration's No label; no rate is inferred.",
+        "seed_probe": null
+      },
+      "files_read_completely": [
+        "AGENTS.md",
+        "weird_captcha_gym/docs/controllability/real-time.md",
+        "weird_captcha_gym/environments/rising_causeway_env/controls.json",
+        "weird_captcha_gym/environments/rising_causeway_env/env.json",
+        "weird_captcha_gym/environments/rising_causeway_env/tasks/rising_causeway_seed_0001/task.json",
+        "weird_captcha_gym/environments/rising_causeway_env/tasks/rising_causeway_seed_0001/setup_task.sh",
+        "weird_captcha_gym/environments/rising_causeway_env/tasks/rising_causeway_seed_0001/verifier.py",
+        "weird_captcha_gym/shared_scripts/incubator_generators/rising_causeway.py",
+        "weird_captcha_gym/shared_runtime/app/mechanics/rising_causeway.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/rising_causeway.css",
+        "weird_captcha_gym/shared_runtime/server/incubator_graders/rising_causeway.py",
+        "weird_captcha_gym/shared_runtime/verifier_helpers.py",
+        "weird_captcha_gym/tools/incubator_solvers/rising_causeway.py"
+      ],
+      "source_evidence": [
+        {
+          "path": "weird_captcha_gym/environments/rising_causeway_env/controls.json",
+          "lines": "74-88",
+          "claim": "Difficulty 5 activates the exact profile red_stage_target=3, chamber_length=20.0, stair_height=1.2, corridor_half_width=1.55, launcher_count=4, decoy_actuator_count=4, terminal_radius=0.55, move_speed=4.35."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/rising_causeway.py",
+          "lines": "19-25",
+          "claim": "The generator's PROFILES contains the same five difficulty profiles and selects the requested difficulty."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/rising_causeway.py",
+          "lines": "66-80",
+          "claim": "The generated chamber derives contiguous red extensions, three stair steps, the launcher gallery, and a fixed 840 ms launch duration from the selected profile."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/rising_causeway.js",
+          "lines": "350-419",
+          "claim": "The only continuing task updates are 40 ms ticks: held movement with collision/support checks or a fixed-gravity in-flight arc that lands after flight_duration_ms."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/rising_causeway.js",
+          "lines": "447-490",
+          "claim": "Red/stair/launcher actions apply synchronously, launcher prime has no countdown, and terminal activation checks only landed state and fixed radius."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/rising_causeway.js",
+          "lines": "421-445",
+          "claim": "Full mode accepts movement only from keyboard and look only from viewport drag; the same model state is changed by those direct inputs."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/rising_causeway.js",
+          "lines": "516-524",
+          "claim": "Full viewport clicks dispatch to the red actuator, stair endpoints, launcher prime, or terminal activation."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/rising_causeway.js",
+          "lines": "634-684",
+          "claim": "Full mode binds native key and pointer events and starts the fixed 40 ms tick interval."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/rising_causeway.py",
+          "lines": "231-350",
+          "claim": "The authoritative replay applies the same deterministic ticks, contact launch, landing, configuration choices, and terminal-radius check; it has no timing deadline or decay rule."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/rising_causeway.css",
+          "lines": "41-45",
+          "claim": "The only CSS transition is the post-pass verdict; there is no task-state animation supplying an independent moving target."
+        },
+        {
+          "path": "weird_captcha_gym/tools/incubator_solvers/rising_causeway.py",
+          "lines": "119-184",
+          "claim": "The solver configures the visible route and uses short held movement pulses with re-observation, showing ordinary control of the static geometry rather than a timed expiry."
+        },
+        {
+          "path": "weird_captcha_gym/tools/incubator_solvers/rising_causeway.py",
+          "lines": "206-275",
+          "claim": "The solver waits for the fixed contact launch to land, then walks to and activates the terminal; the launch wait only settles a fixed animation."
+        },
+        {
+          "path": "weird_captcha_gym/environments/rising_causeway_env/tasks/rising_causeway_seed_0001/verifier.py",
+          "lines": "23-44",
+          "claim": "Verification loads the exported replay and shared grader; it does not add a separate real-time rule."
+        }
+      ],
+      "uncertainties": []
+    },
+    {
+      "case_index": 450,
+      "public_environment_name": "Rising Causeway",
+      "environment_id": "rising_causeway_env",
+      "difficulty": 5,
+      "interaction_mode": "simplified",
+      "label": "no",
+      "controls_available": [
+        "Difficulty 5 profile: red_stage_target=3, chamber_length=20.0, stair_height=1.2, corridor_half_width=1.55, launcher_count=4, decoy_actuator_count=4, terminal_radius=0.55, move_speed=4.35.",
+        "Simplified input surface: labelled proxy buttons for red extension, stair-left/right selection, launcher priming, look steps, and terminal activation; the chamber and action effects are unchanged.",
+        "Simplified movement surface: hold the visible d-pad control buttons for forward/back/strafe; use the visible look-step buttons for view changes.",
+        "The route still requires configuring the red stage, stair high end, and launcher, then contacting the primed launcher and walking to the terminal."
+      ],
+      "autonomous_processes": [
+        "A 40 ms interval tick runs continuously. With no held movement input it records a physics tick and redraws without changing the route; with a held movement control it advances the avatar deterministically at the profile's fixed move_speed and applies collision/support checks.",
+        "On contact with the primed launcher, the browser starts a fixed 840 ms inFlight ballistic arc. Ticks update the visible trajectory under fixed gravity, then land at the precomputed platform and re-enable movement; new outcome-affecting controls are blocked during the flight.",
+        "Red extension, stair-end selection, and launcher priming are synchronous actions. Terminal activation remains available after landing whenever the avatar is within the fixed terminal radius; there is no autonomous countdown, moving target, or expiring actuator state."
+      ],
+      "grouped_control_modes": [
+        "proxy-button actuator mode: red extension, stair endpoint, and launcher prime",
+        "held control-button movement mode: d-pad pointer holds",
+        "look-button mode: discrete look-step buttons",
+        "proxy-button terminal activation mode"
+      ],
+      "delta_ms": null,
+      "window_ms": null,
+      "clause_i": {
+        "holds": true,
+        "reason": "Across seeded chambers, the visible mirror changes the required stair end and the launcher gallery/landing geometry varies. The agent's own action history I_t does not contain those world facts, so an observation-free schedule q cannot be optimal for all ordinary route-choice histories."
+      },
+      "clause_ii": {
+        "holds": true,
+        "reason": "The visible chamber, stair heights, launcher orientations, terminal, and current position provide the information needed for the ordinary next screenshot action; a bounded current/recent frame window is sufficient for that static route reading. This is visual dependence on geometry and pose, not evidence of an autonomous opportunity expiring."
+      },
+      "clause_iii": {
+        "holds": false,
+        "reason": "No valid H_t in C_Delta supplies the required strict non-clock loss. Held movement is caused by an already-held agent input and is predictable from its action timing; before an irreversible collision, release/reverse/configure remains effective. Crossing a gap, wrong stair, or outer ledge makes success unsalvageable and is therefore excluded from C_Delta. During the 840 ms launch, all outcome-affecting controls are disabled and later re-enabled, so waiting only traverses a fixed animation. Actuator and terminal actions do not expire."
+      },
+      "common_visible_process": "No common qualifying process exists. The visible 40 ms movement ticks and 840 ms launch arc either follow the agent's held input and remain schedulable/recoverable while success is possible, or form a fixed input-blocking animation that later enables controls. The static 3D geometry supplies route information independently, and any autonomous collision that removes an action also removes the possibility of success.",
+      "pre_run": {
+        "threshold": 0.5,
+        "at_least_half": null,
+        "rate": null,
+        "basis": "not_applicable",
+        "reason": "The mathematical definition already fails at clause (iii), so the pre-run threshold cannot change this configuration's No label; no rate is inferred.",
+        "seed_probe": null
+      },
+      "files_read_completely": [
+        "AGENTS.md",
+        "weird_captcha_gym/docs/controllability/real-time.md",
+        "weird_captcha_gym/environments/rising_causeway_env/controls.json",
+        "weird_captcha_gym/environments/rising_causeway_env/env.json",
+        "weird_captcha_gym/environments/rising_causeway_env/tasks/rising_causeway_seed_0001/task.json",
+        "weird_captcha_gym/environments/rising_causeway_env/tasks/rising_causeway_seed_0001/setup_task.sh",
+        "weird_captcha_gym/environments/rising_causeway_env/tasks/rising_causeway_seed_0001/verifier.py",
+        "weird_captcha_gym/shared_scripts/incubator_generators/rising_causeway.py",
+        "weird_captcha_gym/shared_runtime/app/mechanics/rising_causeway.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/rising_causeway.css",
+        "weird_captcha_gym/shared_runtime/server/incubator_graders/rising_causeway.py",
+        "weird_captcha_gym/shared_runtime/verifier_helpers.py",
+        "weird_captcha_gym/tools/incubator_solvers/rising_causeway.py"
+      ],
+      "source_evidence": [
+        {
+          "path": "weird_captcha_gym/environments/rising_causeway_env/controls.json",
+          "lines": "74-88",
+          "claim": "Difficulty 5 activates the exact profile red_stage_target=3, chamber_length=20.0, stair_height=1.2, corridor_half_width=1.55, launcher_count=4, decoy_actuator_count=4, terminal_radius=0.55, move_speed=4.35."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/rising_causeway.py",
+          "lines": "19-25",
+          "claim": "The generator's PROFILES contains the same five difficulty profiles and selects the requested difficulty."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/rising_causeway.py",
+          "lines": "66-80",
+          "claim": "The generated chamber derives contiguous red extensions, three stair steps, the launcher gallery, and a fixed 840 ms launch duration from the selected profile."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/rising_causeway.js",
+          "lines": "350-419",
+          "claim": "The only continuing task updates are 40 ms ticks: held movement with collision/support checks or a fixed-gravity in-flight arc that lands after flight_duration_ms."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/rising_causeway.js",
+          "lines": "447-490",
+          "claim": "Red/stair/launcher actions apply synchronously, launcher prime has no countdown, and terminal activation checks only landed state and fixed radius."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/rising_causeway.js",
+          "lines": "570-592",
+          "claim": "Simplified mode binds proxy action buttons and held control buttons, with look buttons routed through the same model."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/rising_causeway.js",
+          "lines": "594-626",
+          "claim": "The simplified UI exposes labelled red/stair/launcher/terminal actions, a held movement d-pad, and look-step buttons while rendering the same chamber."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/rising_causeway.js",
+          "lines": "421-445",
+          "claim": "Source checks keep simplified movement, look, and full-mode inputs separate while applying the same state transitions."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/rising_causeway.py",
+          "lines": "231-350",
+          "claim": "The authoritative replay applies the same deterministic ticks, contact launch, landing, configuration choices, and terminal-radius check; it has no timing deadline or decay rule."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/rising_causeway.css",
+          "lines": "41-45",
+          "claim": "The only CSS transition is the post-pass verdict; there is no task-state animation supplying an independent moving target."
+        },
+        {
+          "path": "weird_captcha_gym/tools/incubator_solvers/rising_causeway.py",
+          "lines": "119-184",
+          "claim": "The solver configures the visible route and uses short held movement pulses with re-observation, showing ordinary control of the static geometry rather than a timed expiry."
+        },
+        {
+          "path": "weird_captcha_gym/tools/incubator_solvers/rising_causeway.py",
+          "lines": "206-275",
+          "claim": "The solver waits for the fixed contact launch to land, then walks to and activates the terminal; the launch wait only settles a fixed animation."
+        },
+        {
+          "path": "weird_captcha_gym/environments/rising_causeway_env/tasks/rising_causeway_seed_0001/verifier.py",
+          "lines": "23-44",
+          "claim": "Verification loads the exported replay and shared grader; it does not add a separate real-time rule."
+        }
+      ],
+      "uncertainties": []
+    }
+  ]
+}

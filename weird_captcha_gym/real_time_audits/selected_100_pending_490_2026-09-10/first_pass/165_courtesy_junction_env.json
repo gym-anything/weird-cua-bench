@@ -1,0 +1,123 @@
+{
+  "case_index": 165,
+  "public_environment_name": "Courtesy Junction",
+  "environment_id": "courtesy_junction_env",
+  "difficulty": 3,
+  "interaction_mode": "full",
+  "label": "yes",
+  "controls_available": [
+    "Level 3 uses two traffic lanes with three cars per lane, speeds 34-48, yield horizons 1.3-2.1, either a left or right departure, and road_half 90.",
+    "Start Engine begins the driving phase.",
+    "Full-mode keyboard controls hold ArrowLeft/ArrowRight for steering and ArrowUp/ArrowDown for throttle/brake; releasing a key returns that axis to neutral. The persistent panel buttons are not rendered in full mode.",
+    "File Delivery submits the replay after the yellow car reaches the striped departure road; submission is administrative."
+  ],
+  "autonomous_processes": [
+    "Before Start Engine, no driving physics ticks run. After ignition, while status is driving, requestAnimationFrame advances 20 ms ticks until arrival, collision, off-road, or timeout.",
+    "On each tick, every traffic car advances along its lane, recomputes braking from current relative geometry and velocity with the ego and other traffic, changes velocity, and wraps at its lane limit; the ego pose and speed evolve under the current held steering and pedal state.",
+    "The canvas redraws traffic at its current poses and renders braking with red rear lights, so traffic displacement and braking are visible across recent frames."
+  ],
+  "grouped_control_modes": [
+    "D_full_drive: all occurrences across seeds, rounds, and attempts of the full held-key driving control mode while status is driving, represented by the nine paired steering/pedal values in {-1, 0, 1}^2 and transcript source held_keys."
+  ],
+  "delta_ms": 400,
+  "window_ms": 400,
+  "clause_i": {
+    "holds": true,
+    "reason": "For D_full_drive, the same prior action history can occur with different seeded traffic phases, speeds, yield horizons, decelerations, and turn directions. In otherwise matching approach states, a car may leave a usable gap or close it while braking differently, so the delayed-optimal control differs: continue/accelerate and steer through a safe gap versus coast/brake and hold. An observation-free q(I_t) therefore cannot choose an A*_Delta action for all such histories."
+  },
+  "clause_ii": {
+    "holds": true,
+    "reason": "The configured 400 ms window contains five chronological frames. Recent visible displacement of each lane car estimates its motion, while the visible red brake lights show a changing driver response; together with the ego and junction geometry, this identifies which crossing gap is closing and supports a bounded-window g for the delayed control. No unbounded memory or private generator state is required."
+  },
+  "clause_iii": {
+    "holds": true,
+    "reason": "Choose an active approach state with neutral current control and a traffic car approaching, but not yet occupying, the ego's crossing path. For an action a that steers toward the designated departure and throttles through the current gap, no new action for 0 < tau < 400 ms lets the traffic car's lane position and possibly braking state evolve on 20 ms ticks. The same a delivered at t+400 can face a smaller closing gap and lower success value or lower advantage over no-op, while success remains possible from the still-uncontacted state by braking/coasting and waiting. The strict loss is physical collision risk from traffic motion, not the task deadline."
+  },
+  "common_visible_process": "Seed-dependent traffic streams visibly move through the junction and change relative gaps and brake-light states while the ego is positioned to cross. That same recent trajectory determines the delayed full steering/throttle choice and makes continuing into a formerly open gap strictly less effective as a car advances.",
+  "pre_run": {
+    "threshold": 0.5,
+    "at_least_half": false,
+    "rate": null,
+    "basis": "source_structural",
+    "reason": "The browser initializes started=false, the ego at speed 0, and control=[0,0]. Full key events call setControl, but setControl returns before started, so preparation cannot preset an outcome-affecting control. Start Engine then begins the ticks; with no post-start outcome-affecting action, neutral control applies drag to zero speed and leaves the ego at its start instead of the departure goal. A successful pre-run pattern is therefore unavailable to at least half of generated instances.",
+    "seed_probe": null
+  },
+  "files_read_completely": [
+    "AGENTS.md",
+    "weird_captcha_gym/docs/controllability/real-time.md",
+    "weird_captcha_gym/environments/courtesy_junction_env/controls.json",
+    "weird_captcha_gym/environments/courtesy_junction_env/env.json",
+    "weird_captcha_gym/environments/courtesy_junction_env/tasks/courtesy_junction_seed_0001/task.json",
+    "weird_captcha_gym/environments/courtesy_junction_env/tasks/courtesy_junction_seed_0001/setup_task.sh",
+    "weird_captcha_gym/environments/courtesy_junction_env/tasks/courtesy_junction_seed_0001/export_result.sh",
+    "weird_captcha_gym/environments/courtesy_junction_env/scripts/setup_puzzle_runtime.sh",
+    "weird_captcha_gym/environments/courtesy_junction_env/scripts/install_puzzle_runtime.sh",
+    "weird_captcha_gym/shared_scripts/setup_task.py",
+    "weird_captcha_gym/shared_scripts/incubator_generators/courtesy_junction.py",
+    "weird_captcha_gym/shared_runtime/app/mechanics/courtesy_junction.js",
+    "weird_captcha_gym/shared_runtime/app/mechanics/courtesy_junction.css",
+    "weird_captcha_gym/shared_runtime/app/time_controller.js",
+    "weird_captcha_gym/shared_runtime/verifier_helpers.py",
+    "weird_captcha_gym/shared_runtime/server/incubator_graders/courtesy_junction.py",
+    "weird_captcha_gym/environments/courtesy_junction_env/tasks/courtesy_junction_seed_0001/verifier.py",
+    "weird_captcha_gym/tools/incubator_solvers/courtesy_junction.py"
+  ],
+  "source_evidence": [
+    {
+      "path": "weird_captcha_gym/docs/controllability/real-time.md",
+      "lines": "50-93, 113-139",
+      "claim": "The frozen definition requires one common visible autonomous process, a bounded recent window, and a useful action whose value or advantage strictly declines during the delay; the pre-run threshold is a separate override."
+    },
+    {
+      "path": "weird_captcha_gym/environments/courtesy_junction_env/controls.json",
+      "lines": "42-57, 94-107",
+      "claim": "The assigned level-3 parameters are two lanes, three cars per lane, 34-48 speed, 1.3-2.1 yield horizons, both turn directions, road_half 90; full mode uses held arrow keys and the observation window is 400 ms with five frames."
+    },
+    {
+      "path": "weird_captcha_gym/shared_scripts/setup_task.py",
+      "lines": "184-220, 1925-1956",
+      "claim": "Controlled conditions are validated and copied into the task before the incubator generator is selected, so the injected level-3/full condition is the condition consumed by the generator."
+    },
+    {
+      "path": "weird_captcha_gym/shared_scripts/incubator_generators/courtesy_junction.py",
+      "lines": "11-27, 46-51",
+      "claim": "Generation consumes the selected difficulty parameters, randomizes the turn and traffic phase/speed/yield/deceleration, and creates a world with a 20 ms physics tick and 6000-tick maximum."
+    },
+    {
+      "path": "weird_captcha_gym/shared_runtime/app/mechanics/courtesy_junction.js",
+      "lines": "12-25",
+      "claim": "After ignition, each 20 ms tick updates the ego from the held control, advances every traffic car, recomputes responsive braking from current conflicts, wraps traffic, and checks collision/off-road/arrival/timeout."
+    },
+    {
+      "path": "weird_captcha_gym/shared_runtime/app/mechanics/courtesy_junction.js",
+      "lines": "31-45",
+      "claim": "The canvas visibly draws traffic positions and braking lights; full mode renders the arrow-key instructions, maps keydown/keyup to steering and pedal state, and initializes the ego at zero speed before Start Engine."
+    },
+    {
+      "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/courtesy_junction.py",
+      "lines": "42-75, 87-119",
+      "claim": "The authoritative replay applies the same responsive traffic physics and physical collision/road/goal checks, and requires the full-mode held_keys transcript."
+    },
+    {
+      "path": "weird_captcha_gym/environments/courtesy_junction_env/tasks/courtesy_junction_seed_0001/verifier.py",
+      "lines": "22-35",
+      "claim": "Verification loads the exported result and the independent Courtesy Junction replay grader."
+    },
+    {
+      "path": "weird_captcha_gym/tools/incubator_solvers/courtesy_junction.py",
+      "lines": "32-50, 64-80",
+      "claim": "The implementation solver repeatedly scores physical continuations including braking drivers and changes held full-mode inputs while driving; this is supporting implementation evidence, not policy information."
+    },
+    {
+      "path": "weird_captcha_gym/shared_runtime/app/time_controller.js",
+      "lines": "155-177, 193-224, 548-579",
+      "claim": "The shared clock pauses/resumes task time and runs a bounded task-time window, so the traffic/physics evolution is task-state evolution rather than merely provider latency."
+    },
+    {
+      "path": "weird_captcha_gym/shared_runtime/app/mechanics/courtesy_junction.css",
+      "lines": "1",
+      "claim": "The mechanic stylesheet supplies layout and visual styling; the changing task state is implemented by the canvas physics loop."
+    }
+  ],
+  "uncertainties": []
+}

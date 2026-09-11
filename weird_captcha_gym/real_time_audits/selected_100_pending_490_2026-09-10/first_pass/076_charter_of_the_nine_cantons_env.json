@@ -1,0 +1,113 @@
+{
+  "case_index": 76,
+  "public_environment_name": "Charter of the Nine Cantons",
+  "environment_id": "charter_of_the_nine_cantons_env",
+  "difficulty": 3,
+  "interaction_mode": "simplified",
+  "label": "no",
+  "controls_available": [
+    "Click one visible parcel to select it.",
+    "Click one of the nine visible Canton Seal buttons to assign the selected parcel to that canton; the difficulty-3 profile allows 18 parcel changes.",
+    "Click UNDO to revert the most recent assignment.",
+    "Click CERTIFY CHARTER to submit the current assignment; certification is administrative.",
+    "The mechanic declares mouse and keyboard action surfaces, but this simplified implementation binds no outcome-affecting keyboard control."
+  ],
+  "autonomous_processes": [],
+  "grouped_control_modes": [
+    "D_assign: all simplified parcel-to-canton proxy assignments across parcel choices, canton choices, seeds, and histories.",
+    "D_undo: the UNDO control, which restores the immediately preceding assignment.",
+    "Parcel-selection clicks are preparatory state changes; CERTIFY CHARTER is administrative and is not an outcome-affecting control mode."
+  ],
+  "delta_ms": null,
+  "window_ms": 0,
+  "clause_i": {
+    "holds": true,
+    "reason": "For D_assign, an own-action-only policy q(I_t) cannot choose the seed-specific parcel and canton repair from its action history and task times alone; different generated visible maps can require different next edits."
+  },
+  "clause_ii": {
+    "holds": true,
+    "reason": "A zero-length recent window is sufficient for this static mechanic: the current screenshot exposes the parcel geometry, current canton colors and labels, guild marks, and canton seals, and no task-state evolution changes the delayed action."
+  },
+  "clause_iii": {
+    "holds": false,
+    "reason": "There is no autonomous non-clock task-state evolution between actions. The generator materializes the parcel map and assignments once; simplified assignment and undo mutate state only in click handlers, and certification only submits it. Waiting therefore supplies no H_t^tau in which an outcome-affecting action becomes unavailable or strictly less effective. CSS hover/selection transitions are presentation-only."
+  },
+  "common_visible_process": "None. The exact configuration has no visible autonomous task-state process shared by the clauses; the map and assignment remain unchanged while the agent supplies no action.",
+  "pre_run": {
+    "threshold": 0.5,
+    "at_least_half": null,
+    "rate": null,
+    "basis": "not_applicable",
+    "reason": "The mathematical classification is already No because clause (iii) fails. There is no autonomous outcome phase whose pre-run rate could override a mathematical Yes.",
+    "seed_probe": null
+  },
+  "files_read_completely": [
+    "AGENTS.md",
+    "weird_captcha_gym/docs/controllability/real-time.md",
+    "weird_captcha_gym/environments/charter_of_the_nine_cantons_env/controls.json",
+    "weird_captcha_gym/environments/charter_of_the_nine_cantons_env/env.json",
+    "weird_captcha_gym/environments/charter_of_the_nine_cantons_env/tasks/charter_of_the_nine_cantons_seed_0001/task.json",
+    "weird_captcha_gym/environments/charter_of_the_nine_cantons_env/tasks/charter_of_the_nine_cantons_seed_0001/setup_task.sh",
+    "weird_captcha_gym/environments/charter_of_the_nine_cantons_env/tasks/charter_of_the_nine_cantons_seed_0001/export_result.sh",
+    "weird_captcha_gym/environments/charter_of_the_nine_cantons_env/tasks/charter_of_the_nine_cantons_seed_0001/verifier.py",
+    "weird_captcha_gym/shared_scripts/incubator_generators/charter_of_the_nine_cantons.py",
+    "weird_captcha_gym/shared_runtime/app/index.html",
+    "weird_captcha_gym/shared_runtime/app/time_controller.js",
+    "weird_captcha_gym/shared_runtime/app/mechanics/charter_of_the_nine_cantons.js",
+    "weird_captcha_gym/shared_runtime/app/mechanics/charter_of_the_nine_cantons.css",
+    "weird_captcha_gym/shared_runtime/server/incubator_graders/charter_of_the_nine_cantons.py",
+    "weird_captcha_gym/shared_runtime/verifier_helpers.py",
+    "weird_captcha_gym/tools/incubator_solvers/charter_of_the_nine_cantons.py"
+  ],
+  "source_evidence": [
+    {
+      "path": "weird_captcha_gym/environments/charter_of_the_nine_cantons_env/controls.json",
+      "lines": "24-31,52-56",
+      "claim": "Difficulty 3 is the 15-by-9, eight-displacement, 18-change profile; simplified mode is click-one-parcel then click-one-seal, and the configured observation window is 0 ms with one frame."
+    },
+    {
+      "path": "weird_captcha_gym/environments/charter_of_the_nine_cantons_env/env.json",
+      "lines": "9-14",
+      "claim": "The runner uses a zero-millisecond observation window, one captured frame, a 240-second allowance, and synchronous execution."
+    },
+    {
+      "path": "weird_captcha_gym/shared_scripts/incubator_generators/charter_of_the_nine_cantons.py",
+      "lines": "39-47,442-497,500-583",
+      "claim": "The generator uses the assigned parameters to construct a fixed grid, warped partition, guild labels, initial assignment, and target assignment at generation time; the legacy difficulty-3 path displaces parcels once and returns materialized public and ground-truth state."
+    },
+    {
+      "path": "weird_captcha_gym/shared_runtime/app/mechanics/charter_of_the_nine_cantons.js",
+      "lines": "124-148,211-252,277-304",
+      "claim": "The simplified browser path selects a parcel on click, records an assignment only after a canton-seal click, and changes assignment on undo; the rendered model is initialized from initial_assignment and certification posts the current transcript."
+    },
+    {
+      "path": "weird_captcha_gym/shared_runtime/app/mechanics/charter_of_the_nine_cantons.js",
+      "lines": "1-308",
+      "claim": "The complete mechanic implementation contains no task timer, requestAnimationFrame loop, autonomous mutation, or action-started physical process."
+    },
+    {
+      "path": "weird_captcha_gym/shared_runtime/app/mechanics/charter_of_the_nine_cantons.css",
+      "lines": "179-189,320-325",
+      "claim": "The only timed visual effects are fill/hover/selection CSS transitions; they do not mutate assignment, budget, or grading state."
+    },
+    {
+      "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/charter_of_the_nine_cantons.py",
+      "lines": "200-301",
+      "claim": "The grader replays only the submitted visible assignment/undo events, checks the static partition metrics, and treats certification as the final submitted outcome; it has no autonomous time evolution."
+    },
+    {
+      "path": "weird_captcha_gym/environments/charter_of_the_nine_cantons_env/tasks/charter_of_the_nine_cantons_seed_0001/verifier.py",
+      "lines": "18-35",
+      "claim": "The task verifier loads the exported result and independently grades the replayed result, with no time-dependent task rule."
+    },
+    {
+      "path": "weird_captcha_gym/docs/controllability/real-time.md",
+      "lines": "49-82,102-110",
+      "claim": "The frozen definition requires visible autonomous task-state evolution to make an action strictly less effective inside a positive delay; a static puzzle and presentation-only animation do not satisfy that requirement."
+    }
+  ],
+  "uncertainties": [
+    "The controls file records a full/live baseline, but the assigned configuration is explicitly difficulty 3 with simplified interaction; this report follows the assigned configuration rather than the baseline.",
+    "No seeded probe was needed because the source structurally fixes the generated state and contains no task-specific autonomous evolution after initialization."
+  ]
+}

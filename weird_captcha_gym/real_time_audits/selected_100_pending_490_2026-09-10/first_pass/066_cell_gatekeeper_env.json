@@ -1,0 +1,182 @@
+{
+  "case_index": 66,
+  "public_environment_name": "Cell Gatekeeper",
+  "environment_id": "cell_gatekeeper_env",
+  "difficulty": 3,
+  "interaction_mode": "simplified",
+  "label": "no",
+  "controls_available": [
+    "Simplified protein placement: choose an empty membrane slot in the visible selector and click PLACE for a visible protein card.",
+    "Simplified protein removal: click EJECT on the installed-protein slot.",
+    "For sodium and potassium, click OUT +, OUT −, IN +, or IN − to adjust one visible solute at a time.",
+    "Click SUPPLY ATP BURST to add the configured +4 ATP batch.",
+    "Click LOCK GRADIENT to certify the current state; NEW CELL is a forced-failure/reset control rather than a solving action."
+  ],
+  "autonomous_processes": [
+    "The mechanic advances one transport tick per 100 ms of live task time; the paused runner advances the configured 600 ms observation window, equivalent to six ticks.",
+    "An installed leak moves one unit of its species from the currently higher-count compartment to the lower-count compartment whenever (tick + slot) is divisible by the L3 passive period of 3, and records a passive crossing.",
+    "On every tick divisible by 3, if both installed pumps can be serviced by the shared ATP reservoir, each pump moves one unit in its fixed direction and consumes one ATP; this records active crossings.",
+    "The canvas particle positions and membrane-dot positions are redrawn as functions of the tick. stable_ticks increments autonomously while the base goal holds and is reset by non-certification controls."
+  ],
+  "grouped_control_modes": [
+    "Simplified protein placement, parameterized by visible protein and empty slot.",
+    "Simplified installed-protein ejection, parameterized by slot.",
+    "Simplified one-unit solute adjustment, parameterized by species, compartment, and sign.",
+    "Simplified ATP burst supply (+4 ATP).",
+    "Final LOCK GRADIENT certification is administrative and is not a legitimate autonomous-run control mode."
+  ],
+  "delta_ms": null,
+  "window_ms": 600,
+  "clause_i": {
+    "holds": false,
+    "reason": "For the autonomous transport phenomenon, an observation-free action-clock route exists after preparation: place sodium_leak in a fixed slot, wait for its fixed-period crossing, eject it, place both pumps, supply 8 ATP, and wait for four fixed 3-tick pump cohorts plus the six-tick hold. The generator constructs each L3 goal from exactly one leak crossing and four pump crossings, so the random initial counts do not require a state-conditioned transport decision. Static visual identification of shuffled cards is interface grounding, not a temporal witness."
+  },
+  "clause_ii": {
+    "holds": true,
+    "reason": "A bounded visual policy is sufficient if it chooses to use feedback: L3 renders numeric current counts, target bands, crossing status, and a crossing ledger, while the configured observation bound is 600 ms with six chronological frames. This availability of visual feedback does not make it necessary for the successful transport schedule."
+  },
+  "clause_iii": {
+    "holds": false,
+    "reason": "Leak and pump ticks change counts and ATP, but they do not make a useful solving action strictly less valuable before the outcome. EJECT remains available while the leak is installed; OUT/IN ±1 controls can correct count drift; ATP +4 can recover a missed pump tick; and the generated route stays within visible chamber capacity. Any loss caused only by a later task deadline is excluded by the definition, and the stable hold accumulates during no-op waiting rather than expiring."
+  },
+  "common_visible_process": "The only plausible common process is the 100 ms tick-driven membrane transport, visibly evidenced by changing bars, crossing status, ledger entries, and moving canvas particles. It does not supply a common expiring opportunity: a passive crossing makes the required observation obligation easier and the leak can still be ejected, while active transport only consumes a recoverable ATP resource. No legitimate grouped control mode has a strict state-caused loss within a delay, so no common D, Delta, and bounded window satisfies all three clauses.",
+  "pre_run": {
+    "threshold": 0.5,
+    "at_least_half": true,
+    "rate": null,
+    "basis": "source_structural",
+    "reason": "Every L3 generated instance has two pumps, one required sodium leak, passive_period 3, pump_period 3, pump_cycles 4, atp_batch 4, and goals computed from one passive credit plus four pump moves. A successful pre-run can place the leak in slot 0, wait until tick 3 for its first passive crossing, eject it, place the sodium and potassium pumps, supply two ATP bursts (8 ATP total), and then send no outcome-affecting actions. The two pumps fire together at four later 3-tick boundaries, consume the 8 ATP, reach the generated expected counts, and then accumulate six stable ticks. The random low/high counts remain within capacity and are already incorporated into the generated target, so this construction applies to every seed; the threshold therefore overrides any mathematical Yes.",
+    "seed_probe": null
+  },
+  "files_read_completely": [
+    "AGENTS.md",
+    "weird_captcha_gym/docs/controllability/real-time.md",
+    "weird_captcha_gym/environments/cell_gatekeeper_env/controls.json",
+    "weird_captcha_gym/environments/cell_gatekeeper_env/env.json",
+    "weird_captcha_gym/environments/cell_gatekeeper_env/tasks/cell_gatekeeper_seed_0001/task.json",
+    "weird_captcha_gym/environments/cell_gatekeeper_env/tasks/cell_gatekeeper_seed_0001/setup_task.sh",
+    "weird_captcha_gym/environments/cell_gatekeeper_env/tasks/cell_gatekeeper_seed_0001/export_result.sh",
+    "weird_captcha_gym/shared_scripts/incubator_generators/cell_gatekeeper.py",
+    "weird_captcha_gym/shared_runtime/app/mechanics/cell_gatekeeper.js",
+    "weird_captcha_gym/shared_runtime/app/mechanics/cell_gatekeeper.css",
+    "weird_captcha_gym/shared_runtime/app/time_controller.js",
+    "weird_captcha_gym/shared_runtime/app/index.html",
+    "weird_captcha_gym/shared_runtime/server/incubator_graders/cell_gatekeeper.py",
+    "weird_captcha_gym/environments/cell_gatekeeper_env/tasks/cell_gatekeeper_seed_0001/verifier.py",
+    "weird_captcha_gym/shared_runtime/verifier_helpers.py",
+    "weird_captcha_gym/tools/incubator_solvers/cell_gatekeeper.py"
+  ],
+  "source_evidence": [
+    {
+      "path": "weird_captcha_gym/environments/cell_gatekeeper_env/controls.json",
+      "lines": "48-65",
+      "claim": "The exact L3 profile has two species, one required leak, four pump cycles, goal width 2, passive and pump periods of 3, ATP bursts of 4, six observation ticks, max_ticks 240, numeric readout enabled, and no toolbox decoys."
+    },
+    {
+      "path": "weird_captcha_gym/environments/cell_gatekeeper_env/controls.json",
+      "lines": "106-119",
+      "claim": "Simplified mode uses slot selection plus PLACE, EJECT, solute +/- buttons, and SUPPLY ATP BURST; the observation bound is 600 ms and six frames."
+    },
+    {
+      "path": "weird_captcha_gym/shared_scripts/incubator_generators/cell_gatekeeper.py",
+      "lines": "121-162",
+      "claim": "Generation selects the configured species and required proteins, starts one side high and the other low according to pump direction, credits required leak species by one passive move, and derives target bands from the configured pump cycles."
+    },
+    {
+      "path": "weird_captcha_gym/shared_scripts/incubator_generators/cell_gatekeeper.py",
+      "lines": "204-253",
+      "claim": "The generated world exposes counts, target bands, protein catalog, and an initial state with empty slots, zero ATP, and active status; no seed-specific solution route is required."
+    },
+    {
+      "path": "weird_captcha_gym/shared_runtime/app/mechanics/cell_gatekeeper.js",
+      "lines": "18-65",
+      "claim": "The browser advances autonomous ticks, moves a leak on its fixed passive period, moves every installed pump as a cohort on its fixed pump period when ATP is sufficient, and updates counts, ATP, and crossing records."
+    },
+    {
+      "path": "weird_captcha_gym/shared_runtime/app/mechanics/cell_gatekeeper.js",
+      "lines": "67-90",
+      "claim": "The browser's goal requires target-band counts, all required installations and crossings, leak removal, and six stable ticks; the hold is a completion condition rather than an expiring control opportunity."
+    },
+    {
+      "path": "weird_captcha_gym/shared_runtime/app/mechanics/cell_gatekeeper.js",
+      "lines": "92-184",
+      "claim": "The visible page renders target bands, current bars, crossing trace, protein cards, slot controls, solute controls, ATP control, ledger, and the lock button; the simplified surface is visibly distinct from full drag input."
+    },
+    {
+      "path": "weird_captcha_gym/shared_runtime/app/mechanics/cell_gatekeeper.js",
+      "lines": "194-245",
+      "claim": "Every non-certification action first synchronizes autonomous time and then mutates the replayable state; solute adjustments and ATP supply remain direct one-unit or configured-burst corrections."
+    },
+    {
+      "path": "weird_captcha_gym/shared_runtime/app/mechanics/cell_gatekeeper.js",
+      "lines": "247-377",
+      "claim": "The UI continuously exposes tick, ATP, numeric counts, target-band positions, crossing status, trace text, ledger counts, and canvas particle positions."
+    },
+    {
+      "path": "weird_captcha_gym/shared_runtime/app/mechanics/cell_gatekeeper.js",
+      "lines": "394-408",
+      "claim": "LOCK GRADIENT submits the event transcript, terminal tick, final state, interaction mode, and completion flag for replay."
+    },
+    {
+      "path": "weird_captcha_gym/shared_runtime/app/mechanics/cell_gatekeeper.js",
+      "lines": "428-457",
+      "claim": "Full mode binds pointer drags, while simplified mode binds PLACE, EJECT, solute buttons, and the ATP button; both use the same state mutations."
+    },
+    {
+      "path": "weird_captcha_gym/shared_runtime/app/mechanics/cell_gatekeeper.css",
+      "lines": "40-66",
+      "claim": "The visible membrane canvas, slot rail, compartment drops, concentration bars, and highlighted target bands are rendered as ordinary task UI."
+    },
+    {
+      "path": "weird_captcha_gym/shared_runtime/app/mechanics/cell_gatekeeper.css",
+      "lines": "75-108",
+      "claim": "The simplified selectors, PLACE/EJECT-related controls, solute buttons, ATP supply button, ledger, and lock controls are visible input surfaces."
+    },
+    {
+      "path": "weird_captcha_gym/shared_runtime/app/time_controller.js",
+      "lines": "155-201",
+      "claim": "The shared clock freezes task time in paused mode and resumes task time in live mode; input handlers can run while the task clock is frozen."
+    },
+    {
+      "path": "weird_captcha_gym/shared_runtime/app/time_controller.js",
+      "lines": "548-603",
+      "claim": "A controlled observation window pauses, runs for an exact task-time duration, then pauses again, establishing the 600 ms window semantics used by the environment."
+    },
+    {
+      "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/cell_gatekeeper.py",
+      "lines": "29-79",
+      "claim": "The independent replay applies the same fixed-period leak and pump transitions, with pumps consuming shared ATP only when the full cohort can be serviced."
+    },
+    {
+      "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/cell_gatekeeper.py",
+      "lines": "81-172",
+      "claim": "Replay accepts the configured interaction sources, applies reversible solute/ATP corrections, requires one leak crossing and four pump crossings, requires leak removal, and requires six stable ticks."
+    },
+    {
+      "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/cell_gatekeeper.py",
+      "lines": "189-263",
+      "claim": "The grader binds the transcript to the exact control condition and interaction mode, replays event times, and grades only the final replayed outcome."
+    },
+    {
+      "path": "weird_captcha_gym/environments/cell_gatekeeper_env/tasks/cell_gatekeeper_seed_0001/verifier.py",
+      "lines": "21-50",
+      "claim": "The verifier loads the exported public state and ground truth and delegates authoritative checking to the independent cell-gatekeeper replay grader."
+    },
+    {
+      "path": "weird_captcha_gym/tools/incubator_solvers/cell_gatekeeper.py",
+      "lines": "151-194",
+      "claim": "The reference route observes one passive crossing, removes the leak, installs pumps, supplies the required ATP, waits for crossings, calibrates if needed, waits for the stable goal, and locks; its private truth reads are implementation evidence only."
+    },
+    {
+      "path": "weird_captcha_gym/shared_runtime/app/app.js",
+      "lines": "149-218",
+      "claim": "The shared browser loads the mechanic JavaScript and CSS and passes the task app, readout, renderer, and clock helpers to the mechanic."
+    },
+    {
+      "path": "weird_captcha_gym/shared_runtime/app/app.js",
+      "lines": "3934-4050",
+      "claim": "The task state is fetched and Cell Gatekeeper is routed through the external mechanic renderer before readiness is marked."
+    }
+  ],
+  "uncertainties": []
+}

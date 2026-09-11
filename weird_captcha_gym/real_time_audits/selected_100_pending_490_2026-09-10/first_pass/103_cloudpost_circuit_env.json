@@ -1,0 +1,147 @@
+{
+  "case_index": 103,
+  "public_environment_name": "Cloudpost Circuit",
+  "environment_id": "cloudpost_circuit_env",
+  "difficulty": 2,
+  "interaction_mode": "full",
+  "label": "yes",
+  "controls_available": [
+    "Full interaction uses pointer movement over the 920x540 flight canvas; horizontal position maps to normalized yaw and vertical position maps to normalized pitch.",
+    "The last pointer vector persists until another pointermove. The full configuration does not install the trim buttons, and keyboard input has no Cloudpost handler.",
+    "Success is submitted automatically after all three seals are contacted in world space; there is no separate outcome-affecting submission control."
+  ],
+  "autonomous_processes": [
+    "The plane advances on a 40 ms physics tick while the task is running. Its yaw and pitch move toward the persistent pointer vector, and its 3D position advances at flight_speed 1.78.",
+    "Seals are fixed world-space targets, but their projected centers, outlines, and apparent depth change as the plane/camera pose advances; collected seals disappear from the scene.",
+    "The route ends autonomously when every seal is contacted or when the plane leaves the world corridor. No independent idle animation or future randomness is needed for the real-time effect."
+  ],
+  "grouped_control_modes": [
+    "D: all full-interaction pointer-vector steering corrections during a flight, across seeds, rounds, and attempts; each pointermove changes the persistent yaw/pitch control."
+  ],
+  "delta_ms": 600,
+  "window_ms": 600,
+  "clause_i": {
+    "holds": true,
+    "reason": "An observation-free q sees only its own pointer events and task times. At the same action history, different generated routes can put the next seal on opposite sides or at different vertical bearings, requiring different delayed yaw/pitch vectors. Since the generator varies target coordinates by seed and those coordinates are not in I_t, no single q can choose an A*_Delta action for every success-possible history in D."
+  },
+  "clause_ii": {
+    "holds": true,
+    "reason": "The six chronological frames covering 600 ms show the next uncollected seal's projected position, apparent depth/size, and drift relative to the fixed cockpit marker. Together with the latest pointer vector in I_t, that bounded visual trajectory gives the current bearing, closing phase, and heading correction needed to predict the delayed pose at t+600 and choose the pointer vector. The evidence is the flight/seal projection itself, not an unrelated animation or hidden random variable."
+  },
+  "clause_iii": {
+    "holds": true,
+    "reason": "Use a near-seal history in D with the seal still reachable after 600 ms, and let a be the pointer vector aimed at its visible bearing. With no new action, tau=240 ms advances six autonomous physics ticks, about 10.68 flight units, while the plane's pose and the seal's projected bearing change. The same stale vector delivered after that evolution has a lower world-space intercept value (it can miss the finite radius-16 contact corridor), while a newly observed vector can still recover, so success remains possible. This strict loss is caused by non-clock 3D flight-state evolution rather than merely by later completion or a shrinking deadline."
+  },
+  "common_visible_process": "Continuous 3D flight is the common process: between pointer events the plane advances every 40 ms under the persistent vector, and the fixed next seal visibly drifts and changes apparent depth relative to the fixed cockpit marker. That visible motion is what determines the correction for the delayed action and also makes an old correction lose value inside the finite world-space contact opportunity.",
+  "pre_run": {
+    "threshold": 0.5,
+    "at_least_half": false,
+    "rate": null,
+    "basis": "source_structural",
+    "reason": "After preparation, a full-mode run with no further outcome-affecting actions has only one constant pointer vector because model.control persists and is not changed by step(). Difficulty 2 always emits three targets. For the first target, the generator guarantees |x0| >= 46*0.62 = 28.52, so a radius-16 contact requires |x_plane| >= 12.52; its contact z is at most 68+8+16 = 92. A constant-yaw path has reached its fixed desired yaw by the first target (max_yaw 1.06 and turn_step 0.30 require at most four ticks), so |dx/dz| is at least 12.52/92. The third contact is at least (68+224-8-16) - (68+8+16) = 176 z units later, forcing |x_plane| >= 12.52 + 176*(12.52/92) about 36.5. But the recurrence bounds the third target at |x2| <= 0.35*(0.35*46+0.18*46)+0.18*46 about 16.81, so a radius-16 third contact requires |x_plane| <= 32.81. Thus no prepared constant vector can contact all three targets; the pre-run threshold is not met for the generated instances.",
+    "seed_probe": null
+  },
+  "files_read_completely": [
+    "AGENTS.md",
+    "weird_captcha_gym/docs/controllability/real-time.md",
+    "weird_captcha_gym/environments/cloudpost_circuit_env/controls.json",
+    "weird_captcha_gym/environments/cloudpost_circuit_env/env.json",
+    "weird_captcha_gym/environments/cloudpost_circuit_env/tasks/cloudpost_circuit_seed_0001/task.json",
+    "weird_captcha_gym/environments/cloudpost_circuit_env/tasks/cloudpost_circuit_seed_0001/verifier.py",
+    "weird_captcha_gym/shared_scripts/incubator_generators/cloudpost_circuit.py",
+    "weird_captcha_gym/shared_runtime/app/mechanics/cloudpost_circuit.js",
+    "weird_captcha_gym/shared_runtime/app/mechanics/cloudpost_circuit.css",
+    "weird_captcha_gym/shared_runtime/app/time_controller.js",
+    "weird_captcha_gym/shared_runtime/server/incubator_graders/cloudpost_circuit.py",
+    "weird_captcha_gym/shared_runtime/verifier_helpers.py",
+    "weird_captcha_gym/tools/incubator_solvers/cloudpost_circuit.py"
+  ],
+  "source_evidence": [
+    {
+      "path": "weird_captcha_gym/environments/cloudpost_circuit_env/controls.json",
+      "lines": "5-16",
+      "claim": "The exact difficulty-2 profile has three targets, spacing 112, lateral/vertical spans 46/34, flight_speed 1.78, turn_step 0.30, contact_radius 16; full interaction is continuous pointer steering and the configured observation is 600 ms with six frames."
+    },
+    {
+      "path": "weird_captcha_gym/shared_scripts/incubator_generators/cloudpost_circuit.py",
+      "lines": "82-93",
+      "claim": "A supplied control_condition selects the requested difficulty profile and interaction, rather than defaulting to the checked-in baseline profile."
+    },
+    {
+      "path": "weird_captcha_gym/shared_scripts/incubator_generators/cloudpost_circuit.py",
+      "lines": "96-119",
+      "claim": "Target z positions are spaced along the route; the first lateral coordinate is forced away from center when necessary, while later x/y coordinates are generated from the preceding waypoint with bounded changes."
+    },
+    {
+      "path": "weird_captcha_gym/shared_scripts/incubator_generators/cloudpost_circuit.py",
+      "lines": "162-171",
+      "claim": "The generated physics has tick_ms 40, flight_speed from the difficulty profile, turn_step from the profile, yaw/pitch limits, a finite corridor, and world-space contact_radius."
+    },
+    {
+      "path": "weird_captcha_gym/shared_runtime/app/mechanics/cloudpost_circuit.js",
+      "lines": "97-113",
+      "claim": "In full mode pointermove maps the visible canvas position to a normalized yaw/pitch vector, stores it persistently in model.control, and records a pointer_steer event."
+    },
+    {
+      "path": "weird_captcha_gym/shared_runtime/app/mechanics/cloudpost_circuit.js",
+      "lines": "127-159",
+      "claim": "Each physics step turns the plane toward the persistent control, advances x/y/z, checks Euclidean world-space contact against each seal, and terminates on completion or corridor loss."
+    },
+    {
+      "path": "weird_captcha_gym/shared_runtime/app/mechanics/cloudpost_circuit.js",
+      "lines": "203-258",
+      "claim": "The visible canvas projects the 3D world from the plane pose, draws in-frustum uncollected seals with projected sphere geometry and depth-dependent size, and keeps the cockpit plane marker fixed as the visual reference."
+    },
+    {
+      "path": "weird_captcha_gym/shared_runtime/app/mechanics/cloudpost_circuit.js",
+      "lines": "262-274",
+      "claim": "The animation loop accumulates elapsed time and performs as many 40 ms physics steps as needed before repainting the scene."
+    },
+    {
+      "path": "weird_captcha_gym/shared_runtime/app/mechanics/cloudpost_circuit.js",
+      "lines": "316-344",
+      "claim": "The full branch renders the pointer-vector UI and binds pointermove to the flight canvas; trim buttons are installed only for simplified mode."
+    },
+    {
+      "path": "weird_captcha_gym/shared_runtime/app/mechanics/cloudpost_circuit.css",
+      "lines": "77-86",
+      "claim": "The complete canvas is the signed yaw/pitch pointer field for full interaction and remains usable as the visible flight surface."
+    },
+    {
+      "path": "weird_captcha_gym/shared_runtime/app/time_controller.js",
+      "lines": "15-26",
+      "claim": "The shared clock runs continuously in live mode and can freeze task time in paused mode; this is the evaluation schedule, not an environment-specific branch."
+    },
+    {
+      "path": "weird_captcha_gym/shared_runtime/app/time_controller.js",
+      "lines": "548-576",
+      "claim": "A run_for observation window resumes task time only for the requested finite duration and pauses at the virtual endpoint, matching the 600 ms frame window used by the configuration."
+    },
+    {
+      "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/cloudpost_circuit.py",
+      "lines": "32-44",
+      "claim": "The authoritative replay uses the same heading response and 3D plane integration as the browser."
+    },
+    {
+      "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/cloudpost_circuit.py",
+      "lines": "52-66",
+      "claim": "The grader binds the submitted transcript to the authoritative visible targets/physics and requires pointer_steer for full interaction."
+    },
+    {
+      "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/cloudpost_circuit.py",
+      "lines": "122-164",
+      "claim": "Replay advances the plane tick by tick, checks world-space contacts and corridor limits, and applies steering events after the current tick so action timing affects the trajectory."
+    },
+    {
+      "path": "weird_captcha_gym/environments/cloudpost_circuit_env/tasks/cloudpost_circuit_seed_0001/verifier.py",
+      "lines": "21-34",
+      "claim": "The task verifier loads the exported result and independent Cloudpost replay grader; success is based on the replayed outcome."
+    },
+    {
+      "path": "weird_captcha_gym/tools/incubator_solvers/cloudpost_circuit.py",
+      "lines": "64-85",
+      "claim": "The privileged solver repeatedly re-observes the plane/target state and sends pointer moves for full mode, confirming that the intended trajectory controller is closed-loop; its private state access is not assumed available to the screenshot-only policy."
+    }
+  ],
+  "uncertainties": []
+}

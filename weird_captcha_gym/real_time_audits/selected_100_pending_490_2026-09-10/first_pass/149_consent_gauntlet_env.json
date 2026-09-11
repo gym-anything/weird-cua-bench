@@ -1,0 +1,137 @@
+{
+  "case_index": 149,
+  "public_environment_name": "Consent Gauntlet",
+  "environment_id": "consent_gauntlet_env",
+  "difficulty": 5,
+  "interaction_mode": "full",
+  "label": "yes",
+  "controls_available": [
+    "Difficulty 5 generates ten mixed-polarity purpose statements in three drawers, with two directed links and two reset traps.",
+    "Full mode provides direct mouse clicks on seven moving entry gateway cards; the semantically correct card opens the ledger and the decoys submit failure.",
+    "The ledger exposes three drawer tabs, ten physical NO/YES switch rails operated by drag, two physical reset-trap rails, and REVIEW CURRENT CHOICES.",
+    "A final review exposes seven moving gateway cards; the semantically correct commit card completes the packet, while RETURN TO LEDGER is available in the final stage.",
+    "Mouse and keyboard are declared action surfaces, but this mechanic binds no keyboard handler; the outcome-affecting full-mode controls are mouse clicks and drags."
+  ],
+  "autonomous_processes": [
+    "In the live entry-gateway period, task-time performance.now advances and requestAnimationFrame repeatedly moves every gateway card around the visible orbit and updates its z-order; the configured speed is 28 degrees per second.",
+    "After REVIEW CURRENT CHOICES, the final gateway is rendered and the same autonomous orbit runs, with a fixed 33-degree stage phase offset.",
+    "While the purpose ledger is visible, the packet timer and animation callback continue in live mode, but drawers, purpose states, reset effects, and review availability do not change autonomously.",
+    "The shared controller freezes task-time performance.now and queued animation-frame progress while paused, so the gateway motion is the live task-state process rather than wall-clock-only UI noise."
+  ],
+  "grouped_control_modes": [
+    {
+      "mode": "moving_gateway_card_click",
+      "input_source": "orbit_card",
+      "occurrences": "All direct full-mode gateway-card clicks at entry and final stages across generated seeds and attempts; the stage and semantic role are visible."
+    },
+    {
+      "mode": "drawer_tab_click",
+      "input_source": "drawer_tab",
+      "occurrences": "Full-mode selection of any of the three visible ledger drawers."
+    },
+    {
+      "mode": "purpose_switch_drag",
+      "input_source": "switch_drag",
+      "occurrences": "Full-mode drag of any visible purpose rail between NO and YES, including source switches that flip linked targets."
+    },
+    {
+      "mode": "reset_trap_drag",
+      "input_source": "trap_slider",
+      "occurrences": "Full-mode drag of either visible reset-trap rail to restore its drawer's initial states."
+    },
+    {
+      "mode": "review_button_click",
+      "input_source": "review_button",
+      "occurrences": "Opening the final gateway after ledger reconciliation."
+    },
+    {
+      "mode": "back_button_click",
+      "input_source": "back_button",
+      "occurrences": "Returning from the final gateway to the ledger."
+    }
+  ],
+  "delta_ms": 720,
+  "window_ms": 720,
+  "clause_i": {
+    "holds": true,
+    "reason": "For D = all full-mode moving gateway-card clicks, the generator independently chooses one correct label, samples six decoys, shuffles the seven options, and randomizes the orbit phase. Histories with the same action history and task times can therefore require different option identities and mouse coordinates; no q(I_t) is optimal for every such history."
+  },
+  "clause_ii": {
+    "holds": true,
+    "reason": "The configured five chronological frames over a 720 ms window visibly provide the gateway text, card positions, and their direction of travel. A bounded-window policy can identify the visible manage or commit card and predict its center at t+720 ms from the observed orbit, then issue the corresponding full-mode mouse click."
+  },
+  "clause_iii": {
+    "holds": true,
+    "reason": "Choose an early entry-gateway history in C_Delta with the correct card unobscured and let a be a click at its current center. At tau = 360 ms (< 720 ms), the live phase advances 10.08 degrees; for a suitable visible orbital phase the card moves beyond that old hit point, so Q(H_t^tau, a) is lower even though success remains possible by clicking the card at its new location. The loss is geometric task-state evolution, not deadline or completion time."
+  },
+  "common_visible_process": "The single common process is the visible orbit of the moving gateway cards in D. Its randomized placement and semantic card identity make the delayed-optimal mouse action depend on the recent visual window, and the same orbit moves the card away from a previously optimal click during the 720 ms delay. The witness applies to the entry gateway (and analogously to the final gateway), with success still recoverable after the delay.",
+  "pre_run": {
+    "threshold": 0.5,
+    "at_least_half": false,
+    "rate": null,
+    "basis": "source_structural",
+    "reason": "Every successful replay must contain an entry gateway event that selects manage and a final gateway event that selects commit; the grader treats the final commit choice as the terminal outcome and rejects decoy gateway choices. Difficulty 5 sets moving_gateways true for every generated instance, so at least one outcome-affecting gateway decision is required during the autonomous moving-gateway periods. The later result POST is administrative, but the required gateway clicks are not, so no instance admits the specified no-outcome-affecting-action pre-run solution.",
+    "seed_probe": null
+  },
+  "files_read_completely": [
+    "AGENTS.md",
+    "weird_captcha_gym/docs/controllability/real-time.md",
+    "weird_captcha_gym/environments/consent_gauntlet_env/controls.json",
+    "weird_captcha_gym/shared_scripts/incubator_generators/consent_gauntlet.py",
+    "weird_captcha_gym/shared_runtime/app/mechanics/consent_gauntlet.js",
+    "weird_captcha_gym/shared_runtime/app/mechanics/consent_gauntlet.css",
+    "weird_captcha_gym/shared_runtime/app/time_controller.js",
+    "weird_captcha_gym/shared_runtime/server/incubator_graders/consent_gauntlet.py",
+    "weird_captcha_gym/shared_runtime/verifier_helpers.py",
+    "weird_captcha_gym/environments/consent_gauntlet_env/tasks/consent_gauntlet_seed_0001/verifier.py",
+    "weird_captcha_gym/tools/incubator_solvers/consent_gauntlet.py"
+  ],
+  "source_evidence": [
+    {
+      "path": "weird_captcha_gym/environments/consent_gauntlet_env/controls.json",
+      "lines": "30-41",
+      "claim": "Difficulty 5 has ten purposes, five negative statements, three drawers, seven entry and final options, two reset traps, two links, moving gateways, and 28 degrees/second; full mode uses direct gateway cards, drawer tabs, and physical switch drags; the live observation window is 720 ms with five frames."
+    },
+    {
+      "path": "weird_captcha_gym/shared_scripts/incubator_generators/consent_gauntlet.py",
+      "lines": "127-148, 162-235",
+      "claim": "Each gateway has one correct-pool label plus decoys, shuffles them, and assigns randomized angular offsets; difficulty parameters create the mixed-polarity ledger, reset traps, directed links, moving entry/final options, and randomized surface phase."
+    },
+    {
+      "path": "weird_captcha_gym/shared_runtime/app/mechanics/consent_gauntlet.js",
+      "lines": "101-160",
+      "claim": "Full-mode gateway clicks record pointer geometry and current phase; currentPhase advances with task-time performance.now and the configured orbit speed, while positionOrbit updates visible card left/top/z-index on each animation frame."
+    },
+    {
+      "path": "weird_captcha_gym/shared_runtime/app/mechanics/consent_gauntlet.js",
+      "lines": "217-228, 331-384",
+      "claim": "Stage transitions stop and restart the orbit; full mode binds drawer tabs, physical purpose/reset gestures, review, and back controls, and renders the stage-specific moving gateway."
+    },
+    {
+      "path": "weird_captcha_gym/shared_runtime/app/mechanics/consent_gauntlet.css",
+      "lines": "91-107, 150-157",
+      "claim": "Gateway cards are absolutely positioned visible buttons, while simplified-only proxies are disabled in full mode; ledger switches and reset controls expose the separate physical drag surfaces."
+    },
+    {
+      "path": "weird_captcha_gym/shared_runtime/app/time_controller.js",
+      "lines": "55-62, 155-177, 267-335, 548-579",
+      "claim": "The shared clock supplies virtual task-time performance.now, freezes it and queued requestAnimationFrame callbacks when paused, and advances exactly the requested live observation window."
+    },
+    {
+      "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/consent_gauntlet.py",
+      "lines": "62-106, 177-191, 240-265",
+      "claim": "The grader replays moving-card phase and geometry, requires full-mode orbit_card input, treats manage/commit gateway choices as stage-changing or terminal, and passes only when terminal is committed with all purpose/link conditions satisfied."
+    },
+    {
+      "path": "weird_captcha_gym/tools/incubator_solvers/consent_gauntlet.py",
+      "lines": "26-49, 134-163",
+      "claim": "The normal full-mode solver locates the visible moving card, waits for an unobscured point, clicks its current center, then performs the ledger and final gateway workflow; this confirms the physical screenshot-driven control shape."
+    },
+    {
+      "path": "weird_captcha_gym/environments/consent_gauntlet_env/tasks/consent_gauntlet_seed_0001/verifier.py",
+      "lines": "22-35",
+      "claim": "The task verifier loads the exported result and invokes the independent Consent Gauntlet grader, so the replayed gateway and ledger outcome is authoritative for success."
+    }
+  ],
+  "uncertainties": []
+}

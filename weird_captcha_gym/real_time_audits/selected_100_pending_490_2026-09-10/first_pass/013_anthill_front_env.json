@@ -1,0 +1,188 @@
+{
+  "case_index": 13,
+  "public_environment_name": "Anthill Front",
+  "environment_id": "anthill_front_env",
+  "difficulty": 2,
+  "interaction_mode": "full",
+  "label": "yes",
+  "controls_available": [
+    "Full-mode map selection: click individual visible ants, shift-click to add or remove, or drag a marquee over a worker or soldier group; the minimap and left/right pan controls only change the viewport.",
+    "GATHER: press G to arm the command, then click the visible SEEDS marker; selected workers repeatedly travel to the seed pile and return resources.",
+    "SCOUT: press S to arm the command, then click the visible LISTENING FRONT; exactly one selected worker can sustain the scout until contact is revealed.",
+    "EXCAVATE: press D to arm the command, then click the visible BROOD marker; difficulty 2 requires exactly one selected worker.",
+    "RAISE: press R with no unit selection when the brood is ready and at least two seeds are available; this queues one soldier.",
+    "MARCH: press M to arm the command, then click a visible NORTH or SOUTH tunnel during an active intercept band, or click the visible rival queen after every raid is cleared.",
+    "CERTIFY FRONT is final administrative submission after the simulation reaches a terminal state."
+  ],
+  "autonomous_processes": [
+    {
+      "period": "Between agent commands while the match is active",
+      "changes": "The browser clock advances simulation ticks every 100 ms, running stepSimulation without a new action.",
+      "outcome_affecting_control_remains": "Yes. Visible commands remain usable, subject to their state and timing rules; the defense MARCH control is available only in its response band."
+    },
+    {
+      "period": "Scout assignment, ticks 0-30 after SCOUT",
+      "changes": "The selected worker moves toward the listening front; at scout_ticks=30 the hidden opening is revealed and that worker automatically changes to GATHER.",
+      "outcome_affecting_control_remains": "Yes. Other workers can be assigned, the scout can be cancelled, and later commands can be issued."
+    },
+    {
+      "period": "Brood excavation, 34 ticks with exactly one dig worker",
+      "changes": "Brood progress increases once per tick; at 34 work units the brood becomes ready and the digger automatically changes to GATHER.",
+      "outcome_affecting_control_remains": "Yes. Worker orders and, once ready, RAISE remain outcome-affecting controls."
+    },
+    {
+      "period": "Gathering and soldier production",
+      "changes": "Gathering workers animate on repeated trips and add one seed every 18 ticks; each RAISE queue item creates a soldier after 14 ticks.",
+      "outcome_affecting_control_remains": "Yes. Workers can be reassigned, RAISE can be issued when affordable, and soldiers can later be marched."
+    },
+    {
+      "period": "Rival outpost construction, ticks 103-163",
+      "changes": "The outpost visibly expands/builds before the raid spawns; the build is shown on the world canvas after contact is revealed.",
+      "outcome_affecting_control_remains": "Yes, although the defense tunnel command is not accepted until the raid enters its response band."
+    },
+    {
+      "period": "Raid W1, spawn tick 175 through impact tick 265",
+      "changes": "The red formation moves from its outpost toward the colony. After response_open_tick=214 its vertical position follows a phase-dependent feint, and its visible vector changes while it crosses the intercept band ending at tick 254.",
+      "outcome_affecting_control_remains": "Yes. MARCH to NORTH or SOUTH is accepted for an available soldier group only at ticks 214-254; at tick 265 the raid resolves autonomously."
+    },
+    {
+      "period": "Raid impact and post-raid assault",
+      "changes": "At impact the committed defenders, queen damage, losses, and cleared-wave state are resolved. After all raids clear, soldiers ordered to the rival queen travel for 45 ticks and then deal autonomous damage.",
+      "outcome_affecting_control_remains": "Yes for the later MARCH-to-enemy command after the raid is cleared; the assault's travel and attacks then continue without further commands."
+    },
+    {
+      "period": "CSS live indicator",
+      "changes": "The red pulse animates every 0.8 seconds.",
+      "outcome_affecting_control_remains": "No. This is unrelated presentation animation and is not used by the witness."
+    }
+  ],
+  "grouped_control_modes": [
+    {
+      "mode": "D_worker_orders",
+      "actions": ["GATHER selected workers to seed", "SCOUT one worker to front", "DIG the exact configured worker crew to brood"],
+      "scope": "All full-mode worker-order occurrences across seeds and task progress."
+    },
+    {
+      "mode": "D_production",
+      "actions": ["RAISE one soldier from the brood for two seeds"],
+      "scope": "All affordable production occurrences."
+    },
+    {
+      "mode": "D_defense",
+      "actions": ["MARCH a selected available soldier group to NORTH", "MARCH the group to SOUTH"],
+      "scope": "Every unresolved-raid defense commitment, including W1 at difficulty 2; the target is selected during the visible response band."
+    },
+    {
+      "mode": "D_assault",
+      "actions": ["MARCH selected surviving soldiers to the rival queen"],
+      "scope": "All post-clearance assault occurrences."
+    }
+  ],
+  "delta_ms": 800,
+  "window_ms": 800,
+  "clause_i": {
+    "holds": true,
+    "reason": "For D_defense, an observation-free q sees only its own prior actions and task times. The generator independently chooses first_lane as north/south and permits motion_phase_offset_ticks from 0 through 35, while the visible formation's branch is not encoded in I_t. Histories with the same preparation and tick can therefore require opposite MARCH targets at t+800 ms. A fixed target or no-op cannot be a tie-broken delayed optimum for both histories."
+  },
+  "clause_ii": {
+    "holds": true,
+    "reason": "With w=800 ms and the configured six chronological frames, the red W1 formation's vertical trajectory is visible on the world canvas when panned to it and on the minimap. After contact, its y value is a sinusoidal phase process whose derivative sign is the same branch quantity used by interceptLane; the recent trajectory therefore identifies phase/velocity and predicts the NORTH/SOUTH target at delivery t+800 ms. The screenshot-based solver samples visible formation pixels over consecutive observations, confirming that this information is available through the UI."
+  },
+  "clause_iii": {
+    "holds": true,
+    "reason": "Use an allowed instance with first_lane=south and motion_phase_offset_ticks=18, with six soldiers available, at t=240 (phase index 8 after response opens). MARCH SOUTH is then correct. With no new action for tau=200 ms, tick 242 has phase index 10, so the visible formation has crossed the cosine branch boundary and MARCH SOUTH remains accepted but is marked incorrect; MARCH NORTH can still succeed before the deadline at tick 254. The action's value drops because the raid's visible vertical motion changes the defense state, not because of a deadline alone."
+  },
+  "common_visible_process": "D_defense uses the same W1 post-contact formation motion throughout: the red formation advances toward the colony and visibly feints vertically after tick 214. Its recent y trajectory predicts which tunnel is optimal at delayed delivery, while the same motion can cross the branch boundary before the 800 ms delay and make the previously correct tunnel commitment wrong.",
+  "pre_run": {
+    "threshold": 0.5,
+    "at_least_half": false,
+    "rate": null,
+    "basis": "source_structural",
+    "reason": "Every difficulty-2 world has one three-unit raid and an own queen with 3 HP. Without a successful defense commitment, the deterministic impact step produces a breach of three and ends the match; the grader also requires the raid to be successfully intercepted. The required MARCH-to-tunnel command is outcome-affecting and is accepted only after contact is revealed during ticks 214-254 while the raid is moving, so no instance admits a successful action-free autonomous outcome phase after preparation. A later MARCH-to-enemy command is also required after the raid clears. Thus the at-least-half threshold is not met; no numeric pre-run percentage is asserted.",
+    "seed_probe": null
+  },
+  "files_read_completely": [
+    "AGENTS.md",
+    "weird_captcha_gym/docs/controllability/real-time.md",
+    "weird_captcha_gym/environments/anthill_front_env/controls.json",
+    "weird_captcha_gym/environments/anthill_front_env/env.json",
+    "weird_captcha_gym/environments/anthill_front_env/tasks/anthill_front_seed_0001/task.json",
+    "weird_captcha_gym/environments/anthill_front_env/tasks/anthill_front_seed_0001/verifier.py",
+    "weird_captcha_gym/shared_scripts/incubator_generators/anthill_front.py",
+    "weird_captcha_gym/shared_runtime/app/mechanics/anthill_front.js",
+    "weird_captcha_gym/shared_runtime/app/mechanics/anthill_front.css",
+    "weird_captcha_gym/shared_runtime/server/incubator_graders/anthill_front.py",
+    "weird_captcha_gym/shared_runtime/verifier_helpers.py",
+    "weird_captcha_gym/tools/incubator_solvers/anthill_front.py"
+  ],
+  "source_evidence": [
+    {
+      "path": "weird_captcha_gym/environments/anthill_front_env/controls.json",
+      "lines": "6-8,12-16",
+      "claim": "The assigned difficulty 2 parameters are world 24x13, five workers, four initial seeds, one-worker/34-work excavation, hidden opening, one three-unit seeded raid at spawn 175 and impact 265, enemy queen HP 5, and max tick 680; full interaction uses map/keyboard commands; the configured observation window is 800 ms with six frames."
+    },
+    {
+      "path": "weird_captcha_gym/shared_scripts/incubator_generators/anthill_front.py",
+      "lines": "31-51,97-120,134-160",
+      "claim": "The generator consumes the supplied control condition, chooses the first lane and motion phase, computes the visible response opening/deadline, and sets a 100 ms simulation tick with gathering, production, scouting, raids, and max-tick parameters."
+    },
+    {
+      "path": "weird_captcha_gym/shared_runtime/app/mechanics/anthill_front.js",
+      "lines": "55-139",
+      "claim": "The browser advances autonomous ticks, completes scouting and digging, adds gathering resources, produces soldiers, resolves raids at impact, and applies later assault damage without new agent input."
+    },
+    {
+      "path": "weird_captcha_gym/shared_runtime/app/mechanics/anthill_front.js",
+      "lines": "141-209",
+      "claim": "Visible commands mutate outcomes: worker orders, exact-crew DIG, RAISE, and MARCH; defense MARCH commits a group only in the active response interval and records whether its target equals the current intercept lane."
+    },
+    {
+      "path": "weird_captcha_gym/shared_runtime/app/mechanics/anthill_front.js",
+      "lines": "263-280,344-375,425-452",
+      "claim": "Raid x/y movement is drawn as a moving red formation, with an active intercept band, and the HUD visibly reports CONTACT IN BAND and VECTOR MOVING."
+    },
+    {
+      "path": "weird_captcha_gym/shared_runtime/app/mechanics/anthill_front.js",
+      "lines": "477-501,515-550,553-557",
+      "claim": "Full mode uses canvas click/marquee selection, keyboard G/S/D/M/R, destination clicks, minimap/pan controls, and a real-time performance clock advancing 100 ms ticks."
+    },
+    {
+      "path": "weird_captcha_gym/shared_runtime/app/mechanics/anthill_front.css",
+      "lines": "53-54,67-78",
+      "claim": "The CSS pulse is a separate idle indicator; the battlefield canvas and minimap are the visible surfaces for the task-state motion."
+    },
+    {
+      "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/anthill_front.py",
+      "lines": "47-51,100-155",
+      "claim": "The grader computes the same phase-dependent intercept lane, resolves an incorrect or absent defense as a breach, and requires successful intercepts, a surviving queen, and a destroyed rival queen."
+    },
+    {
+      "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/anthill_front.py",
+      "lines": "221-262,291-360",
+      "claim": "Replay accepts tunnel MARCH only during the visible response band, locks the commitment's correctness at the command tick, and enforces the later assault and exact final outcome."
+    },
+    {
+      "path": "weird_captcha_gym/tools/incubator_solvers/anthill_front.py",
+      "lines": "165-218,233-369",
+      "claim": "The available solver reads formation pixels from screenshots at multiple times to infer vertical direction and selects the tunnel through visible controls before completing the rest of the command sequence."
+    },
+    {
+      "path": "weird_captcha_gym/environments/anthill_front_env/tasks/anthill_front_seed_0001/verifier.py",
+      "lines": "7-32",
+      "claim": "The task verifier loads the exported result and replays it through the Anthill Front grader, so final certification is administrative while the command ledger determines the outcome."
+    },
+    {
+      "path": "weird_captcha_gym/shared_runtime/verifier_helpers.py",
+      "lines": "33-52",
+      "claim": "The shared verifier helper only loads the exported task result before the mechanic-specific replay; it does not provide hidden task state to the screenshot-only policy."
+    },
+    {
+      "path": "weird_captcha_gym/docs/controllability/real-time.md",
+      "lines": "58-86,96-104",
+      "claim": "The frozen definition requires one common visible autonomous process for observation-dependent delayed action, a degrading opportunity within the delay, and the separate pre-run threshold used here."
+    }
+  ],
+  "uncertainties": [
+    "The seed task.json retains legacy baseline metadata naming difficulty medium and a difficulty-3 capability configuration; this review follows the supplied difficulty-2/full assignment and the exact difficulty profile in controls.json, which is the condition consumed by the generator."
+  ]
+}

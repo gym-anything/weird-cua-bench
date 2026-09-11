@@ -1,0 +1,147 @@
+{
+  "case_index": 37,
+  "public_environment_name": "Ballast Lantern",
+  "environment_id": "ballast_lantern_env",
+  "difficulty": 4,
+  "interaction_mode": "full",
+  "label": "yes",
+  "controls_available": [
+    "Full interaction uses Space keydown to engage HAUL/upward thrust and Space keyup to release into COAST/downward acceleration; the cage retains its current momentum between transitions.",
+    "NEW SHAFT abandons and regenerates the run and is administrative; full mode does not render the simplified HAUL/COAST buttons."
+  ],
+  "autonomous_processes": [
+    "While active, the browser advances one shaft tick every 50 ms: cage velocity is updated from the engaged state or gravity, drag, and boundary restitution, then cage position changes without a new action.",
+    "The specimen advances independently on one generated law from steady_sinker, darter, floater, or oscillator, with generated speed/velocity and boundary behavior; its position and recent direction change between actions.",
+    "The crate appears autonomously at a generated tick from 92 through 108 and a generated shaft position. Each tick updates specimen overlap, the capture meter (+24 inside, -14 outside), crate overlap, and the crate meter (+34 while inside), until secured, escaped, or timeout."
+  ],
+  "grouped_control_modes": [
+    {
+      "name": "full_space_winch",
+      "outcome_affecting": true,
+      "scope": "Every active full-mode Space down/up winch transition across generated shafts, including specimen steering and crate servicing.",
+      "actions": ["keydown Space -> engaged/HAUL", "keyup Space -> released/COAST"],
+      "selected_for_common_witness": true
+    }
+  ],
+  "delta_ms": 300,
+  "window_ms": 600,
+  "clause_i": {
+    "holds": true,
+    "reason": "An observation-free q cannot choose the delayed-optimal Space transition from I_t alone. The generator randomizes the specimen's initial position, velocity, law, and (for darters) velocity schedule. As a concrete read-only replay witness, at the same 1300 ms task time with no prior actions, probe seeds witness-0001 and witness-0029 both leave the cage at the same no-action trajectory, but after 300 ms the first has a specimen far above the cage and calls for HAUL while the second has the specimen inside the lower cage and calls for COAST/braking. The common action history and task time do not distinguish those cases."
+  },
+  "clause_ii": {
+    "holds": true,
+    "reason": "A bounded g can use the 600 ms window of visible shaft frames: the cage and specimen positions are redrawn from the simulation, and three visible wake dots plus six chronological frames expose recent specimen direction while cage displacement exposes retained momentum. It can extrapolate the target's recent motion and select Space down to lead/accelerate the cage or Space up to brake/coast. This is the same state-dependent control rule implemented by the generator's phase-leading target predictor, expressed using visible geometry and motion rather than private state or an absolute schedule."
+  },
+  "clause_iii": {
+    "holds": true,
+    "reason": "The same cage/specimen process makes a useful transition degrade during the delay. In a source-model replay of witness-0001 at tick 791, the specimen is inside while the winch is released; delivering Space down immediately keeps it inside through six ticks and raises capture from 6538 to 6682, whereas letting the shaft coast for 300 ms before delivering the same Space down leaves it outside at tick 797 with capture 6644. The strict loss comes from changed cage momentum/position and specimen position, with the outside drain, not from a later deadline; both states remain active and salvageable."
+  },
+  "common_visible_process": "Autonomous vertical motion of the momentum-bearing lantern cage together with the drifting luminous specimen. The recent relative positions, cage displacement, and visible specimen wake determine which Space transition will place the cage over the specimen after the delayed delivery, and the same continuing motion can carry the cage past the useful overlap interval.",
+  "pre_run": {
+    "threshold": 0.5,
+    "at_least_half": false,
+    "rate": null,
+    "basis": "seeded_probe",
+    "reason": "There is no separate start gate: rendering immediately installs the active requestAnimationFrame loop. After preparation, a no-further-action full-mode run can leave only the persistent coast state (engaged=false) or a continuously held Space state (engaged=true). Both fixed modes were simulated for 256 generated seeds; neither secured an instance. The generator also requires its certified reference to use 8 through 220 state-changing winch transitions and material exclusive crate service, consistent with the absence of a successful fixed-mode pre-run strategy.",
+    "seed_probe": {
+      "seeds": "probe-0001 through probe-0256, generated as f'probe-{i:04d}' for i in range(1, 257)",
+      "numerator": 0,
+      "denominator": 256,
+      "code": "import copy, importlib.util, json\nfrom pathlib import Path\nroot = Path('.')\ncontrols = json.loads((root / 'weird_captcha_gym/environments/ballast_lantern_env/controls.json').read_text())\ntask = json.loads((root / 'weird_captcha_gym/environments/ballast_lantern_env/tasks/ballast_lantern_seed_0001/task.json').read_text())\ntask['_control_condition'] = {'difficulty': 4, 'interaction': 'full', 'real_time': 'live', 'difficulty_parameters': copy.deepcopy(controls['difficulty']['4']['parameters'])}\nspec = importlib.util.spec_from_file_location('ballast_generator', root / 'weird_captcha_gym/shared_scripts/incubator_generators/ballast_lantern.py')\nmodule = importlib.util.module_from_spec(spec); spec.loader.exec_module(module)\ndef fixed_secured(truth, engaged):\n    sim = module.initial_simulation(truth['parameters'], truth['motion'], truth['crate'])\n    while sim['status'] == 'active':\n        module.advance_tick(sim, engaged, truth['parameters'], truth['motion'], truth['crate'])\n    return sim['status'] == 'secured'\nseeds = [f'probe-{i:04d}' for i in range(1, 257)]\nsecured = sum(any(fixed_secured(module.generate(task, seed)[1], engaged) for engaged in (False, True)) for seed in seeds)\nprint(secured, len(seeds))"
+    }
+  },
+  "files_read_completely": [
+    "AGENTS.md",
+    "weird_captcha_gym/docs/controllability/real-time.md",
+    "weird_captcha_gym/environments/ballast_lantern_env/controls.json",
+    "weird_captcha_gym/environments/ballast_lantern_env/env.json",
+    "weird_captcha_gym/environments/ballast_lantern_env/tasks/ballast_lantern_seed_0001/task.json",
+    "weird_captcha_gym/environments/ballast_lantern_env/tasks/ballast_lantern_seed_0001/setup_task.sh",
+    "weird_captcha_gym/environments/ballast_lantern_env/tasks/ballast_lantern_seed_0001/export_result.sh",
+    "weird_captcha_gym/environments/ballast_lantern_env/tasks/ballast_lantern_seed_0001/verifier.py",
+    "weird_captcha_gym/shared_scripts/incubator_generators/ballast_lantern.py",
+    "weird_captcha_gym/shared_runtime/app/index.html",
+    "weird_captcha_gym/shared_runtime/app/time_controller.js",
+    "weird_captcha_gym/shared_runtime/app/mechanics/ballast_lantern.js",
+    "weird_captcha_gym/shared_runtime/app/mechanics/ballast_lantern.css",
+    "weird_captcha_gym/shared_runtime/server/incubator_graders/ballast_lantern.py",
+    "weird_captcha_gym/shared_runtime/verifier_helpers.py",
+    "weird_captcha_gym/tools/incubator_solvers/ballast_lantern.py"
+  ],
+  "source_evidence": [
+    {
+      "path": "weird_captcha_gym/environments/ballast_lantern_env/controls.json",
+      "lines": "27-46",
+      "claim": "Difficulty 4 is the hard profile with all four drift laws, cage_half_height 800, specimen speed 28-38, capture fill/drain 24/14, crate fill 34, crate spawn 92-108, trail_samples 3, and no trend beacon; full interaction is Space hold/release and the observation window is 600 ms with six frames."
+    },
+    {
+      "path": "weird_captcha_gym/shared_scripts/incubator_generators/ballast_lantern.py",
+      "lines": "130-164",
+      "claim": "Each generated instance randomizes the active drift law, speed, starting position/direction, and darter schedule within the difficulty-4 pool."
+    },
+    {
+      "path": "weird_captcha_gym/shared_scripts/incubator_generators/ballast_lantern.py",
+      "lines": "167-250",
+      "claim": "The integer simulation advances cage momentum and position, advances the specimen, spawns the crate, tests visible overlap, and changes capture/crate meters on every tick."
+    },
+    {
+      "path": "weird_captcha_gym/shared_scripts/incubator_generators/ballast_lantern.py",
+      "lines": "253-259",
+      "claim": "The intended feedback action predicts target position six ticks ahead and compares it with retained cage velocity, requiring state-dependent haul/coast choices."
+    },
+    {
+      "path": "weird_captcha_gym/shared_scripts/incubator_generators/ballast_lantern.py",
+      "lines": "277-317",
+      "claim": "The certified reference changes the winch at most once per 600 ms observation window and records crate service while the specimen is outside, rather than relying on a fixed run."
+    },
+    {
+      "path": "weird_captcha_gym/shared_scripts/incubator_generators/ballast_lantern.py",
+      "lines": "363-385",
+      "claim": "Generated worlds are accepted only when the reference reaches secured, uses 8-220 transitions, and achieves the required exclusive crate-fill service."
+    },
+    {
+      "path": "weird_captcha_gym/shared_runtime/app/mechanics/ballast_lantern.js",
+      "lines": "35-67",
+      "claim": "The visible browser simulation performs the same autonomous cage/specimen/crate and meter updates while the task is active."
+    },
+    {
+      "path": "weird_captcha_gym/shared_runtime/app/mechanics/ballast_lantern.js",
+      "lines": "180-220",
+      "claim": "The browser redraws cage and specimen positions, overlap status, crate appearance, and recent wake dots from the live simulation."
+    },
+    {
+      "path": "weird_captcha_gym/shared_runtime/app/mechanics/ballast_lantern.js",
+      "lines": "241-327",
+      "claim": "Full mode renders a Space control, registers trusted keydown/keyup handlers, starts the active requestAnimationFrame loop, and advances according to performance.now."
+    },
+    {
+      "path": "weird_captcha_gym/shared_runtime/app/mechanics/ballast_lantern.css",
+      "lines": "180-247",
+      "claim": "The cage, specimen, crate, and wake dots are visibly positioned in the shaft; the wake and directional beacon styling expose motion rather than supplying only an unrelated animation."
+    },
+    {
+      "path": "weird_captcha_gym/shared_runtime/app/time_controller.js",
+      "lines": "15-26,55-66,193-201,267-339,548-579",
+      "claim": "The shared clock makes live task time advance continuously and paused task time advance only through explicit observation windows; the browser's RAF and performance clock therefore govern the same task evolution."
+    },
+    {
+      "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/ballast_lantern.py",
+      "lines": "138-168,178-252",
+      "claim": "The authoritative grader replays the submitted winch transcript through the same tick physics and outcome meters, so the visible control transitions are bound to the outcome."
+    },
+    {
+      "path": "weird_captcha_gym/environments/ballast_lantern_env/tasks/ballast_lantern_seed_0001/verifier.py",
+      "lines": "22-35",
+      "claim": "Verification loads the exported result and independent Ballast Lantern grader; it checks the replayed outcome rather than certifying real-timeness from a scripted solver."
+    },
+    {
+      "path": "weird_captcha_gym/tools/incubator_solvers/ballast_lantern.py",
+      "lines": "44-106",
+      "claim": "The supplied implementation solver makes target/momentum decisions every tick in live mode or every 600 ms in paused mode and uses private simulation state only as implementation evidence, not as the screenshot policy."
+    }
+  ],
+  "uncertainties": [
+    "Numeric capture and crate meter values are not rendered in the visible markup; the common witness relies on the visible cage/specimen geometry and wake, while the source replay confirms the strict overlap loss."
+  ]
+}

@@ -1,0 +1,821 @@
+{
+  "case_index": 33,
+  "environment_id": "lanternfin_dive_env",
+  "public_environment_name": "Lanternfin Dive",
+  "configuration_reports": [
+    {
+      "case_index": 321,
+      "public_environment_name": "Lanternfin Dive",
+      "environment_id": "lanternfin_dive_env",
+      "difficulty": 1,
+      "interaction_mode": "full",
+      "label": "no",
+      "controls_available": [
+        "Hold A (-1) or D (+1) for tail torque; release to neutral.",
+        "Hold J (-1) or L (+1) for yaw torque; release to neutral.",
+        "Hold K (-1) or I (+1) for pitch torque; release to neutral.",
+        "Hold Q (-1) or E (+1) for roll torque; release to neutral.",
+        "Drag the canvas to orbit the camera and inspect pearl depth; this is view-only.",
+        "CERTIFY PEARL ARRIVAL submits the current transcript; ABANDON / FRESH DIVE terminates it."
+      ],
+      "autonomous_processes": [
+        "render() initializes tick 0 with neutral controls and zero translational velocity and starts an 80 ms interval; it runs until certification/submission or max_ticks.",
+        "Every dt=0.08 tick advances tail and fin phase, applies retained damped angular rates and torque, updates yaw/pitch/roll, computes thrust/lift, damps velocity, and changes x/y/z.",
+        "The canvas, tank time, position, attitude, pearl range, and upright-hold readout are redrawn after each tick; arrival requires distance, speed, pitch, and roll bounds and the hold resets when any bound fails.",
+        "At max_ticks=260 the dive window closes; certification only submits the current state and is administrative."
+      ],
+      "grouped_control_modes": [
+        "D_torque_tail: all A/D signed tail torque changes and keyup-to-neutral transitions.",
+        "D_torque_yaw: all J/L signed yaw torque changes and keyup-to-neutral transitions.",
+        "D_torque_pitch: all K/I signed pitch torque changes and keyup-to-neutral transitions.",
+        "D_torque_roll: all Q/E signed roll torque changes and keyup-to-neutral transitions."
+      ],
+      "delta_ms": 320,
+      "window_ms": 600,
+      "clause_i": {
+        "holds": true,
+        "reason": "For D_torque_tail, histories with the same prior key events and task times can have different generated target bearings, target offsets, and current fish trajectories. The best next held key, reversal, or release therefore differs, so no policy q using only I_t can be optimal on every still-salvageable history; a fixed A/D/J/L/K/I/Q/E schedule cannot see the pearl or current motion."
+      },
+      "clause_ii": {
+        "holds": true,
+        "reason": "With w=600 ms and five chronological frames, a screenshot-only policy can track the fish against the visible destination pearl, use the amber depth cue and camera orbit, read position/attitude/range/hold, and infer velocity and angular trend from consecutive frames. Together with I_t (the known prior detents), this bounded window is sufficient to choose the torque that will be best at t+320 ms."
+      },
+      "clause_iii": {
+        "holds": true,
+        "reason": "Use D_torque_tail at a reachable approach state inside the salvageable set: a reverse or neutralizing tail command can reduce the fish's current linear momentum now. If no action arrives for tau=160 ms (< Delta), the 80 ms steps move the fish and retain damped velocity and angular state, so the same command lands with a different position, heading, and speed and has strictly lower value or advantage over no-op, while another continuation can still succeed. The loss is caused by non-clock fish-state evolution, not the max-tick deadline."
+      },
+      "common_visible_process": "The same visible fluid-control process witnesses all three clauses: difficulty 1 generates a target around distance 0.62, height 0.04, and depth 0.08, starts at yaw/pitch/roll 0.00/0.02/0.03, and uses arrival radius 0.17, speed limit 0.055, upright tolerance 0.28, and a 5-tick hold. Persistent torque drives the fish through changing orientation, velocity, and position; the canvas and telemetry expose that change. The camera drag changes only the view.",
+      "pre_run": {
+        "threshold": 0.5,
+        "at_least_half": true,
+        "rate": 0.69,
+        "basis": "seeded_probe",
+        "reason": "There is no separate start gate: render initializes the fish at tick 0 and immediately starts the 80 ms timer, so a no-further-action pre-run can only choose one persistent four-channel detent vector and then wait for certification. Exhaustive enumeration of all 81 vectors on the reproducible 100-seed probe found 69 successes (observed 69/100, above the 0.5 threshold); tail=+1 with the other channels neutral already covers a majority. Certification is administrative. This pre-run threshold overrides the mathematical real-time witness, so the catalog label is no.",
+        "seed_probe": {
+          "seeds": ["probe-000", "probe-001", "probe-002", "probe-003", "probe-004", "probe-005", "probe-006", "probe-007", "probe-008", "probe-009", "probe-010", "probe-011", "probe-012", "probe-013", "probe-014", "probe-015", "probe-016", "probe-017", "probe-018", "probe-019", "probe-020", "probe-021", "probe-022", "probe-023", "probe-024", "probe-025", "probe-026", "probe-027", "probe-028", "probe-029", "probe-030", "probe-031", "probe-032", "probe-033", "probe-034", "probe-035", "probe-036", "probe-037", "probe-038", "probe-039", "probe-040", "probe-041", "probe-042", "probe-043", "probe-044", "probe-045", "probe-046", "probe-047", "probe-048", "probe-049", "probe-050", "probe-051", "probe-052", "probe-053", "probe-054", "probe-055", "probe-056", "probe-057", "probe-058", "probe-059", "probe-060", "probe-061", "probe-062", "probe-063", "probe-064", "probe-065", "probe-066", "probe-067", "probe-068", "probe-069", "probe-070", "probe-071", "probe-072", "probe-073", "probe-074", "probe-075", "probe-076", "probe-077", "probe-078", "probe-079", "probe-080", "probe-081", "probe-082", "probe-083", "probe-084", "probe-085", "probe-086", "probe-087", "probe-088", "probe-089", "probe-090", "probe-091", "probe-092", "probe-093", "probe-094", "probe-095", "probe-096", "probe-097", "probe-098", "probe-099"],
+          "numerator": 69,
+          "denominator": 100,
+          "fixed_vectors_tested": 81,
+          "probe_code": [
+            "PYTHONDONTWRITEBYTECODE=1 python3 - <<'PY'",
+            "import copy, importlib.util, itertools, json, os",
+            "from pathlib import Path",
+            "R=Path(os.environ['SOURCE_ROOT'])/'weird_captcha_gym'",
+            "def L(n,p): s=importlib.util.spec_from_file_location(n,p); m=importlib.util.module_from_spec(s); s.loader.exec_module(m); return m",
+            "G=L('lanternfin_gen',R/'shared_scripts/incubator_generators/lanternfin_dive.py'); D=L('lanternfin_grade',R/'shared_runtime/server/incubator_graders/lanternfin_dive.py')",
+            "base=json.loads((R/'environments/lanternfin_dive_env/tasks/lanternfin_dive_seed_0001/task.json').read_text()); P=json.loads((R/'environments/lanternfin_dive_env/controls.json').read_text())['difficulty']; V=list(itertools.product((-1.0,0.0,1.0),repeat=4)); MODE='full'",
+            "def ok(truth,c):",
+            "  s={k:float(v) for k,v in truth['initial'].items()}; u=dict(zip(('tail','yaw','pitch','roll'),c)); h=0",
+            "  for _ in range(int(truth['physics']['max_ticks'])):",
+            "    D._step(s,u,truth['physics']); h=h+1 if D._arrival(s,truth['target'],truth['physics']) else 0",
+            "    if h>=int(truth['physics']['hold_ticks']): return True",
+            "  return False",
+            "for level in range(1,6):",
+            "  n=0",
+            "  for i in range(100):",
+            "    t=copy.deepcopy(base); t['_control_condition']={'difficulty':level,'interaction':MODE,'real_time':'live','difficulty_parameters':P[str(level)]['parameters']}; _,truth=G.generate(t,f'probe-{i:03d}'); n+=any(ok(truth,c) for c in V)",
+            "  print(level,n,100)",
+            "PY"
+          ]
+        }
+      },
+      "files_read_completely": ["AGENTS.md", "weird_captcha_gym/docs/controllability/real-time.md", "weird_captcha_gym/environments/lanternfin_dive_env/controls.json", "weird_captcha_gym/environments/lanternfin_dive_env/env.json", "weird_captcha_gym/environments/lanternfin_dive_env/tasks/lanternfin_dive_seed_0001/setup_task.sh", "weird_captcha_gym/environments/lanternfin_dive_env/tasks/lanternfin_dive_seed_0001/export_result.sh", "weird_captcha_gym/environments/lanternfin_dive_env/tasks/lanternfin_dive_seed_0001/task.json", "weird_captcha_gym/environments/lanternfin_dive_env/tasks/lanternfin_dive_seed_0001/verifier.py", "weird_captcha_gym/shared_scripts/incubator_generators/lanternfin_dive.py", "weird_captcha_gym/shared_runtime/app/mechanics/lanternfin_dive.js", "weird_captcha_gym/shared_runtime/app/mechanics/lanternfin_dive.css", "weird_captcha_gym/shared_runtime/server/incubator_graders/lanternfin_dive.py", "weird_captcha_gym/shared_runtime/verifier_helpers.py", "weird_captcha_gym/tools/incubator_solvers/lanternfin_dive.py"],
+      "source_evidence": [
+        {"path": "weird_captcha_gym/environments/lanternfin_dive_env/controls.json", "lines": "10-30", "claim": "Difficulty 1 uses a near-aligned short target, broad arrival radius 0.17, speed limit 0.055, upright tolerance 0.28, 5-tick hold, and 260-tick maximum."},
+        {"path": "weird_captcha_gym/environments/lanternfin_dive_env/controls.json", "lines": "121-134", "claim": "Both interaction surfaces are implemented and the configured observation window is 600 ms with 5 frames; play time is 180 seconds."},
+        {"path": "weird_captcha_gym/shared_scripts/incubator_generators/lanternfin_dive.py", "lines": "55-84", "claim": "The selected difficulty parameters are copied into deterministic physics with dt 0.08 and tick_ms 80."},
+        {"path": "weird_captcha_gym/shared_scripts/incubator_generators/lanternfin_dive.py", "lines": "60-69", "claim": "Each seed varies bearing, target distance, target height, and target depth while retaining the visible target contract."},
+        {"path": "weird_captcha_gym/shared_runtime/app/mechanics/lanternfin_dive.js", "lines": "16-55", "claim": "The browser step retains damped angular and linear state, changes position, and defines arrival using distance, speed, pitch, and roll."},
+        {"path": "weird_captcha_gym/shared_runtime/app/mechanics/lanternfin_dive.js", "lines": "131-150", "claim": "The simplified and full surfaces select persistent torque controls and initialize the visible 3D aquarium model."},
+        {"path": "weird_captcha_gym/shared_runtime/app/mechanics/lanternfin_dive.js", "lines": "156-192", "claim": "The canvas and telemetry expose target, fish, tank time, position, attitude, range, hold, and each autonomous tick."},
+        {"path": "weird_captcha_gym/shared_runtime/app/mechanics/lanternfin_dive.js", "lines": "211-235", "claim": "Buttons or keydown/keyup create the mode-specific torque events, while certification is separate and the 80 ms interval runs continuously."},
+        {"path": "weird_captcha_gym/shared_runtime/app/mechanics/lanternfin_dive.css", "lines": "1-41", "claim": "The relevant CSS supplies the visible aquarium canvas, depth/orientation legend, controls, and telemetry layout."},
+        {"path": "weird_captcha_gym/shared_runtime/server/incubator_graders/lanternfin_dive.py", "lines": "31-71", "claim": "The authoritative replay uses the same stateful fluid step and arrival/hold constraints."},
+        {"path": "weird_captcha_gym/shared_runtime/server/incubator_graders/lanternfin_dive.py", "lines": "74-153", "claim": "The grader enforces the selected input source, replays every elapsed physical tick between events, and checks certification state and hold."},
+        {"path": "weird_captcha_gym/environments/lanternfin_dive_env/tasks/lanternfin_dive_seed_0001/verifier.py", "lines": "22-35", "claim": "The task verifier loads the exported result and independent Lanternfin replay grader."}
+      ],
+      "uncertainties": ["The incubator solver reads private page state; it was treated only as implementation evidence. The classification uses the public canvas, telemetry, and bounded frame sequence."]
+    },
+    {
+      "case_index": 329,
+      "public_environment_name": "Lanternfin Dive",
+      "environment_id": "lanternfin_dive_env",
+      "difficulty": 5,
+      "interaction_mode": "full",
+      "label": "yes",
+      "controls_available": [
+        "Hold A/D for signed tail torque, J/L for signed yaw torque, K/I for signed pitch torque, and Q/E for signed roll torque; release neutralizes each channel.",
+        "Drag the canvas to orbit the camera and inspect pearl depth; this is view-only.",
+        "CERTIFY PEARL ARRIVAL submits the current transcript; ABANDON / FRESH DIVE terminates it."
+      ],
+      "autonomous_processes": [
+        "render() initializes tick 0 with neutral controls and zero translational velocity and starts an 80 ms interval; it runs until certification/submission or max_ticks.",
+        "Every dt=0.08 tick advances tail and fin phase, applies retained damped angular rates and torque, updates yaw/pitch/roll, computes thrust/lift, damps velocity, and changes x/y/z.",
+        "The canvas, tank time, position, attitude, pearl range, and upright-hold readout are redrawn after each tick; arrival requires distance, speed, pitch, and roll bounds and the hold resets when any bound fails.",
+        "At max_ticks=720 the dive window closes; certification only submits the current state and is administrative."
+      ],
+      "grouped_control_modes": [
+        "D_torque_tail: all A/D signed tail torque changes and keyup-to-neutral transitions.",
+        "D_torque_yaw: all J/L signed yaw torque changes and keyup-to-neutral transitions.",
+        "D_torque_pitch: all K/I signed pitch torque changes and keyup-to-neutral transitions.",
+        "D_torque_roll: all Q/E signed roll torque changes and keyup-to-neutral transitions."
+      ],
+      "delta_ms": 320,
+      "window_ms": 600,
+      "clause_i": {"holds": true, "reason": "For D_torque_tail, the same prior key history can have different seed-dependent target bearings, offsets, and current fish trajectories. The best next held key, reversal, or release therefore depends on the visible state, so no I_t-only policy q is optimal on every still-salvageable history."},
+      "clause_ii": {"holds": true, "reason": "The five chronological frames in w=600 ms show target-relative motion; visible depth/orientation cues and position/attitude/range/hold telemetry let a screenshot-only policy infer velocity and angular trend. With I_t, that bounded window selects the torque best at t+320 ms."},
+      "clause_iii": {"holds": true, "reason": "At a reachable salvageable approach state, a D_torque_tail reverse or neutralizing command reduces current momentum. Waiting tau=160 ms lets two 80 ms state updates move and rotate the fish, making that same command strictly less valuable or less advantageous than no-op while an alternative continuation can still succeed; the loss is physical state evolution, not deadline passage."},
+      "common_visible_process": "Difficulty 5 uses target distance 1.78, height 0.48, depth 0.76, initial yaw/pitch/roll 0.38/-0.29/-0.34, arrival radius 0.095, speed limit 0.03, upright tolerance 0.12, and an 18-tick hold. Persistent held torque drives the visible 80 ms inertial fluid process: phases, angular rates, orientation, velocity, position, and hold change while the canvas and telemetry expose them; camera drag changes only the view.",
+      "pre_run": {
+        "threshold": 0.5,
+        "at_least_half": false,
+        "rate": 0.0,
+        "basis": "seeded_probe",
+        "reason": "There is no start gate, so a no-further-action pre-run can only choose one persistent four-channel detent vector before waiting for certification. Exhaustive enumeration of all 81 vectors on the reproducible 100-seed probe found 0 successes (observed 0/100, below 0.5); the long diagonal target, strong tilt, narrow speed/upright/radius bands, and 18-tick hold require later state-dependent corrections. Certification is administrative.",
+        "seed_probe": {
+          "seeds": ["probe-000", "probe-001", "probe-002", "probe-003", "probe-004", "probe-005", "probe-006", "probe-007", "probe-008", "probe-009", "probe-010", "probe-011", "probe-012", "probe-013", "probe-014", "probe-015", "probe-016", "probe-017", "probe-018", "probe-019", "probe-020", "probe-021", "probe-022", "probe-023", "probe-024", "probe-025", "probe-026", "probe-027", "probe-028", "probe-029", "probe-030", "probe-031", "probe-032", "probe-033", "probe-034", "probe-035", "probe-036", "probe-037", "probe-038", "probe-039", "probe-040", "probe-041", "probe-042", "probe-043", "probe-044", "probe-045", "probe-046", "probe-047", "probe-048", "probe-049", "probe-050", "probe-051", "probe-052", "probe-053", "probe-054", "probe-055", "probe-056", "probe-057", "probe-058", "probe-059", "probe-060", "probe-061", "probe-062", "probe-063", "probe-064", "probe-065", "probe-066", "probe-067", "probe-068", "probe-069", "probe-070", "probe-071", "probe-072", "probe-073", "probe-074", "probe-075", "probe-076", "probe-077", "probe-078", "probe-079", "probe-080", "probe-081", "probe-082", "probe-083", "probe-084", "probe-085", "probe-086", "probe-087", "probe-088", "probe-089", "probe-090", "probe-091", "probe-092", "probe-093", "probe-094", "probe-095", "probe-096", "probe-097", "probe-098", "probe-099"],
+          "numerator": 0,
+          "denominator": 100,
+          "fixed_vectors_tested": 81,
+          "probe_code": [
+            "PYTHONDONTWRITEBYTECODE=1 python3 - <<'PY'",
+            "import copy, importlib.util, itertools, json, os",
+            "from pathlib import Path",
+            "R=Path(os.environ['SOURCE_ROOT'])/'weird_captcha_gym'",
+            "def L(n,p): s=importlib.util.spec_from_file_location(n,p); m=importlib.util.module_from_spec(s); s.loader.exec_module(m); return m",
+            "G=L('lanternfin_gen',R/'shared_scripts/incubator_generators/lanternfin_dive.py'); D=L('lanternfin_grade',R/'shared_runtime/server/incubator_graders/lanternfin_dive.py')",
+            "base=json.loads((R/'environments/lanternfin_dive_env/tasks/lanternfin_dive_seed_0001/task.json').read_text()); P=json.loads((R/'environments/lanternfin_dive_env/controls.json').read_text())['difficulty']; V=list(itertools.product((-1.0,0.0,1.0),repeat=4)); MODE='full'",
+            "def ok(truth,c):",
+            "  s={k:float(v) for k,v in truth['initial'].items()}; u=dict(zip(('tail','yaw','pitch','roll'),c)); h=0",
+            "  for _ in range(int(truth['physics']['max_ticks'])):",
+            "    D._step(s,u,truth['physics']); h=h+1 if D._arrival(s,truth['target'],truth['physics']) else 0",
+            "    if h>=int(truth['physics']['hold_ticks']): return True",
+            "  return False",
+            "for level in range(1,6):",
+            "  n=0",
+            "  for i in range(100):",
+            "    t=copy.deepcopy(base); t['_control_condition']={'difficulty':level,'interaction':MODE,'real_time':'live','difficulty_parameters':P[str(level)]['parameters']}; _,truth=G.generate(t,f'probe-{i:03d}'); n+=any(ok(truth,c) for c in V)",
+            "  print(level,n,100)",
+            "PY"
+          ]
+        }
+      },
+      "files_read_completely": ["AGENTS.md", "weird_captcha_gym/docs/controllability/real-time.md", "weird_captcha_gym/environments/lanternfin_dive_env/controls.json", "weird_captcha_gym/environments/lanternfin_dive_env/env.json", "weird_captcha_gym/environments/lanternfin_dive_env/tasks/lanternfin_dive_seed_0001/setup_task.sh", "weird_captcha_gym/environments/lanternfin_dive_env/tasks/lanternfin_dive_seed_0001/export_result.sh", "weird_captcha_gym/environments/lanternfin_dive_env/tasks/lanternfin_dive_seed_0001/task.json", "weird_captcha_gym/environments/lanternfin_dive_env/tasks/lanternfin_dive_seed_0001/verifier.py", "weird_captcha_gym/shared_scripts/incubator_generators/lanternfin_dive.py", "weird_captcha_gym/shared_runtime/app/mechanics/lanternfin_dive.js", "weird_captcha_gym/shared_runtime/app/mechanics/lanternfin_dive.css", "weird_captcha_gym/shared_runtime/server/incubator_graders/lanternfin_dive.py", "weird_captcha_gym/shared_runtime/verifier_helpers.py", "weird_captcha_gym/tools/incubator_solvers/lanternfin_dive.py"],
+      "source_evidence": [
+        {"path": "weird_captcha_gym/environments/lanternfin_dive_env/controls.json", "lines": "98-117", "claim": "Difficulty 5 has the exact long diagonal/tilt profile, narrow radius 0.095, speed limit 0.03, upright tolerance 0.12, 18-tick hold, and 720-tick maximum."},
+        {"path": "weird_captcha_gym/environments/lanternfin_dive_env/controls.json", "lines": "121-134", "claim": "Full held-key control and the 600 ms/5-frame observation configuration are active."},
+        {"path": "weird_captcha_gym/shared_scripts/incubator_generators/lanternfin_dive.py", "lines": "55-84", "claim": "The condition is applied to deterministic 0.08-dt, 80-ms-tick physics."},
+        {"path": "weird_captcha_gym/shared_scripts/incubator_generators/lanternfin_dive.py", "lines": "60-69", "claim": "Seed-dependent target bearing and offsets are generated."},
+        {"path": "weird_captcha_gym/shared_runtime/app/mechanics/lanternfin_dive.js", "lines": "16-55", "claim": "Retained angular/linear state, position changes, and arrival constraints are implemented."},
+        {"path": "weird_captcha_gym/shared_runtime/app/mechanics/lanternfin_dive.js", "lines": "131-150", "claim": "The full key surface and visible 3D model are installed."},
+        {"path": "weird_captcha_gym/shared_runtime/app/mechanics/lanternfin_dive.js", "lines": "156-192", "claim": "The changing fish/pearl state and hold are visibly redrawn."},
+        {"path": "weird_captcha_gym/shared_runtime/app/mechanics/lanternfin_dive.js", "lines": "211-235", "claim": "Keyboard torque, neutralization, certification, and continuous ticking are wired."},
+        {"path": "weird_captcha_gym/shared_runtime/app/mechanics/lanternfin_dive.css", "lines": "1-41", "claim": "The visible aquarium, depth cue, controls, and telemetry are styled."},
+        {"path": "weird_captcha_gym/shared_runtime/server/incubator_graders/lanternfin_dive.py", "lines": "31-71", "claim": "The independent replay applies the same dynamics and arrival/hold rules."},
+        {"path": "weird_captcha_gym/shared_runtime/server/incubator_graders/lanternfin_dive.py", "lines": "74-153", "claim": "Full keyboard sources and elapsed tick replay are enforced."},
+        {"path": "weird_captcha_gym/environments/lanternfin_dive_env/tasks/lanternfin_dive_seed_0001/verifier.py", "lines": "22-35", "claim": "The task verifier invokes the independent replay grader."}
+      ],
+      "uncertainties": ["The incubator solver reads private page state; it was treated only as implementation evidence. The classification uses the public canvas, telemetry, and bounded frame sequence."]
+    },
+    {
+      "case_index": 330,
+      "public_environment_name": "Lanternfin Dive",
+      "environment_id": "lanternfin_dive_env",
+      "difficulty": 5,
+      "interaction_mode": "simplified",
+      "label": "yes",
+      "controls_available": [
+        "Persistent tail, yaw, pitch, and roll button rows, each with -1, NEUTRAL, and +1; a detent persists until reversed or neutralized.",
+        "Drag the canvas to orbit the camera and inspect pearl depth; this is view-only.",
+        "CERTIFY PEARL ARRIVAL submits the current transcript; ABANDON / FRESH DIVE terminates it."
+      ],
+      "autonomous_processes": [
+        "render() initializes tick 0 with neutral controls and zero translational velocity and starts an 80 ms interval; it runs until certification/submission or max_ticks.",
+        "Every dt=0.08 tick advances tail and fin phase, applies retained damped angular rates and torque, updates yaw/pitch/roll, computes thrust/lift, damps velocity, and changes x/y/z.",
+        "The canvas, tank time, position, attitude, pearl range, and upright-hold readout are redrawn after each tick; arrival requires distance, speed, pitch, and roll bounds and the hold resets when any bound fails.",
+        "At max_ticks=720 the dive window closes; certification only submits the current state and is administrative."
+      ],
+      "grouped_control_modes": [
+        "D_torque_tail: all simplified tail -1/NEUTRAL/+1 button transitions.",
+        "D_torque_yaw: all simplified yaw -1/NEUTRAL/+1 button transitions.",
+        "D_torque_pitch: all simplified pitch -1/NEUTRAL/+1 button transitions.",
+        "D_torque_roll: all simplified roll -1/NEUTRAL/+1 button transitions."
+      ],
+      "delta_ms": 320,
+      "window_ms": 600,
+      "clause_i": {"holds": true, "reason": "For D_torque_tail, the same prior button history can have different seed-dependent target bearings, offsets, and current fish trajectories. The best next detent, reversal, or neutralization therefore depends on the visible state, so no I_t-only policy q is optimal on every still-salvageable history."},
+      "clause_ii": {"holds": true, "reason": "The five chronological frames in w=600 ms show target-relative motion; visible depth/orientation cues and position/attitude/range/hold telemetry let a screenshot-only policy infer velocity and angular trend. With I_t, that bounded window selects the torque best at t+320 ms."},
+      "clause_iii": {"holds": true, "reason": "At a reachable salvageable approach state, a D_torque_tail reverse or neutralizing detent reduces current momentum. Waiting tau=160 ms lets two 80 ms state updates move and rotate the fish, making that same action strictly less valuable or less advantageous than no-op while an alternative continuation can still succeed; the loss is physical state evolution, not deadline passage."},
+      "common_visible_process": "Difficulty 5 uses target distance 1.78, height 0.48, depth 0.76, initial yaw/pitch/roll 0.38/-0.29/-0.34, arrival radius 0.095, speed limit 0.03, upright tolerance 0.12, and an 18-tick hold. Persistent button detents drive the visible 80 ms inertial fluid process: phases, angular rates, orientation, velocity, position, and hold change while the canvas and telemetry expose them; camera drag changes only the view.",
+      "pre_run": {
+        "threshold": 0.5,
+        "at_least_half": false,
+        "rate": 0.0,
+        "basis": "seeded_probe",
+        "reason": "There is no start gate, so a no-further-action pre-run can only choose one persistent four-channel detent vector before waiting for certification. Exhaustive enumeration of all 81 vectors on the reproducible 100-seed probe found 0 successes (observed 0/100, below 0.5); the long diagonal target, strong tilt, narrow speed/upright/radius bands, and 18-tick hold require later state-dependent corrections. Certification is administrative.",
+        "seed_probe": {
+          "seeds": ["probe-000", "probe-001", "probe-002", "probe-003", "probe-004", "probe-005", "probe-006", "probe-007", "probe-008", "probe-009", "probe-010", "probe-011", "probe-012", "probe-013", "probe-014", "probe-015", "probe-016", "probe-017", "probe-018", "probe-019", "probe-020", "probe-021", "probe-022", "probe-023", "probe-024", "probe-025", "probe-026", "probe-027", "probe-028", "probe-029", "probe-030", "probe-031", "probe-032", "probe-033", "probe-034", "probe-035", "probe-036", "probe-037", "probe-038", "probe-039", "probe-040", "probe-041", "probe-042", "probe-043", "probe-044", "probe-045", "probe-046", "probe-047", "probe-048", "probe-049", "probe-050", "probe-051", "probe-052", "probe-053", "probe-054", "probe-055", "probe-056", "probe-057", "probe-058", "probe-059", "probe-060", "probe-061", "probe-062", "probe-063", "probe-064", "probe-065", "probe-066", "probe-067", "probe-068", "probe-069", "probe-070", "probe-071", "probe-072", "probe-073", "probe-074", "probe-075", "probe-076", "probe-077", "probe-078", "probe-079", "probe-080", "probe-081", "probe-082", "probe-083", "probe-084", "probe-085", "probe-086", "probe-087", "probe-088", "probe-089", "probe-090", "probe-091", "probe-092", "probe-093", "probe-094", "probe-095", "probe-096", "probe-097", "probe-098", "probe-099"],
+          "numerator": 0,
+          "denominator": 100,
+          "fixed_vectors_tested": 81,
+          "probe_code": [
+            "PYTHONDONTWRITEBYTECODE=1 python3 - <<'PY'",
+            "import copy, importlib.util, itertools, json, os",
+            "from pathlib import Path",
+            "R=Path(os.environ['SOURCE_ROOT'])/'weird_captcha_gym'",
+            "def L(n,p): s=importlib.util.spec_from_file_location(n,p); m=importlib.util.module_from_spec(s); s.loader.exec_module(m); return m",
+            "G=L('lanternfin_gen',R/'shared_scripts/incubator_generators/lanternfin_dive.py'); D=L('lanternfin_grade',R/'shared_runtime/server/incubator_graders/lanternfin_dive.py')",
+            "base=json.loads((R/'environments/lanternfin_dive_env/tasks/lanternfin_dive_seed_0001/task.json').read_text()); P=json.loads((R/'environments/lanternfin_dive_env/controls.json').read_text())['difficulty']; V=list(itertools.product((-1.0,0.0,1.0),repeat=4)); MODE='simplified'",
+            "def ok(truth,c):",
+            "  s={k:float(v) for k,v in truth['initial'].items()}; u=dict(zip(('tail','yaw','pitch','roll'),c)); h=0",
+            "  for _ in range(int(truth['physics']['max_ticks'])):",
+            "    D._step(s,u,truth['physics']); h=h+1 if D._arrival(s,truth['target'],truth['physics']) else 0",
+            "    if h>=int(truth['physics']['hold_ticks']): return True",
+            "  return False",
+            "for level in range(1,6):",
+            "  n=0",
+            "  for i in range(100):",
+            "    t=copy.deepcopy(base); t['_control_condition']={'difficulty':level,'interaction':MODE,'real_time':'live','difficulty_parameters':P[str(level)]['parameters']}; _,truth=G.generate(t,f'probe-{i:03d}'); n+=any(ok(truth,c) for c in V)",
+            "  print(level,n,100)",
+            "PY"
+          ]
+        }
+      },
+      "files_read_completely": ["AGENTS.md", "weird_captcha_gym/docs/controllability/real-time.md", "weird_captcha_gym/environments/lanternfin_dive_env/controls.json", "weird_captcha_gym/environments/lanternfin_dive_env/env.json", "weird_captcha_gym/environments/lanternfin_dive_env/tasks/lanternfin_dive_seed_0001/setup_task.sh", "weird_captcha_gym/environments/lanternfin_dive_env/tasks/lanternfin_dive_seed_0001/export_result.sh", "weird_captcha_gym/environments/lanternfin_dive_env/tasks/lanternfin_dive_seed_0001/task.json", "weird_captcha_gym/environments/lanternfin_dive_env/tasks/lanternfin_dive_seed_0001/verifier.py", "weird_captcha_gym/shared_scripts/incubator_generators/lanternfin_dive.py", "weird_captcha_gym/shared_runtime/app/mechanics/lanternfin_dive.js", "weird_captcha_gym/shared_runtime/app/mechanics/lanternfin_dive.css", "weird_captcha_gym/shared_runtime/server/incubator_graders/lanternfin_dive.py", "weird_captcha_gym/shared_runtime/verifier_helpers.py", "weird_captcha_gym/tools/incubator_solvers/lanternfin_dive.py"],
+      "source_evidence": [
+        {"path": "weird_captcha_gym/environments/lanternfin_dive_env/controls.json", "lines": "98-117", "claim": "Difficulty 5 has the exact long diagonal/tilt, arrival, speed, upright, hold, and maximum parameters."},
+        {"path": "weird_captcha_gym/environments/lanternfin_dive_env/controls.json", "lines": "121-134", "claim": "Simplified persistent buttons and the 600 ms/5-frame observation configuration are active."},
+        {"path": "weird_captcha_gym/shared_scripts/incubator_generators/lanternfin_dive.py", "lines": "55-84", "claim": "The condition is applied to deterministic 0.08-dt, 80-ms-tick physics."},
+        {"path": "weird_captcha_gym/shared_scripts/incubator_generators/lanternfin_dive.py", "lines": "60-69", "claim": "Seed-dependent target bearing and offsets are generated."},
+        {"path": "weird_captcha_gym/shared_runtime/app/mechanics/lanternfin_dive.js", "lines": "16-55", "claim": "Retained angular/linear state, position changes, and arrival constraints are implemented."},
+        {"path": "weird_captcha_gym/shared_runtime/app/mechanics/lanternfin_dive.js", "lines": "131-150", "claim": "The simplified button surface and visible 3D model are installed."},
+        {"path": "weird_captcha_gym/shared_runtime/app/mechanics/lanternfin_dive.js", "lines": "156-192", "claim": "The changing fish/pearl state and hold are visibly redrawn."},
+        {"path": "weird_captcha_gym/shared_runtime/app/mechanics/lanternfin_dive.js", "lines": "211-235", "claim": "Button events, neutralization, certification, and continuous ticking are wired."},
+        {"path": "weird_captcha_gym/shared_runtime/app/mechanics/lanternfin_dive.css", "lines": "1-41", "claim": "The visible aquarium, depth cue, controls, and telemetry are styled."},
+        {"path": "weird_captcha_gym/shared_runtime/server/incubator_graders/lanternfin_dive.py", "lines": "31-71", "claim": "The independent replay applies the same dynamics and arrival/hold rules."},
+        {"path": "weird_captcha_gym/shared_runtime/server/incubator_graders/lanternfin_dive.py", "lines": "74-153", "claim": "Simplified input sources and elapsed tick replay are enforced."},
+        {"path": "weird_captcha_gym/environments/lanternfin_dive_env/tasks/lanternfin_dive_seed_0001/verifier.py", "lines": "22-35", "claim": "The task verifier invokes the independent replay grader."}
+      ],
+      "uncertainties": ["The incubator solver reads private page state; it was treated only as implementation evidence. The classification uses the public canvas, telemetry, and bounded frame sequence."]
+    },
+    {
+      "case_index": 328,
+      "public_environment_name": "Lanternfin Dive",
+      "environment_id": "lanternfin_dive_env",
+      "difficulty": 4,
+      "interaction_mode": "simplified",
+      "label": "yes",
+      "controls_available": [
+        "Persistent tail, yaw, pitch, and roll button rows, each with -1, NEUTRAL, and +1; a detent persists until reversed or neutralized.",
+        "Drag the canvas to orbit the camera and inspect pearl depth; this is view-only.",
+        "CERTIFY PEARL ARRIVAL submits the current transcript; ABANDON / FRESH DIVE terminates it."
+      ],
+      "autonomous_processes": [
+        "render() initializes tick 0 with neutral controls and zero translational velocity and starts an 80 ms interval; it runs until certification/submission or max_ticks.",
+        "Every dt=0.08 tick advances tail and fin phase, applies retained damped angular rates and torque, updates yaw/pitch/roll, computes thrust/lift, damps velocity, and changes x/y/z.",
+        "The canvas, tank time, position, attitude, pearl range, and upright-hold readout are redrawn after each tick; arrival requires distance, speed, pitch, and roll bounds and the hold resets when any bound fails.",
+        "At max_ticks=560 the dive window closes; certification only submits the current state and is administrative."
+      ],
+      "grouped_control_modes": [
+        "D_torque_tail: all simplified tail -1/NEUTRAL/+1 button transitions.",
+        "D_torque_yaw: all simplified yaw -1/NEUTRAL/+1 button transitions.",
+        "D_torque_pitch: all simplified pitch -1/NEUTRAL/+1 button transitions.",
+        "D_torque_roll: all simplified roll -1/NEUTRAL/+1 button transitions."
+      ],
+      "delta_ms": 320,
+      "window_ms": 600,
+      "clause_i": {"holds": true, "reason": "For D_torque_tail, the same prior button history can have different seed-dependent target bearings, offsets, and current fish trajectories. The best next detent, reversal, or neutralization therefore depends on the visible state, so no I_t-only policy q is optimal on every still-salvageable history."},
+      "clause_ii": {"holds": true, "reason": "The five chronological frames in w=600 ms show target-relative motion; visible depth/orientation cues and position/attitude/range/hold telemetry let a screenshot-only policy infer velocity and angular trend. With I_t, that bounded window selects the torque best at t+320 ms."},
+      "clause_iii": {"holds": true, "reason": "At a reachable salvageable approach state, a D_torque_tail reverse or neutralizing detent reduces current momentum. Waiting tau=160 ms lets two 80 ms state updates move and rotate the fish, making that same action strictly less valuable or less advantageous than no-op while an alternative continuation can still succeed; this is physical state evolution, not deadline passage."},
+      "common_visible_process": "Difficulty 4 uses target distance 1.42, height 0.36, depth 0.58, initial yaw/pitch/roll -0.28/0.20/0.25, arrival radius 0.115, speed limit 0.038, upright tolerance 0.155, and a 12-tick hold. Persistent button detents drive the visible 80 ms inertial fluid process: phases, angular rates, orientation, velocity, position, and hold change while the canvas and telemetry expose them; camera drag changes only the view.",
+      "pre_run": {
+        "threshold": 0.5,
+        "at_least_half": false,
+        "rate": 0.0,
+        "basis": "seeded_probe",
+        "reason": "There is no start gate, so a no-further-action pre-run can only choose one persistent four-channel detent vector before waiting for certification. Exhaustive enumeration of all 81 vectors on the reproducible 100-seed probe found 0 successes (observed 0/100, below 0.5); the diagonal target, strong initial tilt, narrow arrival bands, and long hold require later state-dependent corrections. Certification is administrative.",
+        "seed_probe": {
+          "seeds": ["probe-000", "probe-001", "probe-002", "probe-003", "probe-004", "probe-005", "probe-006", "probe-007", "probe-008", "probe-009", "probe-010", "probe-011", "probe-012", "probe-013", "probe-014", "probe-015", "probe-016", "probe-017", "probe-018", "probe-019", "probe-020", "probe-021", "probe-022", "probe-023", "probe-024", "probe-025", "probe-026", "probe-027", "probe-028", "probe-029", "probe-030", "probe-031", "probe-032", "probe-033", "probe-034", "probe-035", "probe-036", "probe-037", "probe-038", "probe-039", "probe-040", "probe-041", "probe-042", "probe-043", "probe-044", "probe-045", "probe-046", "probe-047", "probe-048", "probe-049", "probe-050", "probe-051", "probe-052", "probe-053", "probe-054", "probe-055", "probe-056", "probe-057", "probe-058", "probe-059", "probe-060", "probe-061", "probe-062", "probe-063", "probe-064", "probe-065", "probe-066", "probe-067", "probe-068", "probe-069", "probe-070", "probe-071", "probe-072", "probe-073", "probe-074", "probe-075", "probe-076", "probe-077", "probe-078", "probe-079", "probe-080", "probe-081", "probe-082", "probe-083", "probe-084", "probe-085", "probe-086", "probe-087", "probe-088", "probe-089", "probe-090", "probe-091", "probe-092", "probe-093", "probe-094", "probe-095", "probe-096", "probe-097", "probe-098", "probe-099"],
+          "numerator": 0,
+          "denominator": 100,
+          "fixed_vectors_tested": 81,
+          "probe_code": [
+            "PYTHONDONTWRITEBYTECODE=1 python3 - <<'PY'",
+            "import copy, importlib.util, itertools, json, os",
+            "from pathlib import Path",
+            "R=Path(os.environ['SOURCE_ROOT'])/'weird_captcha_gym'",
+            "def L(n,p): s=importlib.util.spec_from_file_location(n,p); m=importlib.util.module_from_spec(s); s.loader.exec_module(m); return m",
+            "G=L('lanternfin_gen',R/'shared_scripts/incubator_generators/lanternfin_dive.py'); D=L('lanternfin_grade',R/'shared_runtime/server/incubator_graders/lanternfin_dive.py')",
+            "base=json.loads((R/'environments/lanternfin_dive_env/tasks/lanternfin_dive_seed_0001/task.json').read_text()); P=json.loads((R/'environments/lanternfin_dive_env/controls.json').read_text())['difficulty']; V=list(itertools.product((-1.0,0.0,1.0),repeat=4)); MODE='simplified'",
+            "def ok(truth,c):",
+            "  s={k:float(v) for k,v in truth['initial'].items()}; u=dict(zip(('tail','yaw','pitch','roll'),c)); h=0",
+            "  for _ in range(int(truth['physics']['max_ticks'])):",
+            "    D._step(s,u,truth['physics']); h=h+1 if D._arrival(s,truth['target'],truth['physics']) else 0",
+            "    if h>=int(truth['physics']['hold_ticks']): return True",
+            "  return False",
+            "for level in range(1,6):",
+            "  n=0",
+            "  for i in range(100):",
+            "    t=copy.deepcopy(base); t['_control_condition']={'difficulty':level,'interaction':MODE,'real_time':'live','difficulty_parameters':P[str(level)]['parameters']}; _,truth=G.generate(t,f'probe-{i:03d}'); n+=any(ok(truth,c) for c in V)",
+            "  print(level,n,100)",
+            "PY"
+          ]
+        }
+      },
+      "files_read_completely": ["AGENTS.md", "weird_captcha_gym/docs/controllability/real-time.md", "weird_captcha_gym/environments/lanternfin_dive_env/controls.json", "weird_captcha_gym/environments/lanternfin_dive_env/env.json", "weird_captcha_gym/environments/lanternfin_dive_env/tasks/lanternfin_dive_seed_0001/setup_task.sh", "weird_captcha_gym/environments/lanternfin_dive_env/tasks/lanternfin_dive_seed_0001/export_result.sh", "weird_captcha_gym/environments/lanternfin_dive_env/tasks/lanternfin_dive_seed_0001/task.json", "weird_captcha_gym/environments/lanternfin_dive_env/tasks/lanternfin_dive_seed_0001/verifier.py", "weird_captcha_gym/shared_scripts/incubator_generators/lanternfin_dive.py", "weird_captcha_gym/shared_runtime/app/mechanics/lanternfin_dive.js", "weird_captcha_gym/shared_runtime/app/mechanics/lanternfin_dive.css", "weird_captcha_gym/shared_runtime/server/incubator_graders/lanternfin_dive.py", "weird_captcha_gym/shared_runtime/verifier_helpers.py", "weird_captcha_gym/tools/incubator_solvers/lanternfin_dive.py"],
+      "source_evidence": [
+        {"path": "weird_captcha_gym/environments/lanternfin_dive_env/controls.json", "lines": "76-95", "claim": "Difficulty 4 has the exact diagonal/tilt, arrival, speed, upright, hold, and maximum parameters."},
+        {"path": "weird_captcha_gym/environments/lanternfin_dive_env/controls.json", "lines": "121-134", "claim": "Simplified persistent buttons and the 600 ms/5-frame observation configuration are active."},
+        {"path": "weird_captcha_gym/shared_scripts/incubator_generators/lanternfin_dive.py", "lines": "55-84", "claim": "The condition is applied to deterministic 0.08-dt, 80-ms-tick physics."},
+        {"path": "weird_captcha_gym/shared_scripts/incubator_generators/lanternfin_dive.py", "lines": "60-69", "claim": "Seed-dependent target bearing and offsets are generated."},
+        {"path": "weird_captcha_gym/shared_runtime/app/mechanics/lanternfin_dive.js", "lines": "16-55", "claim": "Retained momentum, position changes, and arrival constraints are implemented."},
+        {"path": "weird_captcha_gym/shared_runtime/app/mechanics/lanternfin_dive.js", "lines": "131-150", "claim": "The simplified button surface and visible 3D model are installed."},
+        {"path": "weird_captcha_gym/shared_runtime/app/mechanics/lanternfin_dive.js", "lines": "156-192", "claim": "The changing fish/pearl state and hold are visibly redrawn."},
+        {"path": "weird_captcha_gym/shared_runtime/app/mechanics/lanternfin_dive.js", "lines": "211-235", "claim": "Button events, neutralization, certification, and continuous ticking are wired."},
+        {"path": "weird_captcha_gym/shared_runtime/app/mechanics/lanternfin_dive.css", "lines": "1-41", "claim": "The visible aquarium, depth cue, controls, and telemetry are styled."},
+        {"path": "weird_captcha_gym/shared_runtime/server/incubator_graders/lanternfin_dive.py", "lines": "31-71", "claim": "Replay physics and arrival/hold rules match the browser."},
+        {"path": "weird_captcha_gym/shared_runtime/server/incubator_graders/lanternfin_dive.py", "lines": "74-153", "claim": "Simplified input sources and elapsed tick replay are enforced."},
+        {"path": "weird_captcha_gym/environments/lanternfin_dive_env/tasks/lanternfin_dive_seed_0001/verifier.py", "lines": "22-35", "claim": "The independent replay grader is authoritative for the task."}
+      ],
+      "uncertainties": ["The incubator solver reads private page state; it was treated only as implementation evidence. The classification uses the public canvas, telemetry, and bounded frame sequence."]
+    },
+    {
+      "case_index": 327,
+      "public_environment_name": "Lanternfin Dive",
+      "environment_id": "lanternfin_dive_env",
+      "difficulty": 4,
+      "interaction_mode": "full",
+      "label": "yes",
+      "controls_available": [
+        "Hold A/D for signed tail torque, J/L for signed yaw torque, K/I for signed pitch torque, and Q/E for signed roll torque; release neutralizes each channel.",
+        "Drag the canvas to orbit the camera and inspect pearl depth; this is view-only.",
+        "CERTIFY PEARL ARRIVAL submits the current transcript; ABANDON / FRESH DIVE terminates it."
+      ],
+      "autonomous_processes": [
+        "render() initializes tick 0 with neutral controls and zero translational velocity and starts an 80 ms interval; it runs until certification/submission or max_ticks.",
+        "Every dt=0.08 tick advances tail and fin phase, applies retained damped angular rates and torque, updates yaw/pitch/roll, computes thrust/lift, damps velocity, and changes x/y/z.",
+        "The canvas, tank time, position, attitude, pearl range, and upright-hold readout are redrawn after each tick; arrival requires distance, speed, pitch, and roll bounds and the hold resets when any bound fails.",
+        "At max_ticks=560 the dive window closes; certification only submits the current state and is administrative."
+      ],
+      "grouped_control_modes": [
+        "D_torque_tail: all A/D signed tail torque changes and keyup-to-neutral transitions.",
+        "D_torque_yaw: all J/L signed yaw torque changes and keyup-to-neutral transitions.",
+        "D_torque_pitch: all K/I signed pitch torque changes and keyup-to-neutral transitions.",
+        "D_torque_roll: all Q/E signed roll torque changes and keyup-to-neutral transitions."
+      ],
+      "delta_ms": 320,
+      "window_ms": 600,
+      "clause_i": {"holds": true, "reason": "For D_torque_tail, the same prior key history can have different seed-dependent target bearings, offsets, and current fish trajectories. The best next held key, reversal, or release therefore depends on the visible state, so no I_t-only policy q is optimal on every still-salvageable history."},
+      "clause_ii": {"holds": true, "reason": "The five chronological frames in w=600 ms show target-relative motion; visible depth/orientation cues and position/attitude/range/hold telemetry let a screenshot-only policy infer velocity and angular trend. With I_t, that bounded window selects the torque best at t+320 ms."},
+      "clause_iii": {"holds": true, "reason": "At a reachable salvageable approach state, a D_torque_tail reverse or neutralizing command reduces current momentum. Waiting tau=160 ms lets two 80 ms state updates move and rotate the fish, making that same command strictly less valuable or less advantageous than no-op while an alternative continuation can still succeed; the loss is physical state evolution, not deadline passage."},
+      "common_visible_process": "Difficulty 4 uses target distance 1.42, height 0.36, depth 0.58, initial yaw/pitch/roll -0.28/0.20/0.25, arrival radius 0.115, speed limit 0.038, upright tolerance 0.155, and a 12-tick hold. Persistent held torque drives the visible 80 ms inertial fluid process: phases, angular rates, orientation, velocity, position, and hold change while the canvas and telemetry expose them; camera drag changes only the view.",
+      "pre_run": {
+        "threshold": 0.5,
+        "at_least_half": false,
+        "rate": 0.0,
+        "basis": "seeded_probe",
+        "reason": "There is no start gate, so a no-further-action pre-run can only choose one persistent four-channel detent vector before waiting for certification. Exhaustive enumeration of all 81 vectors on the reproducible 100-seed probe found 0 successes (observed 0/100, below 0.5); the diagonal target, strong initial tilt, narrow arrival bands, and long hold require later state-dependent corrections. Certification is administrative.",
+        "seed_probe": {
+          "seeds": ["probe-000", "probe-001", "probe-002", "probe-003", "probe-004", "probe-005", "probe-006", "probe-007", "probe-008", "probe-009", "probe-010", "probe-011", "probe-012", "probe-013", "probe-014", "probe-015", "probe-016", "probe-017", "probe-018", "probe-019", "probe-020", "probe-021", "probe-022", "probe-023", "probe-024", "probe-025", "probe-026", "probe-027", "probe-028", "probe-029", "probe-030", "probe-031", "probe-032", "probe-033", "probe-034", "probe-035", "probe-036", "probe-037", "probe-038", "probe-039", "probe-040", "probe-041", "probe-042", "probe-043", "probe-044", "probe-045", "probe-046", "probe-047", "probe-048", "probe-049", "probe-050", "probe-051", "probe-052", "probe-053", "probe-054", "probe-055", "probe-056", "probe-057", "probe-058", "probe-059", "probe-060", "probe-061", "probe-062", "probe-063", "probe-064", "probe-065", "probe-066", "probe-067", "probe-068", "probe-069", "probe-070", "probe-071", "probe-072", "probe-073", "probe-074", "probe-075", "probe-076", "probe-077", "probe-078", "probe-079", "probe-080", "probe-081", "probe-082", "probe-083", "probe-084", "probe-085", "probe-086", "probe-087", "probe-088", "probe-089", "probe-090", "probe-091", "probe-092", "probe-093", "probe-094", "probe-095", "probe-096", "probe-097", "probe-098", "probe-099"],
+          "numerator": 0,
+          "denominator": 100,
+          "fixed_vectors_tested": 81,
+          "probe_code": [
+            "PYTHONDONTWRITEBYTECODE=1 python3 - <<'PY'",
+            "import copy, importlib.util, itertools, json, os",
+            "from pathlib import Path",
+            "R=Path(os.environ['SOURCE_ROOT'])/'weird_captcha_gym'",
+            "def L(n,p): s=importlib.util.spec_from_file_location(n,p); m=importlib.util.module_from_spec(s); s.loader.exec_module(m); return m",
+            "G=L('lanternfin_gen',R/'shared_scripts/incubator_generators/lanternfin_dive.py'); D=L('lanternfin_grade',R/'shared_runtime/server/incubator_graders/lanternfin_dive.py')",
+            "base=json.loads((R/'environments/lanternfin_dive_env/tasks/lanternfin_dive_seed_0001/task.json').read_text()); P=json.loads((R/'environments/lanternfin_dive_env/controls.json').read_text())['difficulty']; V=list(itertools.product((-1.0,0.0,1.0),repeat=4)); MODE='full'",
+            "def ok(truth,c):",
+            "  s={k:float(v) for k,v in truth['initial'].items()}; u=dict(zip(('tail','yaw','pitch','roll'),c)); h=0",
+            "  for _ in range(int(truth['physics']['max_ticks'])):",
+            "    D._step(s,u,truth['physics']); h=h+1 if D._arrival(s,truth['target'],truth['physics']) else 0",
+            "    if h>=int(truth['physics']['hold_ticks']): return True",
+            "  return False",
+            "for level in range(1,6):",
+            "  n=0",
+            "  for i in range(100):",
+            "    t=copy.deepcopy(base); t['_control_condition']={'difficulty':level,'interaction':MODE,'real_time':'live','difficulty_parameters':P[str(level)]['parameters']}; _,truth=G.generate(t,f'probe-{i:03d}'); n+=any(ok(truth,c) for c in V)",
+            "  print(level,n,100)",
+            "PY"
+          ]
+        }
+      },
+      "files_read_completely": ["AGENTS.md", "weird_captcha_gym/docs/controllability/real-time.md", "weird_captcha_gym/environments/lanternfin_dive_env/controls.json", "weird_captcha_gym/environments/lanternfin_dive_env/env.json", "weird_captcha_gym/environments/lanternfin_dive_env/tasks/lanternfin_dive_seed_0001/setup_task.sh", "weird_captcha_gym/environments/lanternfin_dive_env/tasks/lanternfin_dive_seed_0001/export_result.sh", "weird_captcha_gym/environments/lanternfin_dive_env/tasks/lanternfin_dive_seed_0001/task.json", "weird_captcha_gym/environments/lanternfin_dive_env/tasks/lanternfin_dive_seed_0001/verifier.py", "weird_captcha_gym/shared_scripts/incubator_generators/lanternfin_dive.py", "weird_captcha_gym/shared_runtime/app/mechanics/lanternfin_dive.js", "weird_captcha_gym/shared_runtime/app/mechanics/lanternfin_dive.css", "weird_captcha_gym/shared_runtime/server/incubator_graders/lanternfin_dive.py", "weird_captcha_gym/shared_runtime/verifier_helpers.py", "weird_captcha_gym/tools/incubator_solvers/lanternfin_dive.py"],
+      "source_evidence": [
+        {"path": "weird_captcha_gym/environments/lanternfin_dive_env/controls.json", "lines": "76-95", "claim": "Difficulty 4 has the exact diagonal target, initial tilt, narrow arrival bands, 12-tick hold, and 560-tick maximum."},
+        {"path": "weird_captcha_gym/environments/lanternfin_dive_env/controls.json", "lines": "121-134", "claim": "Full held-key control and the 600 ms/5-frame observation configuration are active."},
+        {"path": "weird_captcha_gym/shared_scripts/incubator_generators/lanternfin_dive.py", "lines": "55-84", "claim": "The condition is applied to deterministic 0.08-dt, 80-ms-tick physics."},
+        {"path": "weird_captcha_gym/shared_scripts/incubator_generators/lanternfin_dive.py", "lines": "60-69", "claim": "Seed-dependent target bearing and offsets are generated."},
+        {"path": "weird_captcha_gym/shared_runtime/app/mechanics/lanternfin_dive.js", "lines": "16-55", "claim": "Retained angular/linear state, position changes, and arrival constraints are implemented."},
+        {"path": "weird_captcha_gym/shared_runtime/app/mechanics/lanternfin_dive.js", "lines": "131-150", "claim": "The full key surface and visible aquarium are installed."},
+        {"path": "weird_captcha_gym/shared_runtime/app/mechanics/lanternfin_dive.js", "lines": "156-192", "claim": "The changing fish and target state and hold are visible."},
+        {"path": "weird_captcha_gym/shared_runtime/app/mechanics/lanternfin_dive.js", "lines": "211-235", "claim": "Keyboard torque, neutralization, certification, and continuous ticking are wired."},
+        {"path": "weird_captcha_gym/shared_runtime/app/mechanics/lanternfin_dive.css", "lines": "1-41", "claim": "The aquarium, depth/orientation legend, controls, and telemetry are visible."},
+        {"path": "weird_captcha_gym/shared_runtime/server/incubator_graders/lanternfin_dive.py", "lines": "31-71", "claim": "The independent replay applies the same fluid dynamics and arrival/hold rules."},
+        {"path": "weird_captcha_gym/shared_runtime/server/incubator_graders/lanternfin_dive.py", "lines": "74-153", "claim": "Full keyboard sources and elapsed tick replay are enforced."},
+        {"path": "weird_captcha_gym/environments/lanternfin_dive_env/tasks/lanternfin_dive_seed_0001/verifier.py", "lines": "22-35", "claim": "The task verifier invokes the independent replay grader."}
+      ],
+      "uncertainties": ["The incubator solver reads private page state; it was treated only as implementation evidence. The classification uses the public canvas, telemetry, and bounded frame sequence."]
+    },
+    {
+      "case_index": 325,
+      "public_environment_name": "Lanternfin Dive",
+      "environment_id": "lanternfin_dive_env",
+      "difficulty": 3,
+      "interaction_mode": "full",
+      "label": "yes",
+      "controls_available": [
+        "Hold A/D for signed tail torque, J/L for signed yaw torque, K/I for signed pitch torque, and Q/E for signed roll torque; release neutralizes each channel.",
+        "Drag the canvas to orbit the camera and inspect pearl depth; this is view-only.",
+        "CERTIFY PEARL ARRIVAL submits the current transcript; ABANDON / FRESH DIVE terminates it."
+      ],
+      "autonomous_processes": [
+        "render() initializes tick 0 with neutral controls and zero translational velocity and starts an 80 ms interval; it runs until certification/submission or max_ticks.",
+        "Every dt=0.08 tick advances tail and fin phase, applies retained damped angular rates and torque, updates yaw/pitch/roll, computes thrust/lift, damps velocity, and changes x/y/z.",
+        "The canvas, tank time, position, attitude, pearl range, and upright-hold readout are redrawn after each tick; arrival requires distance, speed, pitch, and roll bounds and the hold resets when any bound fails.",
+        "At max_ticks=430 the dive window closes; certification only submits the current state and is administrative."
+      ],
+      "grouped_control_modes": [
+        "D_torque_tail: all A/D signed tail torque changes and keyup-to-neutral transitions.",
+        "D_torque_yaw: all J/L signed yaw torque changes and keyup-to-neutral transitions.",
+        "D_torque_pitch: all K/I signed pitch torque changes and keyup-to-neutral transitions.",
+        "D_torque_roll: all Q/E signed roll torque changes and keyup-to-neutral transitions."
+      ],
+      "delta_ms": 320,
+      "window_ms": 600,
+      "clause_i": {"holds": true, "reason": "For D_torque_tail, the same prior key history can have different seed-dependent target bearings and different current fish trajectories. The best next held key, reversal, or release therefore depends on the visible state, so no I_t-only policy q is optimal on every still-salvageable history."},
+      "clause_ii": {"holds": true, "reason": "The five chronological frames in w=600 ms show target-relative motion; the canvas depth/orientation cues and position/attitude/range/hold telemetry let a screenshot-only policy infer velocity and angular trend. Together with I_t, the bounded window selects the torque best at t+320 ms."},
+      "clause_iii": {"holds": true, "reason": "At a reachable salvageable approach state, a D_torque_tail reverse or neutralizing command reduces current momentum. Waiting tau=160 ms lets two 80 ms state updates move and rotate the fish, making that same command strictly less valuable or less advantageous than no-op while an alternative continuation can still succeed; the loss is physical state evolution, not deadline passage."},
+      "common_visible_process": "Difficulty 3 uses target distance 1.16, height 0.27, depth 0.42, initial yaw/pitch/roll 0.20/-0.14/-0.18, arrival radius 0.13, speed limit 0.045, upright tolerance 0.19, and a 9-tick hold. Persistent held torque drives the visible 80 ms inertial fluid process: phases, angular rates, orientation, velocity, position, and hold change while the canvas and telemetry expose them; camera drag changes only the view.",
+      "pre_run": {
+        "threshold": 0.5,
+        "at_least_half": false,
+        "rate": 0.0,
+        "basis": "seeded_probe",
+        "reason": "There is no start gate, so a no-further-action pre-run can only choose one persistent four-channel detent vector before waiting for certification. Exhaustive enumeration of all 81 vectors on the reproducible 100-seed probe found 0 successes (observed 0/100, below 0.5); the diagonal offset, initial tilt, narrow arrival conditions, and long hold require later state-dependent corrections. Certification is administrative.",
+        "seed_probe": {
+          "seeds": ["probe-000", "probe-001", "probe-002", "probe-003", "probe-004", "probe-005", "probe-006", "probe-007", "probe-008", "probe-009", "probe-010", "probe-011", "probe-012", "probe-013", "probe-014", "probe-015", "probe-016", "probe-017", "probe-018", "probe-019", "probe-020", "probe-021", "probe-022", "probe-023", "probe-024", "probe-025", "probe-026", "probe-027", "probe-028", "probe-029", "probe-030", "probe-031", "probe-032", "probe-033", "probe-034", "probe-035", "probe-036", "probe-037", "probe-038", "probe-039", "probe-040", "probe-041", "probe-042", "probe-043", "probe-044", "probe-045", "probe-046", "probe-047", "probe-048", "probe-049", "probe-050", "probe-051", "probe-052", "probe-053", "probe-054", "probe-055", "probe-056", "probe-057", "probe-058", "probe-059", "probe-060", "probe-061", "probe-062", "probe-063", "probe-064", "probe-065", "probe-066", "probe-067", "probe-068", "probe-069", "probe-070", "probe-071", "probe-072", "probe-073", "probe-074", "probe-075", "probe-076", "probe-077", "probe-078", "probe-079", "probe-080", "probe-081", "probe-082", "probe-083", "probe-084", "probe-085", "probe-086", "probe-087", "probe-088", "probe-089", "probe-090", "probe-091", "probe-092", "probe-093", "probe-094", "probe-095", "probe-096", "probe-097", "probe-098", "probe-099"],
+          "numerator": 0,
+          "denominator": 100,
+          "fixed_vectors_tested": 81,
+          "probe_code": [
+            "PYTHONDONTWRITEBYTECODE=1 python3 - <<'PY'",
+            "import copy, importlib.util, itertools, json, os",
+            "from pathlib import Path",
+            "R=Path(os.environ['SOURCE_ROOT'])/'weird_captcha_gym'",
+            "def L(n,p): s=importlib.util.spec_from_file_location(n,p); m=importlib.util.module_from_spec(s); s.loader.exec_module(m); return m",
+            "G=L('lanternfin_gen',R/'shared_scripts/incubator_generators/lanternfin_dive.py'); D=L('lanternfin_grade',R/'shared_runtime/server/incubator_graders/lanternfin_dive.py')",
+            "base=json.loads((R/'environments/lanternfin_dive_env/tasks/lanternfin_dive_seed_0001/task.json').read_text()); P=json.loads((R/'environments/lanternfin_dive_env/controls.json').read_text())['difficulty']; V=list(itertools.product((-1.0,0.0,1.0),repeat=4)); MODE='full'",
+            "def ok(truth,c):",
+            "  s={k:float(v) for k,v in truth['initial'].items()}; u=dict(zip(('tail','yaw','pitch','roll'),c)); h=0",
+            "  for _ in range(int(truth['physics']['max_ticks'])):",
+            "    D._step(s,u,truth['physics']); h=h+1 if D._arrival(s,truth['target'],truth['physics']) else 0",
+            "    if h>=int(truth['physics']['hold_ticks']): return True",
+            "  return False",
+            "for level in range(1,6):",
+            "  n=0",
+            "  for i in range(100):",
+            "    t=copy.deepcopy(base); t['_control_condition']={'difficulty':level,'interaction':MODE,'real_time':'live','difficulty_parameters':P[str(level)]['parameters']}; _,truth=G.generate(t,f'probe-{i:03d}'); n+=any(ok(truth,c) for c in V)",
+            "  print(level,n,100)",
+            "PY"
+          ]
+        }
+      },
+      "files_read_completely": ["AGENTS.md", "weird_captcha_gym/docs/controllability/real-time.md", "weird_captcha_gym/environments/lanternfin_dive_env/controls.json", "weird_captcha_gym/environments/lanternfin_dive_env/env.json", "weird_captcha_gym/environments/lanternfin_dive_env/tasks/lanternfin_dive_seed_0001/setup_task.sh", "weird_captcha_gym/environments/lanternfin_dive_env/tasks/lanternfin_dive_seed_0001/export_result.sh", "weird_captcha_gym/environments/lanternfin_dive_env/tasks/lanternfin_dive_seed_0001/task.json", "weird_captcha_gym/environments/lanternfin_dive_env/tasks/lanternfin_dive_seed_0001/verifier.py", "weird_captcha_gym/shared_scripts/incubator_generators/lanternfin_dive.py", "weird_captcha_gym/shared_runtime/app/mechanics/lanternfin_dive.js", "weird_captcha_gym/shared_runtime/app/mechanics/lanternfin_dive.css", "weird_captcha_gym/shared_runtime/server/incubator_graders/lanternfin_dive.py", "weird_captcha_gym/shared_runtime/verifier_helpers.py", "weird_captcha_gym/tools/incubator_solvers/lanternfin_dive.py"],
+      "source_evidence": [
+        {"path": "weird_captcha_gym/environments/lanternfin_dive_env/controls.json", "lines": "54-73", "claim": "Difficulty 3 uses the exact diagonal target, initial tilt, radius 0.13, speed limit 0.045, upright tolerance 0.19, 9-tick hold, and 430-tick maximum."},
+        {"path": "weird_captcha_gym/environments/lanternfin_dive_env/controls.json", "lines": "121-134", "claim": "Full held-key control and the 600 ms/5-frame observation configuration are active."},
+        {"path": "weird_captcha_gym/shared_scripts/incubator_generators/lanternfin_dive.py", "lines": "55-84", "claim": "The condition is applied to deterministic 0.08-dt, 80-ms-tick physics."},
+        {"path": "weird_captcha_gym/shared_scripts/incubator_generators/lanternfin_dive.py", "lines": "60-69", "claim": "Seed-dependent target bearing and offsets are generated."},
+        {"path": "weird_captcha_gym/shared_runtime/app/mechanics/lanternfin_dive.js", "lines": "16-55", "claim": "Angular and linear state are retained and arrival depends on distance, speed, pitch, and roll."},
+        {"path": "weird_captcha_gym/shared_runtime/app/mechanics/lanternfin_dive.js", "lines": "131-150", "claim": "The full key surface and visible 3D aquarium are installed."},
+        {"path": "weird_captcha_gym/shared_runtime/app/mechanics/lanternfin_dive.js", "lines": "156-192", "claim": "The evolving fish/pearl state and hold are visibly redrawn."},
+        {"path": "weird_captcha_gym/shared_runtime/app/mechanics/lanternfin_dive.js", "lines": "211-235", "claim": "Keyboard torque, neutralization, certification, and continuous ticking are wired."},
+        {"path": "weird_captcha_gym/shared_runtime/app/mechanics/lanternfin_dive.css", "lines": "1-41", "claim": "The visible aquarium, depth cue, controls, and telemetry are styled."},
+        {"path": "weird_captcha_gym/shared_runtime/server/incubator_graders/lanternfin_dive.py", "lines": "31-71", "claim": "The authoritative replay applies retained momentum and arrival/hold rules."},
+        {"path": "weird_captcha_gym/shared_runtime/server/incubator_graders/lanternfin_dive.py", "lines": "74-153", "claim": "Full keyboard sources and all elapsed physical ticks between events are enforced."},
+        {"path": "weird_captcha_gym/environments/lanternfin_dive_env/tasks/lanternfin_dive_seed_0001/verifier.py", "lines": "22-35", "claim": "The exported transcript is checked by the independent grader."}
+      ],
+      "uncertainties": ["The incubator solver reads private page state; it was treated only as implementation evidence. The classification uses the public canvas, telemetry, and bounded frame sequence."]
+    },
+    {
+      "case_index": 326,
+      "public_environment_name": "Lanternfin Dive",
+      "environment_id": "lanternfin_dive_env",
+      "difficulty": 3,
+      "interaction_mode": "simplified",
+      "label": "yes",
+      "controls_available": [
+        "Persistent tail, yaw, pitch, and roll button rows, each with -1, NEUTRAL, and +1; a detent persists until reversed or neutralized.",
+        "Drag the canvas to orbit the camera and inspect pearl depth; this is view-only.",
+        "CERTIFY PEARL ARRIVAL submits the current transcript; ABANDON / FRESH DIVE terminates it."
+      ],
+      "autonomous_processes": [
+        "render() initializes tick 0 with neutral controls and zero translational velocity and starts an 80 ms interval; it runs until certification/submission or max_ticks.",
+        "Every dt=0.08 tick advances tail and fin phase, applies retained damped angular rates and torque, updates yaw/pitch/roll, computes thrust/lift, damps velocity, and changes x/y/z.",
+        "The canvas, tank time, position, attitude, pearl range, and upright-hold readout are redrawn after each tick; arrival requires distance, speed, pitch, and roll bounds and the hold resets when any bound fails.",
+        "At max_ticks=430 the dive window closes; certification only submits the current state and is administrative."
+      ],
+      "grouped_control_modes": [
+        "D_torque_tail: all simplified tail -1/NEUTRAL/+1 button transitions.",
+        "D_torque_yaw: all simplified yaw -1/NEUTRAL/+1 button transitions.",
+        "D_torque_pitch: all simplified pitch -1/NEUTRAL/+1 button transitions.",
+        "D_torque_roll: all simplified roll -1/NEUTRAL/+1 button transitions."
+      ],
+      "delta_ms": 320,
+      "window_ms": 600,
+      "clause_i": {"holds": true, "reason": "For D_torque_tail, the same prior button history can have different seed-dependent target bearings and different current fish trajectories. The best next detent, reversal, or neutralization therefore depends on the visible state, so no I_t-only policy q is optimal on every still-salvageable history."},
+      "clause_ii": {"holds": true, "reason": "The five chronological frames in w=600 ms show target-relative motion; visible depth/orientation cues and position/attitude/range/hold telemetry let a screenshot-only policy infer velocity and angular trend. With I_t, that bounded window selects the torque best at t+320 ms."},
+      "clause_iii": {"holds": true, "reason": "At a reachable salvageable approach state, a D_torque_tail reverse or neutralizing detent reduces current momentum. Waiting tau=160 ms lets two 80 ms state updates move and rotate the fish, making that same action strictly less valuable or less advantageous than no-op while an alternative continuation can still succeed; this is physical state evolution, not deadline passage."},
+      "common_visible_process": "Difficulty 3 uses target distance 1.16, height 0.27, depth 0.42, initial yaw/pitch/roll 0.20/-0.14/-0.18, arrival radius 0.13, speed limit 0.045, upright tolerance 0.19, and a 9-tick hold. Persistent button detents drive the same visible 80 ms inertial fluid process: phases, angular rates, orientation, velocity, position, and hold change while the canvas and telemetry expose them; camera drag changes only the view.",
+      "pre_run": {
+        "threshold": 0.5,
+        "at_least_half": false,
+        "rate": 0.0,
+        "basis": "seeded_probe",
+        "reason": "There is no start gate, so a no-further-action pre-run can only choose one persistent four-channel detent vector before waiting for certification. Exhaustive enumeration of all 81 vectors on the reproducible 100-seed probe found 0 successes (observed 0/100, below 0.5); the diagonal offset, initial tilt, narrow arrival conditions, and long hold require later state-dependent corrections. Certification is administrative.",
+        "seed_probe": {
+          "seeds": ["probe-000", "probe-001", "probe-002", "probe-003", "probe-004", "probe-005", "probe-006", "probe-007", "probe-008", "probe-009", "probe-010", "probe-011", "probe-012", "probe-013", "probe-014", "probe-015", "probe-016", "probe-017", "probe-018", "probe-019", "probe-020", "probe-021", "probe-022", "probe-023", "probe-024", "probe-025", "probe-026", "probe-027", "probe-028", "probe-029", "probe-030", "probe-031", "probe-032", "probe-033", "probe-034", "probe-035", "probe-036", "probe-037", "probe-038", "probe-039", "probe-040", "probe-041", "probe-042", "probe-043", "probe-044", "probe-045", "probe-046", "probe-047", "probe-048", "probe-049", "probe-050", "probe-051", "probe-052", "probe-053", "probe-054", "probe-055", "probe-056", "probe-057", "probe-058", "probe-059", "probe-060", "probe-061", "probe-062", "probe-063", "probe-064", "probe-065", "probe-066", "probe-067", "probe-068", "probe-069", "probe-070", "probe-071", "probe-072", "probe-073", "probe-074", "probe-075", "probe-076", "probe-077", "probe-078", "probe-079", "probe-080", "probe-081", "probe-082", "probe-083", "probe-084", "probe-085", "probe-086", "probe-087", "probe-088", "probe-089", "probe-090", "probe-091", "probe-092", "probe-093", "probe-094", "probe-095", "probe-096", "probe-097", "probe-098", "probe-099"],
+          "numerator": 0,
+          "denominator": 100,
+          "fixed_vectors_tested": 81,
+          "probe_code": [
+            "PYTHONDONTWRITEBYTECODE=1 python3 - <<'PY'",
+            "import copy, importlib.util, itertools, json, os",
+            "from pathlib import Path",
+            "R=Path(os.environ['SOURCE_ROOT'])/'weird_captcha_gym'",
+            "def L(n,p): s=importlib.util.spec_from_file_location(n,p); m=importlib.util.module_from_spec(s); s.loader.exec_module(m); return m",
+            "G=L('lanternfin_gen',R/'shared_scripts/incubator_generators/lanternfin_dive.py'); D=L('lanternfin_grade',R/'shared_runtime/server/incubator_graders/lanternfin_dive.py')",
+            "base=json.loads((R/'environments/lanternfin_dive_env/tasks/lanternfin_dive_seed_0001/task.json').read_text()); P=json.loads((R/'environments/lanternfin_dive_env/controls.json').read_text())['difficulty']; V=list(itertools.product((-1.0,0.0,1.0),repeat=4)); MODE='simplified'",
+            "def ok(truth,c):",
+            "  s={k:float(v) for k,v in truth['initial'].items()}; u=dict(zip(('tail','yaw','pitch','roll'),c)); h=0",
+            "  for _ in range(int(truth['physics']['max_ticks'])):",
+            "    D._step(s,u,truth['physics']); h=h+1 if D._arrival(s,truth['target'],truth['physics']) else 0",
+            "    if h>=int(truth['physics']['hold_ticks']): return True",
+            "  return False",
+            "for level in range(1,6):",
+            "  n=0",
+            "  for i in range(100):",
+            "    t=copy.deepcopy(base); t['_control_condition']={'difficulty':level,'interaction':MODE,'real_time':'live','difficulty_parameters':P[str(level)]['parameters']}; _,truth=G.generate(t,f'probe-{i:03d}'); n+=any(ok(truth,c) for c in V)",
+            "  print(level,n,100)",
+            "PY"
+          ]
+        }
+      },
+      "files_read_completely": ["AGENTS.md", "weird_captcha_gym/docs/controllability/real-time.md", "weird_captcha_gym/environments/lanternfin_dive_env/controls.json", "weird_captcha_gym/environments/lanternfin_dive_env/env.json", "weird_captcha_gym/environments/lanternfin_dive_env/tasks/lanternfin_dive_seed_0001/setup_task.sh", "weird_captcha_gym/environments/lanternfin_dive_env/tasks/lanternfin_dive_seed_0001/export_result.sh", "weird_captcha_gym/environments/lanternfin_dive_env/tasks/lanternfin_dive_seed_0001/task.json", "weird_captcha_gym/environments/lanternfin_dive_env/tasks/lanternfin_dive_seed_0001/verifier.py", "weird_captcha_gym/shared_scripts/incubator_generators/lanternfin_dive.py", "weird_captcha_gym/shared_runtime/app/mechanics/lanternfin_dive.js", "weird_captcha_gym/shared_runtime/app/mechanics/lanternfin_dive.css", "weird_captcha_gym/shared_runtime/server/incubator_graders/lanternfin_dive.py", "weird_captcha_gym/shared_runtime/verifier_helpers.py", "weird_captcha_gym/tools/incubator_solvers/lanternfin_dive.py"],
+      "source_evidence": [
+        {"path": "weird_captcha_gym/environments/lanternfin_dive_env/controls.json", "lines": "54-73", "claim": "Difficulty 3 has the exact diagonal/tilt, arrival, speed, upright, hold, and max-tick parameters."},
+        {"path": "weird_captcha_gym/environments/lanternfin_dive_env/controls.json", "lines": "121-134", "claim": "Simplified persistent buttons and the 600 ms/5-frame observation configuration are active."},
+        {"path": "weird_captcha_gym/shared_scripts/incubator_generators/lanternfin_dive.py", "lines": "55-84", "claim": "The condition is applied to deterministic 0.08-dt physics."},
+        {"path": "weird_captcha_gym/shared_scripts/incubator_generators/lanternfin_dive.py", "lines": "60-69", "claim": "Target bearing and offsets vary by seed."},
+        {"path": "weird_captcha_gym/shared_runtime/app/mechanics/lanternfin_dive.js", "lines": "16-55", "claim": "Retained velocity/rates, position updates, and arrival criteria are implemented."},
+        {"path": "weird_captcha_gym/shared_runtime/app/mechanics/lanternfin_dive.js", "lines": "131-150", "claim": "The simplified button surface and visible 3D model are installed."},
+        {"path": "weird_captcha_gym/shared_runtime/app/mechanics/lanternfin_dive.js", "lines": "156-192", "claim": "The changing fish, target, time, position, attitude, range, and hold are visibly drawn."},
+        {"path": "weird_captcha_gym/shared_runtime/app/mechanics/lanternfin_dive.js", "lines": "211-235", "claim": "Button events, neutralization, certification, and continuous ticking are wired."},
+        {"path": "weird_captcha_gym/shared_runtime/app/mechanics/lanternfin_dive.css", "lines": "1-41", "claim": "The visible aquarium, depth cue, controls, and telemetry are styled."},
+        {"path": "weird_captcha_gym/shared_runtime/server/incubator_graders/lanternfin_dive.py", "lines": "31-71", "claim": "Replay physics and arrival/hold rules match the browser."},
+        {"path": "weird_captcha_gym/shared_runtime/server/incubator_graders/lanternfin_dive.py", "lines": "74-153", "claim": "Simplified input sources and elapsed tick replay are enforced."},
+        {"path": "weird_captcha_gym/environments/lanternfin_dive_env/tasks/lanternfin_dive_seed_0001/verifier.py", "lines": "22-35", "claim": "The independent grader is the task verifier."}
+      ],
+      "uncertainties": ["The incubator solver reads private page state; it was treated only as implementation evidence. The classification uses the public canvas, telemetry, and bounded frame sequence."]
+    },
+    {
+      "case_index": 322,
+      "public_environment_name": "Lanternfin Dive",
+      "environment_id": "lanternfin_dive_env",
+      "difficulty": 1,
+      "interaction_mode": "simplified",
+      "label": "no",
+      "controls_available": [
+        "Persistent tail, yaw, pitch, and roll button rows, each with -1, NEUTRAL, and +1; a detent persists until reversed or neutralized.",
+        "Drag the canvas to orbit the camera and inspect pearl depth; this is view-only.",
+        "CERTIFY PEARL ARRIVAL submits the current transcript; ABANDON / FRESH DIVE terminates it."
+      ],
+      "autonomous_processes": [
+        "render() initializes tick 0 with neutral controls and zero translational velocity and starts an 80 ms interval; it runs until certification/submission or max_ticks.",
+        "Every dt=0.08 tick advances tail and fin phase, applies retained damped angular rates and torque, updates yaw/pitch/roll, computes thrust/lift, damps velocity, and changes x/y/z.",
+        "The canvas, tank time, position, attitude, pearl range, and upright-hold readout are redrawn after each tick; arrival requires distance, speed, pitch, and roll bounds and the hold resets when any bound fails.",
+        "At max_ticks=260 the dive window closes; certification only submits the current state and is administrative."
+      ],
+      "grouped_control_modes": [
+        "D_torque_tail: all simplified tail -1/NEUTRAL/+1 button transitions.",
+        "D_torque_yaw: all simplified yaw -1/NEUTRAL/+1 button transitions.",
+        "D_torque_pitch: all simplified pitch -1/NEUTRAL/+1 button transitions.",
+        "D_torque_roll: all simplified roll -1/NEUTRAL/+1 button transitions."
+      ],
+      "delta_ms": 320,
+      "window_ms": 600,
+      "clause_i": {
+        "holds": true,
+        "reason": "For D_torque_tail, histories with the same prior button events and task times can have different generated target bearings, target offsets, and current fish trajectories. The best next detent, reversal, or neutralization therefore differs, so no policy q using only I_t can be optimal on every still-salvageable history."
+      },
+      "clause_ii": {
+        "holds": true,
+        "reason": "With w=600 ms and five chronological frames, a screenshot-only policy can track the fish against the visible destination pearl, use the amber depth cue and camera orbit, read position/attitude/range/hold, and infer velocity and angular trend from consecutive frames. Together with I_t (the known prior detents), this bounded window is sufficient to choose the torque best at t+320 ms."
+      },
+      "clause_iii": {
+        "holds": true,
+        "reason": "Use D_torque_tail at a reachable approach state inside the salvageable set: a reverse or neutralizing tail detent can reduce current linear momentum now. If no action arrives for tau=160 ms (< Delta), the 80 ms steps move the fish and retain damped velocity and angular state, so the same command lands with a different position, heading, and speed and has strictly lower value or advantage over no-op, while another continuation can still succeed. The loss is non-clock fish-state evolution, not the max-tick deadline."
+      },
+      "common_visible_process": "The same visible fluid-control process witnesses all three clauses: difficulty 1 generates a target around distance 0.62, height 0.04, and depth 0.08, starts at yaw/pitch/roll 0.00/0.02/0.03, and uses arrival radius 0.17, speed limit 0.055, upright tolerance 0.28, and a 5-tick hold. Persistent button detents drive the fish through changing orientation, velocity, and position; the canvas and telemetry expose that change. Camera drag changes only the view.",
+      "pre_run": {
+        "threshold": 0.5,
+        "at_least_half": true,
+        "rate": 0.69,
+        "basis": "seeded_probe",
+        "reason": "There is no separate start gate: render initializes the fish at tick 0 and immediately starts the 80 ms timer, so a no-further-action pre-run can only choose one persistent four-channel detent vector and then wait for certification. Exhaustive enumeration of all 81 vectors on the reproducible 100-seed probe found 69 successes (observed 69/100, above the 0.5 threshold); tail=+1 with the other channels neutral already covers a majority. Certification is administrative. This pre-run threshold overrides the mathematical real-time witness, so the catalog label is no.",
+        "seed_probe": {
+          "seeds": ["probe-000", "probe-001", "probe-002", "probe-003", "probe-004", "probe-005", "probe-006", "probe-007", "probe-008", "probe-009", "probe-010", "probe-011", "probe-012", "probe-013", "probe-014", "probe-015", "probe-016", "probe-017", "probe-018", "probe-019", "probe-020", "probe-021", "probe-022", "probe-023", "probe-024", "probe-025", "probe-026", "probe-027", "probe-028", "probe-029", "probe-030", "probe-031", "probe-032", "probe-033", "probe-034", "probe-035", "probe-036", "probe-037", "probe-038", "probe-039", "probe-040", "probe-041", "probe-042", "probe-043", "probe-044", "probe-045", "probe-046", "probe-047", "probe-048", "probe-049", "probe-050", "probe-051", "probe-052", "probe-053", "probe-054", "probe-055", "probe-056", "probe-057", "probe-058", "probe-059", "probe-060", "probe-061", "probe-062", "probe-063", "probe-064", "probe-065", "probe-066", "probe-067", "probe-068", "probe-069", "probe-070", "probe-071", "probe-072", "probe-073", "probe-074", "probe-075", "probe-076", "probe-077", "probe-078", "probe-079", "probe-080", "probe-081", "probe-082", "probe-083", "probe-084", "probe-085", "probe-086", "probe-087", "probe-088", "probe-089", "probe-090", "probe-091", "probe-092", "probe-093", "probe-094", "probe-095", "probe-096", "probe-097", "probe-098", "probe-099"],
+          "numerator": 69,
+          "denominator": 100,
+          "fixed_vectors_tested": 81,
+          "probe_code": [
+            "PYTHONDONTWRITEBYTECODE=1 python3 - <<'PY'",
+            "import copy, importlib.util, itertools, json, os",
+            "from pathlib import Path",
+            "R=Path(os.environ['SOURCE_ROOT'])/'weird_captcha_gym'",
+            "def L(n,p): s=importlib.util.spec_from_file_location(n,p); m=importlib.util.module_from_spec(s); s.loader.exec_module(m); return m",
+            "G=L('lanternfin_gen',R/'shared_scripts/incubator_generators/lanternfin_dive.py'); D=L('lanternfin_grade',R/'shared_runtime/server/incubator_graders/lanternfin_dive.py')",
+            "base=json.loads((R/'environments/lanternfin_dive_env/tasks/lanternfin_dive_seed_0001/task.json').read_text()); P=json.loads((R/'environments/lanternfin_dive_env/controls.json').read_text())['difficulty']; V=list(itertools.product((-1.0,0.0,1.0),repeat=4)); MODE='simplified'",
+            "def ok(truth,c):",
+            "  s={k:float(v) for k,v in truth['initial'].items()}; u=dict(zip(('tail','yaw','pitch','roll'),c)); h=0",
+            "  for _ in range(int(truth['physics']['max_ticks'])):",
+            "    D._step(s,u,truth['physics']); h=h+1 if D._arrival(s,truth['target'],truth['physics']) else 0",
+            "    if h>=int(truth['physics']['hold_ticks']): return True",
+            "  return False",
+            "for level in range(1,6):",
+            "  n=0",
+            "  for i in range(100):",
+            "    t=copy.deepcopy(base); t['_control_condition']={'difficulty':level,'interaction':MODE,'real_time':'live','difficulty_parameters':P[str(level)]['parameters']}; _,truth=G.generate(t,f'probe-{i:03d}'); n+=any(ok(truth,c) for c in V)",
+            "  print(level,n,100)",
+            "PY"
+          ]
+        }
+      },
+      "files_read_completely": ["AGENTS.md", "weird_captcha_gym/docs/controllability/real-time.md", "weird_captcha_gym/environments/lanternfin_dive_env/controls.json", "weird_captcha_gym/environments/lanternfin_dive_env/env.json", "weird_captcha_gym/environments/lanternfin_dive_env/tasks/lanternfin_dive_seed_0001/setup_task.sh", "weird_captcha_gym/environments/lanternfin_dive_env/tasks/lanternfin_dive_seed_0001/export_result.sh", "weird_captcha_gym/environments/lanternfin_dive_env/tasks/lanternfin_dive_seed_0001/task.json", "weird_captcha_gym/environments/lanternfin_dive_env/tasks/lanternfin_dive_seed_0001/verifier.py", "weird_captcha_gym/shared_scripts/incubator_generators/lanternfin_dive.py", "weird_captcha_gym/shared_runtime/app/mechanics/lanternfin_dive.js", "weird_captcha_gym/shared_runtime/app/mechanics/lanternfin_dive.css", "weird_captcha_gym/shared_runtime/server/incubator_graders/lanternfin_dive.py", "weird_captcha_gym/shared_runtime/verifier_helpers.py", "weird_captcha_gym/tools/incubator_solvers/lanternfin_dive.py"],
+      "source_evidence": [
+        {"path": "weird_captcha_gym/environments/lanternfin_dive_env/controls.json", "lines": "10-30", "claim": "Difficulty 1 uses a near-aligned short target, broad arrival radius 0.17, speed limit 0.055, upright tolerance 0.28, 5-tick hold, and 260-tick maximum."},
+        {"path": "weird_captcha_gym/environments/lanternfin_dive_env/controls.json", "lines": "121-134", "claim": "Simplified persistent signed buttons are implemented and the observation window is 600 ms with 5 frames."},
+        {"path": "weird_captcha_gym/shared_scripts/incubator_generators/lanternfin_dive.py", "lines": "55-84", "claim": "The selected difficulty parameters become deterministic 0.08-dt, 80-ms-tick physics."},
+        {"path": "weird_captcha_gym/shared_scripts/incubator_generators/lanternfin_dive.py", "lines": "60-69", "claim": "Seeds vary the visible target bearing, distance, height, and depth."},
+        {"path": "weird_captcha_gym/shared_runtime/app/mechanics/lanternfin_dive.js", "lines": "16-55", "claim": "The browser retains damped velocity and angular state, changes position, and checks arrival constraints."},
+        {"path": "weird_captcha_gym/shared_runtime/app/mechanics/lanternfin_dive.js", "lines": "131-150", "claim": "The simplified button surface and visible 3D aquarium model are selected from the interaction condition."},
+        {"path": "weird_captcha_gym/shared_runtime/app/mechanics/lanternfin_dive.js", "lines": "156-192", "claim": "Canvas and telemetry expose the evolving target/fish state and hold."},
+        {"path": "weird_captcha_gym/shared_runtime/app/mechanics/lanternfin_dive.js", "lines": "211-235", "claim": "Button detents generate mode-specific torque events and the interval ticks continuously."},
+        {"path": "weird_captcha_gym/shared_runtime/app/mechanics/lanternfin_dive.css", "lines": "1-41", "claim": "The CSS defines the visible aquarium, depth legend, controls, and telemetry."},
+        {"path": "weird_captcha_gym/shared_runtime/server/incubator_graders/lanternfin_dive.py", "lines": "31-71", "claim": "The independent replay uses the same fluid step and arrival/hold rules."},
+        {"path": "weird_captcha_gym/shared_runtime/server/incubator_graders/lanternfin_dive.py", "lines": "74-153", "claim": "The grader enforces simplified input sources and advances all physical ticks between events."},
+        {"path": "weird_captcha_gym/environments/lanternfin_dive_env/tasks/lanternfin_dive_seed_0001/verifier.py", "lines": "22-35", "claim": "The task verifier delegates to the independent replay grader."}
+      ],
+      "uncertainties": ["The incubator solver reads private page state; it was treated only as implementation evidence. The classification uses the public canvas, telemetry, and bounded frame sequence."]
+    },
+    {
+      "case_index": 323,
+      "public_environment_name": "Lanternfin Dive",
+      "environment_id": "lanternfin_dive_env",
+      "difficulty": 2,
+      "interaction_mode": "full",
+      "label": "yes",
+      "controls_available": [
+        "Hold A/D for signed tail torque, J/L for signed yaw torque, K/I for signed pitch torque, and Q/E for signed roll torque; release neutralizes each channel.",
+        "Drag the canvas to orbit the camera and inspect pearl depth; this is view-only.",
+        "CERTIFY PEARL ARRIVAL submits the current transcript; ABANDON / FRESH DIVE terminates it."
+      ],
+      "autonomous_processes": [
+        "render() initializes tick 0 with neutral controls and zero translational velocity and starts an 80 ms interval; it runs until certification/submission or max_ticks.",
+        "Every dt=0.08 tick advances tail and fin phase, applies retained damped angular rates and torque, updates yaw/pitch/roll, computes thrust/lift, damps velocity, and changes x/y/z.",
+        "The canvas, tank time, position, attitude, pearl range, and upright-hold readout are redrawn after each tick; arrival requires distance, speed, pitch, and roll bounds and the hold resets when any bound fails.",
+        "At max_ticks=340 the dive window closes; certification only submits the current state and is administrative."
+      ],
+      "grouped_control_modes": [
+        "D_torque_tail: all A/D signed tail torque changes and keyup-to-neutral transitions.",
+        "D_torque_yaw: all J/L signed yaw torque changes and keyup-to-neutral transitions.",
+        "D_torque_pitch: all K/I signed pitch torque changes and keyup-to-neutral transitions.",
+        "D_torque_roll: all Q/E signed roll torque changes and keyup-to-neutral transitions."
+      ],
+      "delta_ms": 320,
+      "window_ms": 600,
+      "clause_i": {
+        "holds": true,
+        "reason": "For D_torque_tail, histories with the same prior key events and task times can have different generated target bearings, target offsets, and current fish trajectories. The best next held key, reversal, or release therefore differs, so no policy q using only I_t can be optimal on every still-salvageable history; a fixed key schedule cannot see the pearl or current motion."
+      },
+      "clause_ii": {
+        "holds": true,
+        "reason": "With w=600 ms and five chronological frames, a screenshot-only policy can track the fish against the visible destination pearl, use the amber depth cue and camera orbit, read position/attitude/range/hold, and infer velocity and angular trend from consecutive frames. Together with I_t, this bounded window is sufficient to choose the torque best at t+320 ms."
+      },
+      "clause_iii": {
+        "holds": true,
+        "reason": "Use D_torque_tail at a reachable approach state inside the salvageable set: a reverse or neutralizing tail command can reduce current linear momentum now. If no action arrives for tau=160 ms (< Delta), the 80 ms steps move the fish and retain damped velocity and angular state, so the same command lands with a different position, heading, and speed and has strictly lower value or advantage over no-op, while another continuation can still succeed. The loss is non-clock fish-state evolution, not the max-tick deadline."
+      },
+      "common_visible_process": "The same visible fluid-control process witnesses all three clauses: difficulty 2 generates a target around distance 0.92, height 0.18, and depth 0.28, starts at yaw/pitch/roll -0.12/0.08/0.08, and uses arrival radius 0.15, speed limit 0.05, upright tolerance 0.23, and a 7-tick hold. Persistent held torque drives changing orientation, velocity, and position; the canvas and telemetry expose that change. Camera drag changes only the view.",
+      "pre_run": {
+        "threshold": 0.5,
+        "at_least_half": false,
+        "rate": 0.06,
+        "basis": "seeded_probe",
+        "reason": "There is no separate start gate, so a no-further-action pre-run can only choose one persistent four-channel detent vector before waiting for certification. Exhaustive enumeration of all 81 vectors on the reproducible 100-seed probe found 6 successes (observed 6/100, below the 0.5 threshold). The higher/offset target, initial attitude, and tighter arrival conditions require subsequent state-dependent corrections; certification is administrative."
+        ,"seed_probe": {
+          "seeds": ["probe-000", "probe-001", "probe-002", "probe-003", "probe-004", "probe-005", "probe-006", "probe-007", "probe-008", "probe-009", "probe-010", "probe-011", "probe-012", "probe-013", "probe-014", "probe-015", "probe-016", "probe-017", "probe-018", "probe-019", "probe-020", "probe-021", "probe-022", "probe-023", "probe-024", "probe-025", "probe-026", "probe-027", "probe-028", "probe-029", "probe-030", "probe-031", "probe-032", "probe-033", "probe-034", "probe-035", "probe-036", "probe-037", "probe-038", "probe-039", "probe-040", "probe-041", "probe-042", "probe-043", "probe-044", "probe-045", "probe-046", "probe-047", "probe-048", "probe-049", "probe-050", "probe-051", "probe-052", "probe-053", "probe-054", "probe-055", "probe-056", "probe-057", "probe-058", "probe-059", "probe-060", "probe-061", "probe-062", "probe-063", "probe-064", "probe-065", "probe-066", "probe-067", "probe-068", "probe-069", "probe-070", "probe-071", "probe-072", "probe-073", "probe-074", "probe-075", "probe-076", "probe-077", "probe-078", "probe-079", "probe-080", "probe-081", "probe-082", "probe-083", "probe-084", "probe-085", "probe-086", "probe-087", "probe-088", "probe-089", "probe-090", "probe-091", "probe-092", "probe-093", "probe-094", "probe-095", "probe-096", "probe-097", "probe-098", "probe-099"],
+          "numerator": 6,
+          "denominator": 100,
+          "fixed_vectors_tested": 81,
+          "probe_code": [
+            "PYTHONDONTWRITEBYTECODE=1 python3 - <<'PY'",
+            "import copy, importlib.util, itertools, json, os",
+            "from pathlib import Path",
+            "R=Path(os.environ['SOURCE_ROOT'])/'weird_captcha_gym'",
+            "def L(n,p): s=importlib.util.spec_from_file_location(n,p); m=importlib.util.module_from_spec(s); s.loader.exec_module(m); return m",
+            "G=L('lanternfin_gen',R/'shared_scripts/incubator_generators/lanternfin_dive.py'); D=L('lanternfin_grade',R/'shared_runtime/server/incubator_graders/lanternfin_dive.py')",
+            "base=json.loads((R/'environments/lanternfin_dive_env/tasks/lanternfin_dive_seed_0001/task.json').read_text()); P=json.loads((R/'environments/lanternfin_dive_env/controls.json').read_text())['difficulty']; V=list(itertools.product((-1.0,0.0,1.0),repeat=4)); MODE='full'",
+            "def ok(truth,c):",
+            "  s={k:float(v) for k,v in truth['initial'].items()}; u=dict(zip(('tail','yaw','pitch','roll'),c)); h=0",
+            "  for _ in range(int(truth['physics']['max_ticks'])):",
+            "    D._step(s,u,truth['physics']); h=h+1 if D._arrival(s,truth['target'],truth['physics']) else 0",
+            "    if h>=int(truth['physics']['hold_ticks']): return True",
+            "  return False",
+            "for level in range(1,6):",
+            "  n=0",
+            "  for i in range(100):",
+            "    t=copy.deepcopy(base); t['_control_condition']={'difficulty':level,'interaction':MODE,'real_time':'live','difficulty_parameters':P[str(level)]['parameters']}; _,truth=G.generate(t,f'probe-{i:03d}'); n+=any(ok(truth,c) for c in V)",
+            "  print(level,n,100)",
+            "PY"
+          ]
+        }
+      },
+      "files_read_completely": ["AGENTS.md", "weird_captcha_gym/docs/controllability/real-time.md", "weird_captcha_gym/environments/lanternfin_dive_env/controls.json", "weird_captcha_gym/environments/lanternfin_dive_env/env.json", "weird_captcha_gym/environments/lanternfin_dive_env/tasks/lanternfin_dive_seed_0001/setup_task.sh", "weird_captcha_gym/environments/lanternfin_dive_env/tasks/lanternfin_dive_seed_0001/export_result.sh", "weird_captcha_gym/environments/lanternfin_dive_env/tasks/lanternfin_dive_seed_0001/task.json", "weird_captcha_gym/environments/lanternfin_dive_env/tasks/lanternfin_dive_seed_0001/verifier.py", "weird_captcha_gym/shared_scripts/incubator_generators/lanternfin_dive.py", "weird_captcha_gym/shared_runtime/app/mechanics/lanternfin_dive.js", "weird_captcha_gym/shared_runtime/app/mechanics/lanternfin_dive.css", "weird_captcha_gym/shared_runtime/server/incubator_graders/lanternfin_dive.py", "weird_captcha_gym/shared_runtime/verifier_helpers.py", "weird_captcha_gym/tools/incubator_solvers/lanternfin_dive.py"],
+      "source_evidence": [
+        {"path": "weird_captcha_gym/environments/lanternfin_dive_env/controls.json", "lines": "32-51", "claim": "Difficulty 2 uses the 0.92/0.18/0.28 target profile, initial attitude -0.12/0.08/0.08, radius 0.15, speed limit 0.05, upright tolerance 0.23, 7-tick hold, and 340-tick maximum."},
+        {"path": "weird_captcha_gym/environments/lanternfin_dive_env/controls.json", "lines": "121-134", "claim": "Full held-key control is implemented with a 600 ms, 5-frame observation window."},
+        {"path": "weird_captcha_gym/shared_scripts/incubator_generators/lanternfin_dive.py", "lines": "55-84", "claim": "Difficulty parameters become deterministic 0.08-dt, 80-ms-tick physics."},
+        {"path": "weird_captcha_gym/shared_scripts/incubator_generators/lanternfin_dive.py", "lines": "60-69", "claim": "The seed varies visible target bearing and offsets."},
+        {"path": "weird_captcha_gym/shared_runtime/app/mechanics/lanternfin_dive.js", "lines": "16-55", "claim": "Damped angular/linear state changes and arrival constraints make current motion outcome-affecting."},
+        {"path": "weird_captcha_gym/shared_runtime/app/mechanics/lanternfin_dive.js", "lines": "131-150", "claim": "The full held-key surface and aquarium model are installed."},
+        {"path": "weird_captcha_gym/shared_runtime/app/mechanics/lanternfin_dive.js", "lines": "156-192", "claim": "The changing fish, target, time, position, attitude, range, and hold are visibly drawn."},
+        {"path": "weird_captcha_gym/shared_runtime/app/mechanics/lanternfin_dive.js", "lines": "211-235", "claim": "Key events, neutralization, certification, and continuous interval ticking are bound in the browser."},
+        {"path": "weird_captcha_gym/shared_runtime/app/mechanics/lanternfin_dive.css", "lines": "1-41", "claim": "The relevant visible canvas and telemetry/control presentation is styled here."},
+        {"path": "weird_captcha_gym/shared_runtime/server/incubator_graders/lanternfin_dive.py", "lines": "31-71", "claim": "The authoritative replay applies retained momentum and checks arrival."},
+        {"path": "weird_captcha_gym/shared_runtime/server/incubator_graders/lanternfin_dive.py", "lines": "74-153", "claim": "Full keyboard sources are enforced and elapsed ticks are replayed between events."},
+        {"path": "weird_captcha_gym/environments/lanternfin_dive_env/tasks/lanternfin_dive_seed_0001/verifier.py", "lines": "22-35", "claim": "The exported transcript is checked by the independent Lanternfin grader."}
+      ],
+      "uncertainties": ["The incubator solver reads private page state; it was treated only as implementation evidence. The classification uses the public canvas, telemetry, and bounded frame sequence."]
+    },
+    {
+      "case_index": 324,
+      "public_environment_name": "Lanternfin Dive",
+      "environment_id": "lanternfin_dive_env",
+      "difficulty": 2,
+      "interaction_mode": "simplified",
+      "label": "yes",
+      "controls_available": [
+        "Persistent tail, yaw, pitch, and roll button rows, each with -1, NEUTRAL, and +1; a detent persists until reversed or neutralized.",
+        "Drag the canvas to orbit the camera and inspect pearl depth; this is view-only.",
+        "CERTIFY PEARL ARRIVAL submits the current transcript; ABANDON / FRESH DIVE terminates it."
+      ],
+      "autonomous_processes": [
+        "render() initializes tick 0 with neutral controls and zero translational velocity and starts an 80 ms interval; it runs until certification/submission or max_ticks.",
+        "Every dt=0.08 tick advances tail and fin phase, applies retained damped angular rates and torque, updates yaw/pitch/roll, computes thrust/lift, damps velocity, and changes x/y/z.",
+        "The canvas, tank time, position, attitude, pearl range, and upright-hold readout are redrawn after each tick; arrival requires distance, speed, pitch, and roll bounds and the hold resets when any bound fails.",
+        "At max_ticks=340 the dive window closes; certification only submits the current state and is administrative."
+      ],
+      "grouped_control_modes": [
+        "D_torque_tail: all simplified tail -1/NEUTRAL/+1 button transitions.",
+        "D_torque_yaw: all simplified yaw -1/NEUTRAL/+1 button transitions.",
+        "D_torque_pitch: all simplified pitch -1/NEUTRAL/+1 button transitions.",
+        "D_torque_roll: all simplified roll -1/NEUTRAL/+1 button transitions."
+      ],
+      "delta_ms": 320,
+      "window_ms": 600,
+      "clause_i": {"holds": true, "reason": "For D_torque_tail, the same prior button history can lead to different target bearings, offsets, and fish trajectories across seeds. The best next detent, reversal, or neutralization therefore depends on the visible state, so no I_t-only policy q is optimal on every C_Delta history."},
+      "clause_ii": {"holds": true, "reason": "The five chronological frames in w=600 ms show target-relative fish motion; visible depth/orientation cues and position/attitude/range/hold telemetry let a screenshot-only policy infer velocity and angular trend. With I_t, that bounded window selects the torque best at t+320 ms."},
+      "clause_iii": {"holds": true, "reason": "At a reachable salvageable approach state, a D_torque_tail reverse or neutralizing detent reduces current momentum. Waiting tau=160 ms lets two 80 ms state updates move and rotate the fish, making that same action strictly less valuable or less advantageous than no-op while an alternative continuation can still succeed; this is physical state evolution, not deadline passage."},
+      "common_visible_process": "Difficulty 2 uses target distance 0.92, height 0.18, depth 0.28, initial yaw/pitch/roll -0.12/0.08/0.08, arrival radius 0.15, speed limit 0.05, upright tolerance 0.23, and a 7-tick hold. Persistent button detents drive the same visible 80 ms inertial fluid process: phases, angular rates, orientation, velocity, position, and hold change while the canvas and telemetry expose them; camera drag is view-only.",
+      "pre_run": {
+        "threshold": 0.5,
+        "at_least_half": false,
+        "rate": 0.06,
+        "basis": "seeded_probe",
+        "reason": "The runtime has no start gate, so a no-further-action pre-run can only choose one persistent four-channel detent vector before waiting for certification. Exhaustive enumeration of all 81 vectors on the reproducible 100-seed probe found 6 successes (observed 6/100, below 0.5); the offset target and attitude require later state-dependent corrections. Certification is administrative.",
+        "seed_probe": {"seeds": ["probe-000", "probe-001", "probe-002", "probe-003", "probe-004", "probe-005", "probe-006", "probe-007", "probe-008", "probe-009", "probe-010", "probe-011", "probe-012", "probe-013", "probe-014", "probe-015", "probe-016", "probe-017", "probe-018", "probe-019", "probe-020", "probe-021", "probe-022", "probe-023", "probe-024", "probe-025", "probe-026", "probe-027", "probe-028", "probe-029", "probe-030", "probe-031", "probe-032", "probe-033", "probe-034", "probe-035", "probe-036", "probe-037", "probe-038", "probe-039", "probe-040", "probe-041", "probe-042", "probe-043", "probe-044", "probe-045", "probe-046", "probe-047", "probe-048", "probe-049", "probe-050", "probe-051", "probe-052", "probe-053", "probe-054", "probe-055", "probe-056", "probe-057", "probe-058", "probe-059", "probe-060", "probe-061", "probe-062", "probe-063", "probe-064", "probe-065", "probe-066", "probe-067", "probe-068", "probe-069", "probe-070", "probe-071", "probe-072", "probe-073", "probe-074", "probe-075", "probe-076", "probe-077", "probe-078", "probe-079", "probe-080", "probe-081", "probe-082", "probe-083", "probe-084", "probe-085", "probe-086", "probe-087", "probe-088", "probe-089", "probe-090", "probe-091", "probe-092", "probe-093", "probe-094", "probe-095", "probe-096", "probe-097", "probe-098", "probe-099"], "numerator": 6, "denominator": 100, "fixed_vectors_tested": 81, "probe_code": ["PYTHONDONTWRITEBYTECODE=1 python3 - <<'PY'","import copy, importlib.util, itertools, json, os","from pathlib import Path","R=Path(os.environ['SOURCE_ROOT'])/'weird_captcha_gym'","def L(n,p): s=importlib.util.spec_from_file_location(n,p); m=importlib.util.module_from_spec(s); s.loader.exec_module(m); return m","G=L('lanternfin_gen',R/'shared_scripts/incubator_generators/lanternfin_dive.py'); D=L('lanternfin_grade',R/'shared_runtime/server/incubator_graders/lanternfin_dive.py')","base=json.loads((R/'environments/lanternfin_dive_env/tasks/lanternfin_dive_seed_0001/task.json').read_text()); P=json.loads((R/'environments/lanternfin_dive_env/controls.json').read_text())['difficulty']; V=list(itertools.product((-1.0,0.0,1.0),repeat=4)); MODE='simplified'","def ok(truth,c):","  s={k:float(v) for k,v in truth['initial'].items()}; u=dict(zip(('tail','yaw','pitch','roll'),c)); h=0","  for _ in range(int(truth['physics']['max_ticks'])):","    D._step(s,u,truth['physics']); h=h+1 if D._arrival(s,truth['target'],truth['physics']) else 0","    if h>=int(truth['physics']['hold_ticks']): return True","  return False","for level in range(1,6):","  n=0","  for i in range(100):","    t=copy.deepcopy(base); t['_control_condition']={'difficulty':level,'interaction':MODE,'real_time':'live','difficulty_parameters':P[str(level)]['parameters']}; _,truth=G.generate(t,f'probe-{i:03d}'); n+=any(ok(truth,c) for c in V)","  print(level,n,100)","PY"]}
+      },
+      "files_read_completely": ["AGENTS.md", "weird_captcha_gym/docs/controllability/real-time.md", "weird_captcha_gym/environments/lanternfin_dive_env/controls.json", "weird_captcha_gym/environments/lanternfin_dive_env/env.json", "weird_captcha_gym/environments/lanternfin_dive_env/tasks/lanternfin_dive_seed_0001/setup_task.sh", "weird_captcha_gym/environments/lanternfin_dive_env/tasks/lanternfin_dive_seed_0001/export_result.sh", "weird_captcha_gym/environments/lanternfin_dive_env/tasks/lanternfin_dive_seed_0001/task.json", "weird_captcha_gym/environments/lanternfin_dive_env/tasks/lanternfin_dive_seed_0001/verifier.py", "weird_captcha_gym/shared_scripts/incubator_generators/lanternfin_dive.py", "weird_captcha_gym/shared_runtime/app/mechanics/lanternfin_dive.js", "weird_captcha_gym/shared_runtime/app/mechanics/lanternfin_dive.css", "weird_captcha_gym/shared_runtime/server/incubator_graders/lanternfin_dive.py", "weird_captcha_gym/shared_runtime/verifier_helpers.py", "weird_captcha_gym/tools/incubator_solvers/lanternfin_dive.py"],
+      "source_evidence": [
+        {"path": "weird_captcha_gym/environments/lanternfin_dive_env/controls.json", "lines": "32-51", "claim": "Difficulty 2 has the exact offset/attitude, arrival, speed, upright, hold, and max-tick parameters."},
+        {"path": "weird_captcha_gym/environments/lanternfin_dive_env/controls.json", "lines": "121-134", "claim": "Simplified persistent buttons and the 600 ms/5-frame observation configuration are active."},
+        {"path": "weird_captcha_gym/shared_scripts/incubator_generators/lanternfin_dive.py", "lines": "55-84", "claim": "The condition is applied to deterministic 0.08-dt physics."},
+        {"path": "weird_captcha_gym/shared_scripts/incubator_generators/lanternfin_dive.py", "lines": "60-69", "claim": "Target bearing and offsets vary by seed."},
+        {"path": "weird_captcha_gym/shared_runtime/app/mechanics/lanternfin_dive.js", "lines": "16-55", "claim": "Retained velocity/rates, position updates, and arrival criteria are implemented."},
+        {"path": "weird_captcha_gym/shared_runtime/app/mechanics/lanternfin_dive.js", "lines": "131-150", "claim": "The simplified input surface and visible 3D model are installed."},
+        {"path": "weird_captcha_gym/shared_runtime/app/mechanics/lanternfin_dive.js", "lines": "156-192", "claim": "The evolving target-relative state and hold are visible."},
+        {"path": "weird_captcha_gym/shared_runtime/app/mechanics/lanternfin_dive.js", "lines": "211-235", "claim": "Button changes, certification, and continuous 80 ms ticking are wired."},
+        {"path": "weird_captcha_gym/shared_runtime/app/mechanics/lanternfin_dive.css", "lines": "1-41", "claim": "Relevant aquarium/control/telemetry presentation is styled."},
+        {"path": "weird_captcha_gym/shared_runtime/server/incubator_graders/lanternfin_dive.py", "lines": "31-71", "claim": "Replay physics and arrival/hold rules match the browser."},
+        {"path": "weird_captcha_gym/shared_runtime/server/incubator_graders/lanternfin_dive.py", "lines": "74-153", "claim": "Simplified event sources and elapsed tick replay are enforced."},
+        {"path": "weird_captcha_gym/environments/lanternfin_dive_env/tasks/lanternfin_dive_seed_0001/verifier.py", "lines": "22-35", "claim": "The authoritative task verifier invokes the independent grader."}
+      ],
+      "uncertainties": ["The incubator solver reads private page state; it was treated only as implementation evidence. The classification uses the public canvas, telemetry, and bounded frame sequence."]
+    }
+  ]
+}

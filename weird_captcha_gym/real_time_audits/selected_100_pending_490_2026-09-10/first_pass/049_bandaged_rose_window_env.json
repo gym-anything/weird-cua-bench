@@ -1,0 +1,123 @@
+{
+  "case_index": 49,
+  "public_environment_name": "Bandaged Rose Window",
+  "environment_id": "bandaged_rose_window_env",
+  "difficulty": 5,
+  "interaction_mode": "full",
+  "label": "no",
+  "controls_available": [
+    "Difficulty 5 uses an exact breadth-first scramble depth of 14.",
+    "Full interaction exposes three brass handles, one for each of NORTH, SOUTHWEST, and SOUTHEAST; dragging a handle by at least 0.45 radians requests a clockwise or counter-clockwise sixth-turn.",
+    "A requested turn is checked against the current visible arrangement: a legal turn changes the rose, while an illegal turn is refused and leaves the rose unchanged.",
+    "SEAL submits the transcript and RETRY is available only after a failed submission; both are administrative. The mechanic has no outcome-affecting keyboard binding in full mode."
+  ],
+  "autonomous_processes": [
+    "None between agent actions: the current rose, handle positions, and legal-turn set remain unchanged while the task is idle.",
+    "During one full drag, pointermove events reposition only the dragged handle as part of that same agent-controlled input; they do not autonomously turn the rose.",
+    "On pointerup, the legal check, state update or refusal, event recording, and rerender happen synchronously; no post-release timer, physics tick, or task animation follows.",
+    "The SEAL response and a RETRY fresh render are action-triggered administrative UI changes, not an outcome-affecting autonomous phase."
+  ],
+  "grouped_control_modes": [
+    {
+      "id": "D_rim_drag",
+      "description": "All full-mode rim drags on the three disc handles in either direction, across every seed and occurrence; the graded input source is rim_drag.",
+      "outcome_affecting": true
+    }
+  ],
+  "delta_ms": null,
+  "window_ms": 0,
+  "clause_i": {
+    "holds": true,
+    "reason": "As a standalone condition, an action-history-only policy cannot select the shortest next rim drag across the different depth-14 arrangements sampled by the generator: the same initial I_t can require different disc/direction choices. This state dependence does not make the task real-time without autonomous evolution."
+  },
+  "clause_ii": {
+    "holds": true,
+    "reason": "A zero-length bounded window (the current screenshot) contains both the reference rose and current rose plus the three visible handles. The arrangement and visible piece identities provide enough information to choose the next legal shortest-path drag; additional frames are unnecessary. This is ordinary visual planning, not prediction of a changing task state."
+  },
+  "clause_iii": {
+    "holds": false,
+    "reason": "No H_t autonomously evolves during 0 < tau < Delta in an outcome-affecting way. The only rose evolution is the synchronous turn(state, disc, direction) applied by attempt() after pointerup; an illegal attempt leaves the state unchanged. Waiting therefore neither makes a rim drag unavailable nor strictly reduces its value or advantage."
+  },
+  "common_visible_process": "There is no common visible autonomous process. The visible rose is static while the agent waits; a handle may move only because the agent is actively dragging it, and the rose changes only at that drag's pointerup. Thus no visible recent process can satisfy clauses (i), (ii), and (iii) together.",
+  "pre_run": {
+    "threshold": 0.5,
+    "at_least_half": null,
+    "rate": null,
+    "basis": "not_applicable",
+    "reason": "The mathematical definition already fails clause (iii), so the pre-run threshold cannot change the catalog label and no pre-run rate was estimated.",
+    "seed_probe": null
+  },
+  "files_read_completely": [
+    "AGENTS.md",
+    "weird_captcha_gym/docs/controllability/real-time.md",
+    "weird_captcha_gym/environments/bandaged_rose_window_env/controls.json",
+    "weird_captcha_gym/environments/bandaged_rose_window_env/env.json",
+    "weird_captcha_gym/environments/bandaged_rose_window_env/scripts/install_puzzle_runtime.sh",
+    "weird_captcha_gym/environments/bandaged_rose_window_env/scripts/setup_puzzle_runtime.sh",
+    "weird_captcha_gym/environments/bandaged_rose_window_env/tasks/bandaged_rose_window_seed_0001/export_result.sh",
+    "weird_captcha_gym/environments/bandaged_rose_window_env/tasks/bandaged_rose_window_seed_0001/setup_task.sh",
+    "weird_captcha_gym/environments/bandaged_rose_window_env/tasks/bandaged_rose_window_seed_0001/task.json",
+    "weird_captcha_gym/shared_scripts/incubator_generators/bandaged_rose_window.py",
+    "weird_captcha_gym/shared_runtime/app/mechanics/bandaged_rose_window.js",
+    "weird_captcha_gym/shared_runtime/app/mechanics/bandaged_rose_window.css",
+    "weird_captcha_gym/shared_runtime/server/incubator_graders/bandaged_rose_window.py",
+    "weird_captcha_gym/environments/bandaged_rose_window_env/tasks/bandaged_rose_window_seed_0001/verifier.py",
+    "weird_captcha_gym/shared_runtime/verifier_helpers.py",
+    "weird_captcha_gym/tools/incubator_solvers/bandaged_rose_window.py"
+  ],
+  "source_evidence": [
+    {
+      "path": "weird_captcha_gym/environments/bandaged_rose_window_env/controls.json",
+      "lines": "34-38, 46-54",
+      "claim": "The assigned difficulty 5 activates scramble_depth 14; full interaction is implemented as brass-handle drags requesting clockwise or counter-clockwise sixth-turns, with observation_window_ms 0 and one frame."
+    },
+    {
+      "path": "weird_captcha_gym/environments/bandaged_rose_window_env/env.json",
+      "lines": "9-14",
+      "claim": "The runtime has a zero observation window, one captured frame, and synchronous task execution; the manifest supplies no mechanic-level clock or physics behavior."
+    },
+    {
+      "path": "weird_captcha_gym/shared_scripts/incubator_generators/bandaged_rose_window.py",
+      "lines": "36-50, 110-155",
+      "claim": "Legal moves and sixth-turn permutations are pure functions of the current arrangement, while generation samples a static initial state at the requested depth and exports its solved state and solution moves."
+    },
+    {
+      "path": "weird_captcha_gym/shared_runtime/app/mechanics/bandaged_rose_window.js",
+      "lines": "84-116",
+      "claim": "attempt() checks legality, applies turn() only when allowed, records the event, and rerenders synchronously; refused turns preserve the prior state."
+    },
+    {
+      "path": "weird_captcha_gym/shared_runtime/app/mechanics/bandaged_rose_window.js",
+      "lines": "125-170",
+      "claim": "Full-mode pointermove only changes the handle transform during the active drag; pointerup restores the handle transform and calls attempt() once the drag threshold is met."
+    },
+    {
+      "path": "weird_captcha_gym/shared_runtime/app/mechanics/bandaged_rose_window.js",
+      "lines": "181-238",
+      "claim": "SEAL, failure handling, RETRY, and rendering are event-triggered UI operations; rendering shows the reference and current roses and installs the full-mode handles, with no autonomous task loop."
+    },
+    {
+      "path": "weird_captcha_gym/shared_runtime/app/mechanics/bandaged_rose_window.css",
+      "lines": "1-4",
+      "claim": "The complete mechanic stylesheet supplies static layout, appearance, and drag-cursor rules; it declares no animation or transition that could advance the rose while idle."
+    },
+    {
+      "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/bandaged_rose_window.py",
+      "lines": "45-99",
+      "claim": "The grader binds full interaction to input_source rim_drag and independently replays each requested turn from the preceding state, distinguishing turned from refused events and checking only the final restored outcome."
+    },
+    {
+      "path": "weird_captcha_gym/environments/bandaged_rose_window_env/tasks/bandaged_rose_window_seed_0001/verifier.py",
+      "lines": "15-21, 39-105",
+      "claim": "The verifier loads the exported result and performs the same state replay; it does not introduce a task-time evolution process."
+    },
+    {
+      "path": "weird_captcha_gym/tools/incubator_solvers/bandaged_rose_window.py",
+      "lines": "20-56, 77-96",
+      "claim": "The solver performs sequential handle drags with an optional step delay defaulting to zero, waiting only for synchronous successful-turn counters; it contains no time-dependent solution mechanic."
+    }
+  ],
+  "uncertainties": [
+    "The bundled seed task metadata retains a legacy difficulty-4 capability_configuration, but the supplied exact configuration and controls.json assign difficulty 5 with scramble_depth 14; the classification follows the supplied controls."
+  ]
+}

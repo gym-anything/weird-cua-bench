@@ -1,0 +1,139 @@
+{
+  "case_index": 102,
+  "public_environment_name": "Cloudpost Circuit",
+  "environment_id": "cloudpost_circuit_env",
+  "difficulty": 1,
+  "interaction_mode": "simplified",
+  "label": "yes",
+  "controls_available": [
+    "Visible LEFT TURN button: decreases the persistent yaw control by 0.12.",
+    "Visible TURN RIGHT button: increases the persistent yaw control by 0.12.",
+    "Visible CLIMB button: increases the persistent pitch control by 0.10.",
+    "Visible DIVE button: decreases the persistent pitch control by 0.10.",
+    "Visible LEVEL button: resets the persistent yaw and pitch controls to [0, 0].",
+    "No pointer-steering surface is bound in simplified mode; trim controls remain available while the flight is nonterminal."
+  ],
+  "autonomous_processes": [
+    "From render until terminal state, the 40 ms physics tick advances yaw and pitch toward the persistent trim vector and moves the plane in world-space x, y, and z without a new action.",
+    "Each animation frame reprojects stationary seals and scenery from the current plane pose, so visible seal bearing, depth, size, and frustum visibility change during flight without a new action.",
+    "Each physics tick checks world-space distance to every uncollected seal and the flight corridor; contact changes the collected count and removes that seal, while corridor exit ends the flight. Trim buttons remain available during these nonterminal periods."
+  ],
+  "grouped_control_modes": [
+    {
+      "name": "D_trim_button",
+      "description": "All occurrences across seeds, rounds, and attempts of the simplified trim-button steering mode: left/right yaw increments, up/down pitch increments, and LEVEL reset, with the selected vector persisting between actions."
+    }
+  ],
+  "delta_ms": 600,
+  "window_ms": 600,
+  "clause_i": {
+    "holds": true,
+    "reason": "The generator draws seed-dependent first and subsequent seal coordinates, while I_t contains only prior actions and task times. The same prior trim history can therefore lead to different visible seal bearings that require different delayed trim actions. No observation-free q(I_t) can be optimal for every survivable occurrence of D."
+  },
+  "clause_ii": {
+    "holds": true,
+    "reason": "The configured 600 ms window contains six chronological frames showing the seal projection, cockpit marker, and their changing target-relative bearing and depth as the plane advances. A bounded visual policy can use that recent trajectory and the current visible offset to choose the needed trim axis and sign (or LEVEL) for delivery after the delay. This is the same flight process that causes the opportunity to degrade."
+  },
+  "clause_iii": {
+    "holds": true,
+    "reason": "For a survivable approach state, take a context-appropriate trim such as TURN RIGHT while the next seal is visibly to the right. Delivered now, it changes yaw before the next 15 physics ticks; after a 600 ms no-action delay the plane has advanced substantially and its relative pose to the fixed seal has changed, so the same click can lose the contact-corridor advantage or fail to enter the 19-unit contact sphere. The state after the delay can still be recoverable with a different correction when t is chosen before the approach closes. The strict loss is caused by world-state motion, not a deadline or merely later completion."
+  },
+  "common_visible_process": "Persistent-trim forward flight through stationary 3D seals: every 40 ms the plane pose changes, and the browser reprojects the same seals so their visible trajectory supplies the evidence for the delayed trim while the plane's advancing world-space pose makes an earlier correction less effective.",
+  "pre_run": {
+    "threshold": 0.5,
+    "at_least_half": false,
+    "rate": null,
+    "basis": "source_structural",
+    "reason": "The browser starts the animation loop immediately on render and exposes no separate pre-start phase, so a solution that starts the autonomous outcome phase and sends no outcome-affecting actions has the initial [0, 0] control throughout. With zero yaw and pitch, the plane stays at x=y=0. At difficulty 1, the first raw lateral draw is forced to x=+/-25.8 when its absolute value is below 18.6; otherwise its absolute value is at least 18.6. A no-action run can contact the first seal only when the generated x lies in the narrow band |x|<=19, which is less than half of the uniform draw domain, and it must also contact the second seal. Thus at least half of generated instances cannot admit a successful no-action autonomous run; no percentage rate is asserted.",
+    "seed_probe": null
+  },
+  "files_read_completely": [
+    "AGENTS.md",
+    "weird_captcha_gym/docs/controllability/real-time.md",
+    "weird_captcha_gym/environments/cloudpost_circuit_env/controls.json",
+    "weird_captcha_gym/environments/cloudpost_circuit_env/env.json",
+    "weird_captcha_gym/environments/cloudpost_circuit_env/tasks/cloudpost_circuit_seed_0001/task.json",
+    "weird_captcha_gym/environments/cloudpost_circuit_env/tasks/cloudpost_circuit_seed_0001/setup_task.sh",
+    "weird_captcha_gym/environments/cloudpost_circuit_env/tasks/cloudpost_circuit_seed_0001/export_result.sh",
+    "weird_captcha_gym/environments/cloudpost_circuit_env/tasks/cloudpost_circuit_seed_0001/verifier.py",
+    "weird_captcha_gym/shared_scripts/incubator_generators/cloudpost_circuit.py",
+    "weird_captcha_gym/shared_runtime/app/mechanics/cloudpost_circuit.js",
+    "weird_captcha_gym/shared_runtime/app/mechanics/cloudpost_circuit.css",
+    "weird_captcha_gym/shared_runtime/server/incubator_graders/cloudpost_circuit.py",
+    "weird_captcha_gym/shared_runtime/verifier_helpers.py",
+    "weird_captcha_gym/tools/incubator_solvers/cloudpost_circuit.py"
+  ],
+  "source_evidence": [
+    {
+      "path": "weird_captcha_gym/environments/cloudpost_circuit_env/controls.json",
+      "lines": "5-16",
+      "claim": "Difficulty 1 is the two-target, 1.55-speed, 0.34-turn-step, 19-radius profile; simplified mode is trim buttons; the configured observation window is 600 ms with six frames."
+    },
+    {
+      "path": "weird_captcha_gym/shared_scripts/incubator_generators/cloudpost_circuit.py",
+      "lines": "82-119",
+      "claim": "The requested control condition selects the difficulty profile, and target x/y/z coordinates are seed-dependent; the first lateral coordinate is deliberately pushed to +/-25.8 for raw values inside the inner 62% band."
+    },
+    {
+      "path": "weird_captcha_gym/shared_scripts/incubator_generators/cloudpost_circuit.py",
+      "lines": "162-192",
+      "claim": "The generated physics has a 40 ms tick, flight speed, turn response, contact radius, corridor, visible targets/scenery, and an initial plane at zero pose."
+    },
+    {
+      "path": "weird_captcha_gym/shared_runtime/app/mechanics/cloudpost_circuit.js",
+      "lines": "89-114",
+      "claim": "Trim actions persistently change yaw/pitch control, while full pointer control is a separate mode; simplified trim events are recorded as trim-button input."
+    },
+    {
+      "path": "weird_captcha_gym/shared_runtime/app/mechanics/cloudpost_circuit.js",
+      "lines": "127-159",
+      "claim": "Each physics step changes plane yaw/pitch and x/y/z, performs world-space contact checks, removes contacted seals, and ends on corridor exit."
+    },
+    {
+      "path": "weird_captcha_gym/shared_runtime/app/mechanics/cloudpost_circuit.js",
+      "lines": "203-274",
+      "claim": "The visible canvas projects targets from the current camera pose, only draws targets in the visible frustum, and runs the step loop autonomously from animation-frame time."
+    },
+    {
+      "path": "weird_captcha_gym/shared_runtime/app/mechanics/cloudpost_circuit.js",
+      "lines": "316-344",
+      "claim": "Render initializes zero controls and immediately starts the animation loop; simplified mode creates only the five trim buttons and binds their visible effects."
+    },
+    {
+      "path": "weird_captcha_gym/shared_runtime/app/mechanics/cloudpost_circuit.css",
+      "lines": "164-181",
+      "claim": "The simplified trim console visibly exposes five clickable controls."
+    },
+    {
+      "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/cloudpost_circuit.py",
+      "lines": "60-112",
+      "claim": "The grader requires the selected simplified interaction source and accepts only visible trim increments or LEVEL, binding the transcript to the selected mode."
+    },
+    {
+      "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/cloudpost_circuit.py",
+      "lines": "122-188",
+      "claim": "The independent grader replays the same 40 ms world-space trajectory, contact radius, event timing, and terminal pose before passing."
+    },
+    {
+      "path": "weird_captcha_gym/environments/cloudpost_circuit_env/tasks/cloudpost_circuit_seed_0001/verifier.py",
+      "lines": "21-34",
+      "claim": "Verification loads the exported state and the independent Cloudpost grader, then bases the result on that replay."
+    },
+    {
+      "path": "weird_captcha_gym/tools/incubator_solvers/cloudpost_circuit.py",
+      "lines": "64-85",
+      "claim": "The privileged construction solver repeatedly snapshots the plane, computes a target-relative correction, applies a trim, and re-observes; this is implementation evidence of closed-loop correction, not assumed policy access."
+    },
+    {
+      "path": "weird_captcha_gym/docs/controllability/real-time.md",
+      "lines": "35-68",
+      "claim": "The frozen definition requires one grouped mode, one visible bounded process, an observation-dependent delayed action, and a strictly degrading action opportunity caused by non-clock state evolution."
+    },
+    {
+      "path": "weird_captcha_gym/docs/controllability/real-time.md",
+      "lines": "70-88",
+      "claim": "The pre-run threshold overrides a mathematical Yes only when at least half of instances can run the outcome phase with no outcome-affecting actions."
+    }
+  ],
+  "uncertainties": []
+}

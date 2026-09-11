@@ -1,0 +1,166 @@
+{
+  "case_index": 86,
+  "public_environment_name": "Circle Limit Twist",
+  "environment_id": "circle_limit_twist_env",
+  "difficulty": 3,
+  "interaction_mode": "simplified",
+  "label": "no",
+  "controls_available": [
+    {
+      "surface": "simplified",
+      "difficulty_parameters": {
+        "face_count": 12,
+        "scramble_length": 4,
+        "move_budget": 6
+      },
+      "outcome_affecting": [
+        "Click a visible heptagon to center it, then click the clockwise or counter-clockwise proxy button to twist that centered face."
+      ],
+      "view_or_preparation": [
+        "A focus click synchronously recenters the selected face in the Poincare view."
+      ],
+      "administrative": [
+        "RESET SCRAMBLE",
+        "CERTIFY",
+        "FRESH CHALLENGE after failure"
+      ],
+      "limits": "At most six accepted twists; a twist is accepted only when the centered face is inside the central activation aperture."
+    }
+  ],
+  "autonomous_processes": [
+    {
+      "period": "Every interval with no new agent action before certification or failure",
+      "process": "None affecting the puzzle. In live mode the shared framework clock may advance, but sticker state, view, focused face, twist count, and twist availability do not autonomously change.",
+      "outcome_affecting_control_remains_available": "Yes: focus remains available, and after a face is centered the proxy twist controls remain available until the twist budget is spent.",
+      "visible_evidence": "The mechanic has no timer, interval, animation-frame, physics, or autonomous update callback; its state writes are in input handlers."
+    }
+  ],
+  "grouped_control_modes": [
+    {
+      "name": "simplified_face_focus",
+      "actions": ["focus_click"],
+      "outcome_affecting": false,
+      "scope": "All visible-heptagon focus clicks across seeds and attempts",
+      "effect": "Synchronous view recentering and focused-face selection; it does not permute stickers."
+    },
+    {
+      "name": "simplified_centered_twist",
+      "actions": ["proxy_buttons direction=-1", "proxy_buttons direction=1"],
+      "outcome_affecting": true,
+      "scope": "All counter-clockwise and clockwise centered twists across seeds and attempts",
+      "effect": "Synchronous seven-position own/ring sticker permutation, consuming one of six twist-budget units."
+    }
+  ],
+  "delta_ms": null,
+  "window_ms": 0,
+  "clause_i": {
+    "holds": false,
+    "reason": "There is no state-dependent commitment forced before a positive delay. For any sufficiently slack history in the grouped control modes, an observation-free q can use the state-preserving no-op/ineffective action and then continue optimally, because waiting changes neither the scramble nor the available twist opportunity."
+  },
+  "clause_ii": {
+    "holds": true,
+    "reason": "A zero-width window is sufficient: the single current screenshot renders the twelve colored heptagons, their sticker sectors, the central aperture, and the simplified controls. A visual policy can select the state-correct focus and twist direction without needing a temporal trace; the existence of such a g does not make the task real-time."
+  },
+  "clause_iii": {
+    "holds": false,
+    "reason": "No non-clock task-state evolution occurs autonomously for any 0 < tau < Delta. The mechanic changes view or sticker state only in response to focus, twist, drag, reset, or submission events; the stylesheet has no animation/transition process. The live framework clock/deadline is clock-only and is expressly insufficient, so no action becomes unavailable or strictly less effective through the required visible autonomous process."
+  },
+  "common_visible_process": "None. The only autonomous progression is the shared task clock in live mode; it does not change the visible puzzle state or degrade an action opportunity.",
+  "pre_run": {
+    "threshold": 0.5,
+    "at_least_half": false,
+    "rate": 0.0,
+    "basis": "source_structural",
+    "reason": "At difficulty 3 the generator always constructs a four-move scramble and a four-move inverse solution, while the browser mechanic has no autonomous outcome phase. The required sticker changes are driven by explicit twist input, so no generated instance admits the defined pre-run solution. This threshold result is redundant because the mathematical definition already fails.",
+    "seed_probe": null
+  },
+  "files_read_completely": [
+    "AGENTS.md",
+    "weird_captcha_gym/docs/controllability/real-time.md",
+    "weird_captcha_gym/environments/circle_limit_twist_env/controls.json",
+    "weird_captcha_gym/environments/circle_limit_twist_env/env.json",
+    "weird_captcha_gym/environments/circle_limit_twist_env/tasks/circle_limit_twist_seed_0001/task.json",
+    "weird_captcha_gym/shared_scripts/incubator_generators/circle_limit_twist.py",
+    "weird_captcha_gym/shared_runtime/app/mechanics/circle_limit_twist.js",
+    "weird_captcha_gym/shared_runtime/app/mechanics/circle_limit_twist.css",
+    "weird_captcha_gym/shared_runtime/server/incubator_graders/circle_limit_twist.py",
+    "weird_captcha_gym/environments/circle_limit_twist_env/tasks/circle_limit_twist_seed_0001/verifier.py",
+    "weird_captcha_gym/tools/incubator_solvers/circle_limit_twist.py",
+    "weird_captcha_gym/shared_runtime/verifier_helpers.py",
+    "weird_captcha_gym/shared_runtime/app/time_controller.js",
+    "weird_captcha_gym/shared_runtime/app/index.html"
+  ],
+  "source_evidence": [
+    {
+      "path": "weird_captcha_gym/environments/circle_limit_twist_env/controls.json",
+      "lines": "22-26",
+      "claim": "Difficulty 3 is medium with face_count 12, scramble_length 4, and move_budget 6."
+    },
+    {
+      "path": "weird_captcha_gym/environments/circle_limit_twist_env/controls.json",
+      "lines": "41-54",
+      "claim": "The simplified surface is a visible-heptagon focus click followed by explicit counter-clockwise or clockwise twist buttons; the configured observation window is 0 ms with one frame."
+    },
+    {
+      "path": "weird_captcha_gym/environments/circle_limit_twist_env/env.json",
+      "lines": "9-14",
+      "claim": "The runtime uses a 0-ms observation window, one frame per observation, synchronous execution, and a 180-second play allowance."
+    },
+    {
+      "path": "weird_captcha_gym/shared_scripts/incubator_generators/circle_limit_twist.py",
+      "lines": "308-348",
+      "claim": "The generator reads the selected difficulty parameters, builds a scramble of the configured exact length, rejects shorter solutions, and constructs the reversed inverse solution."
+    },
+    {
+      "path": "weird_captcha_gym/shared_scripts/incubator_generators/circle_limit_twist.py",
+      "lines": "351-387",
+      "claim": "The generated puzzle contains static tiles/faces, initial sticker state, twist cycles, a fixed activation radius, and the selected control condition; no time-dependent puzzle field is generated."
+    },
+    {
+      "path": "weird_captcha_gym/shared_runtime/app/mechanics/circle_limit_twist.js",
+      "lines": "199-233",
+      "claim": "applyTwist synchronously validates the aperture, permutes own/ring stickers, increments the twist count, records the event, and redraws; an invalid attempt reports NO CHANGE."
+    },
+    {
+      "path": "weird_captcha_gym/shared_runtime/app/mechanics/circle_limit_twist.js",
+      "lines": "235-299",
+      "claim": "View movement, full-mode panning, full-mode canvas twists, and simplified-mode focus selection are all driven by pointer events; simplified focus synchronously updates the view and focused face."
+    },
+    {
+      "path": "weird_captcha_gym/shared_runtime/app/mechanics/circle_limit_twist.js",
+      "lines": "301-355",
+      "claim": "Reset and submission are explicit event handlers; submission computes the static completion predicate and sends the replay, with no autonomous task-state progression."
+    },
+    {
+      "path": "weird_captcha_gym/shared_runtime/app/mechanics/circle_limit_twist.js",
+      "lines": "1-434",
+      "claim": "The complete Circle Limit Twist mechanic defines no setTimeout, setInterval, requestAnimationFrame, physics, or autonomous state-update loop."
+    },
+    {
+      "path": "weird_captcha_gym/shared_runtime/app/mechanics/circle_limit_twist.css",
+      "lines": "1-3",
+      "claim": "The relevant stylesheet supplies static layout, colors, cursors, and hover/class styling; it declares no animation or transition that could evolve task state."
+    },
+    {
+      "path": "weird_captcha_gym/shared_runtime/app/time_controller.js",
+      "lines": "250-348",
+      "claim": "The shared controller can schedule and drain timers or animation frames only when the page code registers them, and drains them only while the shared clock is running; it does not itself create Circle Limit Twist state changes."
+    },
+    {
+      "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/circle_limit_twist.py",
+      "lines": "89-192",
+      "claim": "The grader validates a static event transcript by replaying focus/pan/twist transformations and sticker permutations, then checks the claimed final state and completion."
+    },
+    {
+      "path": "weird_captcha_gym/environments/circle_limit_twist_env/tasks/circle_limit_twist_seed_0001/verifier.py",
+      "lines": "91-196",
+      "claim": "The authoritative verifier independently replays the submitted events and static sticker state, with no event-time or autonomous-transition condition."
+    },
+    {
+      "path": "weird_captcha_gym/tools/incubator_solvers/circle_limit_twist.py",
+      "lines": "144-175",
+      "claim": "The scripted solver applies the fixed inverse solution by focusing each face and immediately pressing the matching simplified twist control, then certifies; it has no wait-for-dynamics step."
+    }
+  ],
+  "uncertainties": []
+}

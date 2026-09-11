@@ -1,0 +1,118 @@
+{
+  "case_index": 109,
+  "public_environment_name": "Cloudpost Circuit",
+  "environment_id": "cloudpost_circuit_env",
+  "difficulty": 5,
+  "interaction_mode": "full",
+  "label": "yes",
+  "controls_available": [
+    "Pointer movement across the visible flight canvas sets a continuous normalized yaw/pitch steering vector in full mode.",
+    "The selected pointer vector persists until another pointer move; full mode renders no trim buttons.",
+    "The plane flies autonomously and seals are collected by world-space contact; the terminal result is submitted automatically."
+  ],
+  "autonomous_processes": [
+    "Immediately after rendering, a requestAnimationFrame loop advances the flight in 40 ms physics ticks even without a new input; each tick turns the plane toward the persistent vector and advances its world-space x, y, and z position.",
+    "As the plane/camera advances, uncollected seals and scenery are reprojected into the visible camera frustum and seal apparent size changes with depth; world-space contact collects seals and leaving the corridor terminates the flight."
+  ],
+  "grouped_control_modes": [
+    "D_full_pointer_steering: every full-mode pointer-vector correction across generated seeds, route approaches, and attempts, including corrections while an uncollected seal is visibly projected.",
+    "Persistent-vector hold/no-op: no new pointer move while the last steering vector continues to drive the flight; this is the no-op comparison for the full pointer mode."
+  ],
+  "delta_ms": 600,
+  "window_ms": 600,
+  "clause_i": {
+    "holds": true,
+    "reason": "At active seal approaches, the same prior action/timing history can occur for generated routes whose next seal is at different visible lateral or vertical positions. An observation-free q(I_t) must choose the same pointer vector for those histories, although their delayed-optimal vectors differ; the randomized route is not encoded in I_t."
+  },
+  "clause_ii": {
+    "holds": true,
+    "reason": "For the same full-pointer steering mode, the six chronological frames in the configured 600 ms window expose the visible seal projection, its drift relative to the fixed cockpit marker, and depth-dependent size change. A bounded visual policy can use that recent trajectory to predict the seal's position at t+600 ms and select the canvas yaw/pitch vector."
+  },
+  "clause_iii": {
+    "holds": true,
+    "reason": "For a visible off-axis seal in an active approach, a pointer vector aimed at that seal has higher value when delivered at t. With no new action, 40 ms ticks move and turn the plane; for some 0 < tau < 600 ms the seal's world-space crossing/alignment opportunity is already worse while later correction can still keep success possible. The same vector delivered at t+600 ms can arrive after the useful contact corridor or with a larger lateral/vertical error. This is non-clock flight-state evolution, not merely a deadline or later submission."
+  },
+  "common_visible_process": "The common process is forward 3D flight through static delivery seals: the persistent pointer vector changes the plane heading, each 40 ms tick advances the plane, and the camera reprojects the seals so their screen position and depth-dependent size visibly change across the recent frame window. That same visible trajectory determines the delayed pointer correction, while forward motion through a radius-10 world-space seal makes a presently useful correction degrade or expire during the delay.",
+  "pre_run": {
+    "threshold": 0.5,
+    "at_least_half": false,
+    "rate": null,
+    "basis": "source_structural",
+    "reason": "There is no separate start gate: render resets the full-mode control to [0, 0] and immediately schedules the autonomous flight loop, while pointermove is the outcome-affecting control. With no outcome-affecting action during the autonomous phase, the plane remains on the zero-control trajectory. At difficulty 5 the first generated seal always has |x| at least 0.62*96 = 59.52 (and is forced to 0.86*96 when the random sample is nearer the center), whereas the world-space contact radius is 10; the straight initial flight therefore cannot contact the first seal in any generated instance. No percentage is asserted.",
+    "seed_probe": null
+  },
+  "files_read_completely": [
+    "AGENTS.md",
+    "weird_captcha_gym/docs/controllability/real-time.md",
+    "weird_captcha_gym/environments/cloudpost_circuit_env/controls.json",
+    "weird_captcha_gym/environments/cloudpost_circuit_env/env.json",
+    "weird_captcha_gym/environments/cloudpost_circuit_env/tasks/cloudpost_circuit_seed_0001/task.json",
+    "weird_captcha_gym/environments/cloudpost_circuit_env/tasks/cloudpost_circuit_seed_0001/setup_task.sh",
+    "weird_captcha_gym/environments/cloudpost_circuit_env/tasks/cloudpost_circuit_seed_0001/export_result.sh",
+    "weird_captcha_gym/environments/cloudpost_circuit_env/tasks/cloudpost_circuit_seed_0001/verifier.py",
+    "weird_captcha_gym/shared_scripts/incubator_generators/cloudpost_circuit.py",
+    "weird_captcha_gym/shared_runtime/app/mechanics/cloudpost_circuit.js",
+    "weird_captcha_gym/shared_runtime/app/mechanics/cloudpost_circuit.css",
+    "weird_captcha_gym/shared_runtime/server/incubator_graders/cloudpost_circuit.py",
+    "weird_captcha_gym/shared_runtime/verifier_helpers.py",
+    "weird_captcha_gym/tools/incubator_solvers/cloudpost_circuit.py"
+  ],
+  "source_evidence": [
+    {
+      "path": "weird_captcha_gym/environments/cloudpost_circuit_env/controls.json",
+      "lines": "5-16",
+      "claim": "Difficulty 5 selects seven targets, spacing 80, lateral span 96, vertical span 72, flight speed 2.65, turn step 0.21, contact radius 10; full interaction is continuous pointer steering and the observation window is 600 ms with six frames."
+    },
+    {
+      "path": "weird_captcha_gym/shared_scripts/incubator_generators/cloudpost_circuit.py",
+      "lines": "82-119",
+      "claim": "The condition selects the requested difficulty profile; target depth progresses by spacing, lateral/vertical coordinates are randomized, successive waypoints change route heading, and the first target is forced away from the centerline."
+    },
+    {
+      "path": "weird_captcha_gym/shared_scripts/incubator_generators/cloudpost_circuit.py",
+      "lines": "162-192",
+      "claim": "Generated physics runs at tick_ms 40 with the difficulty-5 speed and contact radius, and the plane starts at x=y=z=yaw=pitch=0."
+    },
+    {
+      "path": "weird_captcha_gym/shared_runtime/app/mechanics/cloudpost_circuit.js",
+      "lines": "97-114",
+      "claim": "Full-mode pointer movement maps the canvas position to normalized yaw and pitch and persists the resulting control vector."
+    },
+    {
+      "path": "weird_captcha_gym/shared_runtime/app/mechanics/cloudpost_circuit.js",
+      "lines": "127-158",
+      "claim": "Each autonomous step turns toward the current control, advances the plane in 3D, checks world-space contact against the seal radius, and ends the flight on completion or corridor exit."
+    },
+    {
+      "path": "weird_captcha_gym/shared_runtime/app/mechanics/cloudpost_circuit.js",
+      "lines": "161-200, 244-258",
+      "claim": "Seals are rendered as projected 3D spheres with screen position and depth-dependent size; only seals in the camera frustum are visible, while the plane remains a fixed cockpit marker."
+    },
+    {
+      "path": "weird_captcha_gym/shared_runtime/app/mechanics/cloudpost_circuit.js",
+      "lines": "262-274, 316-344",
+      "claim": "The animation loop consumes elapsed time in 40 ms ticks, render resets control and state, full mode attaches pointermove to the canvas, and the loop starts immediately without a start gate."
+    },
+    {
+      "path": "weird_captcha_gym/shared_runtime/app/mechanics/cloudpost_circuit.css",
+      "lines": "77-86",
+      "claim": "The full canvas is the visible signed yaw/pitch pointer field and remains available as the flight interaction surface."
+    },
+    {
+      "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/cloudpost_circuit.py",
+      "lines": "60-66, 79-112, 134-164",
+      "claim": "The grader binds the exact interaction mode to pointer_steer for full mode and independently replays the scheduled controls, plane motion, corridor, and world-space contacts with event ordering."
+    },
+    {
+      "path": "weird_captcha_gym/tools/incubator_solvers/cloudpost_circuit.py",
+      "lines": "64-85",
+      "claim": "The implementation solver repeatedly re-observes the plane and next target and sends a new pointer move, which is evidence of closed-loop control rather than a pre-run action sequence; its private state is not treated as policy information."
+    },
+    {
+      "path": "weird_captcha_gym/environments/cloudpost_circuit_env/tasks/cloudpost_circuit_seed_0001/verifier.py",
+      "lines": "1-34",
+      "claim": "The task verifier loads the exported result and the independent Cloudpost Circuit grader, so the authoritative outcome is the replayed world-space result."
+    }
+  ],
+  "uncertainties": []
+}
