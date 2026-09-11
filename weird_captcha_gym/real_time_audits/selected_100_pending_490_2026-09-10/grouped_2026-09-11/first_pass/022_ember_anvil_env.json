@@ -1,0 +1,518 @@
+{
+  "case_index": 22,
+  "environment_id": "ember_anvil_env",
+  "public_environment_name": "Ember Anvil",
+  "configuration_reports": [
+    {
+      "case_index": 211,
+      "public_environment_name": "Ember Anvil",
+      "environment_id": "ember_anvil_env",
+      "difficulty": 1,
+      "interaction_mode": "full",
+      "label": "no",
+      "controls_available": [
+        "Mode buttons select DRAW, UPSET, or SPLIT; direction buttons select E, S, W, or N.",
+        "Full mode drags the hammer to an exposed top face, drags the tongs between anvil and forge, and drags the orbit rail to rotate the view.",
+        "STAMP TOOL submits the current billet; no keyboard handler is bound by this mechanic."
+      ],
+      "autonomous_processes": [
+        "On the anvil, heat decreases continuously with cooling_ms=60000; in the forge, heat increases toward 1.0 with heat_ms=2400. The 0.35 threshold controls whether a strike is workable.",
+        "An 80 ms repaint updates the visible heat meter and label. Voxel heights change only on explicit strike events; the target and orbit view do not change autonomously."
+      ],
+      "grouped_control_modes": [
+        "tool_selection: mode and direction buttons (tool_control)",
+        "strike: drag the hammer onto a top face (direct_drag)",
+        "forge_transfer: drag tongs to the forge or anvil (direct_drag)",
+        "orbit_view: drag the orbit rail (direct_drag; view-only)",
+        "stamp: STAMP TOOL (tool_control; administrative)"
+      ],
+      "delta_ms": null,
+      "window_ms": null,
+      "clause_i": {
+        "holds": false,
+        "reason": "For the only plausible thermal witness, heat at the delayed action is determined by the agent's own transfer actions and task timestamps plus the fixed cooling and reheating constants, so an observation-free q can schedule the thermal choice. The screenshot is needed for the static voxel route, but that is unrelated to the autonomous heat process; no legitimate D repairs this shared-phenomenon failure."
+      },
+      "clause_ii": {
+        "holds": true,
+        "reason": "In isolation, a bounded screenshot contains the heat bar/label and the current 3-D workpiece, so a visual policy could choose a strike or forge transfer. The heat information is redundant with I_t, however, and the extra static-geometry information cannot serve as the required common witness with clause (i)."
+      },
+      "clause_iii": {
+        "holds": true,
+        "reason": "A valid strike can be started with heat just above 0.35; during a positive sub-horizon wait on the anvil, visible cooling can cross below the threshold, making that strike cold and ineffective while success remains recoverable by reheating. This is a deterministic clock-driven degradation, not an observation-dependent prediction problem."
+      },
+      "common_visible_process": "No valid common witness exists. Cooling/reheating is the only autonomous outcome-relevant process; its state is reconstructible from I_t, while the frame's additional information is static 3-D geometry.",
+      "pre_run": {
+        "threshold": 0.5,
+        "at_least_half": false,
+        "rate": null,
+        "basis": "source_structural",
+        "reason": "There is no autonomous outcome phase to start after preparation. The generator's solution is a sequence of explicit draw/upset/split actions, and cold metal can only be recovered by explicit forge transfers; the final stamp is administrative.",
+        "seed_probe": null
+      },
+      "files_read_completely": [
+        "AGENTS.md",
+        "weird_captcha_gym/docs/controllability/real-time.md",
+        "weird_captcha_gym/environments/ember_anvil_env/controls.json",
+        "weird_captcha_gym/environments/ember_anvil_env/env.json",
+        "weird_captcha_gym/environments/ember_anvil_env/tasks/ember_anvil_seed_0001/task.json",
+        "weird_captcha_gym/shared_scripts/incubator_generators/ember_anvil.py",
+        "weird_captcha_gym/shared_runtime/app/mechanics/ember_anvil.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/ember_anvil.css",
+        "weird_captcha_gym/shared_runtime/server/incubator_graders/ember_anvil.py",
+        "weird_captcha_gym/environments/ember_anvil_env/tasks/ember_anvil_seed_0001/verifier.py",
+        "weird_captcha_gym/tools/incubator_solvers/ember_anvil.py"
+      ],
+      "source_evidence": [
+        {
+          "path": "weird_captcha_gym/environments/ember_anvil_env/controls.json",
+          "lines": "10-20",
+          "claim": "Difficulty 1 is span 3, max height 2, two scramble steps, one excess voxel, no relief, and 60000 ms cooling."
+        },
+        {
+          "path": "weird_captcha_gym/environments/ember_anvil_env/controls.json",
+          "lines": "71-84",
+          "claim": "Both full and simplified surfaces are implemented; full uses drags, simplified uses proxy clicks/buttons, and the configured observation window is 600 ms with one frame."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/ember_anvil.py",
+          "lines": "19-37",
+          "claim": "Draw and upset move one voxel only when their height predicates hold; split discards one voxel, and none of these changes occurs without an action."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/ember_anvil.py",
+          "lines": "55-117",
+          "claim": "The target and scrambled initial solid are generated statically, and solution is explicitly the reversed smithing route plus split actions; the world sets cooling_ms, heat_ms=2400, workable=0.35, and initial_heat=1.0."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/ember_anvil.js",
+          "lines": "7-42",
+          "claim": "thermal() decays heat on the anvil and raises it in the forge; strike rejects cold, forge-located, empty, or blocked contacts and changes heights only on a strike event."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/ember_anvil.js",
+          "lines": "118-166",
+          "claim": "The heat meter/label is rendered, simplified mode binds clicks/buttons, full mode binds hammer/tongs/orbit drags, and an 80 ms paint interval performs the thermal repaint."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/ember_anvil.css",
+          "lines": "19-27",
+          "claim": "The workable heat meter and forge state are visibly rendered."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/ember_anvil.py",
+          "lines": "30-75",
+          "claim": "The grader replays heat from event timestamps and location, checks the workable threshold, and applies voxel changes only for replayed strikes."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/ember_anvil.py",
+          "lines": "76-80",
+          "claim": "A final stamp is required and success is h==target with material conservation; the grader does not autonomously complete the solid."
+        },
+        {
+          "path": "weird_captcha_gym/tools/incubator_solvers/ember_anvil.py",
+          "lines": "55-84",
+          "claim": "The wiring solver performs each private-route strike, explicitly transfers to the forge when TOO COLD, waits for reheating, returns to the anvil, and stamps."
+        }
+      ],
+      "uncertainties": []
+    },
+    {
+      "case_index": 212,
+      "public_environment_name": "Ember Anvil",
+      "environment_id": "ember_anvil_env",
+      "difficulty": 1,
+      "interaction_mode": "simplified",
+      "label": "no",
+      "controls_available": [
+        "Mode buttons select DRAW, UPSET, or SPLIT; direction buttons select E, S, W, or N.",
+        "Simplified mode clicks an exposed top face, uses Move to forge/Return to anvil and Turn left/Turn right buttons, and shows the same target and heat meter.",
+        "STAMP TOOL submits the current billet; no keyboard handler is bound by this mechanic."
+      ],
+      "autonomous_processes": [
+        "On the anvil, heat decreases continuously with cooling_ms=60000; in the forge, heat increases toward 1.0 with heat_ms=2400. The 0.35 threshold controls whether a strike is workable.",
+        "An 80 ms repaint updates the visible heat meter and label. Voxel heights change only on explicit strike events; the target and orbit view do not change autonomously."
+      ],
+      "grouped_control_modes": [
+        "tool_selection: mode and direction buttons (tool_control)",
+        "strike: click an exposed top face (proxy_click)",
+        "forge_transfer: Move to forge/Return to anvil buttons (proxy_click)",
+        "orbit_view: Turn left/Turn right buttons (proxy_click; view-only)",
+        "stamp: STAMP TOOL (tool_control; administrative)"
+      ],
+      "delta_ms": null,
+      "window_ms": null,
+      "clause_i": {
+        "holds": false,
+        "reason": "For the only plausible thermal witness, heat at the delayed action is determined by the agent's own transfer actions and task timestamps plus the fixed cooling and reheating constants, so an observation-free q can schedule the thermal choice. The screenshot is needed for the static voxel route, but that is unrelated to the autonomous heat process; no legitimate D repairs this shared-phenomenon failure."
+      },
+      "clause_ii": {
+        "holds": true,
+        "reason": "In isolation, a bounded screenshot contains the heat bar/label and the current 3-D workpiece, so a visual policy could choose a strike or forge transfer. The heat information is redundant with I_t, however, and the extra static-geometry information cannot serve as the required common witness with clause (i)."
+      },
+      "clause_iii": {
+        "holds": true,
+        "reason": "A valid strike can be started with heat just above 0.35; during a positive sub-horizon wait on the anvil, visible cooling can cross below the threshold, making that strike cold and ineffective while success remains recoverable by reheating. This is a deterministic clock-driven degradation, not an observation-dependent prediction problem."
+      },
+      "common_visible_process": "No valid common witness exists. Cooling/reheating is the only autonomous outcome-relevant process; its state is reconstructible from I_t, while the frame's additional information is static 3-D geometry.",
+      "pre_run": {
+        "threshold": 0.5,
+        "at_least_half": false,
+        "rate": null,
+        "basis": "source_structural",
+        "reason": "There is no autonomous outcome phase to start after preparation. The generator's solution is a sequence of explicit draw/upset/split actions, and cold metal can only be recovered by explicit forge transfers; the final stamp is administrative.",
+        "seed_probe": null
+      },
+      "files_read_completely": [
+        "AGENTS.md",
+        "weird_captcha_gym/docs/controllability/real-time.md",
+        "weird_captcha_gym/environments/ember_anvil_env/controls.json",
+        "weird_captcha_gym/environments/ember_anvil_env/env.json",
+        "weird_captcha_gym/environments/ember_anvil_env/tasks/ember_anvil_seed_0001/task.json",
+        "weird_captcha_gym/shared_scripts/incubator_generators/ember_anvil.py",
+        "weird_captcha_gym/shared_runtime/app/mechanics/ember_anvil.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/ember_anvil.css",
+        "weird_captcha_gym/shared_runtime/server/incubator_graders/ember_anvil.py",
+        "weird_captcha_gym/environments/ember_anvil_env/tasks/ember_anvil_seed_0001/verifier.py",
+        "weird_captcha_gym/tools/incubator_solvers/ember_anvil.py"
+      ],
+      "source_evidence": [
+        {"path": "weird_captcha_gym/environments/ember_anvil_env/controls.json", "lines": "10-20", "claim": "Difficulty 1 is span 3, max height 2, two scramble steps, one excess voxel, no relief, and 60000 ms cooling."},
+        {"path": "weird_captcha_gym/environments/ember_anvil_env/controls.json", "lines": "71-84", "claim": "Simplified uses proxy clicks/buttons while the task world and 600 ms, one-frame observation setting remain the same."},
+        {"path": "weird_captcha_gym/shared_scripts/incubator_generators/ember_anvil.py", "lines": "19-37; 55-117", "claim": "Smithing changes the finite solid only through explicit draw/upset/split actions; target, initial solid, heat constants, and explicit solution are generated statically."},
+        {"path": "weird_captcha_gym/shared_runtime/app/mechanics/ember_anvil.js", "lines": "7-42; 118-166", "claim": "Heat is time-updated and visible; simplified clicks/buttons and the strike/transfer handlers are the only task-state inputs, with voxel changes on strikes."},
+        {"path": "weird_captcha_gym/shared_runtime/app/mechanics/ember_anvil.css", "lines": "19-27", "claim": "The heat meter and forge occupancy are visibly rendered."},
+        {"path": "weird_captcha_gym/shared_runtime/server/incubator_graders/ember_anvil.py", "lines": "30-80", "claim": "Grading replays timestamp-based heat and explicit strikes, then requires the stamped replayed solid to equal the target."},
+        {"path": "weird_captcha_gym/tools/incubator_solvers/ember_anvil.py", "lines": "55-84", "claim": "The solver explicitly performs the strike route and only transfers/reheats when the visible state is TOO COLD before final stamping."}
+      ],
+      "uncertainties": []
+    },
+    {
+      "case_index": 213,
+      "public_environment_name": "Ember Anvil",
+      "environment_id": "ember_anvil_env",
+      "difficulty": 2,
+      "interaction_mode": "full",
+      "label": "no",
+      "controls_available": [
+        "Mode buttons select DRAW, UPSET, or SPLIT; direction buttons select E, S, W, or N.",
+        "Full mode drags the hammer to an exposed top face, drags the tongs between anvil and forge, and drags the orbit rail to rotate the view.",
+        "STAMP TOOL submits the current billet; no keyboard handler is bound by this mechanic."
+      ],
+      "autonomous_processes": [
+        "On the anvil, heat decreases continuously with cooling_ms=60000; in the forge, heat increases toward 1.0 with heat_ms=2400. The 0.35 threshold controls whether a strike is workable.",
+        "An 80 ms repaint updates the visible heat meter and label. Voxel heights change only on explicit strike events; the target and orbit view do not change autonomously."
+      ],
+      "grouped_control_modes": [
+        "tool_selection: mode and direction buttons (tool_control)",
+        "strike: drag the hammer onto a top face (direct_drag)",
+        "forge_transfer: drag tongs to the forge or anvil (direct_drag)",
+        "orbit_view: drag the orbit rail (direct_drag; view-only)",
+        "stamp: STAMP TOOL (tool_control; administrative)"
+      ],
+      "delta_ms": null,
+      "window_ms": null,
+      "clause_i": {"holds": false, "reason": "For the thermal process, q can reconstruct heat at the delayed action from its own transfer actions and task timestamps plus fixed constants. Visual input is needed for the static voxel route, not because cooling makes the delayed action observation-dependent; no legitimate D repairs that mismatch."},
+      "clause_ii": {"holds": true, "reason": "A bounded screenshot exposes the heat display and workpiece, so a visual policy can choose a strike or transfer, but the thermal part is redundant with I_t and the static-geometry part is not the common real-time witness."},
+      "clause_iii": {"holds": true, "reason": "On the anvil, a strike just above the 0.35 workable threshold can become cold during a positive wait while reheating remains possible. The loss is deterministic cooling, not an observation-dependent prediction requirement."},
+      "common_visible_process": "No valid common witness exists: cooling/reheating is deterministic from I_t, while the screenshot's additional information is static 3-D geometry.",
+      "pre_run": {"threshold": 0.5, "at_least_half": false, "rate": null, "basis": "source_structural", "reason": "No autonomous outcome phase exists. Success requires explicit smithing events and, if cold, explicit forge transfers; final stamping is administrative.", "seed_probe": null},
+      "files_read_completely": ["AGENTS.md", "weird_captcha_gym/docs/controllability/real-time.md", "weird_captcha_gym/environments/ember_anvil_env/controls.json", "weird_captcha_gym/environments/ember_anvil_env/env.json", "weird_captcha_gym/environments/ember_anvil_env/tasks/ember_anvil_seed_0001/task.json", "weird_captcha_gym/shared_scripts/incubator_generators/ember_anvil.py", "weird_captcha_gym/shared_runtime/app/mechanics/ember_anvil.js", "weird_captcha_gym/shared_runtime/app/mechanics/ember_anvil.css", "weird_captcha_gym/shared_runtime/server/incubator_graders/ember_anvil.py", "weird_captcha_gym/environments/ember_anvil_env/tasks/ember_anvil_seed_0001/verifier.py", "weird_captcha_gym/tools/incubator_solvers/ember_anvil.py"],
+      "source_evidence": [
+        {"path": "weird_captcha_gym/environments/ember_anvil_env/controls.json", "lines": "22-32", "claim": "Difficulty 2 is span 4, max height 2, five scramble steps, one excess voxel, no relief, and 60000 ms cooling."},
+        {"path": "weird_captcha_gym/environments/ember_anvil_env/controls.json", "lines": "71-84", "claim": "Full uses direct drags and the shared observation setting is 600 ms with one frame."},
+        {"path": "weird_captcha_gym/shared_scripts/incubator_generators/ember_anvil.py", "lines": "19-37; 55-117", "claim": "The finite solid changes only through explicit legal moves, while the target, heat constants, and reverse solution are generated before play."},
+        {"path": "weird_captcha_gym/shared_runtime/app/mechanics/ember_anvil.js", "lines": "7-42; 118-166", "claim": "Thermal state changes with elapsed time and location; full drag handlers deliver strikes/transfers and rendering exposes heat."},
+        {"path": "weird_captcha_gym/shared_runtime/server/incubator_graders/ember_anvil.py", "lines": "30-80", "claim": "The independent grader recomputes timestamp-based heat and requires explicit replayed heights to equal the target."},
+        {"path": "weird_captcha_gym/tools/incubator_solvers/ember_anvil.py", "lines": "55-84", "claim": "The solver uses direct route actions and explicit reheat handling rather than an autonomous outcome phase."}
+      ],
+      "uncertainties": []
+    },
+    {
+      "case_index": 214,
+      "public_environment_name": "Ember Anvil",
+      "environment_id": "ember_anvil_env",
+      "difficulty": 2,
+      "interaction_mode": "simplified",
+      "label": "no",
+      "controls_available": [
+        "Mode buttons select DRAW, UPSET, or SPLIT; direction buttons select E, S, W, or N.",
+        "Simplified mode clicks an exposed top face, uses Move to forge/Return to anvil and Turn left/Turn right buttons, and shows the same target and heat meter.",
+        "STAMP TOOL submits the current billet; no keyboard handler is bound by this mechanic."
+      ],
+      "autonomous_processes": [
+        "On the anvil, heat decreases continuously with cooling_ms=60000; in the forge, heat increases toward 1.0 with heat_ms=2400. The 0.35 threshold controls whether a strike is workable.",
+        "An 80 ms repaint updates the visible heat meter and label. Voxel heights change only on explicit strike events; the target and orbit view do not change autonomously."
+      ],
+      "grouped_control_modes": [
+        "tool_selection: mode and direction buttons (tool_control)",
+        "strike: click an exposed top face (proxy_click)",
+        "forge_transfer: Move to forge/Return to anvil buttons (proxy_click)",
+        "orbit_view: Turn left/Turn right buttons (proxy_click; view-only)",
+        "stamp: STAMP TOOL (tool_control; administrative)"
+      ],
+      "delta_ms": null,
+      "window_ms": null,
+      "clause_i": {"holds": false, "reason": "For the thermal process, q can reconstruct heat at the delayed action from its own transfer actions and task timestamps plus fixed constants. Visual input is needed for the static voxel route, not because cooling makes the delayed action observation-dependent; no legitimate D repairs that mismatch."},
+      "clause_ii": {"holds": true, "reason": "A bounded screenshot exposes the heat display and workpiece, so a visual policy can choose a strike or transfer, but the thermal part is redundant with I_t and the static-geometry part is not the common real-time witness."},
+      "clause_iii": {"holds": true, "reason": "On the anvil, a strike just above the 0.35 workable threshold can become cold during a positive wait while reheating remains possible. The loss is deterministic cooling, not an observation-dependent prediction requirement."},
+      "common_visible_process": "No valid common witness exists: cooling/reheating is deterministic from I_t, while the screenshot's additional information is static 3-D geometry.",
+      "pre_run": {"threshold": 0.5, "at_least_half": false, "rate": null, "basis": "source_structural", "reason": "No autonomous outcome phase exists. Success requires explicit smithing events and, if cold, explicit forge transfers; final stamping is administrative.", "seed_probe": null},
+      "files_read_completely": ["AGENTS.md", "weird_captcha_gym/docs/controllability/real-time.md", "weird_captcha_gym/environments/ember_anvil_env/controls.json", "weird_captcha_gym/environments/ember_anvil_env/env.json", "weird_captcha_gym/environments/ember_anvil_env/tasks/ember_anvil_seed_0001/task.json", "weird_captcha_gym/shared_scripts/incubator_generators/ember_anvil.py", "weird_captcha_gym/shared_runtime/app/mechanics/ember_anvil.js", "weird_captcha_gym/shared_runtime/app/mechanics/ember_anvil.css", "weird_captcha_gym/shared_runtime/server/incubator_graders/ember_anvil.py", "weird_captcha_gym/environments/ember_anvil_env/tasks/ember_anvil_seed_0001/verifier.py", "weird_captcha_gym/tools/incubator_solvers/ember_anvil.py"],
+      "source_evidence": [
+        {"path": "weird_captcha_gym/environments/ember_anvil_env/controls.json", "lines": "22-32", "claim": "Difficulty 2 is span 4, max height 2, five scramble steps, one excess voxel, no relief, and 60000 ms cooling."},
+        {"path": "weird_captcha_gym/environments/ember_anvil_env/controls.json", "lines": "71-84", "claim": "Simplified uses proxy clicks/buttons while world dynamics and the 600 ms, one-frame observation setting remain unchanged."},
+        {"path": "weird_captcha_gym/shared_scripts/incubator_generators/ember_anvil.py", "lines": "19-37; 55-117", "claim": "The finite solid changes only through explicit legal moves, while the target, heat constants, and reverse solution are generated before play."},
+        {"path": "weird_captcha_gym/shared_runtime/app/mechanics/ember_anvil.js", "lines": "7-42; 118-166", "claim": "Thermal state changes with elapsed time and location; simplified click/button handlers deliver strikes/transfers and rendering exposes heat."},
+        {"path": "weird_captcha_gym/shared_runtime/server/incubator_graders/ember_anvil.py", "lines": "30-80", "claim": "The independent grader recomputes timestamp-based heat and requires explicit replayed heights to equal the target."},
+        {"path": "weird_captcha_gym/tools/incubator_solvers/ember_anvil.py", "lines": "55-84", "claim": "The solver uses proxy route actions and explicit reheat handling rather than an autonomous outcome phase."}
+      ],
+      "uncertainties": []
+    },
+    {
+      "case_index": 215,
+      "public_environment_name": "Ember Anvil",
+      "environment_id": "ember_anvil_env",
+      "difficulty": 3,
+      "interaction_mode": "full",
+      "label": "no",
+      "controls_available": [
+        "Mode buttons select DRAW, UPSET, or SPLIT; direction buttons select E, S, W, or N.",
+        "Full mode drags the hammer to an exposed top face, drags the tongs between anvil and forge, and drags the orbit rail to rotate the view.",
+        "STAMP TOOL submits the current billet; no keyboard handler is bound by this mechanic."
+      ],
+      "autonomous_processes": [
+        "On the anvil, heat decreases continuously with cooling_ms=45000; in the forge, heat increases toward 1.0 with heat_ms=2400. The 0.35 threshold controls whether a strike is workable.",
+        "An 80 ms repaint updates the visible heat meter and label. Voxel heights change only on explicit strike events; the target and orbit view do not change autonomously."
+      ],
+      "grouped_control_modes": [
+        "tool_selection: mode and direction buttons (tool_control)",
+        "strike: drag the hammer onto a top face (direct_drag)",
+        "forge_transfer: drag tongs to the forge or anvil (direct_drag)",
+        "orbit_view: drag the orbit rail (direct_drag; view-only)",
+        "stamp: STAMP TOOL (tool_control; administrative)"
+      ],
+      "delta_ms": null,
+      "window_ms": null,
+      "clause_i": {"holds": false, "reason": "For the thermal process, q can reconstruct heat at the delayed action from its own transfer actions and task timestamps plus fixed constants. Visual input is needed for the static voxel route, not because cooling makes the delayed action observation-dependent; no legitimate D repairs that mismatch."},
+      "clause_ii": {"holds": true, "reason": "A bounded screenshot exposes the heat display and workpiece, so a visual policy can choose a strike or transfer, but the thermal part is redundant with I_t and the static-geometry part is not the common real-time witness."},
+      "clause_iii": {"holds": true, "reason": "On the anvil, a strike just above the 0.35 workable threshold can become cold during a positive wait while reheating remains possible. The loss is deterministic cooling, not an observation-dependent prediction requirement."},
+      "common_visible_process": "No valid common witness exists: cooling/reheating is deterministic from I_t, while the screenshot's additional information is static 3-D geometry.",
+      "pre_run": {"threshold": 0.5, "at_least_half": false, "rate": null, "basis": "source_structural", "reason": "No autonomous outcome phase exists. Success requires explicit smithing events and, if cold, explicit forge transfers; final stamping is administrative.", "seed_probe": null},
+      "files_read_completely": ["AGENTS.md", "weird_captcha_gym/docs/controllability/real-time.md", "weird_captcha_gym/environments/ember_anvil_env/controls.json", "weird_captcha_gym/environments/ember_anvil_env/env.json", "weird_captcha_gym/environments/ember_anvil_env/tasks/ember_anvil_seed_0001/task.json", "weird_captcha_gym/shared_scripts/incubator_generators/ember_anvil.py", "weird_captcha_gym/shared_runtime/app/mechanics/ember_anvil.js", "weird_captcha_gym/shared_runtime/app/mechanics/ember_anvil.css", "weird_captcha_gym/shared_runtime/server/incubator_graders/ember_anvil.py", "weird_captcha_gym/environments/ember_anvil_env/tasks/ember_anvil_seed_0001/verifier.py", "weird_captcha_gym/tools/incubator_solvers/ember_anvil.py"],
+      "source_evidence": [
+        {"path": "weird_captcha_gym/environments/ember_anvil_env/controls.json", "lines": "34-44", "claim": "Difficulty 3 is span 5, max height 3, ten scramble steps, two excess voxels, relief enabled, and 45000 ms cooling."},
+        {"path": "weird_captcha_gym/environments/ember_anvil_env/controls.json", "lines": "71-84", "claim": "Full uses direct drags and the shared observation setting is 600 ms with one frame."},
+        {"path": "weird_captcha_gym/shared_scripts/incubator_generators/ember_anvil.py", "lines": "19-37; 55-117", "claim": "Relief and extra volume alter the static target/route; all shape changes remain explicit legal moves and heat is the only autonomous state."},
+        {"path": "weird_captcha_gym/shared_runtime/app/mechanics/ember_anvil.js", "lines": "7-42; 118-166", "claim": "Thermal state changes with elapsed time and location; full drags deliver strikes/transfers and rendering exposes heat."},
+        {"path": "weird_captcha_gym/shared_runtime/server/incubator_graders/ember_anvil.py", "lines": "30-80", "claim": "Grading replays timestamp-based heat and explicit strikes, then requires the replayed solid to equal the target."},
+        {"path": "weird_captcha_gym/tools/incubator_solvers/ember_anvil.py", "lines": "55-84", "claim": "The solver handles a cold state by explicit forge transfer/reheat and returns to explicit strikes before stamping."}
+      ],
+      "uncertainties": []
+    },
+    {
+      "case_index": 216,
+      "public_environment_name": "Ember Anvil",
+      "environment_id": "ember_anvil_env",
+      "difficulty": 3,
+      "interaction_mode": "simplified",
+      "label": "no",
+      "controls_available": [
+        "Mode buttons select DRAW, UPSET, or SPLIT; direction buttons select E, S, W, or N.",
+        "Simplified mode clicks an exposed top face, uses Move to forge/Return to anvil and Turn left/Turn right buttons, and shows the same target and heat meter.",
+        "STAMP TOOL submits the current billet; no keyboard handler is bound by this mechanic."
+      ],
+      "autonomous_processes": [
+        "On the anvil, heat decreases continuously with cooling_ms=45000; in the forge, heat increases toward 1.0 with heat_ms=2400. The 0.35 threshold controls whether a strike is workable.",
+        "An 80 ms repaint updates the visible heat meter and label. Voxel heights change only on explicit strike events; the target and orbit view do not change autonomously."
+      ],
+      "grouped_control_modes": [
+        "tool_selection: mode and direction buttons (tool_control)",
+        "strike: click an exposed top face (proxy_click)",
+        "forge_transfer: Move to forge/Return to anvil buttons (proxy_click)",
+        "orbit_view: Turn left/Turn right buttons (proxy_click; view-only)",
+        "stamp: STAMP TOOL (tool_control; administrative)"
+      ],
+      "delta_ms": null,
+      "window_ms": null,
+      "clause_i": {"holds": false, "reason": "For the thermal process, q can reconstruct heat at the delayed action from its own transfer actions and task timestamps plus fixed constants. Visual input is needed for the static voxel route, not because cooling makes the delayed action observation-dependent; no legitimate D repairs that mismatch."},
+      "clause_ii": {"holds": true, "reason": "A bounded screenshot exposes the heat display and workpiece, so a visual policy can choose a strike or transfer, but the thermal part is redundant with I_t and the static-geometry part is not the common real-time witness."},
+      "clause_iii": {"holds": true, "reason": "On the anvil, a strike just above the 0.35 workable threshold can become cold during a positive wait while reheating remains possible. The loss is deterministic cooling, not an observation-dependent prediction requirement."},
+      "common_visible_process": "No valid common witness exists: cooling/reheating is deterministic from I_t, while the screenshot's additional information is static 3-D geometry.",
+      "pre_run": {"threshold": 0.5, "at_least_half": false, "rate": null, "basis": "source_structural", "reason": "No autonomous outcome phase exists. Success requires explicit smithing events and, if cold, explicit forge transfers; final stamping is administrative.", "seed_probe": null},
+      "files_read_completely": ["AGENTS.md", "weird_captcha_gym/docs/controllability/real-time.md", "weird_captcha_gym/environments/ember_anvil_env/controls.json", "weird_captcha_gym/environments/ember_anvil_env/env.json", "weird_captcha_gym/environments/ember_anvil_env/tasks/ember_anvil_seed_0001/task.json", "weird_captcha_gym/shared_scripts/incubator_generators/ember_anvil.py", "weird_captcha_gym/shared_runtime/app/mechanics/ember_anvil.js", "weird_captcha_gym/shared_runtime/app/mechanics/ember_anvil.css", "weird_captcha_gym/shared_runtime/server/incubator_graders/ember_anvil.py", "weird_captcha_gym/environments/ember_anvil_env/tasks/ember_anvil_seed_0001/verifier.py", "weird_captcha_gym/tools/incubator_solvers/ember_anvil.py"],
+      "source_evidence": [
+        {"path": "weird_captcha_gym/environments/ember_anvil_env/controls.json", "lines": "34-44", "claim": "Difficulty 3 is span 5, max height 3, ten scramble steps, two excess voxels, relief enabled, and 45000 ms cooling."},
+        {"path": "weird_captcha_gym/environments/ember_anvil_env/controls.json", "lines": "71-84", "claim": "Simplified uses proxy clicks/buttons while world dynamics and the 600 ms, one-frame observation setting remain unchanged."},
+        {"path": "weird_captcha_gym/shared_scripts/incubator_generators/ember_anvil.py", "lines": "19-37; 55-117", "claim": "Relief and extra volume alter the static target/route; all shape changes remain explicit legal moves and heat is the only autonomous state."},
+        {"path": "weird_captcha_gym/shared_runtime/app/mechanics/ember_anvil.js", "lines": "7-42; 118-166", "claim": "Thermal state changes with elapsed time and location; simplified click/button handlers deliver strikes/transfers and rendering exposes heat."},
+        {"path": "weird_captcha_gym/shared_runtime/server/incubator_graders/ember_anvil.py", "lines": "30-80", "claim": "Grading replays timestamp-based heat and explicit strikes, then requires the replayed solid to equal the target."},
+        {"path": "weird_captcha_gym/tools/incubator_solvers/ember_anvil.py", "lines": "55-84", "claim": "The solver handles a cold state by explicit forge transfer/reheat and returns to explicit strikes before stamping."}
+      ],
+      "uncertainties": []
+    },
+    {
+      "case_index": 217,
+      "public_environment_name": "Ember Anvil",
+      "environment_id": "ember_anvil_env",
+      "difficulty": 4,
+      "interaction_mode": "full",
+      "label": "no",
+      "controls_available": [
+        "Mode buttons select DRAW, UPSET, or SPLIT; direction buttons select E, S, W, or N.",
+        "Full mode drags the hammer to an exposed top face, drags the tongs between anvil and forge, and drags the orbit rail to rotate the view.",
+        "STAMP TOOL submits the current billet; no keyboard handler is bound by this mechanic."
+      ],
+      "autonomous_processes": [
+        "On the anvil, heat decreases continuously with cooling_ms=45000; in the forge, heat increases toward 1.0 with heat_ms=2400. The 0.35 threshold controls whether a strike is workable.",
+        "An 80 ms repaint updates the visible heat meter and label. Voxel heights change only on explicit strike events; the target and orbit view do not change autonomously."
+      ],
+      "grouped_control_modes": [
+        "tool_selection: mode and direction buttons (tool_control)",
+        "strike: drag the hammer onto a top face (direct_drag)",
+        "forge_transfer: drag tongs to the forge or anvil (direct_drag)",
+        "orbit_view: drag the orbit rail (direct_drag; view-only)",
+        "stamp: STAMP TOOL (tool_control; administrative)"
+      ],
+      "delta_ms": null,
+      "window_ms": null,
+      "clause_i": {"holds": false, "reason": "For the thermal process, q can reconstruct heat at the delayed action from its own transfer actions and task timestamps plus fixed constants. Visual input is needed for the static voxel route, not because cooling makes the delayed action observation-dependent; no legitimate D repairs that mismatch."},
+      "clause_ii": {"holds": true, "reason": "A bounded screenshot exposes the heat display and workpiece, so a visual policy can choose a strike or transfer, but the thermal part is redundant with I_t and the static-geometry part is not the common real-time witness."},
+      "clause_iii": {"holds": true, "reason": "On the anvil, a strike just above the 0.35 workable threshold can become cold during a positive wait while reheating remains possible. The loss is deterministic cooling, not an observation-dependent prediction requirement."},
+      "common_visible_process": "No valid common witness exists: cooling/reheating is deterministic from I_t, while the screenshot's additional information is static 3-D geometry.",
+      "pre_run": {"threshold": 0.5, "at_least_half": false, "rate": null, "basis": "source_structural", "reason": "No autonomous outcome phase exists. Success requires explicit smithing events and, if cold, explicit forge transfers; final stamping is administrative.", "seed_probe": null},
+      "files_read_completely": ["AGENTS.md", "weird_captcha_gym/docs/controllability/real-time.md", "weird_captcha_gym/environments/ember_anvil_env/controls.json", "weird_captcha_gym/environments/ember_anvil_env/env.json", "weird_captcha_gym/environments/ember_anvil_env/tasks/ember_anvil_seed_0001/task.json", "weird_captcha_gym/shared_scripts/incubator_generators/ember_anvil.py", "weird_captcha_gym/shared_runtime/app/mechanics/ember_anvil.js", "weird_captcha_gym/shared_runtime/app/mechanics/ember_anvil.css", "weird_captcha_gym/shared_runtime/server/incubator_graders/ember_anvil.py", "weird_captcha_gym/environments/ember_anvil_env/tasks/ember_anvil_seed_0001/verifier.py", "weird_captcha_gym/tools/incubator_solvers/ember_anvil.py"],
+      "source_evidence": [
+        {"path": "weird_captcha_gym/environments/ember_anvil_env/controls.json", "lines": "46-56", "claim": "Difficulty 4 is span 5, max height 3, eighteen scramble steps, one excess voxel, relief enabled, and 45000 ms cooling."},
+        {"path": "weird_captcha_gym/environments/ember_anvil_env/controls.json", "lines": "71-84", "claim": "Full uses direct drags and the shared observation setting is 600 ms with one frame."},
+        {"path": "weird_captcha_gym/shared_scripts/incubator_generators/ember_anvil.py", "lines": "55-117", "claim": "The deeper scramble changes the static route; the world has the same fixed heat process and the solution remains an explicit action list."},
+        {"path": "weird_captcha_gym/shared_runtime/app/mechanics/ember_anvil.js", "lines": "7-42; 118-166", "claim": "Thermal state changes with elapsed time and location; full drags deliver strikes/transfers and rendering exposes heat."},
+        {"path": "weird_captcha_gym/shared_runtime/server/incubator_graders/ember_anvil.py", "lines": "30-80", "claim": "Grading replays timestamp-based heat and explicit strikes, then requires the replayed solid to equal the target."},
+        {"path": "weird_captcha_gym/tools/incubator_solvers/ember_anvil.py", "lines": "55-84", "claim": "The solver handles a cold state by explicit forge transfer/reheat and returns to explicit strikes before stamping."}
+      ],
+      "uncertainties": []
+    },
+    {
+      "case_index": 218,
+      "public_environment_name": "Ember Anvil",
+      "environment_id": "ember_anvil_env",
+      "difficulty": 4,
+      "interaction_mode": "simplified",
+      "label": "no",
+      "controls_available": [
+        "Mode buttons select DRAW, UPSET, or SPLIT; direction buttons select E, S, W, or N.",
+        "Simplified mode clicks an exposed top face, uses Move to forge/Return to anvil and Turn left/Turn right buttons, and shows the same target and heat meter.",
+        "STAMP TOOL submits the current billet; no keyboard handler is bound by this mechanic."
+      ],
+      "autonomous_processes": [
+        "On the anvil, heat decreases continuously with cooling_ms=45000; in the forge, heat increases toward 1.0 with heat_ms=2400. The 0.35 threshold controls whether a strike is workable.",
+        "An 80 ms repaint updates the visible heat meter and label. Voxel heights change only on explicit strike events; the target and orbit view do not change autonomously."
+      ],
+      "grouped_control_modes": [
+        "tool_selection: mode and direction buttons (tool_control)",
+        "strike: click an exposed top face (proxy_click)",
+        "forge_transfer: Move to forge/Return to anvil buttons (proxy_click)",
+        "orbit_view: Turn left/Turn right buttons (proxy_click; view-only)",
+        "stamp: STAMP TOOL (tool_control; administrative)"
+      ],
+      "delta_ms": null,
+      "window_ms": null,
+      "clause_i": {"holds": false, "reason": "For the thermal process, q can reconstruct heat at the delayed action from its own transfer actions and task timestamps plus fixed constants. Visual input is needed for the static voxel route, not because cooling makes the delayed action observation-dependent; no legitimate D repairs that mismatch."},
+      "clause_ii": {"holds": true, "reason": "A bounded screenshot exposes the heat display and workpiece, so a visual policy can choose a strike or transfer, but the thermal part is redundant with I_t and the static-geometry part is not the common real-time witness."},
+      "clause_iii": {"holds": true, "reason": "On the anvil, a strike just above the 0.35 workable threshold can become cold during a positive wait while reheating remains possible. The loss is deterministic cooling, not an observation-dependent prediction requirement."},
+      "common_visible_process": "No valid common witness exists: cooling/reheating is deterministic from I_t, while the screenshot's additional information is static 3-D geometry.",
+      "pre_run": {"threshold": 0.5, "at_least_half": false, "rate": null, "basis": "source_structural", "reason": "No autonomous outcome phase exists. Success requires explicit smithing events and, if cold, explicit forge transfers; final stamping is administrative.", "seed_probe": null},
+      "files_read_completely": ["AGENTS.md", "weird_captcha_gym/docs/controllability/real-time.md", "weird_captcha_gym/environments/ember_anvil_env/controls.json", "weird_captcha_gym/environments/ember_anvil_env/env.json", "weird_captcha_gym/environments/ember_anvil_env/tasks/ember_anvil_seed_0001/task.json", "weird_captcha_gym/shared_scripts/incubator_generators/ember_anvil.py", "weird_captcha_gym/shared_runtime/app/mechanics/ember_anvil.js", "weird_captcha_gym/shared_runtime/app/mechanics/ember_anvil.css", "weird_captcha_gym/shared_runtime/server/incubator_graders/ember_anvil.py", "weird_captcha_gym/environments/ember_anvil_env/tasks/ember_anvil_seed_0001/verifier.py", "weird_captcha_gym/tools/incubator_solvers/ember_anvil.py"],
+      "source_evidence": [
+        {"path": "weird_captcha_gym/environments/ember_anvil_env/controls.json", "lines": "46-56", "claim": "Difficulty 4 is span 5, max height 3, eighteen scramble steps, one excess voxel, relief enabled, and 45000 ms cooling."},
+        {"path": "weird_captcha_gym/environments/ember_anvil_env/controls.json", "lines": "71-84", "claim": "Simplified uses proxy clicks/buttons while world dynamics and the 600 ms, one-frame observation setting remain unchanged."},
+        {"path": "weird_captcha_gym/shared_scripts/incubator_generators/ember_anvil.py", "lines": "55-117", "claim": "The deeper scramble changes the static route; the world has the same fixed heat process and the solution remains an explicit action list."},
+        {"path": "weird_captcha_gym/shared_runtime/app/mechanics/ember_anvil.js", "lines": "7-42; 118-166", "claim": "Thermal state changes with elapsed time and location; simplified click/button handlers deliver strikes/transfers and rendering exposes heat."},
+        {"path": "weird_captcha_gym/shared_runtime/server/incubator_graders/ember_anvil.py", "lines": "30-80", "claim": "Grading replays timestamp-based heat and explicit strikes, then requires the replayed solid to equal the target."},
+        {"path": "weird_captcha_gym/tools/incubator_solvers/ember_anvil.py", "lines": "55-84", "claim": "The solver handles a cold state by explicit forge transfer/reheat and returns to explicit strikes before stamping."}
+      ],
+      "uncertainties": []
+    },
+    {
+      "case_index": 219,
+      "public_environment_name": "Ember Anvil",
+      "environment_id": "ember_anvil_env",
+      "difficulty": 5,
+      "interaction_mode": "full",
+      "label": "no",
+      "controls_available": [
+        "Mode buttons select DRAW, UPSET, or SPLIT; direction buttons select E, S, W, or N.",
+        "Full mode drags the hammer to an exposed top face, drags the tongs between anvil and forge, and drags the orbit rail to rotate the view.",
+        "STAMP TOOL submits the current billet; no keyboard handler is bound by this mechanic."
+      ],
+      "autonomous_processes": [
+        "On the anvil, heat decreases continuously with cooling_ms=45000; in the forge, heat increases toward 1.0 with heat_ms=2400. The 0.35 threshold controls whether a strike is workable.",
+        "An 80 ms repaint updates the visible heat meter and label. Voxel heights change only on explicit strike events; the target and orbit view do not change autonomously."
+      ],
+      "grouped_control_modes": [
+        "tool_selection: mode and direction buttons (tool_control)",
+        "strike: drag the hammer onto a top face (direct_drag)",
+        "forge_transfer: drag tongs to the forge or anvil (direct_drag)",
+        "orbit_view: drag the orbit rail (direct_drag; view-only)",
+        "stamp: STAMP TOOL (tool_control; administrative)"
+      ],
+      "delta_ms": null,
+      "window_ms": null,
+      "clause_i": {"holds": false, "reason": "For the thermal process, q can reconstruct heat at the delayed action from its own transfer actions and task timestamps plus fixed constants. Visual input is needed for the static voxel route, not because cooling makes the delayed action observation-dependent; no legitimate D repairs that mismatch."},
+      "clause_ii": {"holds": true, "reason": "A bounded screenshot exposes the heat display and workpiece, so a visual policy can choose a strike or transfer, but the thermal part is redundant with I_t and the static-geometry part is not the common real-time witness."},
+      "clause_iii": {"holds": true, "reason": "On the anvil, a strike just above the 0.35 workable threshold can become cold during a positive wait while reheating remains possible. The loss is deterministic cooling, not an observation-dependent prediction requirement."},
+      "common_visible_process": "No valid common witness exists: cooling/reheating is deterministic from I_t, while the screenshot's additional information is static 3-D geometry.",
+      "pre_run": {"threshold": 0.5, "at_least_half": false, "rate": null, "basis": "source_structural", "reason": "No autonomous outcome phase exists. Success requires explicit smithing events and, if cold, explicit forge transfers; final stamping is administrative.", "seed_probe": null},
+      "files_read_completely": ["AGENTS.md", "weird_captcha_gym/docs/controllability/real-time.md", "weird_captcha_gym/environments/ember_anvil_env/controls.json", "weird_captcha_gym/environments/ember_anvil_env/env.json", "weird_captcha_gym/environments/ember_anvil_env/tasks/ember_anvil_seed_0001/task.json", "weird_captcha_gym/shared_scripts/incubator_generators/ember_anvil.py", "weird_captcha_gym/shared_runtime/app/mechanics/ember_anvil.js", "weird_captcha_gym/shared_runtime/app/mechanics/ember_anvil.css", "weird_captcha_gym/shared_runtime/server/incubator_graders/ember_anvil.py", "weird_captcha_gym/environments/ember_anvil_env/tasks/ember_anvil_seed_0001/verifier.py", "weird_captcha_gym/tools/incubator_solvers/ember_anvil.py"],
+      "source_evidence": [
+        {"path": "weird_captcha_gym/environments/ember_anvil_env/controls.json", "lines": "58-68", "claim": "Difficulty 5 is span 6, max height 4, twenty-eight scramble steps, no excess voxels, relief enabled, and 45000 ms cooling."},
+        {"path": "weird_captcha_gym/environments/ember_anvil_env/controls.json", "lines": "71-84", "claim": "Full uses direct drags and the shared observation setting is 600 ms with one frame."},
+        {"path": "weird_captcha_gym/shared_scripts/incubator_generators/ember_anvil.py", "lines": "55-117", "claim": "The deeper relief/capacity changes the static route; the world still has fixed heat dynamics and an explicit solution action list."},
+        {"path": "weird_captcha_gym/shared_runtime/app/mechanics/ember_anvil.js", "lines": "7-42; 118-166", "claim": "Thermal state changes with elapsed time and location; full drags deliver strikes/transfers and rendering exposes heat."},
+        {"path": "weird_captcha_gym/shared_runtime/server/incubator_graders/ember_anvil.py", "lines": "30-80", "claim": "Grading replays timestamp-based heat and explicit strikes, then requires the replayed solid to equal the target."},
+        {"path": "weird_captcha_gym/tools/incubator_solvers/ember_anvil.py", "lines": "55-84", "claim": "The solver handles a cold state by explicit forge transfer/reheat and returns to explicit strikes before stamping."}
+      ],
+      "uncertainties": []
+    },
+    {
+      "case_index": 220,
+      "public_environment_name": "Ember Anvil",
+      "environment_id": "ember_anvil_env",
+      "difficulty": 5,
+      "interaction_mode": "simplified",
+      "label": "no",
+      "controls_available": [
+        "Mode buttons select DRAW, UPSET, or SPLIT; direction buttons select E, S, W, or N.",
+        "Simplified mode clicks an exposed top face, uses Move to forge/Return to anvil and Turn left/Turn right buttons, and shows the same target and heat meter.",
+        "STAMP TOOL submits the current billet; no keyboard handler is bound by this mechanic."
+      ],
+      "autonomous_processes": [
+        "On the anvil, heat decreases continuously with cooling_ms=45000; in the forge, heat increases toward 1.0 with heat_ms=2400. The 0.35 threshold controls whether a strike is workable.",
+        "An 80 ms repaint updates the visible heat meter and label. Voxel heights change only on explicit strike events; the target and orbit view do not change autonomously."
+      ],
+      "grouped_control_modes": [
+        "tool_selection: mode and direction buttons (tool_control)",
+        "strike: click an exposed top face (proxy_click)",
+        "forge_transfer: Move to forge/Return to anvil buttons (proxy_click)",
+        "orbit_view: Turn left/Turn right buttons (proxy_click; view-only)",
+        "stamp: STAMP TOOL (tool_control; administrative)"
+      ],
+      "delta_ms": null,
+      "window_ms": null,
+      "clause_i": {"holds": false, "reason": "For the thermal process, q can reconstruct heat at the delayed action from its own transfer actions and task timestamps plus fixed constants. Visual input is needed for the static voxel route, not because cooling makes the delayed action observation-dependent; no legitimate D repairs that mismatch."},
+      "clause_ii": {"holds": true, "reason": "A bounded screenshot exposes the heat display and workpiece, so a visual policy can choose a strike or transfer, but the thermal part is redundant with I_t and the static-geometry part is not the common real-time witness."},
+      "clause_iii": {"holds": true, "reason": "On the anvil, a strike just above the 0.35 workable threshold can become cold during a positive wait while reheating remains possible. The loss is deterministic cooling, not an observation-dependent prediction requirement."},
+      "common_visible_process": "No valid common witness exists: cooling/reheating is deterministic from I_t, while the screenshot's additional information is static 3-D geometry.",
+      "pre_run": {"threshold": 0.5, "at_least_half": false, "rate": null, "basis": "source_structural", "reason": "No autonomous outcome phase exists. Success requires explicit smithing events and, if cold, explicit forge transfers; final stamping is administrative.", "seed_probe": null},
+      "files_read_completely": ["AGENTS.md", "weird_captcha_gym/docs/controllability/real-time.md", "weird_captcha_gym/environments/ember_anvil_env/controls.json", "weird_captcha_gym/environments/ember_anvil_env/env.json", "weird_captcha_gym/environments/ember_anvil_env/tasks/ember_anvil_seed_0001/task.json", "weird_captcha_gym/shared_scripts/incubator_generators/ember_anvil.py", "weird_captcha_gym/shared_runtime/app/mechanics/ember_anvil.js", "weird_captcha_gym/shared_runtime/app/mechanics/ember_anvil.css", "weird_captcha_gym/shared_runtime/server/incubator_graders/ember_anvil.py", "weird_captcha_gym/environments/ember_anvil_env/tasks/ember_anvil_seed_0001/verifier.py", "weird_captcha_gym/tools/incubator_solvers/ember_anvil.py"],
+      "source_evidence": [
+        {"path": "weird_captcha_gym/environments/ember_anvil_env/controls.json", "lines": "58-68", "claim": "Difficulty 5 is span 6, max height 4, twenty-eight scramble steps, no excess voxels, relief enabled, and 45000 ms cooling."},
+        {"path": "weird_captcha_gym/environments/ember_anvil_env/controls.json", "lines": "71-84", "claim": "Simplified uses proxy clicks/buttons while world dynamics and the 600 ms, one-frame observation setting remain unchanged."},
+        {"path": "weird_captcha_gym/shared_scripts/incubator_generators/ember_anvil.py", "lines": "55-117", "claim": "The deeper relief/capacity changes the static route; the world still has fixed heat dynamics and an explicit solution action list."},
+        {"path": "weird_captcha_gym/shared_runtime/app/mechanics/ember_anvil.js", "lines": "7-42; 118-166", "claim": "Thermal state changes with elapsed time and location; simplified click/button handlers deliver strikes/transfers and rendering exposes heat."},
+        {"path": "weird_captcha_gym/shared_runtime/server/incubator_graders/ember_anvil.py", "lines": "30-80", "claim": "Grading replays timestamp-based heat and explicit strikes, then requires the replayed solid to equal the target."},
+        {"path": "weird_captcha_gym/tools/incubator_solvers/ember_anvil.py", "lines": "55-84", "claim": "The solver handles a cold state by explicit forge transfer/reheat and returns to explicit strikes before stamping."}
+      ],
+      "uncertainties": []
+    }
+  ]
+}

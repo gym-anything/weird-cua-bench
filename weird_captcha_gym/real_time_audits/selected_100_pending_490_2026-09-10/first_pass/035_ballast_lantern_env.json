@@ -1,0 +1,176 @@
+{
+  "case_index": 35,
+  "public_environment_name": "Ballast Lantern",
+  "environment_id": "ballast_lantern_env",
+  "difficulty": 3,
+  "interaction_mode": "full",
+  "label": "no",
+  "controls_available": [
+    "Outcome-affecting full control is a Space keydown that sets the winch to HAUL/up and a Space keyup (or window blur) that sets it to COAST/down; the selected state persists until the next transition.",
+    "The full-mode page renders a SPACE keycap rather than HAUL/COAST buttons. NEW SHAFT abandons and regenerates the task and is administrative, not a solve control.",
+    "The exact profile advances at 50 ms ticks with a 600 ms observation window containing 6 chronological frames and a 90 second play-time allowance."
+  ],
+  "autonomous_processes": [
+    "While active and without a new input event, the browser advances the simulation every 50 ms: the cage applies +5 acceleration when Space is held or -4 acceleration when released, then 0.95 drag and 1/3 boundary restitution to its retained velocity.",
+    "On the same ticks, the specimen moves autonomously under one generated law from steady_sinker, darter, floater, or oscillator; its position and velocity change at the shaft boundaries, and darter velocity changes occur at 28-40 tick intervals.",
+    "The crate appears autonomously at a generated tick in [82, 96]. Each tick updates the hidden capture meter (+27 while the specimen is inside, -10 otherwise) and hidden crate meter (+44 while the crate is inside), which can end the task as escaped, specimen_only, secured, or timeout.",
+    "requestAnimationFrame keeps synchronizing the simulation and visible positions between input events. CSS transitions move the cage, specimen, crate, and four wake dots, while the reel rotates as a presentation animation; the reel itself is not outcome-affecting."
+  ],
+  "grouped_control_modes": [
+    {
+      "name": "full keyboard winch channel",
+      "scope": "All effective Space transitions across seeds and attempts in the full interaction configuration",
+      "actions": [
+        "Space keydown -> engaged=true / HAUL",
+        "Space keyup or blur -> engaged=false / COAST"
+      ],
+      "outcome_affecting": true
+    },
+    {
+      "name": "administrative task controls",
+      "scope": "NEW SHAFT, retry, and final result submission",
+      "actions": [
+        "Abandon/regenerate or resubmit a result"
+      ],
+      "outcome_affecting": false
+    }
+  ],
+  "delta_ms": 600,
+  "window_ms": 600,
+  "clause_i": {
+    "holds": true,
+    "reason": "An observation-free q cannot choose the delayed-optimal effective transition for every history in the full winch mode. The difficulty-3 generator samples the motion law, specimen start position, start velocity, speed, darter schedule, and crate placement from the seed. At the same I_t, including the empty initial action history, those worlds can require opposite HAUL/COAST corrections because the specimen and cage have different relative positions and velocities."
+  },
+  "clause_ii": {
+    "holds": false,
+    "reason": "Six chronological frames over 600 ms expose cage/specimen/crate positions and the visible specimen wake, so they can reveal local motion. They do not expose the accumulated capture_meter or crate_meter that determines whether the optimal continuation should keep the specimen alive or service the crate. The browser draw path renders positions, overlap flags, and wake dots, while the meters appear only in the private simulation snapshot/result payload; the solver's allocation branch reads those private meters directly. Earlier overlap history can therefore leave different hidden progress at the same recent visible geometry, and I_t contains only the agent's prior actions and task times. No bounded visible g can be optimal for all histories in the full D."
+  },
+  "clause_iii": {
+    "holds": true,
+    "reason": "The physical steering subproblem has an expiring action opportunity. Use D = the full keyboard winch channel, Delta = 600 ms (12 ticks), and a specimen-tracking state with Space held and a needed Space keyup. In a read-only replay of generated seed ballast-lantern-witness-0002 at tick 120, the cage is at y=8477 with velocity 60 and the specimen at y=8460 with velocity -37. Immediate COAST for the next 12 ticks ends at cage y=8723 and specimen y=8172, still inside the capture corridor; delaying that same keyup by one 50 ms tick while HAUL continues ends at cage y=8800 versus specimen y=8172, outside. The delayed state remains active and recoverable. The strict loss is caused by specimen displacement and retained cage momentum, not merely by a later deadline."
+  },
+  "common_visible_process": "The visible inertial relative motion of specimen and cage is a genuine degrading control process and supplies the clause-iii witness: recent positions/wake predict whether a HAUL or COAST transition will land in the capture corridor. It cannot be a common witness for all three clauses in the full outcome-affecting mode because optimal target allocation also depends on hidden accumulated capture and crate meters, which are absent from the bounded visible window.",
+  "pre_run": {
+    "threshold": 0.5,
+    "at_least_half": null,
+    "rate": null,
+    "basis": "not_applicable",
+    "reason": "The mathematical definition already fails clause (ii), so the frozen prompt makes the configuration No regardless of the unresolved pre-run rate.",
+    "seed_probe": null
+  },
+  "files_read_completely": [
+    "AGENTS.md",
+    "weird_captcha_gym/docs/controllability/real-time.md",
+    "weird_captcha_gym/environments/ballast_lantern_env/controls.json",
+    "weird_captcha_gym/environments/ballast_lantern_env/env.json",
+    "weird_captcha_gym/environments/ballast_lantern_env/tasks/ballast_lantern_seed_0001/task.json",
+    "weird_captcha_gym/environments/ballast_lantern_env/tasks/ballast_lantern_seed_0001/verifier.py",
+    "weird_captcha_gym/shared_scripts/incubator_generators/ballast_lantern.py",
+    "weird_captcha_gym/shared_runtime/app/mechanics/ballast_lantern.js",
+    "weird_captcha_gym/shared_runtime/app/mechanics/ballast_lantern.css",
+    "weird_captcha_gym/shared_runtime/server/incubator_graders/ballast_lantern.py",
+    "weird_captcha_gym/shared_runtime/verifier_helpers.py",
+    "weird_captcha_gym/tools/incubator_solvers/ballast_lantern.py"
+  ],
+  "source_evidence": [
+    {
+      "path": "weird_captcha_gym/docs/controllability/real-time.md",
+      "lines": "50-68",
+      "claim": "The frozen test requires one common grouped control mode, positive delay, bounded visible window, and a visibly evidenced autonomous change that strictly degrades an action opportunity."
+    },
+    {
+      "path": "weird_captcha_gym/docs/controllability/real-time.md",
+      "lines": "70-90",
+      "claim": "A mathematical clause failure is sufficient for No; the bounded recent window must be sufficient and hidden information cannot be substituted."
+    },
+    {
+      "path": "weird_captcha_gym/environments/ballast_lantern_env/controls.json",
+      "lines": "20-25",
+      "claim": "Difficulty 3 uses 50 ms ticks, all four motion laws, no trend beacon, four trail samples, and the specified capture/crate parameters."
+    },
+    {
+      "path": "weird_captcha_gym/environments/ballast_lantern_env/controls.json",
+      "lines": "42-46",
+      "claim": "Full interaction is Space hold/release, and the exact observation settings are 600 ms, 6 frames, and 90 seconds."
+    },
+    {
+      "path": "weird_captcha_gym/shared_scripts/incubator_generators/ballast_lantern.py",
+      "lines": "130-164",
+      "claim": "The generator randomizes each instance's drift law, speed, start position/direction, boundary behavior, and future darter velocities."
+    },
+    {
+      "path": "weird_captcha_gym/shared_scripts/incubator_generators/ballast_lantern.py",
+      "lines": "183-250",
+      "claim": "Each tick advances the specimen and inertial cage, tests both overlaps, updates hidden meters, and can terminate the task."
+    },
+    {
+      "path": "weird_captcha_gym/shared_scripts/incubator_generators/ballast_lantern.py",
+      "lines": "277-318",
+      "claim": "The reference control cadence is one command per 600 ms observation interval, and target selection explicitly branches on hidden capture/crate meters."
+    },
+    {
+      "path": "weird_captcha_gym/shared_scripts/incubator_generators/ballast_lantern.py",
+      "lines": "348-385",
+      "claim": "The crate spawns at a generated time and is selected far from the specimen; generated instances are certified for a competing-target reference run."
+    },
+    {
+      "path": "weird_captcha_gym/shared_runtime/app/mechanics/ballast_lantern.js",
+      "lines": "35-67",
+      "claim": "The visible browser implements the same 50 ms-equivalent physics, moving target, overlap tests, hidden meter updates, and terminal statuses."
+    },
+    {
+      "path": "weird_captcha_gym/shared_runtime/app/mechanics/ballast_lantern.js",
+      "lines": "69-85",
+      "claim": "Outcome-affecting actions are winch state transitions recorded when the Space-derived engaged state changes."
+    },
+    {
+      "path": "weird_captcha_gym/shared_runtime/app/mechanics/ballast_lantern.js",
+      "lines": "87-105",
+      "claim": "capture_meter and crate_meter are included in the private snapshot used for the outgoing result, not a visible control or readout."
+    },
+    {
+      "path": "weird_captcha_gym/shared_runtime/app/mechanics/ballast_lantern.js",
+      "lines": "180-220",
+      "claim": "The render path exposes cage/specimen/crate positions, overlap styling, optional trend direction, wake dots, and the elapsed-time tick loop."
+    },
+    {
+      "path": "weird_captcha_gym/shared_runtime/app/mechanics/ballast_lantern.js",
+      "lines": "241-327",
+      "claim": "Full mode renders only the SPACE keycap, binds keydown/keyup/blur, and keeps advancing via requestAnimationFrame; the HTML contains no numeric progress meters."
+    },
+    {
+      "path": "weird_captcha_gym/shared_runtime/app/mechanics/ballast_lantern.css",
+      "lines": "180-234",
+      "claim": "The cage, specimen, crate, and wake are the visible moving objects; overlap is shown only as styling and the crate fades in on spawn."
+    },
+    {
+      "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/ballast_lantern.py",
+      "lines": "117-168",
+      "claim": "The authoritative replay independently advances the same target/cage dynamics and hidden meter/status rules."
+    },
+    {
+      "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/ballast_lantern.py",
+      "lines": "189-252",
+      "claim": "The grader requires full-mode keyboard input, replays event timing, and grades secured only when the replay reaches the secured terminal state."
+    },
+    {
+      "path": "weird_captcha_gym/tools/incubator_solvers/ballast_lantern.py",
+      "lines": "44-105",
+      "claim": "The scripted solver uses private sim capture_meter/crate_meter and private positions; that is implementation evidence of target allocation, not information available to a screenshot-only policy."
+    },
+    {
+      "path": "weird_captcha_gym/environments/ballast_lantern_env/tasks/ballast_lantern_seed_0001/verifier.py",
+      "lines": "22-35",
+      "claim": "The task verifier loads the shared helper and Ballast Lantern replay grader and evaluates the exported outcome."
+    },
+    {
+      "path": "weird_captcha_gym/shared_runtime/verifier_helpers.py",
+      "lines": "12-52",
+      "claim": "The shared verifier helper loads the mechanic grader and exported result; it does not make private page state visible to the policy."
+    }
+  ],
+  "uncertainties": [
+    "The source has a clear physical-motion degradation witness, but no visible numeric progress indicator; treating the hidden meters as available would contradict the frozen screenshot-only and bounded-window requirements.",
+    "The finite pre-run probe was not used because clause (ii) already fixes the mathematical label as No."
+  ]
+}

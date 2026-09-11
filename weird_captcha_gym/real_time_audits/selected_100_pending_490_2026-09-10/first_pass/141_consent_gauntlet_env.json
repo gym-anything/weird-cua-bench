@@ -1,0 +1,135 @@
+{
+  "case_index": 141,
+  "public_environment_name": "Consent Gauntlet",
+  "environment_id": "consent_gauntlet_env",
+  "difficulty": 1,
+  "interaction_mode": "full",
+  "label": "no",
+  "controls_available": [
+    "Difficulty 1 supplies three purposes, one drawer, one entry gateway option, one final gateway option, no reset traps, no directed links, and stationary gateways with zero orbit speed.",
+    "Full interaction uses direct clicks on the visible gateway cards, the ledger drawer tab, and physical drags on each visible NO/YES switch rail; stationary clicks do not change switches.",
+    "A normal screenshot-only solution reads the sole manage card, drags any currently-YES purpose switches to NO, opens review, and clicks the sole commit card. The initial switch states and gateway phase may vary, but the controls do not move or expire.",
+    "The configured observation settings are a 720 ms window with five frames, but the task's required transitions are synchronous at the input boundary and a single current frame is sufficient for this configuration."
+  ],
+  "autonomous_processes": [
+    "While an entry or final gateway is displayed, requestAnimationFrame updates the visible packet clock from performance.now().",
+    "The same loop recomputes gateway positions, but moving_gateways is false and orbit_speed_deg_per_second is zero, so phase, card positions, and z-order remain fixed for each generated instance.",
+    "During the preference stage there is no autonomous outcome-affecting state transition; purpose state, stage, and drawer state change only from input handlers. The timer is clock progression only and is not an expiring task opportunity."
+  ],
+  "grouped_control_modes": [
+    {
+      "mode": "gateway_card",
+      "input_source": "orbit_card",
+      "occurrences": "entry manage decision and final commit decision",
+      "outcome_effect": "The exact profile has one option at each stage, and both cards are stationary."
+    },
+    {
+      "mode": "purpose_switch_drag",
+      "input_source": "switch_drag",
+      "occurrences": "the three purpose rows in the single drawer",
+      "outcome_effect": "A drag changes a purpose state synchronously; there are no links or reset traps at difficulty 1."
+    },
+    {
+      "mode": "drawer_tab",
+      "input_source": "drawer_tab",
+      "occurrences": "the single drawer tab",
+      "outcome_effect": "There is only one drawer, so this has no state-changing alternative."
+    },
+    {
+      "mode": "review_transition",
+      "input_source": "review_button",
+      "occurrences": "the review button after the ledger",
+      "outcome_effect": "This synchronously changes the stage to final review."
+    }
+  ],
+  "delta_ms": null,
+  "window_ms": 0,
+  "clause_i": {
+    "holds": true,
+    "reason": "For the grouped gateway-card mode across generated seeds, the stationary card's seeded position is visible but is not available in I_t, so an observation-free policy cannot choose its click coordinate for every history; a current screenshot can. This is static visual grounding, not a changing-state witness."
+  },
+  "clause_ii": {
+    "holds": true,
+    "reason": "A bounded current-frame policy can select the visible gateway card and the visible switch endpoint. No temporal history is needed; w=0 is sufficient and is within the configured 720 ms observation bound."
+  },
+  "clause_iii": {
+    "holds": false,
+    "reason": "No positive delay causes a non-clock task-state change that makes an available action unavailable or less effective. With moving_gateways false and speed zero, gateway geometry is unchanged; switch rails, review, and commit remain usable indefinitely. The changing packet clock and reduced remaining deadline cannot satisfy this clause."
+  },
+  "common_visible_process": "There is no common visible autonomous process for clauses (i)-(iii). The only autonomous visible change is the packet clock; the gateway position is stationary and preference state changes only after agent input, so no action opportunity degrades inside a positive Delta.",
+  "pre_run": {
+    "threshold": 0.5,
+    "at_least_half": true,
+    "rate": null,
+    "basis": "source_structural",
+    "reason": "The d1 generator fixes negative_count to zero, so every generated purpose target is false, and fixes one stationary entry option, one stationary final option, one drawer, zero reset traps, and zero links. After preparation, a screenshot-only solution can set all visible switches to NO and open review; the remaining final commit is administrative under the frozen rule. This structure admits a successful pre-run solution for every generated seed, without needing a numeric rate.",
+    "seed_probe": null
+  },
+  "files_read_completely": [
+    "AGENTS.md",
+    "weird_captcha_gym/docs/controllability/real-time.md",
+    "weird_captcha_gym/environments/consent_gauntlet_env/controls.json",
+    "weird_captcha_gym/environments/consent_gauntlet_env/env.json",
+    "weird_captcha_gym/environments/consent_gauntlet_env/tasks/consent_gauntlet_seed_0001/task.json",
+    "weird_captcha_gym/shared_scripts/incubator_generators/consent_gauntlet.py",
+    "weird_captcha_gym/shared_runtime/app/mechanics/consent_gauntlet.js",
+    "weird_captcha_gym/shared_runtime/app/mechanics/consent_gauntlet.css",
+    "weird_captcha_gym/shared_runtime/server/incubator_graders/consent_gauntlet.py",
+    "weird_captcha_gym/environments/consent_gauntlet_env/tasks/consent_gauntlet_seed_0001/verifier.py",
+    "weird_captcha_gym/tools/incubator_solvers/consent_gauntlet.py",
+    "weird_captcha_gym/shared_runtime/verifier_helpers.py"
+  ],
+  "source_evidence": [
+    {
+      "path": "weird_captcha_gym/environments/consent_gauntlet_env/controls.json",
+      "lines": "6-10",
+      "claim": "The exact difficulty-1 profile has three purposes, zero negative purposes, one drawer, one entry and final option, zero reset traps and links, and stationary gateways at zero speed."
+    },
+    {
+      "path": "weird_captcha_gym/environments/consent_gauntlet_env/controls.json",
+      "lines": "37-41",
+      "claim": "Full mode uses direct gateway-card clicks, ledger tabs, and physical switch drags; the observation bound is 720 ms with five frames."
+    },
+    {
+      "path": "weird_captcha_gym/shared_scripts/incubator_generators/consent_gauntlet.py",
+      "lines": "81-124; 152-177; 188-232",
+      "claim": "The generator consumes the supplied difficulty parameters, makes each d1 purpose target false, randomizes only initial switch values and static geometry, and creates no traps or links while creating one option per gateway."
+    },
+    {
+      "path": "weird_captcha_gym/shared_runtime/app/mechanics/consent_gauntlet.js",
+      "lines": "136-160",
+      "claim": "The animation-frame loop updates the packet clock and card positions, but currentPhase adds elapsed motion only when moving_gateways is true."
+    },
+    {
+      "path": "weird_captcha_gym/shared_runtime/app/mechanics/consent_gauntlet.js",
+      "lines": "163-175; 185-215; 217-249; 271-353",
+      "claim": "The visible full-mode UI renders stationary-orbit cards when configured, physical switch rails, one-drawer tabs, review, and synchronous input handlers; no autonomous handler changes task state."
+    },
+    {
+      "path": "weird_captcha_gym/shared_runtime/app/mechanics/consent_gauntlet.css",
+      "lines": "1-173",
+      "claim": "The relevant CSS defines the visible card, ledger, and drag-rail geometry and contains no timed CSS animation that could move or expire a control."
+    },
+    {
+      "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/consent_gauntlet.py",
+      "lines": "74-106; 109-126; 129-265",
+      "claim": "The grader validates gateway geometry against task time only when moving_gateways is enabled, validates drag gestures, and replays only submitted events with a bounded elapsed-task timestamp; it does not add an autonomous state transition."
+    },
+    {
+      "path": "weird_captcha_gym/tools/incubator_solvers/consent_gauntlet.py",
+      "lines": "81-163",
+      "claim": "The solver's normal path sets each visible purpose to its target, then reviews and commits; full mode uses a physical drag only when a switch needs changing."
+    },
+    {
+      "path": "weird_captcha_gym/environments/consent_gauntlet_env/tasks/consent_gauntlet_seed_0001/verifier.py",
+      "lines": "1-35",
+      "claim": "The task verifier loads the exported result and delegates outcome checking to the independent consent replay grader."
+    },
+    {
+      "path": "weird_captcha_gym/docs/controllability/real-time.md",
+      "lines": "1-172",
+      "claim": "The frozen definition requires one common visible autonomous process and a strict loss of action value inside a positive delay; clock-only deadline effects and static or permanently actionable controls do not qualify."
+    }
+  ],
+  "uncertainties": []
+}

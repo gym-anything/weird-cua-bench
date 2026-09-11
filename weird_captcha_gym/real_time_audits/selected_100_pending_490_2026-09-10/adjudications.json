@@ -1,0 +1,412 @@
+{
+  "schema_version": 1,
+  "date": "2026-09-11",
+  "source_revision": "6172cf4baafbd4d1bbcfbb2444e5017edbb8326c",
+  "manifest_sha256": "d028d3190ec80f809a2d67bda1535726bbcd57d5d011e3b64eb212dafc763024",
+  "authorization": "User requested fixing the 14 validation flags, then a pull request and merge.",
+  "scope": "Explicit corrections to the 14 flagged reports only. Original first-pass files, process receipts, frozen prompts/manifests, completion snapshot, and 510 historical labels remain untouched. Corrected source lists describe the derived report; they do not assert what the original reviewer actually opened. No new gameplay evaluations, puzzle changes, or independent re-audit of all classifications.",
+  "cases": [
+    {
+      "case_index": 12,
+      "public_environment_name": "Anthill Front",
+      "difficulty": 1,
+      "interaction_mode": "simplified",
+      "kind": "pre_run_exception_polarity",
+      "first_pass_path": "first_pass/012_anthill_front_env.json",
+      "first_pass_sha256": "54e8f87a9bb2a4a428cf8cb5d1e5a0ac59948fe8a2745e8e22eb3accc79b0d98",
+      "original_issues": [
+        "no_without_failed_clause_or_pre_run_override"
+      ],
+      "reason": "The original report has all three clauses true and explicitly finds no successful pre-run solution, but then applies the >=50% pre-run override backward. Source inspection confirms that defense cannot be pre-committed: a raid spawns before its response band opens, a lane MARCH is accepted only within that band, and an incorrect or absent defense is fatal for the L1 three-HP queen. The phase-dependent visible lane choice is an expiring opportunity. Change No to Yes and correct the contradictory final sentence; retain the existing witnesses.",
+      "source_files_checked": [
+        "AGENTS.md",
+        "weird_captcha_gym/docs/controllability/real-time.md",
+        "weird_captcha_gym/environments/anthill_front_env/controls.json",
+        "weird_captcha_gym/environments/anthill_front_env/env.json",
+        "weird_captcha_gym/environments/anthill_front_env/tasks/anthill_front_seed_0001/task.json",
+        "weird_captcha_gym/environments/anthill_front_env/tasks/anthill_front_seed_0001/verifier.py",
+        "weird_captcha_gym/shared_scripts/incubator_generators/anthill_front.py",
+        "weird_captcha_gym/shared_runtime/app/mechanics/anthill_front.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/anthill_front.css",
+        "weird_captcha_gym/shared_runtime/server/incubator_graders/anthill_front.py",
+        "weird_captcha_gym/tools/incubator_solvers/anthill_front.py"
+      ],
+      "patches": [
+        {
+          "field": [
+            "label"
+          ],
+          "before": "no",
+          "after": "yes"
+        },
+        {
+          "field": [
+            "pre_run",
+            "reason"
+          ],
+          "before": "Preparation can gather seeds and raise soldiers, but the only defensive commitment is an outcome-affecting MARCH action. The browser and grader accept NORTH/SOUTH only when the current tick is in the response band 223-268, after the autonomous raid has already spawned and begun moving; there is no queued or pre-commit defense action. Thus no screenshot-only instance can start the autonomous raid outcome phase and send no further outcome-affecting action until that phase ends. The pre-run threshold therefore overrides the mathematical witness and makes the configuration label no.",
+          "after": "Preparation can gather seeds and raise soldiers, but the only defensive commitment is an outcome-affecting MARCH action. The browser and grader accept NORTH/SOUTH only when the current tick is in the response band 223-268, after the autonomous raid has already spawned and begun moving; there is no queued or pre-commit defense action. Thus no screenshot-only instance can start the autonomous raid outcome phase and send no further outcome-affecting action until that phase ends. The pre-run threshold is therefore not met and does not override the three-clause real-time witness. This configuration is labelled yes."
+        }
+      ]
+    },
+    {
+      "case_index": 27,
+      "public_environment_name": "Apothecary Dead Reckoning",
+      "difficulty": 4,
+      "interaction_mode": "full",
+      "kind": "source_path",
+      "first_pass_path": "first_pass/027_apothecary_dead_reckoning_env.json",
+      "first_pass_sha256": "fec76ce9ef68dc4462b4f2032c64cb0375b07d187c86bb8f285ccbffc3ae6441",
+      "original_issues": [
+        "missing_source_path:weird_captcha_gym/environments/apothecary_dead_reckoning_env/verifier.py"
+      ],
+      "reason": "The cited verifier is located under the seed task directory, not the environment root. Read the actual 43-line verifier and confirm that lines 22-43 load the exported result and invoke the Apothecary grader. Correct both reference fields without changing the label.",
+      "source_files_checked": [
+        "weird_captcha_gym/docs/controllability/real-time.md",
+        "weird_captcha_gym/environments/apothecary_dead_reckoning_env/tasks/apothecary_dead_reckoning_seed_0001/verifier.py"
+      ],
+      "patches": [
+        {
+          "field": [
+            "files_read_completely",
+            7
+          ],
+          "before": "weird_captcha_gym/environments/apothecary_dead_reckoning_env/verifier.py",
+          "after": "weird_captcha_gym/environments/apothecary_dead_reckoning_env/tasks/apothecary_dead_reckoning_seed_0001/verifier.py"
+        },
+        {
+          "field": [
+            "source_evidence",
+            9,
+            "path"
+          ],
+          "before": "weird_captcha_gym/environments/apothecary_dead_reckoning_env/verifier.py",
+          "after": "weird_captcha_gym/environments/apothecary_dead_reckoning_env/tasks/apothecary_dead_reckoning_seed_0001/verifier.py"
+        }
+      ]
+    },
+    {
+      "case_index": 38,
+      "public_environment_name": "Ballast Lantern",
+      "difficulty": 4,
+      "interaction_mode": "simplified",
+      "kind": "clause_i_boolean_polarity",
+      "first_pass_path": "first_pass/038_ballast_lantern_env.json",
+      "first_pass_sha256": "d94c67f1830f1bb2ee0febe740ec9e9bfccaf4d0edc954c485cd70aecd906391",
+      "original_issues": [
+        "yes_without_three_clauses"
+      ],
+      "reason": "Clause (i) means there is no action-history-only q that is delayed-optimal for every admissible history. The existing reason explicitly says such a q cannot distinguish worlds requiring opposite winch commands, which asserts clause (i), not its negation. The active generator varies target motion and the UI/independent replay preserve inertial HAUL/COAST dynamics. Correct the inverted Boolean to true and retain Yes. This adjudication resolves the field/reason mismatch; it is not an independent proof of the report's clause-(ii) sufficiency claim. Its existing uncertainties about hidden drift variation and unrendered reserves are retained.",
+      "source_files_checked": [
+        "AGENTS.md",
+        "weird_captcha_gym/docs/controllability/real-time.md",
+        "weird_captcha_gym/environments/ballast_lantern_env/controls.json",
+        "weird_captcha_gym/environments/ballast_lantern_env/env.json",
+        "weird_captcha_gym/environments/ballast_lantern_env/tasks/ballast_lantern_seed_0001/task.json",
+        "weird_captcha_gym/environments/ballast_lantern_env/tasks/ballast_lantern_seed_0001/verifier.py",
+        "weird_captcha_gym/shared_scripts/incubator_generators/ballast_lantern.py",
+        "weird_captcha_gym/shared_runtime/app/mechanics/ballast_lantern.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/ballast_lantern.css",
+        "weird_captcha_gym/shared_runtime/server/incubator_graders/ballast_lantern.py",
+        "weird_captcha_gym/tools/incubator_solvers/ballast_lantern.py"
+      ],
+      "patches": [
+        {
+          "field": [
+            "clause_i",
+            "holds"
+          ],
+          "before": false,
+          "after": true
+        }
+      ]
+    },
+    {
+      "case_index": 71,
+      "public_environment_name": "Charter of the Nine Cantons",
+      "difficulty": 1,
+      "interaction_mode": "full",
+      "kind": "source_path",
+      "first_pass_path": "first_pass/071_charter_of_the_nine_cantons_env.json",
+      "first_pass_sha256": "3e33ced317d8bde279ea9ec44bb3d77036c60767546d0b0e23f9473e757ab775",
+      "original_issues": [
+        "missing_source_path:weird_captcha_gym/environments/charter_of_the_nine_cantons_env/scripts/setup_task.sh"
+      ],
+      "reason": "The environment bootstrap is scripts/setup_puzzle_runtime.sh, a four-line wrapper delegating to the shared runtime setup; scripts/setup_task.sh does not exist. Read the actual wrapper and correct the derived complete-source list. The separate task-level setup_task.sh reference is valid and unchanged. No label or clause changes.",
+      "source_files_checked": [
+        "weird_captcha_gym/docs/controllability/real-time.md",
+        "weird_captcha_gym/environments/charter_of_the_nine_cantons_env/scripts/setup_puzzle_runtime.sh"
+      ],
+      "patches": [
+        {
+          "field": [
+            "files_read_completely",
+            5
+          ],
+          "before": "weird_captcha_gym/environments/charter_of_the_nine_cantons_env/scripts/setup_task.sh",
+          "after": "weird_captcha_gym/environments/charter_of_the_nine_cantons_env/scripts/setup_puzzle_runtime.sh"
+        }
+      ]
+    },
+    {
+      "case_index": 271,
+      "public_environment_name": "Four-Pane Pilgrimage",
+      "difficulty": 1,
+      "interaction_mode": "full",
+      "kind": "source_path",
+      "first_pass_path": "grouped_2026-09-11/first_pass/028_four_pane_pilgrimage_env.json",
+      "first_pass_sha256": "33230364b41db75d70f7b20abe5ff8437223327c7d89af5355caae3f127ee451",
+      "original_issues": [
+        "missing_source_path:weird_cua_gym/docs/controllability/real-time.md"
+      ],
+      "reason": "Correct the misspelled repository prefix in the real-time definition reference after reading the complete frozen definition. This is the same source-path error in each of the ten configurations; labels and substantive judgments are unchanged.",
+      "source_files_checked": [
+        "weird_captcha_gym/docs/controllability/real-time.md"
+      ],
+      "patches": [
+        {
+          "field": [
+            "files_read_completely",
+            1
+          ],
+          "before": "weird_cua_gym/docs/controllability/real-time.md",
+          "after": "weird_captcha_gym/docs/controllability/real-time.md"
+        }
+      ]
+    },
+    {
+      "case_index": 272,
+      "public_environment_name": "Four-Pane Pilgrimage",
+      "difficulty": 1,
+      "interaction_mode": "simplified",
+      "kind": "source_path",
+      "first_pass_path": "grouped_2026-09-11/first_pass/028_four_pane_pilgrimage_env.json",
+      "first_pass_sha256": "33230364b41db75d70f7b20abe5ff8437223327c7d89af5355caae3f127ee451",
+      "original_issues": [
+        "missing_source_path:weird_cua_gym/docs/controllability/real-time.md"
+      ],
+      "reason": "Correct the misspelled repository prefix in the real-time definition reference after reading the complete frozen definition. This is the same source-path error in each of the ten configurations; labels and substantive judgments are unchanged.",
+      "source_files_checked": [
+        "weird_captcha_gym/docs/controllability/real-time.md"
+      ],
+      "patches": [
+        {
+          "field": [
+            "files_read_completely",
+            1
+          ],
+          "before": "weird_cua_gym/docs/controllability/real-time.md",
+          "after": "weird_captcha_gym/docs/controllability/real-time.md"
+        }
+      ]
+    },
+    {
+      "case_index": 273,
+      "public_environment_name": "Four-Pane Pilgrimage",
+      "difficulty": 2,
+      "interaction_mode": "full",
+      "kind": "source_path",
+      "first_pass_path": "grouped_2026-09-11/first_pass/028_four_pane_pilgrimage_env.json",
+      "first_pass_sha256": "33230364b41db75d70f7b20abe5ff8437223327c7d89af5355caae3f127ee451",
+      "original_issues": [
+        "missing_source_path:weird_cua_gym/docs/controllability/real-time.md"
+      ],
+      "reason": "Correct the misspelled repository prefix in the real-time definition reference after reading the complete frozen definition. This is the same source-path error in each of the ten configurations; labels and substantive judgments are unchanged.",
+      "source_files_checked": [
+        "weird_captcha_gym/docs/controllability/real-time.md"
+      ],
+      "patches": [
+        {
+          "field": [
+            "files_read_completely",
+            1
+          ],
+          "before": "weird_cua_gym/docs/controllability/real-time.md",
+          "after": "weird_captcha_gym/docs/controllability/real-time.md"
+        }
+      ]
+    },
+    {
+      "case_index": 274,
+      "public_environment_name": "Four-Pane Pilgrimage",
+      "difficulty": 2,
+      "interaction_mode": "simplified",
+      "kind": "source_path",
+      "first_pass_path": "grouped_2026-09-11/first_pass/028_four_pane_pilgrimage_env.json",
+      "first_pass_sha256": "33230364b41db75d70f7b20abe5ff8437223327c7d89af5355caae3f127ee451",
+      "original_issues": [
+        "missing_source_path:weird_cua_gym/docs/controllability/real-time.md"
+      ],
+      "reason": "Correct the misspelled repository prefix in the real-time definition reference after reading the complete frozen definition. This is the same source-path error in each of the ten configurations; labels and substantive judgments are unchanged.",
+      "source_files_checked": [
+        "weird_captcha_gym/docs/controllability/real-time.md"
+      ],
+      "patches": [
+        {
+          "field": [
+            "files_read_completely",
+            1
+          ],
+          "before": "weird_cua_gym/docs/controllability/real-time.md",
+          "after": "weird_captcha_gym/docs/controllability/real-time.md"
+        }
+      ]
+    },
+    {
+      "case_index": 275,
+      "public_environment_name": "Four-Pane Pilgrimage",
+      "difficulty": 3,
+      "interaction_mode": "full",
+      "kind": "source_path",
+      "first_pass_path": "grouped_2026-09-11/first_pass/028_four_pane_pilgrimage_env.json",
+      "first_pass_sha256": "33230364b41db75d70f7b20abe5ff8437223327c7d89af5355caae3f127ee451",
+      "original_issues": [
+        "missing_source_path:weird_cua_gym/docs/controllability/real-time.md"
+      ],
+      "reason": "Correct the misspelled repository prefix in the real-time definition reference after reading the complete frozen definition. This is the same source-path error in each of the ten configurations; labels and substantive judgments are unchanged.",
+      "source_files_checked": [
+        "weird_captcha_gym/docs/controllability/real-time.md"
+      ],
+      "patches": [
+        {
+          "field": [
+            "files_read_completely",
+            1
+          ],
+          "before": "weird_cua_gym/docs/controllability/real-time.md",
+          "after": "weird_captcha_gym/docs/controllability/real-time.md"
+        }
+      ]
+    },
+    {
+      "case_index": 276,
+      "public_environment_name": "Four-Pane Pilgrimage",
+      "difficulty": 3,
+      "interaction_mode": "simplified",
+      "kind": "source_path",
+      "first_pass_path": "grouped_2026-09-11/first_pass/028_four_pane_pilgrimage_env.json",
+      "first_pass_sha256": "33230364b41db75d70f7b20abe5ff8437223327c7d89af5355caae3f127ee451",
+      "original_issues": [
+        "missing_source_path:weird_cua_gym/docs/controllability/real-time.md"
+      ],
+      "reason": "Correct the misspelled repository prefix in the real-time definition reference after reading the complete frozen definition. This is the same source-path error in each of the ten configurations; labels and substantive judgments are unchanged.",
+      "source_files_checked": [
+        "weird_captcha_gym/docs/controllability/real-time.md"
+      ],
+      "patches": [
+        {
+          "field": [
+            "files_read_completely",
+            1
+          ],
+          "before": "weird_cua_gym/docs/controllability/real-time.md",
+          "after": "weird_captcha_gym/docs/controllability/real-time.md"
+        }
+      ]
+    },
+    {
+      "case_index": 277,
+      "public_environment_name": "Four-Pane Pilgrimage",
+      "difficulty": 4,
+      "interaction_mode": "full",
+      "kind": "source_path",
+      "first_pass_path": "grouped_2026-09-11/first_pass/028_four_pane_pilgrimage_env.json",
+      "first_pass_sha256": "33230364b41db75d70f7b20abe5ff8437223327c7d89af5355caae3f127ee451",
+      "original_issues": [
+        "missing_source_path:weird_cua_gym/docs/controllability/real-time.md"
+      ],
+      "reason": "Correct the misspelled repository prefix in the real-time definition reference after reading the complete frozen definition. This is the same source-path error in each of the ten configurations; labels and substantive judgments are unchanged.",
+      "source_files_checked": [
+        "weird_captcha_gym/docs/controllability/real-time.md"
+      ],
+      "patches": [
+        {
+          "field": [
+            "files_read_completely",
+            1
+          ],
+          "before": "weird_cua_gym/docs/controllability/real-time.md",
+          "after": "weird_captcha_gym/docs/controllability/real-time.md"
+        }
+      ]
+    },
+    {
+      "case_index": 278,
+      "public_environment_name": "Four-Pane Pilgrimage",
+      "difficulty": 4,
+      "interaction_mode": "simplified",
+      "kind": "source_path",
+      "first_pass_path": "grouped_2026-09-11/first_pass/028_four_pane_pilgrimage_env.json",
+      "first_pass_sha256": "33230364b41db75d70f7b20abe5ff8437223327c7d89af5355caae3f127ee451",
+      "original_issues": [
+        "missing_source_path:weird_cua_gym/docs/controllability/real-time.md"
+      ],
+      "reason": "Correct the misspelled repository prefix in the real-time definition reference after reading the complete frozen definition. This is the same source-path error in each of the ten configurations; labels and substantive judgments are unchanged.",
+      "source_files_checked": [
+        "weird_captcha_gym/docs/controllability/real-time.md"
+      ],
+      "patches": [
+        {
+          "field": [
+            "files_read_completely",
+            1
+          ],
+          "before": "weird_cua_gym/docs/controllability/real-time.md",
+          "after": "weird_captcha_gym/docs/controllability/real-time.md"
+        }
+      ]
+    },
+    {
+      "case_index": 279,
+      "public_environment_name": "Four-Pane Pilgrimage",
+      "difficulty": 5,
+      "interaction_mode": "full",
+      "kind": "source_path",
+      "first_pass_path": "grouped_2026-09-11/first_pass/028_four_pane_pilgrimage_env.json",
+      "first_pass_sha256": "33230364b41db75d70f7b20abe5ff8437223327c7d89af5355caae3f127ee451",
+      "original_issues": [
+        "missing_source_path:weird_cua_gym/docs/controllability/real-time.md"
+      ],
+      "reason": "Correct the misspelled repository prefix in the real-time definition reference after reading the complete frozen definition. This is the same source-path error in each of the ten configurations; labels and substantive judgments are unchanged.",
+      "source_files_checked": [
+        "weird_captcha_gym/docs/controllability/real-time.md"
+      ],
+      "patches": [
+        {
+          "field": [
+            "files_read_completely",
+            1
+          ],
+          "before": "weird_cua_gym/docs/controllability/real-time.md",
+          "after": "weird_captcha_gym/docs/controllability/real-time.md"
+        }
+      ]
+    },
+    {
+      "case_index": 280,
+      "public_environment_name": "Four-Pane Pilgrimage",
+      "difficulty": 5,
+      "interaction_mode": "simplified",
+      "kind": "source_path",
+      "first_pass_path": "grouped_2026-09-11/first_pass/028_four_pane_pilgrimage_env.json",
+      "first_pass_sha256": "33230364b41db75d70f7b20abe5ff8437223327c7d89af5355caae3f127ee451",
+      "original_issues": [
+        "missing_source_path:weird_cua_gym/docs/controllability/real-time.md"
+      ],
+      "reason": "Correct the misspelled repository prefix in the real-time definition reference after reading the complete frozen definition. This is the same source-path error in each of the ten configurations; labels and substantive judgments are unchanged.",
+      "source_files_checked": [
+        "weird_captcha_gym/docs/controllability/real-time.md"
+      ],
+      "patches": [
+        {
+          "field": [
+            "files_read_completely",
+            1
+          ],
+          "before": "weird_cua_gym/docs/controllability/real-time.md",
+          "after": "weird_captcha_gym/docs/controllability/real-time.md"
+        }
+      ]
+    }
+  ]
+}

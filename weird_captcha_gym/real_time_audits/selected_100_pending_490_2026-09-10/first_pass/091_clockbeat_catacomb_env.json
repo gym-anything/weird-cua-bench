@@ -1,0 +1,109 @@
+{
+  "case_index": 91,
+  "public_environment_name": "Clockbeat Catacomb",
+  "environment_id": "clockbeat_catacomb_env",
+  "difficulty": 1,
+  "interaction_mode": "full",
+  "label": "yes",
+  "controls_available": [
+    "WIND THE CLOCK is a mouse-start control; SUBMIT EXPEDITION is administrative.",
+    "ArrowUp, ArrowRight, ArrowDown, ArrowLeft, W, A, S, and D move or attack; Space waits; key repeat is ignored.",
+    "At most one outcome-affecting keyboard action is accepted per 1800 ms beat, and only during its first 1150 ms gold window; off-beat input is ignored."
+  ],
+  "autonomous_processes": [
+    "After the clock is wound, performance.now advances elapsed task time and a 50 ms timer redraws the visible beat and pulse progress.",
+    "At each 1800 ms beat boundary, the level-1 crawler advances one Manhattan tile toward the player when possible; contact costs one heart, then the beat increments and the next action becomes available.",
+    "The board, roster, health, beat readout, pulse, and crawler position update without a new agent action; before WIND THE CLOCK there is no autonomous outcome state."
+  ],
+  "grouped_control_modes": [
+    {
+      "name": "full_keyboard_outcome_mode",
+      "surface": "keyboard",
+      "actions": ["UP", "RIGHT", "DOWN", "LEFT", "WAIT"],
+      "scope": "All beat-gated keyboard action occurrences across seeds, rounds, and attempts; start and submit are excluded as administrative controls."
+    }
+  ],
+  "delta_ms": 1900,
+  "window_ms": 300,
+  "clause_i": {
+    "holds": true,
+    "reason": "No policy using only I_t can be optimal across C_Delta(D): seeded generation changes walls, start, exit, and crawler positions, so identical initial action histories and task times can require different directions."
+  },
+  "clause_ii": {
+    "holds": true,
+    "reason": "The configured 300 ms window has three chronological frames and visibly contains the board, player, crawler, walls, exit, health, and beat progress. Together with the visible chase rule, that bounded window predicts the crawler state at t+1900 ms; a window straddling a beat boundary visibly shows the crawler's tile change."
+  },
+  "clause_iii": {
+    "holds": true,
+    "reason": "Use a gold-window state and Delta=1900 ms, with tau approximately 1800 ms. One no-action beat visibly advances the crawler while success remains possible. For example, a generated level-1 state can show the crawler moving from [5,4] to [5,3]; the same direction can then require a longer optimal continuation than before that move. The strict loss is caused by crawler motion, not merely by the clock window closing or reopening."
+  },
+  "common_visible_process": "The common witness is the single visible crawler advancing one tile toward the player at each shared-beat boundary. The current board and chase rule, plus a boundary-crossing portion of the 300 ms frame window, provide the observation needed to predict its delayed position; seed-dependent positions make an observation-free action schedule insufficient, and the changed crawler tile can reduce the value of the same move while the run remains salvageable.",
+  "pre_run": {
+    "threshold": 0.5,
+    "at_least_half": false,
+    "rate": null,
+    "basis": "source_structural",
+    "reason": "Every level-1 generated instance starts the player at a location distinct from the exit, and only act() changes the player position or sets won. If no outcome-affecting action is sent after WIND THE CLOCK, advance() can only move the live crawler and update the beat; it cannot defeat the crawler, move the player, or set won. Thus no generated instance admits a successful pre-run solution, so the at-least-half threshold is not met and does not override the mathematical Yes.",
+    "seed_probe": null
+  },
+  "files_read_completely": [
+    "AGENTS.md",
+    "weird_captcha_gym/docs/controllability/real-time.md",
+    "weird_captcha_gym/environments/clockbeat_catacomb_env/controls.json",
+    "weird_captcha_gym/shared_scripts/incubator_generators/clockbeat_catacomb.py",
+    "weird_captcha_gym/shared_runtime/app/mechanics/clockbeat_catacomb.js",
+    "weird_captcha_gym/shared_runtime/app/mechanics/clockbeat_catacomb.css",
+    "weird_captcha_gym/shared_runtime/server/incubator_graders/clockbeat_catacomb.py",
+    "weird_captcha_gym/environments/clockbeat_catacomb_env/tasks/clockbeat_catacomb_seed_0001/verifier.py",
+    "weird_captcha_gym/shared_runtime/verifier_helpers.py",
+    "weird_captcha_gym/tools/incubator_solvers/clockbeat_catacomb.py"
+  ],
+  "source_evidence": [
+    {
+      "path": "weird_captcha_gym/docs/controllability/real-time.md",
+      "lines": "40-68, 70-76, 114",
+      "claim": "The frozen clauses require one common visible process, a bounded recent window, a non-clock strict action-value loss, and the 50% pre-run override."
+    },
+    {
+      "path": "weird_captcha_gym/environments/clockbeat_catacomb_env/controls.json",
+      "lines": "10-26, 109-122",
+      "claim": "Difficulty 1 is a 7x7 board with two walls, one crawler, one-hit enemies, four health, full keyboard input, a 300 ms/three-frame observation window, and the configured real-time constants."
+    },
+    {
+      "path": "weird_captcha_gym/shared_scripts/incubator_generators/clockbeat_catacomb.py",
+      "lines": "15-41",
+      "claim": "The supplied control condition overrides the default profile; seeded generation randomizes connected walls, start, exit, and enemy positions, requires the exit candidate to be at least three Manhattan steps from start, and sets beat_ms=1800, open_ms=1150, and max_beats=100."
+    },
+    {
+      "path": "weird_captcha_gym/shared_runtime/app/mechanics/clockbeat_catacomb.js",
+      "lines": "9-20, 22-40",
+      "claim": "The browser state starts with the generated board, act() is the only player-state transition, and each autonomous step moves the crawler toward the player, applies contact damage, increments beat, and resets used. performance.now and sync() advance those steps without input."
+    },
+    {
+      "path": "weird_captcha_gym/shared_runtime/app/mechanics/clockbeat_catacomb.js",
+      "lines": "42-68",
+      "claim": "The visible UI renders the board, player, crawler, exit, health, roster rule, beat/pulse state, gold-window text, and full-mode arrow/WASD/Space controls; off-beat input is rejected before act()."
+    },
+    {
+      "path": "weird_captcha_gym/shared_runtime/app/mechanics/clockbeat_catacomb.css",
+      "lines": "1-3",
+      "claim": "The visible implementation is a 2D grid board with distinct wall, player, enemy, danger, stair, pulse, and keyboard-control styling."
+    },
+    {
+      "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/clockbeat_catacomb.py",
+      "lines": "7-49, 59-78",
+      "claim": "The authoritative replay mirrors act/advance, including crawler movement, beat gating, health, action timing, and final-state success; it requires the full-mode transcript to use keyboard input."
+    },
+    {
+      "path": "weird_captcha_gym/environments/clockbeat_catacomb_env/tasks/clockbeat_catacomb_seed_0001/verifier.py",
+      "lines": "22-35",
+      "claim": "The verifier loads the exported result and delegates outcome checking to the independent Clockbeat Catacomb replay grader."
+    },
+    {
+      "path": "weird_captcha_gym/tools/incubator_solvers/clockbeat_catacomb.py",
+      "lines": "20-35",
+      "claim": "The wiring solver plans from the replay state, waits for each beat, and sends Arrow/Space keyboard inputs in full mode; this confirms the beat-gated control wiring but is not used as screenshot-only evidence."
+    }
+  ],
+  "uncertainties": []
+}

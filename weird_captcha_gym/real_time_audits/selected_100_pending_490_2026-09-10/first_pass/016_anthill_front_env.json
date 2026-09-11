@@ -1,0 +1,140 @@
+{
+  "case_index": 16,
+  "public_environment_name": "Anthill Front",
+  "environment_id": "anthill_front_env",
+  "difficulty": 3,
+  "interaction_mode": "simplified",
+  "label": "yes",
+  "controls_available": [
+    "Simplified roster controls: individual worker or soldier buttons plus WORKERS, SOLDIERS, and CLEAR selection buttons.",
+    "GATHER sends the selected workers to the visible seed pile.",
+    "SCOUT sends exactly one selected worker to the visible listening front until contact is acquired.",
+    "EXCAVATE sends exactly two selected workers to the brood chamber; RAISE consumes two seeds and queues one soldier.",
+    "MARCH NORTH and MARCH SOUTH commit the selected soldiers to the active raid's branch; ASSAULT RIVAL sends selected soldiers to the enemy queen after every raid is cleared.",
+    "CERTIFY FRONT is administrative and does not affect the outcome."
+  ],
+  "autonomous_processes": [
+    "The live page advances the simulation from elapsed performance time in 100 ms ticks, including while no new command is supplied.",
+    "A deployed scout completes after 40 ticks and reveals contact; exactly two diggers add two brood-progress units per tick until 70 work, after which they gather automatically.",
+    "Gatherers add one seed every 18 ticks, and each RAISE order produces a soldier after 14 ticks.",
+    "At difficulty 3 the single seeded raid builds from tick 105 to 168, spawns at tick 180, travels toward the queen, and reaches its 219-259 response band before impact at tick 270.",
+    "During the response band the raid formation's visible vertical position follows a phase-offset sinusoid with a 36-tick period; at impact the committed lane and the surviving committed soldiers determine whether the four-raider wave is stopped.",
+    "After the raid is resolved, an enemy assault takes 45 ticks to reach and damage the rival queen; the fixed CSS pulse is presentation-only and is not part of the task state."
+  ],
+  "grouped_control_modes": [
+    {
+      "name": "worker setup",
+      "actions": ["GATHER -> seed", "SCOUT -> front", "DIG -> brood"],
+      "surface": "command_panel",
+      "outcome_affecting": true
+    },
+    {
+      "name": "soldier production",
+      "actions": ["RAISE -> brood"],
+      "surface": "command_panel",
+      "outcome_affecting": true
+    },
+    {
+      "name": "moving-raid defense commitment",
+      "actions": ["MARCH -> north", "MARCH -> south"],
+      "surface": "command_panel",
+      "outcome_affecting": true,
+      "common_witness_mode": true
+    },
+    {
+      "name": "final assault",
+      "actions": ["MARCH -> enemy"],
+      "surface": "command_panel",
+      "outcome_affecting": true
+    }
+  ],
+  "delta_ms": 800,
+  "window_ms": 800,
+  "clause_i": {
+    "holds": true,
+    "reason": "For the moving-raid defense mode, I_t contains only the reviewer's prior commands and their task times. The generator independently randomizes the first raid lane and a 0-35 tick motion phase offset across instances. Thus the same prior command/tick history can lead to different NORTH/SOUTH actions being optimal at t+Delta. A fixed q(I_t) must choose the same branch for both, and no-op or the wrong branch cannot stop all four raiders, so it cannot be optimal for every history in C_Delta(D)."
+  },
+  "clause_ii": {
+    "holds": true,
+    "reason": "The six chronological frames in the configured 800 ms window expose the red formation's changing vertical position and advance direction on the visible canvas/minimap. The rendered phase-offset sinusoid has a known 36-tick period, so the recent trajectory predicts which branch will be correct when the command is delivered eight ticks later. The simplified NORTH/SOUTH command buttons and roster remain visible, and the supplied screenshot-only solver samples successive formation images and maps downward/upward motion to SOUTH/NORTH. This supplies a bounded g(I_t,W_t^w) without private state."
+  },
+  "clause_iii": {
+    "holds": true,
+    "reason": "Choose a history in the active 219-259 response band with the formation approaching a vertical turning point, and choose Delta=800 ms so t+Delta is still before tick 259. Within some tau<Delta the visible sinusoidal motion crosses the sign change used by interceptLane; the same MARCH branch remains a valid control but becomes the wrong, strictly less effective commitment. At impact only correctly committed soldiers in the committed lane stop the wave; a wrong commitment stops none and removes four queen HP, while the opposite branch still leaves success possible. The strict loss is caused by the changing raid state, not by a deadline or later completion."
+  },
+  "common_visible_process": "The common D is the simplified command-panel defense commitment for the one seeded wave. After the scout reveals contact, the rendered four-ant formation moves horizontally toward the colony and vertically as a phase-offset sinusoid during the visible intercept band. The same visible motion supplies the recent evidence needed to extrapolate the branch at t+800 ms, changes which MARCH target is optimal, and changes the impact result through the grader's correct-commitment test.",
+  "pre_run": {
+    "threshold": 0.5,
+    "at_least_half": false,
+    "rate": null,
+    "basis": "source_structural",
+    "reason": "Every difficulty-3 instance has one four-raider wave. A successful replay requires an outcome-affecting NORTH/SOUTH commitment during that wave's response band, and the UI/grader reject MARCH -> enemy until every raid has resolved, requiring a separate outcome-affecting assault afterward. Therefore no instance has a successful continuation that starts one autonomous outcome phase and sends no further outcome-affecting actions through that phase; the 50% pre-run override is not met. The exact rate is left null rather than invented because a seed census was unnecessary for this structural exclusion.",
+    "seed_probe": null
+  },
+  "files_read_completely": [
+    "AGENTS.md",
+    "weird_captcha_gym/docs/controllability/real-time.md",
+    "weird_captcha_gym/environments/anthill_front_env/controls.json",
+    "weird_captcha_gym/environments/anthill_front_env/env.json",
+    "weird_captcha_gym/environments/anthill_front_env/tasks/anthill_front_seed_0001/task.json",
+    "weird_captcha_gym/environments/anthill_front_env/tasks/anthill_front_seed_0001/verifier.py",
+    "weird_captcha_gym/environments/anthill_front_env/tasks/anthill_front_seed_0001/setup_task.sh",
+    "weird_captcha_gym/environments/anthill_front_env/tasks/anthill_front_seed_0001/export_result.sh",
+    "weird_captcha_gym/environments/anthill_front_env/scripts/install_puzzle_runtime.sh",
+    "weird_captcha_gym/environments/anthill_front_env/scripts/setup_puzzle_runtime.sh",
+    "weird_captcha_gym/shared_scripts/incubator_generators/anthill_front.py",
+    "weird_captcha_gym/shared_runtime/app/mechanics/anthill_front.js",
+    "weird_captcha_gym/shared_runtime/app/mechanics/anthill_front.css",
+    "weird_captcha_gym/shared_runtime/server/incubator_graders/anthill_front.py",
+    "weird_captcha_gym/shared_runtime/verifier_helpers.py",
+    "weird_captcha_gym/tools/incubator_solvers/anthill_front.py"
+  ],
+  "source_evidence": [
+    {
+      "path": "weird_captcha_gym/environments/anthill_front_env/controls.json",
+      "lines": "3-16",
+      "claim": "Difficulty 3 is the medium five-worker/two-worker excavation configuration with one four-raider seeded wave, 180/270 spawn and impact ticks, hidden opening, and the simplified labelled-roster/explicit-order interface; the observation window is 800 ms with six frames."
+    },
+    {
+      "path": "weird_captcha_gym/environments/anthill_front_env/env.json",
+      "lines": "9-14",
+      "claim": "The environment exposes frame-window observations, mouse and keyboard actions, an 800 ms observation window, six frames per observation, and a 100 ms simulation tick in the live runner."
+    },
+    {
+      "path": "weird_captcha_gym/shared_scripts/incubator_generators/anthill_front.py",
+      "lines": "31-60, 96-120, 134-180",
+      "claim": "The generator consumes the selected difficulty condition, randomizes first_lane and motion_phase_offset_ticks, derives the response-open/deadline interval, sets tick_ms=100, and publicly states that recent motion determines the defense branch."
+    },
+    {
+      "path": "weird_captcha_gym/shared_runtime/app/mechanics/anthill_front.js",
+      "lines": "16-20, 55-138, 141-206",
+      "claim": "The browser simulation advances scouting, digging, gathering, production, raid impact, and assault autonomously; interceptLane depends on phase; and MARCH lane commitments are accepted only during the response band and record whether the selected branch is correct."
+    },
+    {
+      "path": "weird_captcha_gym/shared_runtime/app/mechanics/anthill_front.js",
+      "lines": "263-279, 344-375, 425-446, 517-556",
+      "claim": "The formation's visible position is rendered from a phase-offset sinusoid, the intercept band and moving vector are drawn, contact status is shown, simplified command-panel controls are bound to command_panel events, and the live loop advances from elapsed time."
+    },
+    {
+      "path": "weird_captcha_gym/shared_runtime/app/mechanics/anthill_front.css",
+      "lines": "53-54, 67-70, 88-105",
+      "claim": "The canvas, visible intercept/intel styling, roster, and explicit simplified order buttons are part of the visible task UI; the 0.8-second pulse is only a decorative animation."
+    },
+    {
+      "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/anthill_front.py",
+      "lines": "54-140, 172-261, 291-360",
+      "claim": "Deterministic replay resolves a correct commitment at impact, binds simplified events to command_panel, requires correct wave interception and a later enemy assault, and awards success only when the rival queen is destroyed while the home queen survives."
+    },
+    {
+      "path": "weird_captcha_gym/environments/anthill_front_env/tasks/anthill_front_seed_0001/verifier.py",
+      "lines": "1-31",
+      "claim": "The environment verifier loads the shared exported-result helper and the Anthill Front grader, then grades the submitted replay against public and private state."
+    },
+    {
+      "path": "weird_captcha_gym/tools/incubator_solvers/anthill_front.py",
+      "lines": "165-218, 246-356",
+      "claim": "The normal UI solver reads successive screenshot pixels to estimate the formation's vertical direction, uses simplified roster/order buttons, raises enough soldiers before the band, and commits the visually inferred lane."
+    }
+  ],
+  "uncertainties": []
+}

@@ -1,0 +1,320 @@
+{
+  "case_index": 131,
+  "public_environment_name": "Concertina Courier",
+  "environment_id": "concertina_courier_env",
+  "difficulty": 1,
+  "interaction_mode": "full",
+  "label": "no",
+  "controls_available": [
+    {
+      "name": "slide left",
+      "control": [
+        -1,
+        0
+      ],
+      "surface": "visible body arrow",
+      "input": "pointerdown and hold; pointerup, pointercancel, or blur releases to coast",
+      "outcome_affecting": true
+    },
+    {
+      "name": "slide right",
+      "control": [
+        1,
+        0
+      ],
+      "surface": "visible body arrow",
+      "input": "pointerdown and hold; pointerup, pointercancel, or blur releases to coast",
+      "outcome_affecting": true
+    },
+    {
+      "name": "morph taller",
+      "control": [
+        0,
+        1
+      ],
+      "surface": "visible body arrow",
+      "input": "pointerdown and hold; pointerup, pointercancel, or blur releases to coast",
+      "outcome_affecting": true
+    },
+    {
+      "name": "morph wider",
+      "control": [
+        0,
+        -1
+      ],
+      "surface": "visible body arrow",
+      "input": "pointerdown and hold; pointerup, pointercancel, or blur releases to coast",
+      "outcome_affecting": true
+    },
+    {
+      "name": "release/coast",
+      "control": [
+        0,
+        0
+      ],
+      "surface": "pointer release",
+      "input": "release the current body hold",
+      "outcome_affecting": true
+    },
+    {
+      "name": "CERTIFY",
+      "surface": "visible button",
+      "input": "click",
+      "outcome_affecting": false
+    },
+    {
+      "name": "NEW ROOM",
+      "surface": "visible button",
+      "input": "click",
+      "outcome_affecting": false,
+      "effect": "abandons the current room and requests a fresh one"
+    }
+  ],
+  "autonomous_processes": [
+    {
+      "period": "Active simulation between input events",
+      "change": "Every 40 ms, four substeps apply the current control, update height and horizontal velocity/position, apply gravity, resolve floor contact, and test seal contact.",
+      "outcome_affecting_control_remains_available": true
+    },
+    {
+      "period": "After a full-mode body hold is released",
+      "change": "The control becomes [0,0]; horizontal velocity is frictionally decayed, so the parcel coasts a finite visible distance. Gravity is immediately stopped by the full-width floor in this configuration.",
+      "outcome_affecting_control_remains_available": true
+    },
+    {
+      "period": "After terminal solved, fell, or timeout status",
+      "change": "The simulation stops advancing; only administrative certification or retry UI remains.",
+      "outcome_affecting_control_remains_available": false
+    }
+  ],
+  "grouped_control_modes": [
+    {
+      "mode": "slide-left hold",
+      "control": [
+        -1,
+        0
+      ],
+      "input_source": "body_hold"
+    },
+    {
+      "mode": "slide-right hold",
+      "control": [
+        1,
+        0
+      ],
+      "input_source": "body_hold"
+    },
+    {
+      "mode": "morph-taller hold",
+      "control": [
+        0,
+        1
+      ],
+      "input_source": "body_hold"
+    },
+    {
+      "mode": "morph-wider hold",
+      "control": [
+        0,
+        -1
+      ],
+      "input_source": "body_hold"
+    },
+    {
+      "mode": "coast/release",
+      "control": [
+        0,
+        0
+      ],
+      "input_source": "body_hold"
+    }
+  ],
+  "delta_ms": null,
+  "window_ms": 80,
+  "clause_i": {
+    "holds": false,
+    "reason": "An observation-free route can be fixed from the exact level-1 geometry: hold morph-taller for seven 40 ms physics ticks to reach h=101, release, then hold slide-right until terminal. With no layout key the generator uses the linear branch; gap=0 replaces the floor with a full-width floor, and all seal centers are to the right of the initial x=100 (the random ranges are approximately x=130-160, 270-325, 405-475, and 835-865). The h=101 parcel fits beneath the clearance-105 shelf and its top is within 10 units of the y=310 seal, so the fixed rightward sweep succeeds without recent-frame information. Under the primary pass/fail outcome, this supplies an observation-free success-maximizing q; the random offsets do not require a different route."
+  },
+  "clause_ii": {
+    "holds": true,
+    "reason": "A bounded-window mapping can ignore its input window and follow the same fixed action schedule. The configured 80 ms window and three chronological frames are therefore sufficient but unnecessary for selecting a success-maximizing action in this configuration."
+  },
+  "clause_iii": {
+    "holds": false,
+    "reason": "The only non-clock change during a no-new-action interval is finite inertial coasting plus floor-supported physics. At difficulty 1 there is no unsupported gap and no alcove; seals remain visible and collectible, horizontal motion is reversible, and height can be corrected while the parcel remains supported. Waiting can move the parcel, but it does not make a required control opportunity unavailable or strictly reduce eventual verifier success; a max_ticks deadline is not a qualifying cause under the definition. Thus no Delta and grouped mode has the required strict Q loss from a common visible process."
+  },
+  "common_visible_process": "No qualifying common process exists. The visible parcel coasts under inertia, but in the exact linear full-floor level-1 room that motion does not close or degrade an outcome-affecting opportunity; a fixed rightward sweep remains available after any such delay.",
+  "pre_run": {
+    "threshold": 0.5,
+    "at_least_half": true,
+    "rate": null,
+    "basis": "source_structural",
+    "reason": "All generated level-1 instances have the same linear full-floor topology and only bounded horizontal seal offsets. A fixed preparation raises h from 80 to 101, then a final continuous right hold starts the autonomous outcome interval; no further outcome-affecting input is needed before the sweep reaches every seal and the task becomes solved. The source structure therefore implies at least half (in fact all) generated seeds admit a pre-run solution; no percentage is claimed. A 100-seed replay probe corroborated this result.",
+    "seed_probe": {
+      "seeds": [
+        "0",
+        "1",
+        "2",
+        "3",
+        "4",
+        "5",
+        "6",
+        "7",
+        "8",
+        "9",
+        "10",
+        "11",
+        "12",
+        "13",
+        "14",
+        "15",
+        "16",
+        "17",
+        "18",
+        "19",
+        "20",
+        "21",
+        "22",
+        "23",
+        "24",
+        "25",
+        "26",
+        "27",
+        "28",
+        "29",
+        "30",
+        "31",
+        "32",
+        "33",
+        "34",
+        "35",
+        "36",
+        "37",
+        "38",
+        "39",
+        "40",
+        "41",
+        "42",
+        "43",
+        "44",
+        "45",
+        "46",
+        "47",
+        "48",
+        "49",
+        "50",
+        "51",
+        "52",
+        "53",
+        "54",
+        "55",
+        "56",
+        "57",
+        "58",
+        "59",
+        "60",
+        "61",
+        "62",
+        "63",
+        "64",
+        "65",
+        "66",
+        "67",
+        "68",
+        "69",
+        "70",
+        "71",
+        "72",
+        "73",
+        "74",
+        "75",
+        "76",
+        "77",
+        "78",
+        "79",
+        "80",
+        "81",
+        "82",
+        "83",
+        "84",
+        "85",
+        "86",
+        "87",
+        "88",
+        "89",
+        "90",
+        "91",
+        "92",
+        "93",
+        "94",
+        "95",
+        "96",
+        "97",
+        "98",
+        "99"
+      ],
+      "numerator": 100,
+      "denominator": 100,
+      "code": "PYTHONDONTWRITEBYTECODE=1 python3 - <<'PY'\nimport copy, importlib.util\nfrom pathlib import Path\nroot = Path('/private/tmp/weird-cua-realtime-source-20260910.ObhAQg')\ndef load(name, path):\n    spec = importlib.util.spec_from_file_location(name, path)\n    mod = importlib.util.module_from_spec(spec)\n    spec.loader.exec_module(mod)\n    return mod\ngen = load('concertina_generator_probe', root/'weird_captcha_gym/shared_scripts/incubator_generators/concertina_courier.py')\ngrade = load('concertina_grader_probe', root/'weird_captcha_gym/shared_runtime/server/incubator_graders/concertina_courier.py')\ncondition = {'difficulty': 1, 'interaction': 'full', 'real_time': 'live', 'difficulty_parameters': {'clearance': 105, 'gap': 0, 'reach': 100, 'alcove': 0, 'drag': 0.65}}\ntask = {'id': 'concertina_courier_seed_probe@0.1', '_control_condition': condition}\nsolved = 0\nfor i in range(100):\n    _, world = gen.generate(task, str(i))\n    state = copy.deepcopy(world['initial_state'])\n    for _ in range(7):\n        grade.advance(state, [0, 1], world)\n    for _ in range(2):\n        grade.advance(state, [0, 0], world)\n    for _ in range(400):\n        grade.advance(state, [1, 0], world)\n        if state['status'] != 'active':\n            break\n    solved += state['status'] == 'solved'\nprint({'solved': solved, 'seeds': 100})\nPY"
+    }
+  },
+  "files_read_completely": [
+    "AGENTS.md",
+    "weird_captcha_gym/docs/controllability/real-time.md",
+    "weird_captcha_gym/environments/concertina_courier_env/controls.json",
+    "weird_captcha_gym/environments/concertina_courier_env/env.json",
+    "weird_captcha_gym/environments/concertina_courier_env/tasks/concertina_courier_seed_0001/task.json",
+    "weird_captcha_gym/environments/concertina_courier_env/tasks/concertina_courier_seed_0001/setup_task.sh",
+    "weird_captcha_gym/environments/concertina_courier_env/tasks/concertina_courier_seed_0001/export_result.sh",
+    "weird_captcha_gym/shared_scripts/incubator_generators/concertina_courier.py",
+    "weird_captcha_gym/shared_runtime/app/mechanics/concertina_courier.js",
+    "weird_captcha_gym/shared_runtime/app/mechanics/concertina_courier.css",
+    "weird_captcha_gym/shared_runtime/server/incubator_graders/concertina_courier.py",
+    "weird_captcha_gym/shared_runtime/verifier_helpers.py",
+    "weird_captcha_gym/environments/concertina_courier_env/tasks/concertina_courier_seed_0001/verifier.py",
+    "weird_captcha_gym/tools/incubator_solvers/concertina_courier.py"
+  ],
+  "source_evidence": [
+    {
+      "path": "weird_captcha_gym/environments/concertina_courier_env/controls.json",
+      "lines": "10-19, 93-104",
+      "claim": "Difficulty 1 is very_easy with clearance 105, gap 0, reach 100, alcove 0, drag 0.65; full interaction is implemented and the configured observation is 80 ms with three frames."
+    },
+    {
+      "path": "weird_captcha_gym/shared_scripts/incubator_generators/concertina_courier.py",
+      "lines": "14-30, 31-42",
+      "claim": "The supplied difficulty parameters are used directly; because level 1 has no layout key, generation takes the linear branch, gap 0 creates a full-width floor, alcove 0 adds no well, and the seal coordinates vary only within fixed horizontal ranges."
+    },
+    {
+      "path": "weird_captcha_gym/shared_runtime/app/mechanics/concertina_courier.js",
+      "lines": "5-22",
+      "claim": "The parcel has fixed area, explicit height bounds, four physics substeps per tick, inertial horizontal velocity with drag, gravity/floor collision, monotone seal collection, and terminal checks."
+    },
+    {
+      "path": "weird_captcha_gym/shared_runtime/app/mechanics/concertina_courier.js",
+      "lines": "24-28, 42-52",
+      "claim": "Full mode renders body-arrow controls and hides the simplified console; task time advances from performance.now at tick_ms, and pointer holds/releases set the control while the animation frame loop advances the simulation."
+    },
+    {
+      "path": "weird_captcha_gym/shared_runtime/app/mechanics/concertina_courier.css",
+      "lines": "1",
+      "claim": "The visible body-control overlay is positioned over the parcel, while the alternate console is hidden when the full interface is selected."
+    },
+    {
+      "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/concertina_courier.py",
+      "lines": "21-49, 52-86",
+      "claim": "The authoritative replay applies the same physics, enforces the selected full input surface and release-before-new-hold rule, and passes only when replay reaches solved with every seal collected."
+    },
+    {
+      "path": "weird_captcha_gym/environments/concertina_courier_env/tasks/concertina_courier_seed_0001/verifier.py",
+      "lines": "36-49",
+      "claim": "Verification loads the exported result and invokes the independent Concertina Courier replay grader rather than trusting client collection claims."
+    },
+    {
+      "path": "weird_captcha_gym/tools/incubator_solvers/concertina_courier.py",
+      "lines": "53-69, 72-123",
+      "claim": "The reference solver uses state feedback and short prediction for harder routes, and its task-time waiting is delegated to the harness; this private solver is wiring evidence, not policy-visible information."
+    }
+  ],
+  "uncertainties": []
+}

@@ -1,0 +1,109 @@
+{
+  "case_index": 139,
+  "public_environment_name": "Concertina Courier",
+  "environment_id": "concertina_courier_env",
+  "difficulty": 5,
+  "interaction_mode": "full",
+  "label": "yes",
+  "controls_available": [
+    "Full-mode pointer hold on the parcel-attached Slide left body arrow.",
+    "Full-mode pointer hold on the parcel-attached Morph taller body arrow.",
+    "Full-mode pointer hold on the parcel-attached Slide right body arrow.",
+    "Full-mode pointer hold on the parcel-attached Morph wider body arrow.",
+    "Pointer release, cancel, or blur sets neutral control [0, 0] and leaves the parcel to coast; CERTIFY is administrative."
+  ],
+  "autonomous_processes": [
+    "The requestAnimationFrame loop advances the simulation according to elapsed task time even when no new input arrives.",
+    "Each physics tick applies gravity to vertical velocity and bottom position, collision/landing, seal contact, and fall or solved status updates.",
+    "Existing horizontal velocity is updated by drag and moves the parcel even with neutral control, so release produces visible coasting."
+  ],
+  "grouped_control_modes": [
+    "D_full_body_hold: all full-mode parcel-attached body-arrow holds, including lateral slide and morphology, across every seed and occurrence.",
+    "D_full_release_coast: full-mode pointer release/cancel/blur neutralization that leaves the active physical state evolving."
+  ],
+  "delta_ms": 160,
+  "window_ms": 80,
+  "clause_i": {
+    "holds": true,
+    "reason": "For the same prior action history and task times, generated island worlds can be reflected and can differ in landing side, gap, well position, and contact-induced velocity. At a coasting stage the delayed-optimal body correction therefore differs between otherwise identical I_t histories; an observation-free q cannot choose the required side or shape action for every history in C_Delta(D)."
+  },
+  "clause_ii": {
+    "holds": true,
+    "reason": "The bounded 80 ms window contains three chronological frames, while the canvas visibly renders the solids, seals, parcel rectangle, and parcel-attached controls. Consecutive parcel positions expose the sign and magnitude of coasting velocity and its clearance from the receiving opening, so g can select the lateral counter-hold or morph action that is optimal at the 160 ms delayed endpoint."
+  },
+  "clause_iii": {
+    "holds": true,
+    "reason": "Use a reachable tall parcel at h=200 (width=6400/200=32) moving toward an L5 receiving-opening edge. The opening is 52-60 units wide, leaving only 10-14 units of center margin. With neutral control after release, the physics still updates vx and x; at the speed cap, two ticks/80 ms move the parcel about 8 units while it remains recoverable, making the same counter-slide action strictly less effective than at t, and four ticks/160 ms can consume the margin. This loss is caused by visible non-clock x/vx evolution, not by a deadline or later completion."
+  },
+  "common_visible_process": "Unsupported or released-parcel physics: the parcel's position and motion change autonomously on the canvas under inertial coasting and gravity. The same visible trajectory in the recent frames determines which full-mode correction is appropriate at the delayed endpoint and simultaneously consumes the narrow landing/opening clearance, so the relevant action opportunity degrades while waiting.",
+  "pre_run": {
+    "threshold": 0.5,
+    "at_least_half": false,
+    "rate": null,
+    "basis": "source_structural",
+    "reason": "At L5 every generated instance uses the island layout with a 140-175 unit gap and a 52-60 unit receiving opening. The area-preserving parcel needs a broad shape to bridge the gap, then a tall/narrow shape (up to h=200, width 32) to reach and enter the upper well. Neutral physics changes position and velocity but never morphs height, and the route therefore requires outcome-affecting morph and steering actions after the run has begun. There is no separate autonomous-start phase in the browser implementation; a no-action passive phase cannot complete the staged all-seal outcome, so at least half of instances cannot admit a successful pre-run solution.",
+    "seed_probe": null
+  },
+  "files_read_completely": [
+    "AGENTS.md",
+    "weird_captcha_gym/docs/controllability/real-time.md",
+    "weird_captcha_gym/environments/concertina_courier_env/controls.json",
+    "weird_captcha_gym/environments/concertina_courier_env/env.json",
+    "weird_captcha_gym/environments/concertina_courier_env/tasks/concertina_courier_seed_0001/task.json",
+    "weird_captcha_gym/environments/concertina_courier_env/tasks/concertina_courier_seed_0001/setup_task.sh",
+    "weird_captcha_gym/environments/concertina_courier_env/tasks/concertina_courier_seed_0001/export_result.sh",
+    "weird_captcha_gym/environments/concertina_courier_env/tasks/concertina_courier_seed_0001/verifier.py",
+    "weird_captcha_gym/environments/concertina_courier_env/scripts/setup_puzzle_runtime.sh",
+    "weird_captcha_gym/environments/concertina_courier_env/scripts/install_puzzle_runtime.sh",
+    "weird_captcha_gym/shared_scripts/setup_task.py",
+    "weird_captcha_gym/shared_scripts/incubator_generators/concertina_courier.py",
+    "weird_captcha_gym/shared_runtime/app/mechanics/concertina_courier.js",
+    "weird_captcha_gym/shared_runtime/app/mechanics/concertina_courier.css",
+    "weird_captcha_gym/shared_runtime/server/incubator_graders/concertina_courier.py",
+    "weird_captcha_gym/shared_runtime/verifier_helpers.py",
+    "weird_captcha_gym/tools/incubator_solvers/concertina_courier.py"
+  ],
+  "source_evidence": [
+    {
+      "path": "weird_captcha_gym/environments/concertina_courier_env/controls.json",
+      "lines": "72-105",
+      "claim": "Difficulty 5 is the island profile with island_width 170, gap 140-175, opening 52-60, clearance 42, reach 185, drag 0.94, and well_clearance 145; full interaction is implemented; the observation window is 80 ms with 3 frames."
+    },
+    {
+      "path": "weird_captcha_gym/shared_scripts/incubator_generators/concertina_courier.py",
+      "lines": "14-19,46-78",
+      "claim": "The generator applies the supplied difficulty condition, constructs the randomized island/landing/roof geometry and four seal positions, randomly reflects the world, and initializes an active area-6400 parcel with h=80, bottom=420, and zero velocity."
+    },
+    {
+      "path": "weird_captcha_gym/shared_runtime/app/mechanics/concertina_courier.js",
+      "lines": "5-22",
+      "claim": "The browser physics preserves area through width=area/h, updates height only from control, applies drag and horizontal movement, applies gravity and landing, collects seals, and terminates on fall, solve, or timeout."
+    },
+    {
+      "path": "weird_captcha_gym/shared_runtime/app/mechanics/concertina_courier.js",
+      "lines": "24-43,46-52",
+      "claim": "Full mode exposes four body arrows; the animation tick advances from elapsed performance time, pointer release sets [0,0], and body pointer events record holds while the parcel continues to simulate."
+    },
+    {
+      "path": "weird_captcha_gym/shared_runtime/app/mechanics/concertina_courier.css",
+      "lines": "1",
+      "claim": "The visible room contains the canvas and parcel-attached body-control layout used by the full interaction surface."
+    },
+    {
+      "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/concertina_courier.py",
+      "lines": "21-49,52-85",
+      "claim": "The authoritative replay uses the same substep physics and checks the exact generated world, interaction mode, body-hold input source, event transitions, terminal tick, and final physical state."
+    },
+    {
+      "path": "weird_captcha_gym/tools/incubator_solvers/concertina_courier.py",
+      "lines": "10-38,53-69,72-149",
+      "claim": "The reference controller predicts drag/coast, brakes with feedback, and for island worlds performs distinct tall, lateral, flattened, lateral, and tall stages; its module explicitly treats privileged state access as wiring-test evidence."
+    },
+    {
+      "path": "weird_captcha_gym/environments/concertina_courier_env/tasks/concertina_courier_seed_0001/verifier.py",
+      "lines": "22-49",
+      "claim": "Task verification loads the exported result and the Concertina Courier replay grader rather than trusting client collection claims."
+    }
+  ],
+  "uncertainties": []
+}

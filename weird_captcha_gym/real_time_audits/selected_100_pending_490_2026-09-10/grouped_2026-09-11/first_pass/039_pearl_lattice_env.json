@@ -1,0 +1,1087 @@
+{
+  "case_index": 39,
+  "environment_id": "pearl_lattice_env",
+  "public_environment_name": "Pearl Lattice",
+  "configuration_reports": [
+    {
+      "case_index": 381,
+      "public_environment_name": "Pearl Lattice",
+      "environment_id": "pearl_lattice_env",
+      "difficulty": 1,
+      "interaction_mode": "full",
+      "label": "no",
+      "controls_available": [
+        "Active profile: geometry=planar_easy, prefill_player=3, extra_noise=0, preview_label_detail=coordinates, opponent_policy=threat_then_block, max_player_moves=3; rotation_step_degrees=18, rotation_rate=0.0022.",
+        "Visible transparent 4×4×4 lattice with the current glowing preview; pearls fall to the lowest free y in the selected (x,z) column.",
+        "Full input: click the lattice SVG surface to advance to the next legal column; click the separate below-lattice CONFIRM PREVIEW zone, or activate that focused zone with Enter/Space, to place.",
+        "At most 3 player placements; CERTIFY WIN and ABANDON / TEST FAILURE are terminal administrative controls."
+      ],
+      "autonomous_processes": [
+        "During every no-action interval, the visible lattice projection rotates continuously at rotation_rate=0.0022, quantized in 18-degree yaw steps; only model.yaw/SVG projection changes, while model.board, legal columns, preview, and landing height remain unchanged.",
+        "Each confirmation synchronously drops the player's pearl under y-gravity and immediately invokes the threat_then_block clockwork-rival response in the same handler; there is no intervening autonomous no-action period for the rival."
+      ],
+      "grouped_control_modes": [
+        "D_cycle: every full-mode board_surface activation that emits cycle_preview and advances the logical preview.",
+        "D_place: every full-mode confirm_area click or keyboard activation that emits place for the current preview.",
+        "certify_button and abandon are administrative and are not outcome-affecting grouped control modes."
+      ],
+      "delta_ms": null,
+      "window_ms": null,
+      "clause_i": {
+        "holds": false,
+        "reason": "The only autonomous process never changes which logical outcome-affecting action is appropriate. Waiting/no-op or a noncommitting preview cycle is not made worse by yaw, and any need to inspect the board is static spatial planning rather than evidence from a changing task state; the required observation dependence for this process is absent."
+      },
+      "clause_ii": {
+        "holds": true,
+        "reason": "A current screenshot, or the configured 500-ms/5-frame bounded window, can expose the static board, current preview, and landing layer well enough to choose a cycle or confirmation action. This is ordinary static visual grounding and does not make the yaw process a real-time witness."
+      },
+      "clause_iii": {
+        "holds": false,
+        "reason": "For any delay inside the active game, yaw changes only the SVG projection. cycle() and place() use model.board/model.preview and the selected column remains legal and confirmable with the same effect; no action's Q value or Q advantage strictly decreases before the delay ends."
+      },
+      "common_visible_process": "The only common visible autonomous process is continuous yaw rotation of the transparent lattice. It changes the rendered projection but not the logical board, preview, legal-column set, landing height, hit semantics, opponent timing, or certification outcome, so it cannot witness clauses (i)-(iii) together.",
+      "pre_run": {
+        "threshold": 0.5,
+        "at_least_half": null,
+        "rate": null,
+        "basis": "not_applicable",
+        "reason": "Not applicable because clause (iii) fails for this mathematical configuration; the pre-run override is not needed to assign No and no percentage is asserted.",
+        "seed_probe": null
+      },
+      "files_read_completely": [
+        "AGENTS.md",
+        "weird_captcha_gym/docs/controllability/real-time.md",
+        "weird_captcha_gym/environments/pearl_lattice_env/controls.json",
+        "weird_captcha_gym/environments/pearl_lattice_env/env.json",
+        "weird_captcha_gym/environments/pearl_lattice_env/tasks/pearl_lattice_seed_0001/task.json",
+        "weird_captcha_gym/environments/pearl_lattice_env/tasks/pearl_lattice_seed_0001/verifier.py",
+        "weird_captcha_gym/shared_scripts/incubator_generators/pearl_lattice.py",
+        "weird_captcha_gym/shared_runtime/app/mechanics/pearl_lattice.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/pearl_lattice.css",
+        "weird_captcha_gym/shared_runtime/server/incubator_graders/pearl_lattice.py",
+        "weird_captcha_gym/shared_runtime/verifier_helpers.py",
+        "weird_captcha_gym/tools/incubator_solvers/pearl_lattice.py"
+      ],
+      "source_evidence": [
+        {
+          "path": "weird_captcha_gym/environments/pearl_lattice_env/controls.json",
+          "lines": "6-12",
+          "claim": "Difficulty 1 activates geometry=planar_easy, prefill_player=3, extra_noise=0, preview_label_detail=coordinates, opponent_policy=threat_then_block, max_player_moves=3, including rotation_step_degrees=18 and rotation_rate=0.0022."
+        },
+        {
+          "path": "weird_captcha_gym/environments/pearl_lattice_env/controls.json",
+          "lines": "52-57",
+          "claim": "In full mode, the SVG board surface cycles the preview and the separate below-board confirmation zone places the pearl. The configured observation window is 500 ms with 5 frames, and both modes use the same real-time settings."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/pearl_lattice.py",
+          "lines": "262-364",
+          "claim": "The level parameters construct a static gravity board, supports, noise, opponent pressure, and a bounded solution; no autonomous clock-state mutation is generated."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/pearl_lattice.js",
+          "lines": "105-121",
+          "claim": "Legal columns, landing height, and drops are computed from model.board and y-gravity."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/pearl_lattice.js",
+          "lines": "163-220",
+          "claim": "Cycling advances the logical legal-column preview, and placement uses that preview and synchronously applies the player drop followed by the clockwork rival policy."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/pearl_lattice.js",
+          "lines": "288-306",
+          "claim": "The animation loop changes only model.yaw and redraws the projection at the configured step/rate. The event listeners enable board_surface cycling and confirm_area placement only for full mode."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/pearl_lattice.css",
+          "lines": "19-35",
+          "claim": "In full mode, the SVG board surface cycles the preview and the separate below-board confirmation zone places the pearl."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/pearl_lattice.py",
+          "lines": "134-269",
+          "claim": "The grader binds the expected interaction source and replays only cycles, gravity placements, rival responses, and certification; it has no yaw or timing condition."
+        },
+        {
+          "path": "weird_captcha_gym/environments/pearl_lattice_env/tasks/pearl_lattice_seed_0001/verifier.py",
+          "lines": "19-35",
+          "claim": "Verification loads the exported UI result and the independent Pearl Lattice replay grader, so certification checks the logical outcome."
+        }
+      ],
+      "uncertainties": []
+    },
+    {
+      "case_index": 382,
+      "public_environment_name": "Pearl Lattice",
+      "environment_id": "pearl_lattice_env",
+      "difficulty": 1,
+      "interaction_mode": "simplified",
+      "label": "no",
+      "controls_available": [
+        "Active profile: geometry=planar_easy, prefill_player=3, extra_noise=0, preview_label_detail=coordinates, opponent_policy=threat_then_block, max_player_moves=3; rotation_step_degrees=18, rotation_rate=0.0022.",
+        "Visible transparent 4×4×4 lattice with the current glowing preview; pearls fall to the lowest free y in the selected (x,z) column.",
+        "Simplified input: NEXT LEGAL COLUMN advances to the next legal column and CONFIRM PREVIEW places the current preview; direct board-surface and below-board inputs are inactive.",
+        "At most 3 player placements; CERTIFY WIN and ABANDON / TEST FAILURE are terminal administrative controls."
+      ],
+      "autonomous_processes": [
+        "During every no-action interval, the visible lattice projection rotates continuously at rotation_rate=0.0022, quantized in 18-degree yaw steps; only model.yaw/SVG projection changes, while model.board, legal columns, preview, and landing height remain unchanged.",
+        "Each confirmation synchronously drops the player's pearl under y-gravity and immediately invokes the threat_then_block clockwork-rival response in the same handler; there is no intervening autonomous no-action period for the rival."
+      ],
+      "grouped_control_modes": [
+        "D_cycle: every simplified proxy_next activation that emits cycle_preview and advances the logical preview.",
+        "D_place: every simplified confirm_button activation that emits place for the current preview.",
+        "certify_button and abandon are administrative and are not outcome-affecting grouped control modes."
+      ],
+      "delta_ms": null,
+      "window_ms": null,
+      "clause_i": {
+        "holds": false,
+        "reason": "The only autonomous process never changes which logical outcome-affecting action is appropriate. Waiting/no-op or a noncommitting preview cycle is not made worse by yaw, and any need to inspect the board is static spatial planning rather than evidence from a changing task state; the required observation dependence for this process is absent."
+      },
+      "clause_ii": {
+        "holds": true,
+        "reason": "A current screenshot, or the configured 500-ms/5-frame bounded window, can expose the static board, current preview, and landing layer well enough to choose a cycle or confirmation action. This is ordinary static visual grounding and does not make the yaw process a real-time witness."
+      },
+      "clause_iii": {
+        "holds": false,
+        "reason": "For any delay inside the active game, yaw changes only the SVG projection. cycle() and place() use model.board/model.preview and the selected column remains legal and confirmable with the same effect; no action's Q value or Q advantage strictly decreases before the delay ends."
+      },
+      "common_visible_process": "The only common visible autonomous process is continuous yaw rotation of the transparent lattice. It changes the rendered projection but not the logical board, preview, legal-column set, landing height, hit semantics, opponent timing, or certification outcome, so it cannot witness clauses (i)-(iii) together.",
+      "pre_run": {
+        "threshold": 0.5,
+        "at_least_half": null,
+        "rate": null,
+        "basis": "not_applicable",
+        "reason": "Not applicable because clause (iii) fails for this mathematical configuration; the pre-run override is not needed to assign No and no percentage is asserted.",
+        "seed_probe": null
+      },
+      "files_read_completely": [
+        "AGENTS.md",
+        "weird_captcha_gym/docs/controllability/real-time.md",
+        "weird_captcha_gym/environments/pearl_lattice_env/controls.json",
+        "weird_captcha_gym/environments/pearl_lattice_env/env.json",
+        "weird_captcha_gym/environments/pearl_lattice_env/tasks/pearl_lattice_seed_0001/task.json",
+        "weird_captcha_gym/environments/pearl_lattice_env/tasks/pearl_lattice_seed_0001/verifier.py",
+        "weird_captcha_gym/shared_scripts/incubator_generators/pearl_lattice.py",
+        "weird_captcha_gym/shared_runtime/app/mechanics/pearl_lattice.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/pearl_lattice.css",
+        "weird_captcha_gym/shared_runtime/server/incubator_graders/pearl_lattice.py",
+        "weird_captcha_gym/shared_runtime/verifier_helpers.py",
+        "weird_captcha_gym/tools/incubator_solvers/pearl_lattice.py"
+      ],
+      "source_evidence": [
+        {
+          "path": "weird_captcha_gym/environments/pearl_lattice_env/controls.json",
+          "lines": "6-12",
+          "claim": "Difficulty 1 activates geometry=planar_easy, prefill_player=3, extra_noise=0, preview_label_detail=coordinates, opponent_policy=threat_then_block, max_player_moves=3, including rotation_step_degrees=18 and rotation_rate=0.0022."
+        },
+        {
+          "path": "weird_captcha_gym/environments/pearl_lattice_env/controls.json",
+          "lines": "52-57",
+          "claim": "In simplified mode, visible NEXT LEGAL COLUMN and CONFIRM PREVIEW buttons replace the board-surface and below-board inputs while preserving the same board and win predicate. The configured observation window is 500 ms with 5 frames, and both modes use the same real-time settings."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/pearl_lattice.py",
+          "lines": "262-364",
+          "claim": "The level parameters construct a static gravity board, supports, noise, opponent pressure, and a bounded solution; no autonomous clock-state mutation is generated."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/pearl_lattice.js",
+          "lines": "105-121",
+          "claim": "Legal columns, landing height, and drops are computed from model.board and y-gravity."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/pearl_lattice.js",
+          "lines": "163-220",
+          "claim": "Cycling advances the logical legal-column preview, and placement uses that preview and synchronously applies the player drop followed by the clockwork rival policy."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/pearl_lattice.js",
+          "lines": "288-306",
+          "claim": "The animation loop changes only model.yaw and redraws the projection at the configured step/rate. The event listeners route proxy_next and confirm_button to the same cycle and placement functions; direct surface controls are inactive."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/pearl_lattice.css",
+          "lines": "49-53",
+          "claim": "In simplified mode, visible NEXT LEGAL COLUMN and CONFIRM PREVIEW buttons replace the board-surface and below-board inputs while preserving the same board and win predicate."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/pearl_lattice.py",
+          "lines": "134-269",
+          "claim": "The grader binds the expected interaction source and replays only cycles, gravity placements, rival responses, and certification; it has no yaw or timing condition."
+        },
+        {
+          "path": "weird_captcha_gym/environments/pearl_lattice_env/tasks/pearl_lattice_seed_0001/verifier.py",
+          "lines": "19-35",
+          "claim": "Verification loads the exported UI result and the independent Pearl Lattice replay grader, so certification checks the logical outcome."
+        }
+      ],
+      "uncertainties": []
+    },
+    {
+      "case_index": 383,
+      "public_environment_name": "Pearl Lattice",
+      "environment_id": "pearl_lattice_env",
+      "difficulty": 2,
+      "interaction_mode": "full",
+      "label": "no",
+      "controls_available": [
+        "Active profile: geometry=cross_fork, prefill_player=2, extra_noise=2, preview_label_detail=coordinates, opponent_policy=win_then_pressure, max_player_moves=6; rotation_step_degrees=15, rotation_rate=0.0019.",
+        "Visible transparent 4×4×4 lattice with the current glowing preview; pearls fall to the lowest free y in the selected (x,z) column.",
+        "Full input: click the lattice SVG surface to advance to the next legal column; click the separate below-lattice CONFIRM PREVIEW zone, or activate that focused zone with Enter/Space, to place.",
+        "At most 6 player placements; CERTIFY WIN and ABANDON / TEST FAILURE are terminal administrative controls."
+      ],
+      "autonomous_processes": [
+        "During every no-action interval, the visible lattice projection rotates continuously at rotation_rate=0.0019, quantized in 15-degree yaw steps; only model.yaw/SVG projection changes, while model.board, legal columns, preview, and landing height remain unchanged.",
+        "Each confirmation synchronously drops the player's pearl under y-gravity and immediately invokes the win_then_pressure clockwork-rival response in the same handler; there is no intervening autonomous no-action period for the rival."
+      ],
+      "grouped_control_modes": [
+        "D_cycle: every full-mode board_surface activation that emits cycle_preview and advances the logical preview.",
+        "D_place: every full-mode confirm_area click or keyboard activation that emits place for the current preview.",
+        "certify_button and abandon are administrative and are not outcome-affecting grouped control modes."
+      ],
+      "delta_ms": null,
+      "window_ms": null,
+      "clause_i": {
+        "holds": false,
+        "reason": "The only autonomous process never changes which logical outcome-affecting action is appropriate. Waiting/no-op or a noncommitting preview cycle is not made worse by yaw, and any need to inspect the board is static spatial planning rather than evidence from a changing task state; the required observation dependence for this process is absent."
+      },
+      "clause_ii": {
+        "holds": true,
+        "reason": "A current screenshot, or the configured 500-ms/5-frame bounded window, can expose the static board, current preview, and landing layer well enough to choose a cycle or confirmation action. This is ordinary static visual grounding and does not make the yaw process a real-time witness."
+      },
+      "clause_iii": {
+        "holds": false,
+        "reason": "For any delay inside the active game, yaw changes only the SVG projection. cycle() and place() use model.board/model.preview and the selected column remains legal and confirmable with the same effect; no action's Q value or Q advantage strictly decreases before the delay ends."
+      },
+      "common_visible_process": "The only common visible autonomous process is continuous yaw rotation of the transparent lattice. It changes the rendered projection but not the logical board, preview, legal-column set, landing height, hit semantics, opponent timing, or certification outcome, so it cannot witness clauses (i)-(iii) together.",
+      "pre_run": {
+        "threshold": 0.5,
+        "at_least_half": null,
+        "rate": null,
+        "basis": "not_applicable",
+        "reason": "Not applicable because clause (iii) fails for this mathematical configuration; the pre-run override is not needed to assign No and no percentage is asserted.",
+        "seed_probe": null
+      },
+      "files_read_completely": [
+        "AGENTS.md",
+        "weird_captcha_gym/docs/controllability/real-time.md",
+        "weird_captcha_gym/environments/pearl_lattice_env/controls.json",
+        "weird_captcha_gym/environments/pearl_lattice_env/env.json",
+        "weird_captcha_gym/environments/pearl_lattice_env/tasks/pearl_lattice_seed_0001/task.json",
+        "weird_captcha_gym/environments/pearl_lattice_env/tasks/pearl_lattice_seed_0001/verifier.py",
+        "weird_captcha_gym/shared_scripts/incubator_generators/pearl_lattice.py",
+        "weird_captcha_gym/shared_runtime/app/mechanics/pearl_lattice.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/pearl_lattice.css",
+        "weird_captcha_gym/shared_runtime/server/incubator_graders/pearl_lattice.py",
+        "weird_captcha_gym/shared_runtime/verifier_helpers.py",
+        "weird_captcha_gym/tools/incubator_solvers/pearl_lattice.py"
+      ],
+      "source_evidence": [
+        {
+          "path": "weird_captcha_gym/environments/pearl_lattice_env/controls.json",
+          "lines": "15-21",
+          "claim": "Difficulty 2 activates geometry=cross_fork, prefill_player=2, extra_noise=2, preview_label_detail=coordinates, opponent_policy=win_then_pressure, max_player_moves=6, including rotation_step_degrees=15 and rotation_rate=0.0019."
+        },
+        {
+          "path": "weird_captcha_gym/environments/pearl_lattice_env/controls.json",
+          "lines": "52-57",
+          "claim": "In full mode, the SVG board surface cycles the preview and the separate below-board confirmation zone places the pearl. The configured observation window is 500 ms with 5 frames, and both modes use the same real-time settings."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/pearl_lattice.py",
+          "lines": "262-364",
+          "claim": "The level parameters construct a static gravity board, supports, noise, opponent pressure, and a bounded solution; no autonomous clock-state mutation is generated."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/pearl_lattice.js",
+          "lines": "105-121",
+          "claim": "Legal columns, landing height, and drops are computed from model.board and y-gravity."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/pearl_lattice.js",
+          "lines": "163-220",
+          "claim": "Cycling advances the logical legal-column preview, and placement uses that preview and synchronously applies the player drop followed by the clockwork rival policy."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/pearl_lattice.js",
+          "lines": "288-306",
+          "claim": "The animation loop changes only model.yaw and redraws the projection at the configured step/rate. The event listeners enable board_surface cycling and confirm_area placement only for full mode."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/pearl_lattice.css",
+          "lines": "19-35",
+          "claim": "In full mode, the SVG board surface cycles the preview and the separate below-board confirmation zone places the pearl."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/pearl_lattice.py",
+          "lines": "134-269",
+          "claim": "The grader binds the expected interaction source and replays only cycles, gravity placements, rival responses, and certification; it has no yaw or timing condition."
+        },
+        {
+          "path": "weird_captcha_gym/environments/pearl_lattice_env/tasks/pearl_lattice_seed_0001/verifier.py",
+          "lines": "19-35",
+          "claim": "Verification loads the exported UI result and the independent Pearl Lattice replay grader, so certification checks the logical outcome."
+        }
+      ],
+      "uncertainties": []
+    },
+    {
+      "case_index": 384,
+      "public_environment_name": "Pearl Lattice",
+      "environment_id": "pearl_lattice_env",
+      "difficulty": 2,
+      "interaction_mode": "simplified",
+      "label": "no",
+      "controls_available": [
+        "Active profile: geometry=cross_fork, prefill_player=2, extra_noise=2, preview_label_detail=coordinates, opponent_policy=win_then_pressure, max_player_moves=6; rotation_step_degrees=15, rotation_rate=0.0019.",
+        "Visible transparent 4×4×4 lattice with the current glowing preview; pearls fall to the lowest free y in the selected (x,z) column.",
+        "Simplified input: NEXT LEGAL COLUMN advances to the next legal column and CONFIRM PREVIEW places the current preview; direct board-surface and below-board inputs are inactive.",
+        "At most 6 player placements; CERTIFY WIN and ABANDON / TEST FAILURE are terminal administrative controls."
+      ],
+      "autonomous_processes": [
+        "During every no-action interval, the visible lattice projection rotates continuously at rotation_rate=0.0019, quantized in 15-degree yaw steps; only model.yaw/SVG projection changes, while model.board, legal columns, preview, and landing height remain unchanged.",
+        "Each confirmation synchronously drops the player's pearl under y-gravity and immediately invokes the win_then_pressure clockwork-rival response in the same handler; there is no intervening autonomous no-action period for the rival."
+      ],
+      "grouped_control_modes": [
+        "D_cycle: every simplified proxy_next activation that emits cycle_preview and advances the logical preview.",
+        "D_place: every simplified confirm_button activation that emits place for the current preview.",
+        "certify_button and abandon are administrative and are not outcome-affecting grouped control modes."
+      ],
+      "delta_ms": null,
+      "window_ms": null,
+      "clause_i": {
+        "holds": false,
+        "reason": "The only autonomous process never changes which logical outcome-affecting action is appropriate. Waiting/no-op or a noncommitting preview cycle is not made worse by yaw, and any need to inspect the board is static spatial planning rather than evidence from a changing task state; the required observation dependence for this process is absent."
+      },
+      "clause_ii": {
+        "holds": true,
+        "reason": "A current screenshot, or the configured 500-ms/5-frame bounded window, can expose the static board, current preview, and landing layer well enough to choose a cycle or confirmation action. This is ordinary static visual grounding and does not make the yaw process a real-time witness."
+      },
+      "clause_iii": {
+        "holds": false,
+        "reason": "For any delay inside the active game, yaw changes only the SVG projection. cycle() and place() use model.board/model.preview and the selected column remains legal and confirmable with the same effect; no action's Q value or Q advantage strictly decreases before the delay ends."
+      },
+      "common_visible_process": "The only common visible autonomous process is continuous yaw rotation of the transparent lattice. It changes the rendered projection but not the logical board, preview, legal-column set, landing height, hit semantics, opponent timing, or certification outcome, so it cannot witness clauses (i)-(iii) together.",
+      "pre_run": {
+        "threshold": 0.5,
+        "at_least_half": null,
+        "rate": null,
+        "basis": "not_applicable",
+        "reason": "Not applicable because clause (iii) fails for this mathematical configuration; the pre-run override is not needed to assign No and no percentage is asserted.",
+        "seed_probe": null
+      },
+      "files_read_completely": [
+        "AGENTS.md",
+        "weird_captcha_gym/docs/controllability/real-time.md",
+        "weird_captcha_gym/environments/pearl_lattice_env/controls.json",
+        "weird_captcha_gym/environments/pearl_lattice_env/env.json",
+        "weird_captcha_gym/environments/pearl_lattice_env/tasks/pearl_lattice_seed_0001/task.json",
+        "weird_captcha_gym/environments/pearl_lattice_env/tasks/pearl_lattice_seed_0001/verifier.py",
+        "weird_captcha_gym/shared_scripts/incubator_generators/pearl_lattice.py",
+        "weird_captcha_gym/shared_runtime/app/mechanics/pearl_lattice.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/pearl_lattice.css",
+        "weird_captcha_gym/shared_runtime/server/incubator_graders/pearl_lattice.py",
+        "weird_captcha_gym/shared_runtime/verifier_helpers.py",
+        "weird_captcha_gym/tools/incubator_solvers/pearl_lattice.py"
+      ],
+      "source_evidence": [
+        {
+          "path": "weird_captcha_gym/environments/pearl_lattice_env/controls.json",
+          "lines": "15-21",
+          "claim": "Difficulty 2 activates geometry=cross_fork, prefill_player=2, extra_noise=2, preview_label_detail=coordinates, opponent_policy=win_then_pressure, max_player_moves=6, including rotation_step_degrees=15 and rotation_rate=0.0019."
+        },
+        {
+          "path": "weird_captcha_gym/environments/pearl_lattice_env/controls.json",
+          "lines": "52-57",
+          "claim": "In simplified mode, visible NEXT LEGAL COLUMN and CONFIRM PREVIEW buttons replace the board-surface and below-board inputs while preserving the same board and win predicate. The configured observation window is 500 ms with 5 frames, and both modes use the same real-time settings."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/pearl_lattice.py",
+          "lines": "262-364",
+          "claim": "The level parameters construct a static gravity board, supports, noise, opponent pressure, and a bounded solution; no autonomous clock-state mutation is generated."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/pearl_lattice.js",
+          "lines": "105-121",
+          "claim": "Legal columns, landing height, and drops are computed from model.board and y-gravity."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/pearl_lattice.js",
+          "lines": "163-220",
+          "claim": "Cycling advances the logical legal-column preview, and placement uses that preview and synchronously applies the player drop followed by the clockwork rival policy."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/pearl_lattice.js",
+          "lines": "288-306",
+          "claim": "The animation loop changes only model.yaw and redraws the projection at the configured step/rate. The event listeners route proxy_next and confirm_button to the same cycle and placement functions; direct surface controls are inactive."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/pearl_lattice.css",
+          "lines": "49-53",
+          "claim": "In simplified mode, visible NEXT LEGAL COLUMN and CONFIRM PREVIEW buttons replace the board-surface and below-board inputs while preserving the same board and win predicate."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/pearl_lattice.py",
+          "lines": "134-269",
+          "claim": "The grader binds the expected interaction source and replays only cycles, gravity placements, rival responses, and certification; it has no yaw or timing condition."
+        },
+        {
+          "path": "weird_captcha_gym/environments/pearl_lattice_env/tasks/pearl_lattice_seed_0001/verifier.py",
+          "lines": "19-35",
+          "claim": "Verification loads the exported UI result and the independent Pearl Lattice replay grader, so certification checks the logical outcome."
+        }
+      ],
+      "uncertainties": []
+    },
+    {
+      "case_index": 385,
+      "public_environment_name": "Pearl Lattice",
+      "environment_id": "pearl_lattice_env",
+      "difficulty": 3,
+      "interaction_mode": "full",
+      "label": "no",
+      "controls_available": [
+        "Active profile: geometry=cross_fork, prefill_player=2, extra_noise=6, preview_label_detail=coordinates, opponent_policy=threat_then_block, max_player_moves=8; rotation_step_degrees=12, rotation_rate=0.0016.",
+        "Visible transparent 4×4×4 lattice with the current glowing preview; pearls fall to the lowest free y in the selected (x,z) column.",
+        "Full input: click the lattice SVG surface to advance to the next legal column; click the separate below-lattice CONFIRM PREVIEW zone, or activate that focused zone with Enter/Space, to place.",
+        "At most 8 player placements; CERTIFY WIN and ABANDON / TEST FAILURE are terminal administrative controls."
+      ],
+      "autonomous_processes": [
+        "During every no-action interval, the visible lattice projection rotates continuously at rotation_rate=0.0016, quantized in 12-degree yaw steps; only model.yaw/SVG projection changes, while model.board, legal columns, preview, and landing height remain unchanged.",
+        "Each confirmation synchronously drops the player's pearl under y-gravity and immediately invokes the threat_then_block clockwork-rival response in the same handler; there is no intervening autonomous no-action period for the rival."
+      ],
+      "grouped_control_modes": [
+        "D_cycle: every full-mode board_surface activation that emits cycle_preview and advances the logical preview.",
+        "D_place: every full-mode confirm_area click or keyboard activation that emits place for the current preview.",
+        "certify_button and abandon are administrative and are not outcome-affecting grouped control modes."
+      ],
+      "delta_ms": null,
+      "window_ms": null,
+      "clause_i": {
+        "holds": false,
+        "reason": "The only autonomous process never changes which logical outcome-affecting action is appropriate. Waiting/no-op or a noncommitting preview cycle is not made worse by yaw, and any need to inspect the board is static spatial planning rather than evidence from a changing task state; the required observation dependence for this process is absent."
+      },
+      "clause_ii": {
+        "holds": true,
+        "reason": "A current screenshot, or the configured 500-ms/5-frame bounded window, can expose the static board, current preview, and landing layer well enough to choose a cycle or confirmation action. This is ordinary static visual grounding and does not make the yaw process a real-time witness."
+      },
+      "clause_iii": {
+        "holds": false,
+        "reason": "For any delay inside the active game, yaw changes only the SVG projection. cycle() and place() use model.board/model.preview and the selected column remains legal and confirmable with the same effect; no action's Q value or Q advantage strictly decreases before the delay ends."
+      },
+      "common_visible_process": "The only common visible autonomous process is continuous yaw rotation of the transparent lattice. It changes the rendered projection but not the logical board, preview, legal-column set, landing height, hit semantics, opponent timing, or certification outcome, so it cannot witness clauses (i)-(iii) together.",
+      "pre_run": {
+        "threshold": 0.5,
+        "at_least_half": null,
+        "rate": null,
+        "basis": "not_applicable",
+        "reason": "Not applicable because clause (iii) fails for this mathematical configuration; the pre-run override is not needed to assign No and no percentage is asserted.",
+        "seed_probe": null
+      },
+      "files_read_completely": [
+        "AGENTS.md",
+        "weird_captcha_gym/docs/controllability/real-time.md",
+        "weird_captcha_gym/environments/pearl_lattice_env/controls.json",
+        "weird_captcha_gym/environments/pearl_lattice_env/env.json",
+        "weird_captcha_gym/environments/pearl_lattice_env/tasks/pearl_lattice_seed_0001/task.json",
+        "weird_captcha_gym/environments/pearl_lattice_env/tasks/pearl_lattice_seed_0001/verifier.py",
+        "weird_captcha_gym/shared_scripts/incubator_generators/pearl_lattice.py",
+        "weird_captcha_gym/shared_runtime/app/mechanics/pearl_lattice.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/pearl_lattice.css",
+        "weird_captcha_gym/shared_runtime/server/incubator_graders/pearl_lattice.py",
+        "weird_captcha_gym/shared_runtime/verifier_helpers.py",
+        "weird_captcha_gym/tools/incubator_solvers/pearl_lattice.py"
+      ],
+      "source_evidence": [
+        {
+          "path": "weird_captcha_gym/environments/pearl_lattice_env/controls.json",
+          "lines": "24-30",
+          "claim": "Difficulty 3 activates geometry=cross_fork, prefill_player=2, extra_noise=6, preview_label_detail=coordinates, opponent_policy=threat_then_block, max_player_moves=8, including rotation_step_degrees=12 and rotation_rate=0.0016."
+        },
+        {
+          "path": "weird_captcha_gym/environments/pearl_lattice_env/controls.json",
+          "lines": "52-57",
+          "claim": "In full mode, the SVG board surface cycles the preview and the separate below-board confirmation zone places the pearl. The configured observation window is 500 ms with 5 frames, and both modes use the same real-time settings."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/pearl_lattice.py",
+          "lines": "262-364",
+          "claim": "The level parameters construct a static gravity board, supports, noise, opponent pressure, and a bounded solution; no autonomous clock-state mutation is generated."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/pearl_lattice.js",
+          "lines": "105-121",
+          "claim": "Legal columns, landing height, and drops are computed from model.board and y-gravity."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/pearl_lattice.js",
+          "lines": "163-220",
+          "claim": "Cycling advances the logical legal-column preview, and placement uses that preview and synchronously applies the player drop followed by the clockwork rival policy."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/pearl_lattice.js",
+          "lines": "288-306",
+          "claim": "The animation loop changes only model.yaw and redraws the projection at the configured step/rate. The event listeners enable board_surface cycling and confirm_area placement only for full mode."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/pearl_lattice.css",
+          "lines": "19-35",
+          "claim": "In full mode, the SVG board surface cycles the preview and the separate below-board confirmation zone places the pearl."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/pearl_lattice.py",
+          "lines": "134-269",
+          "claim": "The grader binds the expected interaction source and replays only cycles, gravity placements, rival responses, and certification; it has no yaw or timing condition."
+        },
+        {
+          "path": "weird_captcha_gym/environments/pearl_lattice_env/tasks/pearl_lattice_seed_0001/verifier.py",
+          "lines": "19-35",
+          "claim": "Verification loads the exported UI result and the independent Pearl Lattice replay grader, so certification checks the logical outcome."
+        }
+      ],
+      "uncertainties": []
+    },
+    {
+      "case_index": 386,
+      "public_environment_name": "Pearl Lattice",
+      "environment_id": "pearl_lattice_env",
+      "difficulty": 3,
+      "interaction_mode": "simplified",
+      "label": "no",
+      "controls_available": [
+        "Active profile: geometry=cross_fork, prefill_player=2, extra_noise=6, preview_label_detail=coordinates, opponent_policy=threat_then_block, max_player_moves=8; rotation_step_degrees=12, rotation_rate=0.0016.",
+        "Visible transparent 4×4×4 lattice with the current glowing preview; pearls fall to the lowest free y in the selected (x,z) column.",
+        "Simplified input: NEXT LEGAL COLUMN advances to the next legal column and CONFIRM PREVIEW places the current preview; direct board-surface and below-board inputs are inactive.",
+        "At most 8 player placements; CERTIFY WIN and ABANDON / TEST FAILURE are terminal administrative controls."
+      ],
+      "autonomous_processes": [
+        "During every no-action interval, the visible lattice projection rotates continuously at rotation_rate=0.0016, quantized in 12-degree yaw steps; only model.yaw/SVG projection changes, while model.board, legal columns, preview, and landing height remain unchanged.",
+        "Each confirmation synchronously drops the player's pearl under y-gravity and immediately invokes the threat_then_block clockwork-rival response in the same handler; there is no intervening autonomous no-action period for the rival."
+      ],
+      "grouped_control_modes": [
+        "D_cycle: every simplified proxy_next activation that emits cycle_preview and advances the logical preview.",
+        "D_place: every simplified confirm_button activation that emits place for the current preview.",
+        "certify_button and abandon are administrative and are not outcome-affecting grouped control modes."
+      ],
+      "delta_ms": null,
+      "window_ms": null,
+      "clause_i": {
+        "holds": false,
+        "reason": "The only autonomous process never changes which logical outcome-affecting action is appropriate. Waiting/no-op or a noncommitting preview cycle is not made worse by yaw, and any need to inspect the board is static spatial planning rather than evidence from a changing task state; the required observation dependence for this process is absent."
+      },
+      "clause_ii": {
+        "holds": true,
+        "reason": "A current screenshot, or the configured 500-ms/5-frame bounded window, can expose the static board, current preview, and landing layer well enough to choose a cycle or confirmation action. This is ordinary static visual grounding and does not make the yaw process a real-time witness."
+      },
+      "clause_iii": {
+        "holds": false,
+        "reason": "For any delay inside the active game, yaw changes only the SVG projection. cycle() and place() use model.board/model.preview and the selected column remains legal and confirmable with the same effect; no action's Q value or Q advantage strictly decreases before the delay ends."
+      },
+      "common_visible_process": "The only common visible autonomous process is continuous yaw rotation of the transparent lattice. It changes the rendered projection but not the logical board, preview, legal-column set, landing height, hit semantics, opponent timing, or certification outcome, so it cannot witness clauses (i)-(iii) together.",
+      "pre_run": {
+        "threshold": 0.5,
+        "at_least_half": null,
+        "rate": null,
+        "basis": "not_applicable",
+        "reason": "Not applicable because clause (iii) fails for this mathematical configuration; the pre-run override is not needed to assign No and no percentage is asserted.",
+        "seed_probe": null
+      },
+      "files_read_completely": [
+        "AGENTS.md",
+        "weird_captcha_gym/docs/controllability/real-time.md",
+        "weird_captcha_gym/environments/pearl_lattice_env/controls.json",
+        "weird_captcha_gym/environments/pearl_lattice_env/env.json",
+        "weird_captcha_gym/environments/pearl_lattice_env/tasks/pearl_lattice_seed_0001/task.json",
+        "weird_captcha_gym/environments/pearl_lattice_env/tasks/pearl_lattice_seed_0001/verifier.py",
+        "weird_captcha_gym/shared_scripts/incubator_generators/pearl_lattice.py",
+        "weird_captcha_gym/shared_runtime/app/mechanics/pearl_lattice.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/pearl_lattice.css",
+        "weird_captcha_gym/shared_runtime/server/incubator_graders/pearl_lattice.py",
+        "weird_captcha_gym/shared_runtime/verifier_helpers.py",
+        "weird_captcha_gym/tools/incubator_solvers/pearl_lattice.py"
+      ],
+      "source_evidence": [
+        {
+          "path": "weird_captcha_gym/environments/pearl_lattice_env/controls.json",
+          "lines": "24-30",
+          "claim": "Difficulty 3 activates geometry=cross_fork, prefill_player=2, extra_noise=6, preview_label_detail=coordinates, opponent_policy=threat_then_block, max_player_moves=8, including rotation_step_degrees=12 and rotation_rate=0.0016."
+        },
+        {
+          "path": "weird_captcha_gym/environments/pearl_lattice_env/controls.json",
+          "lines": "52-57",
+          "claim": "In simplified mode, visible NEXT LEGAL COLUMN and CONFIRM PREVIEW buttons replace the board-surface and below-board inputs while preserving the same board and win predicate. The configured observation window is 500 ms with 5 frames, and both modes use the same real-time settings."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/pearl_lattice.py",
+          "lines": "262-364",
+          "claim": "The level parameters construct a static gravity board, supports, noise, opponent pressure, and a bounded solution; no autonomous clock-state mutation is generated."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/pearl_lattice.js",
+          "lines": "105-121",
+          "claim": "Legal columns, landing height, and drops are computed from model.board and y-gravity."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/pearl_lattice.js",
+          "lines": "163-220",
+          "claim": "Cycling advances the logical legal-column preview, and placement uses that preview and synchronously applies the player drop followed by the clockwork rival policy."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/pearl_lattice.js",
+          "lines": "288-306",
+          "claim": "The animation loop changes only model.yaw and redraws the projection at the configured step/rate. The event listeners route proxy_next and confirm_button to the same cycle and placement functions; direct surface controls are inactive."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/pearl_lattice.css",
+          "lines": "49-53",
+          "claim": "In simplified mode, visible NEXT LEGAL COLUMN and CONFIRM PREVIEW buttons replace the board-surface and below-board inputs while preserving the same board and win predicate."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/pearl_lattice.py",
+          "lines": "134-269",
+          "claim": "The grader binds the expected interaction source and replays only cycles, gravity placements, rival responses, and certification; it has no yaw or timing condition."
+        },
+        {
+          "path": "weird_captcha_gym/environments/pearl_lattice_env/tasks/pearl_lattice_seed_0001/verifier.py",
+          "lines": "19-35",
+          "claim": "Verification loads the exported UI result and the independent Pearl Lattice replay grader, so certification checks the logical outcome."
+        }
+      ],
+      "uncertainties": []
+    },
+    {
+      "case_index": 387,
+      "public_environment_name": "Pearl Lattice",
+      "environment_id": "pearl_lattice_env",
+      "difficulty": 4,
+      "interaction_mode": "full",
+      "label": "no",
+      "controls_available": [
+        "Active profile: geometry=raised_fork, prefill_player=2, extra_noise=10, preview_label_detail=coordinates, opponent_policy=threat_then_block, max_player_moves=8; rotation_step_degrees=10, rotation_rate=0.0014.",
+        "Visible transparent 4×4×4 lattice with the current glowing preview; pearls fall to the lowest free y in the selected (x,z) column.",
+        "Full input: click the lattice SVG surface to advance to the next legal column; click the separate below-lattice CONFIRM PREVIEW zone, or activate that focused zone with Enter/Space, to place.",
+        "At most 8 player placements; CERTIFY WIN and ABANDON / TEST FAILURE are terminal administrative controls."
+      ],
+      "autonomous_processes": [
+        "During every no-action interval, the visible lattice projection rotates continuously at rotation_rate=0.0014, quantized in 10-degree yaw steps; only model.yaw/SVG projection changes, while model.board, legal columns, preview, and landing height remain unchanged.",
+        "Each confirmation synchronously drops the player's pearl under y-gravity and immediately invokes the threat_then_block clockwork-rival response in the same handler; there is no intervening autonomous no-action period for the rival."
+      ],
+      "grouped_control_modes": [
+        "D_cycle: every full-mode board_surface activation that emits cycle_preview and advances the logical preview.",
+        "D_place: every full-mode confirm_area click or keyboard activation that emits place for the current preview.",
+        "certify_button and abandon are administrative and are not outcome-affecting grouped control modes."
+      ],
+      "delta_ms": null,
+      "window_ms": null,
+      "clause_i": {
+        "holds": false,
+        "reason": "The only autonomous process never changes which logical outcome-affecting action is appropriate. Waiting/no-op or a noncommitting preview cycle is not made worse by yaw, and any need to inspect the board is static spatial planning rather than evidence from a changing task state; the required observation dependence for this process is absent."
+      },
+      "clause_ii": {
+        "holds": true,
+        "reason": "A current screenshot, or the configured 500-ms/5-frame bounded window, can expose the static board, current preview, and landing layer well enough to choose a cycle or confirmation action. This is ordinary static visual grounding and does not make the yaw process a real-time witness."
+      },
+      "clause_iii": {
+        "holds": false,
+        "reason": "For any delay inside the active game, yaw changes only the SVG projection. cycle() and place() use model.board/model.preview and the selected column remains legal and confirmable with the same effect; no action's Q value or Q advantage strictly decreases before the delay ends."
+      },
+      "common_visible_process": "The only common visible autonomous process is continuous yaw rotation of the transparent lattice. It changes the rendered projection but not the logical board, preview, legal-column set, landing height, hit semantics, opponent timing, or certification outcome, so it cannot witness clauses (i)-(iii) together.",
+      "pre_run": {
+        "threshold": 0.5,
+        "at_least_half": null,
+        "rate": null,
+        "basis": "not_applicable",
+        "reason": "Not applicable because clause (iii) fails for this mathematical configuration; the pre-run override is not needed to assign No and no percentage is asserted.",
+        "seed_probe": null
+      },
+      "files_read_completely": [
+        "AGENTS.md",
+        "weird_captcha_gym/docs/controllability/real-time.md",
+        "weird_captcha_gym/environments/pearl_lattice_env/controls.json",
+        "weird_captcha_gym/environments/pearl_lattice_env/env.json",
+        "weird_captcha_gym/environments/pearl_lattice_env/tasks/pearl_lattice_seed_0001/task.json",
+        "weird_captcha_gym/environments/pearl_lattice_env/tasks/pearl_lattice_seed_0001/verifier.py",
+        "weird_captcha_gym/shared_scripts/incubator_generators/pearl_lattice.py",
+        "weird_captcha_gym/shared_runtime/app/mechanics/pearl_lattice.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/pearl_lattice.css",
+        "weird_captcha_gym/shared_runtime/server/incubator_graders/pearl_lattice.py",
+        "weird_captcha_gym/shared_runtime/verifier_helpers.py",
+        "weird_captcha_gym/tools/incubator_solvers/pearl_lattice.py"
+      ],
+      "source_evidence": [
+        {
+          "path": "weird_captcha_gym/environments/pearl_lattice_env/controls.json",
+          "lines": "33-39",
+          "claim": "Difficulty 4 activates geometry=raised_fork, prefill_player=2, extra_noise=10, preview_label_detail=coordinates, opponent_policy=threat_then_block, max_player_moves=8, including rotation_step_degrees=10 and rotation_rate=0.0014."
+        },
+        {
+          "path": "weird_captcha_gym/environments/pearl_lattice_env/controls.json",
+          "lines": "52-57",
+          "claim": "In full mode, the SVG board surface cycles the preview and the separate below-board confirmation zone places the pearl. The configured observation window is 500 ms with 5 frames, and both modes use the same real-time settings."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/pearl_lattice.py",
+          "lines": "262-364",
+          "claim": "The level parameters construct a static gravity board, supports, noise, opponent pressure, and a bounded solution; no autonomous clock-state mutation is generated."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/pearl_lattice.js",
+          "lines": "105-121",
+          "claim": "Legal columns, landing height, and drops are computed from model.board and y-gravity."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/pearl_lattice.js",
+          "lines": "163-220",
+          "claim": "Cycling advances the logical legal-column preview, and placement uses that preview and synchronously applies the player drop followed by the clockwork rival policy."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/pearl_lattice.js",
+          "lines": "288-306",
+          "claim": "The animation loop changes only model.yaw and redraws the projection at the configured step/rate. The event listeners enable board_surface cycling and confirm_area placement only for full mode."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/pearl_lattice.css",
+          "lines": "19-35",
+          "claim": "In full mode, the SVG board surface cycles the preview and the separate below-board confirmation zone places the pearl."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/pearl_lattice.py",
+          "lines": "134-269",
+          "claim": "The grader binds the expected interaction source and replays only cycles, gravity placements, rival responses, and certification; it has no yaw or timing condition."
+        },
+        {
+          "path": "weird_captcha_gym/environments/pearl_lattice_env/tasks/pearl_lattice_seed_0001/verifier.py",
+          "lines": "19-35",
+          "claim": "Verification loads the exported UI result and the independent Pearl Lattice replay grader, so certification checks the logical outcome."
+        }
+      ],
+      "uncertainties": []
+    },
+    {
+      "case_index": 388,
+      "public_environment_name": "Pearl Lattice",
+      "environment_id": "pearl_lattice_env",
+      "difficulty": 4,
+      "interaction_mode": "simplified",
+      "label": "no",
+      "controls_available": [
+        "Active profile: geometry=raised_fork, prefill_player=2, extra_noise=10, preview_label_detail=coordinates, opponent_policy=threat_then_block, max_player_moves=8; rotation_step_degrees=10, rotation_rate=0.0014.",
+        "Visible transparent 4×4×4 lattice with the current glowing preview; pearls fall to the lowest free y in the selected (x,z) column.",
+        "Simplified input: NEXT LEGAL COLUMN advances to the next legal column and CONFIRM PREVIEW places the current preview; direct board-surface and below-board inputs are inactive.",
+        "At most 8 player placements; CERTIFY WIN and ABANDON / TEST FAILURE are terminal administrative controls."
+      ],
+      "autonomous_processes": [
+        "During every no-action interval, the visible lattice projection rotates continuously at rotation_rate=0.0014, quantized in 10-degree yaw steps; only model.yaw/SVG projection changes, while model.board, legal columns, preview, and landing height remain unchanged.",
+        "Each confirmation synchronously drops the player's pearl under y-gravity and immediately invokes the threat_then_block clockwork-rival response in the same handler; there is no intervening autonomous no-action period for the rival."
+      ],
+      "grouped_control_modes": [
+        "D_cycle: every simplified proxy_next activation that emits cycle_preview and advances the logical preview.",
+        "D_place: every simplified confirm_button activation that emits place for the current preview.",
+        "certify_button and abandon are administrative and are not outcome-affecting grouped control modes."
+      ],
+      "delta_ms": null,
+      "window_ms": null,
+      "clause_i": {
+        "holds": false,
+        "reason": "The only autonomous process never changes which logical outcome-affecting action is appropriate. Waiting/no-op or a noncommitting preview cycle is not made worse by yaw, and any need to inspect the board is static spatial planning rather than evidence from a changing task state; the required observation dependence for this process is absent."
+      },
+      "clause_ii": {
+        "holds": true,
+        "reason": "A current screenshot, or the configured 500-ms/5-frame bounded window, can expose the static board, current preview, and landing layer well enough to choose a cycle or confirmation action. This is ordinary static visual grounding and does not make the yaw process a real-time witness."
+      },
+      "clause_iii": {
+        "holds": false,
+        "reason": "For any delay inside the active game, yaw changes only the SVG projection. cycle() and place() use model.board/model.preview and the selected column remains legal and confirmable with the same effect; no action's Q value or Q advantage strictly decreases before the delay ends."
+      },
+      "common_visible_process": "The only common visible autonomous process is continuous yaw rotation of the transparent lattice. It changes the rendered projection but not the logical board, preview, legal-column set, landing height, hit semantics, opponent timing, or certification outcome, so it cannot witness clauses (i)-(iii) together.",
+      "pre_run": {
+        "threshold": 0.5,
+        "at_least_half": null,
+        "rate": null,
+        "basis": "not_applicable",
+        "reason": "Not applicable because clause (iii) fails for this mathematical configuration; the pre-run override is not needed to assign No and no percentage is asserted.",
+        "seed_probe": null
+      },
+      "files_read_completely": [
+        "AGENTS.md",
+        "weird_captcha_gym/docs/controllability/real-time.md",
+        "weird_captcha_gym/environments/pearl_lattice_env/controls.json",
+        "weird_captcha_gym/environments/pearl_lattice_env/env.json",
+        "weird_captcha_gym/environments/pearl_lattice_env/tasks/pearl_lattice_seed_0001/task.json",
+        "weird_captcha_gym/environments/pearl_lattice_env/tasks/pearl_lattice_seed_0001/verifier.py",
+        "weird_captcha_gym/shared_scripts/incubator_generators/pearl_lattice.py",
+        "weird_captcha_gym/shared_runtime/app/mechanics/pearl_lattice.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/pearl_lattice.css",
+        "weird_captcha_gym/shared_runtime/server/incubator_graders/pearl_lattice.py",
+        "weird_captcha_gym/shared_runtime/verifier_helpers.py",
+        "weird_captcha_gym/tools/incubator_solvers/pearl_lattice.py"
+      ],
+      "source_evidence": [
+        {
+          "path": "weird_captcha_gym/environments/pearl_lattice_env/controls.json",
+          "lines": "33-39",
+          "claim": "Difficulty 4 activates geometry=raised_fork, prefill_player=2, extra_noise=10, preview_label_detail=coordinates, opponent_policy=threat_then_block, max_player_moves=8, including rotation_step_degrees=10 and rotation_rate=0.0014."
+        },
+        {
+          "path": "weird_captcha_gym/environments/pearl_lattice_env/controls.json",
+          "lines": "52-57",
+          "claim": "In simplified mode, visible NEXT LEGAL COLUMN and CONFIRM PREVIEW buttons replace the board-surface and below-board inputs while preserving the same board and win predicate. The configured observation window is 500 ms with 5 frames, and both modes use the same real-time settings."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/pearl_lattice.py",
+          "lines": "262-364",
+          "claim": "The level parameters construct a static gravity board, supports, noise, opponent pressure, and a bounded solution; no autonomous clock-state mutation is generated."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/pearl_lattice.js",
+          "lines": "105-121",
+          "claim": "Legal columns, landing height, and drops are computed from model.board and y-gravity."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/pearl_lattice.js",
+          "lines": "163-220",
+          "claim": "Cycling advances the logical legal-column preview, and placement uses that preview and synchronously applies the player drop followed by the clockwork rival policy."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/pearl_lattice.js",
+          "lines": "288-306",
+          "claim": "The animation loop changes only model.yaw and redraws the projection at the configured step/rate. The event listeners route proxy_next and confirm_button to the same cycle and placement functions; direct surface controls are inactive."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/pearl_lattice.css",
+          "lines": "49-53",
+          "claim": "In simplified mode, visible NEXT LEGAL COLUMN and CONFIRM PREVIEW buttons replace the board-surface and below-board inputs while preserving the same board and win predicate."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/pearl_lattice.py",
+          "lines": "134-269",
+          "claim": "The grader binds the expected interaction source and replays only cycles, gravity placements, rival responses, and certification; it has no yaw or timing condition."
+        },
+        {
+          "path": "weird_captcha_gym/environments/pearl_lattice_env/tasks/pearl_lattice_seed_0001/verifier.py",
+          "lines": "19-35",
+          "claim": "Verification loads the exported UI result and the independent Pearl Lattice replay grader, so certification checks the logical outcome."
+        }
+      ],
+      "uncertainties": []
+    },
+    {
+      "case_index": 389,
+      "public_environment_name": "Pearl Lattice",
+      "environment_id": "pearl_lattice_env",
+      "difficulty": 5,
+      "interaction_mode": "full",
+      "label": "no",
+      "controls_available": [
+        "Active profile: geometry=spatial_fork, prefill_player=2, extra_noise=12, preview_label_detail=layer, opponent_policy=threat_then_block, max_player_moves=10; rotation_step_degrees=8, rotation_rate=0.0012.",
+        "Visible transparent 4×4×4 lattice with the current glowing preview; pearls fall to the lowest free y in the selected (x,z) column.",
+        "Full input: click the lattice SVG surface to advance to the next legal column; click the separate below-lattice CONFIRM PREVIEW zone, or activate that focused zone with Enter/Space, to place.",
+        "At most 10 player placements; CERTIFY WIN and ABANDON / TEST FAILURE are terminal administrative controls."
+      ],
+      "autonomous_processes": [
+        "During every no-action interval, the visible lattice projection rotates continuously at rotation_rate=0.0012, quantized in 8-degree yaw steps; only model.yaw/SVG projection changes, while model.board, legal columns, preview, and landing height remain unchanged.",
+        "Each confirmation synchronously drops the player's pearl under y-gravity and immediately invokes the threat_then_block clockwork-rival response in the same handler; there is no intervening autonomous no-action period for the rival."
+      ],
+      "grouped_control_modes": [
+        "D_cycle: every full-mode board_surface activation that emits cycle_preview and advances the logical preview.",
+        "D_place: every full-mode confirm_area click or keyboard activation that emits place for the current preview.",
+        "certify_button and abandon are administrative and are not outcome-affecting grouped control modes."
+      ],
+      "delta_ms": null,
+      "window_ms": null,
+      "clause_i": {
+        "holds": false,
+        "reason": "The only autonomous process never changes which logical outcome-affecting action is appropriate. Waiting/no-op or a noncommitting preview cycle is not made worse by yaw, and any need to inspect the board is static spatial planning rather than evidence from a changing task state; the required observation dependence for this process is absent."
+      },
+      "clause_ii": {
+        "holds": true,
+        "reason": "A current screenshot, or the configured 500-ms/5-frame bounded window, can expose the static board, current preview, and landing layer well enough to choose a cycle or confirmation action. This is ordinary static visual grounding and does not make the yaw process a real-time witness."
+      },
+      "clause_iii": {
+        "holds": false,
+        "reason": "For any delay inside the active game, yaw changes only the SVG projection. cycle() and place() use model.board/model.preview and the selected column remains legal and confirmable with the same effect; no action's Q value or Q advantage strictly decreases before the delay ends."
+      },
+      "common_visible_process": "The only common visible autonomous process is continuous yaw rotation of the transparent lattice. It changes the rendered projection but not the logical board, preview, legal-column set, landing height, hit semantics, opponent timing, or certification outcome, so it cannot witness clauses (i)-(iii) together.",
+      "pre_run": {
+        "threshold": 0.5,
+        "at_least_half": null,
+        "rate": null,
+        "basis": "not_applicable",
+        "reason": "Not applicable because clause (iii) fails for this mathematical configuration; the pre-run override is not needed to assign No and no percentage is asserted.",
+        "seed_probe": null
+      },
+      "files_read_completely": [
+        "AGENTS.md",
+        "weird_captcha_gym/docs/controllability/real-time.md",
+        "weird_captcha_gym/environments/pearl_lattice_env/controls.json",
+        "weird_captcha_gym/environments/pearl_lattice_env/env.json",
+        "weird_captcha_gym/environments/pearl_lattice_env/tasks/pearl_lattice_seed_0001/task.json",
+        "weird_captcha_gym/environments/pearl_lattice_env/tasks/pearl_lattice_seed_0001/verifier.py",
+        "weird_captcha_gym/shared_scripts/incubator_generators/pearl_lattice.py",
+        "weird_captcha_gym/shared_runtime/app/mechanics/pearl_lattice.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/pearl_lattice.css",
+        "weird_captcha_gym/shared_runtime/server/incubator_graders/pearl_lattice.py",
+        "weird_captcha_gym/shared_runtime/verifier_helpers.py",
+        "weird_captcha_gym/tools/incubator_solvers/pearl_lattice.py"
+      ],
+      "source_evidence": [
+        {
+          "path": "weird_captcha_gym/environments/pearl_lattice_env/controls.json",
+          "lines": "42-48",
+          "claim": "Difficulty 5 activates geometry=spatial_fork, prefill_player=2, extra_noise=12, preview_label_detail=layer, opponent_policy=threat_then_block, max_player_moves=10, including rotation_step_degrees=8 and rotation_rate=0.0012."
+        },
+        {
+          "path": "weird_captcha_gym/environments/pearl_lattice_env/controls.json",
+          "lines": "52-57",
+          "claim": "In full mode, the SVG board surface cycles the preview and the separate below-board confirmation zone places the pearl. The configured observation window is 500 ms with 5 frames, and both modes use the same real-time settings."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/pearl_lattice.py",
+          "lines": "262-364",
+          "claim": "The level parameters construct a static gravity board, supports, noise, opponent pressure, and a bounded solution; no autonomous clock-state mutation is generated."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/pearl_lattice.js",
+          "lines": "105-121",
+          "claim": "Legal columns, landing height, and drops are computed from model.board and y-gravity."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/pearl_lattice.js",
+          "lines": "163-220",
+          "claim": "Cycling advances the logical legal-column preview, and placement uses that preview and synchronously applies the player drop followed by the clockwork rival policy."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/pearl_lattice.js",
+          "lines": "288-306",
+          "claim": "The animation loop changes only model.yaw and redraws the projection at the configured step/rate. The event listeners enable board_surface cycling and confirm_area placement only for full mode."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/pearl_lattice.css",
+          "lines": "19-35",
+          "claim": "In full mode, the SVG board surface cycles the preview and the separate below-board confirmation zone places the pearl."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/pearl_lattice.py",
+          "lines": "134-269",
+          "claim": "The grader binds the expected interaction source and replays only cycles, gravity placements, rival responses, and certification; it has no yaw or timing condition."
+        },
+        {
+          "path": "weird_captcha_gym/environments/pearl_lattice_env/tasks/pearl_lattice_seed_0001/verifier.py",
+          "lines": "19-35",
+          "claim": "Verification loads the exported UI result and the independent Pearl Lattice replay grader, so certification checks the logical outcome."
+        }
+      ],
+      "uncertainties": []
+    },
+    {
+      "case_index": 390,
+      "public_environment_name": "Pearl Lattice",
+      "environment_id": "pearl_lattice_env",
+      "difficulty": 5,
+      "interaction_mode": "simplified",
+      "label": "no",
+      "controls_available": [
+        "Active profile: geometry=spatial_fork, prefill_player=2, extra_noise=12, preview_label_detail=layer, opponent_policy=threat_then_block, max_player_moves=10; rotation_step_degrees=8, rotation_rate=0.0012.",
+        "Visible transparent 4×4×4 lattice with the current glowing preview; pearls fall to the lowest free y in the selected (x,z) column.",
+        "Simplified input: NEXT LEGAL COLUMN advances to the next legal column and CONFIRM PREVIEW places the current preview; direct board-surface and below-board inputs are inactive.",
+        "At most 10 player placements; CERTIFY WIN and ABANDON / TEST FAILURE are terminal administrative controls."
+      ],
+      "autonomous_processes": [
+        "During every no-action interval, the visible lattice projection rotates continuously at rotation_rate=0.0012, quantized in 8-degree yaw steps; only model.yaw/SVG projection changes, while model.board, legal columns, preview, and landing height remain unchanged.",
+        "Each confirmation synchronously drops the player's pearl under y-gravity and immediately invokes the threat_then_block clockwork-rival response in the same handler; there is no intervening autonomous no-action period for the rival."
+      ],
+      "grouped_control_modes": [
+        "D_cycle: every simplified proxy_next activation that emits cycle_preview and advances the logical preview.",
+        "D_place: every simplified confirm_button activation that emits place for the current preview.",
+        "certify_button and abandon are administrative and are not outcome-affecting grouped control modes."
+      ],
+      "delta_ms": null,
+      "window_ms": null,
+      "clause_i": {
+        "holds": false,
+        "reason": "The only autonomous process never changes which logical outcome-affecting action is appropriate. Waiting/no-op or a noncommitting preview cycle is not made worse by yaw, and any need to inspect the board is static spatial planning rather than evidence from a changing task state; the required observation dependence for this process is absent."
+      },
+      "clause_ii": {
+        "holds": true,
+        "reason": "A current screenshot, or the configured 500-ms/5-frame bounded window, can expose the static board, current preview, and landing layer well enough to choose a cycle or confirmation action. This is ordinary static visual grounding and does not make the yaw process a real-time witness."
+      },
+      "clause_iii": {
+        "holds": false,
+        "reason": "For any delay inside the active game, yaw changes only the SVG projection. cycle() and place() use model.board/model.preview and the selected column remains legal and confirmable with the same effect; no action's Q value or Q advantage strictly decreases before the delay ends."
+      },
+      "common_visible_process": "The only common visible autonomous process is continuous yaw rotation of the transparent lattice. It changes the rendered projection but not the logical board, preview, legal-column set, landing height, hit semantics, opponent timing, or certification outcome, so it cannot witness clauses (i)-(iii) together.",
+      "pre_run": {
+        "threshold": 0.5,
+        "at_least_half": null,
+        "rate": null,
+        "basis": "not_applicable",
+        "reason": "Not applicable because clause (iii) fails for this mathematical configuration; the pre-run override is not needed to assign No and no percentage is asserted.",
+        "seed_probe": null
+      },
+      "files_read_completely": [
+        "AGENTS.md",
+        "weird_captcha_gym/docs/controllability/real-time.md",
+        "weird_captcha_gym/environments/pearl_lattice_env/controls.json",
+        "weird_captcha_gym/environments/pearl_lattice_env/env.json",
+        "weird_captcha_gym/environments/pearl_lattice_env/tasks/pearl_lattice_seed_0001/task.json",
+        "weird_captcha_gym/environments/pearl_lattice_env/tasks/pearl_lattice_seed_0001/verifier.py",
+        "weird_captcha_gym/shared_scripts/incubator_generators/pearl_lattice.py",
+        "weird_captcha_gym/shared_runtime/app/mechanics/pearl_lattice.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/pearl_lattice.css",
+        "weird_captcha_gym/shared_runtime/server/incubator_graders/pearl_lattice.py",
+        "weird_captcha_gym/shared_runtime/verifier_helpers.py",
+        "weird_captcha_gym/tools/incubator_solvers/pearl_lattice.py"
+      ],
+      "source_evidence": [
+        {
+          "path": "weird_captcha_gym/environments/pearl_lattice_env/controls.json",
+          "lines": "42-48",
+          "claim": "Difficulty 5 activates geometry=spatial_fork, prefill_player=2, extra_noise=12, preview_label_detail=layer, opponent_policy=threat_then_block, max_player_moves=10, including rotation_step_degrees=8 and rotation_rate=0.0012."
+        },
+        {
+          "path": "weird_captcha_gym/environments/pearl_lattice_env/controls.json",
+          "lines": "52-57",
+          "claim": "In simplified mode, visible NEXT LEGAL COLUMN and CONFIRM PREVIEW buttons replace the board-surface and below-board inputs while preserving the same board and win predicate. The configured observation window is 500 ms with 5 frames, and both modes use the same real-time settings."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/pearl_lattice.py",
+          "lines": "262-364",
+          "claim": "The level parameters construct a static gravity board, supports, noise, opponent pressure, and a bounded solution; no autonomous clock-state mutation is generated."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/pearl_lattice.js",
+          "lines": "105-121",
+          "claim": "Legal columns, landing height, and drops are computed from model.board and y-gravity."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/pearl_lattice.js",
+          "lines": "163-220",
+          "claim": "Cycling advances the logical legal-column preview, and placement uses that preview and synchronously applies the player drop followed by the clockwork rival policy."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/pearl_lattice.js",
+          "lines": "288-306",
+          "claim": "The animation loop changes only model.yaw and redraws the projection at the configured step/rate. The event listeners route proxy_next and confirm_button to the same cycle and placement functions; direct surface controls are inactive."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/pearl_lattice.css",
+          "lines": "49-53",
+          "claim": "In simplified mode, visible NEXT LEGAL COLUMN and CONFIRM PREVIEW buttons replace the board-surface and below-board inputs while preserving the same board and win predicate."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/pearl_lattice.py",
+          "lines": "134-269",
+          "claim": "The grader binds the expected interaction source and replays only cycles, gravity placements, rival responses, and certification; it has no yaw or timing condition."
+        },
+        {
+          "path": "weird_captcha_gym/environments/pearl_lattice_env/tasks/pearl_lattice_seed_0001/verifier.py",
+          "lines": "19-35",
+          "claim": "Verification loads the exported UI result and the independent Pearl Lattice replay grader, so certification checks the logical outcome."
+        }
+      ],
+      "uncertainties": []
+    }
+  ]
+}

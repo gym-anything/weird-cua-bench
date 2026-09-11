@@ -1,0 +1,163 @@
+{
+  "case_index": 15,
+  "public_environment_name": "Anthill Front",
+  "environment_id": "anthill_front_env",
+  "difficulty": 3,
+  "interaction_mode": "full",
+  "label": "yes",
+  "controls_available": [
+    "Select individual ants by clicking the map or select a group with a marquee; Shift modifies the selection.",
+    "Press G, S, D, M, or R for GATHER, SCOUT, DIG, MARCH, or RAISE. In full mode the command is armed and a visible map destination is clicked.",
+    "GATHER targets the visible seed pile; SCOUT targets the listening front; DIG targets the brood chamber; MARCH targets NORTH, SOUTH, or the rival queen.",
+    "Pan the map with the minimap, its arrow buttons, or the left/right keys.",
+    "CERTIFY FRONT submits the command ledger and is administrative rather than outcome-affecting."
+  ],
+  "autonomous_processes": [
+    "The match advances in 100 ms simulation ticks without new input. A scout progresses toward the listening front and, after 40 ticks at L3, contact is revealed and that worker automatically returns to GATHER.",
+    "Exactly two DIG workers add two brood-progress units per tick; at 70 units the brood becomes ready and those diggers automatically return to GATHER.",
+    "Workers assigned to GATHER make repeated seed trips and add one seed every 18 ticks.",
+    "RAISE spends two seeds and queues a soldier that appears at the rally point after 14 ticks.",
+    "A raid outpost expands before spawn. After spawn, the rival formation advances toward the colony while its visible vertical position oscillates through the tunnel approach.",
+    "At raid impact, the current defense commitment is evaluated, soldiers can be lost, the wave is resolved, and an unblocked raid damages the home queen.",
+    "After every raid is cleared, soldiers marching to the rival queen travel for 45 ticks and then damage it; the match terminates at 720 ticks if no win has occurred.",
+    "The CSS live pulse also animates without input, but it is decorative and changes neither task state nor outcome."
+  ],
+  "grouped_control_modes": [
+    "GATHER: selected workers to the seed pile",
+    "SCOUT: one worker to the listening front",
+    "DIG: exactly two selected workers to the brood chamber",
+    "RAISE: no selected units; queue one soldier from ready brood",
+    "MARCH/intercept: selected soldiers to NORTH or SOUTH for an uncommitted raid inside its response band",
+    "MARCH/assault: selected surviving soldiers to the rival queen after all raids are cleared"
+  ],
+  "delta_ms": 800,
+  "window_ms": 800,
+  "clause_i": {
+    "holds": true,
+    "reason": "Let D be all MARCH tunnel-commitment opportunities for the L3 raid. For identical prior actions and task times, the generator varies the seeded first lane and the 0-35-tick motion phase. At the delayed delivery time the maximizing target can therefore be NORTH in one history and SOUTH in another, while an action-clock-only q receives no current visual evidence and cannot select the correct target for every H_t in C_Delta(D)."
+  },
+  "clause_ii": {
+    "holds": true,
+    "reason": "Six chronological frames over the configured 800 ms window show the formation's changing x/y position and, importantly, its vertical direction or reversal. That visible trajectory identifies the oscillation phase and predicts the NORTH/SOUTH target at t+800 ms, so a bounded-window policy g can select the appropriate soldiers and delayed tunnel from I_t and W_t^800. The full map exposes the formation, tunnel lanes, and intercept marker used for this decision."
+  },
+  "clause_iii": {
+    "holds": true,
+    "reason": "Use Delta=800 ms (8 simulation ticks) at a wave-1 history with at least four available soldiers, immediately before a visible vertical turning point and with the turn within the delay; take tau=300 ms. The formation autonomously reverses direction, so the same MARCH-to-lane action a that is correct at H_t is recorded with correct=false after the turn at H_t^tau. Success remains possible from H_t^tau by committing the opposite lane. At L3, a correct four-soldier commitment stops all four attackers, whereas the stale lane stops none and the four-ant breach removes all 3 home-queen HP. This strict loss is caused by the formation's changing task state, not by a deadline or later completion."
+  },
+  "common_visible_process": "The rival four-ant formation moves from its outpost toward the colony and visibly oscillates vertically through the NORTH/SOUTH intercept band. Its recent direction and reversal determine which tunnel commitment is correct at the delayed delivery time, and the same reversal makes a previously correct tunnel action lose its effect.",
+  "pre_run": {
+    "threshold": 0.5,
+    "at_least_half": false,
+    "rate": null,
+    "basis": "source_structural",
+    "reason": "Every L3 generated world has one four-ant raid. The tunnel MARCH action is accepted only while that raid is inside its response band, and its correctness is sampled from the moving formation at the commit tick. A run that sends no further outcome-affecting actions after preparation cannot guarantee the required in-band interception. After the wave is resolved, MARCH to the rival queen is rejected until all raids are cleared and is required to reduce the rival queen's HP; there is no automatic victory. Thus no generated instance admits a successful action-free autonomous outcome phase under the normal visible controls.",
+    "seed_probe": null
+  },
+  "files_read_completely": [
+    "AGENTS.md",
+    "weird_captcha_gym/docs/controllability/real-time.md",
+    "weird_captcha_gym/environments/anthill_front_env/controls.json",
+    "weird_captcha_gym/environments/anthill_front_env/env.json",
+    "weird_captcha_gym/environments/anthill_front_env/tasks/anthill_front_seed_0001/task.json",
+    "weird_captcha_gym/environments/anthill_front_env/tasks/anthill_front_seed_0001/setup_task.sh",
+    "weird_captcha_gym/environments/anthill_front_env/tasks/anthill_front_seed_0001/export_result.sh",
+    "weird_captcha_gym/environments/anthill_front_env/tasks/anthill_front_seed_0001/verifier.py",
+    "weird_captcha_gym/shared_scripts/incubator_generators/anthill_front.py",
+    "weird_captcha_gym/shared_runtime/app/index.html",
+    "weird_captcha_gym/shared_runtime/app/time_controller.js",
+    "weird_captcha_gym/shared_runtime/app/app.js",
+    "weird_captcha_gym/shared_runtime/app/mechanics/anthill_front.js",
+    "weird_captcha_gym/shared_runtime/app/mechanics/anthill_front.css",
+    "weird_captcha_gym/shared_runtime/server/incubator_graders/anthill_front.py",
+    "weird_captcha_gym/shared_runtime/verifier_helpers.py",
+    "weird_captcha_gym/tools/incubator_solvers/anthill_front.py"
+  ],
+  "source_evidence": [
+    {
+      "path": "weird_captcha_gym/environments/anthill_front_env/controls.json",
+      "lines": "4-16",
+      "claim": "The assigned configuration is difficulty 3/full, with a 150-second allowance, an 800 ms observation window, and six frames per observation; L3 has five workers, two dig workers, a hidden opening, one seeded raid of count four, and the listed spawn/impact ticks."
+    },
+    {
+      "path": "weird_captcha_gym/shared_scripts/incubator_generators/anthill_front.py",
+      "lines": "31-60",
+      "claim": "The generator reads the exact control condition, derives the L3 parameters, chooses a seeded first lane, and validates the raid schedule."
+    },
+    {
+      "path": "weird_captcha_gym/shared_scripts/incubator_generators/anthill_front.py",
+      "lines": "97-120",
+      "claim": "Each generated raid has an expansion interval, response-open/deadline ticks, a spawn and impact tick, and a random motion phase offset."
+    },
+    {
+      "path": "weird_captcha_gym/shared_scripts/incubator_generators/anthill_front.py",
+      "lines": "148-180",
+      "claim": "The world uses a 100 ms tick, 18-tick gathering cycle, 14-tick production delay, 45-tick assault travel, and visible rules that require recent motion to choose a defense branch."
+    },
+    {
+      "path": "weird_captcha_gym/shared_runtime/app/mechanics/anthill_front.js",
+      "lines": "55-138",
+      "claim": "stepSimulation autonomously advances scouting, digging, gathering, production, raid readiness/impact, soldier assaults, queen damage, and the 720-tick terminal condition."
+    },
+    {
+      "path": "weird_captcha_gym/shared_runtime/app/mechanics/anthill_front.js",
+      "lines": "157-204",
+      "claim": "The browser accepts GATHER, SCOUT, DIG, RAISE, and MARCH; tunnel MARCH is available only for an uncommitted raid within response_open_tick through response_deadline_tick, and its commitment correctness is computed from interceptLane at the action tick."
+    },
+    {
+      "path": "weird_captcha_gym/shared_runtime/app/mechanics/anthill_front.js",
+      "lines": "263-279",
+      "claim": "raidWorldPosition moves the formation toward the colony and then gives it sinusoidal vertical motion; the vertical state is the visible temporal evidence for the intercept decision."
+    },
+    {
+      "path": "weird_captcha_gym/shared_runtime/app/mechanics/anthill_front.js",
+      "lines": "344-375",
+      "claim": "The live canvas renders the moving raid formation, intercept marker, tunnel lanes, and accumulated colony state."
+    },
+    {
+      "path": "weird_captcha_gym/shared_runtime/app/mechanics/anthill_front.js",
+      "lines": "477-550",
+      "claim": "Full mode uses map pointer selection/marquee, keyboard command arming, visible destination clicks, minimap/arrow panning, and an administrative certification button; the render loop continuously advances and redraws the state."
+    },
+    {
+      "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/anthill_front.py",
+      "lines": "47-51",
+      "claim": "The grader computes the branch from the raid phase and motion offset, with the branch changing when the visible vertical direction reverses."
+    },
+    {
+      "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/anthill_front.py",
+      "lines": "100-150",
+      "claim": "At impact, correct commitments filter living soldiers on the committed lane, stop up to the raid count, apply losses, and otherwise apply the breach to the home queen; the rival queen is damaged by completed assaults."
+    },
+    {
+      "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/anthill_front.py",
+      "lines": "221-262",
+      "claim": "The replay grader rejects tunnel MARCH outside the visible response band and rejects rival-queen MARCH before all raids are cleared; accepted actions set the soldier orders and assault due tick."
+    },
+    {
+      "path": "weird_captcha_gym/tools/incubator_solvers/anthill_front.py",
+      "lines": "165-218",
+      "claim": "The visible solver samples formation pixels at successive times and uses a consistent vertical delta as the observed advance vector, explicitly avoiding a turning point where the direction can expire before the pointer event."
+    },
+    {
+      "path": "weird_captcha_gym/tools/incubator_solvers/anthill_front.py",
+      "lines": "277-343",
+      "claim": "The solver prepares the colony, raises enough soldiers before the first response band, then waits for visible contact and chooses a tunnel from successive visual measurements."
+    },
+    {
+      "path": "weird_captcha_gym/shared_runtime/app/time_controller.js",
+      "lines": "15-25",
+      "claim": "The shared clock distinguishes live and paused task time and advances the virtual task clock only while running."
+    },
+    {
+      "path": "weird_captcha_gym/shared_runtime/app/time_controller.js",
+      "lines": "548-580",
+      "claim": "A paused observation cycle runs a finite task-time window and then pauses at its endpoint, so the reported 800 ms horizon is task time rather than provider latency."
+    },
+    {
+      "path": "weird_captcha_gym/environments/anthill_front_env/tasks/anthill_front_seed_0001/verifier.py",
+      "lines": "21-32",
+      "claim": "Verification loads the Anthill Front replay grader and grades the exported outcome, rather than treating the browser's visual path as the result itself."
+    }
+  ],
+  "uncertainties": []
+}

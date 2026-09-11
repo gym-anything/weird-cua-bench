@@ -1,0 +1,148 @@
+{
+  "case_index": 45,
+  "public_environment_name": "Bandaged Rose Window",
+  "environment_id": "bandaged_rose_window_env",
+  "difficulty": 3,
+  "interaction_mode": "full",
+  "label": "no",
+  "controls_available": [
+    {
+      "control": "rim_drag",
+      "surface": "mouse",
+      "scope": "The three visible brass handles on the NORTH, SOUTHWEST, and SOUTHEAST discs",
+      "effect": "A drag of at least 0.45 radians requests one clockwise or counter-clockwise sixth-turn; the sign of the drag selects the direction."
+    },
+    {
+      "control": "SEAL",
+      "surface": "mouse",
+      "scope": "Certification button",
+      "effect": "Administrative submission after the rose has been restored; it does not change the rose during the solve."
+    },
+    {
+      "control": "RETRY",
+      "surface": "mouse",
+      "scope": "Shown after a failed submission",
+      "effect": "Requests a fresh challenge and is not part of a successful normal solve."
+    }
+  ],
+  "autonomous_processes": [
+    {
+      "period": "Between all agent inputs, including live idle time",
+      "task_state_change": "none",
+      "reason": "The rose model has no task timer, interval, animation loop, physics loop, or autonomous state update. A visible rose change occurs only when an input handler attempts a turn."
+    }
+  ],
+  "grouped_control_modes": [
+    {
+      "mode": "rim_drag",
+      "scope": "Every outcome-affecting drag attempt on any of the three handles, in either direction, across seeds and turns",
+      "effect": "A legal request rotates the selected disc; an illegal request is synchronously refused and leaves the state unchanged."
+    }
+  ],
+  "delta_ms": null,
+  "window_ms": 0,
+  "clause_i": {
+    "holds": false,
+    "reason": "An observation-free q cannot choose the shortest-path progress action for every occurrence of rim_drag: the generator selects different depth-seven initial states by seed, while I_t does not contain the visible rose. The same empty action history can therefore require different disc/direction choices."
+  },
+  "clause_ii": {
+    "holds": true,
+    "reason": "For the state-choice portion, a zero-width bounded window is sufficient: the screenshot shows the current stained-glass arrangement and the reference arrangement, and the fixed disc geometry and turn rules allow a visual policy g to select a shortest-path disc and direction. This is static visual grounding, not evidence of a changing process."
+  },
+  "clause_iii": {
+    "holds": false,
+    "reason": "No positive Delta can witness autonomous degradation. With no new action, the current state remains unchanged, so an action's Q value and advantage over no-op do not strictly decrease. Legal-turn eligibility changes only synchronously after attempt() receives a drag; clock progression, later completion, or a deadline cannot satisfy the non-clock task-state requirement."
+  },
+  "common_visible_process": "None. The only outcome-affecting visual change is the synchronous result of a drag; CSS hover/drag styling and shared clock progression do not change the rose task state.",
+  "pre_run": {
+    "threshold": 0.5,
+    "at_least_half": false,
+    "rate": null,
+    "basis": "source_structural",
+    "reason": "The source has no autonomous outcome phase. Every successful restoration requires outcome-affecting turns delivered by the agent, while SEAL is administrative; therefore no generated instance admits the specified action-free pre-run form.",
+    "seed_probe": null
+  },
+  "files_read_completely": [
+    "AGENTS.md",
+    "weird_captcha_gym/docs/controllability/real-time.md",
+    "weird_captcha_gym/environments/bandaged_rose_window_env/controls.json",
+    "weird_captcha_gym/environments/bandaged_rose_window_env/env.json",
+    "weird_captcha_gym/environments/bandaged_rose_window_env/tasks/bandaged_rose_window_seed_0001/task.json",
+    "weird_captcha_gym/environments/bandaged_rose_window_env/scripts/install_puzzle_runtime.sh",
+    "weird_captcha_gym/environments/bandaged_rose_window_env/scripts/setup_puzzle_runtime.sh",
+    "weird_captcha_gym/environments/bandaged_rose_window_env/tasks/bandaged_rose_window_seed_0001/setup_task.sh",
+    "weird_captcha_gym/environments/bandaged_rose_window_env/tasks/bandaged_rose_window_seed_0001/export_result.sh",
+    "weird_captcha_gym/shared_scripts/incubator_generators/bandaged_rose_window.py",
+    "weird_captcha_gym/shared_runtime/app/mechanics/bandaged_rose_window.js",
+    "weird_captcha_gym/shared_runtime/app/mechanics/bandaged_rose_window.css",
+    "weird_captcha_gym/shared_runtime/server/incubator_graders/bandaged_rose_window.py",
+    "weird_captcha_gym/environments/bandaged_rose_window_env/tasks/bandaged_rose_window_seed_0001/verifier.py",
+    "weird_captcha_gym/tools/incubator_solvers/bandaged_rose_window.py",
+    "weird_captcha_gym/shared_runtime/verifier_helpers.py",
+    "weird_captcha_gym/shared_runtime/app/index.html",
+    "weird_captcha_gym/shared_runtime/app/time_controller.js"
+  ],
+  "source_evidence": [
+    {
+      "path": "weird_captcha_gym/docs/controllability/real-time.md",
+      "lines": "48-84",
+      "claim": "The frozen definition requires a common visible autonomous process and a strict loss in action value or advantage caused by non-clock task-state evolution."
+    },
+    {
+      "path": "weird_captcha_gym/environments/bandaged_rose_window_env/controls.json",
+      "lines": "22-26",
+      "claim": "Difficulty 3 is medium and sets scramble_depth to 7."
+    },
+    {
+      "path": "weird_captcha_gym/environments/bandaged_rose_window_env/controls.json",
+      "lines": "46-54",
+      "claim": "Full interaction is rim_drag, and the configured observation window is 0 ms with one frame; play time is 180 seconds."
+    },
+    {
+      "path": "weird_captcha_gym/shared_scripts/incubator_generators/bandaged_rose_window.py",
+      "lines": "36-50,53-77,110-131",
+      "claim": "Disc legality and turns are deterministic state transformations; generation samples a seed-dependent state at the selected BFS depth and records a solved state and exact optimal distance."
+    },
+    {
+      "path": "weird_captcha_gym/shared_runtime/app/mechanics/bandaged_rose_window.js",
+      "lines": "12-24,91-116",
+      "claim": "The browser implements synchronous legality/turn logic, and current state changes only inside attempt(), which is invoked by an input. Refused turns leave the state unchanged."
+    },
+    {
+      "path": "weird_captcha_gym/shared_runtime/app/mechanics/bandaged_rose_window.js",
+      "lines": "125-168,220-239",
+      "claim": "Full mode renders drag handles, triggers one turn only on a completed drag exceeding the angular threshold, initializes from initial_state, and binds SEAL separately for submission."
+    },
+    {
+      "path": "weird_captcha_gym/shared_runtime/app/mechanics/bandaged_rose_window.css",
+      "lines": "1-4",
+      "claim": "The mechanic CSS contains static layout, hover/drag styling, and synchronous pass/fail display rules, with no autonomous animation declaration."
+    },
+    {
+      "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/bandaged_rose_window.py",
+      "lines": "45-99",
+      "claim": "The grader binds full mode to rim_drag and grades by deterministic replay of the submitted turn transcript and final solved state, with no timing condition."
+    },
+    {
+      "path": "weird_captcha_gym/environments/bandaged_rose_window_env/tasks/bandaged_rose_window_seed_0001/verifier.py",
+      "lines": "39-105",
+      "claim": "The exported verifier independently replays the same state transitions and decides pass solely from the resulting solved state."
+    },
+    {
+      "path": "weird_captcha_gym/tools/incubator_solvers/bandaged_rose_window.py",
+      "lines": "20-56,77-96",
+      "claim": "The solver delivers each solution move as an explicit mouse drag in full mode and waits for the successful-turn count after each move; there is no action-free outcome phase."
+    },
+    {
+      "path": "weird_captcha_gym/shared_runtime/app/time_controller.js",
+      "lines": "301-345,548-603",
+      "claim": "The shared clock can drain registered timers or run observation windows, but this mechanic registers no timer, frame callback, or clock-dependent state update, so clock progression alone does not evolve the rose."
+    },
+    {
+      "path": "weird_captcha_gym/shared_runtime/verifier_helpers.py",
+      "lines": "33-52",
+      "claim": "The verifier's shared helper only copies and parses the exported result; it adds no task-state or timing behavior."
+    }
+  ],
+  "uncertainties": []
+}

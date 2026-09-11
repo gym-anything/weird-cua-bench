@@ -1,0 +1,987 @@
+{
+  "case_index": 20,
+  "environment_id": "downsky_causeway_env",
+  "public_environment_name": "Downsky Causeway",
+  "configuration_reports": [
+    {
+      "case_index": 191,
+      "public_environment_name": "Downsky Causeway",
+      "environment_id": "downsky_causeway_env",
+      "difficulty": 1,
+      "interaction_mode": "full",
+      "label": "no",
+      "controls_available": [
+        "Hold W/S/A/D or the arrow keys for forward, back, strafe-left, and strafe-right movement.",
+        "Drag the first-person canvas for continuous mouse-look; there is no jump control.",
+        "ABANDON ROUTE submits a failed attempt; RETRY RESULT is available only after a result error."
+      ],
+      "autonomous_processes": [
+        "A 40 ms physics interval changes the avatar position only while a movement key is held; with no held movement, the tick has zero displacement and leaves task state unchanged.",
+        "This level statically generates three descending route terraces, no side shelves, broad 13.2 by 10.2 platforms, and fixed cloud positions. No platform, pavilion, or hazard moves.",
+        "Physical exit contact stops the interval and submits success; after a fall, a 260 ms timeout only submits failure and does not create a recoverable control opportunity."
+      ],
+      "grouped_control_modes": [
+        "Held keyboard movement and key release for the four movement directions.",
+        "Viewport-drag look, which immediately changes heading and pitch.",
+        "Route submission controls: ABANDON ROUTE and RETRY RESULT."
+      ],
+      "delta_ms": null,
+      "window_ms": null,
+      "clause_i": {
+        "holds": true,
+        "reason": "An observation-free policy based only on its own action history and times cannot guarantee the optimal route control across the generated mirrored presentations and current visible terrace states. This is static spatial uncertainty, not evidence of a changing task state."
+      },
+      "clause_ii": {
+        "holds": true,
+        "reason": "The first-person view, support/altitude readouts, and recent frames can expose the current terrace geometry and position well enough to choose ordinary movement and look controls within a bounded window. That state-dependent visual control does not provide a qualifying real-time process."
+      },
+      "clause_iii": {
+        "holds": false,
+        "reason": "The held-input tick is only translation from an already-held command; the route geometry, pavilion, clouds, and target conditions remain fixed. While success remains possible, movement can be released, reversed, or reoriented and the static route remains available, so no available action has a strict Q-value or advantage loss. If movement crosses a wrong shelf or edge, success is already unsalvageable and that history is removed by C_Delta. Look has no autonomous evolution, and the post-fall timeout is terminal."
+      },
+      "common_visible_process": "No qualifying common visible process exists. The only nonzero autonomous period is 40 ms held-input translation through static geometry; it is not a moving target, hazard, or expiring action opportunity while success remains possible.",
+      "pre_run": {
+        "threshold": 0.5,
+        "at_least_half": null,
+        "rate": null,
+        "basis": "not_applicable",
+        "reason": "The mathematical definition already fails clause (iii), so the pre-run threshold cannot change this No and no pre-run percentage is assigned.",
+        "seed_probe": null
+      },
+      "files_read_completely": [
+        "AGENTS.md",
+        "weird_captcha_gym/docs/controllability/real-time.md",
+        "weird_captcha_gym/environments/downsky_causeway_env/controls.json",
+        "weird_captcha_gym/environments/downsky_causeway_env/env.json",
+        "weird_captcha_gym/environments/downsky_causeway_env/tasks/downsky_causeway_seed_0001/task.json",
+        "weird_captcha_gym/environments/downsky_causeway_env/tasks/downsky_causeway_seed_0001/verifier.py",
+        "weird_captcha_gym/shared_scripts/incubator_generators/downsky_causeway.py",
+        "weird_captcha_gym/shared_runtime/app/mechanics/downsky_causeway.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/downsky_causeway.css",
+        "weird_captcha_gym/shared_runtime/server/incubator_graders/downsky_causeway.py",
+        "weird_captcha_gym/shared_runtime/verifier_helpers.py",
+        "weird_captcha_gym/tools/incubator_solvers/downsky_causeway.py"
+      ],
+      "source_evidence": [
+        {
+          "path": "weird_captcha_gym/environments/downsky_causeway_env/controls.json",
+          "lines": "14-36",
+          "claim": "Difficulty 1 is three route platforms with no branches, wide/deep platforms, a fixed movement speed, and fixed look sensitivity."
+        },
+        {
+          "path": "weird_captcha_gym/environments/downsky_causeway_env/controls.json",
+          "lines": "148-161",
+          "claim": "Full and simplified input surfaces are both implemented, and the configured observation window is 400 ms with four frames."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/downsky_causeway.py",
+          "lines": "138-205",
+          "claim": "The selected difficulty is used to construct a fixed route and optional shelves once per challenge; no per-tick world generation occurs."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/downsky_causeway.js",
+          "lines": "283-324",
+          "claim": "The only interval-driven task update integrates held movement at a fixed speed and either lands on a lower platform or marks the avatar falling."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/downsky_causeway.js",
+          "lines": "479-508",
+          "claim": "Full mode accepts keyboard movement and viewport drag, and starts the 40 ms tick interval; the event handlers contain no moving-world process."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/downsky_causeway.py",
+          "lines": "151-234",
+          "claim": "The independent replay applies only submitted look, key, and fixed physics-tick events against the static world, with failure on leaving without lower support."
+        },
+        {
+          "path": "weird_captcha_gym/environments/downsky_causeway_env/tasks/downsky_causeway_seed_0001/verifier.py",
+          "lines": "23-44",
+          "claim": "Verification loads the exported result and independent Downsky replay grader; it does not grade timing or a moving-world outcome."
+        }
+      ],
+      "uncertainties": []
+    },
+    {
+      "case_index": 192,
+      "public_environment_name": "Downsky Causeway",
+      "environment_id": "downsky_causeway_env",
+      "difficulty": 1,
+      "interaction_mode": "simplified",
+      "label": "no",
+      "controls_available": [
+        "Hold the on-screen movement proxy buttons for forward, back, strafe-left, and strafe-right.",
+        "Click the four on-screen look-step buttons for fixed left, right, up, and down look changes; there is no jump control.",
+        "ABANDON ROUTE submits a failed attempt; RETRY RESULT is available only after a result error."
+      ],
+      "autonomous_processes": [
+        "A 40 ms physics interval changes the avatar position only while a movement proxy button is held; with no held movement, the tick has zero displacement and leaves task state unchanged.",
+        "This level statically generates three descending route terraces, no side shelves, broad 13.2 by 10.2 platforms, and fixed cloud positions. No platform, pavilion, or hazard moves.",
+        "Physical exit contact stops the interval and submits success; after a fall, a 260 ms timeout only submits failure and does not create a recoverable control opportunity."
+      ],
+      "grouped_control_modes": [
+        "Held on-screen movement proxy buttons and pointer release for the four movement directions.",
+        "Discrete look-step buttons for left, right, up, and down.",
+        "Route submission controls: ABANDON ROUTE and RETRY RESULT."
+      ],
+      "delta_ms": null,
+      "window_ms": null,
+      "clause_i": {
+        "holds": true,
+        "reason": "An observation-free policy based only on its own action history and times cannot guarantee the optimal route control across the generated mirrored presentations and current visible terrace states. This is static spatial uncertainty, not evidence of a changing task state."
+      },
+      "clause_ii": {
+        "holds": true,
+        "reason": "The first-person view, support/altitude readouts, and recent frames can expose the current terrace geometry and position well enough to choose ordinary proxy movement and look controls within a bounded window. That state-dependent visual control does not provide a qualifying real-time process."
+      },
+      "clause_iii": {
+        "holds": false,
+        "reason": "The held-input tick is only translation from an already-held command; the route geometry, pavilion, clouds, and target conditions remain fixed. While success remains possible, movement can be released, reversed, or reoriented and the static route remains available, so no available action has a strict Q-value or advantage loss. If movement crosses a wrong shelf or edge, success is already unsalvageable and that history is removed by C_Delta. Look has no autonomous evolution, and the post-fall timeout is terminal."
+      },
+      "common_visible_process": "No qualifying common visible process exists. The only nonzero autonomous period is 40 ms held-input translation through static geometry; it is not a moving target, hazard, or expiring action opportunity while success remains possible.",
+      "pre_run": {
+        "threshold": 0.5,
+        "at_least_half": null,
+        "rate": null,
+        "basis": "not_applicable",
+        "reason": "The mathematical definition already fails clause (iii), so the pre-run threshold cannot change this No and no pre-run percentage is assigned.",
+        "seed_probe": null
+      },
+      "files_read_completely": [
+        "AGENTS.md",
+        "weird_captcha_gym/docs/controllability/real-time.md",
+        "weird_captcha_gym/environments/downsky_causeway_env/controls.json",
+        "weird_captcha_gym/environments/downsky_causeway_env/env.json",
+        "weird_captcha_gym/environments/downsky_causeway_env/tasks/downsky_causeway_seed_0001/task.json",
+        "weird_captcha_gym/environments/downsky_causeway_env/tasks/downsky_causeway_seed_0001/verifier.py",
+        "weird_captcha_gym/shared_scripts/incubator_generators/downsky_causeway.py",
+        "weird_captcha_gym/shared_runtime/app/mechanics/downsky_causeway.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/downsky_causeway.css",
+        "weird_captcha_gym/shared_runtime/server/incubator_graders/downsky_causeway.py",
+        "weird_captcha_gym/shared_runtime/verifier_helpers.py",
+        "weird_captcha_gym/tools/incubator_solvers/downsky_causeway.py"
+      ],
+      "source_evidence": [
+        {
+          "path": "weird_captcha_gym/environments/downsky_causeway_env/controls.json",
+          "lines": "14-36",
+          "claim": "Difficulty 1 is three route platforms with no branches, wide/deep platforms, a fixed movement speed, and fixed look sensitivity."
+        },
+        {
+          "path": "weird_captcha_gym/environments/downsky_causeway_env/controls.json",
+          "lines": "148-161",
+          "claim": "Simplified and full input surfaces are both implemented, and the configured observation window is 400 ms with four frames."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/downsky_causeway.py",
+          "lines": "138-205",
+          "claim": "The selected difficulty is used to construct a fixed route and optional shelves once per challenge; no per-tick world generation occurs."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/downsky_causeway.js",
+          "lines": "283-324",
+          "claim": "The only interval-driven task update integrates held movement at a fixed speed and either lands on a lower platform or marks the avatar falling."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/downsky_causeway.js",
+          "lines": "402-420",
+          "claim": "Simplified mode binds held movement proxy buttons and discrete look buttons; those handlers do not animate the world."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/downsky_causeway.py",
+          "lines": "151-234",
+          "claim": "The independent replay applies only submitted look, button-equivalent key, and fixed physics-tick events against the static world, with failure on leaving without lower support."
+        },
+        {
+          "path": "weird_captcha_gym/environments/downsky_causeway_env/tasks/downsky_causeway_seed_0001/verifier.py",
+          "lines": "23-44",
+          "claim": "Verification loads the exported result and independent Downsky replay grader; it does not grade timing or a moving-world outcome."
+        }
+      ],
+      "uncertainties": []
+    },
+    {
+      "case_index": 193,
+      "public_environment_name": "Downsky Causeway",
+      "environment_id": "downsky_causeway_env",
+      "difficulty": 2,
+      "interaction_mode": "full",
+      "label": "no",
+      "controls_available": [
+        "Hold W/S/A/D or the arrow keys for forward, back, strafe-left, and strafe-right movement.",
+        "Drag the first-person canvas for continuous mouse-look; there is no jump control.",
+        "ABANDON ROUTE submits a failed attempt; RETRY RESULT is available only after a result error."
+      ],
+      "autonomous_processes": [
+        "A 40 ms physics interval changes the avatar position only while a movement key is held; with no held movement, the tick has zero displacement and leaves task state unchanged.",
+        "This level statically generates four descending route terraces, one lower side shelf, 11.8 by 9.0 platforms, and fixed cloud positions. No platform, pavilion, or hazard moves.",
+        "Physical exit contact stops the interval and submits success; after a fall, a 260 ms timeout only submits failure and does not create a recoverable control opportunity."
+      ],
+      "grouped_control_modes": [
+        "Held keyboard movement and key release for the four movement directions.",
+        "Viewport-drag look, which immediately changes heading and pitch.",
+        "Route submission controls: ABANDON ROUTE and RETRY RESULT."
+      ],
+      "delta_ms": null,
+      "window_ms": null,
+      "clause_i": {
+        "holds": true,
+        "reason": "An observation-free policy based only on its own action history and times cannot guarantee the optimal route control across the generated mirrored presentations, side shelf, and current visible terrace states. This is static spatial uncertainty, not evidence of a changing task state."
+      },
+      "clause_ii": {
+        "holds": true,
+        "reason": "The first-person view, support/altitude readouts, and recent frames can expose the current terrace geometry and position well enough to choose ordinary movement and look controls within a bounded window. That state-dependent visual control does not provide a qualifying real-time process."
+      },
+      "clause_iii": {
+        "holds": false,
+        "reason": "The held-input tick is only translation from an already-held command; the route geometry, pavilion, clouds, and target conditions remain fixed. While success remains possible, movement can be released, reversed, or reoriented and the static route remains available, so no available action has a strict Q-value or advantage loss. If movement crosses the irreversible side shelf or an edge, success is already unsalvageable and that history is removed by C_Delta. Look has no autonomous evolution, and the post-fall timeout is terminal."
+      },
+      "common_visible_process": "No qualifying common visible process exists. The only nonzero autonomous period is 40 ms held-input translation through static geometry; it is not a moving target, hazard, or expiring action opportunity while success remains possible.",
+      "pre_run": {
+        "threshold": 0.5,
+        "at_least_half": null,
+        "rate": null,
+        "basis": "not_applicable",
+        "reason": "The mathematical definition already fails clause (iii), so the pre-run threshold cannot change this No and no pre-run percentage is assigned.",
+        "seed_probe": null
+      },
+      "files_read_completely": [
+        "AGENTS.md",
+        "weird_captcha_gym/docs/controllability/real-time.md",
+        "weird_captcha_gym/environments/downsky_causeway_env/controls.json",
+        "weird_captcha_gym/environments/downsky_causeway_env/env.json",
+        "weird_captcha_gym/environments/downsky_causeway_env/tasks/downsky_causeway_seed_0001/task.json",
+        "weird_captcha_gym/environments/downsky_causeway_env/tasks/downsky_causeway_seed_0001/verifier.py",
+        "weird_captcha_gym/shared_scripts/incubator_generators/downsky_causeway.py",
+        "weird_captcha_gym/shared_runtime/app/mechanics/downsky_causeway.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/downsky_causeway.css",
+        "weird_captcha_gym/shared_runtime/server/incubator_graders/downsky_causeway.py",
+        "weird_captcha_gym/shared_runtime/verifier_helpers.py",
+        "weird_captcha_gym/tools/incubator_solvers/downsky_causeway.py"
+      ],
+      "source_evidence": [
+        {
+          "path": "weird_captcha_gym/environments/downsky_causeway_env/controls.json",
+          "lines": "38-61",
+          "claim": "Difficulty 2 is four route platforms with one regular side branch, narrower 11.8 by 9.0 platforms, and a fixed movement/look rate."
+        },
+        {
+          "path": "weird_captcha_gym/environments/downsky_causeway_env/controls.json",
+          "lines": "148-161",
+          "claim": "Full and simplified input surfaces are both implemented, and the configured observation window is 400 ms with four frames."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/downsky_causeway.py",
+          "lines": "138-205",
+          "claim": "The selected difficulty is used to construct a fixed route and optional shelves once per challenge; no per-tick world generation occurs."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/downsky_causeway.js",
+          "lines": "283-324",
+          "claim": "The only interval-driven task update integrates held movement at a fixed speed and either lands on a lower platform or marks the avatar falling."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/downsky_causeway.js",
+          "lines": "479-508",
+          "claim": "Full mode accepts keyboard movement and viewport drag, and starts the 40 ms tick interval; the event handlers contain no moving-world process."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/downsky_causeway.py",
+          "lines": "151-234",
+          "claim": "The independent replay applies only submitted look, key, and fixed physics-tick events against the static world, with failure on leaving without lower support."
+        },
+        {
+          "path": "weird_captcha_gym/environments/downsky_causeway_env/tasks/downsky_causeway_seed_0001/verifier.py",
+          "lines": "23-44",
+          "claim": "Verification loads the exported result and independent Downsky replay grader; it does not grade timing or a moving-world outcome."
+        }
+      ],
+      "uncertainties": []
+    },
+    {
+      "case_index": 194,
+      "public_environment_name": "Downsky Causeway",
+      "environment_id": "downsky_causeway_env",
+      "difficulty": 2,
+      "interaction_mode": "simplified",
+      "label": "no",
+      "controls_available": [
+        "Hold the on-screen movement proxy buttons for forward, back, strafe-left, and strafe-right.",
+        "Click the four on-screen look-step buttons for fixed left, right, up, and down look changes; there is no jump control.",
+        "ABANDON ROUTE submits a failed attempt; RETRY RESULT is available only after a result error."
+      ],
+      "autonomous_processes": [
+        "A 40 ms physics interval changes the avatar position only while a movement proxy button is held; with no held movement, the tick has zero displacement and leaves task state unchanged.",
+        "This level statically generates four descending route terraces, one lower side shelf, 11.8 by 9.0 platforms, and fixed cloud positions. No platform, pavilion, or hazard moves.",
+        "Physical exit contact stops the interval and submits success; after a fall, a 260 ms timeout only submits failure and does not create a recoverable control opportunity."
+      ],
+      "grouped_control_modes": [
+        "Held on-screen movement proxy buttons and pointer release for the four movement directions.",
+        "Discrete look-step buttons for left, right, up, and down.",
+        "Route submission controls: ABANDON ROUTE and RETRY RESULT."
+      ],
+      "delta_ms": null,
+      "window_ms": null,
+      "clause_i": {
+        "holds": true,
+        "reason": "An observation-free policy based only on its own action history and times cannot guarantee the optimal route control across the generated mirrored presentations, side shelf, and current visible terrace states. This is static spatial uncertainty, not evidence of a changing task state."
+      },
+      "clause_ii": {
+        "holds": true,
+        "reason": "The first-person view, support/altitude readouts, and recent frames can expose the current terrace geometry and position well enough to choose ordinary proxy movement and look controls within a bounded window. That state-dependent visual control does not provide a qualifying real-time process."
+      },
+      "clause_iii": {
+        "holds": false,
+        "reason": "The held-input tick is only translation from an already-held command; the route geometry, pavilion, clouds, and target conditions remain fixed. While success remains possible, movement can be released, reversed, or reoriented and the static route remains available, so no available action has a strict Q-value or advantage loss. If movement crosses the irreversible side shelf or an edge, success is already unsalvageable and that history is removed by C_Delta. Look has no autonomous evolution, and the post-fall timeout is terminal."
+      },
+      "common_visible_process": "No qualifying common visible process exists. The only nonzero autonomous period is 40 ms held-input translation through static geometry; it is not a moving target, hazard, or expiring action opportunity while success remains possible.",
+      "pre_run": {
+        "threshold": 0.5,
+        "at_least_half": null,
+        "rate": null,
+        "basis": "not_applicable",
+        "reason": "The mathematical definition already fails clause (iii), so the pre-run threshold cannot change this No and no pre-run percentage is assigned.",
+        "seed_probe": null
+      },
+      "files_read_completely": [
+        "AGENTS.md",
+        "weird_captcha_gym/docs/controllability/real-time.md",
+        "weird_captcha_gym/environments/downsky_causeway_env/controls.json",
+        "weird_captcha_gym/environments/downsky_causeway_env/env.json",
+        "weird_captcha_gym/environments/downsky_causeway_env/tasks/downsky_causeway_seed_0001/task.json",
+        "weird_captcha_gym/environments/downsky_causeway_env/tasks/downsky_causeway_seed_0001/verifier.py",
+        "weird_captcha_gym/shared_scripts/incubator_generators/downsky_causeway.py",
+        "weird_captcha_gym/shared_runtime/app/mechanics/downsky_causeway.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/downsky_causeway.css",
+        "weird_captcha_gym/shared_runtime/server/incubator_graders/downsky_causeway.py",
+        "weird_captcha_gym/shared_runtime/verifier_helpers.py",
+        "weird_captcha_gym/tools/incubator_solvers/downsky_causeway.py"
+      ],
+      "source_evidence": [
+        {
+          "path": "weird_captcha_gym/environments/downsky_causeway_env/controls.json",
+          "lines": "38-61",
+          "claim": "Difficulty 2 is four route platforms with one regular side branch, narrower 11.8 by 9.0 platforms, and a fixed movement/look rate."
+        },
+        {
+          "path": "weird_captcha_gym/environments/downsky_causeway_env/controls.json",
+          "lines": "148-161",
+          "claim": "Simplified and full input surfaces are both implemented, and the configured observation window is 400 ms with four frames."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/downsky_causeway.py",
+          "lines": "138-205",
+          "claim": "The selected difficulty is used to construct a fixed route and optional shelves once per challenge; no per-tick world generation occurs."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/downsky_causeway.js",
+          "lines": "283-324",
+          "claim": "The only interval-driven task update integrates held movement at a fixed speed and either lands on a lower platform or marks the avatar falling."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/downsky_causeway.js",
+          "lines": "402-420",
+          "claim": "Simplified mode binds held movement proxy buttons and discrete look buttons; those handlers do not animate the world."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/downsky_causeway.py",
+          "lines": "151-234",
+          "claim": "The independent replay applies only submitted look, button-equivalent key, and fixed physics-tick events against the static world, with failure on leaving without lower support."
+        },
+        {
+          "path": "weird_captcha_gym/environments/downsky_causeway_env/tasks/downsky_causeway_seed_0001/verifier.py",
+          "lines": "23-44",
+          "claim": "Verification loads the exported result and independent Downsky replay grader; it does not grade timing or a moving-world outcome."
+        }
+      ],
+      "uncertainties": []
+    },
+    {
+      "case_index": 195,
+      "public_environment_name": "Downsky Causeway",
+      "environment_id": "downsky_causeway_env",
+      "difficulty": 3,
+      "interaction_mode": "full",
+      "label": "no",
+      "controls_available": [
+        "Hold W/S/A/D or the arrow keys for forward, back, strafe-left, and strafe-right movement.",
+        "Drag the first-person canvas for continuous mouse-look; there is no jump control.",
+        "ABANDON ROUTE submits a failed attempt; RETRY RESULT is available only after a result error."
+      ],
+      "autonomous_processes": [
+        "A 40 ms physics interval changes the avatar position only while a movement key is held; with no held movement, the tick has zero displacement and leaves task state unchanged.",
+        "This level statically generates five descending route terraces, two regular side shelves, 10.4 by 8.2 platforms, and fixed cloud positions. No platform, pavilion, or hazard moves.",
+        "Physical exit contact stops the interval and submits success; after a fall, a 260 ms timeout only submits failure and does not create a recoverable control opportunity."
+      ],
+      "grouped_control_modes": [
+        "Held keyboard movement and key release for the four movement directions.",
+        "Viewport-drag look, which immediately changes heading and pitch.",
+        "Route submission controls: ABANDON ROUTE and RETRY RESULT."
+      ],
+      "delta_ms": null,
+      "window_ms": null,
+      "clause_i": {
+        "holds": true,
+        "reason": "An observation-free policy based only on its own action history and times cannot guarantee the optimal route control across the generated mirrored presentations, side shelves, and current visible terrace states. This is static spatial uncertainty, not evidence of a changing task state."
+      },
+      "clause_ii": {
+        "holds": true,
+        "reason": "The first-person view, support/altitude readouts, and recent frames can expose the current terrace geometry and position well enough to choose ordinary movement and look controls within a bounded window. That state-dependent visual control does not provide a qualifying real-time process."
+      },
+      "clause_iii": {
+        "holds": false,
+        "reason": "The held-input tick is only translation from an already-held command; the route geometry, pavilion, clouds, and target conditions remain fixed. While success remains possible, movement can be released, reversed, or reoriented and the static route remains available, so no available action has a strict Q-value or advantage loss. If movement crosses an irreversible side shelf or an edge, success is already unsalvageable and that history is removed by C_Delta. Look has no autonomous evolution, and the post-fall timeout is terminal."
+      },
+      "common_visible_process": "No qualifying common visible process exists. The only nonzero autonomous period is 40 ms held-input translation through static geometry; it is not a moving target, hazard, or expiring action opportunity while success remains possible.",
+      "pre_run": {
+        "threshold": 0.5,
+        "at_least_half": null,
+        "rate": null,
+        "basis": "not_applicable",
+        "reason": "The mathematical definition already fails clause (iii), so the pre-run threshold cannot change this No and no pre-run percentage is assigned.",
+        "seed_probe": null
+      },
+      "files_read_completely": [
+        "AGENTS.md",
+        "weird_captcha_gym/docs/controllability/real-time.md",
+        "weird_captcha_gym/environments/downsky_causeway_env/controls.json",
+        "weird_captcha_gym/environments/downsky_causeway_env/env.json",
+        "weird_captcha_gym/environments/downsky_causeway_env/tasks/downsky_causeway_seed_0001/task.json",
+        "weird_captcha_gym/environments/downsky_causeway_env/tasks/downsky_causeway_seed_0001/verifier.py",
+        "weird_captcha_gym/shared_scripts/incubator_generators/downsky_causeway.py",
+        "weird_captcha_gym/shared_runtime/app/mechanics/downsky_causeway.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/downsky_causeway.css",
+        "weird_captcha_gym/shared_runtime/server/incubator_graders/downsky_causeway.py",
+        "weird_captcha_gym/shared_runtime/verifier_helpers.py",
+        "weird_captcha_gym/tools/incubator_solvers/downsky_causeway.py"
+      ],
+      "source_evidence": [
+        {
+          "path": "weird_captcha_gym/environments/downsky_causeway_env/controls.json",
+          "lines": "63-87",
+          "claim": "Difficulty 3 is five route platforms with two regular side branches, 10.4 by 8.2 platforms, and a fixed movement/look rate."
+        },
+        {
+          "path": "weird_captcha_gym/environments/downsky_causeway_env/controls.json",
+          "lines": "148-161",
+          "claim": "Full and simplified input surfaces are both implemented, and the configured observation window is 400 ms with four frames."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/downsky_causeway.py",
+          "lines": "138-205",
+          "claim": "The selected difficulty is used to construct a fixed route and optional shelves once per challenge; no per-tick world generation occurs."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/downsky_causeway.js",
+          "lines": "283-324",
+          "claim": "The only interval-driven task update integrates held movement at a fixed speed and either lands on a lower platform or marks the avatar falling."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/downsky_causeway.js",
+          "lines": "479-508",
+          "claim": "Full mode accepts keyboard movement and viewport drag, and starts the 40 ms tick interval; the event handlers contain no moving-world process."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/downsky_causeway.py",
+          "lines": "151-234",
+          "claim": "The independent replay applies only submitted look, key, and fixed physics-tick events against the static world, with failure on leaving without lower support."
+        },
+        {
+          "path": "weird_captcha_gym/environments/downsky_causeway_env/tasks/downsky_causeway_seed_0001/verifier.py",
+          "lines": "23-44",
+          "claim": "Verification loads the exported result and independent Downsky replay grader; it does not grade timing or a moving-world outcome."
+        }
+      ],
+      "uncertainties": []
+    },
+    {
+      "case_index": 196,
+      "public_environment_name": "Downsky Causeway",
+      "environment_id": "downsky_causeway_env",
+      "difficulty": 3,
+      "interaction_mode": "simplified",
+      "label": "no",
+      "controls_available": [
+        "Hold the on-screen movement proxy buttons for forward, back, strafe-left, and strafe-right.",
+        "Click the four on-screen look-step buttons for fixed left, right, up, and down look changes; there is no jump control.",
+        "ABANDON ROUTE submits a failed attempt; RETRY RESULT is available only after a result error."
+      ],
+      "autonomous_processes": [
+        "A 40 ms physics interval changes the avatar position only while a movement proxy button is held; with no held movement, the tick has zero displacement and leaves task state unchanged.",
+        "This level statically generates five descending route terraces, two regular side shelves, 10.4 by 8.2 platforms, and fixed cloud positions. No platform, pavilion, or hazard moves.",
+        "Physical exit contact stops the interval and submits success; after a fall, a 260 ms timeout only submits failure and does not create a recoverable control opportunity."
+      ],
+      "grouped_control_modes": [
+        "Held on-screen movement proxy buttons and pointer release for the four movement directions.",
+        "Discrete look-step buttons for left, right, up, and down.",
+        "Route submission controls: ABANDON ROUTE and RETRY RESULT."
+      ],
+      "delta_ms": null,
+      "window_ms": null,
+      "clause_i": {
+        "holds": true,
+        "reason": "An observation-free policy based only on its own action history and times cannot guarantee the optimal route control across the generated mirrored presentations, side shelves, and current visible terrace states. This is static spatial uncertainty, not evidence of a changing task state."
+      },
+      "clause_ii": {
+        "holds": true,
+        "reason": "The first-person view, support/altitude readouts, and recent frames can expose the current terrace geometry and position well enough to choose ordinary proxy movement and look controls within a bounded window. That state-dependent visual control does not provide a qualifying real-time process."
+      },
+      "clause_iii": {
+        "holds": false,
+        "reason": "The held-input tick is only translation from an already-held command; the route geometry, pavilion, clouds, and target conditions remain fixed. While success remains possible, movement can be released, reversed, or reoriented and the static route remains available, so no available action has a strict Q-value or advantage loss. If movement crosses an irreversible side shelf or an edge, success is already unsalvageable and that history is removed by C_Delta. Look has no autonomous evolution, and the post-fall timeout is terminal."
+      },
+      "common_visible_process": "No qualifying common visible process exists. The only nonzero autonomous period is 40 ms held-input translation through static geometry; it is not a moving target, hazard, or expiring action opportunity while success remains possible.",
+      "pre_run": {
+        "threshold": 0.5,
+        "at_least_half": null,
+        "rate": null,
+        "basis": "not_applicable",
+        "reason": "The mathematical definition already fails clause (iii), so the pre-run threshold cannot change this No and no pre-run percentage is assigned.",
+        "seed_probe": null
+      },
+      "files_read_completely": [
+        "AGENTS.md",
+        "weird_captcha_gym/docs/controllability/real-time.md",
+        "weird_captcha_gym/environments/downsky_causeway_env/controls.json",
+        "weird_captcha_gym/environments/downsky_causeway_env/env.json",
+        "weird_captcha_gym/environments/downsky_causeway_env/tasks/downsky_causeway_seed_0001/task.json",
+        "weird_captcha_gym/environments/downsky_causeway_env/tasks/downsky_causeway_seed_0001/verifier.py",
+        "weird_captcha_gym/shared_scripts/incubator_generators/downsky_causeway.py",
+        "weird_captcha_gym/shared_runtime/app/mechanics/downsky_causeway.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/downsky_causeway.css",
+        "weird_captcha_gym/shared_runtime/server/incubator_graders/downsky_causeway.py",
+        "weird_captcha_gym/shared_runtime/verifier_helpers.py",
+        "weird_captcha_gym/tools/incubator_solvers/downsky_causeway.py"
+      ],
+      "source_evidence": [
+        {
+          "path": "weird_captcha_gym/environments/downsky_causeway_env/controls.json",
+          "lines": "63-87",
+          "claim": "Difficulty 3 is five route platforms with two regular side branches, 10.4 by 8.2 platforms, and a fixed movement/look rate."
+        },
+        {
+          "path": "weird_captcha_gym/environments/downsky_causeway_env/controls.json",
+          "lines": "148-161",
+          "claim": "Simplified and full input surfaces are both implemented, and the configured observation window is 400 ms with four frames."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/downsky_causeway.py",
+          "lines": "138-205",
+          "claim": "The selected difficulty is used to construct a fixed route and optional shelves once per challenge; no per-tick world generation occurs."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/downsky_causeway.js",
+          "lines": "283-324",
+          "claim": "The only interval-driven task update integrates held movement at a fixed speed and either lands on a lower platform or marks the avatar falling."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/downsky_causeway.js",
+          "lines": "402-420",
+          "claim": "Simplified mode binds held movement proxy buttons and discrete look buttons; those handlers do not animate the world."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/downsky_causeway.py",
+          "lines": "151-234",
+          "claim": "The independent replay applies only submitted look, button-equivalent key, and fixed physics-tick events against the static world, with failure on leaving without lower support."
+        },
+        {
+          "path": "weird_captcha_gym/environments/downsky_causeway_env/tasks/downsky_causeway_seed_0001/verifier.py",
+          "lines": "23-44",
+          "claim": "Verification loads the exported result and independent Downsky replay grader; it does not grade timing or a moving-world outcome."
+        }
+      ],
+      "uncertainties": []
+    },
+    {
+      "case_index": 197,
+      "public_environment_name": "Downsky Causeway",
+      "environment_id": "downsky_causeway_env",
+      "difficulty": 4,
+      "interaction_mode": "full",
+      "label": "no",
+      "controls_available": [
+        "Hold W/S/A/D or the arrow keys for forward, back, strafe-left, and strafe-right movement.",
+        "Drag the first-person canvas for continuous mouse-look; there is no jump control.",
+        "ABANDON ROUTE submits a failed attempt; RETRY RESULT is available only after a result error."
+      ],
+      "autonomous_processes": [
+        "A 40 ms physics interval changes the avatar position only while a movement key is held; with no held movement, the tick has zero displacement and leaves task state unchanged.",
+        "This level statically generates seven descending route terraces, three regular side shelves plus one terminal shelf, narrow 8.8 by 7.2 platforms, and fixed cloud positions. No platform, pavilion, or hazard moves.",
+        "Physical exit contact stops the interval and submits success; after a fall, a 260 ms timeout only submits failure and does not create a recoverable control opportunity."
+      ],
+      "grouped_control_modes": [
+        "Held keyboard movement and key release for the four movement directions.",
+        "Viewport-drag look, which immediately changes heading and pitch.",
+        "Route submission controls: ABANDON ROUTE and RETRY RESULT."
+      ],
+      "delta_ms": null,
+      "window_ms": null,
+      "clause_i": {
+        "holds": true,
+        "reason": "An observation-free policy based only on its own action history and times cannot guarantee the optimal route control across the generated mirrored presentations, multiple irreversible shelves, and current visible terrace states. This is static spatial uncertainty, not evidence of a changing task state."
+      },
+      "clause_ii": {
+        "holds": true,
+        "reason": "The first-person view, support/altitude readouts, and recent frames can expose the current terrace geometry and position well enough to choose ordinary movement and look controls within a bounded window. That state-dependent visual control does not provide a qualifying real-time process."
+      },
+      "clause_iii": {
+        "holds": false,
+        "reason": "The held-input tick is only translation from an already-held command; the route geometry, pavilion, clouds, and target conditions remain fixed. While success remains possible, movement can be released, reversed, or reoriented and the static route remains available, so no available action has a strict Q-value or advantage loss. If movement crosses an irreversible shelf or an edge, success is already unsalvageable and that history is removed by C_Delta. Look has no autonomous evolution, and the post-fall timeout is terminal."
+      },
+      "common_visible_process": "No qualifying common visible process exists. The only nonzero autonomous period is 40 ms held-input translation through static geometry; it is not a moving target, hazard, or expiring action opportunity while success remains possible.",
+      "pre_run": {
+        "threshold": 0.5,
+        "at_least_half": null,
+        "rate": null,
+        "basis": "not_applicable",
+        "reason": "The mathematical definition already fails clause (iii), so the pre-run threshold cannot change this No and no pre-run percentage is assigned.",
+        "seed_probe": null
+      },
+      "files_read_completely": [
+        "AGENTS.md",
+        "weird_captcha_gym/docs/controllability/real-time.md",
+        "weird_captcha_gym/environments/downsky_causeway_env/controls.json",
+        "weird_captcha_gym/environments/downsky_causeway_env/env.json",
+        "weird_captcha_gym/environments/downsky_causeway_env/tasks/downsky_causeway_seed_0001/task.json",
+        "weird_captcha_gym/environments/downsky_causeway_env/tasks/downsky_causeway_seed_0001/verifier.py",
+        "weird_captcha_gym/shared_scripts/incubator_generators/downsky_causeway.py",
+        "weird_captcha_gym/shared_runtime/app/mechanics/downsky_causeway.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/downsky_causeway.css",
+        "weird_captcha_gym/shared_runtime/server/incubator_graders/downsky_causeway.py",
+        "weird_captcha_gym/shared_runtime/verifier_helpers.py",
+        "weird_captcha_gym/tools/incubator_solvers/downsky_causeway.py"
+      ],
+      "source_evidence": [
+        {
+          "path": "weird_captcha_gym/environments/downsky_causeway_env/controls.json",
+          "lines": "89-115",
+          "claim": "Difficulty 4 is seven route platforms with four shelves, including a terminal shelf, narrow 8.8 by 7.2 platforms, and a fixed movement/look rate."
+        },
+        {
+          "path": "weird_captcha_gym/environments/downsky_causeway_env/controls.json",
+          "lines": "148-161",
+          "claim": "Full and simplified input surfaces are both implemented, and the configured observation window is 400 ms with four frames."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/downsky_causeway.py",
+          "lines": "138-205",
+          "claim": "The selected difficulty is used to construct a fixed route and optional shelves once per challenge; no per-tick world generation occurs."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/downsky_causeway.js",
+          "lines": "283-324",
+          "claim": "The only interval-driven task update integrates held movement at a fixed speed and either lands on a lower platform or marks the avatar falling."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/downsky_causeway.js",
+          "lines": "479-508",
+          "claim": "Full mode accepts keyboard movement and viewport drag, and starts the 40 ms tick interval; the event handlers contain no moving-world process."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/downsky_causeway.py",
+          "lines": "151-234",
+          "claim": "The independent replay applies only submitted look, key, and fixed physics-tick events against the static world, with failure on leaving without lower support."
+        },
+        {
+          "path": "weird_captcha_gym/environments/downsky_causeway_env/tasks/downsky_causeway_seed_0001/verifier.py",
+          "lines": "23-44",
+          "claim": "Verification loads the exported result and independent Downsky replay grader; it does not grade timing or a moving-world outcome."
+        }
+      ],
+      "uncertainties": []
+    },
+    {
+      "case_index": 198,
+      "public_environment_name": "Downsky Causeway",
+      "environment_id": "downsky_causeway_env",
+      "difficulty": 4,
+      "interaction_mode": "simplified",
+      "label": "no",
+      "controls_available": [
+        "Hold the on-screen movement proxy buttons for forward, back, strafe-left, and strafe-right.",
+        "Click the four on-screen look-step buttons for fixed left, right, up, and down look changes; there is no jump control.",
+        "ABANDON ROUTE submits a failed attempt; RETRY RESULT is available only after a result error."
+      ],
+      "autonomous_processes": [
+        "A 40 ms physics interval changes the avatar position only while a movement proxy button is held; with no held movement, the tick has zero displacement and leaves task state unchanged.",
+        "This level statically generates seven descending route terraces, three regular side shelves plus one terminal shelf, narrow 8.8 by 7.2 platforms, and fixed cloud positions. No platform, pavilion, or hazard moves.",
+        "Physical exit contact stops the interval and submits success; after a fall, a 260 ms timeout only submits failure and does not create a recoverable control opportunity."
+      ],
+      "grouped_control_modes": [
+        "Held on-screen movement proxy buttons and pointer release for the four movement directions.",
+        "Discrete look-step buttons for left, right, up, and down.",
+        "Route submission controls: ABANDON ROUTE and RETRY RESULT."
+      ],
+      "delta_ms": null,
+      "window_ms": null,
+      "clause_i": {
+        "holds": true,
+        "reason": "An observation-free policy based only on its own action history and times cannot guarantee the optimal route control across the generated mirrored presentations, multiple irreversible shelves, and current visible terrace states. This is static spatial uncertainty, not evidence of a changing task state."
+      },
+      "clause_ii": {
+        "holds": true,
+        "reason": "The first-person view, support/altitude readouts, and recent frames can expose the current terrace geometry and position well enough to choose ordinary proxy movement and look controls within a bounded window. That state-dependent visual control does not provide a qualifying real-time process."
+      },
+      "clause_iii": {
+        "holds": false,
+        "reason": "The held-input tick is only translation from an already-held command; the route geometry, pavilion, clouds, and target conditions remain fixed. While success remains possible, movement can be released, reversed, or reoriented and the static route remains available, so no available action has a strict Q-value or advantage loss. If movement crosses an irreversible shelf or an edge, success is already unsalvageable and that history is removed by C_Delta. Look has no autonomous evolution, and the post-fall timeout is terminal."
+      },
+      "common_visible_process": "No qualifying common visible process exists. The only nonzero autonomous period is 40 ms held-input translation through static geometry; it is not a moving target, hazard, or expiring action opportunity while success remains possible.",
+      "pre_run": {
+        "threshold": 0.5,
+        "at_least_half": null,
+        "rate": null,
+        "basis": "not_applicable",
+        "reason": "The mathematical definition already fails clause (iii), so the pre-run threshold cannot change this No and no pre-run percentage is assigned.",
+        "seed_probe": null
+      },
+      "files_read_completely": [
+        "AGENTS.md",
+        "weird_captcha_gym/docs/controllability/real-time.md",
+        "weird_captcha_gym/environments/downsky_causeway_env/controls.json",
+        "weird_captcha_gym/environments/downsky_causeway_env/env.json",
+        "weird_captcha_gym/environments/downsky_causeway_env/tasks/downsky_causeway_seed_0001/task.json",
+        "weird_captcha_gym/environments/downsky_causeway_env/tasks/downsky_causeway_seed_0001/verifier.py",
+        "weird_captcha_gym/shared_scripts/incubator_generators/downsky_causeway.py",
+        "weird_captcha_gym/shared_runtime/app/mechanics/downsky_causeway.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/downsky_causeway.css",
+        "weird_captcha_gym/shared_runtime/server/incubator_graders/downsky_causeway.py",
+        "weird_captcha_gym/shared_runtime/verifier_helpers.py",
+        "weird_captcha_gym/tools/incubator_solvers/downsky_causeway.py"
+      ],
+      "source_evidence": [
+        {
+          "path": "weird_captcha_gym/environments/downsky_causeway_env/controls.json",
+          "lines": "89-115",
+          "claim": "Difficulty 4 is seven route platforms with four shelves, including a terminal shelf, narrow 8.8 by 7.2 platforms, and a fixed movement/look rate."
+        },
+        {
+          "path": "weird_captcha_gym/environments/downsky_causeway_env/controls.json",
+          "lines": "148-161",
+          "claim": "Simplified and full input surfaces are both implemented, and the configured observation window is 400 ms with four frames."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/downsky_causeway.py",
+          "lines": "138-205",
+          "claim": "The selected difficulty is used to construct a fixed route and optional shelves once per challenge; no per-tick world generation occurs."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/downsky_causeway.js",
+          "lines": "283-324",
+          "claim": "The only interval-driven task update integrates held movement at a fixed speed and either lands on a lower platform or marks the avatar falling."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/downsky_causeway.js",
+          "lines": "402-420",
+          "claim": "Simplified mode binds held movement proxy buttons and discrete look buttons; those handlers do not animate the world."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/downsky_causeway.py",
+          "lines": "151-234",
+          "claim": "The independent replay applies only submitted look, button-equivalent key, and fixed physics-tick events against the static world, with failure on leaving without lower support."
+        },
+        {
+          "path": "weird_captcha_gym/environments/downsky_causeway_env/tasks/downsky_causeway_seed_0001/verifier.py",
+          "lines": "23-44",
+          "claim": "Verification loads the exported result and independent Downsky replay grader; it does not grade timing or a moving-world outcome."
+        }
+      ],
+      "uncertainties": []
+    },
+    {
+      "case_index": 199,
+      "public_environment_name": "Downsky Causeway",
+      "environment_id": "downsky_causeway_env",
+      "difficulty": 5,
+      "interaction_mode": "full",
+      "label": "no",
+      "controls_available": [
+        "Hold W/S/A/D or the arrow keys for forward, back, strafe-left, and strafe-right movement.",
+        "Drag the first-person canvas for continuous mouse-look; there is no jump control.",
+        "ABANDON ROUTE submits a failed attempt; RETRY RESULT is available only after a result error."
+      ],
+      "autonomous_processes": [
+        "A 40 ms physics interval changes the avatar position only while a movement key is held; with no held movement, the tick has zero displacement and leaves task state unchanged.",
+        "This level statically generates nine descending route terraces, four regular side shelves plus one terminal shelf, tight 7.9 by 6.5 platforms, and fixed cloud positions. No platform, pavilion, or hazard moves.",
+        "Physical exit contact stops the interval and submits success; after a fall, a 260 ms timeout only submits failure and does not create a recoverable control opportunity."
+      ],
+      "grouped_control_modes": [
+        "Held keyboard movement and key release for the four movement directions.",
+        "Viewport-drag look, which immediately changes heading and pitch.",
+        "Route submission controls: ABANDON ROUTE and RETRY RESULT."
+      ],
+      "delta_ms": null,
+      "window_ms": null,
+      "clause_i": {
+        "holds": true,
+        "reason": "An observation-free policy based only on its own action history and times cannot guarantee the optimal route control across the generated mirrored presentations, multiple irreversible shelves, and current visible terrace states. This is static spatial uncertainty, not evidence of a changing task state."
+      },
+      "clause_ii": {
+        "holds": true,
+        "reason": "The first-person view, support/altitude readouts, and recent frames can expose the current terrace geometry and position well enough to choose ordinary movement and look controls within a bounded window. That state-dependent visual control does not provide a qualifying real-time process."
+      },
+      "clause_iii": {
+        "holds": false,
+        "reason": "The held-input tick is only translation from an already-held command; the route geometry, pavilion, clouds, and target conditions remain fixed. While success remains possible, movement can be released, reversed, or reoriented and the static route remains available, so no available action has a strict Q-value or advantage loss. If movement crosses an irreversible shelf or an edge, success is already unsalvageable and that history is removed by C_Delta. Look has no autonomous evolution, and the post-fall timeout is terminal."
+      },
+      "common_visible_process": "No qualifying common visible process exists. The only nonzero autonomous period is 40 ms held-input translation through static geometry; it is not a moving target, hazard, or expiring action opportunity while success remains possible.",
+      "pre_run": {
+        "threshold": 0.5,
+        "at_least_half": null,
+        "rate": null,
+        "basis": "not_applicable",
+        "reason": "The mathematical definition already fails clause (iii), so the pre-run threshold cannot change this No and no pre-run percentage is assigned.",
+        "seed_probe": null
+      },
+      "files_read_completely": [
+        "AGENTS.md",
+        "weird_captcha_gym/docs/controllability/real-time.md",
+        "weird_captcha_gym/environments/downsky_causeway_env/controls.json",
+        "weird_captcha_gym/environments/downsky_causeway_env/env.json",
+        "weird_captcha_gym/environments/downsky_causeway_env/tasks/downsky_causeway_seed_0001/task.json",
+        "weird_captcha_gym/environments/downsky_causeway_env/tasks/downsky_causeway_seed_0001/verifier.py",
+        "weird_captcha_gym/shared_scripts/incubator_generators/downsky_causeway.py",
+        "weird_captcha_gym/shared_runtime/app/mechanics/downsky_causeway.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/downsky_causeway.css",
+        "weird_captcha_gym/shared_runtime/server/incubator_graders/downsky_causeway.py",
+        "weird_captcha_gym/shared_runtime/verifier_helpers.py",
+        "weird_captcha_gym/tools/incubator_solvers/downsky_causeway.py"
+      ],
+      "source_evidence": [
+        {
+          "path": "weird_captcha_gym/environments/downsky_causeway_env/controls.json",
+          "lines": "117-145",
+          "claim": "Difficulty 5 is nine route platforms with five shelves, including a terminal shelf, tight 7.9 by 6.5 platforms, and a fixed movement/look rate."
+        },
+        {
+          "path": "weird_captcha_gym/environments/downsky_causeway_env/controls.json",
+          "lines": "148-161",
+          "claim": "Full and simplified input surfaces are both implemented, and the configured observation window is 400 ms with four frames."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/downsky_causeway.py",
+          "lines": "138-205",
+          "claim": "The selected difficulty is used to construct a fixed route and optional shelves once per challenge; no per-tick world generation occurs."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/downsky_causeway.js",
+          "lines": "283-324",
+          "claim": "The only interval-driven task update integrates held movement at a fixed speed and either lands on a lower platform or marks the avatar falling."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/downsky_causeway.js",
+          "lines": "479-508",
+          "claim": "Full mode accepts keyboard movement and viewport drag, and starts the 40 ms tick interval; the event handlers contain no moving-world process."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/downsky_causeway.py",
+          "lines": "151-234",
+          "claim": "The independent replay applies only submitted look, key, and fixed physics-tick events against the static world, with failure on leaving without lower support."
+        },
+        {
+          "path": "weird_captcha_gym/environments/downsky_causeway_env/tasks/downsky_causeway_seed_0001/verifier.py",
+          "lines": "23-44",
+          "claim": "Verification loads the exported result and independent Downsky replay grader; it does not grade timing or a moving-world outcome."
+        }
+      ],
+      "uncertainties": []
+    },
+    {
+      "case_index": 200,
+      "public_environment_name": "Downsky Causeway",
+      "environment_id": "downsky_causeway_env",
+      "difficulty": 5,
+      "interaction_mode": "simplified",
+      "label": "no",
+      "controls_available": [
+        "Hold the on-screen movement proxy buttons for forward, back, strafe-left, and strafe-right.",
+        "Click the four on-screen look-step buttons for fixed left, right, up, and down look changes; there is no jump control.",
+        "ABANDON ROUTE submits a failed attempt; RETRY RESULT is available only after a result error."
+      ],
+      "autonomous_processes": [
+        "A 40 ms physics interval changes the avatar position only while a movement proxy button is held; with no held movement, the tick has zero displacement and leaves task state unchanged.",
+        "This level statically generates nine descending route terraces, four regular side shelves plus one terminal shelf, tight 7.9 by 6.5 platforms, and fixed cloud positions. No platform, pavilion, or hazard moves.",
+        "Physical exit contact stops the interval and submits success; after a fall, a 260 ms timeout only submits failure and does not create a recoverable control opportunity."
+      ],
+      "grouped_control_modes": [
+        "Held on-screen movement proxy buttons and pointer release for the four movement directions.",
+        "Discrete look-step buttons for left, right, up, and down.",
+        "Route submission controls: ABANDON ROUTE and RETRY RESULT."
+      ],
+      "delta_ms": null,
+      "window_ms": null,
+      "clause_i": {
+        "holds": true,
+        "reason": "An observation-free policy based only on its own action history and times cannot guarantee the optimal route control across the generated mirrored presentations, multiple irreversible shelves, and current visible terrace states. This is static spatial uncertainty, not evidence of a changing task state."
+      },
+      "clause_ii": {
+        "holds": true,
+        "reason": "The first-person view, support/altitude readouts, and recent frames can expose the current terrace geometry and position well enough to choose ordinary proxy movement and look controls within a bounded window. That state-dependent visual control does not provide a qualifying real-time process."
+      },
+      "clause_iii": {
+        "holds": false,
+        "reason": "The held-input tick is only translation from an already-held command; the route geometry, pavilion, clouds, and target conditions remain fixed. While success remains possible, movement can be released, reversed, or reoriented and the static route remains available, so no available action has a strict Q-value or advantage loss. If movement crosses an irreversible shelf or an edge, success is already unsalvageable and that history is removed by C_Delta. Look has no autonomous evolution, and the post-fall timeout is terminal."
+      },
+      "common_visible_process": "No qualifying common visible process exists. The only nonzero autonomous period is 40 ms held-input translation through static geometry; it is not a moving target, hazard, or expiring action opportunity while success remains possible.",
+      "pre_run": {
+        "threshold": 0.5,
+        "at_least_half": null,
+        "rate": null,
+        "basis": "not_applicable",
+        "reason": "The mathematical definition already fails clause (iii), so the pre-run threshold cannot change this No and no pre-run percentage is assigned.",
+        "seed_probe": null
+      },
+      "files_read_completely": [
+        "AGENTS.md",
+        "weird_captcha_gym/docs/controllability/real-time.md",
+        "weird_captcha_gym/environments/downsky_causeway_env/controls.json",
+        "weird_captcha_gym/environments/downsky_causeway_env/env.json",
+        "weird_captcha_gym/environments/downsky_causeway_env/tasks/downsky_causeway_seed_0001/task.json",
+        "weird_captcha_gym/environments/downsky_causeway_env/tasks/downsky_causeway_seed_0001/verifier.py",
+        "weird_captcha_gym/shared_scripts/incubator_generators/downsky_causeway.py",
+        "weird_captcha_gym/shared_runtime/app/mechanics/downsky_causeway.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/downsky_causeway.css",
+        "weird_captcha_gym/shared_runtime/server/incubator_graders/downsky_causeway.py",
+        "weird_captcha_gym/shared_runtime/verifier_helpers.py",
+        "weird_captcha_gym/tools/incubator_solvers/downsky_causeway.py"
+      ],
+      "source_evidence": [
+        {
+          "path": "weird_captcha_gym/environments/downsky_causeway_env/controls.json",
+          "lines": "117-145",
+          "claim": "Difficulty 5 is nine route platforms with five shelves, including a terminal shelf, tight 7.9 by 6.5 platforms, and a fixed movement/look rate."
+        },
+        {
+          "path": "weird_captcha_gym/environments/downsky_causeway_env/controls.json",
+          "lines": "148-161",
+          "claim": "Simplified and full input surfaces are both implemented, and the configured observation window is 400 ms with four frames."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/downsky_causeway.py",
+          "lines": "138-205",
+          "claim": "The selected difficulty is used to construct a fixed route and optional shelves once per challenge; no per-tick world generation occurs."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/downsky_causeway.js",
+          "lines": "283-324",
+          "claim": "The only interval-driven task update integrates held movement at a fixed speed and either lands on a lower platform or marks the avatar falling."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/downsky_causeway.js",
+          "lines": "402-420",
+          "claim": "Simplified mode binds held movement proxy buttons and discrete look buttons; those handlers do not animate the world."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/downsky_causeway.py",
+          "lines": "151-234",
+          "claim": "The independent replay applies only submitted look, button-equivalent key, and fixed physics-tick events against the static world, with failure on leaving without lower support."
+        },
+        {
+          "path": "weird_captcha_gym/environments/downsky_causeway_env/tasks/downsky_causeway_seed_0001/verifier.py",
+          "lines": "23-44",
+          "claim": "Verification loads the exported result and independent Downsky replay grader; it does not grade timing or a moving-world outcome."
+        }
+      ],
+      "uncertainties": []
+    }
+  ]
+}

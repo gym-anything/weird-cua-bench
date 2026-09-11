@@ -1,0 +1,106 @@
+{
+  "case_index": 95,
+  "public_environment_name": "Clockbeat Catacomb",
+  "environment_id": "clockbeat_catacomb_env",
+  "difficulty": 3,
+  "interaction_mode": "full",
+  "label": "yes",
+  "controls_available": [
+    "Administrative mouse controls start the clock with WIND THE CLOCK and certify with SUBMIT EXPEDITION.",
+    "The full interaction surface accepts ArrowUp, ArrowRight, ArrowDown, ArrowLeft and their W/A/S/D aliases, plus Space for WAIT; key repeat is ignored.",
+    "Only one move, attack, or wait can be accepted per beat, during the first 1,150 ms of each 1,800 ms beat. Off-beat inputs do not affect the player; the sentries still advance at beat boundaries."
+  ],
+  "autonomous_processes": [
+    "After WIND THE CLOCK, live task time advances from performance.now; the pulse and beat readout redraw every 50 ms. During the gold portion an unused keyboard action remains available, while the remaining 650 ms is LISTEN and an outcome-affecting key is treated as off-beat.",
+    "At each 1,800 ms boundary sync runs the sentry step without a new agent action, increments beat, and resets the per-beat used flag. A crawler chases one tile; each hopper alternates REST / OPEN with SHIELD + CHASE, and an active chaser can move into or damage the player.",
+    "The board and roster visibly update player and sentry positions, health, hopper shield state, phase text, beat number, and the gold pulse. After an accepted action, further actions in that beat are unavailable until the next autonomous boundary; after 100 beats the clock is exhausted."
+  ],
+  "grouped_control_modes": [
+    "D = every full-mode, beat-gated keyboard outcome action (UP, RIGHT, DOWN, LEFT, or WAIT, including arrow/WASD aliases) across all beats, seeds, rounds, and attempts; the start and submit buttons are administrative and excluded."
+  ],
+  "delta_ms": 1800,
+  "window_ms": 300,
+  "clause_i": {
+    "holds": true,
+    "reason": "I_t contains prior actions and task times but not the visible board. At difficulty 3 the generator varies the connected walls, start and exit, sentry positions, and hopper offsets across seeds. Thus the same action history and task time can correspond to boards whose delayed-optimal keyboard directions differ; no observation-free q can select an A*_Delta action for every history in D."
+  },
+  "clause_ii": {
+    "holds": true,
+    "reason": "The bounded 300 ms window contains the current board geometry, player and sentry locations, visible hopper phase/shield indication, roster rules, and beat progress; three chronological frames can show the boundary phase/position transition. The future one-beat replay is deterministic from that visible state, so a bounded-window g can predict the state at t+1,800 ms and choose its optimal keyboard action without private generator state."
+  },
+  "clause_iii": {
+    "holds": true,
+    "reason": "Use t just after a beat boundary while a one-hit hopper is adjacent and visibly REST / OPEN, with the action window still gold, and let a be the direction into that hopper. With Delta = 1,800 ms, the current gold window closes and the next autonomous boundary changes the hopper to SHIELD + CHASE while it can remain adjacent; the same a changes from defeating the hopper to the visible ARMORED / shield-blocked result and spends the beat without damage. A reachable such state can retain health and a successful continuation after the no-action delay, so C_Delta(D) is nonempty. The strict loss is caused by the hopper's task-state phase/armor evolution, not merely by a later deadline or completion time."
+  },
+  "common_visible_process": "The common process is the beat-boundary evolution of the visible sentries, especially the hopper's alternating REST / OPEN and SHIELD + CHASE phases. The phase text and shield halo are visible in the current board/window; a 300 ms window placed across a boundary shows the phase change, and the same 1,800 ms horizon predicts whether an attack direction will hit or be blocked at delivery. This process both makes the delayed-optimal direction depend on the screenshot and makes an attack opportunity strictly less effective after waiting.",
+  "pre_run": {
+    "threshold": 0.5,
+    "at_least_half": false,
+    "rate": null,
+    "basis": "source_structural",
+    "reason": "Every difficulty-3 generated board has one crawler and two live one-hit hoppers, and the initial state has the player at start, all enemy health intact, and won false. Before the clock is started, keyboard input is ignored; after WIND THE CLOCK starts the autonomous phase, the only outcome-affecting actions are the move/attack/wait inputs. With no such actions, enemies are never cleared and the player never enters the exit, so no generated instance admits a successful pre-run solution. No percentage is inferred or reported.",
+    "seed_probe": null
+  },
+  "files_read_completely": [
+    "AGENTS.md",
+    "weird_captcha_gym/docs/controllability/real-time.md",
+    "weird_captcha_gym/environments/clockbeat_catacomb_env/controls.json",
+    "weird_captcha_gym/environments/clockbeat_catacomb_env/env.json",
+    "weird_captcha_gym/environments/clockbeat_catacomb_env/tasks/clockbeat_catacomb_seed_0001/task.json",
+    "weird_captcha_gym/environments/clockbeat_catacomb_env/tasks/clockbeat_catacomb_seed_0001/setup_task.sh",
+    "weird_captcha_gym/environments/clockbeat_catacomb_env/tasks/clockbeat_catacomb_seed_0001/export_result.sh",
+    "weird_captcha_gym/environments/clockbeat_catacomb_env/tasks/clockbeat_catacomb_seed_0001/verifier.py",
+    "weird_captcha_gym/shared_scripts/incubator_generators/clockbeat_catacomb.py",
+    "weird_captcha_gym/shared_runtime/app/mechanics/clockbeat_catacomb.js",
+    "weird_captcha_gym/shared_runtime/app/mechanics/clockbeat_catacomb.css",
+    "weird_captcha_gym/shared_runtime/app/time_controller.js",
+    "weird_captcha_gym/shared_runtime/app/index.html",
+    "weird_captcha_gym/shared_runtime/server/incubator_graders/clockbeat_catacomb.py",
+    "weird_captcha_gym/shared_runtime/verifier_helpers.py",
+    "weird_captcha_gym/tools/incubator_solvers/clockbeat_catacomb.py",
+    "weird_captcha_gym/realtime.py"
+  ],
+  "source_evidence": [
+    {
+      "path": "weird_captcha_gym/environments/clockbeat_catacomb_env/controls.json",
+      "lines": "47-65, 109-123",
+      "claim": "The assigned difficulty-3 profile is size 8 with five walls, crawler/hopper/hopper sentries, one hit point per sentry, and three hearts; full interaction is keyboard arrows/WASD/Space, with a 300 ms observation window and three frames."
+    },
+    {
+      "path": "weird_captcha_gym/shared_scripts/incubator_generators/clockbeat_catacomb.py",
+      "lines": "15-41",
+      "claim": "The generator applies the supplied condition, varies connected layouts, start/exit/positions and hopper offsets, fixes beat_ms at 1,800, open_ms at 1,150 and max_beats at 100, and retains only boards for which the replay planner finds a route."
+    },
+    {
+      "path": "weird_captcha_gym/shared_runtime/app/mechanics/clockbeat_catacomb.js",
+      "lines": "3-20, 22-40",
+      "claim": "The browser maps the five logical actions, attacks by moving into a sentry, blocks repeated actions per beat, alternates hopper phases, moves/attacks sentries at autonomous boundaries, and advances beats from live performance time."
+    },
+    {
+      "path": "weird_captcha_gym/shared_runtime/app/mechanics/clockbeat_catacomb.js",
+      "lines": "44-68",
+      "claim": "The visible UI renders beat/pulse status, hopper REST/OPEN versus SHIELD/CHASE text, player/sentry positions, and hopper shield styling; full mode listens for arrows/WASD/Space and rejects off-beat actions."
+    },
+    {
+      "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/clockbeat_catacomb.py",
+      "lines": "7-49, 59-78",
+      "claim": "The independent replay uses the same phase, action, sentry-advance and beat-gate rules, validates keyboard input for full mode and timestamps against the 1,800/1,150 ms beat, and grades the replayed final state rather than trusting the client state."
+    },
+    {
+      "path": "weird_captcha_gym/environments/clockbeat_catacomb_env/tasks/clockbeat_catacomb_seed_0001/verifier.py",
+      "lines": "7-35",
+      "claim": "The task verifier loads the exported result and the independent clockbeat grader, then returns the grader's pass decision."
+    },
+    {
+      "path": "weird_captcha_gym/tools/incubator_solvers/clockbeat_catacomb.py",
+      "lines": "20-34",
+      "claim": "The wiring solver waits for each beat and sends one keyboard action inside the gold window; it is implementation evidence only, not screenshot-policy evidence."
+    },
+    {
+      "path": "weird_captcha_gym/docs/controllability/real-time.md",
+      "lines": "36-68, 70-90, 112-114",
+      "claim": "The frozen test requires one common visibly evidenced autonomous process, a bounded window, an action opportunity that strictly degrades inside Delta, and the separate 50% pre-run override; the hopper phase/armor change meets the non-clock degradation requirement."
+    }
+  ],
+  "uncertainties": []
+}

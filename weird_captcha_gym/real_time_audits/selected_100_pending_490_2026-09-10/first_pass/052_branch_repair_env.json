@@ -1,0 +1,145 @@
+{
+  "case_index": 52,
+  "public_environment_name": "Branch Repair",
+  "environment_id": "branch_repair_env",
+  "difficulty": 1,
+  "interaction_mode": "simplified",
+  "label": "no",
+  "controls_available": [
+    "X-, X+, Y-, Y+, Z-, and Z+ labelled slice-step buttons",
+    "Left, right, up, and down orbit buttons",
+    "Two labelled segment selectors, SELECT PAIR, and MERGE SELECTED",
+    "RED SEED and GREEN SEED buttons, an XY/XZ/YZ plane selector, a labelled seed-segment selector, PLACE ACTIVE SEED, and CUT BETWEEN SEEDS",
+    "CERTIFY REPAIRED BRANCH"
+  ],
+  "autonomous_processes": [
+    "None: after the initial static render, nodes, edges, slice focus, camera, controls, and grader-relevant state change only in response to visible input events. Certification performs an administrative result submission after the button action."
+  ],
+  "grouped_control_modes": [
+    {
+      "mode": "simplified missing-join repair",
+      "event_kinds": ["select_segment", "merge"],
+      "outcome_affecting": true
+    },
+    {
+      "mode": "simplified false-join repair",
+      "event_kinds": ["seed", "split"],
+      "outcome_affecting": true
+    },
+    {
+      "mode": "simplified linked-view inspection",
+      "event_kinds": ["slice_change", "orbit"],
+      "outcome_affecting": false
+    },
+    {
+      "mode": "certification",
+      "event_kinds": ["submit"],
+      "outcome_affecting": false
+    }
+  ],
+  "delta_ms": null,
+  "window_ms": 0,
+  "clause_i": {
+    "holds": true,
+    "reason": "For the geometry-dependent repair modes, an observation-free q using only I_t cannot choose the seed-specific missing or false edge across generated seeds: the target fibre is randomized and public segment labels are opaque. The current static screenshot can supply the needed geometric information, so this is a visual dependency rather than a temporal one."
+  },
+  "clause_ii": {
+    "holds": true,
+    "reason": "A current screenshot of the static mesh/slices, together with the agent's own prior controls, is sufficient in principle to choose the next simplified repair action; no positive-width sequence of frames is needed. This bounded-window sufficiency does not imply real time because the displayed state does not evolve while the agent waits."
+  },
+  "clause_iii": {
+    "holds": false,
+    "reason": "There is no autonomous non-clock task-state evolution from H_t to H_t^tau for any Delta > 0. Waiting leaves the visible geometry, topology, focus, camera, controls, and outcome value unchanged; only event handlers change repair state. The fixed 180-second allowance is only a deadline and cannot supply the required strict loss."
+  },
+  "common_visible_process": "None. No common visible autonomous process changes the task state or makes a repair action expire or degrade.",
+  "pre_run": {
+    "threshold": 0.5,
+    "at_least_half": null,
+    "rate": null,
+    "basis": "not_applicable",
+    "reason": "The mathematical definition already fails clause (iii), so the pre-run threshold cannot change this configuration-level No label.",
+    "seed_probe": null
+  },
+  "files_read_completely": [
+    "AGENTS.md",
+    "weird_captcha_gym/docs/controllability/real-time.md",
+    "weird_captcha_gym/environments/branch_repair_env/controls.json",
+    "weird_captcha_gym/environments/branch_repair_env/env.json",
+    "weird_captcha_gym/environments/branch_repair_env/tasks/branch_repair_seed_0001/task.json",
+    "weird_captcha_gym/environments/branch_repair_env/tasks/branch_repair_seed_0001/verifier.py",
+    "weird_captcha_gym/shared_scripts/incubator_generators/branch_repair.py",
+    "weird_captcha_gym/shared_runtime/app/mechanics/branch_repair.js",
+    "weird_captcha_gym/shared_runtime/app/mechanics/branch_repair.css",
+    "weird_captcha_gym/shared_runtime/server/incubator_graders/branch_repair.py",
+    "weird_captcha_gym/tools/incubator_solvers/branch_repair.py",
+    "weird_captcha_gym/shared_runtime/app/time_controller.js"
+  ],
+  "source_evidence": [
+    {
+      "path": "weird_captcha_gym/environments/branch_repair_env/controls.json",
+      "lines": "11-25",
+      "claim": "Difficulty 1 is the two-fibre, six-segment, one-missing-join, one-false-join, seven-slice profile."
+    },
+    {
+      "path": "weird_captcha_gym/environments/branch_repair_env/controls.json",
+      "lines": "92-105",
+      "claim": "The simplified surface uses labelled plane steps, orbit buttons, segment selectors, and opposite-colour seed controls; observation_window_ms is 0 and frames_per_observation is 1."
+    },
+    {
+      "path": "weird_captcha_gym/environments/branch_repair_env/env.json",
+      "lines": "9-14",
+      "claim": "The runner configuration also has a zero observation window, one frame, a 180-second allowance, and synchronous execution."
+    },
+    {
+      "path": "weird_captcha_gym/shared_scripts/incubator_generators/branch_repair.py",
+      "lines": "36-43, 79-89",
+      "claim": "The generator consumes the supplied control condition and applies the selected profile parameters rather than the uncontrolled hard/full fallback."
+    },
+    {
+      "path": "weird_captcha_gym/shared_scripts/incubator_generators/branch_repair.py",
+      "lines": "114-140, 146-180, 198-200",
+      "claim": "Generation creates seeded static node coordinates and initial/true edge sets, then exports the static mesh, slices, focus, and requirements; it defines no autonomous evolution."
+    },
+    {
+      "path": "weird_captcha_gym/shared_runtime/app/mechanics/branch_repair.js",
+      "lines": "194-220",
+      "claim": "The simplified render exposes plane-step controls, orbit buttons, selectors, seed controls, cut, and certification while the mesh is a canvas view."
+    },
+    {
+      "path": "weird_captcha_gym/shared_runtime/app/mechanics/branch_repair.js",
+      "lines": "226-293, 315-322",
+      "claim": "State changes and repair events occur in slice, orbit, selection, merge, seed, and cut input handlers; the handlers contain no timer- or idle-driven task transition."
+    },
+    {
+      "path": "weird_captcha_gym/shared_runtime/app/mechanics/branch_repair.js",
+      "lines": "294-313",
+      "claim": "The only asynchronous operation is the result fetch after the visible certification action, which is administrative rather than an autonomous outcome phase."
+    },
+    {
+      "path": "weird_captcha_gym/shared_runtime/app/mechanics/branch_repair.css",
+      "lines": "1-108",
+      "claim": "The complete mechanic stylesheet contains static layout and appearance rules only, with no animation, transition, or keyframe process."
+    },
+    {
+      "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/branch_repair.py",
+      "lines": "127-160, 165-193, 228-316",
+      "claim": "The grader replays the submitted event transcript from the initial topology and changes state only for submitted repair/view events; it grades the final topology and inspection transcript, not elapsed idle time."
+    },
+    {
+      "path": "weird_captcha_gym/environments/branch_repair_env/tasks/branch_repair_seed_0001/verifier.py",
+      "lines": "1-31",
+      "claim": "The verifier loads the exported result and branch-repair grader; it adds no temporal task rule."
+    },
+    {
+      "path": "weird_captcha_gym/tools/incubator_solvers/branch_repair.py",
+      "lines": "188-200",
+      "claim": "The implementation solver reads the generated truth and performs static observations, orbit, edits, inspections, and certification; it has no autonomous outcome phase."
+    },
+    {
+      "path": "weird_captcha_gym/shared_runtime/app/time_controller.js",
+      "lines": "548-580",
+      "claim": "The shared clock can run an explicit observation window, but this branch mechanic supplies no timer or animation that changes task state during that window."
+    }
+  ],
+  "uncertainties": []
+}

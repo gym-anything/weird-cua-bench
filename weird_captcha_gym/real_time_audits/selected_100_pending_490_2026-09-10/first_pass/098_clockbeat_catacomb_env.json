@@ -1,0 +1,158 @@
+{
+  "case_index": 98,
+  "public_environment_name": "Clockbeat Catacomb",
+  "environment_id": "clockbeat_catacomb_env",
+  "difficulty": 4,
+  "interaction_mode": "simplified",
+  "label": "yes",
+  "controls_available": [
+    {
+      "control": "WIND THE CLOCK",
+      "surface": "button",
+      "role": "preparation; starts the autonomous beat clock"
+    },
+    {
+      "control": "direction_buttons",
+      "surface": "visible buttons",
+      "actions": ["UP", "RIGHT", "DOWN", "LEFT", "WAIT"],
+      "role": "one move, attack, or wait action per beat while the bar is gold; off-beat presses have no outcome effect"
+    },
+    {
+      "control": "SUBMIT EXPEDITION",
+      "surface": "button",
+      "role": "administrative submission"
+    }
+  ],
+  "autonomous_processes": [
+    {
+      "period": "after the clock is wound and before terminal state",
+      "changes": "elapsed beat progress advances continuously; the 1,800 ms beat alternates a 1,150 ms gold action window with an off-beat interval",
+      "visible_evidence": "the shared-beat pulse, progress marker, and ACT NOW/LISTEN status change",
+      "control_status": "direction buttons are effective only during the gold window and before that beat has been played"
+    },
+    {
+      "period": "each 1,800 ms beat boundary",
+      "changes": "crawlers and hoppers may move toward the player, rooted lancers may strike when in phase, health may decrease, phases advance, and the next beat reopens the action slot",
+      "visible_evidence": "board positions, lantern hearts, roster phase text, hopper shield ring, and lancer danger tiles are redrawn",
+      "control_status": "the current autonomous step accepts no new agent action; a live player gets a fresh direction-button opportunity in the next beat"
+    },
+    {
+      "period": "death, escape, or clock exhaustion",
+      "changes": "the active simulation stops accepting outcome-affecting input",
+      "visible_evidence": "LANTERN OUT, STAIR OPEN, or CLOCK EXHAUSTED is displayed",
+      "control_status": "no effective direction-button action remains"
+    }
+  ],
+  "grouped_control_modes": [
+    {
+      "name": "direction_buttons",
+      "actions": ["UP", "RIGHT", "DOWN", "LEFT", "WAIT"],
+      "outcome_affecting": true,
+      "selected_as_D": true
+    },
+    {
+      "name": "clock_start",
+      "actions": ["WIND THE CLOCK"],
+      "outcome_affecting": false,
+      "role": "preparation; excluded from D"
+    },
+    {
+      "name": "submission",
+      "actions": ["SUBMIT EXPEDITION"],
+      "outcome_affecting": false,
+      "role": "administrative; excluded from D"
+    }
+  ],
+  "delta_ms": 2000,
+  "window_ms": 300,
+  "clause_i": {
+    "holds": true,
+    "reason": "For D = direction_buttons, the same prior action/time history can occur on different generated layouts and enemy phase offsets, and autonomous sentry positions and phases can differ at the delayed delivery time. An observation-free q(I_t) therefore cannot choose the delayed-optimal move, attack, or retreat for every history in C_Delta(D); the fixed beat schedule alone does not reveal the seed-dependent combat state."
+  },
+  "clause_ii": {
+    "holds": true,
+    "reason": "The latest visible board contains the player, walls, exit, enemy positions and health, while the roster and board expose each sentry phase, hopper shield state, and lancer danger region. The configured three chronological frames over 300 ms also expose beat progress and any boundary movement. Given that visible state and I_t, the deterministic sentry transition rules predict the state 2,000 ms later, so a bounded-window g can select the delayed-optimal direction button."
+  },
+  "clause_iii": {
+    "holds": true,
+    "reason": "A common witness uses the same beat/phase process. Let H_t be just after a boundary with a live lancer in visible phase 0 (PREPARE), adjacent to a one-heart player. With no action for about 1,800 ms, the phase-0 boundary passes without a lancer strike, success remains possible, and the lancer advances to phase 1 (STRIKE) before Delta = 2,000 ms. WAIT is still delivered inside the next gold window, but its next boundary now applies the adjacent-lancer strike and kills the player; at H_t the same WAIT consumes a beat without that strike and optimal continuation can survive. Thus Q(H_t^tau, WAIT) < Q(H_t, WAIT), with the loss caused by sentry phase evolution rather than deadline progress."
+  },
+  "common_visible_process": "The common process is the live 1,800 ms beat simulation: at each boundary the browser and grader advance the sentries, apply phase-dependent movement or lancer attacks, increment beat, and reset the action slot. The pulse, gold/dark window, roster phase text, hopper shield ring, red lancer danger tiles, hearts, and changing board positions visibly evidence it; the 300 ms window with three frames is sufficient to read the current phase/progress and recent change. The 2,000 ms witness begins in an active gold window and ends about 200 ms into the next gold window, so the strict loss is not merely an expired input deadline.",
+  "pre_run": {
+    "threshold": 0.5,
+    "at_least_half": false,
+    "rate": null,
+    "basis": "source_structural",
+    "reason": "No generated instance admits a successful pre-run solution. The generator places the exit and every enemy at Manhattan distance at least 3 from the starting player and gives every sentry positive health. After WIND THE CLOCK, only act() changes the player's position or enemy health; autonomous step() only advances sentries, phases, and possible damage. Sending no outcome-affecting actions therefore cannot clear the sentries and reach the stair, so the 50% override is not met.",
+    "seed_probe": null
+  },
+  "files_read_completely": [
+    "AGENTS.md",
+    "weird_captcha_gym/docs/controllability/real-time.md",
+    "weird_captcha_gym/environments/clockbeat_catacomb_env/controls.json",
+    "weird_captcha_gym/environments/clockbeat_catacomb_env/env.json",
+    "weird_captcha_gym/environments/clockbeat_catacomb_env/tasks/clockbeat_catacomb_seed_0001/task.json",
+    "weird_captcha_gym/environments/clockbeat_catacomb_env/tasks/clockbeat_catacomb_seed_0001/setup_task.sh",
+    "weird_captcha_gym/environments/clockbeat_catacomb_env/tasks/clockbeat_catacomb_seed_0001/export_result.sh",
+    "weird_captcha_gym/shared_scripts/incubator_generators/clockbeat_catacomb.py",
+    "weird_captcha_gym/shared_runtime/app/mechanics/clockbeat_catacomb.js",
+    "weird_captcha_gym/shared_runtime/app/mechanics/clockbeat_catacomb.css",
+    "weird_captcha_gym/shared_runtime/server/incubator_graders/clockbeat_catacomb.py",
+    "weird_captcha_gym/shared_runtime/verifier_helpers.py",
+    "weird_captcha_gym/environments/clockbeat_catacomb_env/tasks/clockbeat_catacomb_seed_0001/verifier.py",
+    "weird_captcha_gym/tools/incubator_solvers/clockbeat_catacomb.py"
+  ],
+  "source_evidence": [
+    {
+      "path": "weird_captcha_gym/environments/clockbeat_catacomb_env/controls.json",
+      "lines": "67-85",
+      "claim": "Difficulty 4 is hard with size 8, six walls, crawler/hopper/lancer enemies, enemy health 2, and player health 3; the simplified profile uses direction and wait buttons during the gold window."
+    },
+    {
+      "path": "weird_captcha_gym/environments/clockbeat_catacomb_env/controls.json",
+      "lines": "109-123",
+      "claim": "Both interaction modes are implemented; the configured real-time settings are a 180-second allowance, 300 ms observation window, and three frames per observation."
+    },
+    {
+      "path": "weird_captcha_gym/shared_scripts/incubator_generators/clockbeat_catacomb.py",
+      "lines": "15-18,21-32",
+      "claim": "The generator applies the selected difficulty parameters, samples connected layouts and enemy offsets, keeps exit/enemy locations at least three Manhattan steps from start, and sets beat_ms=1800, open_ms=1150, and max_beats=100."
+    },
+    {
+      "path": "weird_captcha_gym/shared_runtime/app/mechanics/clockbeat_catacomb.js",
+      "lines": "9-20",
+      "claim": "The browser initializes the player/enemy state, computes visible phase from beat and offset, and makes direction/wait actions move, attack, or wait; hopper shield phase blocks an attack."
+    },
+    {
+      "path": "weird_captcha_gym/shared_runtime/app/mechanics/clockbeat_catacomb.js",
+      "lines": "22-40",
+      "claim": "At autonomous beat boundaries, hoppers and crawlers update, lancers strike only in phase 1, health can decrease, beat increments, and the action slot resets; elapsed time drives those steps."
+    },
+    {
+      "path": "weird_captcha_gym/shared_runtime/app/mechanics/clockbeat_catacomb.js",
+      "lines": "42-58,60-68",
+      "claim": "The visible UI renders the pulse/status, roster phase descriptions, board positions, shield and danger indicators, and simplified direction buttons; off-beat input is ineffective and simplified events are recorded as direction_buttons."
+    },
+    {
+      "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/clockbeat_catacomb.py",
+      "lines": "28-49",
+      "claim": "The authoritative replay applies the same phase-dependent sentry movement/attacks at each beat, then increments beat and reopens the action slot."
+    },
+    {
+      "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/clockbeat_catacomb.py",
+      "lines": "59-77",
+      "claim": "The grader binds simplified runs to direction_buttons and checks action times against the 1,150 ms opening and replayed final state."
+    },
+    {
+      "path": "weird_captcha_gym/environments/clockbeat_catacomb_env/tasks/clockbeat_catacomb_seed_0001/verifier.py",
+      "lines": "22-35",
+      "claim": "The task verifier loads the exported result and authoritative clockbeat replay grader rather than trusting client state."
+    },
+    {
+      "path": "weird_captcha_gym/tools/incubator_solvers/clockbeat_catacomb.py",
+      "lines": "20-34",
+      "claim": "The available wiring solver waits for each visible beat and uses the selected input surface, confirming that actions must be delivered beat by beat; it is not used as screenshot-policy evidence."
+    }
+  ],
+  "uncertainties": []
+}

@@ -1,0 +1,109 @@
+{
+  "case_index": 92,
+  "public_environment_name": "Clockbeat Catacomb",
+  "environment_id": "clockbeat_catacomb_env",
+  "difficulty": 1,
+  "interaction_mode": "simplified",
+  "label": "yes",
+  "controls_available": [
+    "WIND THE CLOCK starts the autonomous beat phase.",
+    "UP, RIGHT, DOWN, LEFT, and WAIT direction buttons are the simplified mouse action surface; at most one is effective during the gold portion of each beat.",
+    "SUBMIT EXPEDITION certifies the recorded result and is administrative rather than outcome-affecting."
+  ],
+  "autonomous_processes": [
+    "Before WIND THE CLOCK, the rendered board is static.",
+    "After the clock starts, the task pulse progresses continuously; each 1800 ms beat has a 1150 ms action window followed by an off-beat interval in which direction inputs do nothing.",
+    "At every beat boundary, the one active crawler automatically moves one Manhattan-reducing tile toward the player using the fixed tie order, or damages the player on contact; the boundary then resets the one-action gate.",
+    "After escape, death, or 100 beats, gameplay stops; submission does not change the simulated outcome."
+  ],
+  "grouped_control_modes": [
+    "D = simplified direction_buttons across all seeds and attempts: UP, RIGHT, DOWN, LEFT, and WAIT."
+  ],
+  "delta_ms": 1800,
+  "window_ms": 300,
+  "clause_i": {
+    "holds": true,
+    "reason": "No observation-free q(I_t) can select a delayed-optimal action for every occurrence in D. The difficulty-1 generator samples the walls, start, exit, and crawler position from the seed, while I_t contains only the prior action/timing history. Identical action histories and beat phases therefore occur with different visible board geometries requiring different directions; the fixed beat schedule alone does not determine the action."
+  },
+  "clause_ii": {
+    "holds": true,
+    "reason": "The visible frame renders the complete grid, walls, exit, player, crawler location and health, plus the beat number, moving beat bar, and ACT NOW/LISTEN status. The visible roster and rule identify the crawler as CHASE and state that it chases one tile and acts at the beat boundary. At difficulty 1 the only crawler has no hidden alternating phase, so a policy can read the current frame, predict its one-boundary movement, and plan the delayed-optimal button. The configured 300 ms window has three chronological frames, but its endpoint frame is sufficient; the same visible beat/chase process supplies the prediction."
+  },
+  "clause_iii": {
+    "holds": true,
+    "reason": "Use the same crawler process with Delta = 1800 ms, starting shortly inside a gold window so the next delivery is again in the gold window; C_Delta(D) is nonempty because the difficulty-1 state has four hearts and the generated board has a reachable route. A reachable generated state can have player [4,2], crawler [5,4], health 4, and beat 1. If no action is supplied until the next boundary, the crawler visibly advances to [5,3] while success remains possible. In deterministic replay of that board, the shortest successful continuation has Q(H_t, LEFT) = 5 action turns versus Q(H_t, WAIT/no-op) = 6, but after the crawler advance it has Q(H_t^tau, LEFT) = 6 versus Q(H_t^tau, WAIT/no-op) = 6. Thus the LEFT advantage strictly decreases because the crawler relocated, not because of a deadline or later completion alone."
+  },
+  "common_visible_process": "The common process is the crawler's visible chase at beat boundaries, synchronized with the visible shared-beat bar. The current crawler/player geometry and CHASE rule predict the crawler's next tile, that relocation changes the delayed-optimal direction and can remove a route advantage, and the gold window is where the predicted action must be delivered. The gold-bar deadline is not used as the strict-loss witness.",
+  "pre_run": {
+    "threshold": 0.5,
+    "at_least_half": false,
+    "rate": null,
+    "basis": "source_structural",
+    "reason": "The difficulty-1 generator always creates one live crawler with hp 1 and samples the exit at Manhattan distance at least 3 from the start. After WIND THE CLOCK, act() is the only mechanic operation that moves the player or damages an enemy; the autonomous step only advances the crawler. With no outcome-affecting action after the autonomous phase starts, the player cannot reach the exit or defeat the crawler, and final submission is administrative. Therefore the at-least-half pre-run condition is false; no percentage is asserted.",
+    "seed_probe": null
+  },
+  "files_read_completely": [
+    "AGENTS.md",
+    "weird_captcha_gym/docs/controllability/real-time.md",
+    "weird_captcha_gym/environments/clockbeat_catacomb_env/controls.json",
+    "weird_captcha_gym/environments/clockbeat_catacomb_env/env.json",
+    "weird_captcha_gym/environments/clockbeat_catacomb_env/scripts/install_puzzle_runtime.sh",
+    "weird_captcha_gym/environments/clockbeat_catacomb_env/scripts/setup_puzzle_runtime.sh",
+    "weird_captcha_gym/environments/clockbeat_catacomb_env/tasks/clockbeat_catacomb_seed_0001/task.json",
+    "weird_captcha_gym/environments/clockbeat_catacomb_env/tasks/clockbeat_catacomb_seed_0001/setup_task.sh",
+    "weird_captcha_gym/environments/clockbeat_catacomb_env/tasks/clockbeat_catacomb_seed_0001/verifier.py",
+    "weird_captcha_gym/environments/clockbeat_catacomb_env/tasks/clockbeat_catacomb_seed_0001/export_result.sh",
+    "weird_captcha_gym/shared_scripts/open_puzzle_browser.sh",
+    "weird_captcha_gym/shared_scripts/export_result.sh",
+    "weird_captcha_gym/shared_runtime/verifier_helpers.py",
+    "weird_captcha_gym/shared_runtime/app/time_controller.js",
+    "weird_captcha_gym/shared_scripts/incubator_generators/clockbeat_catacomb.py",
+    "weird_captcha_gym/shared_runtime/app/mechanics/clockbeat_catacomb.js",
+    "weird_captcha_gym/shared_runtime/app/mechanics/clockbeat_catacomb.css",
+    "weird_captcha_gym/shared_runtime/server/incubator_graders/clockbeat_catacomb.py",
+    "weird_captcha_gym/tools/incubator_solvers/clockbeat_catacomb.py"
+  ],
+  "source_evidence": [
+    {
+      "path": "weird_captcha_gym/environments/clockbeat_catacomb_env/controls.json",
+      "lines": "9-24,109-122",
+      "claim": "Difficulty 1 is a 7x7 board with two interior walls, one crawler, one-hit enemies, and four hearts; simplified mode uses direction and wait clicks; the configured observation window is 300 ms with three frames."
+    },
+    {
+      "path": "weird_captcha_gym/shared_scripts/incubator_generators/clockbeat_catacomb.py",
+      "lines": "15-18,19-32,33-41",
+      "claim": "The control condition supplies the active difficulty parameters, seeded generation varies board geometry and positions, the board fixes beat_ms=1800/open_ms=1150/max_beats=100, reachability is checked, and the condition is copied into public and truth state."
+    },
+    {
+      "path": "weird_captcha_gym/shared_runtime/app/mechanics/clockbeat_catacomb.js",
+      "lines": "9-20,22-40",
+      "claim": "The browser initializes the visible player/enemy state; act() handles direction or wait actions; step() autonomously moves the crawler or applies contact damage; sync() advances steps as elapsed task time crosses beat boundaries."
+    },
+    {
+      "path": "weird_captcha_gym/shared_runtime/app/mechanics/clockbeat_catacomb.js",
+      "lines": "42-58,60-68",
+      "claim": "The UI visibly renders beat phase, pulse progress, crawler CHASE text, board entities and health, and simplified direction buttons dispatch direction_buttons input."
+    },
+    {
+      "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/clockbeat_catacomb.py",
+      "lines": "7-49,51-78",
+      "claim": "The authoritative replay uses the same initial state, action, crawler advance, beat timing and simplified input source, and grades the final outcome from the replay rather than trusting the client."
+    },
+    {
+      "path": "weird_captcha_gym/tools/incubator_solvers/clockbeat_catacomb.py",
+      "lines": "20-34",
+      "claim": "The wiring solver reads the generated public board, plans a route, waits for each beat, and selects the configured direction-button surface for simplified mode; this is implementation evidence of board-conditioned actions."
+    },
+    {
+      "path": "weird_captcha_gym/shared_runtime/app/time_controller.js",
+      "lines": "55-62,301-339,548-579",
+      "claim": "The shared runtime supplies virtual task time, drains task timers only while running, and runs fixed task-time observation windows; paused/live wall-clock handling is separate from the mechanic's beat state."
+    },
+    {
+      "path": "weird_captcha_gym/environments/clockbeat_catacomb_env/tasks/clockbeat_catacomb_seed_0001/verifier.py",
+      "lines": "9-35",
+      "claim": "The task verifier loads the exported result and the independent clockbeat replay grader, so certification is administrative and does not alter the mechanic outcome."
+    }
+  ],
+  "uncertainties": []
+}

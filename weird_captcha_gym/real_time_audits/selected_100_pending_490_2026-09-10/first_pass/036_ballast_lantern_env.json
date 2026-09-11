@@ -1,0 +1,159 @@
+{
+  "case_index": 36,
+  "public_environment_name": "Ballast Lantern",
+  "environment_id": "ballast_lantern_env",
+  "difficulty": 3,
+  "interaction_mode": "simplified",
+  "label": "yes",
+  "controls_available": [
+    "HAUL button: sets the binary winch channel to engaged and leaves that setting active until changed.",
+    "COAST button: sets the binary winch channel to disengaged and leaves that setting active until changed.",
+    "NEW SHAFT button: abandons the current run and requests a regenerated task; it is administrative rather than a successful-run control.",
+    "RETRY button: appears only after a failed result submission and is administrative; the Space key surface is not exposed in simplified mode."
+  ],
+  "autonomous_processes": [
+    "After render and between button clicks, requestAnimationFrame advances the live task to elapsed 50 ms simulation ticks; the current winch setting remains active during that interval.",
+    "At every simulation tick the cage position and velocity change under HAUL thrust or COAST gravity, 95/100 drag, and boundary restitution, so its retained momentum continues without a new action.",
+    "At every simulation tick the specimen position and velocity change under the generated steady_sinker, darter, floater, or oscillator law; the specimen can reverse at the shaft bounds.",
+    "The crate becomes spawned at its generated tick in the 82-96 tick range and then remains a fixed visible target; overlap changes the crate and specimen progress meters and can end the run.",
+    "The CSS reel and position transitions animate the display, but they are presentation of the JavaScript simulation rather than the real-time witness."
+  ],
+  "grouped_control_modes": [
+    "D = the simplified binary winch-button mode, containing every active HAUL/COAST decision across seeds and all episode phases; the action set is {HAUL, COAST}."
+  ],
+  "delta_ms": 600,
+  "window_ms": 600,
+  "clause_i": {
+    "holds": true,
+    "reason": "An observation-free q sees only its own button history and action times. Across the generated all-law pool, specimen direction, position relative to the cage, crate side, and retained cage velocity vary while the same I_t can occur, so the delayed-optimal choice can be HAUL in one history and COAST in another. No single q(I_t) can be optimal for every viable history in D."
+  },
+  "clause_ii": {
+    "holds": true,
+    "reason": "A bounded g can use the six chronological frames in the configured 600 ms window (12 physics ticks) to read the specimen's visible wake and position change, the cage's displacement and retained momentum, and the spawned crate's visible position. Those observations predict the relative position at delivery and select the corresponding HAUL or COAST setting; the current overlap styling supplies additional visible evidence. The window is sufficient for the common visible tracking process, while the future darter schedule is treated as future randomness."
+  },
+  "clause_iii": {
+    "holds": true,
+    "reason": "Choose a viable state near the specimen-cage overlap edge while the cage has the wrong momentum and the specimen is visibly moving away. If the current setting is left unchanged for 0 < tau < 600 ms, the specimen advances 24-32 units per tick and the cage continues its inertial trajectory; the same corrective button delivered after the delay faces a larger or faster relative gap and loses capture opportunity. Outside overlap the capture meter drains 10 per tick, while success remains possible for states with reserve, so this is a strict loss caused by non-clock position/velocity evolution rather than only a later deadline. The HAUL/COAST action remains available but becomes less effective."
+  },
+  "common_visible_process": "The shared witness is relative specimen-cage motion: the specimen drifts and leaves a visible wake while the cage continues under retained momentum. The same visible trajectory is needed to choose the delayed winch direction and causes an overlap opportunity, and hence the value of the corrective action, to degrade during the delay.",
+  "pre_run": {
+    "threshold": 0.5,
+    "at_least_half": false,
+    "rate": 0.0045,
+    "basis": "seeded_probe",
+    "reason": "A deterministic source simulation tested the two no-further-action variants: leave the default COAST setting or set HAUL once before running to terminal state. For seeds pre-run-probe-00000 through pre-run-probe-01999, 0/2000 fixed-COAST runs and 9/2000 fixed-HAUL runs secured both targets, for 9/2000 either-setting successes. The reported rate is the observed probe fraction, not an invented catalogue-wide percentage; it is far below the 0.5 override threshold, so the threshold does not replace the mathematical Yes.",
+    "seed_probe": {
+      "seeds": {
+        "prefix": "pre-run-probe-",
+        "format": "{i:05d}",
+        "inclusive_range": [
+          0,
+          1999
+        ]
+      },
+      "numerator": 9,
+      "denominator": 2000,
+      "sample_rate": 0.0045,
+      "fixed_action_results": {
+        "COAST": 0,
+        "HAUL": 9,
+        "either_setting": 9
+      },
+      "code": "PYTHONDONTWRITEBYTECODE=1 PYTHONPATH=/private/tmp/weird-cua-realtime-source-20260910.ObhAQg python3 - <<'PY'\nimport json\nfrom pathlib import Path\nfrom weird_captcha_gym.shared_scripts.incubator_generators import ballast_lantern as m\nroot = Path('/private/tmp/weird-cua-realtime-source-20260910.ObhAQg')\ncontrols = json.loads((root / 'weird_captcha_gym/environments/ballast_lantern_env/controls.json').read_text())\ntask = json.loads((root / 'weird_captcha_gym/environments/ballast_lantern_env/tasks/ballast_lantern_seed_0001/task.json').read_text())\ntask['_control_condition'] = {'difficulty': 3, 'interaction': 'simplified', 'difficulty_parameters': controls['difficulty']['3']['parameters']}\ndef fixed_run(truth, engaged):\n    p, motion, crate = truth['parameters'], truth['motion'], truth['crate']\n    sim = m.initial_simulation(p, motion, crate)\n    while sim['status'] == 'active':\n        m.advance_tick(sim, engaged, p, motion, crate)\n    return sim['status']\nnumerator = 0\nfor i in range(2000):\n    truth = m.generate(task, f'pre-run-probe-{i:05d}')[1]\n    if any(fixed_run(truth, engaged) == 'secured' for engaged in (False, True)):\n        numerator += 1\nprint(numerator, 2000, numerator / 2000)\nPY"
+    }
+  },
+  "files_read_completely": [
+    "AGENTS.md",
+    "weird_captcha_gym/docs/controllability/real-time.md",
+    "weird_captcha_gym/environments/ballast_lantern_env/controls.json",
+    "weird_captcha_gym/environments/ballast_lantern_env/env.json",
+    "weird_captcha_gym/environments/ballast_lantern_env/tasks/ballast_lantern_seed_0001/task.json",
+    "weird_captcha_gym/environments/ballast_lantern_env/tasks/ballast_lantern_seed_0001/verifier.py",
+    "weird_captcha_gym/shared_scripts/incubator_generators/ballast_lantern.py",
+    "weird_captcha_gym/shared_runtime/app/mechanics/ballast_lantern.js",
+    "weird_captcha_gym/shared_runtime/app/mechanics/ballast_lantern.css",
+    "weird_captcha_gym/shared_runtime/server/incubator_graders/ballast_lantern.py",
+    "weird_captcha_gym/shared_runtime/verifier_helpers.py",
+    "weird_captcha_gym/shared_runtime/app/time_controller.js",
+    "weird_captcha_gym/shared_scripts/setup_task.py",
+    "weird_captcha_gym/tools/incubator_solvers/ballast_lantern.py"
+  ],
+  "source_evidence": [
+    {
+      "path": "weird_captcha_gym/environments/ballast_lantern_env/controls.json",
+      "lines": "20-25",
+      "claim": "Difficulty 3 is the medium profile with all four drift laws, 50 ms ticks, 900 maximum ticks, 950 cage half-height, 24-32 specimen speed, 28-40 tick darter intervals, 3900 initial capture, 27 fill/10 drain, 2800 crate meter, 82-96 tick crate spawn, 1600 minimum separation, and four trail samples."
+    },
+    {
+      "path": "weird_captcha_gym/environments/ballast_lantern_env/controls.json",
+      "lines": "42-46",
+      "claim": "Simplified interaction is implemented as fixed HAUL/COAST buttons, and the configured observation window is 600 ms with six frames and 90 seconds of play time."
+    },
+    {
+      "path": "weird_captcha_gym/environments/ballast_lantern_env/env.json",
+      "lines": "9-12",
+      "claim": "The task observation is a 10 fps frame window and the runner uses the same 600 ms/six-frame settings."
+    },
+    {
+      "path": "weird_captcha_gym/shared_scripts/incubator_generators/ballast_lantern.py",
+      "lines": "130-164",
+      "claim": "Each generated instance selects a drift law and random speed/start/direction data, including scheduled darter velocities."
+    },
+    {
+      "path": "weird_captcha_gym/shared_scripts/incubator_generators/ballast_lantern.py",
+      "lines": "183-249",
+      "claim": "The integer simulation advances the specimen and momentum-bearing cage every tick, computes specimen/crate overlap, fills or drains the meters, and terminates on secured, specimen-only, escape, or timeout."
+    },
+    {
+      "path": "weird_captcha_gym/shared_scripts/incubator_generators/ballast_lantern.py",
+      "lines": "253-259",
+      "claim": "The directional controller explicitly predicts target motion and compares desired velocity with cage velocity, incorporating retained momentum."
+    },
+    {
+      "path": "weird_captcha_gym/shared_scripts/incubator_generators/ballast_lantern.py",
+      "lines": "348-385",
+      "claim": "The crate is spawned at a generated tick and placed at least the active minimum separation from the specimen; accepted instances are certified with a competing-target reference run and required exclusive crate service."
+    },
+    {
+      "path": "weird_captcha_gym/shared_runtime/app/mechanics/ballast_lantern.js",
+      "lines": "35-67",
+      "claim": "The browser runtime applies thrust/gravity, drag, boundary restitution, specimen drift, overlap tests, progress changes, and terminal status on each tick."
+    },
+    {
+      "path": "weird_captcha_gym/shared_runtime/app/mechanics/ballast_lantern.js",
+      "lines": "181-219",
+      "claim": "The visible renderer places the cage, specimen, crate, cable, overlap indicators, drift direction, and wake dots, while requestAnimationFrame advances to the elapsed task time."
+    },
+    {
+      "path": "weird_captcha_gym/shared_runtime/app/mechanics/ballast_lantern.js",
+      "lines": "241-327",
+      "claim": "Simplified mode renders only HAUL/COAST buttons, each click records a winch transition, and the animation loop continues until terminal state."
+    },
+    {
+      "path": "weird_captcha_gym/shared_runtime/app/mechanics/ballast_lantern.css",
+      "lines": "180-234",
+      "claim": "The cage, moving luminous specimen, four wake-dot surface, spawned crate, and visible overlap glow/outline are rendered as distinct vertical geometry."
+    },
+    {
+      "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/ballast_lantern.py",
+      "lines": "178-252",
+      "claim": "The grader replays the submitted HAUL/COAST transcript with the configured interaction source and grades the resulting simulated terminal state and meters."
+    },
+    {
+      "path": "weird_captcha_gym/environments/ballast_lantern_env/tasks/ballast_lantern_seed_0001/verifier.py",
+      "lines": "1-35",
+      "claim": "The task verifier loads the exported result and the mechanic-specific independent replay grader; it does not grade a private solver transcript."
+    },
+    {
+      "path": "weird_captcha_gym/tools/incubator_solvers/ballast_lantern.py",
+      "lines": "44-106",
+      "claim": "The available scripted solver repeatedly chooses directions at the live or 600 ms paused cadence and switches between specimen and crate targets; its private-state reads are implementation evidence only."
+    },
+    {
+      "path": "weird_captcha_gym/shared_runtime/app/time_controller.js",
+      "lines": "23-26,548-603",
+      "claim": "The shared clock distinguishes live running time from paused windows and advances a configured run_for window before pausing again, so the mechanic's elapsed-time loop participates in the live-versus-paused diagnostic."
+    }
+  ],
+  "uncertainties": []
+}

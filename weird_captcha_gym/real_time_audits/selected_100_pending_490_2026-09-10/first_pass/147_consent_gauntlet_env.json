@@ -1,0 +1,129 @@
+{
+  "case_index": 147,
+  "public_environment_name": "Consent Gauntlet",
+  "environment_id": "consent_gauntlet_env",
+  "difficulty": 4,
+  "interaction_mode": "full",
+  "label": "yes",
+  "controls_available": [
+    "Mouse click on one of six directly rendered entry gateway cards; one semantic manage choice opens the ledger and the five accept choices terminate the attempt.",
+    "Mouse click on one of six directly rendered final gateway cards; one semantic commit choice completes the packet and the five accept choices terminate the attempt.",
+    "Mouse click on any of the three ledger drawer tabs.",
+    "Mouse drag on each visible purpose switch rail between NO and YES; eight purposes are present and one source switch flips its linked target.",
+    "Mouse drag on the single provider reset-trap rail in its drawer.",
+    "Mouse click REVIEW CURRENT CHOICES and, from the final stage, RETURN TO LEDGER.",
+    "Keyboard is declared by the environment action surface, but this mechanic renders and consumes no keyboard control."
+  ],
+  "autonomous_processes": [
+    "Across the nonterminal run, the visible packet timer is updated from task time on each orbit animation frame.",
+    "During the entry gateway stage, every option card is a visible button whose position and z-index are continuously updated along an ellipse at 20 degrees per second.",
+    "After review enters the final stage, the final option cards restart the same orbit with a 33-degree phase offset and continue moving until a terminal decision or stage rerender.",
+    "During the preferences stage, purpose states, drawer selection, reset effects, and linked-switch effects change only after input; the timer/animation loop continues but there are no gateway cards to move."
+  ],
+  "grouped_control_modes": [
+    "D_entry_gateway_full: every direct full-mode click on a moving entry gateway card across seeds and attempts (common witness).",
+    "D_final_gateway_full: every direct full-mode click on a moving final gateway card across seeds and attempts.",
+    "D_purpose_switch_full: every full-mode drag of a visible purpose switch rail, including the directed linked flip effect.",
+    "D_reset_trap_full: every full-mode drag of a provider reset-trap rail.",
+    "D_drawer_tab_full: full-mode clicks on drawer tabs used to expose purposes.",
+    "D_review_full and D_back_full: review and return-to-ledger navigation clicks."
+  ],
+  "delta_ms": 720,
+  "window_ms": 720,
+  "clause_i": {
+    "holds": true,
+    "reason": "For D_entry_gateway_full, an observation-free q receives only prior actions and task times. The generator puts one manage option among five accept decoys, shuffles the options, and randomizes both the phase and each option's angular offset. The full action surface is a native coordinate-level mouse click, so the same q action cannot identify the correct semantic card and its coordinate for every still-salvageable generated history."
+  },
+  "clause_ii": {
+    "holds": true,
+    "reason": "The configured 720 ms window contains five chronological frames. Those frames visibly expose the correct card's label and changing position/direction, while the masthead visibly reports the 20 degrees per second orbit. The ellipse equation and fixed speed in the browser implementation let g identify the manage card and extrapolate its center to t+720 ms before issuing a native click; no private generator state is required."
+  },
+  "clause_iii": {
+    "holds": true,
+    "reason": "Take H_t during entry with the visible manage card at a relative orbital phase near 0 degrees, and let a be a click at its current center. For tau=400 ms (< Delta), the 20 degrees per second motion advances 8 degrees. At the 1920x1080 viewport, the content height is 932 px, so the y-center moves about 0.31*932*sin(8 degrees)=40 px, exceeding half of the card's 57 px minimum height; the old coordinate is therefore ineffective while a later click can still succeed. Q drops from opening the ledger to an ineffective/no-op click because the card moved, not because of a deadline or later completion."
+  },
+  "common_visible_process": "The common witness is the full-mode moving gateway-card control: D_entry_gateway_full, Delta=720 ms, and w=720 ms. The six semantic cards visibly orbit, and five chronological frames plus the visible orbit speed provide the trajectory needed to predict the correct manage card's future center. A q based only on the agent's action clock cannot select the randomized card; a g based on the recent visual window can. The same orbit process is used by the final gateway, and a click at a card's current center loses effectiveness after the card advances during the delay while the packet remains solvable.",
+  "pre_run": {
+    "threshold": 0.5,
+    "at_least_half": false,
+    "rate": null,
+    "basis": "source_structural",
+    "reason": "Every difficulty-4 generated surface has moving entry and final gateways. Preparing the ledger cannot remove the need for the final moving gateway choice: the browser records a final gateway event and the grader requires its action to be commit for terminal=committed. The HTTP result POST is administrative, but the preceding choice between commit and accept cards is outcome-affecting, and the orbit has no autonomous end before that choice. Thus the no-outcome-affecting-actions-through-the-autonomous-phase pre-run condition is not met; no percentage is claimed.",
+    "seed_probe": null
+  },
+  "files_read_completely": [
+    "AGENTS.md",
+    "weird_captcha_gym/docs/controllability/real-time.md",
+    "weird_captcha_gym/environments/consent_gauntlet_env/controls.json",
+    "weird_captcha_gym/environments/consent_gauntlet_env/env.json",
+    "weird_captcha_gym/environments/consent_gauntlet_env/tasks/consent_gauntlet_seed_0001/task.json",
+    "weird_captcha_gym/environments/consent_gauntlet_env/tasks/consent_gauntlet_seed_0001/verifier.py",
+    "weird_captcha_gym/shared_scripts/incubator_generators/consent_gauntlet.py",
+    "weird_captcha_gym/shared_runtime/app/mechanics/consent_gauntlet.js",
+    "weird_captcha_gym/shared_runtime/app/mechanics/consent_gauntlet.css",
+    "weird_captcha_gym/shared_runtime/app/time_controller.js",
+    "weird_captcha_gym/shared_runtime/server/incubator_graders/consent_gauntlet.py",
+    "weird_captcha_gym/shared_runtime/verifier_helpers.py",
+    "weird_captcha_gym/tools/incubator_solvers/consent_gauntlet.py"
+  ],
+  "source_evidence": [
+    {
+      "path": "weird_captcha_gym/environments/consent_gauntlet_env/controls.json",
+      "lines": "24-41",
+      "claim": "Difficulty 4 selects eight purposes, three drawers, six entry and final options, one reset trap, one link, moving gateways, and a 20 degrees per second orbit; full mode uses direct gateway clicks, tabs, and physical switch drags; the observation window is 720 ms with five frames and a 180-second allowance."
+    },
+    {
+      "path": "weird_captcha_gym/environments/consent_gauntlet_env/env.json",
+      "lines": "9-14",
+      "claim": "The runtime exposes a 1920x1080 frame window, mouse and keyboard action types, and the same 720 ms/5-frame/180-second runner settings."
+    },
+    {
+      "path": "weird_captcha_gym/shared_scripts/incubator_generators/consent_gauntlet.py",
+      "lines": "127-149",
+      "claim": "Each gateway contains one correct action plus decoys, shuffles the labels, and assigns randomized angular offsets."
+    },
+    {
+      "path": "weird_captcha_gym/shared_scripts/incubator_generators/consent_gauntlet.py",
+      "lines": "162-177;202-232",
+      "claim": "The generated D4 surface uses mixed-polarity purpose targets, distributes purposes across drawers, creates directed flip links and reset traps, and constructs moving manage and commit gateways with a random surface phase."
+    },
+    {
+      "path": "weird_captcha_gym/shared_runtime/app/mechanics/consent_gauntlet.js",
+      "lines": "101-160",
+      "claim": "Full gateway clicks record native pointer geometry; currentPhase advances with the configured speed; requestAnimationFrame continuously updates each card's elliptical position and z-index."
+    },
+    {
+      "path": "weird_captcha_gym/shared_runtime/app/mechanics/consent_gauntlet.js",
+      "lines": "163-175;217-228;331-353",
+      "claim": "The visible stages render LIVE ORBIT cards, reset orbit timing on entry/final stage renders, and bind full-mode tabs, review/back, and direct controls."
+    },
+    {
+      "path": "weird_captcha_gym/shared_runtime/app/mechanics/consent_gauntlet.css",
+      "lines": "86-113;137-157",
+      "claim": "Gateway cards are absolutely positioned visible buttons with a cursor, while full-mode ledger controls are physical drag rails and simplified-only proxies are separate."
+    },
+    {
+      "path": "weird_captcha_gym/shared_runtime/app/time_controller.js",
+      "lines": "55-78;155-200;267-339",
+      "claim": "The shared clock makes performance.now task-time based, advances requestAnimationFrame only while running, and freezes the task world during paused inference/input while resuming it for observation windows."
+    },
+    {
+      "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/consent_gauntlet.py",
+      "lines": "83-106;160-191;200-265",
+      "claim": "The grader replays full-mode pointer phase and orbital geometry, requires the correct gateway stage/source, applies switches/links/resets, and requires terminal committed plus completed and all target states/link effects."
+    },
+    {
+      "path": "weird_captcha_gym/environments/consent_gauntlet_env/tasks/consent_gauntlet_seed_0001/verifier.py",
+      "lines": "22-35",
+      "claim": "The task verifier loads the exported result and independent Consent Gauntlet grader."
+    },
+    {
+      "path": "weird_captcha_gym/tools/incubator_solvers/consent_gauntlet.py",
+      "lines": "26-49;81-95;111-163",
+      "claim": "The normal UI solver locates the current moving card, waits for an unobscured click point, uses full-mode switch drags, reconciles the directed link, then reviews and commits."
+    }
+  ],
+  "uncertainties": [
+    "The checked seed-0001 fixture carries legacy medium/difficulty-3 metadata; the classification follows the launcher-supplied difficulty-4/full configuration in controls.json rather than that sample fixture metadata."
+  ]
+}

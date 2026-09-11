@@ -1,0 +1,155 @@
+{
+  "case_index": 3,
+  "public_environment_name": "After Hours at the Reliquary",
+  "environment_id": "after_hours_at_the_reliquary_env",
+  "difficulty": 2,
+  "interaction_mode": "full",
+  "label": "no",
+  "controls_available": [
+    "Four fixed views (door, desk, cabinet, gallery), navigated in full mode with left and right edge arrows.",
+    "Visible scene hotspots for the door handle, label frame, empty frame, label code, lens drawer, lens, and dust sheet; the exact level-2 configuration has digit and colour wards but no key ward or hook chain.",
+    "Full-mode drag from one tray object to another; the active recipe combines the empty frame and lens into a loupe.",
+    "Full-mode drag from a tray object onto scene geometry; the loupe is applied to the label code after the frame is flipped and the lens is collected.",
+    "Digit ward controls: open the panel, increment three digit wheels, and submit the dial.",
+    "Colour ward controls: open the panel, choose four palette colours, clear if needed, and submit the sequence.",
+    "After both wards are released, click the door handle to submit the completed outcome."
+  ],
+  "autonomous_processes": [
+    {
+      "name": "No active task-state process",
+      "period": "Between all input events",
+      "description": "The current view, flags, inventory, ward state, and completion state remain unchanged without a new input event.",
+      "outcome_affecting_control_available": "All controls remain available as rendered; no opportunity degrades while waiting."
+    },
+    {
+      "name": "Post-success vault-door CSS transition",
+      "period": "After a successful door-handle action has already set the terminal outcome",
+      "description": "The door rotates through a 0.8 second CSS transition after the accepted open_door event.",
+      "outcome_affecting_control_available": false,
+      "why_not_a_real_time_witness": "It begins after the outcome is submitted and does not make any remaining action unavailable or less effective."
+    }
+  ],
+  "grouped_control_modes": [
+    {
+      "mode": "full edge-arrow navigation",
+      "occurrences": "Every left or right edge-arrow turn across the four fixed views",
+      "outcome_effect": "Changes the current view synchronously."
+    },
+    {
+      "mode": "full scene-hotspot click",
+      "occurrences": "Every available room-object click, including clue-reveal and collection hotspots and the final door handle",
+      "outcome_effect": "Sets a flag, adds an object, or submits the already-prepared exit synchronously."
+    },
+    {
+      "mode": "full inventory-to-inventory drag",
+      "occurrences": "Every tray-object combination drag",
+      "outcome_effect": "Consumes the two source objects and creates the recipe output synchronously."
+    },
+    {
+      "mode": "full inventory-to-scene drag",
+      "occurrences": "Every tray-object use drag onto an available scene hotspot",
+      "outcome_effect": "Applies the matching object and updates flags or inventory synchronously."
+    },
+    {
+      "mode": "digit ward controls",
+      "occurrences": "Every digit-wheel and digit-submit interaction",
+      "outcome_effect": "Releases the digit ward or counts a wrong entry synchronously."
+    },
+    {
+      "mode": "colour ward controls",
+      "occurrences": "Every colour-palette, clear, and colour-submit interaction",
+      "outcome_effect": "Releases the colour ward or counts a wrong entry synchronously."
+    }
+  ],
+  "delta_ms": null,
+  "window_ms": 0,
+  "clause_i": {
+    "holds": true,
+    "reason": "For the candidate grouped mode of ward submissions, the generated digit and colour answers vary by seed, while I_t contains only the agent's prior actions and task times; an observation-free q cannot choose the correct submission across those histories. This is static visual information and cross-view memory, not a changing task-state witness."
+  },
+  "clause_ii": {
+    "holds": false,
+    "reason": "For that same ward-submission mode, the configured bounded window is 0 ms with one frame, and the door view does not display the digit clue from the desk or the colour clue from the gallery. A g using only I_t and W_t^w therefore cannot recover the required answers. Other modes can use a current static hotspot, but no different D may be substituted for the common witness."
+  },
+  "clause_iii": {
+    "holds": false,
+    "reason": "No legitimate D, positive Delta, and active opportunity satisfy the strict-loss condition. With no new action, the browser model performs no state transition, so scene targets, inventory combinations, ward submissions, and exit controls retain their value indefinitely. The only autonomous-looking change is the terminal CSS door transition after success."
+  },
+  "common_visible_process": "None. There is no autonomous, visibly evidenced task-state evolution connecting the control modes. The static clues are revealed only by agent actions, and the post-success door animation occurs after the outcome is already terminal.",
+  "pre_run": {
+    "threshold": 0.5,
+    "at_least_half": null,
+    "rate": null,
+    "basis": "not_applicable",
+    "reason": "The mathematical definition already fails, decisively at clause (iii), so the pre-run threshold cannot change the catalog label. There is no autonomous outcome phase to quantify for a pre-run solution.",
+    "seed_probe": null
+  },
+  "files_read_completely": [
+    "AGENTS.md",
+    "weird_captcha_gym/docs/controllability/real-time.md",
+    "weird_captcha_gym/environments/after_hours_at_the_reliquary_env/controls.json",
+    "weird_captcha_gym/environments/after_hours_at_the_reliquary_env/env.json",
+    "weird_captcha_gym/environments/after_hours_at_the_reliquary_env/tasks/after_hours_at_the_reliquary_seed_0001/task.json",
+    "weird_captcha_gym/environments/after_hours_at_the_reliquary_env/tasks/after_hours_at_the_reliquary_seed_0001/setup_task.sh",
+    "weird_captcha_gym/environments/after_hours_at_the_reliquary_env/tasks/after_hours_at_the_reliquary_seed_0001/export_result.sh",
+    "weird_captcha_gym/environments/after_hours_at_the_reliquary_env/tasks/after_hours_at_the_reliquary_seed_0001/verifier.py",
+    "weird_captcha_gym/shared_scripts/incubator_generators/after_hours_at_the_reliquary.py",
+    "weird_captcha_gym/shared_runtime/app/mechanics/after_hours_at_the_reliquary.js",
+    "weird_captcha_gym/shared_runtime/app/mechanics/after_hours_at_the_reliquary.css",
+    "weird_captcha_gym/shared_runtime/server/incubator_graders/after_hours_at_the_reliquary.py",
+    "weird_captcha_gym/tools/incubator_solvers/after_hours_at_the_reliquary.py"
+  ],
+  "source_evidence": [
+    {
+      "path": "weird_captcha_gym/environments/after_hours_at_the_reliquary_env/controls.json",
+      "lines": "12-16",
+      "claim": "Difficulty 2 is four views with digit and colour locks, three digits, four colours, no hook, no decoys, clear cues, no cross-view ordering, and three wrong entries."
+    },
+    {
+      "path": "weird_captcha_gym/environments/after_hours_at_the_reliquary_env/controls.json",
+      "lines": "37-41",
+      "claim": "Full mode uses edge arrows and direct tray drags; the configured observation window is 0 ms with one frame and a 240 second play allowance."
+    },
+    {
+      "path": "weird_captcha_gym/shared_scripts/incubator_generators/after_hours_at_the_reliquary.py",
+      "lines": "52-61; 143-167",
+      "claim": "The injected control condition selects the exact difficulty parameters, while clue values are generated once from the seed and are not advanced by task time; cross-view ordering is disabled at level 2."
+    },
+    {
+      "path": "weird_captcha_gym/shared_scripts/incubator_generators/after_hours_at_the_reliquary.py",
+      "lines": "180-192; 243-285",
+      "claim": "The level-2 generated target set contains the door, desk, cabinet, and colour-sheet interactions only; the public and hidden states contain static clues, targets, recipes, and parameters."
+    },
+    {
+      "path": "weird_captcha_gym/shared_runtime/app/mechanics/after_hours_at_the_reliquary.js",
+      "lines": "87-118; 181-203",
+      "claim": "The browser renders fixed scene views, visible hotspots, lock plates, and full-mode edge arrows; navigation updates the view only inside the arrow event handler."
+    },
+    {
+      "path": "weird_captcha_gym/shared_runtime/app/mechanics/after_hours_at_the_reliquary.js",
+      "lines": "214-261; 313-334; 443-493",
+      "claim": "Scene actions, combinations, ward submissions, drag/click bindings, and initial state updates are synchronous event-driven operations; the complete mechanic has no timer, physics tick, or autonomous task-state callback."
+    },
+    {
+      "path": "weird_captcha_gym/shared_runtime/app/mechanics/after_hours_at_the_reliquary.css",
+      "lines": "157-159",
+      "claim": "The only time-based visual transition is the vault door's 0.8 second transform after the door receives the successful open state."
+    },
+    {
+      "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/after_hours_at_the_reliquary.py",
+      "lines": "289-322; 323-416; 482-498",
+      "claim": "The authoritative grader replays an ordered discrete event transcript, validates synchronous view/object/ward transitions, and accepts only a completed non-seized final state; it has no time-based evolution or timestamp rule."
+    },
+    {
+      "path": "weird_captcha_gym/tools/incubator_solvers/after_hours_at_the_reliquary.py",
+      "lines": "23-99; 117-155",
+      "claim": "The normal full-mode solver turns, reveals clues, drags/composes objects, submits both wards, and opens the door through visible controls without waiting for an autonomous phase."
+    },
+    {
+      "path": "weird_captcha_gym/environments/after_hours_at_the_reliquary_env/tasks/after_hours_at_the_reliquary_seed_0001/verifier.py",
+      "lines": "22-43",
+      "claim": "The exported verifier delegates the result to the independent reliquary grader, so outcome validation is based on the replayed action result rather than elapsed time."
+    }
+  ],
+  "uncertainties": []
+}

@@ -1,0 +1,1087 @@
+{
+  "case_index": 34,
+  "environment_id": "lanternwing_roundup_env",
+  "public_environment_name": "Lanternwing Roundup",
+  "configuration_reports": [
+    {
+      "case_index": 331,
+      "public_environment_name": "Lanternwing Roundup",
+      "environment_id": "lanternwing_roundup_env",
+      "difficulty": 1,
+      "interaction_mode": "full",
+      "label": "no",
+      "controls_available": [
+        "Full movement: hold W/A/S/D or arrow keys; keydown and keyup determine movement on each tick.",
+        "Full look: drag the first-person sanctuary canvas to change yaw and pitch.",
+        "Full throw: click the canvas without dragging to release one capsule along the current yaw and pitch.",
+        "Visible wanted-wing card, 3D canvas and reticle, sanctuary clock, capsule count, and CERTIFY ROUNDUP button."
+      ],
+      "autonomous_processes": [
+        "Every 80 ms, the task tick advances and the one wanted wing is repositioned by its sinusoidal x/y/z motion; this occurs without a new agent action.",
+        "While a capsule is in flight, its position and vertical velocity are integrated under gravity on every tick, while the wing continues moving; ground, obstacle, age, and contact checks resolve the flight.",
+        "A held full-mode movement key also moves the player on each tick; with no held key the player is stationary. The requestAnimationFrame loop redraws the visible sanctuary, wing, projectile, and flight trail.",
+        "The autonomous sanctuary clock closes the task at max_ticks, but the clock alone is not the real-time witness."
+      ],
+      "grouped_control_modes": [
+        "movement: held WASD or arrow-key transitions",
+        "camera look: mouse drag on the sanctuary canvas",
+        "capsule release D: every canvas throw made at a tick when no projectile is active and ammo remains",
+        "CERTIFY ROUNDUP: administrative certification, not an outcome-affecting witness action"
+      ],
+      "delta_ms": 640,
+      "window_ms": 640,
+      "clause_i": {
+        "holds": true,
+        "reason": "For D equal to the available capsule-release opportunities, histories with the same action history and task times can have different seed-dependent target bases and motion phases. In particular, the first throw can face different visible wing positions and required lead directions, so no policy using only I_t can choose a delayed-optimal release for every such history."
+      },
+      "clause_ii": {
+        "holds": true,
+        "reason": "The configured bounded window is six chronological frames over 640 ms. The canvas visibly renders the wanted wing with perspective-dependent position and size, and consecutive frames expose its changing trajectory; a screenshot-only policy can use the wanted card plus that recent visual motion to set the camera and choose the lead for a throw delivered 640 ms later."
+      },
+      "clause_iii": {
+        "holds": true,
+        "reason": "At an early available throw, success remains possible after 640 ms. Choose a valid lead whose ballistic contact is near the wanted wing's capture boundary; after tau=80 ms the wing has autonomously advanced under its nonzero x/y/z sinusoidal motion, so the unchanged capsule direction has strictly lower contact value or requires a later corrective throw. The loss is caused by visible target-state evolution, not merely by the sanctuary deadline."
+      },
+      "common_visible_process": "The same process witnesses all three clauses: the wanted wing visibly moves in depth and height while each gravity-driven capsule travels. Six recent frames expose that movement, which determines the lead direction for the delayed release; the moving target makes an unchanged release less effective while a retargeted release remains possible.",
+      "pre_run": {
+        "threshold": 0.5,
+        "at_least_half": true,
+        "rate": null,
+        "basis": "source_structural",
+        "reason": "This profile has exactly one wanted wing, no obstacle, three capsules, and a single projectile slot. After visual preparation of position and aim, one capsule can start a self-contained ballistic flight that captures the sole target; certification is administrative. Thus at least half of generated instances admit a successful pre-run solution with no further outcome-affecting action during that flight, so the catalog label is overridden to No despite the mathematical clauses holding.",
+        "seed_probe": null
+      },
+      "files_read_completely": [
+        "AGENTS.md",
+        "weird_captcha_gym/docs/controllability/real-time.md",
+        "weird_captcha_gym/environments/lanternwing_roundup_env/controls.json",
+        "weird_captcha_gym/environments/lanternwing_roundup_env/env.json",
+        "weird_captcha_gym/environments/lanternwing_roundup_env/tasks/lanternwing_roundup_seed_0001/task.json",
+        "weird_captcha_gym/environments/lanternwing_roundup_env/tasks/lanternwing_roundup_seed_0001/setup_task.sh",
+        "weird_captcha_gym/environments/lanternwing_roundup_env/tasks/lanternwing_roundup_seed_0001/export_result.sh",
+        "weird_captcha_gym/environments/lanternwing_roundup_env/scripts/setup_puzzle_runtime.sh",
+        "weird_captcha_gym/environments/lanternwing_roundup_env/scripts/install_puzzle_runtime.sh",
+        "weird_captcha_gym/environments/lanternwing_roundup_env/tasks/lanternwing_roundup_seed_0001/verifier.py",
+        "weird_captcha_gym/shared_scripts/incubator_generators/lanternwing_roundup.py",
+        "weird_captcha_gym/shared_runtime/app/mechanics/lanternwing_roundup.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/lanternwing_roundup.css",
+        "weird_captcha_gym/shared_runtime/server/incubator_graders/lanternwing_roundup.py",
+        "weird_captcha_gym/tools/incubator_solvers/lanternwing_roundup.py"
+      ],
+      "source_evidence": [
+        {
+          "path": "weird_captcha_gym/environments/lanternwing_roundup_env/controls.json",
+          "lines": "10-25",
+          "claim": "Difficulty 1 activates one target, no decoys or obstacles, slow target motion, a wide capture radius, three capsules, and the listed projectile physics."
+        },
+        {
+          "path": "weird_captcha_gym/environments/lanternwing_roundup_env/controls.json",
+          "lines": "96-109",
+          "claim": "Both interaction surfaces are implemented; Full uses held movement, mouse-look, and direct throw, with a 640 ms observation window and six frames."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/lanternwing_roundup.py",
+          "lines": "73-79,100-129,142-158",
+          "claim": "Each creature receives a seed-dependent three-coordinate sinusoidal trajectory, while the world starts the player in the open sanctuary and gives one projectile slot with fixed tick physics."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/lanternwing_roundup.js",
+          "lines": "84-118,156-167,183-215",
+          "claim": "The browser advances creatures every timer tick, integrates a flying capsule under gravity, resolves contact, and binds Full key, drag, and canvas-throw controls."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/lanternwing_roundup.js",
+          "lines": "244-274,286-309",
+          "claim": "The target, perspective scene, projectile/trail, clock, ammo, and visible controls are rendered, and the mechanic installs its 80 ms physics timer."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/lanternwing_roundup.py",
+          "lines": "114-128,179-223,225-241",
+          "claim": "The authoritative replay requires the selected interaction surface, exact throw availability and direction, tick-by-tick projectile/creature physics, and visible certification."
+        },
+        {
+          "path": "weird_captcha_gym/tools/incubator_solvers/lanternwing_roundup.py",
+          "lines": "38-60,107-156",
+          "claim": "The implementation's solver models future target position for ballistic leading, uses the visible interaction controls, waits for flight resolution, and repeats only as needed; its private page-state access is not used as policy evidence."
+        },
+        {
+          "path": "weird_captcha_gym/environments/lanternwing_roundup_env/tasks/lanternwing_roundup_seed_0001/verifier.py",
+          "lines": "21-30",
+          "claim": "Exported results are passed to the independent Lanternwing Roundup replay grader."
+        }
+      ],
+      "uncertainties": [
+        "The pre-run fraction is a source-structural threshold judgment; no percentage is asserted. The No label is specifically the threshold override, not a claim that the moving-wing clauses fail.",
+        "Exact 3D coordinates are not textual UI data; a normal solution must infer them from perspective, apparent size, consecutive frames, and visible geometry."
+      ]
+    },
+    {
+      "case_index": 332,
+      "public_environment_name": "Lanternwing Roundup",
+      "environment_id": "lanternwing_roundup_env",
+      "difficulty": 1,
+      "interaction_mode": "simplified",
+      "label": "no",
+      "controls_available": [
+        "Simplified movement: labelled forward, back, left, and right buttons; each creates one pending one-tick movement.",
+        "Simplified look: TURN LEFT/RIGHT and LOOK DOWN/UP buttons change yaw or pitch by fixed increments.",
+        "Simplified throw: THROW CAPSULE releases one capsule along the current camera direction.",
+        "Visible wanted-wing card, 3D canvas and reticle, sanctuary clock, capsule count, and CERTIFY ROUNDUP button."
+      ],
+      "autonomous_processes": [
+        "Every 80 ms, the task tick advances and the one wanted wing is repositioned by its sinusoidal x/y/z motion without a new agent action.",
+        "While a capsule is in flight, its position and vertical velocity advance under gravity on each tick, while the wing continues moving; the flight ends on ground, age, obstacle, or creature contact.",
+        "A proxy movement command is consumed on the next tick and then cleared; proxy look changes the camera synchronously, while the requestAnimationFrame loop redraws the visible sanctuary and flight trace.",
+        "The sanctuary clock can close the task at max_ticks, but deadline progression is not the common real-time cause."
+      ],
+      "grouped_control_modes": [
+        "movement: labelled one-step proxy buttons",
+        "camera look: fixed-increment yaw and pitch proxy buttons",
+        "capsule release D: every THROW CAPSULE action at a tick when no projectile is active and ammo remains",
+        "CERTIFY ROUNDUP: administrative certification, not an outcome-affecting witness action"
+      ],
+      "delta_ms": 640,
+      "window_ms": 640,
+      "clause_i": {
+        "holds": true,
+        "reason": "For the grouped proxy capsule-release mode, identical action histories and task times can occur with different seed-dependent target phases and positions. A fixed proxy sequence or release direction cannot be delayed-optimal for all of those histories because it does not contain the current wanted wing's visible location or lead."
+      },
+      "clause_ii": {
+        "holds": true,
+        "reason": "Six chronological frames span the configured 640 ms bounded window. The canvas shows the wanted wing's changing perspective position and apparent depth/height, and the proxy look controls can set the required yaw and pitch before THROW CAPSULE. The recent visual trajectory supplies the lead needed for the delayed release."
+      },
+      "clause_iii": {
+        "holds": true,
+        "reason": "Use an early THROW CAPSULE opportunity with success still possible after 640 ms. For a valid lead near the capture boundary, the wing's nonzero sinusoidal motion changes its 3D position within tau=80 ms, reducing the unchanged release's contact value or forcing a later corrective throw. This strict loss comes from target-state change rather than from the clock alone."
+      },
+      "common_visible_process": "The common witness is visible wanted-wing motion in x, y, and z during the gravity-driven capsule flight. The six-frame window exposes that motion, the proxy controls let the agent retarget yaw/pitch and release, and waiting makes the old release less effective while the wing remains capturable.",
+      "pre_run": {
+        "threshold": 0.5,
+        "at_least_half": true,
+        "rate": null,
+        "basis": "source_structural",
+        "reason": "There is one wanted wing, no obstacle, three capsules, and only one active projectile. After proxy movement/look preparation, one THROW CAPSULE action can begin a self-contained flight that captures the sole target; certification does not affect the outcome. Therefore at least half of instances admit a successful pre-run solution, overriding the mathematical Yes to catalog No.",
+        "seed_probe": null
+      },
+      "files_read_completely": [
+        "AGENTS.md",
+        "weird_captcha_gym/docs/controllability/real-time.md",
+        "weird_captcha_gym/environments/lanternwing_roundup_env/controls.json",
+        "weird_captcha_gym/environments/lanternwing_roundup_env/env.json",
+        "weird_captcha_gym/environments/lanternwing_roundup_env/tasks/lanternwing_roundup_seed_0001/task.json",
+        "weird_captcha_gym/environments/lanternwing_roundup_env/tasks/lanternwing_roundup_seed_0001/setup_task.sh",
+        "weird_captcha_gym/environments/lanternwing_roundup_env/tasks/lanternwing_roundup_seed_0001/export_result.sh",
+        "weird_captcha_gym/environments/lanternwing_roundup_env/scripts/setup_puzzle_runtime.sh",
+        "weird_captcha_gym/environments/lanternwing_roundup_env/scripts/install_puzzle_runtime.sh",
+        "weird_captcha_gym/environments/lanternwing_roundup_env/tasks/lanternwing_roundup_seed_0001/verifier.py",
+        "weird_captcha_gym/shared_scripts/incubator_generators/lanternwing_roundup.py",
+        "weird_captcha_gym/shared_runtime/app/mechanics/lanternwing_roundup.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/lanternwing_roundup.css",
+        "weird_captcha_gym/shared_runtime/server/incubator_graders/lanternwing_roundup.py",
+        "weird_captcha_gym/tools/incubator_solvers/lanternwing_roundup.py"
+      ],
+      "source_evidence": [
+        {
+          "path": "weird_captcha_gym/environments/lanternwing_roundup_env/controls.json",
+          "lines": "10-25",
+          "claim": "Difficulty 1 activates one target, no decoys or obstacles, slow target motion, a wide capture radius, three capsules, and the listed projectile physics."
+        },
+        {
+          "path": "weird_captcha_gym/environments/lanternwing_roundup_env/controls.json",
+          "lines": "96-109",
+          "claim": "Simplified proxy movement/look/throw is implemented as a separate input surface with the same one-tick and 3D throw effects; the observation bound is 640 ms with six frames."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/lanternwing_roundup.py",
+          "lines": "73-79,100-129,142-158",
+          "claim": "The generated wing follows a seed-dependent three-coordinate trajectory in the same open world and uses fixed gravity/projectile physics."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/lanternwing_roundup.js",
+          "lines": "84-118,156-180,286-309",
+          "claim": "The timer updates the creature and flight state, THROW CAPSULE creates a gravity-driven projectile, proxy controls change pending movement or camera, and the browser visibly renders the state."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/lanternwing_roundup.css",
+          "lines": "1-22",
+          "claim": "The game presents a first-person canvas, visible flight legend, proxy controls, clock/ammo panels, and certification UI."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/lanternwing_roundup.py",
+          "lines": "114-128,179-223,225-241",
+          "claim": "The independent grader enforces the simplified surface, one throw at a time, exact replayed physics, creature contact, and certification."
+        },
+        {
+          "path": "weird_captcha_gym/tools/incubator_solvers/lanternwing_roundup.py",
+          "lines": "38-60,107-156",
+          "claim": "The implementation solver leads future target position and waits for the capsule to resolve; its page-state reads are private implementation evidence, not a screenshot-only method."
+        },
+        {
+          "path": "weird_captcha_gym/environments/lanternwing_roundup_env/tasks/lanternwing_roundup_seed_0001/verifier.py",
+          "lines": "21-30",
+          "claim": "The exported result is verified through the independent replay grader."
+        }
+      ],
+      "uncertainties": [
+        "The pre-run fraction is a structural threshold judgment with no invented numeric rate; the No label is an override of the mathematical clauses.",
+        "A normal policy must infer 3D depth and trajectory from the canvas frames rather than access the private motion object."
+      ]
+    },
+    {
+      "case_index": 333,
+      "public_environment_name": "Lanternwing Roundup",
+      "environment_id": "lanternwing_roundup_env",
+      "difficulty": 2,
+      "interaction_mode": "full",
+      "label": "no",
+      "controls_available": [
+        "Full movement: hold W/A/S/D or arrow keys; keydown and keyup determine movement on each tick.",
+        "Full look: drag the first-person sanctuary canvas to change yaw and pitch.",
+        "Full throw: click the canvas without dragging to release one capsule along the current camera direction.",
+        "Visible wanted-wing card, one non-wanted decoy in the scene, one low obelisk, 3D canvas/reticle, clock, ammo, and CERTIFY ROUNDUP."
+      ],
+      "autonomous_processes": [
+        "Every 80 ms, the wanted wing and the decoy advance independently along their sinusoidal x/y/z trajectories without new agent input.",
+        "A flying capsule advances under gravity on every tick; it can terminate on the ground, the obelisk, age, or contact with a wing, while both wings continue to move.",
+        "Held Full movement changes the player position on each tick; canvas dragging changes view synchronously and the animation loop redraws the perspective scene, moving wings, projectile, and trail.",
+        "The sanctuary clock can end the run at max_ticks, but this deadline is not the visible state-evolution witness."
+      ],
+      "grouped_control_modes": [
+        "movement: held WASD or arrow-key transitions",
+        "camera look: mouse drag on the sanctuary canvas",
+        "capsule release D: every canvas throw made at a tick when no projectile is active and ammo remains",
+        "CERTIFY ROUNDUP: administrative certification, not an outcome-affecting witness action"
+      ],
+      "delta_ms": 640,
+      "window_ms": 640,
+      "clause_i": {
+        "holds": true,
+        "reason": "For D equal to available Full canvas throws, the same I_t can accompany different seeds with different wanted-wing phases, positions, and decoy arrangements. A policy driven only by its own movement/look/throw timing cannot select the delayed lead that distinguishes the wanted wing and avoids the decoy in every such history."
+      },
+      "clause_ii": {
+        "holds": true,
+        "reason": "The six-frame, 640 ms visual window shows which appearance is wanted and exposes changing perspective position, apparent depth/height, and direction for the moving wanted wing. A screenshot-only policy can use those frames and visible obelisk geometry to set yaw/pitch and choose a delayed throw path that avoids the decoy and obstruction."
+      },
+      "clause_iii": {
+        "holds": true,
+        "reason": "At an early throw opportunity with a retargetable path still available after 640 ms, choose a valid wanted-wing lead near the capture boundary. After tau=80 ms the wanted wing autonomously changes position, so the unchanged ballistic throw has lower contact value or requires a later corrective shot; this is a target-state loss, not just a later deadline."
+      },
+      "common_visible_process": "The common process is the visible motion of the wanted wing (and the competing decoy) during a gravity-driven capsule flight. The six recent frames provide the evidence used to predict the delayed 3D contact, and the same motion makes an unchanged release less effective while a fresh visual lead remains possible.",
+      "pre_run": {
+        "threshold": 0.5,
+        "at_least_half": true,
+        "rate": null,
+        "basis": "source_structural",
+        "reason": "There is still only one wanted wing. The single obelisk is fixed and the decoy has a visibly distinct appearance, so after preparation a successful instance can be completed by one correctly aimed Full canvas throw followed by autonomous projectile resolution; certification is administrative. At least half therefore admit a pre-run solution, overriding the mathematical clauses to catalog No.",
+        "seed_probe": null
+      },
+      "files_read_completely": [
+        "AGENTS.md",
+        "weird_captcha_gym/docs/controllability/real-time.md",
+        "weird_captcha_gym/environments/lanternwing_roundup_env/controls.json",
+        "weird_captcha_gym/environments/lanternwing_roundup_env/env.json",
+        "weird_captcha_gym/environments/lanternwing_roundup_env/tasks/lanternwing_roundup_seed_0001/task.json",
+        "weird_captcha_gym/environments/lanternwing_roundup_env/tasks/lanternwing_roundup_seed_0001/setup_task.sh",
+        "weird_captcha_gym/environments/lanternwing_roundup_env/tasks/lanternwing_roundup_seed_0001/export_result.sh",
+        "weird_captcha_gym/environments/lanternwing_roundup_env/scripts/setup_puzzle_runtime.sh",
+        "weird_captcha_gym/environments/lanternwing_roundup_env/scripts/install_puzzle_runtime.sh",
+        "weird_captcha_gym/environments/lanternwing_roundup_env/tasks/lanternwing_roundup_seed_0001/verifier.py",
+        "weird_captcha_gym/shared_scripts/incubator_generators/lanternwing_roundup.py",
+        "weird_captcha_gym/shared_runtime/app/mechanics/lanternwing_roundup.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/lanternwing_roundup.css",
+        "weird_captcha_gym/shared_runtime/server/incubator_graders/lanternwing_roundup.py",
+        "weird_captcha_gym/tools/incubator_solvers/lanternwing_roundup.py"
+      ],
+      "source_evidence": [
+        {
+          "path": "weird_captcha_gym/environments/lanternwing_roundup_env/controls.json",
+          "lines": "27-42",
+          "claim": "Difficulty 2 activates one target, one decoy, one obstacle, faster motion, a smaller capture radius, four capsules, and its projectile parameters."
+        },
+        {
+          "path": "weird_captcha_gym/environments/lanternwing_roundup_env/controls.json",
+          "lines": "96-109",
+          "claim": "Full direct input and Simplified proxy input are both implemented; the shared observation bound is 640 ms with six frames."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/lanternwing_roundup.py",
+          "lines": "73-79,100-140,142-158",
+          "claim": "Targets and decoys receive seed-dependent three-axis motion, the first fixed obelisk is generated for this level, and the replay uses one gravity-driven projectile at a time."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/lanternwing_roundup.js",
+          "lines": "84-118,156-215,258-307",
+          "claim": "The browser updates moving wings and projectile physics every tick, enforces one active projectile, renders the perspective scene, and binds Full movement/look/canvas throw."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/lanternwing_roundup.py",
+          "lines": "114-128,179-223,225-241",
+          "claim": "The independent replay checks the exact Full surface, camera-derived throw, obstacles, moving creature contact, and certification outcome."
+        },
+        {
+          "path": "weird_captcha_gym/tools/incubator_solvers/lanternwing_roundup.py",
+          "lines": "38-60,107-156",
+          "claim": "The solver's intended strategy predicts future target position for a ballistic lead and waits for each flight; private state reads are implementation evidence only."
+        },
+        {
+          "path": "weird_captcha_gym/environments/lanternwing_roundup_env/tasks/lanternwing_roundup_seed_0001/verifier.py",
+          "lines": "21-30",
+          "claim": "The exported transcript is independently graded by the Lanternwing Roundup replay."
+        }
+      ],
+      "uncertainties": [
+        "The pre-run threshold is determined structurally without asserting a generated-instance percentage; the No label is the threshold override.",
+        "The normal policy must read target appearance and 3D cues from the canvas, not inspect the generator or page state."
+      ]
+    },
+    {
+      "case_index": 334,
+      "public_environment_name": "Lanternwing Roundup",
+      "environment_id": "lanternwing_roundup_env",
+      "difficulty": 2,
+      "interaction_mode": "simplified",
+      "label": "no",
+      "controls_available": [
+        "Simplified movement: labelled forward, back, left, and right buttons; each creates one pending one-tick movement.",
+        "Simplified look: TURN LEFT/RIGHT and LOOK DOWN/UP buttons change yaw or pitch by fixed increments.",
+        "Simplified throw: THROW CAPSULE releases one capsule along the current camera direction.",
+        "Visible wanted-wing card, one distinct decoy, one low obelisk, 3D canvas/reticle, clock, ammo, and CERTIFY ROUNDUP."
+      ],
+      "autonomous_processes": [
+        "Every 80 ms, the wanted wing and decoy advance on their independent sinusoidal x/y/z trajectories without new input.",
+        "A capsule in flight is integrated under gravity on every tick and can hit the ground, obelisk, a wing, or its age limit while the creatures continue moving.",
+        "Each proxy movement command is consumed once on the next tick; proxy look is synchronous, and requestAnimationFrame continuously redraws the visible scene and flight trail.",
+        "The sanctuary clock can close the task at max_ticks, but it is not the common state-evolution witness."
+      ],
+      "grouped_control_modes": [
+        "movement: labelled one-step proxy buttons",
+        "camera look: fixed-increment yaw and pitch proxy buttons",
+        "capsule release D: every THROW CAPSULE action at a tick when no projectile is active and ammo remains",
+        "CERTIFY ROUNDUP: administrative certification, not an outcome-affecting witness action"
+      ],
+      "delta_ms": 640,
+      "window_ms": 640,
+      "clause_i": {
+        "holds": true,
+        "reason": "For D equal to the proxy capsule-release opportunities, the same I_t can occur with different seed-dependent wanted and decoy positions and motion phases. A fixed button/timing policy cannot select the correct delayed lead and avoid the decoy for every such history."
+      },
+      "clause_ii": {
+        "holds": true,
+        "reason": "The six chronological frames in the 640 ms bounded window visibly identify the wanted appearance and expose changing perspective position, apparent depth/height, and motion direction. The proxy yaw/pitch controls then allow a recent-window policy to select a delayed 3D throw around the visible obelisk and away from the decoy."
+      },
+      "clause_iii": {
+        "holds": true,
+        "reason": "At an early THROW CAPSULE opportunity, a lead near the capture boundary can be made strictly worse after tau=80 ms because the wanted wing changes autonomously in three coordinates. Success remains possible after the 640 ms delay with a retargeted proxy aim, so the loss is from task-state evolution rather than clock passage alone."
+      },
+      "common_visible_process": "The common witness is wanted-wing and decoy motion visible in successive canvas frames while a gravity-driven capsule is in flight. Recent frames determine the lead and the proxy aim, and waiting changes the value of an unchanged throw without making the target permanently unavailable.",
+      "pre_run": {
+        "threshold": 0.5,
+        "at_least_half": true,
+        "rate": null,
+        "basis": "source_structural",
+        "reason": "Only one wanted wing must be captured. The decoy is visually distinct, the single obstacle is fixed, and one prepared THROW CAPSULE can complete a successful autonomous flight on at least half of the generated instances; certification does not count as an outcome-affecting action. The pre-run threshold therefore overrides the mathematical result to No.",
+        "seed_probe": null
+      },
+      "files_read_completely": [
+        "AGENTS.md",
+        "weird_captcha_gym/docs/controllability/real-time.md",
+        "weird_captcha_gym/environments/lanternwing_roundup_env/controls.json",
+        "weird_captcha_gym/environments/lanternwing_roundup_env/env.json",
+        "weird_captcha_gym/environments/lanternwing_roundup_env/tasks/lanternwing_roundup_seed_0001/task.json",
+        "weird_captcha_gym/environments/lanternwing_roundup_env/tasks/lanternwing_roundup_seed_0001/setup_task.sh",
+        "weird_captcha_gym/environments/lanternwing_roundup_env/tasks/lanternwing_roundup_seed_0001/export_result.sh",
+        "weird_captcha_gym/environments/lanternwing_roundup_env/scripts/setup_puzzle_runtime.sh",
+        "weird_captcha_gym/environments/lanternwing_roundup_env/scripts/install_puzzle_runtime.sh",
+        "weird_captcha_gym/environments/lanternwing_roundup_env/tasks/lanternwing_roundup_seed_0001/verifier.py",
+        "weird_captcha_gym/shared_scripts/incubator_generators/lanternwing_roundup.py",
+        "weird_captcha_gym/shared_runtime/app/mechanics/lanternwing_roundup.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/lanternwing_roundup.css",
+        "weird_captcha_gym/shared_runtime/server/incubator_graders/lanternwing_roundup.py",
+        "weird_captcha_gym/tools/incubator_solvers/lanternwing_roundup.py"
+      ],
+      "source_evidence": [
+        {
+          "path": "weird_captcha_gym/environments/lanternwing_roundup_env/controls.json",
+          "lines": "27-42",
+          "claim": "Difficulty 2 has one wanted target, one decoy, one obstacle, and the specified moving-target and projectile parameters."
+        },
+        {
+          "path": "weird_captcha_gym/environments/lanternwing_roundup_env/controls.json",
+          "lines": "96-109",
+          "claim": "Simplified labelled controls are implemented with the same one-tick movement, camera changes, and 3D throw effect; the observation window is 640 ms with six frames."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/lanternwing_roundup.py",
+          "lines": "73-79,100-140,142-158",
+          "claim": "The generator creates seed-dependent moving creatures, the level's fixed obelisk, and a one-projectile gravity replay contract."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/lanternwing_roundup.js",
+          "lines": "84-118,156-180,286-309",
+          "claim": "Creature/projectile state evolves on the timer, proxy buttons set movement/look and throw, and the browser renders the target and flight."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/lanternwing_roundup.py",
+          "lines": "114-128,179-223,225-241",
+          "claim": "The independent grader binds the simplified surface and replays exact throw timing, camera direction, moving contacts, obstacle collisions, and certification."
+        },
+        {
+          "path": "weird_captcha_gym/tools/incubator_solvers/lanternwing_roundup.py",
+          "lines": "38-60,107-156",
+          "claim": "The scripted implementation leads the future target and waits for flight resolution; its private model access is not treated as policy information."
+        },
+        {
+          "path": "weird_captcha_gym/environments/lanternwing_roundup_env/tasks/lanternwing_roundup_seed_0001/verifier.py",
+          "lines": "21-30",
+          "claim": "The exported result is checked by an independent replay grader."
+        }
+      ],
+      "uncertainties": [
+        "The threshold judgment is structural and supplies no fabricated rate; No means the pre-run override applies.",
+        "The policy must estimate depth and motion from visible canvas frames and geometry rather than use private state."
+      ]
+    },
+    {
+      "case_index": 335,
+      "public_environment_name": "Lanternwing Roundup",
+      "environment_id": "lanternwing_roundup_env",
+      "difficulty": 3,
+      "interaction_mode": "full",
+      "label": "yes",
+      "controls_available": [
+        "Full movement: hold W/A/S/D or arrow keys; keydown and keyup determine movement on each tick.",
+        "Full look: drag the first-person sanctuary canvas to change yaw and pitch.",
+        "Full throw: click the canvas without dragging to release one capsule along the current camera direction.",
+        "Visible cards for two wanted wings, one distinct decoy, two obelisks, 3D canvas/reticle, clock, six capsules, and CERTIFY ROUNDUP."
+      ],
+      "autonomous_processes": [
+        "Every 80 ms, both wanted wings and the decoy advance independently in x, y, and z without a new agent action.",
+        "During each capsule flight, projectile position and vertical velocity change under gravity on every tick; wings continue moving, and the projectile can resolve against the ground, obelisks, age, or a creature.",
+        "A held Full movement key moves the player each tick, while mouse dragging changes view and the animation loop redraws the perspective scene, moving targets, projectile, and trail.",
+        "The sanctuary clock may close the run at max_ticks; that deadline is not the common witness."
+      ],
+      "grouped_control_modes": [
+        "movement: held WASD or arrow-key transitions",
+        "camera look: mouse drag on the sanctuary canvas",
+        "capsule release D: every canvas throw made at a tick when no projectile is active and ammo remains, across both required target captures",
+        "CERTIFY ROUNDUP: administrative certification, not an outcome-affecting witness action"
+      ],
+      "delta_ms": 640,
+      "window_ms": 640,
+      "clause_i": {
+        "holds": true,
+        "reason": "For D equal to all available Full canvas throws, identical I_t histories can arise across seeds with different positions, phases, and velocities for two wanted wings and the decoy. A policy using only its own prior input timing cannot choose which 3D lead and target-specific release is delayed-optimal in every history."
+      },
+      "clause_ii": {
+        "holds": true,
+        "reason": "Six chronological frames over 640 ms visibly identify the wanted appearances and show their changing perspective location, apparent depth/height, and direction. A bounded-window visual policy can track either wanted wing, set yaw/pitch using the visible scene, and choose a gravity-compensated delayed release while avoiding the visible obelisks and decoy."
+      },
+      "clause_iii": {
+        "holds": true,
+        "reason": "Choose an early available throw and a wanted-wing lead near the capture boundary. Within tau=80 ms the selected wing autonomously changes in x/y/z, making that unchanged throw strictly less valuable or requiring a later corrective throw, while both wanted wings remain capturable after the 640 ms delay. The strict loss is due to moving task state, not just reduced remaining clock."
+      },
+      "common_visible_process": "The common witness is the visible three-coordinate motion of the wanted wings and decoy during each physical gravity flight. The six-frame recent window supplies trajectory evidence for delayed lead selection, and the continuing motion degrades an unchanged capsule release while adaptive releases remain possible.",
+      "pre_run": {
+        "threshold": 0.5,
+        "at_least_half": false,
+        "rate": null,
+        "basis": "source_structural",
+        "reason": "Every instance has two wanted wings, but the browser permits only one active projectile: throwCapsule returns while model.projectile exists, and a projectile is removed after at most one creature contact. A successful run must therefore send another outcome-affecting throw after the first autonomous flight resolves; it cannot satisfy the pre-run condition for a single autonomous outcome phase."
+        ,"seed_probe": null
+      },
+      "files_read_completely": [
+        "AGENTS.md",
+        "weird_captcha_gym/docs/controllability/real-time.md",
+        "weird_captcha_gym/environments/lanternwing_roundup_env/controls.json",
+        "weird_captcha_gym/environments/lanternwing_roundup_env/env.json",
+        "weird_captcha_gym/environments/lanternwing_roundup_env/tasks/lanternwing_roundup_seed_0001/task.json",
+        "weird_captcha_gym/environments/lanternwing_roundup_env/tasks/lanternwing_roundup_seed_0001/setup_task.sh",
+        "weird_captcha_gym/environments/lanternwing_roundup_env/tasks/lanternwing_roundup_seed_0001/export_result.sh",
+        "weird_captcha_gym/environments/lanternwing_roundup_env/scripts/setup_puzzle_runtime.sh",
+        "weird_captcha_gym/environments/lanternwing_roundup_env/scripts/install_puzzle_runtime.sh",
+        "weird_captcha_gym/environments/lanternwing_roundup_env/tasks/lanternwing_roundup_seed_0001/verifier.py",
+        "weird_captcha_gym/shared_scripts/incubator_generators/lanternwing_roundup.py",
+        "weird_captcha_gym/shared_runtime/app/mechanics/lanternwing_roundup.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/lanternwing_roundup.css",
+        "weird_captcha_gym/shared_runtime/server/incubator_graders/lanternwing_roundup.py",
+        "weird_captcha_gym/tools/incubator_solvers/lanternwing_roundup.py"
+      ],
+      "source_evidence": [
+        {
+          "path": "weird_captcha_gym/environments/lanternwing_roundup_env/controls.json",
+          "lines": "44-59",
+          "claim": "Difficulty 3 activates two wanted wings, one decoy, two obelisks, faster 3D motion, six capsules, and the specified gravity/projectile settings."
+        },
+        {
+          "path": "weird_captcha_gym/environments/lanternwing_roundup_env/controls.json",
+          "lines": "96-109",
+          "claim": "Full direct input is implemented and the six-frame observation window covers 640 ms."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/lanternwing_roundup.py",
+          "lines": "73-79,97-140,154-163",
+          "claim": "Every creature has a seed-dependent three-axis trajectory; difficulty 3 creates two targets and one decoy plus two fixed obstacles, while physics has one projectile slot and a per-flight age limit."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/lanternwing_roundup.js",
+          "lines": "84-118,156-167,258-309",
+          "claim": "The browser evolves targets and ballistic flight on the timer, refuses a throw during an active projectile, resolves one contact, renders the moving scene, and installs the Full controls."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/lanternwing_roundup.py",
+          "lines": "121-128,179-223,225-241",
+          "claim": "The replay binds Full event sources, checks throw timing/direction and exact moving-creature physics, and requires all target captures before a passed certification."
+        },
+        {
+          "path": "weird_captcha_gym/tools/incubator_solvers/lanternwing_roundup.py",
+          "lines": "38-60,107-156",
+          "claim": "The implementation solver computes future leads, waits for each projectile to resolve, and loops over all wanted IDs; its private model access is not available to a normal policy."
+        },
+        {
+          "path": "weird_captcha_gym/environments/lanternwing_roundup_env/tasks/lanternwing_roundup_seed_0001/verifier.py",
+          "lines": "21-30",
+          "claim": "The authoritative task verifier calls the independent replay grader."
+        }
+      ],
+      "uncertainties": [
+        "The false pre-run result is structural: two wanted captures require sequential throws; no numeric rate is asserted.",
+        "The normal policy must track visual 3D motion and target appearance from frames rather than access private generator state."
+      ]
+    },
+    {
+      "case_index": 336,
+      "public_environment_name": "Lanternwing Roundup",
+      "environment_id": "lanternwing_roundup_env",
+      "difficulty": 3,
+      "interaction_mode": "simplified",
+      "label": "yes",
+      "controls_available": [
+        "Simplified movement: labelled forward, back, left, and right buttons; each creates one pending one-tick movement.",
+        "Simplified look: TURN LEFT/RIGHT and LOOK DOWN/UP buttons change yaw or pitch by fixed increments.",
+        "Simplified throw: THROW CAPSULE releases one capsule along the current camera direction.",
+        "Visible cards for two wanted wings, one decoy, two obelisks, 3D canvas/reticle, clock, six capsules, and CERTIFY ROUNDUP."
+      ],
+      "autonomous_processes": [
+        "Every 80 ms, both wanted wings and the decoy move independently in x/y/z without a new button action.",
+        "Each flying capsule follows the discrete gravity update on every tick and can resolve against ground, an obelisk, age, or one creature; all remaining creatures keep moving.",
+        "A proxy movement command is consumed once on the following tick, proxy look changes yaw/pitch synchronously, and requestAnimationFrame redraws the moving perspective scene and trail.",
+        "The sanctuary clock can terminate at max_ticks, but deadline progression is not the shared real-time phenomenon."
+      ],
+      "grouped_control_modes": [
+        "movement: labelled one-step proxy buttons",
+        "camera look: fixed-increment yaw and pitch proxy buttons",
+        "capsule release D: every THROW CAPSULE action when no projectile is active and ammo remains, across both target captures",
+        "CERTIFY ROUNDUP: administrative certification, not an outcome-affecting witness action"
+      ],
+      "delta_ms": 640,
+      "window_ms": 640,
+      "clause_i": {
+        "holds": true,
+        "reason": "For D equal to all proxy capsule-release opportunities, the same I_t can occur across seeds with different wanted-wing phases, positions, decoy positions, and obstacle relationships. Own button timing alone cannot choose the delayed-optimal target lead and release for every history."
+      },
+      "clause_ii": {
+        "holds": true,
+        "reason": "Six chronological frames over 640 ms expose changing target location, apparent depth/height, and direction while the wanted cards identify which two appearances matter. A recent-window policy can use proxy look and THROW CAPSULE to make a gravity-compensated delayed release around the visible obstacles, then repeat for the other wing."
+      },
+      "clause_iii": {
+        "holds": true,
+        "reason": "For an early proxy throw near a capture boundary, tau=80 ms of autonomous wanted-wing motion changes the contact state and strictly lowers the value of the unchanged throw or necessitates a later correction. The target remains present and capturable after 640 ms, so the loss is not merely a clock deadline."
+      },
+      "common_visible_process": "The common process is the visible three-coordinate motion of wanted wings and the decoy during each gravity-driven capsule flight. The six-frame window provides the trajectory evidence for proxy retargeting; the same motion makes the old release less effective while a new release remains possible.",
+      "pre_run": {
+        "threshold": 0.5,
+        "at_least_half": false,
+        "rate": null,
+        "basis": "source_structural",
+        "reason": "Difficulty 3 requires two wanted contacts. Because THROW CAPSULE is rejected while model.projectile is non-null and a resolved projectile removes at most one creature, a successful run needs a second outcome-affecting button action after the first autonomous flight. No single pre-run phase can complete every instance, so fewer than half qualify structurally.",
+        "seed_probe": null
+      },
+      "files_read_completely": [
+        "AGENTS.md",
+        "weird_captcha_gym/docs/controllability/real-time.md",
+        "weird_captcha_gym/environments/lanternwing_roundup_env/controls.json",
+        "weird_captcha_gym/environments/lanternwing_roundup_env/env.json",
+        "weird_captcha_gym/environments/lanternwing_roundup_env/tasks/lanternwing_roundup_seed_0001/task.json",
+        "weird_captcha_gym/environments/lanternwing_roundup_env/tasks/lanternwing_roundup_seed_0001/setup_task.sh",
+        "weird_captcha_gym/environments/lanternwing_roundup_env/tasks/lanternwing_roundup_seed_0001/export_result.sh",
+        "weird_captcha_gym/environments/lanternwing_roundup_env/scripts/setup_puzzle_runtime.sh",
+        "weird_captcha_gym/environments/lanternwing_roundup_env/scripts/install_puzzle_runtime.sh",
+        "weird_captcha_gym/environments/lanternwing_roundup_env/tasks/lanternwing_roundup_seed_0001/verifier.py",
+        "weird_captcha_gym/shared_scripts/incubator_generators/lanternwing_roundup.py",
+        "weird_captcha_gym/shared_runtime/app/mechanics/lanternwing_roundup.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/lanternwing_roundup.css",
+        "weird_captcha_gym/shared_runtime/server/incubator_graders/lanternwing_roundup.py",
+        "weird_captcha_gym/tools/incubator_solvers/lanternwing_roundup.py"
+      ],
+      "source_evidence": [
+        {
+          "path": "weird_captcha_gym/environments/lanternwing_roundup_env/controls.json",
+          "lines": "44-59",
+          "claim": "Difficulty 3 has two wanted wings, one decoy, two obstacles, and the selected moving-target/projectile parameters."
+        },
+        {
+          "path": "weird_captcha_gym/environments/lanternwing_roundup_env/controls.json",
+          "lines": "96-109",
+          "claim": "The Simplified proxy surface is implemented with the shared 640 ms, six-frame observation setting."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/lanternwing_roundup.py",
+          "lines": "73-79,97-140,154-163",
+          "claim": "Generated wings move on seed-dependent x/y/z trajectories, difficulty 3 includes two targets/one decoy/two obstacles, and physics defines a single active projectile."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/lanternwing_roundup.js",
+          "lines": "84-118,156-180,286-309",
+          "claim": "The timer performs the target and gravity updates, proxy throw is blocked during active flight, proxy look/movement are bound, and the visual scene is rendered."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/lanternwing_roundup.py",
+          "lines": "121-128,179-223,225-241",
+          "claim": "The replay enforces the Simplified sources, exact throw/camera state, moving contacts, and all-target certification."
+        },
+        {
+          "path": "weird_captcha_gym/tools/incubator_solvers/lanternwing_roundup.py",
+          "lines": "38-60,107-156",
+          "claim": "The implementation solver computes a future lead and waits for the projectile before proceeding to the next target; its private reads are not normal UI evidence."
+        },
+        {
+          "path": "weird_captcha_gym/environments/lanternwing_roundup_env/tasks/lanternwing_roundup_seed_0001/verifier.py",
+          "lines": "21-30",
+          "claim": "Task verification uses the independent Lanternwing Roundup replay."
+        }
+      ],
+      "uncertainties": [
+        "The pre-run threshold is a structural less-than-half judgment, not a claimed measured percentage.",
+        "Depth and motion must be estimated from the visible frame sequence and perspective; private page state is excluded."
+      ]
+    },
+    {
+      "case_index": 337,
+      "public_environment_name": "Lanternwing Roundup",
+      "environment_id": "lanternwing_roundup_env",
+      "difficulty": 4,
+      "interaction_mode": "full",
+      "label": "yes",
+      "controls_available": [
+        "Full movement: hold W/A/S/D or arrow keys; keydown and keyup determine movement on each tick.",
+        "Full look: drag the first-person sanctuary canvas to change yaw and pitch.",
+        "Full throw: click the canvas without dragging to release one capsule along the current camera direction.",
+        "Visible cards for three wanted wings, two decoys, three obelisks, 3D canvas/reticle, clock, eight capsules, and CERTIFY ROUNDUP."
+      ],
+      "autonomous_processes": [
+        "Every 80 ms, all three wanted wings and both decoys advance independently through their sinusoidal x/y/z motion without new agent input.",
+        "Each flying capsule follows gravity on every tick and can be stopped by the ground, an obelisk, its age limit, or contact with one creature; all remaining creatures continue moving.",
+        "Held Full movement changes player position between key events, mouse drag changes yaw/pitch, and requestAnimationFrame redraws the perspective targets, obstacles, projectile, and trail.",
+        "The sanctuary clock can close the run at max_ticks, but it is not the common target-state witness."
+      ],
+      "grouped_control_modes": [
+        "movement: held WASD or arrow-key transitions",
+        "camera look: mouse drag on the sanctuary canvas",
+        "capsule release D: every canvas throw when no projectile is active and ammo remains, across the three target captures",
+        "CERTIFY ROUNDUP: administrative certification, not an outcome-affecting witness action"
+      ],
+      "delta_ms": 640,
+      "window_ms": 640,
+      "clause_i": {
+        "holds": true,
+        "reason": "For D equal to all Full canvas throws, the same action history and timing can accompany different random target phases, 3D positions, decoy locations, and obstruction relationships. No observation-free schedule can choose the delayed-optimal target-specific lead and release across those histories."
+      },
+      "clause_ii": {
+        "holds": true,
+        "reason": "The six chronological frames over 640 ms expose wanted appearance, changing location, depth/height cues, and direction in the perspective canvas. A bounded-window visual policy can choose which wanted wing to pursue, set camera aim, predict its delayed ballistic contact, and use the visible obelisks/decoys to select a viable path."
+      },
+      "clause_iii": {
+        "holds": true,
+        "reason": "At an early available throw, choose a lead near the capture boundary for one wanted wing. Its nonzero three-coordinate motion changes the state within tau=80 ms, strictly lowering the unchanged throw's contact value or requiring corrective ammunition, while a retargeted throw remains possible after 640 ms. This is not a mere deadline effect."
+      },
+      "common_visible_process": "The common visible process is continuous wanted-wing and decoy motion during physical gravity flights. The recent six-frame trajectory evidence is what determines each delayed 3D lead, and waiting makes an unchanged release less effective while the remaining target can still be pursued.",
+      "pre_run": {
+        "threshold": 0.5,
+        "at_least_half": false,
+        "rate": null,
+        "basis": "source_structural",
+        "reason": "Three wanted wings must be secured. The browser has a single projectile field and removes a projectile on the first ground, obstacle, age, or creature resolution, so successful completion necessarily needs later outcome-affecting throws after earlier autonomous flights. The pre-run condition cannot hold for at least half of instances.",
+        "seed_probe": null
+      },
+      "files_read_completely": [
+        "AGENTS.md",
+        "weird_captcha_gym/docs/controllability/real-time.md",
+        "weird_captcha_gym/environments/lanternwing_roundup_env/controls.json",
+        "weird_captcha_gym/environments/lanternwing_roundup_env/env.json",
+        "weird_captcha_gym/environments/lanternwing_roundup_env/tasks/lanternwing_roundup_seed_0001/task.json",
+        "weird_captcha_gym/environments/lanternwing_roundup_env/tasks/lanternwing_roundup_seed_0001/setup_task.sh",
+        "weird_captcha_gym/environments/lanternwing_roundup_env/tasks/lanternwing_roundup_seed_0001/export_result.sh",
+        "weird_captcha_gym/environments/lanternwing_roundup_env/scripts/setup_puzzle_runtime.sh",
+        "weird_captcha_gym/environments/lanternwing_roundup_env/scripts/install_puzzle_runtime.sh",
+        "weird_captcha_gym/environments/lanternwing_roundup_env/tasks/lanternwing_roundup_seed_0001/verifier.py",
+        "weird_captcha_gym/shared_scripts/incubator_generators/lanternwing_roundup.py",
+        "weird_captcha_gym/shared_runtime/app/mechanics/lanternwing_roundup.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/lanternwing_roundup.css",
+        "weird_captcha_gym/shared_runtime/server/incubator_graders/lanternwing_roundup.py",
+        "weird_captcha_gym/tools/incubator_solvers/lanternwing_roundup.py"
+      ],
+      "source_evidence": [
+        {
+          "path": "weird_captcha_gym/environments/lanternwing_roundup_env/controls.json",
+          "lines": "61-76",
+          "claim": "Difficulty 4 activates three wanted wings, two decoys, three obstacles, live height/depth motion, eight capsules, and the stated physics."
+        },
+        {
+          "path": "weird_captcha_gym/environments/lanternwing_roundup_env/controls.json",
+          "lines": "96-109",
+          "claim": "Full direct controls are implemented and the observation setting is 640 ms with six frames."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/lanternwing_roundup.py",
+          "lines": "73-79,97-140,154-163",
+          "claim": "The generator assigns independent seed-dependent x/y/z motion to all creatures, creates three obstacles at this level, and defines one gravity projectile with a finite flight age."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/lanternwing_roundup.js",
+          "lines": "84-118,156-215,258-309",
+          "claim": "Targets and projectiles evolve each tick, only one projectile can be active, contacts remove one creature, and the visible Full canvas controls and scene are bound."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/lanternwing_roundup.py",
+          "lines": "121-128,179-241",
+          "claim": "The independent replay enforces the Full surface, exact physical throws, moving creature/obstacle resolution, and all wanted captures before pass."
+        },
+        {
+          "path": "weird_captcha_gym/tools/incubator_solvers/lanternwing_roundup.py",
+          "lines": "38-60,107-156",
+          "claim": "The implementation solver leads each future target and waits for projectile completion before moving to the next wanted ID; private model access is not screenshot evidence."
+        },
+        {
+          "path": "weird_captcha_gym/environments/lanternwing_roundup_env/tasks/lanternwing_roundup_seed_0001/verifier.py",
+          "lines": "21-30",
+          "claim": "The task verifier delegates to the independent replay grader."
+        }
+      ],
+      "uncertainties": [
+        "The pre-run result follows from the three-target/single-projectile sequencing and does not assert a measured fraction.",
+        "The screenshot-only solution must infer 3D depth and motion from visible perspective frames and must not read private state."
+      ]
+    },
+    {
+      "case_index": 338,
+      "public_environment_name": "Lanternwing Roundup",
+      "environment_id": "lanternwing_roundup_env",
+      "difficulty": 4,
+      "interaction_mode": "simplified",
+      "label": "yes",
+      "controls_available": [
+        "Simplified movement: labelled forward, back, left, and right buttons; each creates one pending one-tick movement.",
+        "Simplified look: TURN LEFT/RIGHT and LOOK DOWN/UP buttons change yaw or pitch by fixed increments.",
+        "Simplified throw: THROW CAPSULE releases one capsule along the current camera direction.",
+        "Visible cards for three wanted wings, two decoys, three obelisks, 3D canvas/reticle, clock, eight capsules, and CERTIFY ROUNDUP."
+      ],
+      "autonomous_processes": [
+        "Every 80 ms, the three wanted wings and two decoys advance in their independent sinusoidal x/y/z trajectories without a new button action.",
+        "A flying capsule follows the discrete gravity update each tick and resolves against ground, an obelisk, age, or a creature while all remaining wings continue moving.",
+        "A proxy movement command is consumed once on the next tick, proxy look changes the camera synchronously, and requestAnimationFrame redraws the perspective scene, targets, projectile, and trail.",
+        "The sanctuary clock can close the run at max_ticks, but deadline passage is not the common witness."
+      ],
+      "grouped_control_modes": [
+        "movement: labelled one-step proxy buttons",
+        "camera look: fixed-increment yaw and pitch proxy buttons",
+        "capsule release D: every THROW CAPSULE action when no projectile is active and ammo remains, across the three target captures",
+        "CERTIFY ROUNDUP: administrative certification, not an outcome-affecting witness action"
+      ],
+      "delta_ms": 640,
+      "window_ms": 640,
+      "clause_i": {
+        "holds": true,
+        "reason": "For D equal to every proxy throw opportunity, the same I_t can occur for seeds with different wanted/decoy phases and 3D obstruction relationships. A button schedule independent of the recent canvas cannot choose the correct target-specific delayed lead for all histories."
+      },
+      "clause_ii": {
+        "holds": true,
+        "reason": "The six-frame 640 ms window exposes the wanted cards plus changing target position, apparent depth/height, and direction. A bounded visual policy can use the proxy look and throw controls to retarget a gravity-compensated path around visible obelisks and decoys, repeating after each resolved flight."
+      },
+      "clause_iii": {
+        "holds": true,
+        "reason": "An early proxy throw aimed near a capture boundary loses strict value after tau=80 ms of autonomous three-coordinate wing motion, or consumes an extra corrective capsule later. The wing remains capturable after 640 ms, so the strict loss is state evolution and not just a diminishing deadline."
+      },
+      "common_visible_process": "Wanted wings and decoys visibly continue moving during every gravity-driven capsule flight. The six-frame trajectory window supplies the evidence for each delayed proxy aim, and the same motion degrades stale release directions while adaptive throws remain available.",
+      "pre_run": {
+        "threshold": 0.5,
+        "at_least_half": false,
+        "rate": null,
+        "basis": "source_structural",
+        "reason": "Three wanted wings cannot be captured by one autonomous capsule phase: the single projectile is cleared on the first resolution and the throw button is ineffective while it is active. A successful instance needs later THROW CAPSULE actions after earlier flights, so fewer than half qualify as pre-run solutions.",
+        "seed_probe": null
+      },
+      "files_read_completely": [
+        "AGENTS.md",
+        "weird_captcha_gym/docs/controllability/real-time.md",
+        "weird_captcha_gym/environments/lanternwing_roundup_env/controls.json",
+        "weird_captcha_gym/environments/lanternwing_roundup_env/env.json",
+        "weird_captcha_gym/environments/lanternwing_roundup_env/tasks/lanternwing_roundup_seed_0001/task.json",
+        "weird_captcha_gym/environments/lanternwing_roundup_env/tasks/lanternwing_roundup_seed_0001/setup_task.sh",
+        "weird_captcha_gym/environments/lanternwing_roundup_env/tasks/lanternwing_roundup_seed_0001/export_result.sh",
+        "weird_captcha_gym/environments/lanternwing_roundup_env/scripts/setup_puzzle_runtime.sh",
+        "weird_captcha_gym/environments/lanternwing_roundup_env/scripts/install_puzzle_runtime.sh",
+        "weird_captcha_gym/environments/lanternwing_roundup_env/tasks/lanternwing_roundup_seed_0001/verifier.py",
+        "weird_captcha_gym/shared_scripts/incubator_generators/lanternwing_roundup.py",
+        "weird_captcha_gym/shared_runtime/app/mechanics/lanternwing_roundup.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/lanternwing_roundup.css",
+        "weird_captcha_gym/shared_runtime/server/incubator_graders/lanternwing_roundup.py",
+        "weird_captcha_gym/tools/incubator_solvers/lanternwing_roundup.py"
+      ],
+      "source_evidence": [
+        {
+          "path": "weird_captcha_gym/environments/lanternwing_roundup_env/controls.json",
+          "lines": "61-76",
+          "claim": "Difficulty 4 has three wanted wings, two decoys, three obstacles, and the stated live motion and projectile parameters."
+        },
+        {
+          "path": "weird_captcha_gym/environments/lanternwing_roundup_env/controls.json",
+          "lines": "96-109",
+          "claim": "Simplified proxy input is implemented and the observation setting is six frames over 640 ms."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/lanternwing_roundup.py",
+          "lines": "73-79,97-140,154-163",
+          "claim": "Generated creatures have seed-dependent three-coordinate motion, difficulty 4 creates three obstacles, and the physical contract has one active projectile."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/lanternwing_roundup.js",
+          "lines": "84-118,156-180,286-309",
+          "claim": "The timer updates all moving creatures and flight, proxy controls are bound, and the canvas visibly presents the scene and projectile."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/lanternwing_roundup.py",
+          "lines": "121-128,179-241",
+          "claim": "The independent replay enforces the Simplified input sources, exact physical throw, obstacle/creature resolution, and all-target certification."
+        },
+        {
+          "path": "weird_captcha_gym/tools/incubator_solvers/lanternwing_roundup.py",
+          "lines": "38-60,107-156",
+          "claim": "The scripted solver predicts target leads and waits between target throws; its page-state access is not available to a normal screenshot-only policy."
+        },
+        {
+          "path": "weird_captcha_gym/environments/lanternwing_roundup_env/tasks/lanternwing_roundup_seed_0001/verifier.py",
+          "lines": "21-30",
+          "claim": "The task verifier uses the independent replay grader."
+        }
+      ],
+      "uncertainties": [
+        "The pre-run judgment is structural and does not fabricate an instance fraction; sequential multi-target capture prevents the threshold.",
+        "The visual policy must infer depth and motion from the canvas frame window and visible obstacles, with no private state access."
+      ]
+    },
+    {
+      "case_index": 339,
+      "public_environment_name": "Lanternwing Roundup",
+      "environment_id": "lanternwing_roundup_env",
+      "difficulty": 5,
+      "interaction_mode": "full",
+      "label": "yes",
+      "controls_available": [
+        "Full movement: hold W/A/S/D or arrow keys; keydown and keyup determine movement on each tick.",
+        "Full look: drag the first-person sanctuary canvas to change yaw and pitch.",
+        "Full throw: click the canvas without dragging to release one capsule along the current camera direction.",
+        "Visible cards for four wanted wings, three decoys, five obelisks, 3D canvas/reticle, clock, eleven capsules, and CERTIFY ROUNDUP."
+      ],
+      "autonomous_processes": [
+        "Every 80 ms, four wanted wings and three decoys advance independently through faster sinusoidal x/y/z motion without a new agent action.",
+        "A flying capsule follows gravity on each tick and can resolve against ground, any of five obelisks, age, or one creature; all other creatures continue moving during the flight.",
+        "Held Full movement changes player position each tick, mouse drag changes view, and requestAnimationFrame redraws the perspective scene, target motion, projectile, and trail.",
+        "The sanctuary clock can close the run at max_ticks, but deadline progression is not the common real-time witness."
+      ],
+      "grouped_control_modes": [
+        "movement: held WASD or arrow-key transitions",
+        "camera look: mouse drag on the sanctuary canvas",
+        "capsule release D: every canvas throw when no projectile is active and ammo remains, across the four target captures",
+        "CERTIFY ROUNDUP: administrative certification, not an outcome-affecting witness action"
+      ],
+      "delta_ms": 640,
+      "window_ms": 640,
+      "clause_i": {
+        "holds": true,
+        "reason": "For D equal to all Full canvas throws, identical action histories and task times can occur with different seed-dependent positions/phases for seven moving creatures and different five-obstacle relationships. No action-clock-only policy can select the target-specific delayed lead and avoid decoys for every history."
+      },
+      "clause_ii": {
+        "holds": true,
+        "reason": "Six chronological frames over 640 ms visibly expose wanted appearance, rapid x/y/z motion through perspective location and size, and the current obstacle layout. A bounded-window visual policy can track a selected wanted wing, choose a camera aim and ballistic lead, and repeat for the remaining targets using only visible controls."
+      },
+      "clause_iii": {
+        "holds": true,
+        "reason": "At an early available throw, select a lead near the capture boundary for a wanted wing. Its nonzero faster motion changes the 3D contact state within tau=80 ms, strictly reducing the unchanged throw's value or requiring corrective ammunition, while a new visually retargeted throw remains possible after 640 ms. The loss is caused by moving task state, not only by the clock."
+      },
+      "common_visible_process": "The common witness is fast, visibly evidenced three-coordinate motion of wanted wings and decoys during each physical gravity flight. The recent six-frame window predicts where the selected wing will be at delayed contact, and that same motion degrades stale release directions while targets remain actionable.",
+      "pre_run": {
+        "threshold": 0.5,
+        "at_least_half": false,
+        "rate": null,
+        "basis": "source_structural",
+        "reason": "Four wanted wings must be captured, while one projectile can be active and one resolution removes at most one creature. Every successful instance requires later outcome-affecting throws after earlier autonomous flights; a single pre-run autonomous phase cannot finish at least half of the instances.",
+        "seed_probe": null
+      },
+      "files_read_completely": [
+        "AGENTS.md",
+        "weird_captcha_gym/docs/controllability/real-time.md",
+        "weird_captcha_gym/environments/lanternwing_roundup_env/controls.json",
+        "weird_captcha_gym/environments/lanternwing_roundup_env/env.json",
+        "weird_captcha_gym/environments/lanternwing_roundup_env/tasks/lanternwing_roundup_seed_0001/task.json",
+        "weird_captcha_gym/environments/lanternwing_roundup_env/tasks/lanternwing_roundup_seed_0001/setup_task.sh",
+        "weird_captcha_gym/environments/lanternwing_roundup_env/tasks/lanternwing_roundup_seed_0001/export_result.sh",
+        "weird_captcha_gym/environments/lanternwing_roundup_env/scripts/setup_puzzle_runtime.sh",
+        "weird_captcha_gym/environments/lanternwing_roundup_env/scripts/install_puzzle_runtime.sh",
+        "weird_captcha_gym/environments/lanternwing_roundup_env/tasks/lanternwing_roundup_seed_0001/verifier.py",
+        "weird_captcha_gym/shared_scripts/incubator_generators/lanternwing_roundup.py",
+        "weird_captcha_gym/shared_runtime/app/mechanics/lanternwing_roundup.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/lanternwing_roundup.css",
+        "weird_captcha_gym/shared_runtime/server/incubator_graders/lanternwing_roundup.py",
+        "weird_captcha_gym/tools/incubator_solvers/lanternwing_roundup.py"
+      ],
+      "source_evidence": [
+        {
+          "path": "weird_captcha_gym/environments/lanternwing_roundup_env/controls.json",
+          "lines": "78-93",
+          "claim": "Difficulty 5 activates four wanted wings, three decoys, five obstacles, fastest configured motion, eleven capsules, a smaller capture radius, and the listed gravity/projectile settings."
+        },
+        {
+          "path": "weird_captcha_gym/environments/lanternwing_roundup_env/controls.json",
+          "lines": "96-109",
+          "claim": "Full direct interaction is implemented and the bounded observation setting is 640 ms with six frames."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/lanternwing_roundup.py",
+          "lines": "73-79,97-140,154-163",
+          "claim": "The generator creates seed-dependent three-coordinate motion for all creatures, five fixed obstacles at this level, and one active gravity projectile with a finite age."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/lanternwing_roundup.js",
+          "lines": "84-118,156-215,258-309",
+          "claim": "The browser advances moving creatures and projectile physics each tick, permits only one active projectile, renders the visual scene, and binds Full movement/look/canvas throw."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/lanternwing_roundup.py",
+          "lines": "121-128,179-241",
+          "claim": "The independent replay checks Full interaction sources, exact 3D throw physics, obstacle and creature contacts, and all wanted captures."
+        },
+        {
+          "path": "weird_captcha_gym/tools/incubator_solvers/lanternwing_roundup.py",
+          "lines": "38-60,107-156",
+          "claim": "The implementation solver predicts future target positions and waits between throws for each wanted ID; private page-state access is not a normal solution."
+        },
+        {
+          "path": "weird_captcha_gym/environments/lanternwing_roundup_env/tasks/lanternwing_roundup_seed_0001/verifier.py",
+          "lines": "21-30",
+          "claim": "The task verifier invokes the independent replay grader."
+        }
+      ],
+      "uncertainties": [
+        "The pre-run result is structural and does not state a made-up percentage; four sequential target captures rule out the threshold.",
+        "The screenshot-only policy must estimate rapid 3D trajectory from visible frames and perspective, not read generator state."
+      ]
+    },
+    {
+      "case_index": 340,
+      "public_environment_name": "Lanternwing Roundup",
+      "environment_id": "lanternwing_roundup_env",
+      "difficulty": 5,
+      "interaction_mode": "simplified",
+      "label": "yes",
+      "controls_available": [
+        "Simplified movement: labelled forward, back, left, and right buttons; each creates one pending one-tick movement.",
+        "Simplified look: TURN LEFT/RIGHT and LOOK DOWN/UP buttons change yaw or pitch by fixed increments.",
+        "Simplified throw: THROW CAPSULE releases one capsule along the current camera direction.",
+        "Visible cards for four wanted wings, three decoys, five obelisks, 3D canvas/reticle, clock, eleven capsules, and CERTIFY ROUNDUP."
+      ],
+      "autonomous_processes": [
+        "Every 80 ms, all four wanted wings and three decoys advance independently through faster sinusoidal x/y/z motion without a new button action.",
+        "Each flying capsule follows gravity each tick and can resolve against ground, any obelisk, age, or one creature, while all remaining creatures continue moving.",
+        "Each proxy movement command is consumed once on the next tick; proxy look changes yaw/pitch synchronously, and requestAnimationFrame redraws the moving perspective scene, projectile, and trail.",
+        "The sanctuary clock can close the run at max_ticks, but deadline passage is not the common target-state witness."
+      ],
+      "grouped_control_modes": [
+        "movement: labelled one-step proxy buttons",
+        "camera look: fixed-increment yaw and pitch proxy buttons",
+        "capsule release D: every THROW CAPSULE action when no projectile is active and ammo remains, across the four target captures",
+        "CERTIFY ROUNDUP: administrative certification, not an outcome-affecting witness action"
+      ],
+      "delta_ms": 640,
+      "window_ms": 640,
+      "clause_i": {
+        "holds": true,
+        "reason": "For D equal to all proxy throws, identical I_t histories can occur with different seed-dependent wanted/decoy phases, trajectories, and obstacle relationships. A button schedule based only on action timing cannot be delayed-optimal for every history."
+      },
+      "clause_ii": {
+        "holds": true,
+        "reason": "The six-frame 640 ms bounded window visibly exposes each wanted appearance and the rapid changing perspective position, depth/height, and direction. A recent-window visual policy can use proxy look and THROW CAPSULE to choose a gravity-compensated path around visible obelisks and decoys, repeating after each flight."
+      },
+      "clause_iii": {
+        "holds": true,
+        "reason": "At an early proxy throw with success still possible after the delay, select a lead near a wanted-wing capture boundary. Within tau=80 ms its faster autonomous x/y/z motion strictly reduces the unchanged throw's contact value or consumes corrective ammunition later; a retargeted throw remains possible after 640 ms. The strict loss comes from task-state motion, not merely the deadline."
+      },
+      "common_visible_process": "The common visible process is rapid wanted-wing and decoy motion during each gravity-driven capsule flight. Recent canvas frames predict the delayed contact for the proxy aim, and the continuing motion makes stale throws less effective while the remaining targets stay actionable.",
+      "pre_run": {
+        "threshold": 0.5,
+        "at_least_half": false,
+        "rate": null,
+        "basis": "source_structural",
+        "reason": "Four wanted contacts are required, but only one projectile can be active and each resolution removes at most one creature. Successful instances require later THROW CAPSULE actions after earlier autonomous flight phases, so the pre-run condition is unavailable for at least half of instances.",
+        "seed_probe": null
+      },
+      "files_read_completely": [
+        "AGENTS.md",
+        "weird_captcha_gym/docs/controllability/real-time.md",
+        "weird_captcha_gym/environments/lanternwing_roundup_env/controls.json",
+        "weird_captcha_gym/environments/lanternwing_roundup_env/env.json",
+        "weird_captcha_gym/environments/lanternwing_roundup_env/tasks/lanternwing_roundup_seed_0001/task.json",
+        "weird_captcha_gym/environments/lanternwing_roundup_env/tasks/lanternwing_roundup_seed_0001/setup_task.sh",
+        "weird_captcha_gym/environments/lanternwing_roundup_env/tasks/lanternwing_roundup_seed_0001/export_result.sh",
+        "weird_captcha_gym/environments/lanternwing_roundup_env/scripts/setup_puzzle_runtime.sh",
+        "weird_captcha_gym/environments/lanternwing_roundup_env/scripts/install_puzzle_runtime.sh",
+        "weird_captcha_gym/environments/lanternwing_roundup_env/tasks/lanternwing_roundup_seed_0001/verifier.py",
+        "weird_captcha_gym/shared_scripts/incubator_generators/lanternwing_roundup.py",
+        "weird_captcha_gym/shared_runtime/app/mechanics/lanternwing_roundup.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/lanternwing_roundup.css",
+        "weird_captcha_gym/shared_runtime/server/incubator_graders/lanternwing_roundup.py",
+        "weird_captcha_gym/tools/incubator_solvers/lanternwing_roundup.py"
+      ],
+      "source_evidence": [
+        {
+          "path": "weird_captcha_gym/environments/lanternwing_roundup_env/controls.json",
+          "lines": "78-93",
+          "claim": "Difficulty 5 has four wanted wings, three decoys, five obstacles, faster motion, eleven capsules, and the stated projectile physics."
+        },
+        {
+          "path": "weird_captcha_gym/environments/lanternwing_roundup_env/controls.json",
+          "lines": "96-109",
+          "claim": "Simplified proxy interaction is implemented and the observation bound is 640 ms with six frames."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/lanternwing_roundup.py",
+          "lines": "73-79,97-140,154-163",
+          "claim": "All generated creatures move in seed-dependent x/y/z trajectories, five obstacles are present at this level, and one gravity projectile is active at a time."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/lanternwing_roundup.js",
+          "lines": "84-118,156-180,286-309",
+          "claim": "The timer updates targets and projectile, proxy throws are blocked during flight, proxy controls and visible canvas are bound, and the scene is continuously redrawn."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/lanternwing_roundup.py",
+          "lines": "121-128,179-241",
+          "claim": "The independent replay enforces Simplified sources, exact 3D throw and collision physics, and all wanted captures before pass."
+        },
+        {
+          "path": "weird_captcha_gym/tools/incubator_solvers/lanternwing_roundup.py",
+          "lines": "38-60,107-156",
+          "claim": "The scripted solver predicts future leads and waits between sequential throws; its private state access is not a screenshot-only solution."
+        },
+        {
+          "path": "weird_captcha_gym/environments/lanternwing_roundup_env/tasks/lanternwing_roundup_seed_0001/verifier.py",
+          "lines": "21-30",
+          "claim": "The task verifier delegates to the independent replay grader."
+        }
+      ],
+      "uncertainties": [
+        "The pre-run determination is structural and does not invent a numeric rate; four required sequential captures prevent the threshold.",
+        "A normal screenshot-only policy must infer rapid 3D motion from visible frames and perspective without private page-state access."
+      ]
+    }
+  ]
+}

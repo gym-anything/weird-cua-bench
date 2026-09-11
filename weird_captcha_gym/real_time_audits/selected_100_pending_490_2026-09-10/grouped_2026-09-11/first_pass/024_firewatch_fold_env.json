@@ -1,0 +1,1127 @@
+{
+  "case_index": 24,
+  "environment_id": "firewatch_fold_env",
+  "public_environment_name": "Firewatch Fold",
+  "configuration_reports": [
+    {
+      "case_index": 231,
+      "public_environment_name": "Firewatch Fold",
+      "environment_id": "firewatch_fold_env",
+      "difficulty": 1,
+      "interaction_mode": "full",
+      "label": "no",
+      "controls_available": [
+        "Level 1 world: 3 floors x 6 cells, 1 ladder per landing, 1 route fire, 0 decoy fires, 0 walls per floor, 0 seam crossings, and 1 extinguisher.",
+        "Full input: Arrow keys or W/A/S/D move, climb, and cross seams; Shift extinguishes the fire immediately ahead in the current facing.",
+        "The visible eye button inspects the other face; CERTIFY RESCUE submits the ledger and is administrative.",
+        "Task settings are play_time_seconds=180, observation_window_ms=0, frames_per_observation=1, and synchronous=true."
+      ],
+      "autonomous_processes": [
+        "Initialization RNG selects the static tower, route, fire, ladder, wall, and palette data before play; it does not continue as task evolution.",
+        "There is no autonomous period before or between actions: waiting leaves player, facing, fires, stock, inspected face, and tower geometry unchanged.",
+        "MOVE, EXTINGUISH, and INSPECT update and render synchronously; only the administrative certification response can report or refresh a challenge after submission."
+      ],
+      "grouped_control_modes": [
+        "D=MOVE: all four full-mode keyboard directions, grouped as walking, climbing, or seam crossing.",
+        "D=EXTINGUISH: full-mode Shift, clearing the current-facing fire and consuming one canister when applicable.",
+        "INSPECT is a view-only eye-button action and CERTIFY is administrative; neither is an outcome-affecting D."
+      ],
+      "delta_ms": null,
+      "window_ms": 0,
+      "clause_i": {
+        "holds": true,
+        "reason": "For D=MOVE, an observation-free q(I_t) is not generally sufficient across generated towers: even this level randomizes the start, ladder locations, resident position, and route fire. The next route action is map-dependent. This is static visual route planning, not temporal dependence."
+      },
+      "clause_ii": {
+        "holds": true,
+        "reason": "A screenshot-only policy can choose a local route action from the zero-task-time endpoint frame: it exposes the currently inspected static face, player/facing HUD, stock, and controls, while the eye can reveal the other face during preparation. No sequence of advancing frames is needed."
+      },
+      "clause_iii": {
+        "holds": false,
+        "reason": "No Delta>0 and 0<tau<Delta causes the required autonomous non-clock task-state change. The configured task window is zero and the browser mechanic has no timer, physics, fire motion, animation, or deadline; waiting cannot make any movement or extinguish action unavailable or less effective."
+      },
+      "common_visible_process": "None. The visible tower is fixed after generation. Visible changes are synchronous consequences of MOVE, EXTINGUISH, or INSPECT, so there is no common autonomous process whose visible evolution could support clauses (i)-(iii).",
+      "pre_run": {
+        "threshold": 0.5,
+        "at_least_half": null,
+        "rate": null,
+        "basis": "not_applicable",
+        "reason": "No autonomous outcome phase exists: the generator supplies a fixed tower and solution sequence, and every route-changing action is supplied by the agent. The mathematical definition already fails clause (iii), so no pre-run rate is needed for the No label.",
+        "seed_probe": null
+      },
+      "files_read_completely": [
+        "AGENTS.md",
+        "weird_captcha_gym/docs/controllability/real-time.md",
+        "weird_captcha_gym/environments/firewatch_fold_env/controls.json",
+        "weird_captcha_gym/environments/firewatch_fold_env/env.json",
+        "weird_captcha_gym/shared_scripts/incubator_generators/firewatch_fold.py",
+        "weird_captcha_gym/shared_runtime/app/mechanics/firewatch_fold.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/firewatch_fold.css",
+        "weird_captcha_gym/shared_runtime/server/incubator_graders/firewatch_fold.py",
+        "weird_captcha_gym/environments/firewatch_fold_env/tasks/firewatch_fold_seed_0001/verifier.py",
+        "weird_captcha_gym/tools/incubator_solvers/firewatch_fold.py"
+      ],
+      "source_evidence": [
+        {
+          "path": "weird_captcha_gym/environments/firewatch_fold_env/controls.json",
+          "lines": "10-27",
+          "claim": "Difficulty 1 has the stated static tower parameters."
+        },
+        {
+          "path": "weird_captcha_gym/environments/firewatch_fold_env/controls.json",
+          "lines": "106-119",
+          "claim": "Full mode uses keyboard movement and Shift, while the configured observation window is 0 ms with one frame."
+        },
+        {
+          "path": "weird_captcha_gym/environments/firewatch_fold_env/env.json",
+          "lines": "9-14",
+          "claim": "The environment exposes mouse and keyboard actions, uses observation_window_ms=0 and frames_per_observation=1, and is synchronous."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/firewatch_fold.py",
+          "lines": "151-187",
+          "claim": "Generation uses seeded RNG to construct start, route, seams, ladders, and resident before returning task state."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/firewatch_fold.js",
+          "lines": "173-220",
+          "claim": "MOVE, EXTINGUISH, and INSPECT mutate model state and immediately record/render events; no autonomous callback is defined."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/firewatch_fold.css",
+          "lines": "1-545",
+          "claim": "The complete co-located stylesheet contains static layout and appearance rules and no task animation or transition mechanic."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/firewatch_fold.py",
+          "lines": "126-136",
+          "claim": "Replay binds MOVE and EXTINGUISH to the selected interaction source and keeps INSPECT as the eye-button source."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/firewatch_fold.py",
+          "lines": "149-260",
+          "claim": "Grading advances the replay only while iterating submitted actions and checks the final static route state."
+        },
+        {
+          "path": "weird_captcha_gym/environments/firewatch_fold_env/tasks/firewatch_fold_seed_0001/verifier.py",
+          "lines": "21-40",
+          "claim": "Verification loads the exported result and independently replays it through the Firewatch Fold grader."
+        },
+        {
+          "path": "weird_captcha_gym/tools/incubator_solvers/firewatch_fold.py",
+          "lines": "26-43",
+          "claim": "The solver issues discrete inspection, movement, and extinguish inputs; its 35 ms wait is test-harness pacing, not game evolution."
+        }
+      ],
+      "uncertainties": []
+    },
+    {
+      "case_index": 232,
+      "public_environment_name": "Firewatch Fold",
+      "environment_id": "firewatch_fold_env",
+      "difficulty": 1,
+      "interaction_mode": "simplified",
+      "label": "no",
+      "controls_available": [
+        "Level 1 world: 3 floors x 6 cells, 1 ladder per landing, 1 route fire, 0 decoy fires, 0 walls per floor, 0 seam crossings, and 1 extinguisher.",
+        "Simplified input: four direction buttons move, climb, and cross seams; EXTINGUISH AHEAD uses the current facing.",
+        "The visible eye button inspects the other face; CERTIFY RESCUE submits the ledger and is administrative.",
+        "Task settings are play_time_seconds=180, observation_window_ms=0, frames_per_observation=1, and synchronous=true."
+      ],
+      "autonomous_processes": [
+        "Initialization RNG selects the static tower, route, fire, ladder, wall, and palette data before play; it does not continue as task evolution.",
+        "There is no autonomous period before or between actions: waiting leaves player, facing, fires, stock, inspected face, and tower geometry unchanged.",
+        "MOVE, EXTINGUISH, and INSPECT update and render synchronously; only the administrative certification response can report or refresh a challenge after submission."
+      ],
+      "grouped_control_modes": [
+        "D=MOVE: all four simplified direction buttons, grouped as walking, climbing, or seam crossing.",
+        "D=EXTINGUISH: the simplified EXTINGUISH AHEAD button, clearing the current-facing fire and consuming one canister when applicable.",
+        "INSPECT is a view-only eye-button action and CERTIFY is administrative; neither is an outcome-affecting D."
+      ],
+      "delta_ms": null,
+      "window_ms": 0,
+      "clause_i": {
+        "holds": true,
+        "reason": "For D=MOVE, an observation-free q(I_t) is not generally sufficient across generated towers: even this level randomizes the start, ladder locations, resident position, and route fire. The next route action is map-dependent. This is static visual route planning, not temporal dependence."
+      },
+      "clause_ii": {
+        "holds": true,
+        "reason": "A screenshot-only policy can choose a local route action from the zero-task-time endpoint frame: it exposes the currently inspected static face, player/facing HUD, stock, and controls, while the eye can reveal the other face during preparation. No sequence of advancing frames is needed."
+      },
+      "clause_iii": {
+        "holds": false,
+        "reason": "No Delta>0 and 0<tau<Delta causes the required autonomous non-clock task-state change. The configured task window is zero and the browser mechanic has no timer, physics, fire motion, animation, or deadline; waiting cannot make any movement or extinguish action unavailable or less effective."
+      },
+      "common_visible_process": "None. The visible tower is fixed after generation. Visible changes are synchronous consequences of MOVE, EXTINGUISH, or INSPECT, so there is no common autonomous process whose visible evolution could support clauses (i)-(iii).",
+      "pre_run": {
+        "threshold": 0.5,
+        "at_least_half": null,
+        "rate": null,
+        "basis": "not_applicable",
+        "reason": "No autonomous outcome phase exists: the generator supplies a fixed tower and solution sequence, and every route-changing action is supplied by the agent. The mathematical definition already fails clause (iii), so no pre-run rate is needed for the No label.",
+        "seed_probe": null
+      },
+      "files_read_completely": [
+        "AGENTS.md",
+        "weird_captcha_gym/docs/controllability/real-time.md",
+        "weird_captcha_gym/environments/firewatch_fold_env/controls.json",
+        "weird_captcha_gym/environments/firewatch_fold_env/env.json",
+        "weird_captcha_gym/shared_scripts/incubator_generators/firewatch_fold.py",
+        "weird_captcha_gym/shared_runtime/app/mechanics/firewatch_fold.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/firewatch_fold.css",
+        "weird_captcha_gym/shared_runtime/server/incubator_graders/firewatch_fold.py",
+        "weird_captcha_gym/environments/firewatch_fold_env/tasks/firewatch_fold_seed_0001/verifier.py",
+        "weird_captcha_gym/tools/incubator_solvers/firewatch_fold.py"
+      ],
+      "source_evidence": [
+        {
+          "path": "weird_captcha_gym/environments/firewatch_fold_env/controls.json",
+          "lines": "10-27",
+          "claim": "Difficulty 1 has the stated static tower parameters."
+        },
+        {
+          "path": "weird_captcha_gym/environments/firewatch_fold_env/controls.json",
+          "lines": "106-119",
+          "claim": "Simplified mode uses direction and extinguish buttons, while the configured observation window is 0 ms with one frame."
+        },
+        {
+          "path": "weird_captcha_gym/environments/firewatch_fold_env/env.json",
+          "lines": "9-14",
+          "claim": "The environment exposes mouse and keyboard actions, uses observation_window_ms=0 and frames_per_observation=1, and is synchronous."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/firewatch_fold.py",
+          "lines": "151-187",
+          "claim": "Generation uses seeded RNG to construct start, route, seams, ladders, and resident before returning task state."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/firewatch_fold.js",
+          "lines": "173-220",
+          "claim": "MOVE, EXTINGUISH, and INSPECT mutate model state and immediately record/render events; no autonomous callback is defined."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/firewatch_fold.css",
+          "lines": "1-545",
+          "claim": "The complete co-located stylesheet contains static layout and appearance rules and no task animation or transition mechanic."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/firewatch_fold.py",
+          "lines": "126-136",
+          "claim": "Replay binds MOVE and EXTINGUISH to the selected interaction source and keeps INSPECT as the eye-button source."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/firewatch_fold.py",
+          "lines": "149-260",
+          "claim": "Grading advances the replay only while iterating submitted actions and checks the final static route state."
+        },
+        {
+          "path": "weird_captcha_gym/environments/firewatch_fold_env/tasks/firewatch_fold_seed_0001/verifier.py",
+          "lines": "21-40",
+          "claim": "Verification loads the exported result and independently replays it through the Firewatch Fold grader."
+        },
+        {
+          "path": "weird_captcha_gym/tools/incubator_solvers/firewatch_fold.py",
+          "lines": "26-43",
+          "claim": "The solver issues discrete inspection, movement, and extinguishing button inputs; its 35 ms wait is test-harness pacing, not game evolution."
+        }
+      ],
+      "uncertainties": []
+    },
+    {
+      "case_index": 233,
+      "public_environment_name": "Firewatch Fold",
+      "environment_id": "firewatch_fold_env",
+      "difficulty": 2,
+      "interaction_mode": "full",
+      "label": "no",
+      "controls_available": [
+        "Level 2 world: 4 floors x 7 cells, 1 ladder per landing, 2 route fires, 1 decoy fire, 1 wall per floor, 1 seam crossing, and 2 extinguishers.",
+        "Full input: Arrow keys or W/A/S/D move, climb, and cross seams; Shift extinguishes the fire immediately ahead in the current facing.",
+        "The visible eye button inspects the other face; CERTIFY RESCUE submits the ledger and is administrative.",
+        "Task settings are play_time_seconds=180, observation_window_ms=0, frames_per_observation=1, and synchronous=true."
+      ],
+      "autonomous_processes": [
+        "Initialization RNG selects the static tower, route, fire, ladder, wall, and palette data before play; it does not continue as task evolution.",
+        "There is no autonomous period before or between actions: waiting leaves player, facing, fires, stock, inspected face, and tower geometry unchanged.",
+        "MOVE, EXTINGUISH, and INSPECT update and render synchronously; only the administrative certification response can report or refresh a challenge after submission."
+      ],
+      "grouped_control_modes": [
+        "D=MOVE: all four full-mode keyboard directions, grouped as walking, climbing, or seam crossing.",
+        "D=EXTINGUISH: full-mode Shift, clearing the current-facing fire and consuming one canister when applicable.",
+        "INSPECT is a view-only eye-button action and CERTIFY is administrative; neither is an outcome-affecting D."
+      ],
+      "delta_ms": null,
+      "window_ms": 0,
+      "clause_i": {
+        "holds": true,
+        "reason": "For D=MOVE, an observation-free q(I_t) is not generally sufficient across generated towers: this level randomizes the start, ladder locations, resident position, route and decoy fires, walls, and one seam crossing. The next route action is map-dependent. This is static visual route planning, not temporal dependence."
+      },
+      "clause_ii": {
+        "holds": true,
+        "reason": "A screenshot-only policy can choose a local route action from the zero-task-time endpoint frame: it exposes the currently inspected static face, player/facing HUD, stock, and controls, while the eye can reveal the other face during preparation. No sequence of advancing frames is needed."
+      },
+      "clause_iii": {
+        "holds": false,
+        "reason": "No Delta>0 and 0<tau<Delta causes the required autonomous non-clock task-state change. The configured task window is zero and the browser mechanic has no timer, physics, fire motion, animation, or deadline; waiting cannot make any movement or extinguish action unavailable or less effective."
+      },
+      "common_visible_process": "None. The visible tower is fixed after generation. Visible changes are synchronous consequences of MOVE, EXTINGUISH, or INSPECT, so there is no common autonomous process whose visible evolution could support clauses (i)-(iii).",
+      "pre_run": {
+        "threshold": 0.5,
+        "at_least_half": null,
+        "rate": null,
+        "basis": "not_applicable",
+        "reason": "No autonomous outcome phase exists: the generator supplies a fixed tower and solution sequence, and every route-changing action is supplied by the agent. The mathematical definition already fails clause (iii), so no pre-run rate is needed for the No label.",
+        "seed_probe": null
+      },
+      "files_read_completely": [
+        "AGENTS.md",
+        "weird_captcha_gym/docs/controllability/real-time.md",
+        "weird_captcha_gym/environments/firewatch_fold_env/controls.json",
+        "weird_captcha_gym/environments/firewatch_fold_env/env.json",
+        "weird_captcha_gym/shared_scripts/incubator_generators/firewatch_fold.py",
+        "weird_captcha_gym/shared_runtime/app/mechanics/firewatch_fold.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/firewatch_fold.css",
+        "weird_captcha_gym/shared_runtime/server/incubator_graders/firewatch_fold.py",
+        "weird_captcha_gym/environments/firewatch_fold_env/tasks/firewatch_fold_seed_0001/verifier.py",
+        "weird_captcha_gym/tools/incubator_solvers/firewatch_fold.py"
+      ],
+      "source_evidence": [
+        {
+          "path": "weird_captcha_gym/environments/firewatch_fold_env/controls.json",
+          "lines": "29-46",
+          "claim": "Difficulty 2 has the stated static tower parameters."
+        },
+        {
+          "path": "weird_captcha_gym/environments/firewatch_fold_env/controls.json",
+          "lines": "106-119",
+          "claim": "Full mode uses keyboard movement and Shift, while the configured observation window is 0 ms with one frame."
+        },
+        {
+          "path": "weird_captcha_gym/environments/firewatch_fold_env/env.json",
+          "lines": "9-14",
+          "claim": "The environment exposes mouse and keyboard actions, uses observation_window_ms=0 and frames_per_observation=1, and is synchronous."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/firewatch_fold.py",
+          "lines": "151-187",
+          "claim": "Generation uses seeded RNG to construct start, route, seams, ladders, and resident before returning task state."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/firewatch_fold.js",
+          "lines": "173-220",
+          "claim": "MOVE, EXTINGUISH, and INSPECT mutate model state and immediately record/render events; no autonomous callback is defined."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/firewatch_fold.css",
+          "lines": "1-545",
+          "claim": "The complete co-located stylesheet contains static layout and appearance rules and no task animation or transition mechanic."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/firewatch_fold.py",
+          "lines": "126-136",
+          "claim": "Replay binds MOVE and EXTINGUISH to the selected interaction source and keeps INSPECT as the eye-button source."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/firewatch_fold.py",
+          "lines": "149-260",
+          "claim": "Grading advances the replay only while iterating submitted actions and checks the final static route state."
+        },
+        {
+          "path": "weird_captcha_gym/environments/firewatch_fold_env/tasks/firewatch_fold_seed_0001/verifier.py",
+          "lines": "21-40",
+          "claim": "Verification loads the exported result and independently replays it through the Firewatch Fold grader."
+        },
+        {
+          "path": "weird_captcha_gym/tools/incubator_solvers/firewatch_fold.py",
+          "lines": "26-43",
+          "claim": "The solver issues discrete inspection, movement, and extinguish inputs; its 35 ms wait is test-harness pacing, not game evolution."
+        }
+      ],
+      "uncertainties": []
+    },
+    {
+      "case_index": 234,
+      "public_environment_name": "Firewatch Fold",
+      "environment_id": "firewatch_fold_env",
+      "difficulty": 2,
+      "interaction_mode": "simplified",
+      "label": "no",
+      "controls_available": [
+        "Level 2 world: 4 floors x 7 cells, 1 ladder per landing, 2 route fires, 1 decoy fire, 1 wall per floor, 1 seam crossing, and 2 extinguishers.",
+        "Simplified input: four direction buttons move, climb, and cross seams; EXTINGUISH AHEAD uses the current facing.",
+        "The visible eye button inspects the other face; CERTIFY RESCUE submits the ledger and is administrative.",
+        "Task settings are play_time_seconds=180, observation_window_ms=0, frames_per_observation=1, and synchronous=true."
+      ],
+      "autonomous_processes": [
+        "Initialization RNG selects the static tower, route, fire, ladder, wall, and palette data before play; it does not continue as task evolution.",
+        "There is no autonomous period before or between actions: waiting leaves player, facing, fires, stock, inspected face, and tower geometry unchanged.",
+        "MOVE, EXTINGUISH, and INSPECT update and render synchronously; only the administrative certification response can report or refresh a challenge after submission."
+      ],
+      "grouped_control_modes": [
+        "D=MOVE: all four simplified direction buttons, grouped as walking, climbing, or seam crossing.",
+        "D=EXTINGUISH: the simplified EXTINGUISH AHEAD button, clearing the current-facing fire and consuming one canister when applicable.",
+        "INSPECT is a view-only eye-button action and CERTIFY is administrative; neither is an outcome-affecting D."
+      ],
+      "delta_ms": null,
+      "window_ms": 0,
+      "clause_i": {
+        "holds": true,
+        "reason": "For D=MOVE, an observation-free q(I_t) is not generally sufficient across generated towers: this level randomizes the start, ladder locations, resident position, route and decoy fires, walls, and one seam crossing. The next route action is map-dependent. This is static visual route planning, not temporal dependence."
+      },
+      "clause_ii": {
+        "holds": true,
+        "reason": "A screenshot-only policy can choose a local route action from the zero-task-time endpoint frame: it exposes the currently inspected static face, player/facing HUD, stock, and controls, while the eye can reveal the other face during preparation. No sequence of advancing frames is needed."
+      },
+      "clause_iii": {
+        "holds": false,
+        "reason": "No Delta>0 and 0<tau<Delta causes the required autonomous non-clock task-state change. The configured task window is zero and the browser mechanic has no timer, physics, fire motion, animation, or deadline; waiting cannot make any movement or extinguish action unavailable or less effective."
+      },
+      "common_visible_process": "None. The visible tower is fixed after generation. Visible changes are synchronous consequences of MOVE, EXTINGUISH, or INSPECT, so there is no common autonomous process whose visible evolution could support clauses (i)-(iii).",
+      "pre_run": {
+        "threshold": 0.5,
+        "at_least_half": null,
+        "rate": null,
+        "basis": "not_applicable",
+        "reason": "No autonomous outcome phase exists: the generator supplies a fixed tower and solution sequence, and every route-changing action is supplied by the agent. The mathematical definition already fails clause (iii), so no pre-run rate is needed for the No label.",
+        "seed_probe": null
+      },
+      "files_read_completely": [
+        "AGENTS.md",
+        "weird_captcha_gym/docs/controllability/real-time.md",
+        "weird_captcha_gym/environments/firewatch_fold_env/controls.json",
+        "weird_captcha_gym/environments/firewatch_fold_env/env.json",
+        "weird_captcha_gym/shared_scripts/incubator_generators/firewatch_fold.py",
+        "weird_captcha_gym/shared_runtime/app/mechanics/firewatch_fold.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/firewatch_fold.css",
+        "weird_captcha_gym/shared_runtime/server/incubator_graders/firewatch_fold.py",
+        "weird_captcha_gym/environments/firewatch_fold_env/tasks/firewatch_fold_seed_0001/verifier.py",
+        "weird_captcha_gym/tools/incubator_solvers/firewatch_fold.py"
+      ],
+      "source_evidence": [
+        {
+          "path": "weird_captcha_gym/environments/firewatch_fold_env/controls.json",
+          "lines": "29-46",
+          "claim": "Difficulty 2 has the stated static tower parameters."
+        },
+        {
+          "path": "weird_captcha_gym/environments/firewatch_fold_env/controls.json",
+          "lines": "106-119",
+          "claim": "Simplified mode uses direction and extinguish buttons, while the configured observation window is 0 ms with one frame."
+        },
+        {
+          "path": "weird_captcha_gym/environments/firewatch_fold_env/env.json",
+          "lines": "9-14",
+          "claim": "The environment exposes mouse and keyboard actions, uses observation_window_ms=0 and frames_per_observation=1, and is synchronous."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/firewatch_fold.py",
+          "lines": "151-187",
+          "claim": "Generation uses seeded RNG to construct start, route, seams, ladders, and resident before returning task state."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/firewatch_fold.js",
+          "lines": "173-220",
+          "claim": "MOVE, EXTINGUISH, and INSPECT mutate model state and immediately record/render events; no autonomous callback is defined."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/firewatch_fold.css",
+          "lines": "1-545",
+          "claim": "The complete co-located stylesheet contains static layout and appearance rules and no task animation or transition mechanic."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/firewatch_fold.py",
+          "lines": "126-136",
+          "claim": "Replay binds MOVE and EXTINGUISH to the selected interaction source and keeps INSPECT as the eye-button source."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/firewatch_fold.py",
+          "lines": "149-260",
+          "claim": "Grading advances the replay only while iterating submitted actions and checks the final static route state."
+        },
+        {
+          "path": "weird_captcha_gym/environments/firewatch_fold_env/tasks/firewatch_fold_seed_0001/verifier.py",
+          "lines": "21-40",
+          "claim": "Verification loads the exported result and independently replays it through the Firewatch Fold grader."
+        },
+        {
+          "path": "weird_captcha_gym/tools/incubator_solvers/firewatch_fold.py",
+          "lines": "26-43",
+          "claim": "The solver issues discrete inspection, movement, and extinguishing button inputs; its 35 ms wait is test-harness pacing, not game evolution."
+        }
+      ],
+      "uncertainties": []
+    },
+    {
+      "case_index": 235,
+      "public_environment_name": "Firewatch Fold",
+      "environment_id": "firewatch_fold_env",
+      "difficulty": 3,
+      "interaction_mode": "full",
+      "label": "no",
+      "controls_available": [
+        "Level 3 world: 5 floors x 8 cells, 2 ladders per landing, 3 route fires, 2 decoy fires, 1 wall per floor, 2 seam crossings, and 3 extinguishers.",
+        "Full input: Arrow keys or W/A/S/D move, climb, and cross seams; Shift extinguishes the fire immediately ahead in the current facing.",
+        "The visible eye button inspects the other face; CERTIFY RESCUE submits the ledger and is administrative.",
+        "Task settings are play_time_seconds=180, observation_window_ms=0, frames_per_observation=1, and synchronous=true."
+      ],
+      "autonomous_processes": [
+        "Initialization RNG selects the static tower, route, fire, ladder, wall, and palette data before play; it does not continue as task evolution.",
+        "There is no autonomous period before or between actions: waiting leaves player, facing, fires, stock, inspected face, and tower geometry unchanged.",
+        "MOVE, EXTINGUISH, and INSPECT update and render synchronously; only the administrative certification response can report or refresh a challenge after submission."
+      ],
+      "grouped_control_modes": [
+        "D=MOVE: all four full-mode keyboard directions, grouped as walking, climbing, or seam crossing.",
+        "D=EXTINGUISH: full-mode Shift, clearing the current-facing fire and consuming one canister when applicable.",
+        "INSPECT is a view-only eye-button action and CERTIFY is administrative; neither is an outcome-affecting D."
+      ],
+      "delta_ms": null,
+      "window_ms": 0,
+      "clause_i": {
+        "holds": true,
+        "reason": "For D=MOVE, an observation-free q(I_t) is not generally sufficient across generated towers: this level randomizes start, multiple ladder choices, resident position, route and decoy fires, walls, and two seam crossings. The next route action is map-dependent. This is static visual route planning, not temporal dependence."
+      },
+      "clause_ii": {
+        "holds": true,
+        "reason": "A screenshot-only policy can choose a local route action from the zero-task-time endpoint frame: it exposes the currently inspected static face, player/facing HUD, stock, and controls, while the eye can reveal the other face during preparation. No sequence of advancing frames is needed."
+      },
+      "clause_iii": {
+        "holds": false,
+        "reason": "No Delta>0 and 0<tau<Delta causes the required autonomous non-clock task-state change. The configured task window is zero and the browser mechanic has no timer, physics, fire motion, animation, or deadline; waiting cannot make any movement or extinguish action unavailable or less effective."
+      },
+      "common_visible_process": "None. The visible tower is fixed after generation. Visible changes are synchronous consequences of MOVE, EXTINGUISH, or INSPECT, so there is no common autonomous process whose visible evolution could support clauses (i)-(iii).",
+      "pre_run": {
+        "threshold": 0.5,
+        "at_least_half": null,
+        "rate": null,
+        "basis": "not_applicable",
+        "reason": "No autonomous outcome phase exists: the generator supplies a fixed tower and solution sequence, and every route-changing action is supplied by the agent. The mathematical definition already fails clause (iii), so no pre-run rate is needed for the No label.",
+        "seed_probe": null
+      },
+      "files_read_completely": [
+        "AGENTS.md",
+        "weird_captcha_gym/docs/controllability/real-time.md",
+        "weird_captcha_gym/environments/firewatch_fold_env/controls.json",
+        "weird_captcha_gym/environments/firewatch_fold_env/env.json",
+        "weird_captcha_gym/shared_scripts/incubator_generators/firewatch_fold.py",
+        "weird_captcha_gym/shared_runtime/app/mechanics/firewatch_fold.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/firewatch_fold.css",
+        "weird_captcha_gym/shared_runtime/server/incubator_graders/firewatch_fold.py",
+        "weird_captcha_gym/environments/firewatch_fold_env/tasks/firewatch_fold_seed_0001/verifier.py",
+        "weird_captcha_gym/tools/incubator_solvers/firewatch_fold.py"
+      ],
+      "source_evidence": [
+        {
+          "path": "weird_captcha_gym/environments/firewatch_fold_env/controls.json",
+          "lines": "48-65",
+          "claim": "Difficulty 3 has the stated static tower parameters."
+        },
+        {
+          "path": "weird_captcha_gym/environments/firewatch_fold_env/controls.json",
+          "lines": "106-119",
+          "claim": "Full mode uses keyboard movement and Shift, while the configured observation window is 0 ms with one frame."
+        },
+        {
+          "path": "weird_captcha_gym/environments/firewatch_fold_env/env.json",
+          "lines": "9-14",
+          "claim": "The environment exposes mouse and keyboard actions, uses observation_window_ms=0 and frames_per_observation=1, and is synchronous."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/firewatch_fold.py",
+          "lines": "151-187",
+          "claim": "Generation uses seeded RNG to construct start, route, seams, ladders, and resident before returning task state."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/firewatch_fold.js",
+          "lines": "173-220",
+          "claim": "MOVE, EXTINGUISH, and INSPECT mutate model state and immediately record/render events; no autonomous callback is defined."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/firewatch_fold.css",
+          "lines": "1-545",
+          "claim": "The complete co-located stylesheet contains static layout and appearance rules and no task animation or transition mechanic."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/firewatch_fold.py",
+          "lines": "126-136",
+          "claim": "Replay binds MOVE and EXTINGUISH to the selected interaction source and keeps INSPECT as the eye-button source."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/firewatch_fold.py",
+          "lines": "149-260",
+          "claim": "Grading advances the replay only while iterating submitted actions and checks the final static route state."
+        },
+        {
+          "path": "weird_captcha_gym/environments/firewatch_fold_env/tasks/firewatch_fold_seed_0001/verifier.py",
+          "lines": "21-40",
+          "claim": "Verification loads the exported result and independently replays it through the Firewatch Fold grader."
+        },
+        {
+          "path": "weird_captcha_gym/tools/incubator_solvers/firewatch_fold.py",
+          "lines": "26-43",
+          "claim": "The solver issues discrete inspection, movement, and extinguish inputs; its 35 ms wait is test-harness pacing, not game evolution."
+        }
+      ],
+      "uncertainties": []
+    },
+    {
+      "case_index": 236,
+      "public_environment_name": "Firewatch Fold",
+      "environment_id": "firewatch_fold_env",
+      "difficulty": 3,
+      "interaction_mode": "simplified",
+      "label": "no",
+      "controls_available": [
+        "Level 3 world: 5 floors x 8 cells, 2 ladders per landing, 3 route fires, 2 decoy fires, 1 wall per floor, 2 seam crossings, and 3 extinguishers.",
+        "Simplified input: four direction buttons move, climb, and cross seams; EXTINGUISH AHEAD uses the current facing.",
+        "The visible eye button inspects the other face; CERTIFY RESCUE submits the ledger and is administrative.",
+        "Task settings are play_time_seconds=180, observation_window_ms=0, frames_per_observation=1, and synchronous=true."
+      ],
+      "autonomous_processes": [
+        "Initialization RNG selects the static tower, route, fire, ladder, wall, and palette data before play; it does not continue as task evolution.",
+        "There is no autonomous period before or between actions: waiting leaves player, facing, fires, stock, inspected face, and tower geometry unchanged.",
+        "MOVE, EXTINGUISH, and INSPECT update and render synchronously; only the administrative certification response can report or refresh a challenge after submission."
+      ],
+      "grouped_control_modes": [
+        "D=MOVE: all four simplified direction buttons, grouped as walking, climbing, or seam crossing.",
+        "D=EXTINGUISH: the simplified EXTINGUISH AHEAD button, clearing the current-facing fire and consuming one canister when applicable.",
+        "INSPECT is a view-only eye-button action and CERTIFY is administrative; neither is an outcome-affecting D."
+      ],
+      "delta_ms": null,
+      "window_ms": 0,
+      "clause_i": {
+        "holds": true,
+        "reason": "For D=MOVE, an observation-free q(I_t) is not generally sufficient across generated towers: this level randomizes start, multiple ladder choices, resident position, route and decoy fires, walls, and two seam crossings. The next route action is map-dependent. This is static visual route planning, not temporal dependence."
+      },
+      "clause_ii": {
+        "holds": true,
+        "reason": "A screenshot-only policy can choose a local route action from the zero-task-time endpoint frame: it exposes the currently inspected static face, player/facing HUD, stock, and controls, while the eye can reveal the other face during preparation. No sequence of advancing frames is needed."
+      },
+      "clause_iii": {
+        "holds": false,
+        "reason": "No Delta>0 and 0<tau<Delta causes the required autonomous non-clock task-state change. The configured task window is zero and the browser mechanic has no timer, physics, fire motion, animation, or deadline; waiting cannot make any movement or extinguish action unavailable or less effective."
+      },
+      "common_visible_process": "None. The visible tower is fixed after generation. Visible changes are synchronous consequences of MOVE, EXTINGUISH, or INSPECT, so there is no common autonomous process whose visible evolution could support clauses (i)-(iii).",
+      "pre_run": {
+        "threshold": 0.5,
+        "at_least_half": null,
+        "rate": null,
+        "basis": "not_applicable",
+        "reason": "No autonomous outcome phase exists: the generator supplies a fixed tower and solution sequence, and every route-changing action is supplied by the agent. The mathematical definition already fails clause (iii), so no pre-run rate is needed for the No label.",
+        "seed_probe": null
+      },
+      "files_read_completely": [
+        "AGENTS.md",
+        "weird_captcha_gym/docs/controllability/real-time.md",
+        "weird_captcha_gym/environments/firewatch_fold_env/controls.json",
+        "weird_captcha_gym/environments/firewatch_fold_env/env.json",
+        "weird_captcha_gym/shared_scripts/incubator_generators/firewatch_fold.py",
+        "weird_captcha_gym/shared_runtime/app/mechanics/firewatch_fold.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/firewatch_fold.css",
+        "weird_captcha_gym/shared_runtime/server/incubator_graders/firewatch_fold.py",
+        "weird_captcha_gym/environments/firewatch_fold_env/tasks/firewatch_fold_seed_0001/verifier.py",
+        "weird_captcha_gym/tools/incubator_solvers/firewatch_fold.py"
+      ],
+      "source_evidence": [
+        {
+          "path": "weird_captcha_gym/environments/firewatch_fold_env/controls.json",
+          "lines": "48-65",
+          "claim": "Difficulty 3 has the stated static tower parameters."
+        },
+        {
+          "path": "weird_captcha_gym/environments/firewatch_fold_env/controls.json",
+          "lines": "106-119",
+          "claim": "Simplified mode uses direction and extinguish buttons, while the configured observation window is 0 ms with one frame."
+        },
+        {
+          "path": "weird_captcha_gym/environments/firewatch_fold_env/env.json",
+          "lines": "9-14",
+          "claim": "The environment exposes mouse and keyboard actions, uses observation_window_ms=0 and frames_per_observation=1, and is synchronous."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/firewatch_fold.py",
+          "lines": "151-187",
+          "claim": "Generation uses seeded RNG to construct start, route, seams, ladders, and resident before returning task state."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/firewatch_fold.js",
+          "lines": "173-220",
+          "claim": "MOVE, EXTINGUISH, and INSPECT mutate model state and immediately record/render events; no autonomous callback is defined."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/firewatch_fold.css",
+          "lines": "1-545",
+          "claim": "The complete co-located stylesheet contains static layout and appearance rules and no task animation or transition mechanic."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/firewatch_fold.py",
+          "lines": "126-136",
+          "claim": "Replay binds MOVE and EXTINGUISH to the selected interaction source and keeps INSPECT as the eye-button source."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/firewatch_fold.py",
+          "lines": "149-260",
+          "claim": "Grading advances the replay only while iterating submitted actions and checks the final static route state."
+        },
+        {
+          "path": "weird_captcha_gym/environments/firewatch_fold_env/tasks/firewatch_fold_seed_0001/verifier.py",
+          "lines": "21-40",
+          "claim": "Verification loads the exported result and independently replays it through the Firewatch Fold grader."
+        },
+        {
+          "path": "weird_captcha_gym/tools/incubator_solvers/firewatch_fold.py",
+          "lines": "26-43",
+          "claim": "The solver issues discrete inspection, movement, and extinguishing button inputs; its 35 ms wait is test-harness pacing, not game evolution."
+        }
+      ],
+      "uncertainties": []
+    },
+    {
+      "case_index": 237,
+      "public_environment_name": "Firewatch Fold",
+      "environment_id": "firewatch_fold_env",
+      "difficulty": 4,
+      "interaction_mode": "full",
+      "label": "no",
+      "controls_available": [
+        "Level 4 world: 6 floors x 9 cells, 2 ladders per landing, 4 route fires, 3 decoy fires, 2 walls per floor, 3 seam crossings, and 4 extinguishers.",
+        "Full input: Arrow keys or W/A/S/D move, climb, and cross seams; Shift extinguishes the fire immediately ahead in the current facing.",
+        "The visible eye button inspects the other face; CERTIFY RESCUE submits the ledger and is administrative.",
+        "Task settings are play_time_seconds=180, observation_window_ms=0, frames_per_observation=1, and synchronous=true."
+      ],
+      "autonomous_processes": [
+        "Initialization RNG selects the static tower, route, fire, ladder, wall, and palette data before play; it does not continue as task evolution.",
+        "There is no autonomous period before or between actions: waiting leaves player, facing, fires, stock, inspected face, and tower geometry unchanged.",
+        "MOVE, EXTINGUISH, and INSPECT update and render synchronously; only the administrative certification response can report or refresh a challenge after submission."
+      ],
+      "grouped_control_modes": [
+        "D=MOVE: all four full-mode keyboard directions, grouped as walking, climbing, or seam crossing.",
+        "D=EXTINGUISH: full-mode Shift, clearing the current-facing fire and consuming one canister when applicable.",
+        "INSPECT is a view-only eye-button action and CERTIFY is administrative; neither is an outcome-affecting D."
+      ],
+      "delta_ms": null,
+      "window_ms": 0,
+      "clause_i": {
+        "holds": true,
+        "reason": "For D=MOVE, an observation-free q(I_t) is not generally sufficient across generated towers: the baseline randomizes start, two ladder choices, resident position, route and decoy fires, walls, and three seam crossings. The next route action is map-dependent. This is static visual route planning, not temporal dependence."
+      },
+      "clause_ii": {
+        "holds": true,
+        "reason": "A screenshot-only policy can choose a local route action from the zero-task-time endpoint frame: it exposes the currently inspected static face, player/facing HUD, stock, and controls, while the eye can reveal the other face during preparation. No sequence of advancing frames is needed."
+      },
+      "clause_iii": {
+        "holds": false,
+        "reason": "No Delta>0 and 0<tau<Delta causes the required autonomous non-clock task-state change. The configured task window is zero and the browser mechanic has no timer, physics, fire motion, animation, or deadline; waiting cannot make any movement or extinguish action unavailable or less effective."
+      },
+      "common_visible_process": "None. The visible tower is fixed after generation. Visible changes are synchronous consequences of MOVE, EXTINGUISH, or INSPECT, so there is no common autonomous process whose visible evolution could support clauses (i)-(iii).",
+      "pre_run": {
+        "threshold": 0.5,
+        "at_least_half": null,
+        "rate": null,
+        "basis": "not_applicable",
+        "reason": "No autonomous outcome phase exists: the generator supplies a fixed tower and solution sequence, and every route-changing action is supplied by the agent. The mathematical definition already fails clause (iii), so no pre-run rate is needed for the No label.",
+        "seed_probe": null
+      },
+      "files_read_completely": [
+        "AGENTS.md",
+        "weird_captcha_gym/docs/controllability/real-time.md",
+        "weird_captcha_gym/environments/firewatch_fold_env/controls.json",
+        "weird_captcha_gym/environments/firewatch_fold_env/env.json",
+        "weird_captcha_gym/shared_scripts/incubator_generators/firewatch_fold.py",
+        "weird_captcha_gym/shared_runtime/app/mechanics/firewatch_fold.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/firewatch_fold.css",
+        "weird_captcha_gym/shared_runtime/server/incubator_graders/firewatch_fold.py",
+        "weird_captcha_gym/environments/firewatch_fold_env/tasks/firewatch_fold_seed_0001/verifier.py",
+        "weird_captcha_gym/tools/incubator_solvers/firewatch_fold.py"
+      ],
+      "source_evidence": [
+        {
+          "path": "weird_captcha_gym/environments/firewatch_fold_env/controls.json",
+          "lines": "67-84",
+          "claim": "Difficulty 4 has the stated baseline static tower parameters."
+        },
+        {
+          "path": "weird_captcha_gym/environments/firewatch_fold_env/controls.json",
+          "lines": "106-119",
+          "claim": "Full mode uses keyboard movement and Shift, while the configured observation window is 0 ms with one frame."
+        },
+        {
+          "path": "weird_captcha_gym/environments/firewatch_fold_env/env.json",
+          "lines": "9-14",
+          "claim": "The environment exposes mouse and keyboard actions, uses observation_window_ms=0 and frames_per_observation=1, and is synchronous."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/firewatch_fold.py",
+          "lines": "151-187",
+          "claim": "Generation uses seeded RNG to construct start, route, seams, ladders, and resident before returning task state."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/firewatch_fold.js",
+          "lines": "173-220",
+          "claim": "MOVE, EXTINGUISH, and INSPECT mutate model state and immediately record/render events; no autonomous callback is defined."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/firewatch_fold.css",
+          "lines": "1-545",
+          "claim": "The complete co-located stylesheet contains static layout and appearance rules and no task animation or transition mechanic."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/firewatch_fold.py",
+          "lines": "126-136",
+          "claim": "Replay binds MOVE and EXTINGUISH to the selected interaction source and keeps INSPECT as the eye-button source."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/firewatch_fold.py",
+          "lines": "149-260",
+          "claim": "Grading advances the replay only while iterating submitted actions and checks the final static route state."
+        },
+        {
+          "path": "weird_captcha_gym/environments/firewatch_fold_env/tasks/firewatch_fold_seed_0001/verifier.py",
+          "lines": "21-40",
+          "claim": "Verification loads the exported result and independently replays it through the Firewatch Fold grader."
+        },
+        {
+          "path": "weird_captcha_gym/tools/incubator_solvers/firewatch_fold.py",
+          "lines": "26-43",
+          "claim": "The solver issues discrete inspection, movement, and extinguish inputs; its 35 ms wait is test-harness pacing, not game evolution."
+        }
+      ],
+      "uncertainties": []
+    },
+    {
+      "case_index": 238,
+      "public_environment_name": "Firewatch Fold",
+      "environment_id": "firewatch_fold_env",
+      "difficulty": 4,
+      "interaction_mode": "simplified",
+      "label": "no",
+      "controls_available": [
+        "Level 4 world: 6 floors x 9 cells, 2 ladders per landing, 4 route fires, 3 decoy fires, 2 walls per floor, 3 seam crossings, and 4 extinguishers.",
+        "Simplified input: four direction buttons move, climb, and cross seams; EXTINGUISH AHEAD uses the current facing.",
+        "The visible eye button inspects the other face; CERTIFY RESCUE submits the ledger and is administrative.",
+        "Task settings are play_time_seconds=180, observation_window_ms=0, frames_per_observation=1, and synchronous=true."
+      ],
+      "autonomous_processes": [
+        "Initialization RNG selects the static tower, route, fire, ladder, wall, and palette data before play; it does not continue as task evolution.",
+        "There is no autonomous period before or between actions: waiting leaves player, facing, fires, stock, inspected face, and tower geometry unchanged.",
+        "MOVE, EXTINGUISH, and INSPECT update and render synchronously; only the administrative certification response can report or refresh a challenge after submission."
+      ],
+      "grouped_control_modes": [
+        "D=MOVE: all four simplified direction buttons, grouped as walking, climbing, or seam crossing.",
+        "D=EXTINGUISH: the simplified EXTINGUISH AHEAD button, clearing the current-facing fire and consuming one canister when applicable.",
+        "INSPECT is a view-only eye-button action and CERTIFY is administrative; neither is an outcome-affecting D."
+      ],
+      "delta_ms": null,
+      "window_ms": 0,
+      "clause_i": {
+        "holds": true,
+        "reason": "For D=MOVE, an observation-free q(I_t) is not generally sufficient across generated towers: the baseline randomizes start, two ladder choices, resident position, route and decoy fires, walls, and three seam crossings. The next route action is map-dependent. This is static visual route planning, not temporal dependence."
+      },
+      "clause_ii": {
+        "holds": true,
+        "reason": "A screenshot-only policy can choose a local route action from the zero-task-time endpoint frame: it exposes the currently inspected static face, player/facing HUD, stock, and controls, while the eye can reveal the other face during preparation. No sequence of advancing frames is needed."
+      },
+      "clause_iii": {
+        "holds": false,
+        "reason": "No Delta>0 and 0<tau<Delta causes the required autonomous non-clock task-state change. The configured task window is zero and the browser mechanic has no timer, physics, fire motion, animation, or deadline; waiting cannot make any movement or extinguish action unavailable or less effective."
+      },
+      "common_visible_process": "None. The visible tower is fixed after generation. Visible changes are synchronous consequences of MOVE, EXTINGUISH, or INSPECT, so there is no common autonomous process whose visible evolution could support clauses (i)-(iii).",
+      "pre_run": {
+        "threshold": 0.5,
+        "at_least_half": null,
+        "rate": null,
+        "basis": "not_applicable",
+        "reason": "No autonomous outcome phase exists: the generator supplies a fixed tower and solution sequence, and every route-changing action is supplied by the agent. The mathematical definition already fails clause (iii), so no pre-run rate is needed for the No label.",
+        "seed_probe": null
+      },
+      "files_read_completely": [
+        "AGENTS.md",
+        "weird_captcha_gym/docs/controllability/real-time.md",
+        "weird_captcha_gym/environments/firewatch_fold_env/controls.json",
+        "weird_captcha_gym/environments/firewatch_fold_env/env.json",
+        "weird_captcha_gym/shared_scripts/incubator_generators/firewatch_fold.py",
+        "weird_captcha_gym/shared_runtime/app/mechanics/firewatch_fold.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/firewatch_fold.css",
+        "weird_captcha_gym/shared_runtime/server/incubator_graders/firewatch_fold.py",
+        "weird_captcha_gym/environments/firewatch_fold_env/tasks/firewatch_fold_seed_0001/verifier.py",
+        "weird_captcha_gym/tools/incubator_solvers/firewatch_fold.py"
+      ],
+      "source_evidence": [
+        {
+          "path": "weird_captcha_gym/environments/firewatch_fold_env/controls.json",
+          "lines": "67-84",
+          "claim": "Difficulty 4 has the stated baseline static tower parameters."
+        },
+        {
+          "path": "weird_captcha_gym/environments/firewatch_fold_env/controls.json",
+          "lines": "106-119",
+          "claim": "Simplified mode uses direction and extinguish buttons, while the configured observation window is 0 ms with one frame."
+        },
+        {
+          "path": "weird_captcha_gym/environments/firewatch_fold_env/env.json",
+          "lines": "9-14",
+          "claim": "The environment exposes mouse and keyboard actions, uses observation_window_ms=0 and frames_per_observation=1, and is synchronous."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/firewatch_fold.py",
+          "lines": "151-187",
+          "claim": "Generation uses seeded RNG to construct start, route, seams, ladders, and resident before returning task state."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/firewatch_fold.js",
+          "lines": "173-220",
+          "claim": "MOVE, EXTINGUISH, and INSPECT mutate model state and immediately record/render events; no autonomous callback is defined."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/firewatch_fold.css",
+          "lines": "1-545",
+          "claim": "The complete co-located stylesheet contains static layout and appearance rules and no task animation or transition mechanic."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/firewatch_fold.py",
+          "lines": "126-136",
+          "claim": "Replay binds MOVE and EXTINGUISH to the selected interaction source and keeps INSPECT as the eye-button source."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/firewatch_fold.py",
+          "lines": "149-260",
+          "claim": "Grading advances the replay only while iterating submitted actions and checks the final static route state."
+        },
+        {
+          "path": "weird_captcha_gym/environments/firewatch_fold_env/tasks/firewatch_fold_seed_0001/verifier.py",
+          "lines": "21-40",
+          "claim": "Verification loads the exported result and independently replays it through the Firewatch Fold grader."
+        },
+        {
+          "path": "weird_captcha_gym/tools/incubator_solvers/firewatch_fold.py",
+          "lines": "26-43",
+          "claim": "The solver issues discrete inspection, movement, and extinguishing button inputs; its 35 ms wait is test-harness pacing, not game evolution."
+        }
+      ],
+      "uncertainties": []
+    },
+    {
+      "case_index": 239,
+      "public_environment_name": "Firewatch Fold",
+      "environment_id": "firewatch_fold_env",
+      "difficulty": 5,
+      "interaction_mode": "full",
+      "label": "no",
+      "controls_available": [
+        "Level 5 world: 7 floors x 10 cells, 3 ladders per landing, 5 route fires, 5 decoy fires, 3 walls per floor, 4 seam crossings, and 5 extinguishers.",
+        "Full input: Arrow keys or W/A/S/D move, climb, and cross seams; Shift extinguishes the fire immediately ahead in the current facing.",
+        "The visible eye button inspects the other face; CERTIFY RESCUE submits the ledger and is administrative.",
+        "Task settings are play_time_seconds=180, observation_window_ms=0, frames_per_observation=1, and synchronous=true."
+      ],
+      "autonomous_processes": [
+        "Initialization RNG selects the static tower, route, fire, ladder, wall, and palette data before play; it does not continue as task evolution.",
+        "There is no autonomous period before or between actions: waiting leaves player, facing, fires, stock, inspected face, and tower geometry unchanged.",
+        "MOVE, EXTINGUISH, and INSPECT update and render synchronously; only the administrative certification response can report or refresh a challenge after submission."
+      ],
+      "grouped_control_modes": [
+        "D=MOVE: all four full-mode keyboard directions, grouped as walking, climbing, or seam crossing.",
+        "D=EXTINGUISH: full-mode Shift, clearing the current-facing fire and consuming one canister when applicable.",
+        "INSPECT is a view-only eye-button action and CERTIFY is administrative; neither is an outcome-affecting D."
+      ],
+      "delta_ms": null,
+      "window_ms": 0,
+      "clause_i": {
+        "holds": true,
+        "reason": "For D=MOVE, an observation-free q(I_t) is not generally sufficient across generated towers: this level randomizes start, three ladder choices, resident position, route and decoy fires, walls, and four seam crossings. The next route action is map-dependent. This is static visual route planning, not temporal dependence."
+      },
+      "clause_ii": {
+        "holds": true,
+        "reason": "A screenshot-only policy can choose a local route action from the zero-task-time endpoint frame: it exposes the currently inspected static face, player/facing HUD, stock, and controls, while the eye can reveal the other face during preparation. No sequence of advancing frames is needed."
+      },
+      "clause_iii": {
+        "holds": false,
+        "reason": "No Delta>0 and 0<tau<Delta causes the required autonomous non-clock task-state change. The configured task window is zero and the browser mechanic has no timer, physics, fire motion, animation, or deadline; waiting cannot make any movement or extinguish action unavailable or less effective."
+      },
+      "common_visible_process": "None. The visible tower is fixed after generation. Visible changes are synchronous consequences of MOVE, EXTINGUISH, or INSPECT, so there is no common autonomous process whose visible evolution could support clauses (i)-(iii).",
+      "pre_run": {
+        "threshold": 0.5,
+        "at_least_half": null,
+        "rate": null,
+        "basis": "not_applicable",
+        "reason": "No autonomous outcome phase exists: the generator supplies a fixed tower and solution sequence, and every route-changing action is supplied by the agent. The mathematical definition already fails clause (iii), so no pre-run rate is needed for the No label.",
+        "seed_probe": null
+      },
+      "files_read_completely": [
+        "AGENTS.md",
+        "weird_captcha_gym/docs/controllability/real-time.md",
+        "weird_captcha_gym/environments/firewatch_fold_env/controls.json",
+        "weird_captcha_gym/environments/firewatch_fold_env/env.json",
+        "weird_captcha_gym/shared_scripts/incubator_generators/firewatch_fold.py",
+        "weird_captcha_gym/shared_runtime/app/mechanics/firewatch_fold.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/firewatch_fold.css",
+        "weird_captcha_gym/shared_runtime/server/incubator_graders/firewatch_fold.py",
+        "weird_captcha_gym/environments/firewatch_fold_env/tasks/firewatch_fold_seed_0001/verifier.py",
+        "weird_captcha_gym/tools/incubator_solvers/firewatch_fold.py"
+      ],
+      "source_evidence": [
+        {
+          "path": "weird_captcha_gym/environments/firewatch_fold_env/controls.json",
+          "lines": "86-103",
+          "claim": "Difficulty 5 has the stated static tower parameters."
+        },
+        {
+          "path": "weird_captcha_gym/environments/firewatch_fold_env/controls.json",
+          "lines": "106-119",
+          "claim": "Full mode uses keyboard movement and Shift, while the configured observation window is 0 ms with one frame."
+        },
+        {
+          "path": "weird_captcha_gym/environments/firewatch_fold_env/env.json",
+          "lines": "9-14",
+          "claim": "The environment exposes mouse and keyboard actions, uses observation_window_ms=0 and frames_per_observation=1, and is synchronous."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/firewatch_fold.py",
+          "lines": "151-187",
+          "claim": "Generation uses seeded RNG to construct start, route, seams, ladders, and resident before returning task state."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/firewatch_fold.js",
+          "lines": "173-220",
+          "claim": "MOVE, EXTINGUISH, and INSPECT mutate model state and immediately record/render events; no autonomous callback is defined."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/firewatch_fold.css",
+          "lines": "1-545",
+          "claim": "The complete co-located stylesheet contains static layout and appearance rules and no task animation or transition mechanic."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/firewatch_fold.py",
+          "lines": "126-136",
+          "claim": "Replay binds MOVE and EXTINGUISH to the selected interaction source and keeps INSPECT as the eye-button source."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/firewatch_fold.py",
+          "lines": "149-260",
+          "claim": "Grading advances the replay only while iterating submitted actions and checks the final static route state."
+        },
+        {
+          "path": "weird_captcha_gym/environments/firewatch_fold_env/tasks/firewatch_fold_seed_0001/verifier.py",
+          "lines": "21-40",
+          "claim": "Verification loads the exported result and independently replays it through the Firewatch Fold grader."
+        },
+        {
+          "path": "weird_captcha_gym/tools/incubator_solvers/firewatch_fold.py",
+          "lines": "26-43",
+          "claim": "The solver issues discrete inspection, movement, and extinguish inputs; its 35 ms wait is test-harness pacing, not game evolution."
+        }
+      ],
+      "uncertainties": []
+    },
+    {
+      "case_index": 240,
+      "public_environment_name": "Firewatch Fold",
+      "environment_id": "firewatch_fold_env",
+      "difficulty": 5,
+      "interaction_mode": "simplified",
+      "label": "no",
+      "controls_available": [
+        "Level 5 world: 7 floors x 10 cells, 3 ladders per landing, 5 route fires, 5 decoy fires, 3 walls per floor, 4 seam crossings, and 5 extinguishers.",
+        "Simplified input: four direction buttons move, climb, and cross seams; EXTINGUISH AHEAD uses the current facing.",
+        "The visible eye button inspects the other face; CERTIFY RESCUE submits the ledger and is administrative.",
+        "Task settings are play_time_seconds=180, observation_window_ms=0, frames_per_observation=1, and synchronous=true."
+      ],
+      "autonomous_processes": [
+        "Initialization RNG selects the static tower, route, fire, ladder, wall, and palette data before play; it does not continue as task evolution.",
+        "There is no autonomous period before or between actions: waiting leaves player, facing, fires, stock, inspected face, and tower geometry unchanged.",
+        "MOVE, EXTINGUISH, and INSPECT update and render synchronously; only the administrative certification response can report or refresh a challenge after submission."
+      ],
+      "grouped_control_modes": [
+        "D=MOVE: all four simplified direction buttons, grouped as walking, climbing, or seam crossing.",
+        "D=EXTINGUISH: the simplified EXTINGUISH AHEAD button, clearing the current-facing fire and consuming one canister when applicable.",
+        "INSPECT is a view-only eye-button action and CERTIFY is administrative; neither is an outcome-affecting D."
+      ],
+      "delta_ms": null,
+      "window_ms": 0,
+      "clause_i": {
+        "holds": true,
+        "reason": "For D=MOVE, an observation-free q(I_t) is not generally sufficient across generated towers: this level randomizes start, three ladder choices, resident position, route and decoy fires, walls, and four seam crossings. The next route action is map-dependent. This is static visual route planning, not temporal dependence."
+      },
+      "clause_ii": {
+        "holds": true,
+        "reason": "A screenshot-only policy can choose a local route action from the zero-task-time endpoint frame: it exposes the currently inspected static face, player/facing HUD, stock, and controls, while the eye can reveal the other face during preparation. No sequence of advancing frames is needed."
+      },
+      "clause_iii": {
+        "holds": false,
+        "reason": "No Delta>0 and 0<tau<Delta causes the required autonomous non-clock task-state change. The configured task window is zero and the browser mechanic has no timer, physics, fire motion, animation, or deadline; waiting cannot make any movement or extinguish action unavailable or less effective."
+      },
+      "common_visible_process": "None. The visible tower is fixed after generation. Visible changes are synchronous consequences of MOVE, EXTINGUISH, or INSPECT, so there is no common autonomous process whose visible evolution could support clauses (i)-(iii).",
+      "pre_run": {
+        "threshold": 0.5,
+        "at_least_half": null,
+        "rate": null,
+        "basis": "not_applicable",
+        "reason": "No autonomous outcome phase exists: the generator supplies a fixed tower and solution sequence, and every route-changing action is supplied by the agent. The mathematical definition already fails clause (iii), so no pre-run rate is needed for the No label.",
+        "seed_probe": null
+      },
+      "files_read_completely": [
+        "AGENTS.md",
+        "weird_captcha_gym/docs/controllability/real-time.md",
+        "weird_captcha_gym/environments/firewatch_fold_env/controls.json",
+        "weird_captcha_gym/environments/firewatch_fold_env/env.json",
+        "weird_captcha_gym/shared_scripts/incubator_generators/firewatch_fold.py",
+        "weird_captcha_gym/shared_runtime/app/mechanics/firewatch_fold.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/firewatch_fold.css",
+        "weird_captcha_gym/shared_runtime/server/incubator_graders/firewatch_fold.py",
+        "weird_captcha_gym/environments/firewatch_fold_env/tasks/firewatch_fold_seed_0001/verifier.py",
+        "weird_captcha_gym/tools/incubator_solvers/firewatch_fold.py"
+      ],
+      "source_evidence": [
+        {
+          "path": "weird_captcha_gym/environments/firewatch_fold_env/controls.json",
+          "lines": "86-103",
+          "claim": "Difficulty 5 has the stated static tower parameters."
+        },
+        {
+          "path": "weird_captcha_gym/environments/firewatch_fold_env/controls.json",
+          "lines": "106-119",
+          "claim": "Simplified mode uses direction and extinguish buttons, while the configured observation window is 0 ms with one frame."
+        },
+        {
+          "path": "weird_captcha_gym/environments/firewatch_fold_env/env.json",
+          "lines": "9-14",
+          "claim": "The environment exposes mouse and keyboard actions, uses observation_window_ms=0 and frames_per_observation=1, and is synchronous."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/firewatch_fold.py",
+          "lines": "151-187",
+          "claim": "Generation uses seeded RNG to construct start, route, seams, ladders, and resident before returning task state."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/firewatch_fold.js",
+          "lines": "173-220",
+          "claim": "MOVE, EXTINGUISH, and INSPECT mutate model state and immediately record/render events; no autonomous callback is defined."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/firewatch_fold.css",
+          "lines": "1-545",
+          "claim": "The complete co-located stylesheet contains static layout and appearance rules and no task animation or transition mechanic."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/firewatch_fold.py",
+          "lines": "126-136",
+          "claim": "Replay binds MOVE and EXTINGUISH to the selected interaction source and keeps INSPECT as the eye-button source."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/firewatch_fold.py",
+          "lines": "149-260",
+          "claim": "Grading advances the replay only while iterating submitted actions and checks the final static route state."
+        },
+        {
+          "path": "weird_captcha_gym/environments/firewatch_fold_env/tasks/firewatch_fold_seed_0001/verifier.py",
+          "lines": "21-40",
+          "claim": "Verification loads the exported result and independently replays it through the Firewatch Fold grader."
+        },
+        {
+          "path": "weird_captcha_gym/tools/incubator_solvers/firewatch_fold.py",
+          "lines": "26-43",
+          "claim": "The solver issues discrete inspection, movement, and extinguishing button inputs; its 35 ms wait is test-harness pacing, not game evolution."
+        }
+      ],
+      "uncertainties": []
+    }
+  ]
+}

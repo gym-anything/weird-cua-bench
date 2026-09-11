@@ -1,0 +1,143 @@
+{
+  "case_index": 11,
+  "public_environment_name": "Anthill Front",
+  "environment_id": "anthill_front_env",
+  "difficulty": 1,
+  "interaction_mode": "full",
+  "label": "yes",
+  "controls_available": [
+    "Full map selection: click individual visible ants or marquee-select visible workers and soldiers; Shift extends a selection.",
+    "G arms GATHER, then a visible click on the SEEDS marker assigns the selected workers.",
+    "R raises one soldier at the ready BROOD when no ants are selected and at least two seeds are available.",
+    "M arms MARCH, then a visible click on the NORTH or SOUTH tunnel commits selected soldiers during the wave-1 intercept band; after the wave is cleared, a click on the rival queen starts the assault.",
+    "The minimap and pan buttons or arrow keys pan the map; CERTIFY FRONT is administrative and does not affect the outcome. Scout and excavation controls are inactive in this configuration because hidden_opening is false, dig_workers is 0, and the brood starts ready."
+  ],
+  "autonomous_processes": [
+    "While task time runs, fixed 100-ms ticks advance without new input. Gathering workers move to and from the seed pile and add one seed every 18 ticks; queued RAISE orders create soldiers after 14 ticks. GATHER and, when affordable, RAISE remain outcome-affecting controls during this preparation period.",
+    "The single rival outpost builds autonomously from tick 111 through tick 168. Resource and production orders remain available, but a NORTH/SOUTH MARCH commitment is not accepted before the response band opens.",
+    "The one three-ant raid spawns at tick 180, advances horizontally toward the queen, approaches the centerline until tick 223, then visibly oscillates vertically while moving toward impact at tick 280. NORTH/SOUTH MARCH is outcome-affecting and accepted only from tick 223 through tick 268; at impact the defense resolves automatically.",
+    "Once the raid is cleared, MARCH to the rival queen remains available and ordered soldiers travel for 45 ticks before attacking. If the run is not terminal earlier, tick 640 ends it unsuccessfully; certification is administrative."
+  ],
+  "grouped_control_modes": [
+    "Worker GATHER orders to the seed pile.",
+    "RAISE production orders at the ready brood, consuming two seeds per soldier.",
+    "Wave-1 defensive MARCH commitment to either NORTH or SOUTH during the response band; this is the common grouped mode D.",
+    "Post-wave MARCH assault by surviving soldiers to the rival queen after the raid is resolved."
+  ],
+  "delta_ms": 1000,
+  "window_ms": 800,
+  "clause_i": {
+    "holds": true,
+    "reason": "No policy q using only prior actions and task times can choose the delayed wave-1 tunnel for every history. The generator independently varies the first seeded lane and the raid's motion phase offset, so histories with the same I_t can require NORTH or SOUTH at t+1000 ms; a single observation-free action cannot be optimal for both."
+  },
+  "clause_ii": {
+    "holds": true,
+    "reason": "With w=800 ms and the configured six chronological frames, the visible red formation's recent horizontal and vertical trajectory identifies its phase and direction. A bounded-window policy can predict the NORTH/SOUTH lane indicated at t+1000 ms and issue that delayed-optimal MARCH action using only I_t and W_t^w."
+  },
+  "clause_iii": {
+    "holds": true,
+    "reason": "For a permitted example with a south-seeded raid and motion_phase_offset_ticks=0, take t=230 ticks (23,000 ms): phase is 70 degrees, so MARCH SOUTH is correct. At tau=300 ms, tick 233 has phase 100 degrees, so the same action is incorrect while MARCH NORTH can still save the raid; t+delta is tick 240, still before the tick-268 deadline. Because the count is 3 and the home queen has 3 HP, the wrong commitment drops Q to failure at impact, whereas the correct commitment stops the raid. The strict loss is caused by the visible non-clock vertical motion changing the lane, not merely by elapsed deadline."
+  },
+  "common_visible_process": "The same sole raid formation visibly advances from its outpost toward the queen and, after the response band opens, follows a phase-dependent vertical sinusoidal feint between the north and south branches. Recent frames reveal the vertical motion needed to predict the lane at the delayed action time, while the changing phase can make a previously correct tunnel commitment wrong before impact; the response band then closes at tick 268.",
+  "pre_run": {
+    "threshold": 0.5,
+    "at_least_half": false,
+    "rate": null,
+    "basis": "source_structural",
+    "reason": "Every level-1 generated world has one raid of count 3, a home queen with 3 HP, and the same requirement that the raid be successfully intercepted. The replay step subtracts all three HP when no defense commitment exists, and the MARCH NORTH/SOUTH commitment is accepted only inside the tick-223-to-268 response band. Therefore no solution can start the autonomous raid outcome phase and send no further outcome-affecting action until that phase ends; preparation with GATHER and RAISE cannot pre-commit a defense.",
+    "seed_probe": null
+  },
+  "files_read_completely": [
+    "AGENTS.md",
+    "weird_captcha_gym/docs/controllability/real-time.md",
+    "weird_captcha_gym/environments/anthill_front_env/controls.json",
+    "weird_captcha_gym/environments/anthill_front_env/env.json",
+    "weird_captcha_gym/environments/anthill_front_env/tasks/anthill_front_seed_0001/task.json",
+    "weird_captcha_gym/environments/anthill_front_env/tasks/anthill_front_seed_0001/setup_task.sh",
+    "weird_captcha_gym/environments/anthill_front_env/tasks/anthill_front_seed_0001/export_result.sh",
+    "weird_captcha_gym/environments/anthill_front_env/scripts/setup_puzzle_runtime.sh",
+    "weird_captcha_gym/environments/anthill_front_env/scripts/install_puzzle_runtime.sh",
+    "weird_captcha_gym/shared_scripts/incubator_generators/anthill_front.py",
+    "weird_captcha_gym/shared_runtime/app/index.html",
+    "weird_captcha_gym/shared_runtime/app/mechanics/anthill_front.js",
+    "weird_captcha_gym/shared_runtime/app/mechanics/anthill_front.css",
+    "weird_captcha_gym/shared_runtime/app/time_controller.js",
+    "weird_captcha_gym/shared_runtime/server/incubator_graders/anthill_front.py",
+    "weird_captcha_gym/environments/anthill_front_env/tasks/anthill_front_seed_0001/verifier.py",
+    "weird_captcha_gym/shared_runtime/verifier_helpers.py",
+    "weird_captcha_gym/tools/incubator_solvers/anthill_front.py"
+  ],
+  "source_evidence": [
+    {
+      "path": "weird_captcha_gym/environments/anthill_front_env/controls.json",
+      "lines": "4-6, 14-16",
+      "claim": "Difficulty 1 is the compact four-worker, ready-brood, one-raid profile with world 18x10, five initial seeds, raid count 3, spawn 180, impact 280, enemy queen HP 4, and max tick 640; full interaction uses map selection plus G/S/D/M/R surfaces, and the observation window is 800 ms with six frames."
+    },
+    {
+      "path": "weird_captcha_gym/shared_scripts/incubator_generators/anthill_front.py",
+      "lines": "12-14, 31-51",
+      "claim": "The generator uses seeded randomness for first_lane and obtains the exact difficulty parameters from the control condition."
+    },
+    {
+      "path": "weird_captcha_gym/shared_scripts/incubator_generators/anthill_front.py",
+      "lines": "97-120",
+      "claim": "Each raid derives an expansion interval, response_open_tick, response_deadline_tick, impact_tick, and a random motion_phase_offset_ticks; for level 1 the 100-tick travel interval yields response ticks 223-268."
+    },
+    {
+      "path": "weird_captcha_gym/shared_scripts/incubator_generators/anthill_front.py",
+      "lines": "134-180",
+      "claim": "The generated world sets tick_ms=100, 18-tick gathering, 14-tick production, a ready brood, one raid, and visible rules describing moving rival formations and recent-motion interception."
+    },
+    {
+      "path": "weird_captcha_gym/shared_runtime/app/mechanics/anthill_front.js",
+      "lines": "16-20, 55-138",
+      "claim": "The browser simulation computes the lane from the raid phase; autonomous ticks create soldiers, resolve the raid at impact, stop a correctly defended count, and subtract the unblocked breach from queen HP."
+    },
+    {
+      "path": "weird_captcha_gym/shared_runtime/app/mechanics/anthill_front.js",
+      "lines": "141-209",
+      "claim": "Full-mode orders are applied at the current tick, and a NORTH/SOUTH MARCH is accepted only when an uncommitted raid is inside its response band; the commitment records whether the chosen lane matches interceptLane."
+    },
+    {
+      "path": "weird_captcha_gym/shared_runtime/app/mechanics/anthill_front.js",
+      "lines": "263-279, 344-374",
+      "claim": "The raid visibly moves toward the queen and, after response opens, its rendered y position follows a sinusoid; the canvas draws the formation, moving vector, and active intercept marker."
+    },
+    {
+      "path": "weird_captcha_gym/shared_runtime/app/mechanics/anthill_front.js",
+      "lines": "460-501, 515-550, 553-557",
+      "claim": "The full visible UI uses map hit-testing, keyboard-arm plus destination-click commands, and a render loop that advances the simulation from performance time; the exact level-1 render omits inactive scout and dig controls."
+    },
+    {
+      "path": "weird_captcha_gym/shared_runtime/app/mechanics/anthill_front.css",
+      "lines": "67-88, 94-120",
+      "claim": "The visible battlefield canvas, minimap, live intelligence panel, roster, keyboard command surface, and destination controls are rendered as the task UI; the pulse animation is separate presentation."
+    },
+    {
+      "path": "weird_captcha_gym/shared_runtime/app/time_controller.js",
+      "lines": "23-26, 55-62, 333-339",
+      "claim": "The shared controller distinguishes live/running task time, virtual performance time, and animation-frame flushing, so the browser simulation advances autonomously while task time runs."
+    },
+    {
+      "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/anthill_front.py",
+      "lines": "47-51, 105-155",
+      "claim": "The independent replay derives the lane from the raid's phase and resolves a count-3 uncommitted or wrong defense against the 3-HP queen, while a full correct intercept is required for victory."
+    },
+    {
+      "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/anthill_front.py",
+      "lines": "221-261, 291-350",
+      "claim": "The grader enforces the active MARCH windows, the full interaction input source, deterministic event replay, positive own-queen HP, zero rival HP, and successful interception of every raid."
+    },
+    {
+      "path": "weird_captcha_gym/environments/anthill_front_env/tasks/anthill_front_seed_0001/verifier.py",
+      "lines": "21-33",
+      "claim": "The task verifier loads the Anthill Front replay grader and grades the exported UI result rather than accepting a claimed visual outcome."
+    },
+    {
+      "path": "weird_captcha_gym/tools/incubator_solvers/anthill_front.py",
+      "lines": "165-218, 328-343",
+      "claim": "The implementation solver samples formation pixels from consecutive rendered screenshots, requires a consistent visible y-direction, converts it to NORTH/SOUTH, and commits through the full map control; this is evidence for the normal screenshot-only interaction, not private state available to a policy."
+    }
+  ],
+  "uncertainties": []
+}

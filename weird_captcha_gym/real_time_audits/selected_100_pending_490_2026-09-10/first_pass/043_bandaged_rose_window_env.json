@@ -1,0 +1,112 @@
+{
+  "case_index": 43,
+  "public_environment_name": "Bandaged Rose Window",
+  "environment_id": "bandaged_rose_window_env",
+  "difficulty": 2,
+  "interaction_mode": "full",
+  "label": "no",
+  "controls_available": [
+    "Difficulty 2 uses an exact shortest-path scramble depth of 4; the visible task contains a reference rose and a current rose.",
+    "Full interaction exposes brass handles for the north, southwest, and southeast discs. Dragging a handle around its disc by at least 0.45 radians requests one clockwise or counter-clockwise sixth-turn.",
+    "The SEAL button submits the event transcript and is administrative rather than a rose-turn control.",
+    "The configured task settings are play_time_seconds=180, observation_window_ms=0, and frames_per_observation=1."
+  ],
+  "autonomous_processes": [],
+  "grouped_control_modes": [
+    "D_full_rim_drag: all three disc handles and both drag directions, with legal drags turning the selected disc synchronously and illegal drags being refused/no-op."
+  ],
+  "delta_ms": null,
+  "window_ms": 0,
+  "clause_i": {
+    "holds": true,
+    "reason": "Different generated depth-4 states can have the same action history I_t, so an observation-free q cannot choose a state-dependent optimal disc and direction for every occurrence in the grouped rim-drag mode."
+  },
+  "clause_ii": {
+    "holds": true,
+    "reason": "The reference and current rose arrangements, piece geometry, colors, motifs, and three handle locations are visible in one screenshot; because the state does not change while waiting, a zero-width recent window is sufficient to choose the next state-dependent drag."
+  },
+  "clause_iii": {
+    "holds": false,
+    "reason": "There is no autonomous task-state evolution between actions. The JavaScript changes model.current only inside attempt(), which is reached by a completed pointer drag; legal() and turn() are evaluated synchronously at that action. Waiting therefore leaves every disc's state and legality unchanged, so no available action becomes unavailable or strictly less effective within any positive delay."
+  },
+  "common_visible_process": "None. The only changing task state is the rose arrangement after an agent drag; CSS hover/drag styling is presentation and does not autonomously change the puzzle. Since clause (iii) fails, no common visible autonomous process witnesses all three clauses.",
+  "pre_run": {
+    "threshold": 0.5,
+    "at_least_half": null,
+    "rate": null,
+    "basis": "not_applicable",
+    "reason": "The configuration already fails the mathematical real-time definition because clause (iii) is false. The source has no autonomous outcome phase whose pre-run rate could override that result.",
+    "seed_probe": null
+  },
+  "files_read_completely": [
+    "AGENTS.md",
+    "weird_captcha_gym/docs/controllability/real-time.md",
+    "weird_captcha_gym/environments/bandaged_rose_window_env/controls.json",
+    "weird_captcha_gym/environments/bandaged_rose_window_env/env.json",
+    "weird_captcha_gym/environments/bandaged_rose_window_env/scripts/install_puzzle_runtime.sh",
+    "weird_captcha_gym/environments/bandaged_rose_window_env/scripts/setup_puzzle_runtime.sh",
+    "weird_captcha_gym/environments/bandaged_rose_window_env/tasks/bandaged_rose_window_seed_0001/export_result.sh",
+    "weird_captcha_gym/environments/bandaged_rose_window_env/tasks/bandaged_rose_window_seed_0001/setup_task.sh",
+    "weird_captcha_gym/environments/bandaged_rose_window_env/tasks/bandaged_rose_window_seed_0001/task.json",
+    "weird_captcha_gym/environments/bandaged_rose_window_env/tasks/bandaged_rose_window_seed_0001/verifier.py",
+    "weird_captcha_gym/shared_scripts/incubator_generators/bandaged_rose_window.py",
+    "weird_captcha_gym/shared_runtime/app/mechanics/bandaged_rose_window.js",
+    "weird_captcha_gym/shared_runtime/app/mechanics/bandaged_rose_window.css",
+    "weird_captcha_gym/shared_runtime/server/incubator_graders/bandaged_rose_window.py",
+    "weird_captcha_gym/shared_runtime/verifier_helpers.py",
+    "weird_captcha_gym/tools/incubator_solvers/bandaged_rose_window.py"
+  ],
+  "source_evidence": [
+    {
+      "path": "weird_captcha_gym/environments/bandaged_rose_window_env/controls.json",
+      "lines": "16-20",
+      "claim": "Difficulty 2 is labeled easy and sets scramble_depth to 4."
+    },
+    {
+      "path": "weird_captcha_gym/environments/bandaged_rose_window_env/controls.json",
+      "lines": "46-54",
+      "claim": "Full mode is a brass-handle rim drag; the configured observation window is 0 ms with one frame."
+    },
+    {
+      "path": "weird_captcha_gym/environments/bandaged_rose_window_env/env.json",
+      "lines": "9-14",
+      "claim": "The runner uses a 0 ms observation window, one frame per observation, and a synchronous task."
+    },
+    {
+      "path": "weird_captcha_gym/shared_scripts/incubator_generators/bandaged_rose_window.py",
+      "lines": "110-155",
+      "claim": "The difficulty condition selects a static BFS frontier state at the requested depth and emits the initial/solved rose contract and fixed solution moves."
+    },
+    {
+      "path": "weird_captcha_gym/shared_runtime/app/mechanics/bandaged_rose_window.js",
+      "lines": "77-116",
+      "claim": "Full mode renders no proxy buttons, and the rose state changes only when attempt() processes a drag action; refused actions leave after equal to before."
+    },
+    {
+      "path": "weird_captcha_gym/shared_runtime/app/mechanics/bandaged_rose_window.js",
+      "lines": "125-170",
+      "claim": "Pointer handlers update the handle during a drag and call attempt() only on pointerup after the angular threshold; there is no autonomous update loop or timer."
+    },
+    {
+      "path": "weird_captcha_gym/shared_runtime/app/mechanics/bandaged_rose_window.css",
+      "lines": "1-4",
+      "claim": "The relevant CSS provides static layout and hover/drag presentation for handles and contains no task-state animation."
+    },
+    {
+      "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/bandaged_rose_window.py",
+      "lines": "45-99",
+      "claim": "The grader binds full interaction to rim_drag and independently replays only the submitted turn transcript against bandaged-disc legality and state transitions."
+    },
+    {
+      "path": "weird_captcha_gym/environments/bandaged_rose_window_env/tasks/bandaged_rose_window_seed_0001/verifier.py",
+      "lines": "96-105",
+      "claim": "The verifier loads the exported result and checks the independent rose replay; it introduces no timed or autonomous task behavior."
+    },
+    {
+      "path": "weird_captcha_gym/tools/incubator_solvers/bandaged_rose_window.py",
+      "lines": "77-95",
+      "claim": "The reference solver applies the fixed solution moves sequentially with the default zero step delay and certifies only after the rose is restored."
+    }
+  ],
+  "uncertainties": []
+}

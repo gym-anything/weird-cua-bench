@@ -1,0 +1,114 @@
+{
+  "case_index": 136,
+  "public_environment_name": "Concertina Courier",
+  "environment_id": "concertina_courier_env",
+  "difficulty": 3,
+  "interaction_mode": "simplified",
+  "label": "yes",
+  "controls_available": [
+    "The simplified console exposes clickable LEFT [-1,0], RIGHT [1,0], TALLER [0,1], WIDER [0,-1], and COAST [0,0] controls; each click changes the latched control, which persists until another console click.",
+    "The canvas visibly shows the parcel, its area-preserving shape, shelves and floors, gold seals, and the collected-seal counter; CERTIFY and NEW ROOM are administrative controls."
+  ],
+  "autonomous_processes": [
+    "In live task time, the browser advances the simulation every 40 ms; each tick runs four collision-checked substeps.",
+    "The parcel's horizontal velocity carries across frames with drag 0.85 and a speed cap, while gravity increases vertical velocity and moves the bottom when the parcel is unsupported.",
+    "A latched TALLER or WIDER control changes height and the reciprocal width only when the resulting rectangle is clear; horizontal motion, shelf collisions, support landings, seal contact, and falling therefore change the state without another click.",
+    "Contact with seals and the physical trajectory update the visible collection count and eventually produce solved, fell, or timeout status."
+  ],
+  "grouped_control_modes": [
+    "D = the simplified console-latch input mode, including every LEFT, RIGHT, TALLER, WIDER, and COAST occurrence across generated seeds, rounds, and attempts; administrative certification/reset is outside D."
+  ],
+  "delta_ms": 200,
+  "window_ms": 80,
+  "clause_i": {
+    "holds": true,
+    "reason": "No policy q using only I_t can choose the delayed-optimal console latch for every history in D. The L3 generator independently varies island position, gap, receiving opening, well position, and a left/right reflection. Histories with the same prior actions and task times can therefore require opposite horizontal choices or different morphology timing, while q cannot see those differences."
+  },
+  "clause_ii": {
+    "holds": true,
+    "reason": "With w = 80 ms, the three chronological frames expose the current parcel position, height/width, supports, seals, and the parcel's recent horizontal and vertical displacement. A windowed policy g can infer the current drift and predict where the parcel will be at t + 200 ms, then select the appropriate console latch, such as WIDER before an unsupported gap or TALLER while centered in the receiving opening."
+  },
+  "clause_iii": {
+    "holds": true,
+    "reason": "The common witness is the visible inertial/gravity process at a receiving-well approach. A height-80 parcel (width 80) moving toward a 100-120 unit opening can receive TALLER immediately; the body narrows while it is still aligned and can rise to the well seal. If no new click is supplied for tau = 160 ms (four 40 ms ticks), the latched horizontal motion carries the wide body toward the shelf edge. At t + tau the task is still recoverable by braking/repositioning and then morphing, but the same TALLER action is blocked or ineffective at the displaced position, so its advantage over COAST is strictly smaller. The loss is caused by the changed visible position and collision geometry, not by an absolute deadline. This state is inside C_Delta(D) for Delta = 200 ms because the parcel remains supported and can still be repositioned after the delay."
+  },
+  "common_visible_process": "The same 40 ms parcel physics supplies all three clauses: the latched horizontal control and drag produce visible drift, gravity changes bottom position when support is lost, and morphology changes height and reciprocal width subject to visible shelf and floor collisions. The three-frame window shows this drift relative to the generated island, gap, and receiving opening, making the delayed console choice observation-dependent while the useful TALLER/WIDER/steering opportunity degrades as the parcel moves.",
+  "pre_run": {
+    "threshold": 0.5,
+    "at_least_half": false,
+    "rate": null,
+    "basis": "source_structural",
+    "reason": "The L3 generator always uses the island layout with an initial height of 80, a top seal at y = 260, an 80-120 unit unsupported gap, shelves whose lower edge is y = 330, and a receiving seal again at y = 260. A successful route must grow tall to reach the first seal, shrink to a wide body to cross the gap and pass below the shelves, and grow tall again in the receiving opening. The simplified console's mutually exclusive latched controls make these morphology and movement changes outcome-affecting actions during the active simulation; there is no separate autonomous outcome phase after preparation. Reflection and the random horizontal geometry do not remove this required sequence. Thus the at-least-half pre-run override is not met; no numeric rate is claimed.",
+    "seed_probe": null
+  },
+  "files_read_completely": [
+    "AGENTS.md",
+    "weird_captcha_gym/docs/controllability/real-time.md",
+    "weird_captcha_gym/environments/concertina_courier_env/controls.json",
+    "weird_captcha_gym/environments/concertina_courier_env/env.json",
+    "weird_captcha_gym/environments/concertina_courier_env/tasks/concertina_courier_seed_0001/task.json",
+    "weird_captcha_gym/environments/concertina_courier_env/tasks/concertina_courier_seed_0001/setup_task.sh",
+    "weird_captcha_gym/environments/concertina_courier_env/tasks/concertina_courier_seed_0001/export_result.sh",
+    "weird_captcha_gym/shared_scripts/incubator_generators/concertina_courier.py",
+    "weird_captcha_gym/shared_runtime/app/mechanics/concertina_courier.js",
+    "weird_captcha_gym/shared_runtime/app/mechanics/concertina_courier.css",
+    "weird_captcha_gym/shared_runtime/app/time_controller.js",
+    "weird_captcha_gym/shared_runtime/server/incubator_graders/concertina_courier.py",
+    "weird_captcha_gym/environments/concertina_courier_env/tasks/concertina_courier_seed_0001/verifier.py",
+    "weird_captcha_gym/shared_runtime/verifier_helpers.py",
+    "weird_captcha_gym/tools/incubator_solvers/concertina_courier.py"
+  ],
+  "source_evidence": [
+    {
+      "path": "weird_captcha_gym/docs/controllability/real-time.md",
+      "lines": "25-71",
+      "claim": "The frozen definition requires a common grouped mode, delay, and bounded visible window satisfying clauses (i)-(iii), with the strict degradation caused by non-clock task-state evolution."
+    },
+    {
+      "path": "weird_captcha_gym/environments/concertina_courier_env/controls.json",
+      "lines": "32-49; 93-104",
+      "claim": "Difficulty 3 is the island configuration with 80-120 gap, 100-120 opening, clearance 80, reach 160, drag 0.85, and well clearance 90; simplified interaction is implemented and the observation window is 80 ms with three frames."
+    },
+    {
+      "path": "weird_captcha_gym/shared_scripts/incubator_generators/concertina_courier.py",
+      "lines": "46-78",
+      "claim": "The island generator varies center, gap, opening, well, and reflection; it creates the floor/shelf obstacles and four seals, and starts every world at x, bottom 420, height 80, zero velocity, and active status."
+    },
+    {
+      "path": "weird_captcha_gym/shared_runtime/app/mechanics/concertina_courier.js",
+      "lines": "8-22",
+      "claim": "Each physics tick applies morphing, drag-limited horizontal velocity, gravity, collision/support handling, seal contact, and terminal status changes."
+    },
+    {
+      "path": "weird_captcha_gym/shared_runtime/app/mechanics/concertina_courier.js",
+      "lines": "24-52",
+      "claim": "The browser renders the parcel and room on a canvas, shows the simplified console, latches console clicks into control vectors, and advances the simulation from performance.now at the world tick interval."
+    },
+    {
+      "path": "weird_captcha_gym/shared_runtime/app/mechanics/concertina_courier.css",
+      "lines": "1",
+      "claim": "The target browser surface visibly styles the canvas room, body controls, simplified console buttons, status, and certification controls."
+    },
+    {
+      "path": "weird_captcha_gym/shared_runtime/app/time_controller.js",
+      "lines": "55-77; 155-177; 582-602",
+      "claim": "The shared runtime maps performance.now to task time, freezes task time in paused mode, and advances a commanded live/run window; this is evaluator clock behavior rather than a task-specific deadline."
+    },
+    {
+      "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/concertina_courier.py",
+      "lines": "21-49; 52-86",
+      "claim": "The authoritative replay uses the same physical advance function, requires the configured interaction mode and console_latch source in simplified mode, replays every event, checks the physical final state, and accepts only solved status with all seals."
+    },
+    {
+      "path": "weird_captcha_gym/tools/incubator_solvers/concertina_courier.py",
+      "lines": "83-134",
+      "claim": "The reference solver uses simplified console clicks and repeated screenshot/state feedback; for the island route it explicitly changes to tall, wide, moves under the shelf to the well, and changes tall again rather than using a fixed action tape."
+    },
+    {
+      "path": "weird_captcha_gym/environments/concertina_courier_env/tasks/concertina_courier_seed_0001/verifier.py",
+      "lines": "36-49",
+      "claim": "The task verifier loads the shared helper and independent Concertina Courier grader, then grades the exported replay result."
+    }
+  ],
+  "uncertainties": []
+}

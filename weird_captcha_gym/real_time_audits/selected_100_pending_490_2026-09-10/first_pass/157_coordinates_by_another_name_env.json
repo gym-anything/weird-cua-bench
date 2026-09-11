@@ -1,0 +1,93 @@
+{
+  "case_index": 157,
+  "public_environment_name": "Coordinates by Another Name",
+  "environment_id": "coordinates_by_another_name_env",
+  "difficulty": 4,
+  "interaction_mode": "full",
+  "label": "no",
+  "controls_available": [
+    "Level 4 uses a 5x8 irregular chart with locally reversed count directions, touching vessels, no hit-orientation feedback, and two sweep charges.",
+    "Full interaction provides Band, Block, and Count rotary selectors; each must be dragged to a labeled detent, including the Count sweep detent.",
+    "FIRE submits the currently displayed band-block-count designation.",
+    "END ATTEMPT / CERTIFY FLEET submits an administrative certification request."
+  ],
+  "autonomous_processes": [],
+  "grouped_control_modes": [
+    "D_select: any full-mode rotary drag on the Band, Block, or Count selector to a labeled detent.",
+    "D_fire: the FIRE control submitting the selected designation and changing the chart evidence.",
+    "D_certify_admin: END ATTEMPT / CERTIFY FLEET; administrative only and excluded from outcome-affecting control modes."
+  ],
+  "delta_ms": null,
+  "window_ms": 0,
+  "clause_i": {
+    "holds": true,
+    "reason": "Different hidden fleets and resulting hit/miss histories can share the same prior-action history I_t while requiring different next designations. The normal UI exposes those persistent marks only in the chart after FIRE, so no q(I_t) can be optimal across all relevant histories."
+  },
+  "clause_ii": {
+    "holds": true,
+    "reason": "A current screenshot is sufficient with w=0 because shot marks persist in the chart and sunk status persists in the vessel manifest. A bounded-window policy can recompute candidate straight vessels from those visible marks and choose the next designation; the solver follows this rendered-feedback procedure."
+  },
+  "clause_iii": {
+    "holds": false,
+    "reason": "No valid Delta exists. Generation fixes the chart and fleet for the episode, while selector changes and FIRE synchronously update designation, seen cells, shots, sweeps, hits, and sunk status only when the agent acts. With no new action, no timer, physics, animation, random transition, or expiring action window changes task state; the CSS also declares no animation or transition. A possible fresh chart after certification follows an administrative action and is not an outcome-affecting autonomous process. Waiting therefore cannot cause the required strict non-clock loss in Q."
+  },
+  "common_visible_process": "None. The chart is a persistent visible trace of action-triggered shot feedback; selector and FIRE effects occur synchronously, and nothing relevant evolves autonomously between actions.",
+  "pre_run": {
+    "threshold": 0.5,
+    "at_least_half": null,
+    "rate": null,
+    "basis": "not_applicable",
+    "reason": "The mathematical definition already fails clause (iii), so the pre-run threshold cannot change the catalog label and no percentage or seed probe is needed.",
+    "seed_probe": null
+  },
+  "files_read_completely": [
+    "AGENTS.md",
+    "weird_captcha_gym/docs/controllability/real-time.md",
+    "weird_captcha_gym/environments/coordinates_by_another_name_env/controls.json",
+    "weird_captcha_gym/environments/coordinates_by_another_name_env/env.json",
+    "weird_captcha_gym/environments/coordinates_by_another_name_env/scripts/install_puzzle_runtime.sh",
+    "weird_captcha_gym/environments/coordinates_by_another_name_env/tasks/coordinates_by_another_name_seed_0001/setup_task.sh",
+    "weird_captcha_gym/environments/coordinates_by_another_name_env/tasks/coordinates_by_another_name_seed_0001/export_result.sh",
+    "weird_captcha_gym/environments/coordinates_by_another_name_env/tasks/coordinates_by_another_name_seed_0001/task.json",
+    "weird_captcha_gym/environments/coordinates_by_another_name_env/tasks/coordinates_by_another_name_seed_0001/verifier.py",
+    "weird_captcha_gym/shared_scripts/incubator_generators/coordinates_by_another_name.py",
+    "weird_captcha_gym/shared_runtime/app/mechanics/coordinates_by_another_name.js",
+    "weird_captcha_gym/shared_runtime/app/mechanics/coordinates_by_another_name.css",
+    "weird_captcha_gym/shared_runtime/server/incubator_graders/coordinates_by_another_name.py",
+    "weird_captcha_gym/shared_runtime/verifier_helpers.py",
+    "weird_captcha_gym/tools/incubator_solvers/coordinates_by_another_name.py"
+  ],
+  "source_evidence": [
+    {
+      "path": "weird_captcha_gym/environments/coordinates_by_another_name_env/controls.json",
+      "lines": "66-83, 106-119",
+      "claim": "Difficulty 4 activates the irregular 5x8, reverse-count, touching-vessel, no-orientation-feedback, two-sweep profile; full mode requires rotary dragging, and the configured observation window is 0 ms with one frame."
+    },
+    {
+      "path": "weird_captcha_gym/shared_scripts/incubator_generators/coordinates_by_another_name.py",
+      "lines": "15-39, 52-112",
+      "claim": "The generator seeds a fixed chart and hidden fleet, computes static designations and truth, and returns the world without a task-time update or autonomous phase."
+    },
+    {
+      "path": "weird_captcha_gym/shared_runtime/app/mechanics/coordinates_by_another_name.js",
+      "lines": "23-47, 49-85, 88-114",
+      "claim": "Pointer selection and FIRE are event-driven; FIRE synchronously updates seen cells, shots, sweeps, hits, and sunk vessels. Rendering initializes these values and contains no timer or autonomous update loop; certification is a separate fetch-driven administrative action."
+    },
+    {
+      "path": "weird_captcha_gym/shared_runtime/app/mechanics/coordinates_by_another_name.css",
+      "lines": "1-10",
+      "claim": "The mechanic stylesheet contains static layout and visual rules and no animation or transition that could evolve the task between actions."
+    },
+    {
+      "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/coordinates_by_another_name.py",
+      "lines": "31-76",
+      "claim": "The grader replays only selector/fire events against the committed world, derives shot feedback and completion from the event tape, and scores by shots; it has no elapsed-time or autonomous-state term."
+    },
+    {
+      "path": "weird_captcha_gym/tools/incubator_solvers/coordinates_by_another_name.py",
+      "lines": "56-83",
+      "claim": "The structural solver reads rendered hit, miss, and sunk classes, maintains candidate straight-vessel hypotheses, and chooses subsequent designations from persistent visible feedback."
+    }
+  ],
+  "uncertainties": []
+}

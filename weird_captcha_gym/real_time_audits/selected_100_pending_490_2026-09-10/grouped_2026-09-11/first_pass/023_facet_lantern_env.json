@@ -1,0 +1,1487 @@
+{
+  "case_index": 23,
+  "environment_id": "facet_lantern_env",
+  "public_environment_name": "Facet Lantern",
+  "configuration_reports": [
+    {
+      "case_index": 221,
+      "public_environment_name": "Facet Lantern",
+      "environment_id": "facet_lantern_env",
+      "difficulty": 1,
+      "interaction_mode": "full",
+      "label": "no",
+      "controls_available": [
+        "Difficulty 1: shape=bipyramid, ring_vertices=4, polygon_count=2, target_stride=1, initial_connections=1, initial_yaw=0°, occlusion_band=0.45, rotation_step_degrees=15.",
+        "Rotate with direct horizontal pointer drags on an empty part of the SVG stage; yaw is continuous.",
+        "Click or keyboard-activate visible labelled studs: the first selects a stud and the second creates a connection; CANCEL STUD clears a pending selection.",
+        "CERTIFY LANTERN submits the attempt and ABANDON ATTEMPT submits failure/restarts; these are administrative controls, not an autonomous outcome phase."
+      ],
+      "autonomous_processes": [
+        "None: with no new agent action, the rendered lantern, target list, visible-stud set, selection, yaw, and connection graph remain unchanged for the entire episode."
+      ],
+      "grouped_control_modes": [
+        "D_rotation: direct_pointer horizontal drags on the empty SVG stage, grouped across all seeds and attempts.",
+        "D_vertex_connection: vertex_click selection/connection of visible labelled studs, grouped across all seeds and attempts.",
+        "CERTIFY LANTERN and ABANDON ATTEMPT are administrative and are not used as outcome-phase control modes."
+      ],
+      "delta_ms": null,
+      "window_ms": 0,
+      "clause_i": {
+        "holds": false,
+        "reason": "Fails. There is no autonomous task-state evolution or penalty for deferring work. During any delay for which success remains possible, an observation-free policy can choose no-op/defer and continue optimally afterward, so the required absence of q is not established."
+      },
+      "clause_ii": {
+        "holds": true,
+        "reason": "Holds only trivially: the current screenshot at the configured zero-length window exposes the target outlines, projected visible studs, yaw, and ledger, so a bounded-window policy can choose a legal next step. This visual sufficiency is not a real-time witness because no autonomous change or expiring opportunity accompanies it."
+      },
+      "clause_iii": {
+        "holds": false,
+        "reason": "Fails. For 0 < tau < Delta with no agent action, the mechanic has no timer, animation loop, physics tick, or scheduled transition. Yaw and connections change only in explicit input handlers, so no available action becomes unavailable or strictly loses value/advantage."
+      },
+      "common_visible_process": "None. The only visible changes are synchronous re-renders caused by explicit rotation, stud, selection-clear, or submission events; the bipyramid does not move or change while the agent supplies no action.",
+      "pre_run": {
+        "threshold": 0.5,
+        "at_least_half": null,
+        "rate": null,
+        "basis": "not_applicable",
+        "reason": "The mathematical definition already yields No at clauses (i) and (iii); the pre-run threshold cannot change that label, and this static mechanic has no autonomous outcome phase for a pre-run rate to measure.",
+        "seed_probe": null
+      },
+      "files_read_completely": [
+        "AGENTS.md",
+        "weird_captcha_gym/docs/controllability/real-time.md",
+        "weird_captcha_gym/environments/facet_lantern_env/controls.json",
+        "weird_captcha_gym/environments/facet_lantern_env/env.json",
+        "weird_captcha_gym/environments/facet_lantern_env/tasks/facet_lantern_seed_0001/task.json",
+        "weird_captcha_gym/environments/facet_lantern_env/scripts/install_puzzle_runtime.sh",
+        "weird_captcha_gym/environments/facet_lantern_env/scripts/setup_puzzle_runtime.sh",
+        "weird_captcha_gym/environments/facet_lantern_env/tasks/facet_lantern_seed_0001/setup_task.sh",
+        "weird_captcha_gym/environments/facet_lantern_env/tasks/facet_lantern_seed_0001/export_result.sh",
+        "weird_captcha_gym/shared_scripts/incubator_generators/facet_lantern.py",
+        "weird_captcha_gym/shared_runtime/app/mechanics/facet_lantern.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/facet_lantern.css",
+        "weird_captcha_gym/shared_runtime/server/incubator_graders/facet_lantern.py",
+        "weird_captcha_gym/environments/facet_lantern_env/tasks/facet_lantern_seed_0001/verifier.py",
+        "weird_captcha_gym/shared_runtime/verifier_helpers.py",
+        "weird_captcha_gym/tools/incubator_solvers/facet_lantern.py",
+        "weird_captcha_gym/shared_scripts/open_puzzle_browser.sh",
+        "weird_captcha_gym/shared_scripts/time_control.py"
+      ],
+      "source_evidence": [
+        {
+          "path": "weird_captcha_gym/environments/facet_lantern_env/controls.json",
+          "lines": "6-12",
+          "claim": "Difficulty 1 is shape=bipyramid, ring_vertices=4, polygon_count=2, target_stride=1, initial_connections=1, initial_yaw=0°, occlusion_band=0.45, rotation_step_degrees=15; its full prompt specifies full uses direct horizontal pointer drags on the SVG stage."
+        },
+        {
+          "path": "weird_captcha_gym/environments/facet_lantern_env/controls.json",
+          "lines": "52-56",
+          "claim": "Both interaction modes are implemented, and the shared profile sets observation_window_ms=0 and frames_per_observation=1."
+        },
+        {
+          "path": "weird_captcha_gym/environments/facet_lantern_env/env.json",
+          "lines": "9-14",
+          "claim": "The environment exposes a frame window but configures a 0 ms observation window, one frame, synchronous operation, and no task-specific time behavior."
+        },
+        {
+          "path": "weird_captcha_gym/docs/controllability/real-time.md",
+          "lines": "40-68",
+          "claim": "The definition requires one visible autonomous process that makes a useful action strictly worse within Delta; static puzzles and unrelated animation do not qualify."
+        },
+        {
+          "path": "weird_captcha_gym/docs/controllability/real-time.md",
+          "lines": "98-105",
+          "claim": "The settled interpretation explicitly treats waiting with no penalty as not real-time."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/facet_lantern.py",
+          "lines": "66-122",
+          "claim": "Generation constructs fixed bipyramid vertices, faces, target facets, initial connections, initial yaw, occlusion band, and rotation step, then returns the world; no evolving timer or trajectory is generated."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/facet_lantern.py",
+          "lines": "145-187",
+          "claim": "The public state and truth contain the same static world, targets, required connections, and scores; completion changes only through submitted connections."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/facet_lantern.js",
+          "lines": "46-62",
+          "claim": "Each render initializes yaw, persistent connections, selection, and event storage from the generated world."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/facet_lantern.js",
+          "lines": "157-181",
+          "claim": "Rendering projects the same vertices and visibility at the current yaw, while rotateBy mutates yaw only when explicitly called."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/facet_lantern.js",
+          "lines": "183-202",
+          "claim": "Stud selection and connection state mutate only inside the explicit vertex handler."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/facet_lantern.js",
+          "lines": "204-231",
+          "claim": "Full-mode pointer handlers change yaw only in response to an active drag and record the completed drag as a rotate event."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/facet_lantern.css",
+          "lines": "1-57",
+          "claim": "The complete mechanic stylesheet contains layout, color, and pointer styling only; it declares no animation or keyframe process."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/facet_lantern.py",
+          "lines": "61-179",
+          "claim": "The grader replays explicit rotate/select/connect/clear/submit events against static yaw/visibility and graph data, with no task-time or autonomous-state check."
+        },
+        {
+          "path": "weird_captcha_gym/environments/facet_lantern_env/tasks/facet_lantern_seed_0001/verifier.py",
+          "lines": "36-57",
+          "claim": "The verifier only loads the exported result and delegates the independent Facet Lantern replay grader."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/verifier_helpers.py",
+          "lines": "15-52",
+          "claim": "The shared verifier helper only copies and parses the exported result, then generic grading dispatches to a grader; it introduces no Facet Lantern evolution."
+        },
+        {
+          "path": "weird_captcha_gym/tools/incubator_solvers/facet_lantern.py",
+          "lines": "115-145",
+          "claim": "The implementation witness discards its advance argument and performs rotations, visible stud clicks, and certification; this is private-state wiring evidence, not policy information."
+        }
+      ],
+      "uncertainties": []
+    },
+    {
+      "case_index": 222,
+      "public_environment_name": "Facet Lantern",
+      "environment_id": "facet_lantern_env",
+      "difficulty": 1,
+      "interaction_mode": "simplified",
+      "label": "no",
+      "controls_available": [
+        "Difficulty 1: shape=bipyramid, ring_vertices=4, polygon_count=2, target_stride=1, initial_connections=1, initial_yaw=0°, occlusion_band=0.45, rotation_step_degrees=15.",
+        "Rotate with the visible LEFT and RIGHT TURN buttons; each changes yaw by 15 degrees.",
+        "Click or keyboard-activate visible labelled studs: the first selects a stud and the second creates a connection; CANCEL STUD clears a pending selection.",
+        "CERTIFY LANTERN submits the attempt and ABANDON ATTEMPT submits failure/restarts; these are administrative controls, not an autonomous outcome phase."
+      ],
+      "autonomous_processes": [
+        "None: with no new agent action, the rendered lantern, target list, visible-stud set, selection, yaw, and connection graph remain unchanged for the entire episode."
+      ],
+      "grouped_control_modes": [
+        "D_rotation: proxy_button LEFT/RIGHT TURN presses, grouped across all seeds and attempts.",
+        "D_vertex_connection: vertex_click selection/connection of visible labelled studs, grouped across all seeds and attempts.",
+        "CERTIFY LANTERN and ABANDON ATTEMPT are administrative and are not used as outcome-phase control modes."
+      ],
+      "delta_ms": null,
+      "window_ms": 0,
+      "clause_i": {
+        "holds": false,
+        "reason": "Fails. There is no autonomous task-state evolution or penalty for deferring work. During any delay for which success remains possible, an observation-free policy can choose no-op/defer and continue optimally afterward, so the required absence of q is not established."
+      },
+      "clause_ii": {
+        "holds": true,
+        "reason": "Holds only trivially: the current screenshot at the configured zero-length window exposes the target outlines, projected visible studs, yaw, and ledger, so a bounded-window policy can choose a legal next step. This visual sufficiency is not a real-time witness because no autonomous change or expiring opportunity accompanies it."
+      },
+      "clause_iii": {
+        "holds": false,
+        "reason": "Fails. For 0 < tau < Delta with no agent action, the mechanic has no timer, animation loop, physics tick, or scheduled transition. Yaw and connections change only in explicit input handlers, so no available action becomes unavailable or strictly loses value/advantage."
+      },
+      "common_visible_process": "None. The only visible changes are synchronous re-renders caused by explicit rotation, stud, selection-clear, or submission events; the bipyramid does not move or change while the agent supplies no action.",
+      "pre_run": {
+        "threshold": 0.5,
+        "at_least_half": null,
+        "rate": null,
+        "basis": "not_applicable",
+        "reason": "The mathematical definition already yields No at clauses (i) and (iii); the pre-run threshold cannot change that label, and this static mechanic has no autonomous outcome phase for a pre-run rate to measure.",
+        "seed_probe": null
+      },
+      "files_read_completely": [
+        "AGENTS.md",
+        "weird_captcha_gym/docs/controllability/real-time.md",
+        "weird_captcha_gym/environments/facet_lantern_env/controls.json",
+        "weird_captcha_gym/environments/facet_lantern_env/env.json",
+        "weird_captcha_gym/environments/facet_lantern_env/tasks/facet_lantern_seed_0001/task.json",
+        "weird_captcha_gym/environments/facet_lantern_env/scripts/install_puzzle_runtime.sh",
+        "weird_captcha_gym/environments/facet_lantern_env/scripts/setup_puzzle_runtime.sh",
+        "weird_captcha_gym/environments/facet_lantern_env/tasks/facet_lantern_seed_0001/setup_task.sh",
+        "weird_captcha_gym/environments/facet_lantern_env/tasks/facet_lantern_seed_0001/export_result.sh",
+        "weird_captcha_gym/shared_scripts/incubator_generators/facet_lantern.py",
+        "weird_captcha_gym/shared_runtime/app/mechanics/facet_lantern.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/facet_lantern.css",
+        "weird_captcha_gym/shared_runtime/server/incubator_graders/facet_lantern.py",
+        "weird_captcha_gym/environments/facet_lantern_env/tasks/facet_lantern_seed_0001/verifier.py",
+        "weird_captcha_gym/shared_runtime/verifier_helpers.py",
+        "weird_captcha_gym/tools/incubator_solvers/facet_lantern.py",
+        "weird_captcha_gym/shared_scripts/open_puzzle_browser.sh",
+        "weird_captcha_gym/shared_scripts/time_control.py"
+      ],
+      "source_evidence": [
+        {
+          "path": "weird_captcha_gym/environments/facet_lantern_env/controls.json",
+          "lines": "6-12",
+          "claim": "Difficulty 1 is shape=bipyramid, ring_vertices=4, polygon_count=2, target_stride=1, initial_connections=1, initial_yaw=0°, occlusion_band=0.45, rotation_step_degrees=15; its simplified prompt specifies simplified uses visible LEFT/RIGHT TURN buttons."
+        },
+        {
+          "path": "weird_captcha_gym/environments/facet_lantern_env/controls.json",
+          "lines": "52-56",
+          "claim": "Both interaction modes are implemented, and the shared profile sets observation_window_ms=0 and frames_per_observation=1."
+        },
+        {
+          "path": "weird_captcha_gym/environments/facet_lantern_env/env.json",
+          "lines": "9-14",
+          "claim": "The environment exposes a frame window but configures a 0 ms observation window, one frame, synchronous operation, and no task-specific time behavior."
+        },
+        {
+          "path": "weird_captcha_gym/docs/controllability/real-time.md",
+          "lines": "40-68",
+          "claim": "The definition requires one visible autonomous process that makes a useful action strictly worse within Delta; static puzzles and unrelated animation do not qualify."
+        },
+        {
+          "path": "weird_captcha_gym/docs/controllability/real-time.md",
+          "lines": "98-105",
+          "claim": "The settled interpretation explicitly treats waiting with no penalty as not real-time."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/facet_lantern.py",
+          "lines": "66-122",
+          "claim": "Generation constructs fixed bipyramid vertices, faces, target facets, initial connections, initial yaw, occlusion band, and rotation step, then returns the world; no evolving timer or trajectory is generated."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/facet_lantern.py",
+          "lines": "145-187",
+          "claim": "The public state and truth contain the same static world, targets, required connections, and scores; completion changes only through submitted connections."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/facet_lantern.js",
+          "lines": "46-62",
+          "claim": "Each render initializes yaw, persistent connections, selection, and event storage from the generated world."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/facet_lantern.js",
+          "lines": "157-181",
+          "claim": "Rendering projects the same vertices and visibility at the current yaw, while rotateBy mutates yaw only when explicitly called."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/facet_lantern.js",
+          "lines": "183-202",
+          "claim": "Stud selection and connection state mutate only inside the explicit vertex handler."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/facet_lantern.js",
+          "lines": "256-266",
+          "claim": "Simplified-mode button listeners call the ±rotation-step handler; the initial render and button/click listeners are the only listed task interactions."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/facet_lantern.css",
+          "lines": "1-57",
+          "claim": "The complete mechanic stylesheet contains layout, color, and pointer styling only; it declares no animation or keyframe process."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/facet_lantern.py",
+          "lines": "61-179",
+          "claim": "The grader replays explicit rotate/select/connect/clear/submit events against static yaw/visibility and graph data, with no task-time or autonomous-state check."
+        },
+        {
+          "path": "weird_captcha_gym/environments/facet_lantern_env/tasks/facet_lantern_seed_0001/verifier.py",
+          "lines": "36-57",
+          "claim": "The verifier only loads the exported result and delegates the independent Facet Lantern replay grader."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/verifier_helpers.py",
+          "lines": "15-52",
+          "claim": "The shared verifier helper only copies and parses the exported result, then generic grading dispatches to a grader; it introduces no Facet Lantern evolution."
+        },
+        {
+          "path": "weird_captcha_gym/tools/incubator_solvers/facet_lantern.py",
+          "lines": "115-145",
+          "claim": "The implementation witness discards its advance argument and performs rotations, visible stud clicks, and certification; this is private-state wiring evidence, not policy information."
+        }
+      ],
+      "uncertainties": []
+    },
+    {
+      "case_index": 223,
+      "public_environment_name": "Facet Lantern",
+      "environment_id": "facet_lantern_env",
+      "difficulty": 2,
+      "interaction_mode": "full",
+      "label": "no",
+      "controls_available": [
+        "Difficulty 2: shape=bipyramid, ring_vertices=5, polygon_count=2, target_stride=2, initial_connections=2, initial_yaw=15°, occlusion_band=0.35, rotation_step_degrees=15.",
+        "Rotate with direct horizontal pointer drags on an empty part of the SVG stage; yaw is continuous.",
+        "Click or keyboard-activate visible labelled studs: the first selects a stud and the second creates a connection; CANCEL STUD clears a pending selection.",
+        "CERTIFY LANTERN submits the attempt and ABANDON ATTEMPT submits failure/restarts; these are administrative controls, not an autonomous outcome phase."
+      ],
+      "autonomous_processes": [
+        "None: with no new agent action, the rendered lantern, target list, visible-stud set, selection, yaw, and connection graph remain unchanged for the entire episode."
+      ],
+      "grouped_control_modes": [
+        "D_rotation: direct_pointer horizontal drags on the empty SVG stage, grouped across all seeds and attempts.",
+        "D_vertex_connection: vertex_click selection/connection of visible labelled studs, grouped across all seeds and attempts.",
+        "CERTIFY LANTERN and ABANDON ATTEMPT are administrative and are not used as outcome-phase control modes."
+      ],
+      "delta_ms": null,
+      "window_ms": 0,
+      "clause_i": {
+        "holds": false,
+        "reason": "Fails. There is no autonomous task-state evolution or penalty for deferring work. During any delay for which success remains possible, an observation-free policy can choose no-op/defer and continue optimally afterward, so the required absence of q is not established."
+      },
+      "clause_ii": {
+        "holds": true,
+        "reason": "Holds only trivially: the current screenshot at the configured zero-length window exposes the target outlines, projected visible studs, yaw, and ledger, so a bounded-window policy can choose a legal next step. This visual sufficiency is not a real-time witness because no autonomous change or expiring opportunity accompanies it."
+      },
+      "clause_iii": {
+        "holds": false,
+        "reason": "Fails. For 0 < tau < Delta with no agent action, the mechanic has no timer, animation loop, physics tick, or scheduled transition. Yaw and connections change only in explicit input handlers, so no available action becomes unavailable or strictly loses value/advantage."
+      },
+      "common_visible_process": "None. The only visible changes are synchronous re-renders caused by explicit rotation, stud, selection-clear, or submission events; the bipyramid does not move or change while the agent supplies no action.",
+      "pre_run": {
+        "threshold": 0.5,
+        "at_least_half": null,
+        "rate": null,
+        "basis": "not_applicable",
+        "reason": "The mathematical definition already yields No at clauses (i) and (iii); the pre-run threshold cannot change that label, and this static mechanic has no autonomous outcome phase for a pre-run rate to measure.",
+        "seed_probe": null
+      },
+      "files_read_completely": [
+        "AGENTS.md",
+        "weird_captcha_gym/docs/controllability/real-time.md",
+        "weird_captcha_gym/environments/facet_lantern_env/controls.json",
+        "weird_captcha_gym/environments/facet_lantern_env/env.json",
+        "weird_captcha_gym/environments/facet_lantern_env/tasks/facet_lantern_seed_0001/task.json",
+        "weird_captcha_gym/environments/facet_lantern_env/scripts/install_puzzle_runtime.sh",
+        "weird_captcha_gym/environments/facet_lantern_env/scripts/setup_puzzle_runtime.sh",
+        "weird_captcha_gym/environments/facet_lantern_env/tasks/facet_lantern_seed_0001/setup_task.sh",
+        "weird_captcha_gym/environments/facet_lantern_env/tasks/facet_lantern_seed_0001/export_result.sh",
+        "weird_captcha_gym/shared_scripts/incubator_generators/facet_lantern.py",
+        "weird_captcha_gym/shared_runtime/app/mechanics/facet_lantern.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/facet_lantern.css",
+        "weird_captcha_gym/shared_runtime/server/incubator_graders/facet_lantern.py",
+        "weird_captcha_gym/environments/facet_lantern_env/tasks/facet_lantern_seed_0001/verifier.py",
+        "weird_captcha_gym/shared_runtime/verifier_helpers.py",
+        "weird_captcha_gym/tools/incubator_solvers/facet_lantern.py",
+        "weird_captcha_gym/shared_scripts/open_puzzle_browser.sh",
+        "weird_captcha_gym/shared_scripts/time_control.py"
+      ],
+      "source_evidence": [
+        {
+          "path": "weird_captcha_gym/environments/facet_lantern_env/controls.json",
+          "lines": "15-21",
+          "claim": "Difficulty 2 is shape=bipyramid, ring_vertices=5, polygon_count=2, target_stride=2, initial_connections=2, initial_yaw=15°, occlusion_band=0.35, rotation_step_degrees=15; its full prompt specifies full uses direct horizontal pointer drags on the SVG stage."
+        },
+        {
+          "path": "weird_captcha_gym/environments/facet_lantern_env/controls.json",
+          "lines": "52-56",
+          "claim": "Both interaction modes are implemented, and the shared profile sets observation_window_ms=0 and frames_per_observation=1."
+        },
+        {
+          "path": "weird_captcha_gym/environments/facet_lantern_env/env.json",
+          "lines": "9-14",
+          "claim": "The environment exposes a frame window but configures a 0 ms observation window, one frame, synchronous operation, and no task-specific time behavior."
+        },
+        {
+          "path": "weird_captcha_gym/docs/controllability/real-time.md",
+          "lines": "40-68",
+          "claim": "The definition requires one visible autonomous process that makes a useful action strictly worse within Delta; static puzzles and unrelated animation do not qualify."
+        },
+        {
+          "path": "weird_captcha_gym/docs/controllability/real-time.md",
+          "lines": "98-105",
+          "claim": "The settled interpretation explicitly treats waiting with no penalty as not real-time."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/facet_lantern.py",
+          "lines": "66-122",
+          "claim": "Generation constructs fixed bipyramid vertices, faces, target facets, initial connections, initial yaw, occlusion band, and rotation step, then returns the world; no evolving timer or trajectory is generated."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/facet_lantern.py",
+          "lines": "145-187",
+          "claim": "The public state and truth contain the same static world, targets, required connections, and scores; completion changes only through submitted connections."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/facet_lantern.js",
+          "lines": "46-62",
+          "claim": "Each render initializes yaw, persistent connections, selection, and event storage from the generated world."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/facet_lantern.js",
+          "lines": "157-181",
+          "claim": "Rendering projects the same vertices and visibility at the current yaw, while rotateBy mutates yaw only when explicitly called."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/facet_lantern.js",
+          "lines": "183-202",
+          "claim": "Stud selection and connection state mutate only inside the explicit vertex handler."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/facet_lantern.js",
+          "lines": "204-231",
+          "claim": "Full-mode pointer handlers change yaw only in response to an active drag and record the completed drag as a rotate event."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/facet_lantern.css",
+          "lines": "1-57",
+          "claim": "The complete mechanic stylesheet contains layout, color, and pointer styling only; it declares no animation or keyframe process."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/facet_lantern.py",
+          "lines": "61-179",
+          "claim": "The grader replays explicit rotate/select/connect/clear/submit events against static yaw/visibility and graph data, with no task-time or autonomous-state check."
+        },
+        {
+          "path": "weird_captcha_gym/environments/facet_lantern_env/tasks/facet_lantern_seed_0001/verifier.py",
+          "lines": "36-57",
+          "claim": "The verifier only loads the exported result and delegates the independent Facet Lantern replay grader."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/verifier_helpers.py",
+          "lines": "15-52",
+          "claim": "The shared verifier helper only copies and parses the exported result, then generic grading dispatches to a grader; it introduces no Facet Lantern evolution."
+        },
+        {
+          "path": "weird_captcha_gym/tools/incubator_solvers/facet_lantern.py",
+          "lines": "115-145",
+          "claim": "The implementation witness discards its advance argument and performs rotations, visible stud clicks, and certification; this is private-state wiring evidence, not policy information."
+        }
+      ],
+      "uncertainties": []
+    },
+    {
+      "case_index": 224,
+      "public_environment_name": "Facet Lantern",
+      "environment_id": "facet_lantern_env",
+      "difficulty": 2,
+      "interaction_mode": "simplified",
+      "label": "no",
+      "controls_available": [
+        "Difficulty 2: shape=bipyramid, ring_vertices=5, polygon_count=2, target_stride=2, initial_connections=2, initial_yaw=15°, occlusion_band=0.35, rotation_step_degrees=15.",
+        "Rotate with the visible LEFT and RIGHT TURN buttons; each changes yaw by 15 degrees.",
+        "Click or keyboard-activate visible labelled studs: the first selects a stud and the second creates a connection; CANCEL STUD clears a pending selection.",
+        "CERTIFY LANTERN submits the attempt and ABANDON ATTEMPT submits failure/restarts; these are administrative controls, not an autonomous outcome phase."
+      ],
+      "autonomous_processes": [
+        "None: with no new agent action, the rendered lantern, target list, visible-stud set, selection, yaw, and connection graph remain unchanged for the entire episode."
+      ],
+      "grouped_control_modes": [
+        "D_rotation: proxy_button LEFT/RIGHT TURN presses, grouped across all seeds and attempts.",
+        "D_vertex_connection: vertex_click selection/connection of visible labelled studs, grouped across all seeds and attempts.",
+        "CERTIFY LANTERN and ABANDON ATTEMPT are administrative and are not used as outcome-phase control modes."
+      ],
+      "delta_ms": null,
+      "window_ms": 0,
+      "clause_i": {
+        "holds": false,
+        "reason": "Fails. There is no autonomous task-state evolution or penalty for deferring work. During any delay for which success remains possible, an observation-free policy can choose no-op/defer and continue optimally afterward, so the required absence of q is not established."
+      },
+      "clause_ii": {
+        "holds": true,
+        "reason": "Holds only trivially: the current screenshot at the configured zero-length window exposes the target outlines, projected visible studs, yaw, and ledger, so a bounded-window policy can choose a legal next step. This visual sufficiency is not a real-time witness because no autonomous change or expiring opportunity accompanies it."
+      },
+      "clause_iii": {
+        "holds": false,
+        "reason": "Fails. For 0 < tau < Delta with no agent action, the mechanic has no timer, animation loop, physics tick, or scheduled transition. Yaw and connections change only in explicit input handlers, so no available action becomes unavailable or strictly loses value/advantage."
+      },
+      "common_visible_process": "None. The only visible changes are synchronous re-renders caused by explicit rotation, stud, selection-clear, or submission events; the bipyramid does not move or change while the agent supplies no action.",
+      "pre_run": {
+        "threshold": 0.5,
+        "at_least_half": null,
+        "rate": null,
+        "basis": "not_applicable",
+        "reason": "The mathematical definition already yields No at clauses (i) and (iii); the pre-run threshold cannot change that label, and this static mechanic has no autonomous outcome phase for a pre-run rate to measure.",
+        "seed_probe": null
+      },
+      "files_read_completely": [
+        "AGENTS.md",
+        "weird_captcha_gym/docs/controllability/real-time.md",
+        "weird_captcha_gym/environments/facet_lantern_env/controls.json",
+        "weird_captcha_gym/environments/facet_lantern_env/env.json",
+        "weird_captcha_gym/environments/facet_lantern_env/tasks/facet_lantern_seed_0001/task.json",
+        "weird_captcha_gym/environments/facet_lantern_env/scripts/install_puzzle_runtime.sh",
+        "weird_captcha_gym/environments/facet_lantern_env/scripts/setup_puzzle_runtime.sh",
+        "weird_captcha_gym/environments/facet_lantern_env/tasks/facet_lantern_seed_0001/setup_task.sh",
+        "weird_captcha_gym/environments/facet_lantern_env/tasks/facet_lantern_seed_0001/export_result.sh",
+        "weird_captcha_gym/shared_scripts/incubator_generators/facet_lantern.py",
+        "weird_captcha_gym/shared_runtime/app/mechanics/facet_lantern.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/facet_lantern.css",
+        "weird_captcha_gym/shared_runtime/server/incubator_graders/facet_lantern.py",
+        "weird_captcha_gym/environments/facet_lantern_env/tasks/facet_lantern_seed_0001/verifier.py",
+        "weird_captcha_gym/shared_runtime/verifier_helpers.py",
+        "weird_captcha_gym/tools/incubator_solvers/facet_lantern.py",
+        "weird_captcha_gym/shared_scripts/open_puzzle_browser.sh",
+        "weird_captcha_gym/shared_scripts/time_control.py"
+      ],
+      "source_evidence": [
+        {
+          "path": "weird_captcha_gym/environments/facet_lantern_env/controls.json",
+          "lines": "15-21",
+          "claim": "Difficulty 2 is shape=bipyramid, ring_vertices=5, polygon_count=2, target_stride=2, initial_connections=2, initial_yaw=15°, occlusion_band=0.35, rotation_step_degrees=15; its simplified prompt specifies simplified uses visible LEFT/RIGHT TURN buttons."
+        },
+        {
+          "path": "weird_captcha_gym/environments/facet_lantern_env/controls.json",
+          "lines": "52-56",
+          "claim": "Both interaction modes are implemented, and the shared profile sets observation_window_ms=0 and frames_per_observation=1."
+        },
+        {
+          "path": "weird_captcha_gym/environments/facet_lantern_env/env.json",
+          "lines": "9-14",
+          "claim": "The environment exposes a frame window but configures a 0 ms observation window, one frame, synchronous operation, and no task-specific time behavior."
+        },
+        {
+          "path": "weird_captcha_gym/docs/controllability/real-time.md",
+          "lines": "40-68",
+          "claim": "The definition requires one visible autonomous process that makes a useful action strictly worse within Delta; static puzzles and unrelated animation do not qualify."
+        },
+        {
+          "path": "weird_captcha_gym/docs/controllability/real-time.md",
+          "lines": "98-105",
+          "claim": "The settled interpretation explicitly treats waiting with no penalty as not real-time."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/facet_lantern.py",
+          "lines": "66-122",
+          "claim": "Generation constructs fixed bipyramid vertices, faces, target facets, initial connections, initial yaw, occlusion band, and rotation step, then returns the world; no evolving timer or trajectory is generated."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/facet_lantern.py",
+          "lines": "145-187",
+          "claim": "The public state and truth contain the same static world, targets, required connections, and scores; completion changes only through submitted connections."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/facet_lantern.js",
+          "lines": "46-62",
+          "claim": "Each render initializes yaw, persistent connections, selection, and event storage from the generated world."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/facet_lantern.js",
+          "lines": "157-181",
+          "claim": "Rendering projects the same vertices and visibility at the current yaw, while rotateBy mutates yaw only when explicitly called."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/facet_lantern.js",
+          "lines": "183-202",
+          "claim": "Stud selection and connection state mutate only inside the explicit vertex handler."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/facet_lantern.js",
+          "lines": "256-266",
+          "claim": "Simplified-mode button listeners call the ±rotation-step handler; the initial render and button/click listeners are the only listed task interactions."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/facet_lantern.css",
+          "lines": "1-57",
+          "claim": "The complete mechanic stylesheet contains layout, color, and pointer styling only; it declares no animation or keyframe process."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/facet_lantern.py",
+          "lines": "61-179",
+          "claim": "The grader replays explicit rotate/select/connect/clear/submit events against static yaw/visibility and graph data, with no task-time or autonomous-state check."
+        },
+        {
+          "path": "weird_captcha_gym/environments/facet_lantern_env/tasks/facet_lantern_seed_0001/verifier.py",
+          "lines": "36-57",
+          "claim": "The verifier only loads the exported result and delegates the independent Facet Lantern replay grader."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/verifier_helpers.py",
+          "lines": "15-52",
+          "claim": "The shared verifier helper only copies and parses the exported result, then generic grading dispatches to a grader; it introduces no Facet Lantern evolution."
+        },
+        {
+          "path": "weird_captcha_gym/tools/incubator_solvers/facet_lantern.py",
+          "lines": "115-145",
+          "claim": "The implementation witness discards its advance argument and performs rotations, visible stud clicks, and certification; this is private-state wiring evidence, not policy information."
+        }
+      ],
+      "uncertainties": []
+    },
+    {
+      "case_index": 225,
+      "public_environment_name": "Facet Lantern",
+      "environment_id": "facet_lantern_env",
+      "difficulty": 3,
+      "interaction_mode": "full",
+      "label": "no",
+      "controls_available": [
+        "Difficulty 3: shape=bipyramid, ring_vertices=6, polygon_count=3, target_stride=2, initial_connections=3, initial_yaw=30°, occlusion_band=0.25, rotation_step_degrees=15.",
+        "Rotate with direct horizontal pointer drags on an empty part of the SVG stage; yaw is continuous.",
+        "Click or keyboard-activate visible labelled studs: the first selects a stud and the second creates a connection; CANCEL STUD clears a pending selection.",
+        "CERTIFY LANTERN submits the attempt and ABANDON ATTEMPT submits failure/restarts; these are administrative controls, not an autonomous outcome phase."
+      ],
+      "autonomous_processes": [
+        "None: with no new agent action, the rendered lantern, target list, visible-stud set, selection, yaw, and connection graph remain unchanged for the entire episode."
+      ],
+      "grouped_control_modes": [
+        "D_rotation: direct_pointer horizontal drags on the empty SVG stage, grouped across all seeds and attempts.",
+        "D_vertex_connection: vertex_click selection/connection of visible labelled studs, grouped across all seeds and attempts.",
+        "CERTIFY LANTERN and ABANDON ATTEMPT are administrative and are not used as outcome-phase control modes."
+      ],
+      "delta_ms": null,
+      "window_ms": 0,
+      "clause_i": {
+        "holds": false,
+        "reason": "Fails. There is no autonomous task-state evolution or penalty for deferring work. During any delay for which success remains possible, an observation-free policy can choose no-op/defer and continue optimally afterward, so the required absence of q is not established."
+      },
+      "clause_ii": {
+        "holds": true,
+        "reason": "Holds only trivially: the current screenshot at the configured zero-length window exposes the target outlines, projected visible studs, yaw, and ledger, so a bounded-window policy can choose a legal next step. This visual sufficiency is not a real-time witness because no autonomous change or expiring opportunity accompanies it."
+      },
+      "clause_iii": {
+        "holds": false,
+        "reason": "Fails. For 0 < tau < Delta with no agent action, the mechanic has no timer, animation loop, physics tick, or scheduled transition. Yaw and connections change only in explicit input handlers, so no available action becomes unavailable or strictly loses value/advantage."
+      },
+      "common_visible_process": "None. The only visible changes are synchronous re-renders caused by explicit rotation, stud, selection-clear, or submission events; the bipyramid does not move or change while the agent supplies no action.",
+      "pre_run": {
+        "threshold": 0.5,
+        "at_least_half": null,
+        "rate": null,
+        "basis": "not_applicable",
+        "reason": "The mathematical definition already yields No at clauses (i) and (iii); the pre-run threshold cannot change that label, and this static mechanic has no autonomous outcome phase for a pre-run rate to measure.",
+        "seed_probe": null
+      },
+      "files_read_completely": [
+        "AGENTS.md",
+        "weird_captcha_gym/docs/controllability/real-time.md",
+        "weird_captcha_gym/environments/facet_lantern_env/controls.json",
+        "weird_captcha_gym/environments/facet_lantern_env/env.json",
+        "weird_captcha_gym/environments/facet_lantern_env/tasks/facet_lantern_seed_0001/task.json",
+        "weird_captcha_gym/environments/facet_lantern_env/scripts/install_puzzle_runtime.sh",
+        "weird_captcha_gym/environments/facet_lantern_env/scripts/setup_puzzle_runtime.sh",
+        "weird_captcha_gym/environments/facet_lantern_env/tasks/facet_lantern_seed_0001/setup_task.sh",
+        "weird_captcha_gym/environments/facet_lantern_env/tasks/facet_lantern_seed_0001/export_result.sh",
+        "weird_captcha_gym/shared_scripts/incubator_generators/facet_lantern.py",
+        "weird_captcha_gym/shared_runtime/app/mechanics/facet_lantern.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/facet_lantern.css",
+        "weird_captcha_gym/shared_runtime/server/incubator_graders/facet_lantern.py",
+        "weird_captcha_gym/environments/facet_lantern_env/tasks/facet_lantern_seed_0001/verifier.py",
+        "weird_captcha_gym/shared_runtime/verifier_helpers.py",
+        "weird_captcha_gym/tools/incubator_solvers/facet_lantern.py",
+        "weird_captcha_gym/shared_scripts/open_puzzle_browser.sh",
+        "weird_captcha_gym/shared_scripts/time_control.py"
+      ],
+      "source_evidence": [
+        {
+          "path": "weird_captcha_gym/environments/facet_lantern_env/controls.json",
+          "lines": "24-30",
+          "claim": "Difficulty 3 is shape=bipyramid, ring_vertices=6, polygon_count=3, target_stride=2, initial_connections=3, initial_yaw=30°, occlusion_band=0.25, rotation_step_degrees=15; its full prompt specifies full uses direct horizontal pointer drags on the SVG stage."
+        },
+        {
+          "path": "weird_captcha_gym/environments/facet_lantern_env/controls.json",
+          "lines": "52-56",
+          "claim": "Both interaction modes are implemented, and the shared profile sets observation_window_ms=0 and frames_per_observation=1."
+        },
+        {
+          "path": "weird_captcha_gym/environments/facet_lantern_env/env.json",
+          "lines": "9-14",
+          "claim": "The environment exposes a frame window but configures a 0 ms observation window, one frame, synchronous operation, and no task-specific time behavior."
+        },
+        {
+          "path": "weird_captcha_gym/docs/controllability/real-time.md",
+          "lines": "40-68",
+          "claim": "The definition requires one visible autonomous process that makes a useful action strictly worse within Delta; static puzzles and unrelated animation do not qualify."
+        },
+        {
+          "path": "weird_captcha_gym/docs/controllability/real-time.md",
+          "lines": "98-105",
+          "claim": "The settled interpretation explicitly treats waiting with no penalty as not real-time."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/facet_lantern.py",
+          "lines": "66-122",
+          "claim": "Generation constructs fixed bipyramid vertices, faces, target facets, initial connections, initial yaw, occlusion band, and rotation step, then returns the world; no evolving timer or trajectory is generated."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/facet_lantern.py",
+          "lines": "145-187",
+          "claim": "The public state and truth contain the same static world, targets, required connections, and scores; completion changes only through submitted connections."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/facet_lantern.js",
+          "lines": "46-62",
+          "claim": "Each render initializes yaw, persistent connections, selection, and event storage from the generated world."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/facet_lantern.js",
+          "lines": "157-181",
+          "claim": "Rendering projects the same vertices and visibility at the current yaw, while rotateBy mutates yaw only when explicitly called."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/facet_lantern.js",
+          "lines": "183-202",
+          "claim": "Stud selection and connection state mutate only inside the explicit vertex handler."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/facet_lantern.js",
+          "lines": "204-231",
+          "claim": "Full-mode pointer handlers change yaw only in response to an active drag and record the completed drag as a rotate event."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/facet_lantern.css",
+          "lines": "1-57",
+          "claim": "The complete mechanic stylesheet contains layout, color, and pointer styling only; it declares no animation or keyframe process."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/facet_lantern.py",
+          "lines": "61-179",
+          "claim": "The grader replays explicit rotate/select/connect/clear/submit events against static yaw/visibility and graph data, with no task-time or autonomous-state check."
+        },
+        {
+          "path": "weird_captcha_gym/environments/facet_lantern_env/tasks/facet_lantern_seed_0001/verifier.py",
+          "lines": "36-57",
+          "claim": "The verifier only loads the exported result and delegates the independent Facet Lantern replay grader."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/verifier_helpers.py",
+          "lines": "15-52",
+          "claim": "The shared verifier helper only copies and parses the exported result, then generic grading dispatches to a grader; it introduces no Facet Lantern evolution."
+        },
+        {
+          "path": "weird_captcha_gym/tools/incubator_solvers/facet_lantern.py",
+          "lines": "115-145",
+          "claim": "The implementation witness discards its advance argument and performs rotations, visible stud clicks, and certification; this is private-state wiring evidence, not policy information."
+        }
+      ],
+      "uncertainties": []
+    },
+    {
+      "case_index": 226,
+      "public_environment_name": "Facet Lantern",
+      "environment_id": "facet_lantern_env",
+      "difficulty": 3,
+      "interaction_mode": "simplified",
+      "label": "no",
+      "controls_available": [
+        "Difficulty 3: shape=bipyramid, ring_vertices=6, polygon_count=3, target_stride=2, initial_connections=3, initial_yaw=30°, occlusion_band=0.25, rotation_step_degrees=15.",
+        "Rotate with the visible LEFT and RIGHT TURN buttons; each changes yaw by 15 degrees.",
+        "Click or keyboard-activate visible labelled studs: the first selects a stud and the second creates a connection; CANCEL STUD clears a pending selection.",
+        "CERTIFY LANTERN submits the attempt and ABANDON ATTEMPT submits failure/restarts; these are administrative controls, not an autonomous outcome phase."
+      ],
+      "autonomous_processes": [
+        "None: with no new agent action, the rendered lantern, target list, visible-stud set, selection, yaw, and connection graph remain unchanged for the entire episode."
+      ],
+      "grouped_control_modes": [
+        "D_rotation: proxy_button LEFT/RIGHT TURN presses, grouped across all seeds and attempts.",
+        "D_vertex_connection: vertex_click selection/connection of visible labelled studs, grouped across all seeds and attempts.",
+        "CERTIFY LANTERN and ABANDON ATTEMPT are administrative and are not used as outcome-phase control modes."
+      ],
+      "delta_ms": null,
+      "window_ms": 0,
+      "clause_i": {
+        "holds": false,
+        "reason": "Fails. There is no autonomous task-state evolution or penalty for deferring work. During any delay for which success remains possible, an observation-free policy can choose no-op/defer and continue optimally afterward, so the required absence of q is not established."
+      },
+      "clause_ii": {
+        "holds": true,
+        "reason": "Holds only trivially: the current screenshot at the configured zero-length window exposes the target outlines, projected visible studs, yaw, and ledger, so a bounded-window policy can choose a legal next step. This visual sufficiency is not a real-time witness because no autonomous change or expiring opportunity accompanies it."
+      },
+      "clause_iii": {
+        "holds": false,
+        "reason": "Fails. For 0 < tau < Delta with no agent action, the mechanic has no timer, animation loop, physics tick, or scheduled transition. Yaw and connections change only in explicit input handlers, so no available action becomes unavailable or strictly loses value/advantage."
+      },
+      "common_visible_process": "None. The only visible changes are synchronous re-renders caused by explicit rotation, stud, selection-clear, or submission events; the bipyramid does not move or change while the agent supplies no action.",
+      "pre_run": {
+        "threshold": 0.5,
+        "at_least_half": null,
+        "rate": null,
+        "basis": "not_applicable",
+        "reason": "The mathematical definition already yields No at clauses (i) and (iii); the pre-run threshold cannot change that label, and this static mechanic has no autonomous outcome phase for a pre-run rate to measure.",
+        "seed_probe": null
+      },
+      "files_read_completely": [
+        "AGENTS.md",
+        "weird_captcha_gym/docs/controllability/real-time.md",
+        "weird_captcha_gym/environments/facet_lantern_env/controls.json",
+        "weird_captcha_gym/environments/facet_lantern_env/env.json",
+        "weird_captcha_gym/environments/facet_lantern_env/tasks/facet_lantern_seed_0001/task.json",
+        "weird_captcha_gym/environments/facet_lantern_env/scripts/install_puzzle_runtime.sh",
+        "weird_captcha_gym/environments/facet_lantern_env/scripts/setup_puzzle_runtime.sh",
+        "weird_captcha_gym/environments/facet_lantern_env/tasks/facet_lantern_seed_0001/setup_task.sh",
+        "weird_captcha_gym/environments/facet_lantern_env/tasks/facet_lantern_seed_0001/export_result.sh",
+        "weird_captcha_gym/shared_scripts/incubator_generators/facet_lantern.py",
+        "weird_captcha_gym/shared_runtime/app/mechanics/facet_lantern.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/facet_lantern.css",
+        "weird_captcha_gym/shared_runtime/server/incubator_graders/facet_lantern.py",
+        "weird_captcha_gym/environments/facet_lantern_env/tasks/facet_lantern_seed_0001/verifier.py",
+        "weird_captcha_gym/shared_runtime/verifier_helpers.py",
+        "weird_captcha_gym/tools/incubator_solvers/facet_lantern.py",
+        "weird_captcha_gym/shared_scripts/open_puzzle_browser.sh",
+        "weird_captcha_gym/shared_scripts/time_control.py"
+      ],
+      "source_evidence": [
+        {
+          "path": "weird_captcha_gym/environments/facet_lantern_env/controls.json",
+          "lines": "24-30",
+          "claim": "Difficulty 3 is shape=bipyramid, ring_vertices=6, polygon_count=3, target_stride=2, initial_connections=3, initial_yaw=30°, occlusion_band=0.25, rotation_step_degrees=15; its simplified prompt specifies simplified uses visible LEFT/RIGHT TURN buttons."
+        },
+        {
+          "path": "weird_captcha_gym/environments/facet_lantern_env/controls.json",
+          "lines": "52-56",
+          "claim": "Both interaction modes are implemented, and the shared profile sets observation_window_ms=0 and frames_per_observation=1."
+        },
+        {
+          "path": "weird_captcha_gym/environments/facet_lantern_env/env.json",
+          "lines": "9-14",
+          "claim": "The environment exposes a frame window but configures a 0 ms observation window, one frame, synchronous operation, and no task-specific time behavior."
+        },
+        {
+          "path": "weird_captcha_gym/docs/controllability/real-time.md",
+          "lines": "40-68",
+          "claim": "The definition requires one visible autonomous process that makes a useful action strictly worse within Delta; static puzzles and unrelated animation do not qualify."
+        },
+        {
+          "path": "weird_captcha_gym/docs/controllability/real-time.md",
+          "lines": "98-105",
+          "claim": "The settled interpretation explicitly treats waiting with no penalty as not real-time."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/facet_lantern.py",
+          "lines": "66-122",
+          "claim": "Generation constructs fixed bipyramid vertices, faces, target facets, initial connections, initial yaw, occlusion band, and rotation step, then returns the world; no evolving timer or trajectory is generated."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/facet_lantern.py",
+          "lines": "145-187",
+          "claim": "The public state and truth contain the same static world, targets, required connections, and scores; completion changes only through submitted connections."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/facet_lantern.js",
+          "lines": "46-62",
+          "claim": "Each render initializes yaw, persistent connections, selection, and event storage from the generated world."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/facet_lantern.js",
+          "lines": "157-181",
+          "claim": "Rendering projects the same vertices and visibility at the current yaw, while rotateBy mutates yaw only when explicitly called."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/facet_lantern.js",
+          "lines": "183-202",
+          "claim": "Stud selection and connection state mutate only inside the explicit vertex handler."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/facet_lantern.js",
+          "lines": "256-266",
+          "claim": "Simplified-mode button listeners call the ±rotation-step handler; the initial render and button/click listeners are the only listed task interactions."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/facet_lantern.css",
+          "lines": "1-57",
+          "claim": "The complete mechanic stylesheet contains layout, color, and pointer styling only; it declares no animation or keyframe process."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/facet_lantern.py",
+          "lines": "61-179",
+          "claim": "The grader replays explicit rotate/select/connect/clear/submit events against static yaw/visibility and graph data, with no task-time or autonomous-state check."
+        },
+        {
+          "path": "weird_captcha_gym/environments/facet_lantern_env/tasks/facet_lantern_seed_0001/verifier.py",
+          "lines": "36-57",
+          "claim": "The verifier only loads the exported result and delegates the independent Facet Lantern replay grader."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/verifier_helpers.py",
+          "lines": "15-52",
+          "claim": "The shared verifier helper only copies and parses the exported result, then generic grading dispatches to a grader; it introduces no Facet Lantern evolution."
+        },
+        {
+          "path": "weird_captcha_gym/tools/incubator_solvers/facet_lantern.py",
+          "lines": "115-145",
+          "claim": "The implementation witness discards its advance argument and performs rotations, visible stud clicks, and certification; this is private-state wiring evidence, not policy information."
+        }
+      ],
+      "uncertainties": []
+    },
+    {
+      "case_index": 227,
+      "public_environment_name": "Facet Lantern",
+      "environment_id": "facet_lantern_env",
+      "difficulty": 4,
+      "interaction_mode": "full",
+      "label": "no",
+      "controls_available": [
+        "Difficulty 4: shape=bipyramid, ring_vertices=8, polygon_count=4, target_stride=2, initial_connections=4, initial_yaw=45°, occlusion_band=0.18, rotation_step_degrees=15.",
+        "Rotate with direct horizontal pointer drags on an empty part of the SVG stage; yaw is continuous.",
+        "Click or keyboard-activate visible labelled studs: the first selects a stud and the second creates a connection; CANCEL STUD clears a pending selection.",
+        "CERTIFY LANTERN submits the attempt and ABANDON ATTEMPT submits failure/restarts; these are administrative controls, not an autonomous outcome phase."
+      ],
+      "autonomous_processes": [
+        "None: with no new agent action, the rendered lantern, target list, visible-stud set, selection, yaw, and connection graph remain unchanged for the entire episode."
+      ],
+      "grouped_control_modes": [
+        "D_rotation: direct_pointer horizontal drags on the empty SVG stage, grouped across all seeds and attempts.",
+        "D_vertex_connection: vertex_click selection/connection of visible labelled studs, grouped across all seeds and attempts.",
+        "CERTIFY LANTERN and ABANDON ATTEMPT are administrative and are not used as outcome-phase control modes."
+      ],
+      "delta_ms": null,
+      "window_ms": 0,
+      "clause_i": {
+        "holds": false,
+        "reason": "Fails. There is no autonomous task-state evolution or penalty for deferring work. During any delay for which success remains possible, an observation-free policy can choose no-op/defer and continue optimally afterward, so the required absence of q is not established."
+      },
+      "clause_ii": {
+        "holds": true,
+        "reason": "Holds only trivially: the current screenshot at the configured zero-length window exposes the target outlines, projected visible studs, yaw, and ledger, so a bounded-window policy can choose a legal next step. This visual sufficiency is not a real-time witness because no autonomous change or expiring opportunity accompanies it."
+      },
+      "clause_iii": {
+        "holds": false,
+        "reason": "Fails. For 0 < tau < Delta with no agent action, the mechanic has no timer, animation loop, physics tick, or scheduled transition. Yaw and connections change only in explicit input handlers, so no available action becomes unavailable or strictly loses value/advantage."
+      },
+      "common_visible_process": "None. The only visible changes are synchronous re-renders caused by explicit rotation, stud, selection-clear, or submission events; the bipyramid does not move or change while the agent supplies no action.",
+      "pre_run": {
+        "threshold": 0.5,
+        "at_least_half": null,
+        "rate": null,
+        "basis": "not_applicable",
+        "reason": "The mathematical definition already yields No at clauses (i) and (iii); the pre-run threshold cannot change that label, and this static mechanic has no autonomous outcome phase for a pre-run rate to measure.",
+        "seed_probe": null
+      },
+      "files_read_completely": [
+        "AGENTS.md",
+        "weird_captcha_gym/docs/controllability/real-time.md",
+        "weird_captcha_gym/environments/facet_lantern_env/controls.json",
+        "weird_captcha_gym/environments/facet_lantern_env/env.json",
+        "weird_captcha_gym/environments/facet_lantern_env/tasks/facet_lantern_seed_0001/task.json",
+        "weird_captcha_gym/environments/facet_lantern_env/scripts/install_puzzle_runtime.sh",
+        "weird_captcha_gym/environments/facet_lantern_env/scripts/setup_puzzle_runtime.sh",
+        "weird_captcha_gym/environments/facet_lantern_env/tasks/facet_lantern_seed_0001/setup_task.sh",
+        "weird_captcha_gym/environments/facet_lantern_env/tasks/facet_lantern_seed_0001/export_result.sh",
+        "weird_captcha_gym/shared_scripts/incubator_generators/facet_lantern.py",
+        "weird_captcha_gym/shared_runtime/app/mechanics/facet_lantern.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/facet_lantern.css",
+        "weird_captcha_gym/shared_runtime/server/incubator_graders/facet_lantern.py",
+        "weird_captcha_gym/environments/facet_lantern_env/tasks/facet_lantern_seed_0001/verifier.py",
+        "weird_captcha_gym/shared_runtime/verifier_helpers.py",
+        "weird_captcha_gym/tools/incubator_solvers/facet_lantern.py",
+        "weird_captcha_gym/shared_scripts/open_puzzle_browser.sh",
+        "weird_captcha_gym/shared_scripts/time_control.py"
+      ],
+      "source_evidence": [
+        {
+          "path": "weird_captcha_gym/environments/facet_lantern_env/controls.json",
+          "lines": "33-39",
+          "claim": "Difficulty 4 is shape=bipyramid, ring_vertices=8, polygon_count=4, target_stride=2, initial_connections=4, initial_yaw=45°, occlusion_band=0.18, rotation_step_degrees=15; its full prompt specifies full uses direct horizontal pointer drags on the SVG stage."
+        },
+        {
+          "path": "weird_captcha_gym/environments/facet_lantern_env/controls.json",
+          "lines": "52-56",
+          "claim": "Both interaction modes are implemented, and the shared profile sets observation_window_ms=0 and frames_per_observation=1."
+        },
+        {
+          "path": "weird_captcha_gym/environments/facet_lantern_env/env.json",
+          "lines": "9-14",
+          "claim": "The environment exposes a frame window but configures a 0 ms observation window, one frame, synchronous operation, and no task-specific time behavior."
+        },
+        {
+          "path": "weird_captcha_gym/docs/controllability/real-time.md",
+          "lines": "40-68",
+          "claim": "The definition requires one visible autonomous process that makes a useful action strictly worse within Delta; static puzzles and unrelated animation do not qualify."
+        },
+        {
+          "path": "weird_captcha_gym/docs/controllability/real-time.md",
+          "lines": "98-105",
+          "claim": "The settled interpretation explicitly treats waiting with no penalty as not real-time."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/facet_lantern.py",
+          "lines": "66-122",
+          "claim": "Generation constructs fixed bipyramid vertices, faces, target facets, initial connections, initial yaw, occlusion band, and rotation step, then returns the world; no evolving timer or trajectory is generated."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/facet_lantern.py",
+          "lines": "145-187",
+          "claim": "The public state and truth contain the same static world, targets, required connections, and scores; completion changes only through submitted connections."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/facet_lantern.js",
+          "lines": "46-62",
+          "claim": "Each render initializes yaw, persistent connections, selection, and event storage from the generated world."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/facet_lantern.js",
+          "lines": "157-181",
+          "claim": "Rendering projects the same vertices and visibility at the current yaw, while rotateBy mutates yaw only when explicitly called."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/facet_lantern.js",
+          "lines": "183-202",
+          "claim": "Stud selection and connection state mutate only inside the explicit vertex handler."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/facet_lantern.js",
+          "lines": "204-231",
+          "claim": "Full-mode pointer handlers change yaw only in response to an active drag and record the completed drag as a rotate event."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/facet_lantern.css",
+          "lines": "1-57",
+          "claim": "The complete mechanic stylesheet contains layout, color, and pointer styling only; it declares no animation or keyframe process."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/facet_lantern.py",
+          "lines": "61-179",
+          "claim": "The grader replays explicit rotate/select/connect/clear/submit events against static yaw/visibility and graph data, with no task-time or autonomous-state check."
+        },
+        {
+          "path": "weird_captcha_gym/environments/facet_lantern_env/tasks/facet_lantern_seed_0001/verifier.py",
+          "lines": "36-57",
+          "claim": "The verifier only loads the exported result and delegates the independent Facet Lantern replay grader."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/verifier_helpers.py",
+          "lines": "15-52",
+          "claim": "The shared verifier helper only copies and parses the exported result, then generic grading dispatches to a grader; it introduces no Facet Lantern evolution."
+        },
+        {
+          "path": "weird_captcha_gym/tools/incubator_solvers/facet_lantern.py",
+          "lines": "115-145",
+          "claim": "The implementation witness discards its advance argument and performs rotations, visible stud clicks, and certification; this is private-state wiring evidence, not policy information."
+        }
+      ],
+      "uncertainties": []
+    },
+    {
+      "case_index": 228,
+      "public_environment_name": "Facet Lantern",
+      "environment_id": "facet_lantern_env",
+      "difficulty": 4,
+      "interaction_mode": "simplified",
+      "label": "no",
+      "controls_available": [
+        "Difficulty 4: shape=bipyramid, ring_vertices=8, polygon_count=4, target_stride=2, initial_connections=4, initial_yaw=45°, occlusion_band=0.18, rotation_step_degrees=15.",
+        "Rotate with the visible LEFT and RIGHT TURN buttons; each changes yaw by 15 degrees.",
+        "Click or keyboard-activate visible labelled studs: the first selects a stud and the second creates a connection; CANCEL STUD clears a pending selection.",
+        "CERTIFY LANTERN submits the attempt and ABANDON ATTEMPT submits failure/restarts; these are administrative controls, not an autonomous outcome phase."
+      ],
+      "autonomous_processes": [
+        "None: with no new agent action, the rendered lantern, target list, visible-stud set, selection, yaw, and connection graph remain unchanged for the entire episode."
+      ],
+      "grouped_control_modes": [
+        "D_rotation: proxy_button LEFT/RIGHT TURN presses, grouped across all seeds and attempts.",
+        "D_vertex_connection: vertex_click selection/connection of visible labelled studs, grouped across all seeds and attempts.",
+        "CERTIFY LANTERN and ABANDON ATTEMPT are administrative and are not used as outcome-phase control modes."
+      ],
+      "delta_ms": null,
+      "window_ms": 0,
+      "clause_i": {
+        "holds": false,
+        "reason": "Fails. There is no autonomous task-state evolution or penalty for deferring work. During any delay for which success remains possible, an observation-free policy can choose no-op/defer and continue optimally afterward, so the required absence of q is not established."
+      },
+      "clause_ii": {
+        "holds": true,
+        "reason": "Holds only trivially: the current screenshot at the configured zero-length window exposes the target outlines, projected visible studs, yaw, and ledger, so a bounded-window policy can choose a legal next step. This visual sufficiency is not a real-time witness because no autonomous change or expiring opportunity accompanies it."
+      },
+      "clause_iii": {
+        "holds": false,
+        "reason": "Fails. For 0 < tau < Delta with no agent action, the mechanic has no timer, animation loop, physics tick, or scheduled transition. Yaw and connections change only in explicit input handlers, so no available action becomes unavailable or strictly loses value/advantage."
+      },
+      "common_visible_process": "None. The only visible changes are synchronous re-renders caused by explicit rotation, stud, selection-clear, or submission events; the bipyramid does not move or change while the agent supplies no action.",
+      "pre_run": {
+        "threshold": 0.5,
+        "at_least_half": null,
+        "rate": null,
+        "basis": "not_applicable",
+        "reason": "The mathematical definition already yields No at clauses (i) and (iii); the pre-run threshold cannot change that label, and this static mechanic has no autonomous outcome phase for a pre-run rate to measure.",
+        "seed_probe": null
+      },
+      "files_read_completely": [
+        "AGENTS.md",
+        "weird_captcha_gym/docs/controllability/real-time.md",
+        "weird_captcha_gym/environments/facet_lantern_env/controls.json",
+        "weird_captcha_gym/environments/facet_lantern_env/env.json",
+        "weird_captcha_gym/environments/facet_lantern_env/tasks/facet_lantern_seed_0001/task.json",
+        "weird_captcha_gym/environments/facet_lantern_env/scripts/install_puzzle_runtime.sh",
+        "weird_captcha_gym/environments/facet_lantern_env/scripts/setup_puzzle_runtime.sh",
+        "weird_captcha_gym/environments/facet_lantern_env/tasks/facet_lantern_seed_0001/setup_task.sh",
+        "weird_captcha_gym/environments/facet_lantern_env/tasks/facet_lantern_seed_0001/export_result.sh",
+        "weird_captcha_gym/shared_scripts/incubator_generators/facet_lantern.py",
+        "weird_captcha_gym/shared_runtime/app/mechanics/facet_lantern.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/facet_lantern.css",
+        "weird_captcha_gym/shared_runtime/server/incubator_graders/facet_lantern.py",
+        "weird_captcha_gym/environments/facet_lantern_env/tasks/facet_lantern_seed_0001/verifier.py",
+        "weird_captcha_gym/shared_runtime/verifier_helpers.py",
+        "weird_captcha_gym/tools/incubator_solvers/facet_lantern.py",
+        "weird_captcha_gym/shared_scripts/open_puzzle_browser.sh",
+        "weird_captcha_gym/shared_scripts/time_control.py"
+      ],
+      "source_evidence": [
+        {
+          "path": "weird_captcha_gym/environments/facet_lantern_env/controls.json",
+          "lines": "33-39",
+          "claim": "Difficulty 4 is shape=bipyramid, ring_vertices=8, polygon_count=4, target_stride=2, initial_connections=4, initial_yaw=45°, occlusion_band=0.18, rotation_step_degrees=15; its simplified prompt specifies simplified uses visible LEFT/RIGHT TURN buttons."
+        },
+        {
+          "path": "weird_captcha_gym/environments/facet_lantern_env/controls.json",
+          "lines": "52-56",
+          "claim": "Both interaction modes are implemented, and the shared profile sets observation_window_ms=0 and frames_per_observation=1."
+        },
+        {
+          "path": "weird_captcha_gym/environments/facet_lantern_env/env.json",
+          "lines": "9-14",
+          "claim": "The environment exposes a frame window but configures a 0 ms observation window, one frame, synchronous operation, and no task-specific time behavior."
+        },
+        {
+          "path": "weird_captcha_gym/docs/controllability/real-time.md",
+          "lines": "40-68",
+          "claim": "The definition requires one visible autonomous process that makes a useful action strictly worse within Delta; static puzzles and unrelated animation do not qualify."
+        },
+        {
+          "path": "weird_captcha_gym/docs/controllability/real-time.md",
+          "lines": "98-105",
+          "claim": "The settled interpretation explicitly treats waiting with no penalty as not real-time."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/facet_lantern.py",
+          "lines": "66-122",
+          "claim": "Generation constructs fixed bipyramid vertices, faces, target facets, initial connections, initial yaw, occlusion band, and rotation step, then returns the world; no evolving timer or trajectory is generated."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/facet_lantern.py",
+          "lines": "145-187",
+          "claim": "The public state and truth contain the same static world, targets, required connections, and scores; completion changes only through submitted connections."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/facet_lantern.js",
+          "lines": "46-62",
+          "claim": "Each render initializes yaw, persistent connections, selection, and event storage from the generated world."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/facet_lantern.js",
+          "lines": "157-181",
+          "claim": "Rendering projects the same vertices and visibility at the current yaw, while rotateBy mutates yaw only when explicitly called."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/facet_lantern.js",
+          "lines": "183-202",
+          "claim": "Stud selection and connection state mutate only inside the explicit vertex handler."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/facet_lantern.js",
+          "lines": "256-266",
+          "claim": "Simplified-mode button listeners call the ±rotation-step handler; the initial render and button/click listeners are the only listed task interactions."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/facet_lantern.css",
+          "lines": "1-57",
+          "claim": "The complete mechanic stylesheet contains layout, color, and pointer styling only; it declares no animation or keyframe process."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/facet_lantern.py",
+          "lines": "61-179",
+          "claim": "The grader replays explicit rotate/select/connect/clear/submit events against static yaw/visibility and graph data, with no task-time or autonomous-state check."
+        },
+        {
+          "path": "weird_captcha_gym/environments/facet_lantern_env/tasks/facet_lantern_seed_0001/verifier.py",
+          "lines": "36-57",
+          "claim": "The verifier only loads the exported result and delegates the independent Facet Lantern replay grader."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/verifier_helpers.py",
+          "lines": "15-52",
+          "claim": "The shared verifier helper only copies and parses the exported result, then generic grading dispatches to a grader; it introduces no Facet Lantern evolution."
+        },
+        {
+          "path": "weird_captcha_gym/tools/incubator_solvers/facet_lantern.py",
+          "lines": "115-145",
+          "claim": "The implementation witness discards its advance argument and performs rotations, visible stud clicks, and certification; this is private-state wiring evidence, not policy information."
+        }
+      ],
+      "uncertainties": []
+    },
+    {
+      "case_index": 229,
+      "public_environment_name": "Facet Lantern",
+      "environment_id": "facet_lantern_env",
+      "difficulty": 5,
+      "interaction_mode": "full",
+      "label": "no",
+      "controls_available": [
+        "Difficulty 5: shape=bipyramid, ring_vertices=10, polygon_count=5, target_stride=3, initial_connections=5, initial_yaw=60°, occlusion_band=0.12, rotation_step_degrees=15.",
+        "Rotate with direct horizontal pointer drags on an empty part of the SVG stage; yaw is continuous.",
+        "Click or keyboard-activate visible labelled studs: the first selects a stud and the second creates a connection; CANCEL STUD clears a pending selection.",
+        "CERTIFY LANTERN submits the attempt and ABANDON ATTEMPT submits failure/restarts; these are administrative controls, not an autonomous outcome phase."
+      ],
+      "autonomous_processes": [
+        "None: with no new agent action, the rendered lantern, target list, visible-stud set, selection, yaw, and connection graph remain unchanged for the entire episode."
+      ],
+      "grouped_control_modes": [
+        "D_rotation: direct_pointer horizontal drags on the empty SVG stage, grouped across all seeds and attempts.",
+        "D_vertex_connection: vertex_click selection/connection of visible labelled studs, grouped across all seeds and attempts.",
+        "CERTIFY LANTERN and ABANDON ATTEMPT are administrative and are not used as outcome-phase control modes."
+      ],
+      "delta_ms": null,
+      "window_ms": 0,
+      "clause_i": {
+        "holds": false,
+        "reason": "Fails. There is no autonomous task-state evolution or penalty for deferring work. During any delay for which success remains possible, an observation-free policy can choose no-op/defer and continue optimally afterward, so the required absence of q is not established."
+      },
+      "clause_ii": {
+        "holds": true,
+        "reason": "Holds only trivially: the current screenshot at the configured zero-length window exposes the target outlines, projected visible studs, yaw, and ledger, so a bounded-window policy can choose a legal next step. This visual sufficiency is not a real-time witness because no autonomous change or expiring opportunity accompanies it."
+      },
+      "clause_iii": {
+        "holds": false,
+        "reason": "Fails. For 0 < tau < Delta with no agent action, the mechanic has no timer, animation loop, physics tick, or scheduled transition. Yaw and connections change only in explicit input handlers, so no available action becomes unavailable or strictly loses value/advantage."
+      },
+      "common_visible_process": "None. The only visible changes are synchronous re-renders caused by explicit rotation, stud, selection-clear, or submission events; the bipyramid does not move or change while the agent supplies no action.",
+      "pre_run": {
+        "threshold": 0.5,
+        "at_least_half": null,
+        "rate": null,
+        "basis": "not_applicable",
+        "reason": "The mathematical definition already yields No at clauses (i) and (iii); the pre-run threshold cannot change that label, and this static mechanic has no autonomous outcome phase for a pre-run rate to measure.",
+        "seed_probe": null
+      },
+      "files_read_completely": [
+        "AGENTS.md",
+        "weird_captcha_gym/docs/controllability/real-time.md",
+        "weird_captcha_gym/environments/facet_lantern_env/controls.json",
+        "weird_captcha_gym/environments/facet_lantern_env/env.json",
+        "weird_captcha_gym/environments/facet_lantern_env/tasks/facet_lantern_seed_0001/task.json",
+        "weird_captcha_gym/environments/facet_lantern_env/scripts/install_puzzle_runtime.sh",
+        "weird_captcha_gym/environments/facet_lantern_env/scripts/setup_puzzle_runtime.sh",
+        "weird_captcha_gym/environments/facet_lantern_env/tasks/facet_lantern_seed_0001/setup_task.sh",
+        "weird_captcha_gym/environments/facet_lantern_env/tasks/facet_lantern_seed_0001/export_result.sh",
+        "weird_captcha_gym/shared_scripts/incubator_generators/facet_lantern.py",
+        "weird_captcha_gym/shared_runtime/app/mechanics/facet_lantern.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/facet_lantern.css",
+        "weird_captcha_gym/shared_runtime/server/incubator_graders/facet_lantern.py",
+        "weird_captcha_gym/environments/facet_lantern_env/tasks/facet_lantern_seed_0001/verifier.py",
+        "weird_captcha_gym/shared_runtime/verifier_helpers.py",
+        "weird_captcha_gym/tools/incubator_solvers/facet_lantern.py",
+        "weird_captcha_gym/shared_scripts/open_puzzle_browser.sh",
+        "weird_captcha_gym/shared_scripts/time_control.py"
+      ],
+      "source_evidence": [
+        {
+          "path": "weird_captcha_gym/environments/facet_lantern_env/controls.json",
+          "lines": "42-48",
+          "claim": "Difficulty 5 is shape=bipyramid, ring_vertices=10, polygon_count=5, target_stride=3, initial_connections=5, initial_yaw=60°, occlusion_band=0.12, rotation_step_degrees=15; its full prompt specifies full uses direct horizontal pointer drags on the SVG stage."
+        },
+        {
+          "path": "weird_captcha_gym/environments/facet_lantern_env/controls.json",
+          "lines": "52-56",
+          "claim": "Both interaction modes are implemented, and the shared profile sets observation_window_ms=0 and frames_per_observation=1."
+        },
+        {
+          "path": "weird_captcha_gym/environments/facet_lantern_env/env.json",
+          "lines": "9-14",
+          "claim": "The environment exposes a frame window but configures a 0 ms observation window, one frame, synchronous operation, and no task-specific time behavior."
+        },
+        {
+          "path": "weird_captcha_gym/docs/controllability/real-time.md",
+          "lines": "40-68",
+          "claim": "The definition requires one visible autonomous process that makes a useful action strictly worse within Delta; static puzzles and unrelated animation do not qualify."
+        },
+        {
+          "path": "weird_captcha_gym/docs/controllability/real-time.md",
+          "lines": "98-105",
+          "claim": "The settled interpretation explicitly treats waiting with no penalty as not real-time."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/facet_lantern.py",
+          "lines": "66-122",
+          "claim": "Generation constructs fixed bipyramid vertices, faces, target facets, initial connections, initial yaw, occlusion band, and rotation step, then returns the world; no evolving timer or trajectory is generated."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/facet_lantern.py",
+          "lines": "145-187",
+          "claim": "The public state and truth contain the same static world, targets, required connections, and scores; completion changes only through submitted connections."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/facet_lantern.js",
+          "lines": "46-62",
+          "claim": "Each render initializes yaw, persistent connections, selection, and event storage from the generated world."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/facet_lantern.js",
+          "lines": "157-181",
+          "claim": "Rendering projects the same vertices and visibility at the current yaw, while rotateBy mutates yaw only when explicitly called."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/facet_lantern.js",
+          "lines": "183-202",
+          "claim": "Stud selection and connection state mutate only inside the explicit vertex handler."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/facet_lantern.js",
+          "lines": "204-231",
+          "claim": "Full-mode pointer handlers change yaw only in response to an active drag and record the completed drag as a rotate event."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/facet_lantern.css",
+          "lines": "1-57",
+          "claim": "The complete mechanic stylesheet contains layout, color, and pointer styling only; it declares no animation or keyframe process."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/facet_lantern.py",
+          "lines": "61-179",
+          "claim": "The grader replays explicit rotate/select/connect/clear/submit events against static yaw/visibility and graph data, with no task-time or autonomous-state check."
+        },
+        {
+          "path": "weird_captcha_gym/environments/facet_lantern_env/tasks/facet_lantern_seed_0001/verifier.py",
+          "lines": "36-57",
+          "claim": "The verifier only loads the exported result and delegates the independent Facet Lantern replay grader."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/verifier_helpers.py",
+          "lines": "15-52",
+          "claim": "The shared verifier helper only copies and parses the exported result, then generic grading dispatches to a grader; it introduces no Facet Lantern evolution."
+        },
+        {
+          "path": "weird_captcha_gym/tools/incubator_solvers/facet_lantern.py",
+          "lines": "115-145",
+          "claim": "The implementation witness discards its advance argument and performs rotations, visible stud clicks, and certification; this is private-state wiring evidence, not policy information."
+        }
+      ],
+      "uncertainties": []
+    },
+    {
+      "case_index": 230,
+      "public_environment_name": "Facet Lantern",
+      "environment_id": "facet_lantern_env",
+      "difficulty": 5,
+      "interaction_mode": "simplified",
+      "label": "no",
+      "controls_available": [
+        "Difficulty 5: shape=bipyramid, ring_vertices=10, polygon_count=5, target_stride=3, initial_connections=5, initial_yaw=60°, occlusion_band=0.12, rotation_step_degrees=15.",
+        "Rotate with the visible LEFT and RIGHT TURN buttons; each changes yaw by 15 degrees.",
+        "Click or keyboard-activate visible labelled studs: the first selects a stud and the second creates a connection; CANCEL STUD clears a pending selection.",
+        "CERTIFY LANTERN submits the attempt and ABANDON ATTEMPT submits failure/restarts; these are administrative controls, not an autonomous outcome phase."
+      ],
+      "autonomous_processes": [
+        "None: with no new agent action, the rendered lantern, target list, visible-stud set, selection, yaw, and connection graph remain unchanged for the entire episode."
+      ],
+      "grouped_control_modes": [
+        "D_rotation: proxy_button LEFT/RIGHT TURN presses, grouped across all seeds and attempts.",
+        "D_vertex_connection: vertex_click selection/connection of visible labelled studs, grouped across all seeds and attempts.",
+        "CERTIFY LANTERN and ABANDON ATTEMPT are administrative and are not used as outcome-phase control modes."
+      ],
+      "delta_ms": null,
+      "window_ms": 0,
+      "clause_i": {
+        "holds": false,
+        "reason": "Fails. There is no autonomous task-state evolution or penalty for deferring work. During any delay for which success remains possible, an observation-free policy can choose no-op/defer and continue optimally afterward, so the required absence of q is not established."
+      },
+      "clause_ii": {
+        "holds": true,
+        "reason": "Holds only trivially: the current screenshot at the configured zero-length window exposes the target outlines, projected visible studs, yaw, and ledger, so a bounded-window policy can choose a legal next step. This visual sufficiency is not a real-time witness because no autonomous change or expiring opportunity accompanies it."
+      },
+      "clause_iii": {
+        "holds": false,
+        "reason": "Fails. For 0 < tau < Delta with no agent action, the mechanic has no timer, animation loop, physics tick, or scheduled transition. Yaw and connections change only in explicit input handlers, so no available action becomes unavailable or strictly loses value/advantage."
+      },
+      "common_visible_process": "None. The only visible changes are synchronous re-renders caused by explicit rotation, stud, selection-clear, or submission events; the bipyramid does not move or change while the agent supplies no action.",
+      "pre_run": {
+        "threshold": 0.5,
+        "at_least_half": null,
+        "rate": null,
+        "basis": "not_applicable",
+        "reason": "The mathematical definition already yields No at clauses (i) and (iii); the pre-run threshold cannot change that label, and this static mechanic has no autonomous outcome phase for a pre-run rate to measure.",
+        "seed_probe": null
+      },
+      "files_read_completely": [
+        "AGENTS.md",
+        "weird_captcha_gym/docs/controllability/real-time.md",
+        "weird_captcha_gym/environments/facet_lantern_env/controls.json",
+        "weird_captcha_gym/environments/facet_lantern_env/env.json",
+        "weird_captcha_gym/environments/facet_lantern_env/tasks/facet_lantern_seed_0001/task.json",
+        "weird_captcha_gym/environments/facet_lantern_env/scripts/install_puzzle_runtime.sh",
+        "weird_captcha_gym/environments/facet_lantern_env/scripts/setup_puzzle_runtime.sh",
+        "weird_captcha_gym/environments/facet_lantern_env/tasks/facet_lantern_seed_0001/setup_task.sh",
+        "weird_captcha_gym/environments/facet_lantern_env/tasks/facet_lantern_seed_0001/export_result.sh",
+        "weird_captcha_gym/shared_scripts/incubator_generators/facet_lantern.py",
+        "weird_captcha_gym/shared_runtime/app/mechanics/facet_lantern.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/facet_lantern.css",
+        "weird_captcha_gym/shared_runtime/server/incubator_graders/facet_lantern.py",
+        "weird_captcha_gym/environments/facet_lantern_env/tasks/facet_lantern_seed_0001/verifier.py",
+        "weird_captcha_gym/shared_runtime/verifier_helpers.py",
+        "weird_captcha_gym/tools/incubator_solvers/facet_lantern.py",
+        "weird_captcha_gym/shared_scripts/open_puzzle_browser.sh",
+        "weird_captcha_gym/shared_scripts/time_control.py"
+      ],
+      "source_evidence": [
+        {
+          "path": "weird_captcha_gym/environments/facet_lantern_env/controls.json",
+          "lines": "42-48",
+          "claim": "Difficulty 5 is shape=bipyramid, ring_vertices=10, polygon_count=5, target_stride=3, initial_connections=5, initial_yaw=60°, occlusion_band=0.12, rotation_step_degrees=15; its simplified prompt specifies simplified uses visible LEFT/RIGHT TURN buttons."
+        },
+        {
+          "path": "weird_captcha_gym/environments/facet_lantern_env/controls.json",
+          "lines": "52-56",
+          "claim": "Both interaction modes are implemented, and the shared profile sets observation_window_ms=0 and frames_per_observation=1."
+        },
+        {
+          "path": "weird_captcha_gym/environments/facet_lantern_env/env.json",
+          "lines": "9-14",
+          "claim": "The environment exposes a frame window but configures a 0 ms observation window, one frame, synchronous operation, and no task-specific time behavior."
+        },
+        {
+          "path": "weird_captcha_gym/docs/controllability/real-time.md",
+          "lines": "40-68",
+          "claim": "The definition requires one visible autonomous process that makes a useful action strictly worse within Delta; static puzzles and unrelated animation do not qualify."
+        },
+        {
+          "path": "weird_captcha_gym/docs/controllability/real-time.md",
+          "lines": "98-105",
+          "claim": "The settled interpretation explicitly treats waiting with no penalty as not real-time."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/facet_lantern.py",
+          "lines": "66-122",
+          "claim": "Generation constructs fixed bipyramid vertices, faces, target facets, initial connections, initial yaw, occlusion band, and rotation step, then returns the world; no evolving timer or trajectory is generated."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/facet_lantern.py",
+          "lines": "145-187",
+          "claim": "The public state and truth contain the same static world, targets, required connections, and scores; completion changes only through submitted connections."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/facet_lantern.js",
+          "lines": "46-62",
+          "claim": "Each render initializes yaw, persistent connections, selection, and event storage from the generated world."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/facet_lantern.js",
+          "lines": "157-181",
+          "claim": "Rendering projects the same vertices and visibility at the current yaw, while rotateBy mutates yaw only when explicitly called."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/facet_lantern.js",
+          "lines": "183-202",
+          "claim": "Stud selection and connection state mutate only inside the explicit vertex handler."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/facet_lantern.js",
+          "lines": "256-266",
+          "claim": "Simplified-mode button listeners call the ±rotation-step handler; the initial render and button/click listeners are the only listed task interactions."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/facet_lantern.css",
+          "lines": "1-57",
+          "claim": "The complete mechanic stylesheet contains layout, color, and pointer styling only; it declares no animation or keyframe process."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/facet_lantern.py",
+          "lines": "61-179",
+          "claim": "The grader replays explicit rotate/select/connect/clear/submit events against static yaw/visibility and graph data, with no task-time or autonomous-state check."
+        },
+        {
+          "path": "weird_captcha_gym/environments/facet_lantern_env/tasks/facet_lantern_seed_0001/verifier.py",
+          "lines": "36-57",
+          "claim": "The verifier only loads the exported result and delegates the independent Facet Lantern replay grader."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/verifier_helpers.py",
+          "lines": "15-52",
+          "claim": "The shared verifier helper only copies and parses the exported result, then generic grading dispatches to a grader; it introduces no Facet Lantern evolution."
+        },
+        {
+          "path": "weird_captcha_gym/tools/incubator_solvers/facet_lantern.py",
+          "lines": "115-145",
+          "claim": "The implementation witness discards its advance argument and performs rotations, visible stud clicks, and certification; this is private-state wiring evidence, not policy information."
+        }
+      ],
+      "uncertainties": []
+    }
+  ]
+}

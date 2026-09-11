@@ -1,0 +1,136 @@
+{
+  "case_index": 154,
+  "public_environment_name": "Coordinates by Another Name",
+  "environment_id": "coordinates_by_another_name_env",
+  "difficulty": 2,
+  "interaction_mode": "simplified",
+  "label": "no",
+  "controls_available": [
+    {
+      "surface": "simplified console",
+      "actions": [
+        "click explicit band value buttons",
+        "click explicit block value buttons",
+        "click explicit count value buttons",
+        "click Fire"
+      ],
+      "outcome_effect": "A selection changes the pending designation; Fire synchronously records invalid, no-sweeps, repeat, or shot feedback."
+    },
+    {
+      "configuration": "Difficulty 2 uses a 5-by-8 irregular chart, forward counts, orientation feedback, non-touching vessels, no holes, fleet lengths [3, 3, 2], and two sweeps."
+    },
+    {
+      "observation_settings": "play_time_seconds=600, observation_window_ms=0, frames_per_observation=1"
+    }
+  ],
+  "autonomous_processes": [],
+  "grouped_control_modes": [
+    {
+      "name": "simplified_designation_console",
+      "scope": "Every outcome-affecting band/block/count value-button selection and Fire action across seeds, rounds, and attempts for this interaction mode.",
+      "input_sources": [
+        "value_button",
+        "fire_button"
+      ]
+    }
+  ],
+  "delta_ms": null,
+  "window_ms": null,
+  "clause_i": {
+    "holds": true,
+    "reason": "The visible persistent hit/miss/sunk chart can make the best next designation depend on the current history rather than only on the agent's prior action sequence; this informational dependence does not create real-time behavior by itself."
+  },
+  "clause_ii": {
+    "holds": true,
+    "reason": "The current chart, fleet marks, selectors, and sweep count are visible in the current screenshot, so any such next-designation choice can use a bounded zero-length visual window. This is a static-state observation, not evidence of an autonomous process."
+  },
+  "clause_iii": {
+    "holds": false,
+    "reason": "No non-clock task-state evolution occurs without a new agent action. Selector changes are made in the synchronous select handler, and chart, shot, hit, sunk, and sweep state change only in the synchronous Fire handler. The only asynchronous code is certification/result handling, which is administrative and action-triggered. Therefore no legitimate D, Delta > 0, and 0 < tau < Delta can make an available outcome-affecting action strictly less effective while success remains possible."
+  },
+  "common_visible_process": "None. The irregular chart and controls remain unchanged while the agent supplies no action. Fire updates the visible evidence immediately because of the agent action; it is not autonomous evolution, and there is no shared visible process that can witness clauses (i), (ii), and (iii).",
+  "pre_run": {
+    "threshold": 0.5,
+    "at_least_half": null,
+    "rate": null,
+    "basis": "not_applicable",
+    "reason": "The mathematical definition already fails clause (iii), so the pre-run threshold cannot change the catalog label and no percentage estimate or seed probe is needed.",
+    "seed_probe": null
+  },
+  "files_read_completely": [
+    "AGENTS.md",
+    "weird_captcha_gym/docs/controllability/real-time.md",
+    "weird_captcha_gym/environments/coordinates_by_another_name_env/controls.json",
+    "weird_captcha_gym/environments/coordinates_by_another_name_env/env.json",
+    "weird_captcha_gym/environments/coordinates_by_another_name_env/tasks/coordinates_by_another_name_seed_0001/task.json",
+    "weird_captcha_gym/environments/coordinates_by_another_name_env/tasks/coordinates_by_another_name_seed_0001/verifier.py",
+    "weird_captcha_gym/environments/coordinates_by_another_name_env/tasks/coordinates_by_another_name_seed_0001/setup_task.sh",
+    "weird_captcha_gym/environments/coordinates_by_another_name_env/tasks/coordinates_by_another_name_seed_0001/export_result.sh",
+    "weird_captcha_gym/environments/coordinates_by_another_name_env/scripts/install_puzzle_runtime.sh",
+    "weird_captcha_gym/environments/coordinates_by_another_name_env/scripts/setup_puzzle_runtime.sh",
+    "weird_captcha_gym/shared_scripts/incubator_generators/coordinates_by_another_name.py",
+    "weird_captcha_gym/shared_runtime/app/mechanics/coordinates_by_another_name.js",
+    "weird_captcha_gym/shared_runtime/app/mechanics/coordinates_by_another_name.css",
+    "weird_captcha_gym/shared_runtime/server/incubator_graders/coordinates_by_another_name.py",
+    "weird_captcha_gym/shared_runtime/verifier_helpers.py",
+    "weird_captcha_gym/tools/incubator_solvers/coordinates_by_another_name.py"
+  ],
+  "source_evidence": [
+    {
+      "path": "weird_captcha_gym/environments/coordinates_by_another_name_env/controls.json",
+      "lines": "28-45",
+      "claim": "Difficulty 2 is the irregular 5-by-8, forward-count, orientation-feedback, non-touching, zero-hole configuration with fleet lengths 3, 3, 2 and two sweeps."
+    },
+    {
+      "path": "weird_captcha_gym/environments/coordinates_by_another_name_env/controls.json",
+      "lines": "106-119",
+      "claim": "The simplified interaction is implemented as explicit band, block, and count buttons followed by Fire; the configured observation window is 0 ms with one frame."
+    },
+    {
+      "path": "weird_captcha_gym/shared_scripts/incubator_generators/coordinates_by_another_name.py",
+      "lines": "15-18,23-45,94-111",
+      "claim": "Generation applies the supplied control condition's difficulty parameters to a seeded static chart and publishes the condition; chart cells and designations are generated data, not a time-evolving process."
+    },
+    {
+      "path": "weird_captcha_gym/shared_runtime/app/mechanics/coordinates_by_another_name.js",
+      "lines": "12-19",
+      "claim": "When the mode is simplified, the visible selectors are value buttons whose click listeners call select."
+    },
+    {
+      "path": "weird_captcha_gym/shared_runtime/app/mechanics/coordinates_by_another_name.js",
+      "lines": "44-48",
+      "claim": "A selector event synchronously appends an event, updates the selected index, and redraws the selectors; there is no autonomous update path."
+    },
+    {
+      "path": "weird_captcha_gym/shared_runtime/app/mechanics/coordinates_by_another_name.js",
+      "lines": "70-85",
+      "claim": "Fire computes targets and outcomes synchronously, and only a Fire action updates shots, sweeps, seen cells, hits, and sunk vessels before redrawing the board."
+    },
+    {
+      "path": "weird_captcha_gym/shared_runtime/app/mechanics/coordinates_by_another_name.js",
+      "lines": "88-108,110-114",
+      "claim": "The asynchronous path is certification/result handling, while render initializes the state and installs click handlers; no timer, animation, physics, or autonomous task-state loop is present."
+    },
+    {
+      "path": "weird_captcha_gym/shared_runtime/app/mechanics/coordinates_by_another_name.css",
+      "lines": "1-10",
+      "claim": "The complete mechanic stylesheet contains layout and visual-state rules only, with no CSS animation or transition that changes task state."
+    },
+    {
+      "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/coordinates_by_another_name.py",
+      "lines": "27-40,54-68",
+      "claim": "The grader commits to the selected interaction condition and requires simplified selections to use value_button and Fire to use fire_button; replay state changes only while processing the event tape."
+    },
+    {
+      "path": "weird_captcha_gym/environments/coordinates_by_another_name_env/tasks/coordinates_by_another_name_seed_0001/verifier.py",
+      "lines": "35-51",
+      "claim": "The verifier loads the exported UI result and invokes the independent designation replay grader; certification is result submission, not an autonomous outcome phase."
+    },
+    {
+      "path": "weird_captcha_gym/tools/incubator_solvers/coordinates_by_another_name.py",
+      "lines": "49-91",
+      "claim": "The solver reads only rendered persistent hit/miss/sunk feedback, issues visible selector and Fire actions, and treats pacing as optional; it provides no evidence of autonomous task evolution."
+    }
+  ],
+  "uncertainties": []
+}

@@ -1,0 +1,242 @@
+{
+  "case_index": 101,
+  "public_environment_name": "Cloudpost Circuit",
+  "environment_id": "cloudpost_circuit_env",
+  "difficulty": 1,
+  "interaction_mode": "full",
+  "label": "no",
+  "controls_available": [
+    "Full-mode canvas pointer movement sets a normalized yaw/pitch steering vector in [-1, 1] x [-1, 1].",
+    "The most recent pointer vector persists until another pointer movement; no pointer movement is the no-op equivalent.",
+    "The environment declares mouse and keyboard actions, but this mechanic installs only the full-mode canvas pointermove handler; keyboard input has no outcome-affecting handler.",
+    "The flight posts its result automatically on collecting all seals or leaving the corridor; this terminal submission is administrative."
+  ],
+  "autonomous_processes": [
+    "Between pointer events, requestAnimationFrame accumulates elapsed time and advances the plane in 40 ms physics ticks.",
+    "Each physics tick turns toward the persisted vector, translates the plane through 3D space, and changes its world-space pose without a new agent action.",
+    "Each tick checks finite-radius world-space seal contact and corridor bounds; reaching all seals or leaving the corridor ends the flight.",
+    "The scenery and seals are static world objects, but their projected screen positions and apparent depth change as the autonomous plane moves and turns."
+  ],
+  "grouped_control_modes": [
+    "D_full_pointer_steering: every outcome-affecting full-mode canvas pointermove during an active, nonterminal flight, across seeds and target approaches.",
+    "D_noop_hold: no new pointer event, which leaves the previous steering vector in force and is equivalent to no-op for the next autonomous ticks."
+  ],
+  "delta_ms": 600,
+  "window_ms": 600,
+  "clause_i": {
+    "holds": true,
+    "reason": "With the same prior action history and task times, generated seeds can place the next seal at different lateral and vertical coordinates. An action-only q cannot distinguish those histories, while the delayed-optimal pointer vector must differ to steer toward the different visible seal directions."
+  },
+  "clause_ii": {
+    "holds": true,
+    "reason": "The configured 600 ms observation window contains 6 chronological frames. The canvas projects each uncollected seal from the current plane pose, shows its changing screen position/depth when in the camera frustum, and shows the fixed cockpit marker. A bounded-window policy can use that visible motion and the current persisted vector to select the next full pointer vector; it does not need private state."
+  },
+  "clause_iii": {
+    "holds": true,
+    "reason": "The same autonomous flight advances about 15 physics ticks during Delta. For a pre-contact approach, a pointer vector aimed at the seal's earlier visible relative position becomes stale as the plane advances; the finite-radius world-space contact opportunity can be missed or lose value, while success remains possible by correcting the vector. This is non-clock plane motion, not merely a deadline."
+  },
+  "common_visible_process": "Autonomous 3D plane translation plus heading response under the persisted pointer vector is the common process. It visibly moves the projected seal/plane geometry across frames and simultaneously changes which steering action will reach the finite-radius world-space contact before the plane passes it. The final catalog label is overridden by the pre-run threshold even though this common process witnesses the three mathematical clauses.",
+  "pre_run": {
+    "threshold": 0.5,
+    "at_least_half": true,
+    "rate": null,
+    "basis": "seeded_probe",
+    "reason": "Interpreting preparation as setting one initial full-mode pointer vector before the first autonomous physics tick, then sending no further outcome-affecting actions, a reproducible fixed-vector probe found successful action-free continuations for 67 of 100 generated seeds. This is a seeded threshold probe, not a claimed population percentage; the numerator exceeds one half, so the frozen pre-run rule makes the catalog label Not real-time.",
+    "seed_probe": {
+      "seeds": [
+        "seed-0001",
+        "seed-0002",
+        "seed-0003",
+        "seed-0004",
+        "seed-0005",
+        "seed-0006",
+        "seed-0007",
+        "seed-0008",
+        "seed-0009",
+        "seed-0010",
+        "seed-0011",
+        "seed-0012",
+        "seed-0013",
+        "seed-0014",
+        "seed-0015",
+        "seed-0016",
+        "seed-0017",
+        "seed-0018",
+        "seed-0019",
+        "seed-0020",
+        "seed-0021",
+        "seed-0022",
+        "seed-0023",
+        "seed-0024",
+        "seed-0025",
+        "seed-0026",
+        "seed-0027",
+        "seed-0028",
+        "seed-0029",
+        "seed-0030",
+        "seed-0031",
+        "seed-0032",
+        "seed-0033",
+        "seed-0034",
+        "seed-0035",
+        "seed-0036",
+        "seed-0037",
+        "seed-0038",
+        "seed-0039",
+        "seed-0040",
+        "seed-0041",
+        "seed-0042",
+        "seed-0043",
+        "seed-0044",
+        "seed-0045",
+        "seed-0046",
+        "seed-0047",
+        "seed-0048",
+        "seed-0049",
+        "seed-0050",
+        "seed-0051",
+        "seed-0052",
+        "seed-0053",
+        "seed-0054",
+        "seed-0055",
+        "seed-0056",
+        "seed-0057",
+        "seed-0058",
+        "seed-0059",
+        "seed-0060",
+        "seed-0061",
+        "seed-0062",
+        "seed-0063",
+        "seed-0064",
+        "seed-0065",
+        "seed-0066",
+        "seed-0067",
+        "seed-0068",
+        "seed-0069",
+        "seed-0070",
+        "seed-0071",
+        "seed-0072",
+        "seed-0073",
+        "seed-0074",
+        "seed-0075",
+        "seed-0076",
+        "seed-0077",
+        "seed-0078",
+        "seed-0079",
+        "seed-0080",
+        "seed-0081",
+        "seed-0082",
+        "seed-0083",
+        "seed-0084",
+        "seed-0085",
+        "seed-0086",
+        "seed-0087",
+        "seed-0088",
+        "seed-0089",
+        "seed-0090",
+        "seed-0091",
+        "seed-0092",
+        "seed-0093",
+        "seed-0094",
+        "seed-0095",
+        "seed-0096",
+        "seed-0097",
+        "seed-0098",
+        "seed-0099",
+        "seed-0100"
+      ],
+      "numerator": 67,
+      "denominator": 100,
+      "method": "For each seed, test every constant full-mode steering vector on a 101 by 101 grid over [-1, 1] squared, simulate the browser physics for 240 ticks, and count a pass when both difficulty-1 seals are contacted before corridor exit.",
+      "reproducible_code": "PYTHONDONTWRITEBYTECODE=1 python3 - <<'PY'\nimport importlib.util\nfrom pathlib import Path\nimport numpy as np\nroot=Path('/private/tmp/weird-cua-realtime-source-20260910.ObhAQg')\nspec=importlib.util.spec_from_file_location('probe',root/'weird_captcha_gym/shared_scripts/incubator_generators/cloudpost_circuit.py')\nm=importlib.util.module_from_spec(spec); spec.loader.exec_module(m)\ncondition={'difficulty':1,'interaction':'full'}\naxis=np.linspace(-1,1,101)\nu,v=np.meshgrid(axis,axis,indexing='ij'); u=u.ravel(); v=v.ravel(); N=u.size\ndef exists(pub):\n    ph=pub['physics']; x=np.zeros(N); y=np.zeros(N); z=np.zeros(N); yaw=np.zeros(N); pitch=np.zeros(N); got=np.zeros(N,dtype=np.uint8)\n    for tick in range(240):\n        if tick:\n            dy=np.clip(u,-1,1)*ph['max_yaw']; dp=np.clip(v,-1,1)*ph['max_pitch']\n            yaw += np.clip(dy-yaw,-ph['turn_step'],ph['turn_step']); pitch += np.clip(dp-pitch,-ph['turn_step'],ph['turn_step'])\n            cp=np.cos(pitch); x += np.sin(yaw)*cp*ph['flight_speed']; y += np.sin(pitch)*ph['flight_speed']; z += np.cos(yaw)*cp*ph['flight_speed']\n        alive=(np.abs(x)<=ph['world_x'])&(np.abs(y)<=ph['world_y'])&(z<=ph['world_z'])\n        for i,t in enumerate(pub['targets']):\n            hit=((x-t['x'])**2+(y-t['y'])**2+(z-t['z'])**2 <= ph['contact_radius']**2)\n            got[hit & alive] |= (1<<i)\n        if np.any(got==3): return True\n        if not np.any(alive): break\n    return False\npassed=[]\nfor n in range(1,101):\n    pub=m.generate({'id':'cloudpost_probe','metadata':{'control_condition':condition}},f'seed-{n:04d}')[0]\n    passed.append(exists(pub))\nprint(sum(passed),len(passed))\nPY"
+    }
+  },
+  "files_read_completely": [
+    "AGENTS.md",
+    "weird_captcha_gym/docs/controllability/real-time.md",
+    "weird_captcha_gym/environments/cloudpost_circuit_env/controls.json",
+    "weird_captcha_gym/environments/cloudpost_circuit_env/env.json",
+    "weird_captcha_gym/environments/cloudpost_circuit_env/tasks/cloudpost_circuit_seed_0001/task.json",
+    "weird_captcha_gym/environments/cloudpost_circuit_env/tasks/cloudpost_circuit_seed_0001/setup_task.sh",
+    "weird_captcha_gym/environments/cloudpost_circuit_env/tasks/cloudpost_circuit_seed_0001/export_result.sh",
+    "weird_captcha_gym/environments/cloudpost_circuit_env/tasks/cloudpost_circuit_seed_0001/verifier.py",
+    "weird_captcha_gym/environments/cloudpost_circuit_env/scripts/setup_puzzle_runtime.sh",
+    "weird_captcha_gym/environments/cloudpost_circuit_env/scripts/install_puzzle_runtime.sh",
+    "weird_captcha_gym/shared_scripts/incubator_generators/cloudpost_circuit.py",
+    "weird_captcha_gym/shared_runtime/app/mechanics/cloudpost_circuit.js",
+    "weird_captcha_gym/shared_runtime/app/mechanics/cloudpost_circuit.css",
+    "weird_captcha_gym/shared_runtime/server/incubator_graders/cloudpost_circuit.py",
+    "weird_captcha_gym/shared_runtime/verifier_helpers.py",
+    "weird_captcha_gym/tools/incubator_solvers/cloudpost_circuit.py"
+  ],
+  "source_evidence": [
+    {
+      "path": "weird_captcha_gym/environments/cloudpost_circuit_env/controls.json",
+      "lines": "5-16",
+      "claim": "Difficulty 1 selects two seals with speed 1.55, turn_step 0.34, contact radius 19, and the full interaction is continuous pointer steering; the real-time settings are 600 ms and 6 frames."
+    },
+    {
+      "path": "weird_captcha_gym/environments/cloudpost_circuit_env/env.json",
+      "lines": "9-14",
+      "claim": "The environment exposes a frame window, mouse and keyboard actions, and the same 600 ms/6-frame runner settings."
+    },
+    {
+      "path": "weird_captcha_gym/shared_scripts/incubator_generators/cloudpost_circuit.py",
+      "lines": "82-119",
+      "claim": "The generator applies the requested control condition, randomizes seal coordinates, permits the first seal outside the initial camera frustum, and contracts later lateral/vertical waypoints from the previous point."
+    },
+    {
+      "path": "weird_captcha_gym/shared_scripts/incubator_generators/cloudpost_circuit.py",
+      "lines": "162-192",
+      "claim": "Generated physics advances every 40 ms with difficulty-1 speed and contact radius, defines corridor bounds, and starts the plane at the origin."
+    },
+    {
+      "path": "weird_captcha_gym/shared_runtime/app/mechanics/cloudpost_circuit.js",
+      "lines": "97-114",
+      "claim": "Full pointer movement maps the canvas position to normalized yaw/pitch, updates the persisted control vector, and records pointer_steer."
+    },
+    {
+      "path": "weird_captcha_gym/shared_runtime/app/mechanics/cloudpost_circuit.js",
+      "lines": "127-159",
+      "claim": "Each autonomous step turns and translates the plane, checks 3D distance against contact_radius, and ends on complete collection or corridor exit."
+    },
+    {
+      "path": "weird_captcha_gym/shared_runtime/app/mechanics/cloudpost_circuit.js",
+      "lines": "244-259",
+      "claim": "Uncollected seals are drawn from projected 3D points only when in the camera frustum while the plane remains a fixed cockpit marker, providing visible relative-state evidence."
+    },
+    {
+      "path": "weird_captcha_gym/shared_runtime/app/mechanics/cloudpost_circuit.js",
+      "lines": "262-273; 316-344",
+      "claim": "requestAnimationFrame runs the 40 ms step loop without input, and full mode installs only the canvas pointermove handler while warning that targets can be beyond view and screen overlap is not world contact."
+    },
+    {
+      "path": "weird_captcha_gym/shared_runtime/app/mechanics/cloudpost_circuit.css",
+      "lines": "77-85",
+      "claim": "The full canvas is the signed yaw/pitch pointer field and remains reachable to an ordinary pointer."
+    },
+    {
+      "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/cloudpost_circuit.py",
+      "lines": "32-44; 97-112; 134-164",
+      "claim": "The independent grader reproduces the same turn/translation physics, accepts full-mode pointer_steer events, and applies each event to the following tick."
+    },
+    {
+      "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/cloudpost_circuit.py",
+      "lines": "139-188",
+      "claim": "Success is based on replayed world-space finite-radius contacts for every seal and a matching completed terminal ledger, not screen overlap."
+    },
+    {
+      "path": "weird_captcha_gym/tools/incubator_solvers/cloudpost_circuit.py",
+      "lines": "64-85",
+      "claim": "The available construction solver repeatedly snapshots the plane, computes the next target direction, moves the pointer in full mode, and re-observes rather than using one retroactive command."
+    },
+    {
+      "path": "weird_captcha_gym/environments/cloudpost_circuit_env/tasks/cloudpost_circuit_seed_0001/verifier.py",
+      "lines": "21-34",
+      "claim": "The task verifier loads the exported result and independent Cloudpost grader, then returns the replay decision."
+    }
+  ],
+  "uncertainties": [
+    "The source has no explicit launch control; the pre-run probe therefore treats preparation as setting the initial full-mode pointer vector before the first 40 ms physics tick, followed by no further pointer events."
+  ]
+}

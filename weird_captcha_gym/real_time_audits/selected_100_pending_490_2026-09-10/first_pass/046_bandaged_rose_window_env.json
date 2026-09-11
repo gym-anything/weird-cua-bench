@@ -1,0 +1,106 @@
+{
+  "case_index": 46,
+  "public_environment_name": "Bandaged Rose Window",
+  "environment_id": "bandaged_rose_window_env",
+  "difficulty": 3,
+  "interaction_mode": "simplified",
+  "label": "no",
+  "controls_available": [
+    "Visible reference and current stained-glass rose arrangements.",
+    "Six labelled proxy buttons: clockwise and counter-clockwise turns for the NORTH, SOUTHWEST, and SOUTHEAST discs.",
+    "SEAL certification button, which is administrative rather than outcome-affecting."
+  ],
+  "autonomous_processes": [],
+  "grouped_control_modes": [
+    "D_turn: every outcome-affecting simplified proxy-button turn across discs, directions, seeds, and post-turn states."
+  ],
+  "delta_ms": null,
+  "window_ms": 0,
+  "clause_i": {
+    "holds": true,
+    "reason": "For D_turn, an observation-free policy using only its own prior actions and task times cannot choose the next optimal disc and direction across the generated, seed-varying rose states; the required turn depends on the visible arrangement rather than a fixed action schedule."
+  },
+  "clause_ii": {
+    "holds": true,
+    "reason": "A single current screenshot (w = 0 ms here) visibly contains the reference and current arrangements, so a policy can select the next turn from the visible static state and the puzzle rules without needing a frame sequence."
+  },
+  "clause_iii": {
+    "holds": false,
+    "reason": "With no new action, the mechanic has no autonomous task-state evolution: the simplified rose changes only when a proxy-button event calls attempt, and the implementation has no task timer, interval, or animation loop. Waiting therefore does not make any outcome-affecting turn unavailable or strictly less effective; only the remaining clock could change, which is excluded by the definition."
+  },
+  "common_visible_process": "None exists. The visible rose is stationary during no-action intervals; each visible state change is the synchronous result of an agent-triggered turn event.",
+  "pre_run": {
+    "threshold": 0.5,
+    "at_least_half": false,
+    "rate": null,
+    "basis": "source_structural",
+    "reason": "At difficulty 3 the generator selects states from the exact breadth-first depth-seven frontier and supplies a solution whose length is that exact distance. There is no autonomous outcome phase, and every state-changing turn must be delivered through a proxy-button action before SEAL certification, so no generated instance satisfies the pre-run criterion.",
+    "seed_probe": null
+  },
+  "files_read_completely": [
+    "AGENTS.md",
+    "weird_captcha_gym/docs/controllability/real-time.md",
+    "weird_captcha_gym/environments/bandaged_rose_window_env/controls.json",
+    "weird_captcha_gym/environments/bandaged_rose_window_env/env.json",
+    "weird_captcha_gym/environments/bandaged_rose_window_env/tasks/bandaged_rose_window_seed_0001/task.json",
+    "weird_captcha_gym/environments/bandaged_rose_window_env/tasks/bandaged_rose_window_seed_0001/setup_task.sh",
+    "weird_captcha_gym/environments/bandaged_rose_window_env/tasks/bandaged_rose_window_seed_0001/export_result.sh",
+    "weird_captcha_gym/environments/bandaged_rose_window_env/tasks/bandaged_rose_window_seed_0001/verifier.py",
+    "weird_captcha_gym/environments/bandaged_rose_window_env/scripts/install_puzzle_runtime.sh",
+    "weird_captcha_gym/environments/bandaged_rose_window_env/scripts/setup_puzzle_runtime.sh",
+    "weird_captcha_gym/shared_scripts/incubator_generators/bandaged_rose_window.py",
+    "weird_captcha_gym/shared_runtime/app/mechanics/bandaged_rose_window.js",
+    "weird_captcha_gym/shared_runtime/app/mechanics/bandaged_rose_window.css",
+    "weird_captcha_gym/shared_runtime/server/incubator_graders/bandaged_rose_window.py",
+    "weird_captcha_gym/tools/incubator_solvers/bandaged_rose_window.py",
+    "weird_captcha_gym/shared_runtime/verifier_helpers.py"
+  ],
+  "source_evidence": [
+    {
+      "path": "weird_captcha_gym/environments/bandaged_rose_window_env/controls.json",
+      "lines": "22-26, 41-54",
+      "claim": "Difficulty 3 sets scramble_depth to 7; simplified mode is implemented with labelled proxy buttons; the configured observation window is 0 ms with one frame and 180 seconds of play time."
+    },
+    {
+      "path": "weird_captcha_gym/environments/bandaged_rose_window_env/env.json",
+      "lines": "9-14",
+      "claim": "The runner exposes a zero-ms observation window, one frame per observation, and synchronous task behavior for this environment."
+    },
+    {
+      "path": "weird_captcha_gym/shared_scripts/incubator_generators/bandaged_rose_window.py",
+      "lines": "53-77, 110-131, 144-154",
+      "claim": "The generator builds a static legal-turn graph, selects an exact depth-seven state under the requested condition, and emits a solved state plus an exact shortest-path solution."
+    },
+    {
+      "path": "weird_captcha_gym/shared_runtime/app/mechanics/bandaged_rose_window.js",
+      "lines": "12-24, 66-82",
+      "claim": "The visible mechanic renders a fixed reference/current arrangement and, in simplified mode, only the six disc-direction proxy buttons."
+    },
+    {
+      "path": "weird_captcha_gym/shared_runtime/app/mechanics/bandaged_rose_window.js",
+      "lines": "84-116, 220-238",
+      "claim": "model.current is changed only inside attempt after a button or drag input; simplified button listeners synchronously call attempt, while rendering performs no autonomous progression."
+    },
+    {
+      "path": "weird_captcha_gym/shared_runtime/app/mechanics/bandaged_rose_window.css",
+      "lines": "1",
+      "claim": "The complete mechanic stylesheet supplies static layout, styling, and input hover/drag presentation; it contains no autonomous task animation."
+    },
+    {
+      "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/bandaged_rose_window.py",
+      "lines": "34-100",
+      "claim": "Grading replays only the submitted disc turns, applies the legal-turn physics, and checks the final solved state; it has no time-dependent outcome rule."
+    },
+    {
+      "path": "weird_captcha_gym/environments/bandaged_rose_window_env/tasks/bandaged_rose_window_seed_0001/verifier.py",
+      "lines": "39-105",
+      "claim": "Export verification independently replays the event transcript and determines completion solely from the resulting rose state and interaction source."
+    },
+    {
+      "path": "weird_captcha_gym/tools/incubator_solvers/bandaged_rose_window.py",
+      "lines": "50-56, 77-95",
+      "claim": "The solver executes the generated turn sequence through the selected input surface and waits only for the synchronous successful-turn count; it does not rely on an autonomous task phase."
+    }
+  ],
+  "uncertainties": []
+}

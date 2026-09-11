@@ -1,0 +1,120 @@
+{
+  "case_index": 132,
+  "public_environment_name": "Concertina Courier",
+  "environment_id": "concertina_courier_env",
+  "difficulty": 1,
+  "interaction_mode": "simplified",
+  "label": "no",
+  "controls_available": [
+    "Mouse-click simplified console latch: LEFT ([-1, 0])",
+    "Mouse-click simplified console latch: RIGHT ([1, 0])",
+    "Mouse-click simplified console latch: TALLER ([0, 1])",
+    "Mouse-click simplified console latch: WIDER ([0, -1])",
+    "Mouse-click simplified console latch: COAST ([0, 0])",
+    "Mouse-click CERTIFY for administrative submission",
+    "Mouse-click NEW ROOM for administrative reset/retry",
+    "No keyboard control is wired by the mechanic; simplified outcome control is the console mouse surface"
+  ],
+  "autonomous_processes": [
+    "The requestAnimationFrame loop advances the simulation to elapsed task ticks; each task tick is 40 ms and the configured observation window is 80 ms with 3 frames.",
+    "Between console clicks, the latched control is applied automatically: height changes for morph controls, horizontal velocity accelerates with drag and is position-clipped, gravity and floor collision update vertical motion, and contact with visible seals updates collection and terminal status.",
+    "Seed randomness occurs during generation only; the active linear d1 simulation has no autonomous random state changes. With no gap, an uncommanded parcel remains supported on the floor.",
+    "The simplified console latch remains active until another console click, so a RIGHT or morph command can drive subsequent ticks without a new agent action."
+  ],
+  "grouped_control_modes": [
+    "D = simplified console_latch: every outcome-affecting console transition across seeds and attempts, with controls [-1,0], [1,0], [0,1], [0,-1], and [0,0]. Administrative CERTIFY and NEW ROOM actions are outside this outcome-control mode."
+  ],
+  "delta_ms": null,
+  "window_ms": null,
+  "clause_i": {
+    "holds": false,
+    "reason": "An observation-free policy q exists for the active d1 configuration. In its preparation phase, click TALLER and use the agent's own fixed task-time schedule for 40 ticks, taking h from the initial 80 to the 200-unit maximum; then click RIGHT once and never change the latch. Because d1 has gap=0 and takes the linear generator branch, every generated room has a continuous floor and seal x coordinates in the fixed ranges 130-160, 270-325, 405-475, and 835-865. At h=200 the parcel spans y=220..420, so the fixed rightward traversal collects every seal. The delayed action therefore need not depend on a screenshot window."
+  },
+  "clause_ii": {
+    "holds": true,
+    "reason": "For the open-loop route, a bounded-window policy g can simply equal q and ignore W_t^w; recent visible frames are sufficient but unnecessary. This does not rescue the required conjunction because clause (i) fails."
+  },
+  "clause_iii": {
+    "holds": false,
+    "reason": "The same d1 process has no route-critical expiring opportunity: gap=0 removes the unsupported crossing, alcove=0 adds no receiving well, and all stationary seals remain reachable on the continuous floor. Waiting can change velocity or position under the deterministic latch, but it does not close a required passage or make the fixed route unsalvageable; left/right correction remains available. No common visible process supplies the strict non-clock action-value loss required by clause (iii)."
+  },
+  "common_visible_process": "No valid real-time witness is present. The only candidate is the visibly rendered parcel's deterministic 40-ms physics between console clicks—morphing, horizontal acceleration/friction, gravity, floor collision, and seal contact. In d1 the generator makes this a continuous-floor linear room with no gap or alcove, so the process supports a fixed rightward sweep rather than an observation-dependent expiring opportunity.",
+  "pre_run": {
+    "threshold": 0.5,
+    "at_least_half": true,
+    "rate": null,
+    "basis": "source_structural",
+    "reason": "Source structure covers every d1 seed: the difficulty parameters omit layout (so the generator uses its linear branch), set gap=0 and alcove=0, and keep the initial state at x=100, bottom=420, h=80. Prepare h=200 with the latched TALLER control, then start the autonomous outcome phase by latching RIGHT. The parcel remains supported by the full floor, all generated seals lie along the rightward route and within the maximum-height vertical span, and the run limit is 4500 ticks (180 seconds). No later outcome-affecting click is required; CERTIFY is administrative.",
+    "seed_probe": null
+  },
+  "files_read_completely": [
+    "AGENTS.md",
+    "weird_captcha_gym/docs/controllability/real-time.md",
+    "weird_captcha_gym/environments/concertina_courier_env/controls.json",
+    "weird_captcha_gym/environments/concertina_courier_env/env.json",
+    "weird_captcha_gym/environments/concertina_courier_env/scripts/install_puzzle_runtime.sh",
+    "weird_captcha_gym/environments/concertina_courier_env/scripts/setup_puzzle_runtime.sh",
+    "weird_captcha_gym/environments/concertina_courier_env/tasks/concertina_courier_seed_0001/export_result.sh",
+    "weird_captcha_gym/environments/concertina_courier_env/tasks/concertina_courier_seed_0001/setup_task.sh",
+    "weird_captcha_gym/environments/concertina_courier_env/tasks/concertina_courier_seed_0001/task.json",
+    "weird_captcha_gym/environments/concertina_courier_env/tasks/concertina_courier_seed_0001/verifier.py",
+    "weird_captcha_gym/shared_scripts/incubator_generators/concertina_courier.py",
+    "weird_captcha_gym/shared_runtime/app/mechanics/concertina_courier.js",
+    "weird_captcha_gym/shared_runtime/app/mechanics/concertina_courier.css",
+    "weird_captcha_gym/shared_runtime/server/incubator_graders/concertina_courier.py",
+    "weird_captcha_gym/tools/incubator_solvers/concertina_courier.py"
+  ],
+  "source_evidence": [
+    {
+      "path": "weird_captcha_gym/environments/concertina_courier_env/controls.json",
+      "lines": "10-19",
+      "claim": "The assigned d1 profile is very_easy with clearance 105, gap 0, reach 100, alcove 0, and drag 0.65; layout is absent, so it selects the generator's non-island branch."
+    },
+    {
+      "path": "weird_captcha_gym/environments/concertina_courier_env/controls.json",
+      "lines": "93-104",
+      "claim": "Both interaction modes are implemented; the shared real-time settings are 180 seconds, an 80-ms observation window, and 3 frames per observation."
+    },
+    {
+      "path": "weird_captcha_gym/shared_scripts/incubator_generators/concertina_courier.py",
+      "lines": "14-30",
+      "claim": "The generator reads difficulty_parameters from _control_condition, uses the linear branch when layout is not island, replaces the floor with one full [0,420,1000,160] solid when gap is zero, and places all four seals on the rightward linear route."
+    },
+    {
+      "path": "weird_captcha_gym/shared_scripts/incubator_generators/concertina_courier.py",
+      "lines": "36-42",
+      "claim": "Generated worlds have area 6400, height bounds 32..200, tick_ms 40, max_ticks 4500, and initial state x=100, bottom=420, h=80; the control condition is exported to public and truth state."
+    },
+    {
+      "path": "weird_captcha_gym/shared_runtime/app/mechanics/concertina_courier.js",
+      "lines": "8-22",
+      "claim": "Each advance tick applies morphing, drag-limited horizontal acceleration and collision, gravity/floor collision, seal contact, and solved/fell/timeout status."
+    },
+    {
+      "path": "weird_captcha_gym/shared_runtime/app/mechanics/concertina_courier.js",
+      "lines": "24-28",
+      "claim": "The browser selects state.control_condition.interaction, hides body controls in simplified mode, and renders the five console latch buttons including COAST."
+    },
+    {
+      "path": "weird_captcha_gym/shared_runtime/app/mechanics/concertina_courier.js",
+      "lines": "42-50",
+      "claim": "The simulation advances automatically from elapsed performance time; simplified console clicks call set and persist the selected control until another click, while CERTIFY and NEW ROOM are separate submission/reset handlers."
+    },
+    {
+      "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/concertina_courier.py",
+      "lines": "21-49",
+      "claim": "The authoritative replay uses the same 40-ms tick physics and derives collection and terminal status from replayed state rather than client claims."
+    },
+    {
+      "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/concertina_courier.py",
+      "lines": "52-85",
+      "claim": "Grading enforces the exported control condition and simplified console_latch input source, replays all events, checks physical state, and passes only when the replay solves all seals."
+    },
+    {
+      "path": "weird_captcha_gym/environments/concertina_courier_env/tasks/concertina_courier_seed_0001/verifier.py",
+      "lines": "22-49",
+      "claim": "The task verifier loads the shared mechanic grader and grades exported result, ground truth, and public state."
+    }
+  ],
+  "uncertainties": []
+}

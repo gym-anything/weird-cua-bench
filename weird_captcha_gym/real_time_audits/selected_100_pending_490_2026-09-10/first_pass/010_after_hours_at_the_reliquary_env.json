@@ -1,0 +1,113 @@
+{
+  "case_index": 10,
+  "public_environment_name": "After Hours at the Reliquary",
+  "environment_id": "after_hours_at_the_reliquary_env",
+  "difficulty": 5,
+  "interaction_mode": "simplified",
+  "label": "no",
+  "controls_available": [
+    "Six fixed room views navigated with visible TURN LEFT and TURN RIGHT buttons; navigation wraps around the view list.",
+    "Visible scene hotspots for revealing the digit clue, revealing the colour clue, revealing the separate reading-order card, collecting the handle and wire, collecting the two decoys, recovering the ward key, opening the door locks, and opening the final door.",
+    "Simplified inventory controls: select a visible tray object, then click a scene destination to use it or a second tray object to combine it.",
+    "A five-digit number dial and a six-colour sequence entry in the door lock panels; each has a visible submit control and each lock seizes after three wrong entries.",
+    "The combined hook chain: combine the handle and wire, use the hook on the grate for the ward key, then use the ward key on the door keyhole.",
+    "The door handle can complete the task only after the active digit, colour, and key wards are released."
+  ],
+  "autonomous_processes": [
+    "None during gameplay: generated views, clues, hotspot geometry, inventory, lock answers, and flags remain unchanged until a user event.",
+    "After the final door action, the door receives a 0.8-second CSS transform transition; this is post-completion presentation after door_open and leaves no outcome-affecting action opportunity.",
+    "The result POST can asynchronously replace the page with pass or fresh-failure feedback, but that is administrative handling of the preceding action rather than autonomous task-state evolution."
+  ],
+  "grouped_control_modes": [
+    {"mode": "turn_button", "description": "Simplified left/right fixed-view navigation."},
+    {"mode": "scene_click", "description": "Direct scene-object actions, including clue discovery and the final door click."},
+    {"mode": "inventory_select_pair", "description": "Select two tray objects to combine them."},
+    {"mode": "inventory_select_scene", "description": "Select a tray object and click a visible scene target to use it."},
+    {"mode": "digit_controls", "description": "Increment the number wheels and submit the digit ward."},
+    {"mode": "color_controls", "description": "Choose the colour sequence and submit the colour ward."}
+  ],
+  "delta_ms": null,
+  "window_ms": 0,
+  "clause_i": {
+    "holds": true,
+    "reason": "For a candidate grouped mode at the door's digit or colour entry, an observation-free q driven only by I_t cannot choose the correct seed-dependent five-digit or six-colour answer (or its independently sampled reading direction) across all occurrences. This is a static cross-view information requirement, not evidence of autonomous time evolution."
+  },
+  "clause_ii": {
+    "holds": false,
+    "reason": "At the later door lock action, the exact profile's w is bounded by observation_window_ms=0 and frames_per_observation=1; the current door-lock frame does not contain the digit, colour, or order clue previously exposed in other fixed views. Thus no bounded recent window supplies a common delayed-action policy for that lock-entry candidate. A clue visible in an earlier fixed view is cross-view memory, not a changing recent window."
+  },
+  "clause_iii": {
+    "holds": false,
+    "reason": "No legitimate grouped control mode has a useful action become unavailable or strictly less effective during an idle delay. The generator creates fixed per-seed clues and targets, and the browser changes flags, inventory, releases, wrong-entry counts, and completion only in direct event handlers. The only autonomous-looking transition is the final door CSS animation after door_open, when the outcome-affecting work is already complete; less remaining deadline or later administrative feedback would not satisfy the clause."
+  },
+  "common_visible_process": "No common visible autonomous process exists. Fixed-view clues and affordances persist while idle; the only visible autonomous transition is the post-completion door animation, which cannot degrade a remaining action opportunity.",
+  "pre_run": {
+    "threshold": 0.5,
+    "at_least_half": false,
+    "rate": null,
+    "basis": "source_structural",
+    "reason": "There is no autonomous outcome phase to start after preparation. Every successful instance still requires outcome-affecting turn, reveal, combine/use, ward-submission, keyhole, and final door actions; the final door click sets completed and is not merely administrative. Therefore the required pre-run pattern is absent for the generated instances, and in any event it cannot override the mathematical No.",
+    "seed_probe": null
+  },
+  "files_read_completely": [
+    "AGENTS.md",
+    "weird_captcha_gym/docs/controllability/real-time.md",
+    "weird_captcha_gym/environments/after_hours_at_the_reliquary_env/controls.json",
+    "weird_captcha_gym/shared_scripts/incubator_generators/after_hours_at_the_reliquary.py",
+    "weird_captcha_gym/shared_runtime/app/mechanics/after_hours_at_the_reliquary.js",
+    "weird_captcha_gym/shared_runtime/app/mechanics/after_hours_at_the_reliquary.css",
+    "weird_captcha_gym/shared_runtime/server/incubator_graders/after_hours_at_the_reliquary.py",
+    "weird_captcha_gym/environments/after_hours_at_the_reliquary_env/tasks/after_hours_at_the_reliquary_seed_0001/verifier.py",
+    "weird_captcha_gym/tools/incubator_solvers/after_hours_at_the_reliquary.py",
+    "weird_captcha_gym/shared_runtime/verifier_helpers.py",
+    "weird_captcha_gym/shared_runtime/app/time_controller.js"
+  ],
+  "source_evidence": [
+    {
+      "path": "weird_captcha_gym/environments/after_hours_at_the_reliquary_env/controls.json",
+      "lines": "30-41",
+      "claim": "Difficulty 5 is the six-view, three-ward, length-5 digit, length-6 colour, combined-hook, two-decoy, unmarked, cross-view-order configuration; simplified uses turn buttons and select-then-click inventory interaction; the configured observation window is 0 ms with one frame and a 240-second play allowance."
+    },
+    {
+      "path": "weird_captcha_gym/shared_scripts/incubator_generators/after_hours_at_the_reliquary.py",
+      "lines": "143-167",
+      "claim": "The generator derives a stable per-seed random challenge, samples fixed digit and colour clues and reading directions, and stores them as answers; no clock, timer, physics, or autonomous phase is generated."
+    },
+    {
+      "path": "weird_captcha_gym/shared_scripts/incubator_generators/after_hours_at_the_reliquary.py",
+      "lines": "169-237",
+      "claim": "The six view roles and all target rectangles are generated as fixed scene affordances; difficulty 5 adds the order drawer and two decoys while retaining synchronous object recipes and cross-view dependencies."
+    },
+    {
+      "path": "weird_captcha_gym/shared_runtime/app/mechanics/after_hours_at_the_reliquary.js",
+      "lines": "80-186",
+      "claim": "The browser renders fixed scenes, clue/order-card visibility, the number and colour controls, and simplified turn buttons from model state; no autonomous update loop is present."
+    },
+    {
+      "path": "weird_captcha_gym/shared_runtime/app/mechanics/after_hours_at_the_reliquary.js",
+      "lines": "194-334, 442-494",
+      "claim": "Navigation, scene discoveries, combining, item use, ward submission, selection, and model state changes are all invoked by direct click handlers; open_door calls submit only after all wards are released, and render initializes a static state with no timer or frame callback."
+    },
+    {
+      "path": "weird_captcha_gym/shared_runtime/app/mechanics/after_hours_at_the_reliquary.css",
+      "lines": "157, 233",
+      "claim": "The only time-duration styling found in the mechanic is the .8s transform transition for the vault door's is-open presentation; the terminal styling is applied after pass."
+    },
+    {
+      "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/after_hours_at_the_reliquary.py",
+      "lines": "278-416, 482-497",
+      "claim": "The authoritative replay starts from an initial static state, validates sequential user events and visible geometry, changes wards only on submitted actions, marks completion only on an explicit open_door scene event, and has no task-time evolution."
+    },
+    {
+      "path": "weird_captcha_gym/environments/after_hours_at_the_reliquary_env/tasks/after_hours_at_the_reliquary_seed_0001/verifier.py",
+      "lines": "22-43",
+      "claim": "The verifier only loads the exported result and invokes the independent replay grader; it adds no autonomous outcome process."
+    },
+    {
+      "path": "weird_captcha_gym/tools/incubator_solvers/after_hours_at_the_reliquary.py",
+      "lines": "117-156",
+      "claim": "The implementation solver performs the clue reveals, order discovery, hook construction/use, both lock submissions, keyhole use, and final door click as separate outcome-affecting actions; its private-state reads are not assumed available to a screenshot-only policy."
+    }
+  ],
+  "uncertainties": []
+}

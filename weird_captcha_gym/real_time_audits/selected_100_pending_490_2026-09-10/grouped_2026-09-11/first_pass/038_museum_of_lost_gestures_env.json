@@ -1,0 +1,902 @@
+{
+  "case_index": 38,
+  "environment_id": "museum_of_lost_gestures_env",
+  "public_environment_name": "Museum of Lost Gestures",
+  "configuration_reports": [
+    {
+      "case_index": 371,
+      "public_environment_name": "Museum of Lost Gestures",
+      "environment_id": "museum_of_lost_gestures_env",
+      "difficulty": 1,
+      "interaction_mode": "full",
+      "label": "no",
+      "controls_available": [
+        "Native pointer movement, enter/leave, left/right pointer down/up in the gallery; double tap, drag, hold, dwell, and leave/return are recognized from those events.",
+        "Native wheel scrolling to the bottom, resizing through the corner handle, Shift+click, and the A+S keyboard chord.",
+        "The wall ledger, static gesture plinth, and final Close the exhibition certification control."
+      ],
+      "autonomous_processes": [
+        "In full mode, a 100 ms interval emits ticks while a pointer is held or remains entered; hold is recognized after the fixed 2000 ms threshold and dwell after the fixed 5000 ms threshold.",
+        "The fixed 550 ms double-tap acceptance window is checked against the timestamp of the preceding tap; it does not move the gallery or target.",
+        "No other task state advances without a native input event; scroll, resize, leave/return, and keyboard states change only from those events."
+      ],
+      "grouped_control_modes": [
+        "Full native-event mode across all seeds and gesture occurrences: pointer gestures, wheel/resize events, and Shift/a/s keyboard events in the gallery."
+      ],
+      "delta_ms": null,
+      "window_ms": null,
+      "clause_i": {
+        "holds": false,
+        "reason": "For the only autonomous timing candidates, an observation-free policy can use its own event timestamps: release a hold at 2000 ms, wait the fixed 5000 ms for dwell, and issue the second tap within the fixed 550 ms double-tap window. The level-1 single-gesture recipes and gates add static planning, not a need to observe a changing task state."
+      },
+      "clause_ii": {
+        "holds": true,
+        "reason": "A bounded frame can show the static ledger and the fixed hold/dwell countdown, so a window-based policy exists, but it can ignore that window for the timing decisions. The window is not what makes a delayed action optimal."
+      },
+      "clause_iii": {
+        "holds": false,
+        "reason": "The hold and dwell waits only enable or recognize a fixed-duration gesture, and waiting beyond recognition does not make the release or later action less effective. Double-tap loss after 550 ms is elapsed-clock expiration, not non-clock task-state evolution. The static scene has no autonomous motion or degrading target."
+      },
+      "common_visible_process": "No qualifying common visible process exists. The only visible autonomous change is a fixed-clock listening/countdown message during hold or dwell; the gallery scene and ledger remain static between inputs, and the input opportunity is not degraded by a changing world.",
+      "pre_run": {
+        "threshold": 0.5,
+        "at_least_half": false,
+        "rate": null,
+        "basis": "source_structural",
+        "reason": "Every instance requires ten gesture emissions to open ten cases. Each emission is caused by a native input event, or by a fixed timer that was first started by a native input event; there is no autonomous outcome phase that can complete the collection after preparation.",
+        "seed_probe": null
+      },
+      "files_read_completely": [
+        "AGENTS.md",
+        "weird_captcha_gym/docs/controllability/real-time.md",
+        "weird_captcha_gym/environments/museum_of_lost_gestures_env/controls.json",
+        "weird_captcha_gym/environments/museum_of_lost_gestures_env/env.json",
+        "weird_captcha_gym/environments/museum_of_lost_gestures_env/tasks/museum_of_lost_gestures_seed_0001/task.json",
+        "weird_captcha_gym/shared_scripts/incubator_generators/museum_of_lost_gestures.py",
+        "weird_captcha_gym/shared_runtime/app/mechanics/museum_of_lost_gestures.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/museum_of_lost_gestures.css",
+        "weird_captcha_gym/shared_runtime/server/incubator_graders/museum_of_lost_gestures.py",
+        "weird_captcha_gym/environments/museum_of_lost_gestures_env/tasks/museum_of_lost_gestures_seed_0001/verifier.py",
+        "weird_captcha_gym/tools/incubator_solvers/museum_of_lost_gestures.py",
+        "weird_captcha_gym/shared_runtime/verifier_helpers.py"
+      ],
+      "source_evidence": [
+        {
+          "path": "weird_captcha_gym/environments/museum_of_lost_gestures_env/controls.json",
+          "lines": "10-17",
+          "claim": "Difficulty 1 uses titles, gated cases, and composition 1."
+        },
+        {
+          "path": "weird_captcha_gym/environments/museum_of_lost_gestures_env/controls.json",
+          "lines": "56-69",
+          "claim": "Full mode is native input; simplified mode is a separate button surface; the fixed runner observation settings are 500 ms and one frame."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/museum_of_lost_gestures.py",
+          "lines": "18-40",
+          "claim": "Generation randomizes case order and recipes but fixes hold_ms=2000, dwell_ms=5000, double_ms=550, a static plinth, and a finite gesture budget."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/museum_of_lost_gestures.js",
+          "lines": "31-63",
+          "claim": "Full-mode recognition changes only in response to pointer, keyboard, scroll, resize, or fixed tick checks; hold and dwell thresholds are fixed."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/museum_of_lost_gestures.js",
+          "lines": "111-145",
+          "claim": "The full interaction surface binds native events, and the only recurring autonomous callback is the 100 ms timer that records ticks and displays fixed remaining durations."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/museum_of_lost_gestures.css",
+          "lines": "6-13",
+          "claim": "The rendered room is a static scene/plinth with scrolling and static layout rules; no moving target or CSS animation is defined."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/museum_of_lost_gestures.py",
+          "lines": "33-105",
+          "claim": "The independent replay uses the same fixed gesture and timing predicates, including 2000/5000 ms thresholds and the 550 ms double-tap window."
+        },
+        {
+          "path": "weird_captcha_gym/tools/incubator_solvers/museum_of_lost_gestures.py",
+          "lines": "22-49",
+          "claim": "The native solver performs gestures through fixed coordinates and fixed waits, including hold and dwell durations, rather than tracking a changing target."
+        }
+      ],
+      "uncertainties": []
+    },
+    {
+      "case_index": 372,
+      "public_environment_name": "Museum of Lost Gestures",
+      "environment_id": "museum_of_lost_gestures_env",
+      "difficulty": 1,
+      "interaction_mode": "simplified",
+      "label": "no",
+      "controls_available": [
+        "Ten visible vocabulary buttons proxy Double tap, Right click, Long drag, Hold 2 seconds, Scroll to bottom, Resize room, Leave and return, Dwell 5 seconds, Shift + click, and A + S chord.",
+        "The Hold and Dwell buttons start fixed-duration pending actions; the other gesture buttons emit their proxy gesture immediately.",
+        "The static ledger and final Close the exhibition certification control."
+      ],
+      "autonomous_processes": [
+        "A simplified Hold proxy remains pending until fixed hold_ms=2000, while a Dwell proxy remains pending until fixed dwell_ms=5000; 100 ms ticks complete those pending proxies.",
+        "The pending gesture button is disabled during its fixed wait, then the gesture is enabled/committed; this is a fixed wait that enables an action, not an expiring opportunity.",
+        "No gallery movement, target motion, or deadline evolves autonomously; direct proxy buttons change state only when clicked."
+      ],
+      "grouped_control_modes": [
+        "Simplified vocabulary-button proxy mode across all seeds and gesture occurrences; Hold and Dwell are the two fixed-duration proxy variants."
+      ],
+      "delta_ms": null,
+      "window_ms": null,
+      "clause_i": {
+        "holds": false,
+        "reason": "A policy using only its own action history can click each required proxy and wait the known 2000 ms or 5000 ms duration. The level-1 single-gesture recipes do not require observation of a changing state for these timing decisions."
+      },
+      "clause_ii": {
+        "holds": true,
+        "reason": "The current screenshot can show the static ledger or the fixed pending countdown, so a bounded-window policy exists, but it gains no necessary predictive information over the fixed action clock."
+      },
+      "clause_iii": {
+        "holds": false,
+        "reason": "The only autonomous transition is completion of a fixed pending proxy, after which the gesture becomes available and remains recognized. Nothing becomes strictly less effective during the wait, and the static gallery supplies no non-clock evolution."
+      },
+      "common_visible_process": "No qualifying common visible process exists. The visible pending countdown is a fixed-duration button proxy; it does not show a changing task world or cause an action opportunity to degrade.",
+      "pre_run": {
+        "threshold": 0.5,
+        "at_least_half": false,
+        "rate": null,
+        "basis": "source_structural",
+        "reason": "Every instance requires ten gesture emissions to open ten cases. Each simplified emission requires a vocabulary-button click, with only the subsequent fixed hold/dwell completion occurring autonomously; no autonomous phase completes the collection after preparation.",
+        "seed_probe": null
+      },
+      "files_read_completely": [
+        "AGENTS.md",
+        "weird_captcha_gym/docs/controllability/real-time.md",
+        "weird_captcha_gym/environments/museum_of_lost_gestures_env/controls.json",
+        "weird_captcha_gym/environments/museum_of_lost_gestures_env/env.json",
+        "weird_captcha_gym/environments/museum_of_lost_gestures_env/tasks/museum_of_lost_gestures_seed_0001/task.json",
+        "weird_captcha_gym/shared_scripts/incubator_generators/museum_of_lost_gestures.py",
+        "weird_captcha_gym/shared_runtime/app/mechanics/museum_of_lost_gestures.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/museum_of_lost_gestures.css",
+        "weird_captcha_gym/shared_runtime/server/incubator_graders/museum_of_lost_gestures.py",
+        "weird_captcha_gym/environments/museum_of_lost_gestures_env/tasks/museum_of_lost_gestures_seed_0001/verifier.py",
+        "weird_captcha_gym/tools/incubator_solvers/museum_of_lost_gestures.py",
+        "weird_captcha_gym/shared_runtime/verifier_helpers.py"
+      ],
+      "source_evidence": [
+        {
+          "path": "weird_captcha_gym/environments/museum_of_lost_gestures_env/controls.json",
+          "lines": "10-17",
+          "claim": "Difficulty 1 uses titles, gated cases, and composition 1."
+        },
+        {
+          "path": "weird_captcha_gym/environments/museum_of_lost_gestures_env/controls.json",
+          "lines": "56-69",
+          "claim": "Simplified mode uses vocabulary buttons and retains the fixed runner observation settings."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/museum_of_lost_gestures.py",
+          "lines": "18-40",
+          "claim": "The generated world has static geometry and fixed hold/dwell/double timing constants."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/museum_of_lost_gestures.js",
+          "lines": "22-29",
+          "claim": "Simplified proxy events either emit immediately or enter a fixed-duration pending state completed by a tick."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/museum_of_lost_gestures.js",
+          "lines": "131-145",
+          "claim": "Simplified mode disables native room input and uses buttons; the only recurring callback services pending fixed waits."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/museum_of_lost_gestures.py",
+          "lines": "33-45,108-133",
+          "claim": "The grader rejects wrong input surfaces and scores the resulting recognized/opened gesture cases."
+        }
+      ],
+      "uncertainties": []
+    },
+    {
+      "case_index": 373,
+      "public_environment_name": "Museum of Lost Gestures",
+      "environment_id": "museum_of_lost_gestures_env",
+      "difficulty": 2,
+      "interaction_mode": "full",
+      "label": "no",
+      "controls_available": [
+        "Native pointer movement, enter/leave, left/right pointer down/up in the gallery; double tap, drag, hold, dwell, and leave/return are recognized from those events.",
+        "Native wheel scrolling to the bottom, resizing through the corner handle, Shift+click, and the A+S keyboard chord.",
+        "The wall ledger, static gesture plinth, and final Close the exhibition certification control; level 2 recipes can require a consecutive two-gesture prefix."
+      ],
+      "autonomous_processes": [
+        "A 100 ms interval services full-mode hold and dwell checks; the fixed thresholds remain 2000 ms and 5000 ms.",
+        "Double-tap acceptance uses the fixed 550 ms timestamp window after the prior tap; it is not accompanied by target motion.",
+        "All other gallery state changes require pointer, wheel, resize, or keyboard input."
+      ],
+      "grouped_control_modes": [
+        "Full native-event mode across all seeds and gesture occurrences: pointer gestures, wheel/resize events, and Shift/a/s keyboard events in the gallery."
+      ],
+      "delta_ms": null,
+      "window_ms": null,
+      "clause_i": {
+        "holds": false,
+        "reason": "The level-2 consecutive two-gesture recipes add static sequence planning, but the only autonomous timing is still scheduleable from I_t: the known hold, dwell, and double-tap constants determine when to release, remain still, or issue the second tap."
+      },
+      "clause_ii": {
+        "holds": true,
+        "reason": "A bounded screenshot window can show the current ledger and fixed countdown, and can support static recipe selection, but it is not needed to predict any changing target or timing state."
+      },
+      "clause_iii": {
+        "holds": false,
+        "reason": "Waiting through hold or dwell only completes a fixed-duration recognition and does not make a useful later action worse. Double-tap expiration is a clock window, which the definition excludes; no non-clock world state changes autonomously."
+      },
+      "common_visible_process": "No qualifying common visible process exists. The two-gesture composition changes only the required history and dependencies; it does not add motion, physics, or an expiring stateful opportunity.",
+      "pre_run": {
+        "threshold": 0.5,
+        "at_least_half": false,
+        "rate": null,
+        "basis": "source_structural",
+        "reason": "The two-gesture recipes still require individual gesture emissions. The fixed tick can finish only a hold/dwell action already initiated by input, so no instance has a single autonomous outcome phase that completes the ten-case collection after preparation.",
+        "seed_probe": null
+      },
+      "files_read_completely": [
+        "AGENTS.md",
+        "weird_captcha_gym/docs/controllability/real-time.md",
+        "weird_captcha_gym/environments/museum_of_lost_gestures_env/controls.json",
+        "weird_captcha_gym/environments/museum_of_lost_gestures_env/env.json",
+        "weird_captcha_gym/environments/museum_of_lost_gestures_env/tasks/museum_of_lost_gestures_seed_0001/task.json",
+        "weird_captcha_gym/shared_scripts/incubator_generators/museum_of_lost_gestures.py",
+        "weird_captcha_gym/shared_runtime/app/mechanics/museum_of_lost_gestures.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/museum_of_lost_gestures.css",
+        "weird_captcha_gym/shared_runtime/server/incubator_graders/museum_of_lost_gestures.py",
+        "weird_captcha_gym/environments/museum_of_lost_gestures_env/tasks/museum_of_lost_gestures_seed_0001/verifier.py",
+        "weird_captcha_gym/tools/incubator_solvers/museum_of_lost_gestures.py",
+        "weird_captcha_gym/shared_runtime/verifier_helpers.py"
+      ],
+      "source_evidence": [
+        {
+          "path": "weird_captcha_gym/environments/museum_of_lost_gestures_env/controls.json",
+          "lines": "19-26",
+          "claim": "Difficulty 2 uses composition 2 with titles and gated cases."
+        },
+        {
+          "path": "weird_captcha_gym/environments/museum_of_lost_gestures_env/controls.json",
+          "lines": "61-69",
+          "claim": "Full mode remains native input with the same fixed observation settings."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/museum_of_lost_gestures.py",
+          "lines": "23-33",
+          "claim": "Random prefixes and dependency gates alter recipes, while the generated timing and geometry remain fixed."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/museum_of_lost_gestures.js",
+          "lines": "31-63,111-145",
+          "claim": "Native event handlers and the fixed tick interval implement the same hold/dwell/double timing without autonomous target evolution."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/museum_of_lost_gestures.py",
+          "lines": "22-31,100-105",
+          "claim": "The grader's replay changes opened cases only when recognized gesture history matches each recipe and uses fixed time thresholds."
+        }
+      ],
+      "uncertainties": []
+    },
+    {
+      "case_index": 374,
+      "public_environment_name": "Museum of Lost Gestures",
+      "environment_id": "museum_of_lost_gestures_env",
+      "difficulty": 2,
+      "interaction_mode": "simplified",
+      "label": "no",
+      "controls_available": [
+        "Ten visible vocabulary buttons proxy Double tap, Right click, Long drag, Hold 2 seconds, Scroll to bottom, Resize room, Leave and return, Dwell 5 seconds, Shift + click, and A + S chord.",
+        "Hold and Dwell use fixed-duration pending button actions; the other proxies emit immediately.",
+        "The static ledger and final Close the exhibition certification control; level 2 recipes can require a consecutive two-gesture prefix."
+      ],
+      "autonomous_processes": [
+        "A clicked Hold proxy waits exactly 2000 ms and a clicked Dwell proxy waits exactly 5000 ms before a tick emits the gesture.",
+        "The clicked button is disabled during its fixed pending interval, then the gesture is committed; no opportunity decays while waiting.",
+        "The ledger and gallery geometry are static between proxy clicks."
+      ],
+      "grouped_control_modes": [
+        "Simplified vocabulary-button proxy mode across all seeds and gesture occurrences; Hold and Dwell are the two fixed-duration proxy variants."
+      ],
+      "delta_ms": null,
+      "window_ms": null,
+      "clause_i": {
+        "holds": false,
+        "reason": "The two-gesture recipe is a static history requirement. A policy using I_t can issue each button proxy and wait its known fixed duration without observing a changing task state."
+      },
+      "clause_ii": {
+        "holds": true,
+        "reason": "A bounded window can display the static ledger or pending countdown, but the countdown is redundant with the known proxy schedule and is not predictive evidence for a delayed action."
+      },
+      "clause_iii": {
+        "holds": false,
+        "reason": "The fixed pending wait only makes a proxy gesture available and recognized. It does not reduce the value of any action through non-clock state evolution, and no target moves or expires."
+      },
+      "common_visible_process": "No qualifying common visible process exists. Composition 2 changes only the static recipe/history dependency; the visible pending state is a fixed button wait.",
+      "pre_run": {
+        "threshold": 0.5,
+        "at_least_half": false,
+        "rate": null,
+        "basis": "source_structural",
+        "reason": "Each of the ten cases still needs a button proxy; a later tick only completes a fixed wait begun by that button. No generated instance has an autonomous outcome phase capable of completing the collection after preparation.",
+        "seed_probe": null
+      },
+      "files_read_completely": [
+        "AGENTS.md",
+        "weird_captcha_gym/docs/controllability/real-time.md",
+        "weird_captcha_gym/environments/museum_of_lost_gestures_env/controls.json",
+        "weird_captcha_gym/environments/museum_of_lost_gestures_env/env.json",
+        "weird_captcha_gym/environments/museum_of_lost_gestures_env/tasks/museum_of_lost_gestures_seed_0001/task.json",
+        "weird_captcha_gym/shared_scripts/incubator_generators/museum_of_lost_gestures.py",
+        "weird_captcha_gym/shared_runtime/app/mechanics/museum_of_lost_gestures.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/museum_of_lost_gestures.css",
+        "weird_captcha_gym/shared_runtime/server/incubator_graders/museum_of_lost_gestures.py",
+        "weird_captcha_gym/environments/museum_of_lost_gestures_env/tasks/museum_of_lost_gestures_seed_0001/verifier.py",
+        "weird_captcha_gym/tools/incubator_solvers/museum_of_lost_gestures.py",
+        "weird_captcha_gym/shared_runtime/verifier_helpers.py"
+      ],
+      "source_evidence": [
+        {
+          "path": "weird_captcha_gym/environments/museum_of_lost_gestures_env/controls.json",
+          "lines": "19-26",
+          "claim": "Difficulty 2 uses composition 2 with titles and gated cases."
+        },
+        {
+          "path": "weird_captcha_gym/environments/museum_of_lost_gestures_env/controls.json",
+          "lines": "56-69",
+          "claim": "Simplified mode is the button proxy surface with fixed observation settings."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/museum_of_lost_gestures.js",
+          "lines": "22-29,131-145",
+          "claim": "Simplified proxy buttons emit immediately or complete only after fixed hold/dwell durations serviced by ticks."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/museum_of_lost_gestures.py",
+          "lines": "33-45,108-133",
+          "claim": "The independent grader binds the simplified surface and evaluates the resulting gesture history/opened cases."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/museum_of_lost_gestures.css",
+          "lines": "6-13",
+          "claim": "The room and ledger have static layout/scene styling, including no autonomous moving target."
+        }
+      ],
+      "uncertainties": []
+    },
+    {
+      "case_index": 375,
+      "public_environment_name": "Museum of Lost Gestures",
+      "environment_id": "museum_of_lost_gestures_env",
+      "difficulty": 3,
+      "interaction_mode": "full",
+      "label": "no",
+      "controls_available": [
+        "Native pointer movement, enter/leave, left/right pointer down/up in the gallery; double tap, drag, hold, dwell, and leave/return are recognized from those events.",
+        "Native wheel scrolling to the bottom, resizing through the corner handle, Shift+click, and the A+S keyboard chord.",
+        "The wall ledger, static gesture plinth, and final Close the exhibition certification control; level 3 recipes can require a consecutive three-gesture sequence."
+      ],
+      "autonomous_processes": [
+        "A 100 ms interval services full-mode hold and dwell checks at fixed 2000 ms and 5000 ms thresholds.",
+        "The fixed 550 ms double-tap window is checked against the last tap timestamp; it does not arise from a moving or otherwise changing exhibit.",
+        "All pointer, wheel, resize, and keyboard state changes are input-triggered."
+      ],
+      "grouped_control_modes": [
+        "Full native-event mode across all seeds and gesture occurrences: pointer gestures, wheel/resize events, and Shift/a/s keyboard events in the gallery."
+      ],
+      "delta_ms": null,
+      "window_ms": null,
+      "clause_i": {
+        "holds": false,
+        "reason": "Composition 3 requires longer static gesture prefixes and retained history, but the timed gesture controls still have fixed thresholds known from the agent's own action times. A schedule-based q can handle those waits without a recent visual window."
+      },
+      "clause_ii": {
+        "holds": true,
+        "reason": "The current bounded screenshot can show the visible recipe/ledger and fixed countdown, so a g can exist; it is not necessary to predict a future task-state trajectory."
+      },
+      "clause_iii": {
+        "holds": false,
+        "reason": "No non-clock task state evolves autonomously. Hold/dwell recognition is a fixed minimum-duration condition, and double-tap expiration is merely elapsed clock time; neither makes a useful action strictly worse because a visible world changed."
+      },
+      "common_visible_process": "No qualifying common visible process exists. Level 3 changes only composition and history requirements; the gallery remains a static event surface between inputs.",
+      "pre_run": {
+        "threshold": 0.5,
+        "at_least_half": false,
+        "rate": null,
+        "basis": "source_structural",
+        "reason": "Three-gesture recipes still require repeated gesture inputs. Timed completion can occur only after an input starts hold/dwell, so no instance has a self-running phase that completes all ten cases after preparation.",
+        "seed_probe": null
+      },
+      "files_read_completely": [
+        "AGENTS.md",
+        "weird_captcha_gym/docs/controllability/real-time.md",
+        "weird_captcha_gym/environments/museum_of_lost_gestures_env/controls.json",
+        "weird_captcha_gym/environments/museum_of_lost_gestures_env/env.json",
+        "weird_captcha_gym/environments/museum_of_lost_gestures_env/tasks/museum_of_lost_gestures_seed_0001/task.json",
+        "weird_captcha_gym/shared_scripts/incubator_generators/museum_of_lost_gestures.py",
+        "weird_captcha_gym/shared_runtime/app/mechanics/museum_of_lost_gestures.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/museum_of_lost_gestures.css",
+        "weird_captcha_gym/shared_runtime/server/incubator_graders/museum_of_lost_gestures.py",
+        "weird_captcha_gym/environments/museum_of_lost_gestures_env/tasks/museum_of_lost_gestures_seed_0001/verifier.py",
+        "weird_captcha_gym/tools/incubator_solvers/museum_of_lost_gestures.py",
+        "weird_captcha_gym/shared_runtime/verifier_helpers.py"
+      ],
+      "source_evidence": [
+        {
+          "path": "weird_captcha_gym/environments/museum_of_lost_gestures_env/controls.json",
+          "lines": "28-35",
+          "claim": "Difficulty 3 uses composition 3 with titles and gated cases."
+        },
+        {
+          "path": "weird_captcha_gym/environments/museum_of_lost_gestures_env/controls.json",
+          "lines": "61-69",
+          "claim": "Full mode remains native input with a 500 ms one-frame observation window."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/museum_of_lost_gestures.py",
+          "lines": "25-40",
+          "claim": "Composition changes recipe prefixes and gates, while timing constants and room geometry are unchanged."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/museum_of_lost_gestures.js",
+          "lines": "54-63,140-145",
+          "claim": "Full mode's only autonomous service is the fixed timer for hold/dwell checks and countdown display."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/museum_of_lost_gestures.py",
+          "lines": "22-31,100-105",
+          "claim": "Success depends on recognized gesture history matching static generated recipes; replay does not simulate a moving target."
+        }
+      ],
+      "uncertainties": []
+    },
+    {
+      "case_index": 376,
+      "public_environment_name": "Museum of Lost Gestures",
+      "environment_id": "museum_of_lost_gestures_env",
+      "difficulty": 3,
+      "interaction_mode": "simplified",
+      "label": "no",
+      "controls_available": [
+        "Ten visible vocabulary buttons proxy Double tap, Right click, Long drag, Hold 2 seconds, Scroll to bottom, Resize room, Leave and return, Dwell 5 seconds, Shift + click, and A + S chord.",
+        "Hold and Dwell use fixed-duration pending button actions; the other proxies emit immediately.",
+        "The static ledger and final Close the exhibition certification control; level 3 recipes can require a consecutive three-gesture sequence."
+      ],
+      "autonomous_processes": [
+        "A Hold proxy waits a fixed 2000 ms and a Dwell proxy waits a fixed 5000 ms before a 100 ms tick completes it.",
+        "The pending button is disabled during the fixed wait and re-enabled after the gesture is emitted; waiting does not close a useful opportunity.",
+        "No target, room object, or recipe changes autonomously between button actions."
+      ],
+      "grouped_control_modes": [
+        "Simplified vocabulary-button proxy mode across all seeds and gesture occurrences; Hold and Dwell are the two fixed-duration proxy variants."
+      ],
+      "delta_ms": null,
+      "window_ms": null,
+      "clause_i": {
+        "holds": false,
+        "reason": "Composition 3 adds static multi-gesture history, while the simplified timing is still a known button wait. q can use the proxy action and its own clock without observing a changing state."
+      },
+      "clause_ii": {
+        "holds": true,
+        "reason": "A bounded frame can show the current ledger or pending countdown, but it is redundant for the fixed proxy schedule and does not predict any non-clock evolution."
+      },
+      "clause_iii": {
+        "holds": false,
+        "reason": "The pending proxy becomes recognized after a fixed wait; it does not lose value during that interval. The level-3 sequence changes only after input emissions, and no autonomous target or deadline degrades."
+      },
+      "common_visible_process": "No qualifying common visible process exists. Composition 3 affects only static recipe history; the only visible autonomous transition is a fixed pending-button countdown.",
+      "pre_run": {
+        "threshold": 0.5,
+        "at_least_half": false,
+        "rate": null,
+        "basis": "source_structural",
+        "reason": "The ten cases require individual button proxies. Fixed ticks can complete only a hold/dwell proxy already started by a click, so no instance has an autonomous phase that completes the collection after preparation.",
+        "seed_probe": null
+      },
+      "files_read_completely": [
+        "AGENTS.md",
+        "weird_captcha_gym/docs/controllability/real-time.md",
+        "weird_captcha_gym/environments/museum_of_lost_gestures_env/controls.json",
+        "weird_captcha_gym/environments/museum_of_lost_gestures_env/env.json",
+        "weird_captcha_gym/environments/museum_of_lost_gestures_env/tasks/museum_of_lost_gestures_seed_0001/task.json",
+        "weird_captcha_gym/shared_scripts/incubator_generators/museum_of_lost_gestures.py",
+        "weird_captcha_gym/shared_runtime/app/mechanics/museum_of_lost_gestures.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/museum_of_lost_gestures.css",
+        "weird_captcha_gym/shared_runtime/server/incubator_graders/museum_of_lost_gestures.py",
+        "weird_captcha_gym/environments/museum_of_lost_gestures_env/tasks/museum_of_lost_gestures_seed_0001/verifier.py",
+        "weird_captcha_gym/tools/incubator_solvers/museum_of_lost_gestures.py",
+        "weird_captcha_gym/shared_runtime/verifier_helpers.py"
+      ],
+      "source_evidence": [
+        {
+          "path": "weird_captcha_gym/environments/museum_of_lost_gestures_env/controls.json",
+          "lines": "28-35",
+          "claim": "Difficulty 3 uses composition 3 with titles and gated cases."
+        },
+        {
+          "path": "weird_captcha_gym/environments/museum_of_lost_gestures_env/controls.json",
+          "lines": "56-69",
+          "claim": "Simplified mode is the button proxy surface with fixed observation settings."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/museum_of_lost_gestures.js",
+          "lines": "22-29,131-145",
+          "claim": "Proxy gestures either emit immediately or complete after fixed hold/dwell waits serviced by ticks."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/museum_of_lost_gestures.py",
+          "lines": "25-40",
+          "claim": "Composition changes generated recipes and gates, not the room's timing or autonomous behavior."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/museum_of_lost_gestures.py",
+          "lines": "33-45,108-133",
+          "claim": "The grader binds the simplified input surface and checks recognized/opened static gesture history."
+        }
+      ],
+      "uncertainties": []
+    },
+    {
+      "case_index": 377,
+      "public_environment_name": "Museum of Lost Gestures",
+      "environment_id": "museum_of_lost_gestures_env",
+      "difficulty": 4,
+      "interaction_mode": "full",
+      "label": "no",
+      "controls_available": [
+        "Native pointer movement, enter/leave, left/right pointer down/up in the gallery; double tap, drag, hold, dwell, and leave/return are recognized from those events.",
+        "Native wheel scrolling to the bottom, resizing through the corner handle, Shift+click, and the A+S keyboard chord.",
+        "The wall ledger, static gesture plinth, and final Close the exhibition certification control; level 4 recipes can require a consecutive four-gesture sequence."
+      ],
+      "autonomous_processes": [
+        "Full-mode 100 ms ticks check a fixed 2000 ms hold and fixed 5000 ms dwell threshold.",
+        "The second tap of a double gesture is accepted only inside the fixed 550 ms timestamp window.",
+        "No exhibit, plinth, target, or deadline changes without pointer, wheel, resize, or keyboard input."
+      ],
+      "grouped_control_modes": [
+        "Full native-event mode across all seeds and gesture occurrences: pointer gestures, wheel/resize events, and Shift/a/s keyboard events in the gallery."
+      ],
+      "delta_ms": null,
+      "window_ms": null,
+      "clause_i": {
+        "holds": false,
+        "reason": "The four-gesture composition makes static planning and history retention harder, but a q can still schedule the fixed hold, dwell, and double-tap timing from I_t. No recent visual change is required for those controls."
+      },
+      "clause_ii": {
+        "holds": true,
+        "reason": "A bounded screenshot can expose the static multi-step ledger and any fixed countdown, so g exists, but it does not provide predictive evidence of a changing task state."
+      },
+      "clause_iii": {
+        "holds": false,
+        "reason": "The fixed waits are minimum-duration recognition conditions, and the double-tap expiry is only a fixed clock window. The four-gesture history changes on input, not through non-clock autonomous evolution, so no available action strictly degrades during a qualifying delay."
+      },
+      "common_visible_process": "No qualifying common visible process exists. Level 4 changes recipe length/history only; the event gallery remains static between native inputs.",
+      "pre_run": {
+        "threshold": 0.5,
+        "at_least_half": false,
+        "rate": null,
+        "basis": "source_structural",
+        "reason": "Four-gesture recipes require continued native gesture input. A timer can finish only a hold/dwell action already initiated by input; it cannot autonomously complete the ten-case collection after preparation.",
+        "seed_probe": null
+      },
+      "files_read_completely": [
+        "AGENTS.md",
+        "weird_captcha_gym/docs/controllability/real-time.md",
+        "weird_captcha_gym/environments/museum_of_lost_gestures_env/controls.json",
+        "weird_captcha_gym/environments/museum_of_lost_gestures_env/env.json",
+        "weird_captcha_gym/environments/museum_of_lost_gestures_env/tasks/museum_of_lost_gestures_seed_0001/task.json",
+        "weird_captcha_gym/shared_scripts/incubator_generators/museum_of_lost_gestures.py",
+        "weird_captcha_gym/shared_runtime/app/mechanics/museum_of_lost_gestures.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/museum_of_lost_gestures.css",
+        "weird_captcha_gym/shared_runtime/server/incubator_graders/museum_of_lost_gestures.py",
+        "weird_captcha_gym/environments/museum_of_lost_gestures_env/tasks/museum_of_lost_gestures_seed_0001/verifier.py",
+        "weird_captcha_gym/tools/incubator_solvers/museum_of_lost_gestures.py",
+        "weird_captcha_gym/shared_runtime/verifier_helpers.py"
+      ],
+      "source_evidence": [
+        {
+          "path": "weird_captcha_gym/environments/museum_of_lost_gestures_env/controls.json",
+          "lines": "37-44",
+          "claim": "Difficulty 4 uses composition 4 with titles and gated cases."
+        },
+        {
+          "path": "weird_captcha_gym/environments/museum_of_lost_gestures_env/controls.json",
+          "lines": "61-69",
+          "claim": "Full mode is native input with a one-frame, 500 ms observation setting."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/museum_of_lost_gestures.py",
+          "lines": "23-40",
+          "claim": "Randomized prefixes/gates and composition affect static recipes; hold, dwell, double, geometry, and budget remain fixed."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/museum_of_lost_gestures.js",
+          "lines": "31-63,111-145",
+          "claim": "Full native recognition has fixed time checks and no autonomous moving exhibit."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/museum_of_lost_gestures.css",
+          "lines": "6-13",
+          "claim": "The visible scene and layout contain no animation or moving target mechanism."
+        },
+        {
+          "path": "weird_captcha_gym/tools/incubator_solvers/museum_of_lost_gestures.py",
+          "lines": "22-49",
+          "claim": "The full solver uses fixed-duration waits for hold/dwell and fixed native gestures."
+        }
+      ],
+      "uncertainties": []
+    },
+    {
+      "case_index": 378,
+      "public_environment_name": "Museum of Lost Gestures",
+      "environment_id": "museum_of_lost_gestures_env",
+      "difficulty": 4,
+      "interaction_mode": "simplified",
+      "label": "no",
+      "controls_available": [
+        "Ten visible vocabulary buttons proxy Double tap, Right click, Long drag, Hold 2 seconds, Scroll to bottom, Resize room, Leave and return, Dwell 5 seconds, Shift + click, and A + S chord.",
+        "Hold and Dwell use fixed-duration pending button actions; the other proxies emit immediately.",
+        "The static ledger and final Close the exhibition certification control; level 4 recipes can require a consecutive four-gesture sequence."
+      ],
+      "autonomous_processes": [
+        "A Hold proxy is completed after fixed 2000 ms and a Dwell proxy after fixed 5000 ms, serviced by 100 ms ticks.",
+        "The pending button is disabled during the fixed wait and the gesture is then emitted; waiting enables completion instead of degrading an opportunity.",
+        "No room geometry, target, or recipe changes autonomously between proxy clicks."
+      ],
+      "grouped_control_modes": [
+        "Simplified vocabulary-button proxy mode across all seeds and gesture occurrences; Hold and Dwell are the two fixed-duration proxy variants."
+      ],
+      "delta_ms": null,
+      "window_ms": null,
+      "clause_i": {
+        "holds": false,
+        "reason": "The four-gesture recipe is static history planning. q can click the required proxies and use the known fixed waits without using a recent frame window."
+      },
+      "clause_ii": {
+        "holds": true,
+        "reason": "The frame window can show the static ledger and pending countdown, but it is not needed to predict any changing task state; g can ignore it for timing."
+      },
+      "clause_iii": {
+        "holds": false,
+        "reason": "The only autonomous transition completes a fixed proxy wait. It does not make any later action less valuable, and the multi-step history changes only on gesture emissions caused by input."
+      },
+      "common_visible_process": "No qualifying common visible process exists. Composition 4 increases static recipe length while the only visible autonomous behavior remains a fixed pending-button wait.",
+      "pre_run": {
+        "threshold": 0.5,
+        "at_least_half": false,
+        "rate": null,
+        "basis": "source_structural",
+        "reason": "The collection still needs individual button proxies for each gesture. Fixed ticks only finish a Hold/Dwell proxy after a click, so no instance is solvable through one autonomous outcome phase after preparation.",
+        "seed_probe": null
+      },
+      "files_read_completely": [
+        "AGENTS.md",
+        "weird_captcha_gym/docs/controllability/real-time.md",
+        "weird_captcha_gym/environments/museum_of_lost_gestures_env/controls.json",
+        "weird_captcha_gym/environments/museum_of_lost_gestures_env/env.json",
+        "weird_captcha_gym/environments/museum_of_lost_gestures_env/tasks/museum_of_lost_gestures_seed_0001/task.json",
+        "weird_captcha_gym/shared_scripts/incubator_generators/museum_of_lost_gestures.py",
+        "weird_captcha_gym/shared_runtime/app/mechanics/museum_of_lost_gestures.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/museum_of_lost_gestures.css",
+        "weird_captcha_gym/shared_runtime/server/incubator_graders/museum_of_lost_gestures.py",
+        "weird_captcha_gym/environments/museum_of_lost_gestures_env/tasks/museum_of_lost_gestures_seed_0001/verifier.py",
+        "weird_captcha_gym/tools/incubator_solvers/museum_of_lost_gestures.py",
+        "weird_captcha_gym/shared_runtime/verifier_helpers.py"
+      ],
+      "source_evidence": [
+        {
+          "path": "weird_captcha_gym/environments/museum_of_lost_gestures_env/controls.json",
+          "lines": "37-44",
+          "claim": "Difficulty 4 uses composition 4 with titles and gated cases."
+        },
+        {
+          "path": "weird_captcha_gym/environments/museum_of_lost_gestures_env/controls.json",
+          "lines": "56-69",
+          "claim": "Simplified mode is the button proxy surface with fixed observation settings."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/museum_of_lost_gestures.js",
+          "lines": "22-29,131-145",
+          "claim": "Simplified proxies either emit immediately or complete after fixed Hold/Dwell waits."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/museum_of_lost_gestures.py",
+          "lines": "25-40",
+          "claim": "Composition 4 changes recipes and dependencies, not autonomous room behavior."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/museum_of_lost_gestures.py",
+          "lines": "33-45,108-133",
+          "claim": "The simplified transcript is independently replayed against gesture history and opened cases."
+        }
+      ],
+      "uncertainties": []
+    },
+    {
+      "case_index": 379,
+      "public_environment_name": "Museum of Lost Gestures",
+      "environment_id": "museum_of_lost_gestures_env",
+      "difficulty": 5,
+      "interaction_mode": "full",
+      "label": "no",
+      "controls_available": [
+        "Native pointer movement, enter/leave, left/right pointer down/up in the gallery; double tap, drag, hold, dwell, and leave/return are recognized from those events.",
+        "Native wheel scrolling to the bottom, resizing through the corner handle, Shift+click, and the A+S keyboard chord.",
+        "The wall ledger, static gesture plinth, and final Close the exhibition certification control; level 5 recipes can require a consecutive five-gesture sequence."
+      ],
+      "autonomous_processes": [
+        "Full-mode ticks every 100 ms service fixed 2000 ms hold and 5000 ms dwell thresholds.",
+        "Double-tap recognition has the fixed 550 ms timestamp window after a first tap.",
+        "The five-gesture composition changes only input history/dependencies; no exhibit or target moves without an input event."
+      ],
+      "grouped_control_modes": [
+        "Full native-event mode across all seeds and gesture occurrences: pointer gestures, wheel/resize events, and Shift/a/s keyboard events in the gallery."
+      ],
+      "delta_ms": null,
+      "window_ms": null,
+      "clause_i": {
+        "holds": false,
+        "reason": "Level 5 requires the longest static gesture prefixes, but the candidate timing process remains fully determined by I_t and fixed constants. q can schedule hold, dwell, and double-tap actions without recent visual evidence."
+      },
+      "clause_ii": {
+        "holds": true,
+        "reason": "A bounded frame can show the static recipe ledger and fixed countdown, but it does not supply necessary evidence of a future changing state."
+      },
+      "clause_iii": {
+        "holds": false,
+        "reason": "The longer history does not create autonomous evolution. Hold/dwell are fixed minimum-duration waits, and double-tap expiration is only elapsed-clock loss; no visible non-clock process makes an available action strictly less effective."
+      },
+      "common_visible_process": "No qualifying common visible process exists. Level 5 increases static recipe composition/history while the full gallery remains a stationary native event surface.",
+      "pre_run": {
+        "threshold": 0.5,
+        "at_least_half": false,
+        "rate": null,
+        "basis": "source_structural",
+        "reason": "Five-gesture recipes require ongoing native gestures. Timers finish only a hold/dwell action already initiated by input and cannot complete all ten cases without further outcome-affecting actions.",
+        "seed_probe": null
+      },
+      "files_read_completely": [
+        "AGENTS.md",
+        "weird_captcha_gym/docs/controllability/real-time.md",
+        "weird_captcha_gym/environments/museum_of_lost_gestures_env/controls.json",
+        "weird_captcha_gym/environments/museum_of_lost_gestures_env/env.json",
+        "weird_captcha_gym/environments/museum_of_lost_gestures_env/tasks/museum_of_lost_gestures_seed_0001/task.json",
+        "weird_captcha_gym/shared_scripts/incubator_generators/museum_of_lost_gestures.py",
+        "weird_captcha_gym/shared_runtime/app/mechanics/museum_of_lost_gestures.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/museum_of_lost_gestures.css",
+        "weird_captcha_gym/shared_runtime/server/incubator_graders/museum_of_lost_gestures.py",
+        "weird_captcha_gym/environments/museum_of_lost_gestures_env/tasks/museum_of_lost_gestures_seed_0001/verifier.py",
+        "weird_captcha_gym/tools/incubator_solvers/museum_of_lost_gestures.py",
+        "weird_captcha_gym/shared_runtime/verifier_helpers.py"
+      ],
+      "source_evidence": [
+        {
+          "path": "weird_captcha_gym/environments/museum_of_lost_gestures_env/controls.json",
+          "lines": "46-53",
+          "claim": "Difficulty 5 uses composition 5 with titles and gated cases."
+        },
+        {
+          "path": "weird_captcha_gym/environments/museum_of_lost_gestures_env/controls.json",
+          "lines": "61-69",
+          "claim": "Full mode remains native input with fixed 500 ms one-frame observations."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/museum_of_lost_gestures.py",
+          "lines": "25-40",
+          "claim": "Level 5 changes prefix composition and gates, while all timing constants and static geometry remain the same."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/museum_of_lost_gestures.js",
+          "lines": "31-63,111-145",
+          "claim": "Full native events and fixed timer checks implement all gesture recognition; there is no autonomous target process."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/museum_of_lost_gestures.py",
+          "lines": "22-31,100-105",
+          "claim": "Independent grading is a deterministic replay of recognized gesture history and fixed timed predicates."
+        },
+        {
+          "path": "weird_captcha_gym/tools/incubator_solvers/museum_of_lost_gestures.py",
+          "lines": "22-49",
+          "claim": "The solver's full-mode hold/dwell waits are fixed-duration waits, not observations of a moving state."
+        }
+      ],
+      "uncertainties": []
+    },
+    {
+      "case_index": 380,
+      "public_environment_name": "Museum of Lost Gestures",
+      "environment_id": "museum_of_lost_gestures_env",
+      "difficulty": 5,
+      "interaction_mode": "simplified",
+      "label": "no",
+      "controls_available": [
+        "Ten visible vocabulary buttons proxy Double tap, Right click, Long drag, Hold 2 seconds, Scroll to bottom, Resize room, Leave and return, Dwell 5 seconds, Shift + click, and A + S chord.",
+        "Hold and Dwell use fixed-duration pending button actions; the other proxies emit immediately.",
+        "The static ledger and final Close the exhibition certification control; level 5 recipes can require a consecutive five-gesture sequence."
+      ],
+      "autonomous_processes": [
+        "A Hold proxy waits fixed 2000 ms and a Dwell proxy waits fixed 5000 ms before a 100 ms tick emits the gesture.",
+        "The pending button is disabled during the fixed wait, then the gesture is recognized; no target or opportunity degrades during the interval.",
+        "The five-gesture recipe/history changes only after button proxies emit; the room itself is static."
+      ],
+      "grouped_control_modes": [
+        "Simplified vocabulary-button proxy mode across all seeds and gesture occurrences; Hold and Dwell are the two fixed-duration proxy variants."
+      ],
+      "delta_ms": null,
+      "window_ms": null,
+      "clause_i": {
+        "holds": false,
+        "reason": "The five-gesture recipe is static sequence planning. q can issue each known proxy and wait through its fixed duration using only I_t; no changing visual state is needed for the timing."
+      },
+      "clause_ii": {
+        "holds": true,
+        "reason": "A bounded frame can show the static ledger or fixed pending countdown, but it adds no required prediction of an evolving task state."
+      },
+      "clause_iii": {
+        "holds": false,
+        "reason": "The fixed pending wait only completes a button proxy and does not reduce action value. Composition 5 changes history on input, not through a non-clock autonomous process, so no qualifying opportunity expires."
+      },
+      "common_visible_process": "No qualifying common visible process exists. Level 5 increases static recipe length/history; the only visible autonomous behavior is the fixed pending-button countdown.",
+      "pre_run": {
+        "threshold": 0.5,
+        "at_least_half": false,
+        "rate": null,
+        "basis": "source_structural",
+        "reason": "All ten cases require button proxies; fixed ticks finish only Hold/Dwell proxies already started by clicks. No instance can complete the collection in a single autonomous outcome phase after preparation.",
+        "seed_probe": null
+      },
+      "files_read_completely": [
+        "AGENTS.md",
+        "weird_captcha_gym/docs/controllability/real-time.md",
+        "weird_captcha_gym/environments/museum_of_lost_gestures_env/controls.json",
+        "weird_captcha_gym/environments/museum_of_lost_gestures_env/env.json",
+        "weird_captcha_gym/environments/museum_of_lost_gestures_env/tasks/museum_of_lost_gestures_seed_0001/task.json",
+        "weird_captcha_gym/shared_scripts/incubator_generators/museum_of_lost_gestures.py",
+        "weird_captcha_gym/shared_runtime/app/mechanics/museum_of_lost_gestures.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/museum_of_lost_gestures.css",
+        "weird_captcha_gym/shared_runtime/server/incubator_graders/museum_of_lost_gestures.py",
+        "weird_captcha_gym/environments/museum_of_lost_gestures_env/tasks/museum_of_lost_gestures_seed_0001/verifier.py",
+        "weird_captcha_gym/tools/incubator_solvers/museum_of_lost_gestures.py",
+        "weird_captcha_gym/shared_runtime/verifier_helpers.py"
+      ],
+      "source_evidence": [
+        {
+          "path": "weird_captcha_gym/environments/museum_of_lost_gestures_env/controls.json",
+          "lines": "46-53",
+          "claim": "Difficulty 5 uses composition 5 with titles and gated cases."
+        },
+        {
+          "path": "weird_captcha_gym/environments/museum_of_lost_gestures_env/controls.json",
+          "lines": "56-69",
+          "claim": "Simplified mode is the button proxy surface with fixed observation settings."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/museum_of_lost_gestures.js",
+          "lines": "22-29,131-145",
+          "claim": "Simplified proxy gestures either emit immediately or complete after fixed Hold/Dwell waits serviced by ticks."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/museum_of_lost_gestures.py",
+          "lines": "25-40",
+          "claim": "Composition 5 changes static recipes and dependencies, not autonomous room behavior."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/museum_of_lost_gestures.py",
+          "lines": "33-45,108-133",
+          "claim": "The simplified transcript is independently replayed against gesture history and opened cases."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/museum_of_lost_gestures.css",
+          "lines": "6-13",
+          "claim": "The visible room and ledger are static layout/scene elements without a moving-target animation."
+        }
+      ],
+      "uncertainties": []
+    }
+  ]
+}

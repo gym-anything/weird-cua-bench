@@ -1,0 +1,1137 @@
+{
+  "case_index": 41,
+  "environment_id": "polycube_parcel_env",
+  "public_environment_name": "Polycube Parcel",
+  "configuration_reports": [
+    {
+      "case_index": 401,
+      "public_environment_name": "Polycube Parcel",
+      "environment_id": "polycube_parcel_env",
+      "difficulty": 1,
+      "interaction_mode": "full",
+      "label": "no",
+      "controls_available": [
+        "Difficulty 1 profile: 5 of 7 pieces start preplaced and locked, leaving 2 loose pieces; camera yaw 0 degrees, pitch 0.42 radians; piece opacity 0.80; parcel opacity 0.25; rack spacing 1.22.",
+        "Direct camera orbit by dragging an empty part of the SVG scene.",
+        "Visible piece-ledger or rendered-piece click to select one loose piece.",
+        "X/Y/Z plus or minus 90-degree axis buttons to rotate the selected rigid piece.",
+        "Direct pointer drag of the selected loose piece to the projected parcel lattice.",
+        "Cancel selection, abandon attempt, and CERTIFY PARCEL buttons."
+      ],
+      "autonomous_processes": [
+        "None: after initial rendering, no task-specific timer, animation, physics, motion, random transition, or opportunity expiry changes the parcel between agent actions."
+      ],
+      "grouped_control_modes": [
+        "D_camera_orbit: direct_camera_drag on an empty part of the SVG scene.",
+        "D_piece_selection: piece_click through the visible piece ledger or rendered piece.",
+        "D_piece_rotation: axis_rotation_button for X/Y/Z plus or minus 90 degrees on the selected piece.",
+        "D_piece_placement: piece_drag from a loose piece to a projected lattice location.",
+        "Certification is administrative and is not an outcome-affecting control mode."
+      ],
+      "delta_ms": null,
+      "window_ms": null,
+      "clause_i": {
+        "holds": true,
+        "reason": "For D_piece_placement, an action-only policy cannot cover the seed-dependent fixed piece transforms and occupied cells; the needed observation dependence is static instance variation, not a temporal process."
+      },
+      "clause_ii": {
+        "holds": true,
+        "reason": "The current visible SVG, piece ledger, camera readout, and occupancy state can support a stationary screenshot policy choosing the next static manipulation after inspection. No bounded sequence is needed to predict a changed post-delay state."
+      },
+      "clause_iii": {
+        "holds": false,
+        "reason": "With no new action for any positive delay, the generated world and browser model remain unchanged. No piece becomes unavailable or less effective, so there is no non-clock task-state evolution causing a strict loss in Q or action advantage. No legitimate D, Delta, or window repairs this failure."
+      },
+      "common_visible_process": "None. Seeded geometry and the initial five-piece assembly are static; input handlers synchronously redraw the scene after actions, but the scene does not evolve autonomously.",
+      "pre_run": {
+        "threshold": 0.5,
+        "at_least_half": null,
+        "rate": null,
+        "basis": "not_applicable",
+        "reason": "The mathematical definition already fails at clause (iii), so the pre-run catalog threshold is not needed. There is no autonomous outcome phase whose no-action completion could define a pre-run rate.",
+        "seed_probe": null
+      },
+      "files_read_completely": [
+        "AGENTS.md",
+        "weird_captcha_gym/docs/controllability/real-time.md",
+        "weird_captcha_gym/environments/polycube_parcel_env/controls.json",
+        "weird_captcha_gym/environments/polycube_parcel_env/env.json",
+        "weird_captcha_gym/environments/polycube_parcel_env/tasks/polycube_parcel_seed_0001/task.json",
+        "weird_captcha_gym/shared_scripts/incubator_generators/polycube_parcel.py",
+        "weird_captcha_gym/shared_runtime/app/index.html",
+        "weird_captcha_gym/shared_runtime/app/time_controller.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/polycube_parcel.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/polycube_parcel.css",
+        "weird_captcha_gym/shared_runtime/server/incubator_graders/polycube_parcel.py",
+        "weird_captcha_gym/environments/polycube_parcel_env/tasks/polycube_parcel_seed_0001/verifier.py",
+        "weird_captcha_gym/shared_runtime/verifier_helpers.py",
+        "weird_captcha_gym/tools/incubator_solvers/polycube_parcel.py"
+      ],
+      "source_evidence": [
+        {
+          "path": "weird_captcha_gym/environments/polycube_parcel_env/controls.json",
+          "lines": "5-13,52-57",
+          "claim": "Difficulty 1 has five preplaced pieces and two loose pieces; full mode uses direct camera and piece drags, simplified mode uses proxies; the configured observation window is 0 ms with one frame."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/polycube_parcel.py",
+          "lines": "44-50,140-181,186-228",
+          "claim": "The profile only sets static preplacement, camera, opacity, and rack parameters; generation creates a fixed seeded world with placed/locked flags and no time-dependent state."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/polycube_parcel.js",
+          "lines": "59-84,144-186",
+          "claim": "Rendering constructs a static SVG parcel and piece ledger, while selection, rotation, and placement synchronously mutate the model and rerender."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/polycube_parcel.js",
+          "lines": "193-243",
+          "claim": "Full camera and piece drags, proxy camera buttons, proxy placement, rotation buttons, and certification are event handlers; there is no task timer, animation loop, or autonomous transition."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/polycube_parcel.css",
+          "lines": "18-29,40-58",
+          "claim": "The relevant CSS supplies static layout, SVG face styling, controls, and readouts without a task animation or transition."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/polycube_parcel.py",
+          "lines": "101-227",
+          "claim": "The grader binds the expected direct input sources and replays only camera, selection, rotation, placement, and submit events against integer occupancy; it has no task-time evolution."
+        },
+        {
+          "path": "weird_captcha_gym/tools/incubator_solvers/polycube_parcel.py",
+          "lines": "159-183",
+          "claim": "The ordinary-input solver discards the advance hook and performs a finite camera/rotation/placement sequence, consistent with a static puzzle rather than a live process."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/time_controller.js",
+          "lines": "155-201,250-339,548-603",
+          "claim": "The shared runtime can pause or advance virtual time and registered timers/animation frames, but the parcel mechanic registers none; clock progression alone does not mutate its model."
+        },
+        {
+          "path": "weird_captcha_gym/environments/polycube_parcel_env/tasks/polycube_parcel_seed_0001/verifier.py",
+          "lines": "34-47",
+          "claim": "Verification loads the exported result and applies the independent occupancy grader after submission; it does not introduce an autonomous task phase."
+        }
+      ],
+      "uncertainties": []
+    },
+    {
+      "case_index": 402,
+      "public_environment_name": "Polycube Parcel",
+      "environment_id": "polycube_parcel_env",
+      "difficulty": 1,
+      "interaction_mode": "simplified",
+      "label": "no",
+      "controls_available": [
+        "Difficulty 1 profile: 5 of 7 pieces start preplaced and locked, leaving 2 loose pieces; camera yaw 0 degrees, pitch 0.42 radians; piece opacity 0.80; parcel opacity 0.25; rack spacing 1.22.",
+        "Visible camera proxy buttons: left orbit, right orbit, up tilt, and down tilt.",
+        "Visible piece-ledger or rendered-piece click to select one loose piece.",
+        "X/Y/Z plus or minus 90-degree axis buttons to rotate the selected rigid piece.",
+        "X/Y/Z lattice cell selectors followed by PLACE AT CELL.",
+        "Cancel selection, abandon attempt, and CERTIFY PARCEL buttons."
+      ],
+      "autonomous_processes": [
+        "None: after initial rendering, no task-specific timer, animation, physics, motion, random transition, or opportunity expiry changes the parcel between agent actions."
+      ],
+      "grouped_control_modes": [
+        "D_camera_orbit: camera_proxy_button for left, right, up, or down.",
+        "D_piece_selection: piece_click through the visible piece ledger or rendered piece.",
+        "D_piece_rotation: axis_rotation_button for X/Y/Z plus or minus 90 degrees on the selected piece.",
+        "D_piece_placement: placement_proxy using the three visible lattice cell selectors and PLACE AT CELL.",
+        "Certification is administrative and is not an outcome-affecting control mode."
+      ],
+      "delta_ms": null,
+      "window_ms": null,
+      "clause_i": {
+        "holds": true,
+        "reason": "For D_piece_placement, an action-only policy cannot cover the seed-dependent fixed piece transforms and occupied cells; the needed observation dependence is static instance variation, not a temporal process."
+      },
+      "clause_ii": {
+        "holds": true,
+        "reason": "The current visible SVG, piece ledger, camera readout, and occupancy state can support a stationary screenshot policy choosing the next static manipulation after inspection. No bounded sequence is needed to predict a changed post-delay state."
+      },
+      "clause_iii": {
+        "holds": false,
+        "reason": "With no new action for any positive delay, the generated world and browser model remain unchanged. No piece becomes unavailable or less effective, so there is no non-clock task-state evolution causing a strict loss in Q or action advantage. No legitimate D, Delta, or window repairs this failure."
+      },
+      "common_visible_process": "None. Seeded geometry and the initial five-piece assembly are static; input handlers synchronously redraw the scene after actions, but the scene does not evolve autonomously.",
+      "pre_run": {
+        "threshold": 0.5,
+        "at_least_half": null,
+        "rate": null,
+        "basis": "not_applicable",
+        "reason": "The mathematical definition already fails at clause (iii), so the pre-run catalog threshold is not needed. There is no autonomous outcome phase whose no-action completion could define a pre-run rate.",
+        "seed_probe": null
+      },
+      "files_read_completely": [
+        "AGENTS.md",
+        "weird_captcha_gym/docs/controllability/real-time.md",
+        "weird_captcha_gym/environments/polycube_parcel_env/controls.json",
+        "weird_captcha_gym/environments/polycube_parcel_env/env.json",
+        "weird_captcha_gym/environments/polycube_parcel_env/tasks/polycube_parcel_seed_0001/task.json",
+        "weird_captcha_gym/shared_scripts/incubator_generators/polycube_parcel.py",
+        "weird_captcha_gym/shared_runtime/app/index.html",
+        "weird_captcha_gym/shared_runtime/app/time_controller.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/polycube_parcel.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/polycube_parcel.css",
+        "weird_captcha_gym/shared_runtime/server/incubator_graders/polycube_parcel.py",
+        "weird_captcha_gym/environments/polycube_parcel_env/tasks/polycube_parcel_seed_0001/verifier.py",
+        "weird_captcha_gym/shared_runtime/verifier_helpers.py",
+        "weird_captcha_gym/tools/incubator_solvers/polycube_parcel.py"
+      ],
+      "source_evidence": [
+        {
+          "path": "weird_captcha_gym/environments/polycube_parcel_env/controls.json",
+          "lines": "5-13,52-57",
+          "claim": "Difficulty 1 has five preplaced pieces and two loose pieces; simplified mode uses camera and placement proxies; the configured observation window is 0 ms with one frame."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/polycube_parcel.py",
+          "lines": "44-50,140-181,186-228",
+          "claim": "The profile only sets static preplacement, camera, opacity, and rack parameters; generation creates a fixed seeded world with placed/locked flags and no time-dependent state."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/polycube_parcel.js",
+          "lines": "59-84,144-186",
+          "claim": "Rendering constructs a static SVG parcel and piece ledger, while selection, rotation, and placement synchronously mutate the model and rerender."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/polycube_parcel.js",
+          "lines": "193-243",
+          "claim": "Full and simplified controls are event handlers; simplified proxy camera and lattice placement have no timer, animation loop, or autonomous transition."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/polycube_parcel.css",
+          "lines": "18-29,40-58",
+          "claim": "The relevant CSS supplies static layout, SVG face styling, controls, and readouts without a task animation or transition."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/polycube_parcel.py",
+          "lines": "101-227",
+          "claim": "The grader binds the simplified input sources and replays only camera, selection, rotation, placement, and submit events against integer occupancy; it has no task-time evolution."
+        },
+        {
+          "path": "weird_captcha_gym/tools/incubator_solvers/polycube_parcel.py",
+          "lines": "159-183",
+          "claim": "The ordinary-input solver discards the advance hook and performs a finite camera/rotation/placement sequence, consistent with a static puzzle rather than a live process."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/time_controller.js",
+          "lines": "155-201,250-339,548-603",
+          "claim": "The shared runtime can pause or advance virtual time and registered timers/animation frames, but the parcel mechanic registers none; clock progression alone does not mutate its model."
+        },
+        {
+          "path": "weird_captcha_gym/environments/polycube_parcel_env/tasks/polycube_parcel_seed_0001/verifier.py",
+          "lines": "34-47",
+          "claim": "Verification loads the exported result and applies the independent occupancy grader after submission; it does not introduce an autonomous task phase."
+        }
+      ],
+      "uncertainties": []
+    },
+    {
+      "case_index": 403,
+      "public_environment_name": "Polycube Parcel",
+      "environment_id": "polycube_parcel_env",
+      "difficulty": 2,
+      "interaction_mode": "full",
+      "label": "no",
+      "controls_available": [
+        "Difficulty 2 profile: 4 of 7 pieces start preplaced and locked, leaving 3 loose pieces; camera yaw 16 degrees, pitch 0.44 radians; piece opacity 0.84; parcel opacity 0.22; rack spacing 1.16.",
+        "Direct camera orbit by dragging an empty part of the SVG scene.",
+        "Visible piece-ledger or rendered-piece click to select one loose piece.",
+        "X/Y/Z plus or minus 90-degree axis buttons to rotate the selected rigid piece.",
+        "Direct pointer drag of the selected loose piece to the projected parcel lattice.",
+        "Cancel selection, abandon attempt, and CERTIFY PARCEL buttons."
+      ],
+      "autonomous_processes": [
+        "None: after initial rendering, no task-specific timer, animation, physics, motion, random transition, or opportunity expiry changes the parcel between agent actions."
+      ],
+      "grouped_control_modes": [
+        "D_camera_orbit: direct_camera_drag on an empty part of the SVG scene.",
+        "D_piece_selection: piece_click through the visible piece ledger or rendered piece.",
+        "D_piece_rotation: axis_rotation_button for X/Y/Z plus or minus 90 degrees on the selected piece.",
+        "D_piece_placement: piece_drag from a loose piece to a projected lattice location.",
+        "Certification is administrative and is not an outcome-affecting control mode."
+      ],
+      "delta_ms": null,
+      "window_ms": null,
+      "clause_i": {
+        "holds": true,
+        "reason": "For D_piece_placement, an action-only policy cannot cover the seed-dependent fixed piece transforms and occupied cells; the needed observation dependence is static instance variation, not a temporal process."
+      },
+      "clause_ii": {
+        "holds": true,
+        "reason": "The current visible SVG, piece ledger, camera readout, and occupancy state can support a stationary screenshot policy choosing the next static manipulation after inspection. No bounded sequence is needed to predict a changed post-delay state."
+      },
+      "clause_iii": {
+        "holds": false,
+        "reason": "With no new action for any positive delay, the generated world and browser model remain unchanged. No piece becomes unavailable or less effective, so there is no non-clock task-state evolution causing a strict loss in Q or action advantage. No legitimate D, Delta, or window repairs this failure."
+      },
+      "common_visible_process": "None. Seeded geometry and the initial four-piece assembly are static; input handlers synchronously redraw the scene after actions, but the scene does not evolve autonomously.",
+      "pre_run": {
+        "threshold": 0.5,
+        "at_least_half": null,
+        "rate": null,
+        "basis": "not_applicable",
+        "reason": "The mathematical definition already fails at clause (iii), so the pre-run catalog threshold is not needed. There is no autonomous outcome phase whose no-action completion could define a pre-run rate.",
+        "seed_probe": null
+      },
+      "files_read_completely": [
+        "AGENTS.md",
+        "weird_captcha_gym/docs/controllability/real-time.md",
+        "weird_captcha_gym/environments/polycube_parcel_env/controls.json",
+        "weird_captcha_gym/environments/polycube_parcel_env/env.json",
+        "weird_captcha_gym/environments/polycube_parcel_env/tasks/polycube_parcel_seed_0001/task.json",
+        "weird_captcha_gym/shared_scripts/incubator_generators/polycube_parcel.py",
+        "weird_captcha_gym/shared_runtime/app/index.html",
+        "weird_captcha_gym/shared_runtime/app/time_controller.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/polycube_parcel.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/polycube_parcel.css",
+        "weird_captcha_gym/shared_runtime/server/incubator_graders/polycube_parcel.py",
+        "weird_captcha_gym/environments/polycube_parcel_env/tasks/polycube_parcel_seed_0001/verifier.py",
+        "weird_captcha_gym/shared_runtime/verifier_helpers.py",
+        "weird_captcha_gym/tools/incubator_solvers/polycube_parcel.py"
+      ],
+      "source_evidence": [
+        {
+          "path": "weird_captcha_gym/environments/polycube_parcel_env/controls.json",
+          "lines": "15-23,52-57",
+          "claim": "Difficulty 2 has four preplaced pieces and three loose pieces; full mode uses direct camera and piece drags; the configured observation window is 0 ms with one frame."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/polycube_parcel.py",
+          "lines": "44-50,140-181,186-228",
+          "claim": "The profile only sets static preplacement, camera, opacity, and rack parameters; generation creates a fixed seeded world with placed/locked flags and no time-dependent state."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/polycube_parcel.js",
+          "lines": "59-84,144-186",
+          "claim": "Rendering constructs a static SVG parcel and piece ledger, while selection, rotation, and placement synchronously mutate the model and rerender."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/polycube_parcel.js",
+          "lines": "193-243",
+          "claim": "Full camera and piece drags and the remaining controls are event handlers; there is no task timer, animation loop, or autonomous transition."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/polycube_parcel.css",
+          "lines": "18-29,40-58",
+          "claim": "The relevant CSS supplies static layout, SVG face styling, controls, and readouts without a task animation or transition."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/polycube_parcel.py",
+          "lines": "101-227",
+          "claim": "The grader binds the expected full input sources and replays only camera, selection, rotation, placement, and submit events against integer occupancy; it has no task-time evolution."
+        },
+        {
+          "path": "weird_captcha_gym/tools/incubator_solvers/polycube_parcel.py",
+          "lines": "159-183",
+          "claim": "The ordinary-input solver discards the advance hook and performs a finite camera/rotation/placement sequence, consistent with a static puzzle rather than a live process."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/time_controller.js",
+          "lines": "155-201,250-339,548-603",
+          "claim": "The shared runtime can pause or advance virtual time and registered timers/animation frames, but the parcel mechanic registers none; clock progression alone does not mutate its model."
+        },
+        {
+          "path": "weird_captcha_gym/environments/polycube_parcel_env/tasks/polycube_parcel_seed_0001/verifier.py",
+          "lines": "34-47",
+          "claim": "Verification loads the exported result and applies the independent occupancy grader after submission; it does not introduce an autonomous task phase."
+        }
+      ],
+      "uncertainties": []
+    },
+    {
+      "case_index": 404,
+      "public_environment_name": "Polycube Parcel",
+      "environment_id": "polycube_parcel_env",
+      "difficulty": 2,
+      "interaction_mode": "simplified",
+      "label": "no",
+      "controls_available": [
+        "Difficulty 2 profile: 4 of 7 pieces start preplaced and locked, leaving 3 loose pieces; camera yaw 16 degrees, pitch 0.44 radians; piece opacity 0.84; parcel opacity 0.22; rack spacing 1.16.",
+        "Visible camera proxy buttons: left orbit, right orbit, up tilt, and down tilt.",
+        "Visible piece-ledger or rendered-piece click to select one loose piece.",
+        "X/Y/Z plus or minus 90-degree axis buttons to rotate the selected rigid piece.",
+        "X/Y/Z lattice cell selectors followed by PLACE AT CELL.",
+        "Cancel selection, abandon attempt, and CERTIFY PARCEL buttons."
+      ],
+      "autonomous_processes": [
+        "None: after initial rendering, no task-specific timer, animation, physics, motion, random transition, or opportunity expiry changes the parcel between agent actions."
+      ],
+      "grouped_control_modes": [
+        "D_camera_orbit: camera_proxy_button for left, right, up, or down.",
+        "D_piece_selection: piece_click through the visible piece ledger or rendered piece.",
+        "D_piece_rotation: axis_rotation_button for X/Y/Z plus or minus 90 degrees on the selected piece.",
+        "D_piece_placement: placement_proxy using the three visible lattice cell selectors and PLACE AT CELL.",
+        "Certification is administrative and is not an outcome-affecting control mode."
+      ],
+      "delta_ms": null,
+      "window_ms": null,
+      "clause_i": {
+        "holds": true,
+        "reason": "For D_piece_placement, an action-only policy cannot cover the seed-dependent fixed piece transforms and occupied cells; the needed observation dependence is static instance variation, not a temporal process."
+      },
+      "clause_ii": {
+        "holds": true,
+        "reason": "The current visible SVG, piece ledger, camera readout, and occupancy state can support a stationary screenshot policy choosing the next static manipulation after inspection. No bounded sequence is needed to predict a changed post-delay state."
+      },
+      "clause_iii": {
+        "holds": false,
+        "reason": "With no new action for any positive delay, the generated world and browser model remain unchanged. No piece becomes unavailable or less effective, so there is no non-clock task-state evolution causing a strict loss in Q or action advantage. No legitimate D, Delta, or window repairs this failure."
+      },
+      "common_visible_process": "None. Seeded geometry and the initial four-piece assembly are static; input handlers synchronously redraw the scene after actions, but the scene does not evolve autonomously.",
+      "pre_run": {
+        "threshold": 0.5,
+        "at_least_half": null,
+        "rate": null,
+        "basis": "not_applicable",
+        "reason": "The mathematical definition already fails at clause (iii), so the pre-run catalog threshold is not needed. There is no autonomous outcome phase whose no-action completion could define a pre-run rate.",
+        "seed_probe": null
+      },
+      "files_read_completely": [
+        "AGENTS.md",
+        "weird_captcha_gym/docs/controllability/real-time.md",
+        "weird_captcha_gym/environments/polycube_parcel_env/controls.json",
+        "weird_captcha_gym/environments/polycube_parcel_env/env.json",
+        "weird_captcha_gym/environments/polycube_parcel_env/tasks/polycube_parcel_seed_0001/task.json",
+        "weird_captcha_gym/shared_scripts/incubator_generators/polycube_parcel.py",
+        "weird_captcha_gym/shared_runtime/app/index.html",
+        "weird_captcha_gym/shared_runtime/app/time_controller.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/polycube_parcel.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/polycube_parcel.css",
+        "weird_captcha_gym/shared_runtime/server/incubator_graders/polycube_parcel.py",
+        "weird_captcha_gym/environments/polycube_parcel_env/tasks/polycube_parcel_seed_0001/verifier.py",
+        "weird_captcha_gym/shared_runtime/verifier_helpers.py",
+        "weird_captcha_gym/tools/incubator_solvers/polycube_parcel.py"
+      ],
+      "source_evidence": [
+        {
+          "path": "weird_captcha_gym/environments/polycube_parcel_env/controls.json",
+          "lines": "15-23,52-57",
+          "claim": "Difficulty 2 has four preplaced pieces and three loose pieces; simplified mode uses camera and placement proxies; the configured observation window is 0 ms with one frame."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/polycube_parcel.py",
+          "lines": "44-50,140-181,186-228",
+          "claim": "The profile only sets static preplacement, camera, opacity, and rack parameters; generation creates a fixed seeded world with placed/locked flags and no time-dependent state."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/polycube_parcel.js",
+          "lines": "59-84,144-186",
+          "claim": "Rendering constructs a static SVG parcel and piece ledger, while selection, rotation, and placement synchronously mutate the model and rerender."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/polycube_parcel.js",
+          "lines": "193-243",
+          "claim": "Simplified proxy camera, proxy placement, and the remaining controls are event handlers; there is no task timer, animation loop, or autonomous transition."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/polycube_parcel.css",
+          "lines": "18-29,40-58",
+          "claim": "The relevant CSS supplies static layout, SVG face styling, controls, and readouts without a task animation or transition."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/polycube_parcel.py",
+          "lines": "101-227",
+          "claim": "The grader binds the expected simplified input sources and replays only camera, selection, rotation, placement, and submit events against integer occupancy; it has no task-time evolution."
+        },
+        {
+          "path": "weird_captcha_gym/tools/incubator_solvers/polycube_parcel.py",
+          "lines": "159-183",
+          "claim": "The ordinary-input solver discards the advance hook and performs a finite camera/rotation/placement sequence, consistent with a static puzzle rather than a live process."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/time_controller.js",
+          "lines": "155-201,250-339,548-603",
+          "claim": "The shared runtime can pause or advance virtual time and registered timers/animation frames, but the parcel mechanic registers none; clock progression alone does not mutate its model."
+        },
+        {
+          "path": "weird_captcha_gym/environments/polycube_parcel_env/tasks/polycube_parcel_seed_0001/verifier.py",
+          "lines": "34-47",
+          "claim": "Verification loads the exported result and applies the independent occupancy grader after submission; it does not introduce an autonomous task phase."
+        }
+      ],
+      "uncertainties": []
+    },
+    {
+      "case_index": 405,
+      "public_environment_name": "Polycube Parcel",
+      "environment_id": "polycube_parcel_env",
+      "difficulty": 3,
+      "interaction_mode": "full",
+      "label": "no",
+      "controls_available": [
+        "Difficulty 3 profile: 2 of 7 pieces start preplaced and locked, leaving 5 loose pieces; camera yaw 31 degrees, pitch 0.46 radians; piece opacity 0.88; parcel opacity 0.19; rack spacing 1.08.",
+        "Direct camera orbit by dragging an empty part of the SVG scene.",
+        "Visible piece-ledger or rendered-piece click to select one loose piece.",
+        "X/Y/Z plus or minus 90-degree axis buttons to rotate the selected rigid piece.",
+        "Direct pointer drag of the selected loose piece to the projected parcel lattice.",
+        "Cancel selection, abandon attempt, and CERTIFY PARCEL buttons."
+      ],
+      "autonomous_processes": [
+        "None: after initial rendering, no task-specific timer, animation, physics, motion, random transition, or opportunity expiry changes the parcel between agent actions."
+      ],
+      "grouped_control_modes": [
+        "D_camera_orbit: direct_camera_drag on an empty part of the SVG scene.",
+        "D_piece_selection: piece_click through the visible piece ledger or rendered piece.",
+        "D_piece_rotation: axis_rotation_button for X/Y/Z plus or minus 90 degrees on the selected piece.",
+        "D_piece_placement: piece_drag from a loose piece to a projected lattice location.",
+        "Certification is administrative and is not an outcome-affecting control mode."
+      ],
+      "delta_ms": null,
+      "window_ms": null,
+      "clause_i": {
+        "holds": true,
+        "reason": "For D_piece_placement, an action-only policy cannot cover the seed-dependent fixed piece transforms and occupied cells; the needed observation dependence is static instance variation, not a temporal process."
+      },
+      "clause_ii": {
+        "holds": true,
+        "reason": "The current visible SVG, piece ledger, camera readout, and occupancy state can support a stationary screenshot policy choosing the next static manipulation after inspection. No bounded sequence is needed to predict a changed post-delay state."
+      },
+      "clause_iii": {
+        "holds": false,
+        "reason": "With no new action for any positive delay, the generated world and browser model remain unchanged. No piece becomes unavailable or less effective, so there is no non-clock task-state evolution causing a strict loss in Q or action advantage. No legitimate D, Delta, or window repairs this failure."
+      },
+      "common_visible_process": "None. Seeded geometry and the initial two-piece assembly are static; input handlers synchronously redraw the scene after actions, but the scene does not evolve autonomously.",
+      "pre_run": {
+        "threshold": 0.5,
+        "at_least_half": null,
+        "rate": null,
+        "basis": "not_applicable",
+        "reason": "The mathematical definition already fails at clause (iii), so the pre-run catalog threshold is not needed. There is no autonomous outcome phase whose no-action completion could define a pre-run rate.",
+        "seed_probe": null
+      },
+      "files_read_completely": [
+        "AGENTS.md",
+        "weird_captcha_gym/docs/controllability/real-time.md",
+        "weird_captcha_gym/environments/polycube_parcel_env/controls.json",
+        "weird_captcha_gym/environments/polycube_parcel_env/env.json",
+        "weird_captcha_gym/environments/polycube_parcel_env/tasks/polycube_parcel_seed_0001/task.json",
+        "weird_captcha_gym/shared_scripts/incubator_generators/polycube_parcel.py",
+        "weird_captcha_gym/shared_runtime/app/index.html",
+        "weird_captcha_gym/shared_runtime/app/time_controller.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/polycube_parcel.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/polycube_parcel.css",
+        "weird_captcha_gym/shared_runtime/server/incubator_graders/polycube_parcel.py",
+        "weird_captcha_gym/environments/polycube_parcel_env/tasks/polycube_parcel_seed_0001/verifier.py",
+        "weird_captcha_gym/shared_runtime/verifier_helpers.py",
+        "weird_captcha_gym/tools/incubator_solvers/polycube_parcel.py"
+      ],
+      "source_evidence": [
+        {
+          "path": "weird_captcha_gym/environments/polycube_parcel_env/controls.json",
+          "lines": "24-31,52-57",
+          "claim": "Difficulty 3 has two preplaced pieces and five loose pieces; full mode uses direct camera and piece drags; the configured observation window is 0 ms with one frame."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/polycube_parcel.py",
+          "lines": "44-50,140-181,186-228",
+          "claim": "The profile only sets static preplacement, camera, opacity, and rack parameters; generation creates a fixed seeded world with placed/locked flags and no time-dependent state."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/polycube_parcel.js",
+          "lines": "59-84,144-186",
+          "claim": "Rendering constructs a static SVG parcel and piece ledger, while selection, rotation, and placement synchronously mutate the model and rerender."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/polycube_parcel.js",
+          "lines": "193-243",
+          "claim": "Full camera and piece drags and the remaining controls are event handlers; there is no task timer, animation loop, or autonomous transition."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/polycube_parcel.css",
+          "lines": "18-29,40-58",
+          "claim": "The relevant CSS supplies static layout, SVG face styling, controls, and readouts without a task animation or transition."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/polycube_parcel.py",
+          "lines": "101-227",
+          "claim": "The grader binds the expected full input sources and replays only camera, selection, rotation, placement, and submit events against integer occupancy; it has no task-time evolution."
+        },
+        {
+          "path": "weird_captcha_gym/tools/incubator_solvers/polycube_parcel.py",
+          "lines": "159-183",
+          "claim": "The ordinary-input solver discards the advance hook and performs a finite camera/rotation/placement sequence, consistent with a static puzzle rather than a live process."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/time_controller.js",
+          "lines": "155-201,250-339,548-603",
+          "claim": "The shared runtime can pause or advance virtual time and registered timers/animation frames, but the parcel mechanic registers none; clock progression alone does not mutate its model."
+        },
+        {
+          "path": "weird_captcha_gym/environments/polycube_parcel_env/tasks/polycube_parcel_seed_0001/verifier.py",
+          "lines": "34-47",
+          "claim": "Verification loads the exported result and applies the independent occupancy grader after submission; it does not introduce an autonomous task phase."
+        }
+      ],
+      "uncertainties": []
+    },
+    {
+      "case_index": 406,
+      "public_environment_name": "Polycube Parcel",
+      "environment_id": "polycube_parcel_env",
+      "difficulty": 3,
+      "interaction_mode": "simplified",
+      "label": "no",
+      "controls_available": [
+        "Difficulty 3 profile: 2 of 7 pieces start preplaced and locked, leaving 5 loose pieces; camera yaw 31 degrees, pitch 0.46 radians; piece opacity 0.88; parcel opacity 0.19; rack spacing 1.08.",
+        "Visible camera proxy buttons: left orbit, right orbit, up tilt, and down tilt.",
+        "Visible piece-ledger or rendered-piece click to select one loose piece.",
+        "X/Y/Z plus or minus 90-degree axis buttons to rotate the selected rigid piece.",
+        "X/Y/Z lattice cell selectors followed by PLACE AT CELL.",
+        "Cancel selection, abandon attempt, and CERTIFY PARCEL buttons."
+      ],
+      "autonomous_processes": [
+        "None: after initial rendering, no task-specific timer, animation, physics, motion, random transition, or opportunity expiry changes the parcel between agent actions."
+      ],
+      "grouped_control_modes": [
+        "D_camera_orbit: camera_proxy_button for left, right, up, or down.",
+        "D_piece_selection: piece_click through the visible piece ledger or rendered piece.",
+        "D_piece_rotation: axis_rotation_button for X/Y/Z plus or minus 90 degrees on the selected piece.",
+        "D_piece_placement: placement_proxy using the three visible lattice cell selectors and PLACE AT CELL.",
+        "Certification is administrative and is not an outcome-affecting control mode."
+      ],
+      "delta_ms": null,
+      "window_ms": null,
+      "clause_i": {
+        "holds": true,
+        "reason": "For D_piece_placement, an action-only policy cannot cover the seed-dependent fixed piece transforms and occupied cells; the needed observation dependence is static instance variation, not a temporal process."
+      },
+      "clause_ii": {
+        "holds": true,
+        "reason": "The current visible SVG, piece ledger, camera readout, and occupancy state can support a stationary screenshot policy choosing the next static manipulation after inspection. No bounded sequence is needed to predict a changed post-delay state."
+      },
+      "clause_iii": {
+        "holds": false,
+        "reason": "With no new action for any positive delay, the generated world and browser model remain unchanged. No piece becomes unavailable or less effective, so there is no non-clock task-state evolution causing a strict loss in Q or action advantage. No legitimate D, Delta, or window repairs this failure."
+      },
+      "common_visible_process": "None. Seeded geometry and the initial two-piece assembly are static; input handlers synchronously redraw the scene after actions, but the scene does not evolve autonomously.",
+      "pre_run": {
+        "threshold": 0.5,
+        "at_least_half": null,
+        "rate": null,
+        "basis": "not_applicable",
+        "reason": "The mathematical definition already fails at clause (iii), so the pre-run catalog threshold is not needed. There is no autonomous outcome phase whose no-action completion could define a pre-run rate.",
+        "seed_probe": null
+      },
+      "files_read_completely": [
+        "AGENTS.md",
+        "weird_captcha_gym/docs/controllability/real-time.md",
+        "weird_captcha_gym/environments/polycube_parcel_env/controls.json",
+        "weird_captcha_gym/environments/polycube_parcel_env/env.json",
+        "weird_captcha_gym/environments/polycube_parcel_env/tasks/polycube_parcel_seed_0001/task.json",
+        "weird_captcha_gym/shared_scripts/incubator_generators/polycube_parcel.py",
+        "weird_captcha_gym/shared_runtime/app/index.html",
+        "weird_captcha_gym/shared_runtime/app/time_controller.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/polycube_parcel.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/polycube_parcel.css",
+        "weird_captcha_gym/shared_runtime/server/incubator_graders/polycube_parcel.py",
+        "weird_captcha_gym/environments/polycube_parcel_env/tasks/polycube_parcel_seed_0001/verifier.py",
+        "weird_captcha_gym/shared_runtime/verifier_helpers.py",
+        "weird_captcha_gym/tools/incubator_solvers/polycube_parcel.py"
+      ],
+      "source_evidence": [
+        {
+          "path": "weird_captcha_gym/environments/polycube_parcel_env/controls.json",
+          "lines": "24-31,52-57",
+          "claim": "Difficulty 3 has two preplaced pieces and five loose pieces; simplified mode uses camera and placement proxies; the configured observation window is 0 ms with one frame."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/polycube_parcel.py",
+          "lines": "44-50,140-181,186-228",
+          "claim": "The profile only sets static preplacement, camera, opacity, and rack parameters; generation creates a fixed seeded world with placed/locked flags and no time-dependent state."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/polycube_parcel.js",
+          "lines": "59-84,144-186",
+          "claim": "Rendering constructs a static SVG parcel and piece ledger, while selection, rotation, and placement synchronously mutate the model and rerender."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/polycube_parcel.js",
+          "lines": "193-243",
+          "claim": "Simplified proxy camera, proxy placement, and the remaining controls are event handlers; there is no task timer, animation loop, or autonomous transition."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/polycube_parcel.css",
+          "lines": "18-29,40-58",
+          "claim": "The relevant CSS supplies static layout, SVG face styling, controls, and readouts without a task animation or transition."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/polycube_parcel.py",
+          "lines": "101-227",
+          "claim": "The grader binds the expected simplified input sources and replays only camera, selection, rotation, placement, and submit events against integer occupancy; it has no task-time evolution."
+        },
+        {
+          "path": "weird_captcha_gym/tools/incubator_solvers/polycube_parcel.py",
+          "lines": "159-183",
+          "claim": "The ordinary-input solver discards the advance hook and performs a finite camera/rotation/placement sequence, consistent with a static puzzle rather than a live process."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/time_controller.js",
+          "lines": "155-201,250-339,548-603",
+          "claim": "The shared runtime can pause or advance virtual time and registered timers/animation frames, but the parcel mechanic registers none; clock progression alone does not mutate its model."
+        },
+        {
+          "path": "weird_captcha_gym/environments/polycube_parcel_env/tasks/polycube_parcel_seed_0001/verifier.py",
+          "lines": "34-47",
+          "claim": "Verification loads the exported result and applies the independent occupancy grader after submission; it does not introduce an autonomous task phase."
+        }
+      ],
+      "uncertainties": []
+    },
+    {
+      "case_index": 407,
+      "public_environment_name": "Polycube Parcel",
+      "environment_id": "polycube_parcel_env",
+      "difficulty": 4,
+      "interaction_mode": "full",
+      "label": "no",
+      "controls_available": [
+        "Difficulty 4 profile: all 7 pieces start loose and none are preplaced; camera yaw 37 degrees, pitch 0.48 radians; piece opacity 0.93; parcel opacity 0.15; rack spacing 1.00.",
+        "Direct camera orbit by dragging an empty part of the SVG scene.",
+        "Visible piece-ledger or rendered-piece click to select one loose piece.",
+        "X/Y/Z plus or minus 90-degree axis buttons to rotate the selected rigid piece.",
+        "Direct pointer drag of the selected loose piece to the projected parcel lattice.",
+        "Cancel selection, abandon attempt, and CERTIFY PARCEL buttons."
+      ],
+      "autonomous_processes": [
+        "None: after initial rendering, no task-specific timer, animation, physics, motion, random transition, or opportunity expiry changes the parcel between agent actions."
+      ],
+      "grouped_control_modes": [
+        "D_camera_orbit: direct_camera_drag on an empty part of the SVG scene.",
+        "D_piece_selection: piece_click through the visible piece ledger or rendered piece.",
+        "D_piece_rotation: axis_rotation_button for X/Y/Z plus or minus 90 degrees on the selected piece.",
+        "D_piece_placement: piece_drag from a loose piece to a projected lattice location.",
+        "Certification is administrative and is not an outcome-affecting control mode."
+      ],
+      "delta_ms": null,
+      "window_ms": null,
+      "clause_i": {
+        "holds": true,
+        "reason": "For D_piece_placement, an action-only policy cannot cover the seed-dependent fixed piece transforms and occupied cells; the needed observation dependence is static instance variation, not a temporal process."
+      },
+      "clause_ii": {
+        "holds": true,
+        "reason": "The current visible SVG, piece ledger, camera readout, and occupancy state can support a stationary screenshot policy choosing the next static manipulation after inspection. No bounded sequence is needed to predict a changed post-delay state."
+      },
+      "clause_iii": {
+        "holds": false,
+        "reason": "With no new action for any positive delay, the generated world and browser model remain unchanged. No piece becomes unavailable or less effective, so there is no non-clock task-state evolution causing a strict loss in Q or action advantage. No legitimate D, Delta, or window repairs this failure."
+      },
+      "common_visible_process": "None. All seven loose pieces, the parcel, and the camera are static between synchronous input handlers; no visible process evolves autonomously.",
+      "pre_run": {
+        "threshold": 0.5,
+        "at_least_half": null,
+        "rate": null,
+        "basis": "not_applicable",
+        "reason": "The mathematical definition already fails at clause (iii), so the pre-run catalog threshold is not needed. There is no autonomous outcome phase whose no-action completion could define a pre-run rate.",
+        "seed_probe": null
+      },
+      "files_read_completely": [
+        "AGENTS.md",
+        "weird_captcha_gym/docs/controllability/real-time.md",
+        "weird_captcha_gym/environments/polycube_parcel_env/controls.json",
+        "weird_captcha_gym/environments/polycube_parcel_env/env.json",
+        "weird_captcha_gym/environments/polycube_parcel_env/tasks/polycube_parcel_seed_0001/task.json",
+        "weird_captcha_gym/shared_scripts/incubator_generators/polycube_parcel.py",
+        "weird_captcha_gym/shared_runtime/app/index.html",
+        "weird_captcha_gym/shared_runtime/app/time_controller.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/polycube_parcel.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/polycube_parcel.css",
+        "weird_captcha_gym/shared_runtime/server/incubator_graders/polycube_parcel.py",
+        "weird_captcha_gym/environments/polycube_parcel_env/tasks/polycube_parcel_seed_0001/verifier.py",
+        "weird_captcha_gym/shared_runtime/verifier_helpers.py",
+        "weird_captcha_gym/tools/incubator_solvers/polycube_parcel.py"
+      ],
+      "source_evidence": [
+        {
+          "path": "weird_captcha_gym/environments/polycube_parcel_env/controls.json",
+          "lines": "33-40,52-57",
+          "claim": "Difficulty 4 has all seven pieces loose; full mode uses direct camera and piece drags; the configured observation window is 0 ms with one frame."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/polycube_parcel.py",
+          "lines": "44-50,140-181,186-228",
+          "claim": "The profile only sets static preplacement, camera, opacity, and rack parameters; generation creates a fixed seeded world with placed/locked flags and no time-dependent state."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/polycube_parcel.js",
+          "lines": "59-84,144-186",
+          "claim": "Rendering constructs a static SVG parcel and piece ledger, while selection, rotation, and placement synchronously mutate the model and rerender."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/polycube_parcel.js",
+          "lines": "193-243",
+          "claim": "Full camera and piece drags and the remaining controls are event handlers; there is no task timer, animation loop, or autonomous transition."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/polycube_parcel.css",
+          "lines": "18-29,40-58",
+          "claim": "The relevant CSS supplies static layout, SVG face styling, controls, and readouts without a task animation or transition."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/polycube_parcel.py",
+          "lines": "101-227",
+          "claim": "The grader binds the expected full input sources and replays only camera, selection, rotation, placement, and submit events against integer occupancy; it has no task-time evolution."
+        },
+        {
+          "path": "weird_captcha_gym/tools/incubator_solvers/polycube_parcel.py",
+          "lines": "159-183",
+          "claim": "The ordinary-input solver discards the advance hook and performs a finite camera/rotation/placement sequence, consistent with a static puzzle rather than a live process."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/time_controller.js",
+          "lines": "155-201,250-339,548-603",
+          "claim": "The shared runtime can pause or advance virtual time and registered timers/animation frames, but the parcel mechanic registers none; clock progression alone does not mutate its model."
+        },
+        {
+          "path": "weird_captcha_gym/environments/polycube_parcel_env/tasks/polycube_parcel_seed_0001/verifier.py",
+          "lines": "34-47",
+          "claim": "Verification loads the exported result and applies the independent occupancy grader after submission; it does not introduce an autonomous task phase."
+        }
+      ],
+      "uncertainties": []
+    },
+    {
+      "case_index": 408,
+      "public_environment_name": "Polycube Parcel",
+      "environment_id": "polycube_parcel_env",
+      "difficulty": 4,
+      "interaction_mode": "simplified",
+      "label": "no",
+      "controls_available": [
+        "Difficulty 4 profile: all 7 pieces start loose and none are preplaced; camera yaw 37 degrees, pitch 0.48 radians; piece opacity 0.93; parcel opacity 0.15; rack spacing 1.00.",
+        "Visible camera proxy buttons: left orbit, right orbit, up tilt, and down tilt.",
+        "Visible piece-ledger or rendered-piece click to select one loose piece.",
+        "X/Y/Z plus or minus 90-degree axis buttons to rotate the selected rigid piece.",
+        "X/Y/Z lattice cell selectors followed by PLACE AT CELL.",
+        "Cancel selection, abandon attempt, and CERTIFY PARCEL buttons."
+      ],
+      "autonomous_processes": [
+        "None: after initial rendering, no task-specific timer, animation, physics, motion, random transition, or opportunity expiry changes the parcel between agent actions."
+      ],
+      "grouped_control_modes": [
+        "D_camera_orbit: camera_proxy_button for left, right, up, or down.",
+        "D_piece_selection: piece_click through the visible piece ledger or rendered piece.",
+        "D_piece_rotation: axis_rotation_button for X/Y/Z plus or minus 90 degrees on the selected piece.",
+        "D_piece_placement: placement_proxy using the three visible lattice cell selectors and PLACE AT CELL.",
+        "Certification is administrative and is not an outcome-affecting control mode."
+      ],
+      "delta_ms": null,
+      "window_ms": null,
+      "clause_i": {
+        "holds": true,
+        "reason": "For D_piece_placement, an action-only policy cannot cover the seed-dependent fixed piece transforms and occupied cells; the needed observation dependence is static instance variation, not a temporal process."
+      },
+      "clause_ii": {
+        "holds": true,
+        "reason": "The current visible SVG, piece ledger, camera readout, and occupancy state can support a stationary screenshot policy choosing the next static manipulation after inspection. No bounded sequence is needed to predict a changed post-delay state."
+      },
+      "clause_iii": {
+        "holds": false,
+        "reason": "With no new action for any positive delay, the generated world and browser model remain unchanged. No piece becomes unavailable or less effective, so there is no non-clock task-state evolution causing a strict loss in Q or action advantage. No legitimate D, Delta, or window repairs this failure."
+      },
+      "common_visible_process": "None. All seven loose pieces, the parcel, and the camera are static between synchronous input handlers; no visible process evolves autonomously.",
+      "pre_run": {
+        "threshold": 0.5,
+        "at_least_half": null,
+        "rate": null,
+        "basis": "not_applicable",
+        "reason": "The mathematical definition already fails at clause (iii), so the pre-run catalog threshold is not needed. There is no autonomous outcome phase whose no-action completion could define a pre-run rate.",
+        "seed_probe": null
+      },
+      "files_read_completely": [
+        "AGENTS.md",
+        "weird_captcha_gym/docs/controllability/real-time.md",
+        "weird_captcha_gym/environments/polycube_parcel_env/controls.json",
+        "weird_captcha_gym/environments/polycube_parcel_env/env.json",
+        "weird_captcha_gym/environments/polycube_parcel_env/tasks/polycube_parcel_seed_0001/task.json",
+        "weird_captcha_gym/shared_scripts/incubator_generators/polycube_parcel.py",
+        "weird_captcha_gym/shared_runtime/app/index.html",
+        "weird_captcha_gym/shared_runtime/app/time_controller.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/polycube_parcel.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/polycube_parcel.css",
+        "weird_captcha_gym/shared_runtime/server/incubator_graders/polycube_parcel.py",
+        "weird_captcha_gym/environments/polycube_parcel_env/tasks/polycube_parcel_seed_0001/verifier.py",
+        "weird_captcha_gym/shared_runtime/verifier_helpers.py",
+        "weird_captcha_gym/tools/incubator_solvers/polycube_parcel.py"
+      ],
+      "source_evidence": [
+        {
+          "path": "weird_captcha_gym/environments/polycube_parcel_env/controls.json",
+          "lines": "33-40,52-57",
+          "claim": "Difficulty 4 has all seven pieces loose; simplified mode uses camera and placement proxies; the configured observation window is 0 ms with one frame."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/polycube_parcel.py",
+          "lines": "44-50,140-181,186-228",
+          "claim": "The profile only sets static preplacement, camera, opacity, and rack parameters; generation creates a fixed seeded world with placed/locked flags and no time-dependent state."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/polycube_parcel.js",
+          "lines": "59-84,144-186",
+          "claim": "Rendering constructs a static SVG parcel and piece ledger, while selection, rotation, and placement synchronously mutate the model and rerender."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/polycube_parcel.js",
+          "lines": "193-243",
+          "claim": "Simplified proxy camera, proxy placement, and the remaining controls are event handlers; there is no task timer, animation loop, or autonomous transition."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/polycube_parcel.css",
+          "lines": "18-29,40-58",
+          "claim": "The relevant CSS supplies static layout, SVG face styling, controls, and readouts without a task animation or transition."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/polycube_parcel.py",
+          "lines": "101-227",
+          "claim": "The grader binds the expected simplified input sources and replays only camera, selection, rotation, placement, and submit events against integer occupancy; it has no task-time evolution."
+        },
+        {
+          "path": "weird_captcha_gym/tools/incubator_solvers/polycube_parcel.py",
+          "lines": "159-183",
+          "claim": "The ordinary-input solver discards the advance hook and performs a finite camera/rotation/placement sequence, consistent with a static puzzle rather than a live process."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/time_controller.js",
+          "lines": "155-201,250-339,548-603",
+          "claim": "The shared runtime can pause or advance virtual time and registered timers/animation frames, but the parcel mechanic registers none; clock progression alone does not mutate its model."
+        },
+        {
+          "path": "weird_captcha_gym/environments/polycube_parcel_env/tasks/polycube_parcel_seed_0001/verifier.py",
+          "lines": "34-47",
+          "claim": "Verification loads the exported result and applies the independent occupancy grader after submission; it does not introduce an autonomous task phase."
+        }
+      ],
+      "uncertainties": []
+    },
+    {
+      "case_index": 409,
+      "public_environment_name": "Polycube Parcel",
+      "environment_id": "polycube_parcel_env",
+      "difficulty": 5,
+      "interaction_mode": "full",
+      "label": "no",
+      "controls_available": [
+        "Difficulty 5 profile: all 7 pieces start loose and none are preplaced; camera yaw 67 degrees, pitch 0.55 radians; piece opacity 1.00; parcel opacity 0.09; rack spacing 0.86.",
+        "Direct camera orbit by dragging an empty part of the SVG scene.",
+        "Visible piece-ledger or rendered-piece click to select one loose piece.",
+        "X/Y/Z plus or minus 90-degree axis buttons to rotate the selected rigid piece.",
+        "Direct pointer drag of the selected loose piece to the projected parcel lattice.",
+        "Cancel selection, abandon attempt, and CERTIFY PARCEL buttons."
+      ],
+      "autonomous_processes": [
+        "None: after initial rendering, no task-specific timer, animation, physics, motion, random transition, or opportunity expiry changes the parcel between agent actions."
+      ],
+      "grouped_control_modes": [
+        "D_camera_orbit: direct_camera_drag on an empty part of the SVG scene.",
+        "D_piece_selection: piece_click through the visible piece ledger or rendered piece.",
+        "D_piece_rotation: axis_rotation_button for X/Y/Z plus or minus 90 degrees on the selected piece.",
+        "D_piece_placement: piece_drag from a loose piece to a projected lattice location.",
+        "Certification is administrative and is not an outcome-affecting control mode."
+      ],
+      "delta_ms": null,
+      "window_ms": null,
+      "clause_i": {
+        "holds": true,
+        "reason": "For D_piece_placement, an action-only policy cannot cover the seed-dependent fixed piece transforms and occupied cells; the needed observation dependence is static instance variation, not a temporal process."
+      },
+      "clause_ii": {
+        "holds": true,
+        "reason": "The current visible SVG, piece ledger, camera readout, and occupancy state can support a stationary screenshot policy choosing the next static manipulation after inspection. No bounded sequence is needed to predict a changed post-delay state."
+      },
+      "clause_iii": {
+        "holds": false,
+        "reason": "With no new action for any positive delay, the generated world and browser model remain unchanged. No piece becomes unavailable or less effective, so there is no non-clock task-state evolution causing a strict loss in Q or action advantage. No legitimate D, Delta, or window repairs this failure."
+      },
+      "common_visible_process": "None. All seven opaque loose pieces, the faint parcel wireframe, and the camera are static between synchronous input handlers; no visible process evolves autonomously.",
+      "pre_run": {
+        "threshold": 0.5,
+        "at_least_half": null,
+        "rate": null,
+        "basis": "not_applicable",
+        "reason": "The mathematical definition already fails at clause (iii), so the pre-run catalog threshold is not needed. There is no autonomous outcome phase whose no-action completion could define a pre-run rate.",
+        "seed_probe": null
+      },
+      "files_read_completely": [
+        "AGENTS.md",
+        "weird_captcha_gym/docs/controllability/real-time.md",
+        "weird_captcha_gym/environments/polycube_parcel_env/controls.json",
+        "weird_captcha_gym/environments/polycube_parcel_env/env.json",
+        "weird_captcha_gym/environments/polycube_parcel_env/tasks/polycube_parcel_seed_0001/task.json",
+        "weird_captcha_gym/shared_scripts/incubator_generators/polycube_parcel.py",
+        "weird_captcha_gym/shared_runtime/app/index.html",
+        "weird_captcha_gym/shared_runtime/app/time_controller.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/polycube_parcel.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/polycube_parcel.css",
+        "weird_captcha_gym/shared_runtime/server/incubator_graders/polycube_parcel.py",
+        "weird_captcha_gym/environments/polycube_parcel_env/tasks/polycube_parcel_seed_0001/verifier.py",
+        "weird_captcha_gym/shared_runtime/verifier_helpers.py",
+        "weird_captcha_gym/tools/incubator_solvers/polycube_parcel.py"
+      ],
+      "source_evidence": [
+        {
+          "path": "weird_captcha_gym/environments/polycube_parcel_env/controls.json",
+          "lines": "42-49,52-57",
+          "claim": "Difficulty 5 has seven loose pieces, full opacity, a faint parcel wireframe, and tighter rack spacing; full mode uses direct camera and piece drags; the configured observation window is 0 ms with one frame."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/polycube_parcel.py",
+          "lines": "44-50,140-181,186-228",
+          "claim": "The profile only sets static preplacement, camera, opacity, and rack parameters; generation creates a fixed seeded world with placed/locked flags and no time-dependent state."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/polycube_parcel.js",
+          "lines": "59-84,144-186",
+          "claim": "Rendering constructs a static SVG parcel and piece ledger, while selection, rotation, and placement synchronously mutate the model and rerender."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/polycube_parcel.js",
+          "lines": "193-243",
+          "claim": "Full camera and piece drags and the remaining controls are event handlers; there is no task timer, animation loop, or autonomous transition."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/polycube_parcel.css",
+          "lines": "18-29,40-58",
+          "claim": "The relevant CSS supplies static layout, SVG face styling, controls, and readouts without a task animation or transition."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/polycube_parcel.py",
+          "lines": "101-227",
+          "claim": "The grader binds the expected full input sources and replays only camera, selection, rotation, placement, and submit events against integer occupancy; it has no task-time evolution."
+        },
+        {
+          "path": "weird_captcha_gym/tools/incubator_solvers/polycube_parcel.py",
+          "lines": "159-183",
+          "claim": "The ordinary-input solver discards the advance hook and performs a finite camera/rotation/placement sequence, consistent with a static puzzle rather than a live process."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/time_controller.js",
+          "lines": "155-201,250-339,548-603",
+          "claim": "The shared runtime can pause or advance virtual time and registered timers/animation frames, but the parcel mechanic registers none; clock progression alone does not mutate its model."
+        },
+        {
+          "path": "weird_captcha_gym/environments/polycube_parcel_env/tasks/polycube_parcel_seed_0001/verifier.py",
+          "lines": "34-47",
+          "claim": "Verification loads the exported result and applies the independent occupancy grader after submission; it does not introduce an autonomous task phase."
+        }
+      ],
+      "uncertainties": []
+    },
+    {
+      "case_index": 410,
+      "public_environment_name": "Polycube Parcel",
+      "environment_id": "polycube_parcel_env",
+      "difficulty": 5,
+      "interaction_mode": "simplified",
+      "label": "no",
+      "controls_available": [
+        "Difficulty 5 profile: all 7 pieces start loose and none are preplaced; camera yaw 67 degrees, pitch 0.55 radians; piece opacity 1.00; parcel opacity 0.09; rack spacing 0.86.",
+        "Visible camera proxy buttons: left orbit, right orbit, up tilt, and down tilt.",
+        "Visible piece-ledger or rendered-piece click to select one loose piece.",
+        "X/Y/Z plus or minus 90-degree axis buttons to rotate the selected rigid piece.",
+        "X/Y/Z lattice cell selectors followed by PLACE AT CELL.",
+        "Cancel selection, abandon attempt, and CERTIFY PARCEL buttons."
+      ],
+      "autonomous_processes": [
+        "None: after initial rendering, no task-specific timer, animation, physics, motion, random transition, or opportunity expiry changes the parcel between agent actions."
+      ],
+      "grouped_control_modes": [
+        "D_camera_orbit: camera_proxy_button for left, right, up, or down.",
+        "D_piece_selection: piece_click through the visible piece ledger or rendered piece.",
+        "D_piece_rotation: axis_rotation_button for X/Y/Z plus or minus 90 degrees on the selected piece.",
+        "D_piece_placement: placement_proxy using the three visible lattice cell selectors and PLACE AT CELL.",
+        "Certification is administrative and is not an outcome-affecting control mode."
+      ],
+      "delta_ms": null,
+      "window_ms": null,
+      "clause_i": {
+        "holds": true,
+        "reason": "For D_piece_placement, an action-only policy cannot cover the seed-dependent fixed piece transforms and occupied cells; the needed observation dependence is static instance variation, not a temporal process."
+      },
+      "clause_ii": {
+        "holds": true,
+        "reason": "The current visible SVG, piece ledger, camera readout, and occupancy state can support a stationary screenshot policy choosing the next static manipulation after inspection. No bounded sequence is needed to predict a changed post-delay state."
+      },
+      "clause_iii": {
+        "holds": false,
+        "reason": "With no new action for any positive delay, the generated world and browser model remain unchanged. No piece becomes unavailable or less effective, so there is no non-clock task-state evolution causing a strict loss in Q or action advantage. No legitimate D, Delta, or window repairs this failure."
+      },
+      "common_visible_process": "None. All seven opaque loose pieces, the faint parcel wireframe, and the camera are static between synchronous input handlers; no visible process evolves autonomously.",
+      "pre_run": {
+        "threshold": 0.5,
+        "at_least_half": null,
+        "rate": null,
+        "basis": "not_applicable",
+        "reason": "The mathematical definition already fails at clause (iii), so the pre-run catalog threshold is not needed. There is no autonomous outcome phase whose no-action completion could define a pre-run rate.",
+        "seed_probe": null
+      },
+      "files_read_completely": [
+        "AGENTS.md",
+        "weird_captcha_gym/docs/controllability/real-time.md",
+        "weird_captcha_gym/environments/polycube_parcel_env/controls.json",
+        "weird_captcha_gym/environments/polycube_parcel_env/env.json",
+        "weird_captcha_gym/environments/polycube_parcel_env/tasks/polycube_parcel_seed_0001/task.json",
+        "weird_captcha_gym/shared_scripts/incubator_generators/polycube_parcel.py",
+        "weird_captcha_gym/shared_runtime/app/index.html",
+        "weird_captcha_gym/shared_runtime/app/time_controller.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/polycube_parcel.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/polycube_parcel.css",
+        "weird_captcha_gym/shared_runtime/server/incubator_graders/polycube_parcel.py",
+        "weird_captcha_gym/environments/polycube_parcel_env/tasks/polycube_parcel_seed_0001/verifier.py",
+        "weird_captcha_gym/shared_runtime/verifier_helpers.py",
+        "weird_captcha_gym/tools/incubator_solvers/polycube_parcel.py"
+      ],
+      "source_evidence": [
+        {
+          "path": "weird_captcha_gym/environments/polycube_parcel_env/controls.json",
+          "lines": "42-49,52-57",
+          "claim": "Difficulty 5 has seven loose pieces, full opacity, a faint parcel wireframe, and tighter rack spacing; simplified mode uses camera and placement proxies; the configured observation window is 0 ms with one frame."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/polycube_parcel.py",
+          "lines": "44-50,140-181,186-228",
+          "claim": "The profile only sets static preplacement, camera, opacity, and rack parameters; generation creates a fixed seeded world with placed/locked flags and no time-dependent state."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/polycube_parcel.js",
+          "lines": "59-84,144-186",
+          "claim": "Rendering constructs a static SVG parcel and piece ledger, while selection, rotation, and placement synchronously mutate the model and rerender."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/polycube_parcel.js",
+          "lines": "193-243",
+          "claim": "Simplified proxy camera, proxy placement, and the remaining controls are event handlers; there is no task timer, animation loop, or autonomous transition."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/polycube_parcel.css",
+          "lines": "18-29,40-58",
+          "claim": "The relevant CSS supplies static layout, SVG face styling, controls, and readouts without a task animation or transition."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/polycube_parcel.py",
+          "lines": "101-227",
+          "claim": "The grader binds the expected simplified input sources and replays only camera, selection, rotation, placement, and submit events against integer occupancy; it has no task-time evolution."
+        },
+        {
+          "path": "weird_captcha_gym/tools/incubator_solvers/polycube_parcel.py",
+          "lines": "159-183",
+          "claim": "The ordinary-input solver discards the advance hook and performs a finite camera/rotation/placement sequence, consistent with a static puzzle rather than a live process."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/time_controller.js",
+          "lines": "155-201,250-339,548-603",
+          "claim": "The shared runtime can pause or advance virtual time and registered timers/animation frames, but the parcel mechanic registers none; clock progression alone does not mutate its model."
+        },
+        {
+          "path": "weird_captcha_gym/environments/polycube_parcel_env/tasks/polycube_parcel_seed_0001/verifier.py",
+          "lines": "34-47",
+          "claim": "Verification loads the exported result and applies the independent occupancy grader after submission; it does not introduce an autonomous task phase."
+        }
+      ],
+      "uncertainties": []
+    }
+  ]
+}

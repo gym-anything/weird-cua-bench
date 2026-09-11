@@ -1,0 +1,1227 @@
+{
+  "case_index": 25,
+  "environment_id": "five_second_rule_env",
+  "public_environment_name": "Five-Second Rule",
+  "configuration_reports": [
+    {
+      "case_index": 241,
+      "public_environment_name": "Five-Second Rule",
+      "environment_id": "five_second_rule_env",
+      "difficulty": 1,
+      "interaction_mode": "full",
+      "label": "yes",
+      "controls_available": [
+        "Visible two-line dispatch order and five-second task clock for each of five rounds.",
+        "gate_tag: click the instructed moving stage token while its center is inside the white gate.",
+        "sync_hold: hold the instructed stage token and release it on the amber cue after both needles enter the notch.",
+        "vector_flick: drag from the instructed stage token in the required direction while its pointer faces the requested heading.",
+        "relay_pair: tap the two instructed stage tokens on the stage in the requested order.",
+        "shutter_drop: drag the instructed cargo token into the instructed live bay while its shutter is open."
+      ],
+      "autonomous_processes": [
+        "Every round advances autonomously from roundStartedAt: the visible countdown changes continuously and the round fails at 5000 ms without a successful dispatch.",
+        "gate_tag: stage tokens move at the generated target speed 88 px/s (with 10 px sinusoidal vertical motion) and the target's membership in the 66px half-width gate changes.",
+        "sync_hold: two needles move with elapsed task time; the cue begins at a generated 1420–1570 ms start and lasts 460 ms, with 300 ms timing tolerance.",
+        "vector_flick: each token pointer rotates continuously; difficulty 1 uses 44° orientation tolerance and 34px minimum direct travel.",
+        "relay_pair: token positions are static during the pair, but the five-second round clock continues while the two ordered taps are pending.",
+        "shutter_drop: the target bay's shutter opens/closes autonomously for 1450 ms in a 2300 ms cycle; the visible aperture and open state change while the 78px bay remains the target."
+      ],
+      "grouped_control_modes": [
+        "D=direct_tag: every direct moving-token tag action across all gate_tag rounds, seeds, and attempts.",
+        "D=direct_hold: every direct token hold/release across all sync_hold rounds, seeds, and attempts.",
+        "D=direct_flick: every direct pointer drag across all vector_flick rounds, seeds, and attempts.",
+        "D=direct_tap: every direct ordered stage-token tap across all relay_pair rounds, seeds, and attempts.",
+        "D=direct_drag: every direct cargo-to-bay drag across all shutter_drop rounds, seeds, and attempts."
+      ],
+      "delta_ms": 800,
+      "window_ms": 600,
+      "clause_i": {
+        "holds": true,
+        "reason": "For the common witness D=direct_drag, take histories at the same task time before the bay action with identical I_t and no prior bay choice. The generator samples target_bay_index independently for each deck, so different seeds require different bay IDs and visible bay coordinates; q(I_t) is therefore identical where the delayed-optimal action is not. The fixed target-bay phase does not remove this cross-seed target identity ambiguity."
+      },
+      "clause_ii": {
+        "holds": true,
+        "reason": "g uses the bounded W_t^600 window (six chronological frames), the two-line instruction, and the visible stage/proxy geometry. The target color identifies the correct bay; consecutive frames expose the target bay's changing open state and aperture, allowing direct_drag from the visible cargo to the visible bay center to be delivered at t+Delta. Cargo selection itself can be prepared before the timed bay action in simplified mode."
+      },
+      "clause_iii": {
+        "holds": true,
+        "reason": "At t≈1580 ms, the target bay is at the center of its open interval. With no new action for Delta=800 ms, it is closed (the target phase is beyond the 1450 ms open interval), so the same bay drag/click a loses its outcome value; the next opening begins at about 3155 ms, before the 5000 ms round ends, so success remains possible. The strict loss is the autonomous shutter/aperture state change, not merely less deadline time."
+      },
+      "common_visible_process": "Common witness for full: in every shutter_drop round, the generator makes one randomly selected target bay visible and centers its cyclic opening near 1580 ms; the browser continuously renders its open/closed state and aperture. Over Delta=800 ms from the open center, the target shutter closes, making the direct cargo drag invalid at the same bay while the next opening (about 3155 ms) remains available. The same six-frame, 600 ms visible window supplies the target identity and the shutter trajectory used to choose the delayed action.",
+      "pre_run": {
+        "threshold": 0.5,
+        "at_least_half": false,
+        "rate": null,
+        "basis": "source_structural",
+        "reason": "The generator always emits gate_tag, sync_hold, vector_flick, relay_pair, and shutter_drop, and the grader requires all five dispatches. Gate, hold, flick, and drop each require an outcome-affecting action at a changing or time-specific state during the round; a solution that sends no outcome-affecting actions throughout the autonomous outcome phases cannot complete a generated deck. Thus no generated instance qualifies for a pre-run solution in this mode; no percentage is asserted.",
+        "seed_probe": null
+      },
+      "files_read_completely": [
+        "AGENTS.md",
+        "weird_captcha_gym/docs/controllability/real-time.md",
+        "weird_captcha_gym/environments/five_second_rule_env/controls.json",
+        "weird_captcha_gym/environments/five_second_rule_env/env.json",
+        "weird_captcha_gym/environments/five_second_rule_env/tasks/five_second_rule_seed_0001/task.json",
+        "weird_captcha_gym/environments/five_second_rule_env/tasks/five_second_rule_seed_0001/verifier.py",
+        "weird_captcha_gym/shared_scripts/incubator_generators/five_second_rule.py",
+        "weird_captcha_gym/shared_runtime/app/mechanics/five_second_rule.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/five_second_rule.css",
+        "weird_captcha_gym/shared_runtime/app/time_controller.js",
+        "weird_captcha_gym/shared_runtime/server/incubator_graders/five_second_rule.py",
+        "weird_captcha_gym/shared_runtime/verifier_helpers.py",
+        "weird_captcha_gym/tools/incubator_solvers/five_second_rule.py"
+      ],
+      "source_evidence": [
+        {
+          "path": "weird_captcha_gym/environments/five_second_rule_env/controls.json",
+          "lines": "5-10",
+          "claim": "Difficulty 1 supplies the exact five-second configuration: {\"round_duration_ms\":5000,\"object_count\":3,\"gate_half_width\":66,\"motion_speed\":88,\"vertical_amplitude\":10,\"hold_duration_ms\":460,\"hold_tolerance_ms\":300,\"flick_angle_tolerance_deg\":44,\"flick_min_travel_px\":34,\"relay_relation_depth\":0,\"bay_open_ms\":1450,\"bay_period_ms\":2300,\"bay_radius\":78}."
+        },
+        {
+          "path": "weird_captcha_gym/environments/five_second_rule_env/controls.json",
+          "lines": "37-42",
+          "claim": "The full interaction surface is implemented, while the shared task settings are observation_window_ms=600, frames_per_observation=6, and play_time_seconds=90."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/five_second_rule.py",
+          "lines": "345-377",
+          "claim": "Every generated shutter_drop round chooses a target cargo, randomly chooses target_bay_index, gives the target bay a visible color/geometry, and offsets its periodic opening around 1580 ms."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/five_second_rule.py",
+          "lines": "391-403",
+          "claim": "Every generated deck contains exactly five shuffled rounds, including one each of gate_tag, sync_hold, vector_flick, relay_pair, and shutter_drop."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/five_second_rule.js",
+          "lines": "117-134, 336-351",
+          "claim": "The browser exposes distinct full controls; in simplified mode the proxy token, direction, and bay controls are bound, while direct stage controls are used in full mode."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/five_second_rule.js",
+          "lines": "280-288, 386-400",
+          "claim": "A drop is accepted only when the selected target bay is open, and each animation frame updates the target bay's open class/aperture before expiring the round at 5000 ms."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/five_second_rule.css",
+          "lines": "278-283",
+          "claim": "The bay's shutter height is driven by the visible aperture and the open state visibly changes its glow/background."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/five_second_rule.py",
+          "lines": "9-21, 188-209, 243-280",
+          "claim": "The independent grader binds full to its mode-specific input source, validates the bay-open predicate/geometry, requires all five dispatch records, and checks the global event sequence."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/time_controller.js",
+          "lines": "55-78, 193-201, 267-339",
+          "claim": "The shared clock advances task time only while running, maps the mechanic's interactionNow to that task clock, and drives timers/requestAnimationFrame from the same virtual time; live progress therefore changes the rendered shutter between actions."
+        },
+        {
+          "path": "weird_captcha_gym/environments/five_second_rule_env/env.json",
+          "lines": "20-43",
+          "claim": "The environment exposes chronological frame-window observations at 10 fps and the same 600 ms/6-frame runner settings used by the witness."
+        }
+      ],
+      "uncertainties": []
+    },
+    {
+      "case_index": 242,
+      "public_environment_name": "Five-Second Rule",
+      "environment_id": "five_second_rule_env",
+      "difficulty": 1,
+      "interaction_mode": "simplified",
+      "label": "yes",
+      "controls_available": [
+        "Visible two-line dispatch order and five-second task clock for each of five rounds.",
+        "gate_tag: use a stationary labelled TAG proxy button for the instructed token.",
+        "sync_hold: use a stationary labelled HOLD proxy button and hold/release it on the visible cue.",
+        "vector_flick: select the instructed token with a stationary proxy, then press the labelled direction proxy.",
+        "relay_pair: tap the two stationary labelled relay proxy buttons in the requested order.",
+        "shutter_drop: select cargo with a stationary proxy, then press the instructed bay proxy while its visible shutter is open; direct stage nodes remain disabled."
+      ],
+      "autonomous_processes": [
+        "Every round advances autonomously from roundStartedAt: the visible countdown changes continuously and the round fails at 5000 ms without a successful dispatch.",
+        "gate_tag: stage tokens move at the generated target speed 88 px/s (with 10 px sinusoidal vertical motion) and the target's membership in the 66px half-width gate changes.",
+        "sync_hold: two needles move with elapsed task time; the cue begins at a generated 1420–1570 ms start and lasts 460 ms, with 300 ms timing tolerance.",
+        "vector_flick: each token pointer rotates continuously; difficulty 1 uses 44° orientation tolerance and 34px minimum direct travel.",
+        "relay_pair: token positions are static during the pair, but the five-second round clock continues while the two ordered taps are pending.",
+        "shutter_drop: the target bay's shutter opens/closes autonomously for 1450 ms in a 2300 ms cycle; the visible aperture and open state change while the 78px bay remains the target."
+      ],
+      "grouped_control_modes": [
+        "D=proxy_tag: every stationary proxy tag action across all gate_tag rounds, seeds, and attempts.",
+        "D=proxy_hold: every stationary proxy hold/release across all sync_hold rounds, seeds, and attempts.",
+        "D=proxy_flick: every proxy direction action after token selection across all vector_flick rounds, seeds, and attempts.",
+        "D=proxy_tap: every stationary proxy relay tap across all relay_pair rounds, seeds, and attempts.",
+        "D=proxy_drop: every proxy bay action after cargo selection across all shutter_drop rounds, seeds, and attempts."
+      ],
+      "delta_ms": 800,
+      "window_ms": 600,
+      "clause_i": {
+        "holds": true,
+        "reason": "For the common witness D=proxy_drop, take histories at the same task time before the bay action with identical I_t and no prior bay choice. The generator samples target_bay_index independently for each deck, so different seeds require different data-proxy-bay IDs; q(I_t) is therefore identical where the delayed-optimal action is not. The fixed target-bay phase does not remove this cross-seed target identity ambiguity."
+      },
+      "clause_ii": {
+        "holds": true,
+        "reason": "g uses the bounded W_t^600 window (six chronological frames), the two-line instruction, and the visible stage/proxy geometry. The target color identifies the correct bay; consecutive frames expose the target bay's changing open state and aperture, allowing proxy_drop after selecting the visible cargo to be delivered at t+Delta. Cargo selection itself can be prepared before the timed bay action in simplified mode."
+      },
+      "clause_iii": {
+        "holds": true,
+        "reason": "At t≈1580 ms, the target bay is at the center of its open interval. With no new action for Delta=800 ms, it is closed (the target phase is beyond the 1450 ms open interval), so the same bay drag/click a loses its outcome value; the next opening begins at about 3155 ms, before the 5000 ms round ends, so success remains possible. The strict loss is the autonomous shutter/aperture state change, not merely less deadline time."
+      },
+      "common_visible_process": "Common witness for simplified: in every shutter_drop round, the generator makes one randomly selected target bay visible and centers its cyclic opening near 1580 ms; the browser continuously renders its open/closed state and aperture. Over Delta=800 ms from the open center, the target shutter closes, making the proxy cargo/bay selection invalid at the same bay while the next opening (about 3155 ms) remains available. The same six-frame, 600 ms visible window supplies the target identity and the shutter trajectory used to choose the delayed action.",
+      "pre_run": {
+        "threshold": 0.5,
+        "at_least_half": false,
+        "rate": null,
+        "basis": "source_structural",
+        "reason": "The generator always emits gate_tag, sync_hold, vector_flick, relay_pair, and shutter_drop, and the grader requires all five dispatches. Gate, hold, flick, and drop each require an outcome-affecting action at a changing or time-specific state during the round; a solution that sends no outcome-affecting actions throughout the autonomous outcome phases cannot complete a generated deck. Thus no generated instance qualifies for a pre-run solution in this mode; no percentage is asserted.",
+        "seed_probe": null
+      },
+      "files_read_completely": [
+        "AGENTS.md",
+        "weird_captcha_gym/docs/controllability/real-time.md",
+        "weird_captcha_gym/environments/five_second_rule_env/controls.json",
+        "weird_captcha_gym/environments/five_second_rule_env/env.json",
+        "weird_captcha_gym/environments/five_second_rule_env/tasks/five_second_rule_seed_0001/task.json",
+        "weird_captcha_gym/environments/five_second_rule_env/tasks/five_second_rule_seed_0001/verifier.py",
+        "weird_captcha_gym/shared_scripts/incubator_generators/five_second_rule.py",
+        "weird_captcha_gym/shared_runtime/app/mechanics/five_second_rule.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/five_second_rule.css",
+        "weird_captcha_gym/shared_runtime/app/time_controller.js",
+        "weird_captcha_gym/shared_runtime/server/incubator_graders/five_second_rule.py",
+        "weird_captcha_gym/shared_runtime/verifier_helpers.py",
+        "weird_captcha_gym/tools/incubator_solvers/five_second_rule.py"
+      ],
+      "source_evidence": [
+        {
+          "path": "weird_captcha_gym/environments/five_second_rule_env/controls.json",
+          "lines": "5-10",
+          "claim": "Difficulty 1 supplies the exact five-second configuration: {\"round_duration_ms\":5000,\"object_count\":3,\"gate_half_width\":66,\"motion_speed\":88,\"vertical_amplitude\":10,\"hold_duration_ms\":460,\"hold_tolerance_ms\":300,\"flick_angle_tolerance_deg\":44,\"flick_min_travel_px\":34,\"relay_relation_depth\":0,\"bay_open_ms\":1450,\"bay_period_ms\":2300,\"bay_radius\":78}."
+        },
+        {
+          "path": "weird_captcha_gym/environments/five_second_rule_env/controls.json",
+          "lines": "37-42",
+          "claim": "The simplified interaction surface is implemented, while the shared task settings are observation_window_ms=600, frames_per_observation=6, and play_time_seconds=90."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/five_second_rule.py",
+          "lines": "345-377",
+          "claim": "Every generated shutter_drop round chooses a target cargo, randomly chooses target_bay_index, gives the target bay a visible color/geometry, and offsets its periodic opening around 1580 ms."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/five_second_rule.py",
+          "lines": "391-403",
+          "claim": "Every generated deck contains exactly five shuffled rounds, including one each of gate_tag, sync_hold, vector_flick, relay_pair, and shutter_drop."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/five_second_rule.js",
+          "lines": "117-134, 336-351",
+          "claim": "The browser exposes distinct simplified controls; in simplified mode the proxy token, direction, and bay controls are bound, while direct stage controls are used in full mode."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/five_second_rule.js",
+          "lines": "280-288, 386-400",
+          "claim": "A drop is accepted only when the selected target bay is open, and each animation frame updates the target bay's open class/aperture before expiring the round at 5000 ms."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/five_second_rule.css",
+          "lines": "278-283",
+          "claim": "The bay's shutter height is driven by the visible aperture and the open state visibly changes its glow/background."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/five_second_rule.py",
+          "lines": "9-21, 188-209, 243-280",
+          "claim": "The independent grader binds simplified to its mode-specific input source, validates the bay-open predicate/geometry, requires all five dispatch records, and checks the global event sequence."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/time_controller.js",
+          "lines": "55-78, 193-201, 267-339",
+          "claim": "The shared clock advances task time only while running, maps the mechanic's interactionNow to that task clock, and drives timers/requestAnimationFrame from the same virtual time; live progress therefore changes the rendered shutter between actions."
+        },
+        {
+          "path": "weird_captcha_gym/environments/five_second_rule_env/env.json",
+          "lines": "20-43",
+          "claim": "The environment exposes chronological frame-window observations at 10 fps and the same 600 ms/6-frame runner settings used by the witness."
+        }
+      ],
+      "uncertainties": []
+    },
+    {
+      "case_index": 243,
+      "public_environment_name": "Five-Second Rule",
+      "environment_id": "five_second_rule_env",
+      "difficulty": 2,
+      "interaction_mode": "full",
+      "label": "yes",
+      "controls_available": [
+        "Visible two-line dispatch order and five-second task clock for each of five rounds.",
+        "gate_tag: click the instructed moving stage token while its center is inside the white gate.",
+        "sync_hold: hold the instructed stage token and release it on the amber cue after both needles enter the notch.",
+        "vector_flick: drag from the instructed stage token in the required direction while its pointer faces the requested heading.",
+        "relay_pair: tap the two instructed stage tokens on the stage in the requested order.",
+        "shutter_drop: drag the instructed cargo token into the instructed live bay while its shutter is open."
+      ],
+      "autonomous_processes": [
+        "Every round advances autonomously from roundStartedAt: the visible countdown changes continuously and the round fails at 5000 ms without a successful dispatch.",
+        "gate_tag: stage tokens move at the generated target speed 102 px/s (with 15 px sinusoidal vertical motion) and the target's membership in the 54px half-width gate changes.",
+        "sync_hold: two needles move with elapsed task time; the cue begins at a generated 1420–1570 ms start and lasts 500 ms, with 245 ms timing tolerance.",
+        "vector_flick: each token pointer rotates continuously; difficulty 2 uses 36° orientation tolerance and 40px minimum direct travel.",
+        "relay_pair: token positions are static during the pair, but the five-second round clock continues while the two ordered taps are pending.",
+        "shutter_drop: the target bay's shutter opens/closes autonomously for 1220 ms in a 2200 ms cycle; the visible aperture and open state change while the 67px bay remains the target."
+      ],
+      "grouped_control_modes": [
+        "D=direct_tag: every direct moving-token tag action across all gate_tag rounds, seeds, and attempts.",
+        "D=direct_hold: every direct token hold/release across all sync_hold rounds, seeds, and attempts.",
+        "D=direct_flick: every direct pointer drag across all vector_flick rounds, seeds, and attempts.",
+        "D=direct_tap: every direct ordered stage-token tap across all relay_pair rounds, seeds, and attempts.",
+        "D=direct_drag: every direct cargo-to-bay drag across all shutter_drop rounds, seeds, and attempts."
+      ],
+      "delta_ms": 700,
+      "window_ms": 600,
+      "clause_i": {
+        "holds": true,
+        "reason": "For the common witness D=direct_drag, take histories at the same task time before the bay action with identical I_t and no prior bay choice. The generator samples target_bay_index independently for each deck, so different seeds require different bay IDs and visible bay coordinates; q(I_t) is therefore identical where the delayed-optimal action is not. The fixed target-bay phase does not remove this cross-seed target identity ambiguity."
+      },
+      "clause_ii": {
+        "holds": true,
+        "reason": "g uses the bounded W_t^600 window (six chronological frames), the two-line instruction, and the visible stage/proxy geometry. The target color identifies the correct bay; consecutive frames expose the target bay's changing open state and aperture, allowing direct_drag from the visible cargo to the visible bay center to be delivered at t+Delta. Cargo selection itself can be prepared before the timed bay action in simplified mode."
+      },
+      "clause_iii": {
+        "holds": true,
+        "reason": "At t≈1580 ms, the target bay is at the center of its open interval. With no new action for Delta=700 ms, it is closed (the target phase is beyond the 1220 ms open interval), so the same bay drag/click a loses its outcome value; the next opening begins at about 3170 ms, before the 5000 ms round ends, so success remains possible. The strict loss is the autonomous shutter/aperture state change, not merely less deadline time."
+      },
+      "common_visible_process": "Common witness for full: in every shutter_drop round, the generator makes one randomly selected target bay visible and centers its cyclic opening near 1580 ms; the browser continuously renders its open/closed state and aperture. Over Delta=700 ms from the open center, the target shutter closes, making the direct cargo drag invalid at the same bay while the next opening (about 3170 ms) remains available. The same six-frame, 600 ms visible window supplies the target identity and the shutter trajectory used to choose the delayed action.",
+      "pre_run": {
+        "threshold": 0.5,
+        "at_least_half": false,
+        "rate": null,
+        "basis": "source_structural",
+        "reason": "The generator always emits gate_tag, sync_hold, vector_flick, relay_pair, and shutter_drop, and the grader requires all five dispatches. Gate, hold, flick, and drop each require an outcome-affecting action at a changing or time-specific state during the round; a solution that sends no outcome-affecting actions throughout the autonomous outcome phases cannot complete a generated deck. Thus no generated instance qualifies for a pre-run solution in this mode; no percentage is asserted.",
+        "seed_probe": null
+      },
+      "files_read_completely": [
+        "AGENTS.md",
+        "weird_captcha_gym/docs/controllability/real-time.md",
+        "weird_captcha_gym/environments/five_second_rule_env/controls.json",
+        "weird_captcha_gym/environments/five_second_rule_env/env.json",
+        "weird_captcha_gym/environments/five_second_rule_env/tasks/five_second_rule_seed_0001/task.json",
+        "weird_captcha_gym/environments/five_second_rule_env/tasks/five_second_rule_seed_0001/verifier.py",
+        "weird_captcha_gym/shared_scripts/incubator_generators/five_second_rule.py",
+        "weird_captcha_gym/shared_runtime/app/mechanics/five_second_rule.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/five_second_rule.css",
+        "weird_captcha_gym/shared_runtime/app/time_controller.js",
+        "weird_captcha_gym/shared_runtime/server/incubator_graders/five_second_rule.py",
+        "weird_captcha_gym/shared_runtime/verifier_helpers.py",
+        "weird_captcha_gym/tools/incubator_solvers/five_second_rule.py"
+      ],
+      "source_evidence": [
+        {
+          "path": "weird_captcha_gym/environments/five_second_rule_env/controls.json",
+          "lines": "12-16",
+          "claim": "Difficulty 2 supplies the exact five-second configuration: {\"round_duration_ms\":5000,\"object_count\":4,\"gate_half_width\":54,\"motion_speed\":102,\"vertical_amplitude\":15,\"hold_duration_ms\":500,\"hold_tolerance_ms\":245,\"flick_angle_tolerance_deg\":36,\"flick_min_travel_px\":40,\"relay_relation_depth\":1,\"bay_open_ms\":1220,\"bay_period_ms\":2200,\"bay_radius\":67}."
+        },
+        {
+          "path": "weird_captcha_gym/environments/five_second_rule_env/controls.json",
+          "lines": "37-42",
+          "claim": "The full interaction surface is implemented, while the shared task settings are observation_window_ms=600, frames_per_observation=6, and play_time_seconds=90."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/five_second_rule.py",
+          "lines": "345-377",
+          "claim": "Every generated shutter_drop round chooses a target cargo, randomly chooses target_bay_index, gives the target bay a visible color/geometry, and offsets its periodic opening around 1580 ms."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/five_second_rule.py",
+          "lines": "391-403",
+          "claim": "Every generated deck contains exactly five shuffled rounds, including one each of gate_tag, sync_hold, vector_flick, relay_pair, and shutter_drop."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/five_second_rule.js",
+          "lines": "117-134, 336-351",
+          "claim": "The browser exposes distinct full controls; in simplified mode the proxy token, direction, and bay controls are bound, while direct stage controls are used in full mode."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/five_second_rule.js",
+          "lines": "280-288, 386-400",
+          "claim": "A drop is accepted only when the selected target bay is open, and each animation frame updates the target bay's open class/aperture before expiring the round at 5000 ms."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/five_second_rule.css",
+          "lines": "278-283",
+          "claim": "The bay's shutter height is driven by the visible aperture and the open state visibly changes its glow/background."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/five_second_rule.py",
+          "lines": "9-21, 188-209, 243-280",
+          "claim": "The independent grader binds full to its mode-specific input source, validates the bay-open predicate/geometry, requires all five dispatch records, and checks the global event sequence."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/time_controller.js",
+          "lines": "55-78, 193-201, 267-339",
+          "claim": "The shared clock advances task time only while running, maps the mechanic's interactionNow to that task clock, and drives timers/requestAnimationFrame from the same virtual time; live progress therefore changes the rendered shutter between actions."
+        },
+        {
+          "path": "weird_captcha_gym/environments/five_second_rule_env/env.json",
+          "lines": "20-43",
+          "claim": "The environment exposes chronological frame-window observations at 10 fps and the same 600 ms/6-frame runner settings used by the witness."
+        }
+      ],
+      "uncertainties": []
+    },
+    {
+      "case_index": 244,
+      "public_environment_name": "Five-Second Rule",
+      "environment_id": "five_second_rule_env",
+      "difficulty": 2,
+      "interaction_mode": "simplified",
+      "label": "yes",
+      "controls_available": [
+        "Visible two-line dispatch order and five-second task clock for each of five rounds.",
+        "gate_tag: use a stationary labelled TAG proxy button for the instructed token.",
+        "sync_hold: use a stationary labelled HOLD proxy button and hold/release it on the visible cue.",
+        "vector_flick: select the instructed token with a stationary proxy, then press the labelled direction proxy.",
+        "relay_pair: tap the two stationary labelled relay proxy buttons in the requested order.",
+        "shutter_drop: select cargo with a stationary proxy, then press the instructed bay proxy while its visible shutter is open; direct stage nodes remain disabled."
+      ],
+      "autonomous_processes": [
+        "Every round advances autonomously from roundStartedAt: the visible countdown changes continuously and the round fails at 5000 ms without a successful dispatch.",
+        "gate_tag: stage tokens move at the generated target speed 102 px/s (with 15 px sinusoidal vertical motion) and the target's membership in the 54px half-width gate changes.",
+        "sync_hold: two needles move with elapsed task time; the cue begins at a generated 1420–1570 ms start and lasts 500 ms, with 245 ms timing tolerance.",
+        "vector_flick: each token pointer rotates continuously; difficulty 2 uses 36° orientation tolerance and 40px minimum direct travel.",
+        "relay_pair: token positions are static during the pair, but the five-second round clock continues while the two ordered taps are pending.",
+        "shutter_drop: the target bay's shutter opens/closes autonomously for 1220 ms in a 2200 ms cycle; the visible aperture and open state change while the 67px bay remains the target."
+      ],
+      "grouped_control_modes": [
+        "D=proxy_tag: every stationary proxy tag action across all gate_tag rounds, seeds, and attempts.",
+        "D=proxy_hold: every stationary proxy hold/release across all sync_hold rounds, seeds, and attempts.",
+        "D=proxy_flick: every proxy direction action after token selection across all vector_flick rounds, seeds, and attempts.",
+        "D=proxy_tap: every stationary proxy relay tap across all relay_pair rounds, seeds, and attempts.",
+        "D=proxy_drop: every proxy bay action after cargo selection across all shutter_drop rounds, seeds, and attempts."
+      ],
+      "delta_ms": 700,
+      "window_ms": 600,
+      "clause_i": {
+        "holds": true,
+        "reason": "For the common witness D=proxy_drop, take histories at the same task time before the bay action with identical I_t and no prior bay choice. The generator samples target_bay_index independently for each deck, so different seeds require different data-proxy-bay IDs; q(I_t) is therefore identical where the delayed-optimal action is not. The fixed target-bay phase does not remove this cross-seed target identity ambiguity."
+      },
+      "clause_ii": {
+        "holds": true,
+        "reason": "g uses the bounded W_t^600 window (six chronological frames), the two-line instruction, and the visible stage/proxy geometry. The target color identifies the correct bay; consecutive frames expose the target bay's changing open state and aperture, allowing proxy_drop after selecting the visible cargo to be delivered at t+Delta. Cargo selection itself can be prepared before the timed bay action in simplified mode."
+      },
+      "clause_iii": {
+        "holds": true,
+        "reason": "At t≈1580 ms, the target bay is at the center of its open interval. With no new action for Delta=700 ms, it is closed (the target phase is beyond the 1220 ms open interval), so the same bay drag/click a loses its outcome value; the next opening begins at about 3170 ms, before the 5000 ms round ends, so success remains possible. The strict loss is the autonomous shutter/aperture state change, not merely less deadline time."
+      },
+      "common_visible_process": "Common witness for simplified: in every shutter_drop round, the generator makes one randomly selected target bay visible and centers its cyclic opening near 1580 ms; the browser continuously renders its open/closed state and aperture. Over Delta=700 ms from the open center, the target shutter closes, making the proxy cargo/bay selection invalid at the same bay while the next opening (about 3170 ms) remains available. The same six-frame, 600 ms visible window supplies the target identity and the shutter trajectory used to choose the delayed action.",
+      "pre_run": {
+        "threshold": 0.5,
+        "at_least_half": false,
+        "rate": null,
+        "basis": "source_structural",
+        "reason": "The generator always emits gate_tag, sync_hold, vector_flick, relay_pair, and shutter_drop, and the grader requires all five dispatches. Gate, hold, flick, and drop each require an outcome-affecting action at a changing or time-specific state during the round; a solution that sends no outcome-affecting actions throughout the autonomous outcome phases cannot complete a generated deck. Thus no generated instance qualifies for a pre-run solution in this mode; no percentage is asserted.",
+        "seed_probe": null
+      },
+      "files_read_completely": [
+        "AGENTS.md",
+        "weird_captcha_gym/docs/controllability/real-time.md",
+        "weird_captcha_gym/environments/five_second_rule_env/controls.json",
+        "weird_captcha_gym/environments/five_second_rule_env/env.json",
+        "weird_captcha_gym/environments/five_second_rule_env/tasks/five_second_rule_seed_0001/task.json",
+        "weird_captcha_gym/environments/five_second_rule_env/tasks/five_second_rule_seed_0001/verifier.py",
+        "weird_captcha_gym/shared_scripts/incubator_generators/five_second_rule.py",
+        "weird_captcha_gym/shared_runtime/app/mechanics/five_second_rule.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/five_second_rule.css",
+        "weird_captcha_gym/shared_runtime/app/time_controller.js",
+        "weird_captcha_gym/shared_runtime/server/incubator_graders/five_second_rule.py",
+        "weird_captcha_gym/shared_runtime/verifier_helpers.py",
+        "weird_captcha_gym/tools/incubator_solvers/five_second_rule.py"
+      ],
+      "source_evidence": [
+        {
+          "path": "weird_captcha_gym/environments/five_second_rule_env/controls.json",
+          "lines": "12-16",
+          "claim": "Difficulty 2 supplies the exact five-second configuration: {\"round_duration_ms\":5000,\"object_count\":4,\"gate_half_width\":54,\"motion_speed\":102,\"vertical_amplitude\":15,\"hold_duration_ms\":500,\"hold_tolerance_ms\":245,\"flick_angle_tolerance_deg\":36,\"flick_min_travel_px\":40,\"relay_relation_depth\":1,\"bay_open_ms\":1220,\"bay_period_ms\":2200,\"bay_radius\":67}."
+        },
+        {
+          "path": "weird_captcha_gym/environments/five_second_rule_env/controls.json",
+          "lines": "37-42",
+          "claim": "The simplified interaction surface is implemented, while the shared task settings are observation_window_ms=600, frames_per_observation=6, and play_time_seconds=90."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/five_second_rule.py",
+          "lines": "345-377",
+          "claim": "Every generated shutter_drop round chooses a target cargo, randomly chooses target_bay_index, gives the target bay a visible color/geometry, and offsets its periodic opening around 1580 ms."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/five_second_rule.py",
+          "lines": "391-403",
+          "claim": "Every generated deck contains exactly five shuffled rounds, including one each of gate_tag, sync_hold, vector_flick, relay_pair, and shutter_drop."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/five_second_rule.js",
+          "lines": "117-134, 336-351",
+          "claim": "The browser exposes distinct simplified controls; in simplified mode the proxy token, direction, and bay controls are bound, while direct stage controls are used in full mode."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/five_second_rule.js",
+          "lines": "280-288, 386-400",
+          "claim": "A drop is accepted only when the selected target bay is open, and each animation frame updates the target bay's open class/aperture before expiring the round at 5000 ms."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/five_second_rule.css",
+          "lines": "278-283",
+          "claim": "The bay's shutter height is driven by the visible aperture and the open state visibly changes its glow/background."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/five_second_rule.py",
+          "lines": "9-21, 188-209, 243-280",
+          "claim": "The independent grader binds simplified to its mode-specific input source, validates the bay-open predicate/geometry, requires all five dispatch records, and checks the global event sequence."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/time_controller.js",
+          "lines": "55-78, 193-201, 267-339",
+          "claim": "The shared clock advances task time only while running, maps the mechanic's interactionNow to that task clock, and drives timers/requestAnimationFrame from the same virtual time; live progress therefore changes the rendered shutter between actions."
+        },
+        {
+          "path": "weird_captcha_gym/environments/five_second_rule_env/env.json",
+          "lines": "20-43",
+          "claim": "The environment exposes chronological frame-window observations at 10 fps and the same 600 ms/6-frame runner settings used by the witness."
+        }
+      ],
+      "uncertainties": []
+    },
+    {
+      "case_index": 245,
+      "public_environment_name": "Five-Second Rule",
+      "environment_id": "five_second_rule_env",
+      "difficulty": 3,
+      "interaction_mode": "full",
+      "label": "yes",
+      "controls_available": [
+        "Visible two-line dispatch order and five-second task clock for each of five rounds.",
+        "gate_tag: click the instructed moving stage token while its center is inside the white gate.",
+        "sync_hold: hold the instructed stage token and release it on the amber cue after both needles enter the notch.",
+        "vector_flick: drag from the instructed stage token in the required direction while its pointer faces the requested heading.",
+        "relay_pair: tap the two instructed stage tokens on the stage in the requested order.",
+        "shutter_drop: drag the instructed cargo token into the instructed live bay while its shutter is open."
+      ],
+      "autonomous_processes": [
+        "Every round advances autonomously from roundStartedAt: the visible countdown changes continuously and the round fails at 5000 ms without a successful dispatch.",
+        "gate_tag: stage tokens move at the generated target speed 116 px/s (with 21 px sinusoidal vertical motion) and the target's membership in the 44px half-width gate changes.",
+        "sync_hold: two needles move with elapsed task time; the cue begins at a generated 1420–1570 ms start and lasts 550 ms, with 195 ms timing tolerance.",
+        "vector_flick: each token pointer rotates continuously; difficulty 3 uses 29° orientation tolerance and 46px minimum direct travel.",
+        "relay_pair: token positions are static during the pair, but the five-second round clock continues while the two ordered taps are pending.",
+        "shutter_drop: the target bay's shutter opens/closes autonomously for 1040 ms in a 2100 ms cycle; the visible aperture and open state change while the 58px bay remains the target."
+      ],
+      "grouped_control_modes": [
+        "D=direct_tag: every direct moving-token tag action across all gate_tag rounds, seeds, and attempts.",
+        "D=direct_hold: every direct token hold/release across all sync_hold rounds, seeds, and attempts.",
+        "D=direct_flick: every direct pointer drag across all vector_flick rounds, seeds, and attempts.",
+        "D=direct_tap: every direct ordered stage-token tap across all relay_pair rounds, seeds, and attempts.",
+        "D=direct_drag: every direct cargo-to-bay drag across all shutter_drop rounds, seeds, and attempts."
+      ],
+      "delta_ms": 600,
+      "window_ms": 600,
+      "clause_i": {
+        "holds": true,
+        "reason": "For the common witness D=direct_drag, take histories at the same task time before the bay action with identical I_t and no prior bay choice. The generator samples target_bay_index independently for each deck, so different seeds require different bay IDs and visible bay coordinates; q(I_t) is therefore identical where the delayed-optimal action is not. The fixed target-bay phase does not remove this cross-seed target identity ambiguity."
+      },
+      "clause_ii": {
+        "holds": true,
+        "reason": "g uses the bounded W_t^600 window (six chronological frames), the two-line instruction, and the visible stage/proxy geometry. The target color identifies the correct bay; consecutive frames expose the target bay's changing open state and aperture, allowing direct_drag from the visible cargo to the visible bay center to be delivered at t+Delta. Cargo selection itself can be prepared before the timed bay action in simplified mode."
+      },
+      "clause_iii": {
+        "holds": true,
+        "reason": "At t≈1580 ms, the target bay is at the center of its open interval. With no new action for Delta=600 ms, it is closed (the target phase is beyond the 1040 ms open interval), so the same bay drag/click a loses its outcome value; the next opening begins at about 3160 ms, before the 5000 ms round ends, so success remains possible. The strict loss is the autonomous shutter/aperture state change, not merely less deadline time."
+      },
+      "common_visible_process": "Common witness for full: in every shutter_drop round, the generator makes one randomly selected target bay visible and centers its cyclic opening near 1580 ms; the browser continuously renders its open/closed state and aperture. Over Delta=600 ms from the open center, the target shutter closes, making the direct cargo drag invalid at the same bay while the next opening (about 3160 ms) remains available. The same six-frame, 600 ms visible window supplies the target identity and the shutter trajectory used to choose the delayed action.",
+      "pre_run": {
+        "threshold": 0.5,
+        "at_least_half": false,
+        "rate": null,
+        "basis": "source_structural",
+        "reason": "The generator always emits gate_tag, sync_hold, vector_flick, relay_pair, and shutter_drop, and the grader requires all five dispatches. Gate, hold, flick, and drop each require an outcome-affecting action at a changing or time-specific state during the round; a solution that sends no outcome-affecting actions throughout the autonomous outcome phases cannot complete a generated deck. Thus no generated instance qualifies for a pre-run solution in this mode; no percentage is asserted.",
+        "seed_probe": null
+      },
+      "files_read_completely": [
+        "AGENTS.md",
+        "weird_captcha_gym/docs/controllability/real-time.md",
+        "weird_captcha_gym/environments/five_second_rule_env/controls.json",
+        "weird_captcha_gym/environments/five_second_rule_env/env.json",
+        "weird_captcha_gym/environments/five_second_rule_env/tasks/five_second_rule_seed_0001/task.json",
+        "weird_captcha_gym/environments/five_second_rule_env/tasks/five_second_rule_seed_0001/verifier.py",
+        "weird_captcha_gym/shared_scripts/incubator_generators/five_second_rule.py",
+        "weird_captcha_gym/shared_runtime/app/mechanics/five_second_rule.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/five_second_rule.css",
+        "weird_captcha_gym/shared_runtime/app/time_controller.js",
+        "weird_captcha_gym/shared_runtime/server/incubator_graders/five_second_rule.py",
+        "weird_captcha_gym/shared_runtime/verifier_helpers.py",
+        "weird_captcha_gym/tools/incubator_solvers/five_second_rule.py"
+      ],
+      "source_evidence": [
+        {
+          "path": "weird_captcha_gym/environments/five_second_rule_env/controls.json",
+          "lines": "18-22",
+          "claim": "Difficulty 3 supplies the exact five-second configuration: {\"round_duration_ms\":5000,\"object_count\":5,\"gate_half_width\":44,\"motion_speed\":116,\"vertical_amplitude\":21,\"hold_duration_ms\":550,\"hold_tolerance_ms\":195,\"flick_angle_tolerance_deg\":29,\"flick_min_travel_px\":46,\"relay_relation_depth\":2,\"bay_open_ms\":1040,\"bay_period_ms\":2100,\"bay_radius\":58}."
+        },
+        {
+          "path": "weird_captcha_gym/environments/five_second_rule_env/controls.json",
+          "lines": "37-42",
+          "claim": "The full interaction surface is implemented, while the shared task settings are observation_window_ms=600, frames_per_observation=6, and play_time_seconds=90."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/five_second_rule.py",
+          "lines": "345-377",
+          "claim": "Every generated shutter_drop round chooses a target cargo, randomly chooses target_bay_index, gives the target bay a visible color/geometry, and offsets its periodic opening around 1580 ms."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/five_second_rule.py",
+          "lines": "391-403",
+          "claim": "Every generated deck contains exactly five shuffled rounds, including one each of gate_tag, sync_hold, vector_flick, relay_pair, and shutter_drop."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/five_second_rule.js",
+          "lines": "117-134, 336-351",
+          "claim": "The browser exposes distinct full controls; in simplified mode the proxy token, direction, and bay controls are bound, while direct stage controls are used in full mode."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/five_second_rule.js",
+          "lines": "280-288, 386-400",
+          "claim": "A drop is accepted only when the selected target bay is open, and each animation frame updates the target bay's open class/aperture before expiring the round at 5000 ms."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/five_second_rule.css",
+          "lines": "278-283",
+          "claim": "The bay's shutter height is driven by the visible aperture and the open state visibly changes its glow/background."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/five_second_rule.py",
+          "lines": "9-21, 188-209, 243-280",
+          "claim": "The independent grader binds full to its mode-specific input source, validates the bay-open predicate/geometry, requires all five dispatch records, and checks the global event sequence."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/time_controller.js",
+          "lines": "55-78, 193-201, 267-339",
+          "claim": "The shared clock advances task time only while running, maps the mechanic's interactionNow to that task clock, and drives timers/requestAnimationFrame from the same virtual time; live progress therefore changes the rendered shutter between actions."
+        },
+        {
+          "path": "weird_captcha_gym/environments/five_second_rule_env/env.json",
+          "lines": "20-43",
+          "claim": "The environment exposes chronological frame-window observations at 10 fps and the same 600 ms/6-frame runner settings used by the witness."
+        }
+      ],
+      "uncertainties": []
+    },
+    {
+      "case_index": 246,
+      "public_environment_name": "Five-Second Rule",
+      "environment_id": "five_second_rule_env",
+      "difficulty": 3,
+      "interaction_mode": "simplified",
+      "label": "yes",
+      "controls_available": [
+        "Visible two-line dispatch order and five-second task clock for each of five rounds.",
+        "gate_tag: use a stationary labelled TAG proxy button for the instructed token.",
+        "sync_hold: use a stationary labelled HOLD proxy button and hold/release it on the visible cue.",
+        "vector_flick: select the instructed token with a stationary proxy, then press the labelled direction proxy.",
+        "relay_pair: tap the two stationary labelled relay proxy buttons in the requested order.",
+        "shutter_drop: select cargo with a stationary proxy, then press the instructed bay proxy while its visible shutter is open; direct stage nodes remain disabled."
+      ],
+      "autonomous_processes": [
+        "Every round advances autonomously from roundStartedAt: the visible countdown changes continuously and the round fails at 5000 ms without a successful dispatch.",
+        "gate_tag: stage tokens move at the generated target speed 116 px/s (with 21 px sinusoidal vertical motion) and the target's membership in the 44px half-width gate changes.",
+        "sync_hold: two needles move with elapsed task time; the cue begins at a generated 1420–1570 ms start and lasts 550 ms, with 195 ms timing tolerance.",
+        "vector_flick: each token pointer rotates continuously; difficulty 3 uses 29° orientation tolerance and 46px minimum direct travel.",
+        "relay_pair: token positions are static during the pair, but the five-second round clock continues while the two ordered taps are pending.",
+        "shutter_drop: the target bay's shutter opens/closes autonomously for 1040 ms in a 2100 ms cycle; the visible aperture and open state change while the 58px bay remains the target."
+      ],
+      "grouped_control_modes": [
+        "D=proxy_tag: every stationary proxy tag action across all gate_tag rounds, seeds, and attempts.",
+        "D=proxy_hold: every stationary proxy hold/release across all sync_hold rounds, seeds, and attempts.",
+        "D=proxy_flick: every proxy direction action after token selection across all vector_flick rounds, seeds, and attempts.",
+        "D=proxy_tap: every stationary proxy relay tap across all relay_pair rounds, seeds, and attempts.",
+        "D=proxy_drop: every proxy bay action after cargo selection across all shutter_drop rounds, seeds, and attempts."
+      ],
+      "delta_ms": 600,
+      "window_ms": 600,
+      "clause_i": {
+        "holds": true,
+        "reason": "For the common witness D=proxy_drop, take histories at the same task time before the bay action with identical I_t and no prior bay choice. The generator samples target_bay_index independently for each deck, so different seeds require different data-proxy-bay IDs; q(I_t) is therefore identical where the delayed-optimal action is not. The fixed target-bay phase does not remove this cross-seed target identity ambiguity."
+      },
+      "clause_ii": {
+        "holds": true,
+        "reason": "g uses the bounded W_t^600 window (six chronological frames), the two-line instruction, and the visible stage/proxy geometry. The target color identifies the correct bay; consecutive frames expose the target bay's changing open state and aperture, allowing proxy_drop after selecting the visible cargo to be delivered at t+Delta. Cargo selection itself can be prepared before the timed bay action in simplified mode."
+      },
+      "clause_iii": {
+        "holds": true,
+        "reason": "At t≈1580 ms, the target bay is at the center of its open interval. With no new action for Delta=600 ms, it is closed (the target phase is beyond the 1040 ms open interval), so the same bay drag/click a loses its outcome value; the next opening begins at about 3160 ms, before the 5000 ms round ends, so success remains possible. The strict loss is the autonomous shutter/aperture state change, not merely less deadline time."
+      },
+      "common_visible_process": "Common witness for simplified: in every shutter_drop round, the generator makes one randomly selected target bay visible and centers its cyclic opening near 1580 ms; the browser continuously renders its open/closed state and aperture. Over Delta=600 ms from the open center, the target shutter closes, making the proxy cargo/bay selection invalid at the same bay while the next opening (about 3160 ms) remains available. The same six-frame, 600 ms visible window supplies the target identity and the shutter trajectory used to choose the delayed action.",
+      "pre_run": {
+        "threshold": 0.5,
+        "at_least_half": false,
+        "rate": null,
+        "basis": "source_structural",
+        "reason": "The generator always emits gate_tag, sync_hold, vector_flick, relay_pair, and shutter_drop, and the grader requires all five dispatches. Gate, hold, flick, and drop each require an outcome-affecting action at a changing or time-specific state during the round; a solution that sends no outcome-affecting actions throughout the autonomous outcome phases cannot complete a generated deck. Thus no generated instance qualifies for a pre-run solution in this mode; no percentage is asserted.",
+        "seed_probe": null
+      },
+      "files_read_completely": [
+        "AGENTS.md",
+        "weird_captcha_gym/docs/controllability/real-time.md",
+        "weird_captcha_gym/environments/five_second_rule_env/controls.json",
+        "weird_captcha_gym/environments/five_second_rule_env/env.json",
+        "weird_captcha_gym/environments/five_second_rule_env/tasks/five_second_rule_seed_0001/task.json",
+        "weird_captcha_gym/environments/five_second_rule_env/tasks/five_second_rule_seed_0001/verifier.py",
+        "weird_captcha_gym/shared_scripts/incubator_generators/five_second_rule.py",
+        "weird_captcha_gym/shared_runtime/app/mechanics/five_second_rule.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/five_second_rule.css",
+        "weird_captcha_gym/shared_runtime/app/time_controller.js",
+        "weird_captcha_gym/shared_runtime/server/incubator_graders/five_second_rule.py",
+        "weird_captcha_gym/shared_runtime/verifier_helpers.py",
+        "weird_captcha_gym/tools/incubator_solvers/five_second_rule.py"
+      ],
+      "source_evidence": [
+        {
+          "path": "weird_captcha_gym/environments/five_second_rule_env/controls.json",
+          "lines": "18-22",
+          "claim": "Difficulty 3 supplies the exact five-second configuration: {\"round_duration_ms\":5000,\"object_count\":5,\"gate_half_width\":44,\"motion_speed\":116,\"vertical_amplitude\":21,\"hold_duration_ms\":550,\"hold_tolerance_ms\":195,\"flick_angle_tolerance_deg\":29,\"flick_min_travel_px\":46,\"relay_relation_depth\":2,\"bay_open_ms\":1040,\"bay_period_ms\":2100,\"bay_radius\":58}."
+        },
+        {
+          "path": "weird_captcha_gym/environments/five_second_rule_env/controls.json",
+          "lines": "37-42",
+          "claim": "The simplified interaction surface is implemented, while the shared task settings are observation_window_ms=600, frames_per_observation=6, and play_time_seconds=90."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/five_second_rule.py",
+          "lines": "345-377",
+          "claim": "Every generated shutter_drop round chooses a target cargo, randomly chooses target_bay_index, gives the target bay a visible color/geometry, and offsets its periodic opening around 1580 ms."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/five_second_rule.py",
+          "lines": "391-403",
+          "claim": "Every generated deck contains exactly five shuffled rounds, including one each of gate_tag, sync_hold, vector_flick, relay_pair, and shutter_drop."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/five_second_rule.js",
+          "lines": "117-134, 336-351",
+          "claim": "The browser exposes distinct simplified controls; in simplified mode the proxy token, direction, and bay controls are bound, while direct stage controls are used in full mode."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/five_second_rule.js",
+          "lines": "280-288, 386-400",
+          "claim": "A drop is accepted only when the selected target bay is open, and each animation frame updates the target bay's open class/aperture before expiring the round at 5000 ms."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/five_second_rule.css",
+          "lines": "278-283",
+          "claim": "The bay's shutter height is driven by the visible aperture and the open state visibly changes its glow/background."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/five_second_rule.py",
+          "lines": "9-21, 188-209, 243-280",
+          "claim": "The independent grader binds simplified to its mode-specific input source, validates the bay-open predicate/geometry, requires all five dispatch records, and checks the global event sequence."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/time_controller.js",
+          "lines": "55-78, 193-201, 267-339",
+          "claim": "The shared clock advances task time only while running, maps the mechanic's interactionNow to that task clock, and drives timers/requestAnimationFrame from the same virtual time; live progress therefore changes the rendered shutter between actions."
+        },
+        {
+          "path": "weird_captcha_gym/environments/five_second_rule_env/env.json",
+          "lines": "20-43",
+          "claim": "The environment exposes chronological frame-window observations at 10 fps and the same 600 ms/6-frame runner settings used by the witness."
+        }
+      ],
+      "uncertainties": []
+    },
+    {
+      "case_index": 247,
+      "public_environment_name": "Five-Second Rule",
+      "environment_id": "five_second_rule_env",
+      "difficulty": 4,
+      "interaction_mode": "full",
+      "label": "yes",
+      "controls_available": [
+        "Visible two-line dispatch order and five-second task clock for each of five rounds.",
+        "gate_tag: click the instructed moving stage token while its center is inside the white gate.",
+        "sync_hold: hold the instructed stage token and release it on the amber cue after both needles enter the notch.",
+        "vector_flick: drag from the instructed stage token in the required direction while its pointer faces the requested heading.",
+        "relay_pair: tap the two instructed stage tokens on the stage in the requested order.",
+        "shutter_drop: drag the instructed cargo token into the instructed live bay while its shutter is open."
+      ],
+      "autonomous_processes": [
+        "Every round advances autonomously from roundStartedAt: the visible countdown changes continuously and the round fails at 5000 ms without a successful dispatch.",
+        "gate_tag: stage tokens move at the generated target speed 132 px/s (with 27 px sinusoidal vertical motion) and the target's membership in the 35px half-width gate changes.",
+        "sync_hold: two needles move with elapsed task time; the cue begins at a generated 1420–1570 ms start and lasts 610 ms, with 150 ms timing tolerance.",
+        "vector_flick: each token pointer rotates continuously; difficulty 4 uses 21° orientation tolerance and 54px minimum direct travel.",
+        "relay_pair: token positions are static during the pair, but the five-second round clock continues while the two ordered taps are pending.",
+        "shutter_drop: the target bay's shutter opens/closes autonomously for 840 ms in a 2000 ms cycle; the visible aperture and open state change while the 49px bay remains the target."
+      ],
+      "grouped_control_modes": [
+        "D=direct_tag: every direct moving-token tag action across all gate_tag rounds, seeds, and attempts.",
+        "D=direct_hold: every direct token hold/release across all sync_hold rounds, seeds, and attempts.",
+        "D=direct_flick: every direct pointer drag across all vector_flick rounds, seeds, and attempts.",
+        "D=direct_tap: every direct ordered stage-token tap across all relay_pair rounds, seeds, and attempts.",
+        "D=direct_drag: every direct cargo-to-bay drag across all shutter_drop rounds, seeds, and attempts."
+      ],
+      "delta_ms": 500,
+      "window_ms": 600,
+      "clause_i": {
+        "holds": true,
+        "reason": "For the common witness D=direct_drag, take histories at the same task time before the bay action with identical I_t and no prior bay choice. The generator samples target_bay_index independently for each deck, so different seeds require different bay IDs and visible bay coordinates; q(I_t) is therefore identical where the delayed-optimal action is not. The fixed target-bay phase does not remove this cross-seed target identity ambiguity."
+      },
+      "clause_ii": {
+        "holds": true,
+        "reason": "g uses the bounded W_t^600 window (six chronological frames), the two-line instruction, and the visible stage/proxy geometry. The target color identifies the correct bay; consecutive frames expose the target bay's changing open state and aperture, allowing direct_drag from the visible cargo to the visible bay center to be delivered at t+Delta. Cargo selection itself can be prepared before the timed bay action in simplified mode."
+      },
+      "clause_iii": {
+        "holds": true,
+        "reason": "At t≈1580 ms, the target bay is at the center of its open interval. With no new action for Delta=500 ms, it is closed (the target phase is beyond the 840 ms open interval), so the same bay drag/click a loses its outcome value; the next opening begins at about 3160 ms, before the 5000 ms round ends, so success remains possible. The strict loss is the autonomous shutter/aperture state change, not merely less deadline time."
+      },
+      "common_visible_process": "Common witness for full: in every shutter_drop round, the generator makes one randomly selected target bay visible and centers its cyclic opening near 1580 ms; the browser continuously renders its open/closed state and aperture. Over Delta=500 ms from the open center, the target shutter closes, making the direct cargo drag invalid at the same bay while the next opening (about 3160 ms) remains available. The same six-frame, 600 ms visible window supplies the target identity and the shutter trajectory used to choose the delayed action.",
+      "pre_run": {
+        "threshold": 0.5,
+        "at_least_half": false,
+        "rate": null,
+        "basis": "source_structural",
+        "reason": "The generator always emits gate_tag, sync_hold, vector_flick, relay_pair, and shutter_drop, and the grader requires all five dispatches. Gate, hold, flick, and drop each require an outcome-affecting action at a changing or time-specific state during the round; a solution that sends no outcome-affecting actions throughout the autonomous outcome phases cannot complete a generated deck. Thus no generated instance qualifies for a pre-run solution in this mode; no percentage is asserted.",
+        "seed_probe": null
+      },
+      "files_read_completely": [
+        "AGENTS.md",
+        "weird_captcha_gym/docs/controllability/real-time.md",
+        "weird_captcha_gym/environments/five_second_rule_env/controls.json",
+        "weird_captcha_gym/environments/five_second_rule_env/env.json",
+        "weird_captcha_gym/environments/five_second_rule_env/tasks/five_second_rule_seed_0001/task.json",
+        "weird_captcha_gym/environments/five_second_rule_env/tasks/five_second_rule_seed_0001/verifier.py",
+        "weird_captcha_gym/shared_scripts/incubator_generators/five_second_rule.py",
+        "weird_captcha_gym/shared_runtime/app/mechanics/five_second_rule.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/five_second_rule.css",
+        "weird_captcha_gym/shared_runtime/app/time_controller.js",
+        "weird_captcha_gym/shared_runtime/server/incubator_graders/five_second_rule.py",
+        "weird_captcha_gym/shared_runtime/verifier_helpers.py",
+        "weird_captcha_gym/tools/incubator_solvers/five_second_rule.py"
+      ],
+      "source_evidence": [
+        {
+          "path": "weird_captcha_gym/environments/five_second_rule_env/controls.json",
+          "lines": "24-28",
+          "claim": "Difficulty 4 supplies the exact five-second configuration: {\"round_duration_ms\":5000,\"object_count\":6,\"gate_half_width\":35,\"motion_speed\":132,\"vertical_amplitude\":27,\"hold_duration_ms\":610,\"hold_tolerance_ms\":150,\"flick_angle_tolerance_deg\":21,\"flick_min_travel_px\":54,\"relay_relation_depth\":3,\"bay_open_ms\":840,\"bay_period_ms\":2000,\"bay_radius\":49}."
+        },
+        {
+          "path": "weird_captcha_gym/environments/five_second_rule_env/controls.json",
+          "lines": "37-42",
+          "claim": "The full interaction surface is implemented, while the shared task settings are observation_window_ms=600, frames_per_observation=6, and play_time_seconds=90."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/five_second_rule.py",
+          "lines": "345-377",
+          "claim": "Every generated shutter_drop round chooses a target cargo, randomly chooses target_bay_index, gives the target bay a visible color/geometry, and offsets its periodic opening around 1580 ms."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/five_second_rule.py",
+          "lines": "391-403",
+          "claim": "Every generated deck contains exactly five shuffled rounds, including one each of gate_tag, sync_hold, vector_flick, relay_pair, and shutter_drop."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/five_second_rule.js",
+          "lines": "117-134, 336-351",
+          "claim": "The browser exposes distinct full controls; in simplified mode the proxy token, direction, and bay controls are bound, while direct stage controls are used in full mode."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/five_second_rule.js",
+          "lines": "280-288, 386-400",
+          "claim": "A drop is accepted only when the selected target bay is open, and each animation frame updates the target bay's open class/aperture before expiring the round at 5000 ms."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/five_second_rule.css",
+          "lines": "278-283",
+          "claim": "The bay's shutter height is driven by the visible aperture and the open state visibly changes its glow/background."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/five_second_rule.py",
+          "lines": "9-21, 188-209, 243-280",
+          "claim": "The independent grader binds full to its mode-specific input source, validates the bay-open predicate/geometry, requires all five dispatch records, and checks the global event sequence."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/time_controller.js",
+          "lines": "55-78, 193-201, 267-339",
+          "claim": "The shared clock advances task time only while running, maps the mechanic's interactionNow to that task clock, and drives timers/requestAnimationFrame from the same virtual time; live progress therefore changes the rendered shutter between actions."
+        },
+        {
+          "path": "weird_captcha_gym/environments/five_second_rule_env/env.json",
+          "lines": "20-43",
+          "claim": "The environment exposes chronological frame-window observations at 10 fps and the same 600 ms/6-frame runner settings used by the witness."
+        }
+      ],
+      "uncertainties": []
+    },
+    {
+      "case_index": 248,
+      "public_environment_name": "Five-Second Rule",
+      "environment_id": "five_second_rule_env",
+      "difficulty": 4,
+      "interaction_mode": "simplified",
+      "label": "yes",
+      "controls_available": [
+        "Visible two-line dispatch order and five-second task clock for each of five rounds.",
+        "gate_tag: use a stationary labelled TAG proxy button for the instructed token.",
+        "sync_hold: use a stationary labelled HOLD proxy button and hold/release it on the visible cue.",
+        "vector_flick: select the instructed token with a stationary proxy, then press the labelled direction proxy.",
+        "relay_pair: tap the two stationary labelled relay proxy buttons in the requested order.",
+        "shutter_drop: select cargo with a stationary proxy, then press the instructed bay proxy while its visible shutter is open; direct stage nodes remain disabled."
+      ],
+      "autonomous_processes": [
+        "Every round advances autonomously from roundStartedAt: the visible countdown changes continuously and the round fails at 5000 ms without a successful dispatch.",
+        "gate_tag: stage tokens move at the generated target speed 132 px/s (with 27 px sinusoidal vertical motion) and the target's membership in the 35px half-width gate changes.",
+        "sync_hold: two needles move with elapsed task time; the cue begins at a generated 1420–1570 ms start and lasts 610 ms, with 150 ms timing tolerance.",
+        "vector_flick: each token pointer rotates continuously; difficulty 4 uses 21° orientation tolerance and 54px minimum direct travel.",
+        "relay_pair: token positions are static during the pair, but the five-second round clock continues while the two ordered taps are pending.",
+        "shutter_drop: the target bay's shutter opens/closes autonomously for 840 ms in a 2000 ms cycle; the visible aperture and open state change while the 49px bay remains the target."
+      ],
+      "grouped_control_modes": [
+        "D=proxy_tag: every stationary proxy tag action across all gate_tag rounds, seeds, and attempts.",
+        "D=proxy_hold: every stationary proxy hold/release across all sync_hold rounds, seeds, and attempts.",
+        "D=proxy_flick: every proxy direction action after token selection across all vector_flick rounds, seeds, and attempts.",
+        "D=proxy_tap: every stationary proxy relay tap across all relay_pair rounds, seeds, and attempts.",
+        "D=proxy_drop: every proxy bay action after cargo selection across all shutter_drop rounds, seeds, and attempts."
+      ],
+      "delta_ms": 500,
+      "window_ms": 600,
+      "clause_i": {
+        "holds": true,
+        "reason": "For the common witness D=proxy_drop, take histories at the same task time before the bay action with identical I_t and no prior bay choice. The generator samples target_bay_index independently for each deck, so different seeds require different data-proxy-bay IDs; q(I_t) is therefore identical where the delayed-optimal action is not. The fixed target-bay phase does not remove this cross-seed target identity ambiguity."
+      },
+      "clause_ii": {
+        "holds": true,
+        "reason": "g uses the bounded W_t^600 window (six chronological frames), the two-line instruction, and the visible stage/proxy geometry. The target color identifies the correct bay; consecutive frames expose the target bay's changing open state and aperture, allowing proxy_drop after selecting the visible cargo to be delivered at t+Delta. Cargo selection itself can be prepared before the timed bay action in simplified mode."
+      },
+      "clause_iii": {
+        "holds": true,
+        "reason": "At t≈1580 ms, the target bay is at the center of its open interval. With no new action for Delta=500 ms, it is closed (the target phase is beyond the 840 ms open interval), so the same bay drag/click a loses its outcome value; the next opening begins at about 3160 ms, before the 5000 ms round ends, so success remains possible. The strict loss is the autonomous shutter/aperture state change, not merely less deadline time."
+      },
+      "common_visible_process": "Common witness for simplified: in every shutter_drop round, the generator makes one randomly selected target bay visible and centers its cyclic opening near 1580 ms; the browser continuously renders its open/closed state and aperture. Over Delta=500 ms from the open center, the target shutter closes, making the proxy cargo/bay selection invalid at the same bay while the next opening (about 3160 ms) remains available. The same six-frame, 600 ms visible window supplies the target identity and the shutter trajectory used to choose the delayed action.",
+      "pre_run": {
+        "threshold": 0.5,
+        "at_least_half": false,
+        "rate": null,
+        "basis": "source_structural",
+        "reason": "The generator always emits gate_tag, sync_hold, vector_flick, relay_pair, and shutter_drop, and the grader requires all five dispatches. Gate, hold, flick, and drop each require an outcome-affecting action at a changing or time-specific state during the round; a solution that sends no outcome-affecting actions throughout the autonomous outcome phases cannot complete a generated deck. Thus no generated instance qualifies for a pre-run solution in this mode; no percentage is asserted.",
+        "seed_probe": null
+      },
+      "files_read_completely": [
+        "AGENTS.md",
+        "weird_captcha_gym/docs/controllability/real-time.md",
+        "weird_captcha_gym/environments/five_second_rule_env/controls.json",
+        "weird_captcha_gym/environments/five_second_rule_env/env.json",
+        "weird_captcha_gym/environments/five_second_rule_env/tasks/five_second_rule_seed_0001/task.json",
+        "weird_captcha_gym/environments/five_second_rule_env/tasks/five_second_rule_seed_0001/verifier.py",
+        "weird_captcha_gym/shared_scripts/incubator_generators/five_second_rule.py",
+        "weird_captcha_gym/shared_runtime/app/mechanics/five_second_rule.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/five_second_rule.css",
+        "weird_captcha_gym/shared_runtime/app/time_controller.js",
+        "weird_captcha_gym/shared_runtime/server/incubator_graders/five_second_rule.py",
+        "weird_captcha_gym/shared_runtime/verifier_helpers.py",
+        "weird_captcha_gym/tools/incubator_solvers/five_second_rule.py"
+      ],
+      "source_evidence": [
+        {
+          "path": "weird_captcha_gym/environments/five_second_rule_env/controls.json",
+          "lines": "24-28",
+          "claim": "Difficulty 4 supplies the exact five-second configuration: {\"round_duration_ms\":5000,\"object_count\":6,\"gate_half_width\":35,\"motion_speed\":132,\"vertical_amplitude\":27,\"hold_duration_ms\":610,\"hold_tolerance_ms\":150,\"flick_angle_tolerance_deg\":21,\"flick_min_travel_px\":54,\"relay_relation_depth\":3,\"bay_open_ms\":840,\"bay_period_ms\":2000,\"bay_radius\":49}."
+        },
+        {
+          "path": "weird_captcha_gym/environments/five_second_rule_env/controls.json",
+          "lines": "37-42",
+          "claim": "The simplified interaction surface is implemented, while the shared task settings are observation_window_ms=600, frames_per_observation=6, and play_time_seconds=90."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/five_second_rule.py",
+          "lines": "345-377",
+          "claim": "Every generated shutter_drop round chooses a target cargo, randomly chooses target_bay_index, gives the target bay a visible color/geometry, and offsets its periodic opening around 1580 ms."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/five_second_rule.py",
+          "lines": "391-403",
+          "claim": "Every generated deck contains exactly five shuffled rounds, including one each of gate_tag, sync_hold, vector_flick, relay_pair, and shutter_drop."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/five_second_rule.js",
+          "lines": "117-134, 336-351",
+          "claim": "The browser exposes distinct simplified controls; in simplified mode the proxy token, direction, and bay controls are bound, while direct stage controls are used in full mode."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/five_second_rule.js",
+          "lines": "280-288, 386-400",
+          "claim": "A drop is accepted only when the selected target bay is open, and each animation frame updates the target bay's open class/aperture before expiring the round at 5000 ms."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/five_second_rule.css",
+          "lines": "278-283",
+          "claim": "The bay's shutter height is driven by the visible aperture and the open state visibly changes its glow/background."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/five_second_rule.py",
+          "lines": "9-21, 188-209, 243-280",
+          "claim": "The independent grader binds simplified to its mode-specific input source, validates the bay-open predicate/geometry, requires all five dispatch records, and checks the global event sequence."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/time_controller.js",
+          "lines": "55-78, 193-201, 267-339",
+          "claim": "The shared clock advances task time only while running, maps the mechanic's interactionNow to that task clock, and drives timers/requestAnimationFrame from the same virtual time; live progress therefore changes the rendered shutter between actions."
+        },
+        {
+          "path": "weird_captcha_gym/environments/five_second_rule_env/env.json",
+          "lines": "20-43",
+          "claim": "The environment exposes chronological frame-window observations at 10 fps and the same 600 ms/6-frame runner settings used by the witness."
+        }
+      ],
+      "uncertainties": []
+    },
+    {
+      "case_index": 249,
+      "public_environment_name": "Five-Second Rule",
+      "environment_id": "five_second_rule_env",
+      "difficulty": 5,
+      "interaction_mode": "full",
+      "label": "yes",
+      "controls_available": [
+        "Visible two-line dispatch order and five-second task clock for each of five rounds.",
+        "gate_tag: click the instructed moving stage token while its center is inside the white gate.",
+        "sync_hold: hold the instructed stage token and release it on the amber cue after both needles enter the notch.",
+        "vector_flick: drag from the instructed stage token in the required direction while its pointer faces the requested heading.",
+        "relay_pair: tap the two instructed stage tokens on the stage in the requested order.",
+        "shutter_drop: drag the instructed cargo token into the instructed live bay while its shutter is open."
+      ],
+      "autonomous_processes": [
+        "Every round advances autonomously from roundStartedAt: the visible countdown changes continuously and the round fails at 5000 ms without a successful dispatch.",
+        "gate_tag: stage tokens move at the generated target speed 152 px/s (with 34 px sinusoidal vertical motion) and the target's membership in the 27px half-width gate changes.",
+        "sync_hold: two needles move with elapsed task time; the cue begins at a generated 1420–1570 ms start and lasts 670 ms, with 110 ms timing tolerance.",
+        "vector_flick: each token pointer rotates continuously; difficulty 5 uses 15° orientation tolerance and 62px minimum direct travel.",
+        "relay_pair: token positions are static during the pair, but the five-second round clock continues while the two ordered taps are pending.",
+        "shutter_drop: the target bay's shutter opens/closes autonomously for 680 ms in a 1900 ms cycle; the visible aperture and open state change while the 42px bay remains the target."
+      ],
+      "grouped_control_modes": [
+        "D=direct_tag: every direct moving-token tag action across all gate_tag rounds, seeds, and attempts.",
+        "D=direct_hold: every direct token hold/release across all sync_hold rounds, seeds, and attempts.",
+        "D=direct_flick: every direct pointer drag across all vector_flick rounds, seeds, and attempts.",
+        "D=direct_tap: every direct ordered stage-token tap across all relay_pair rounds, seeds, and attempts.",
+        "D=direct_drag: every direct cargo-to-bay drag across all shutter_drop rounds, seeds, and attempts."
+      ],
+      "delta_ms": 400,
+      "window_ms": 600,
+      "clause_i": {
+        "holds": true,
+        "reason": "For the common witness D=direct_drag, take histories at the same task time before the bay action with identical I_t and no prior bay choice. The generator samples target_bay_index independently for each deck, so different seeds require different bay IDs and visible bay coordinates; q(I_t) is therefore identical where the delayed-optimal action is not. The fixed target-bay phase does not remove this cross-seed target identity ambiguity."
+      },
+      "clause_ii": {
+        "holds": true,
+        "reason": "g uses the bounded W_t^600 window (six chronological frames), the two-line instruction, and the visible stage/proxy geometry. The target color identifies the correct bay; consecutive frames expose the target bay's changing open state and aperture, allowing direct_drag from the visible cargo to the visible bay center to be delivered at t+Delta. Cargo selection itself can be prepared before the timed bay action in simplified mode."
+      },
+      "clause_iii": {
+        "holds": true,
+        "reason": "At t≈1580 ms, the target bay is at the center of its open interval. With no new action for Delta=400 ms, it is closed (the target phase is beyond the 680 ms open interval), so the same bay drag/click a loses its outcome value; the next opening begins at about 3140 ms, before the 5000 ms round ends, so success remains possible. The strict loss is the autonomous shutter/aperture state change, not merely less deadline time."
+      },
+      "common_visible_process": "Common witness for full: in every shutter_drop round, the generator makes one randomly selected target bay visible and centers its cyclic opening near 1580 ms; the browser continuously renders its open/closed state and aperture. Over Delta=400 ms from the open center, the target shutter closes, making the direct cargo drag invalid at the same bay while the next opening (about 3140 ms) remains available. The same six-frame, 600 ms visible window supplies the target identity and the shutter trajectory used to choose the delayed action.",
+      "pre_run": {
+        "threshold": 0.5,
+        "at_least_half": false,
+        "rate": null,
+        "basis": "source_structural",
+        "reason": "The generator always emits gate_tag, sync_hold, vector_flick, relay_pair, and shutter_drop, and the grader requires all five dispatches. Gate, hold, flick, and drop each require an outcome-affecting action at a changing or time-specific state during the round; a solution that sends no outcome-affecting actions throughout the autonomous outcome phases cannot complete a generated deck. Thus no generated instance qualifies for a pre-run solution in this mode; no percentage is asserted.",
+        "seed_probe": null
+      },
+      "files_read_completely": [
+        "AGENTS.md",
+        "weird_captcha_gym/docs/controllability/real-time.md",
+        "weird_captcha_gym/environments/five_second_rule_env/controls.json",
+        "weird_captcha_gym/environments/five_second_rule_env/env.json",
+        "weird_captcha_gym/environments/five_second_rule_env/tasks/five_second_rule_seed_0001/task.json",
+        "weird_captcha_gym/environments/five_second_rule_env/tasks/five_second_rule_seed_0001/verifier.py",
+        "weird_captcha_gym/shared_scripts/incubator_generators/five_second_rule.py",
+        "weird_captcha_gym/shared_runtime/app/mechanics/five_second_rule.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/five_second_rule.css",
+        "weird_captcha_gym/shared_runtime/app/time_controller.js",
+        "weird_captcha_gym/shared_runtime/server/incubator_graders/five_second_rule.py",
+        "weird_captcha_gym/shared_runtime/verifier_helpers.py",
+        "weird_captcha_gym/tools/incubator_solvers/five_second_rule.py"
+      ],
+      "source_evidence": [
+        {
+          "path": "weird_captcha_gym/environments/five_second_rule_env/controls.json",
+          "lines": "30-34",
+          "claim": "Difficulty 5 supplies the exact five-second configuration: {\"round_duration_ms\":5000,\"object_count\":7,\"gate_half_width\":27,\"motion_speed\":152,\"vertical_amplitude\":34,\"hold_duration_ms\":670,\"hold_tolerance_ms\":110,\"flick_angle_tolerance_deg\":15,\"flick_min_travel_px\":62,\"relay_relation_depth\":4,\"bay_open_ms\":680,\"bay_period_ms\":1900,\"bay_radius\":42}."
+        },
+        {
+          "path": "weird_captcha_gym/environments/five_second_rule_env/controls.json",
+          "lines": "37-42",
+          "claim": "The full interaction surface is implemented, while the shared task settings are observation_window_ms=600, frames_per_observation=6, and play_time_seconds=90."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/five_second_rule.py",
+          "lines": "345-377",
+          "claim": "Every generated shutter_drop round chooses a target cargo, randomly chooses target_bay_index, gives the target bay a visible color/geometry, and offsets its periodic opening around 1580 ms."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/five_second_rule.py",
+          "lines": "391-403",
+          "claim": "Every generated deck contains exactly five shuffled rounds, including one each of gate_tag, sync_hold, vector_flick, relay_pair, and shutter_drop."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/five_second_rule.js",
+          "lines": "117-134, 336-351",
+          "claim": "The browser exposes distinct full controls; in simplified mode the proxy token, direction, and bay controls are bound, while direct stage controls are used in full mode."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/five_second_rule.js",
+          "lines": "280-288, 386-400",
+          "claim": "A drop is accepted only when the selected target bay is open, and each animation frame updates the target bay's open class/aperture before expiring the round at 5000 ms."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/five_second_rule.css",
+          "lines": "278-283",
+          "claim": "The bay's shutter height is driven by the visible aperture and the open state visibly changes its glow/background."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/five_second_rule.py",
+          "lines": "9-21, 188-209, 243-280",
+          "claim": "The independent grader binds full to its mode-specific input source, validates the bay-open predicate/geometry, requires all five dispatch records, and checks the global event sequence."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/time_controller.js",
+          "lines": "55-78, 193-201, 267-339",
+          "claim": "The shared clock advances task time only while running, maps the mechanic's interactionNow to that task clock, and drives timers/requestAnimationFrame from the same virtual time; live progress therefore changes the rendered shutter between actions."
+        },
+        {
+          "path": "weird_captcha_gym/environments/five_second_rule_env/env.json",
+          "lines": "20-43",
+          "claim": "The environment exposes chronological frame-window observations at 10 fps and the same 600 ms/6-frame runner settings used by the witness."
+        }
+      ],
+      "uncertainties": []
+    },
+    {
+      "case_index": 250,
+      "public_environment_name": "Five-Second Rule",
+      "environment_id": "five_second_rule_env",
+      "difficulty": 5,
+      "interaction_mode": "simplified",
+      "label": "yes",
+      "controls_available": [
+        "Visible two-line dispatch order and five-second task clock for each of five rounds.",
+        "gate_tag: use a stationary labelled TAG proxy button for the instructed token.",
+        "sync_hold: use a stationary labelled HOLD proxy button and hold/release it on the visible cue.",
+        "vector_flick: select the instructed token with a stationary proxy, then press the labelled direction proxy.",
+        "relay_pair: tap the two stationary labelled relay proxy buttons in the requested order.",
+        "shutter_drop: select cargo with a stationary proxy, then press the instructed bay proxy while its visible shutter is open; direct stage nodes remain disabled."
+      ],
+      "autonomous_processes": [
+        "Every round advances autonomously from roundStartedAt: the visible countdown changes continuously and the round fails at 5000 ms without a successful dispatch.",
+        "gate_tag: stage tokens move at the generated target speed 152 px/s (with 34 px sinusoidal vertical motion) and the target's membership in the 27px half-width gate changes.",
+        "sync_hold: two needles move with elapsed task time; the cue begins at a generated 1420–1570 ms start and lasts 670 ms, with 110 ms timing tolerance.",
+        "vector_flick: each token pointer rotates continuously; difficulty 5 uses 15° orientation tolerance and 62px minimum direct travel.",
+        "relay_pair: token positions are static during the pair, but the five-second round clock continues while the two ordered taps are pending.",
+        "shutter_drop: the target bay's shutter opens/closes autonomously for 680 ms in a 1900 ms cycle; the visible aperture and open state change while the 42px bay remains the target."
+      ],
+      "grouped_control_modes": [
+        "D=proxy_tag: every stationary proxy tag action across all gate_tag rounds, seeds, and attempts.",
+        "D=proxy_hold: every stationary proxy hold/release across all sync_hold rounds, seeds, and attempts.",
+        "D=proxy_flick: every proxy direction action after token selection across all vector_flick rounds, seeds, and attempts.",
+        "D=proxy_tap: every stationary proxy relay tap across all relay_pair rounds, seeds, and attempts.",
+        "D=proxy_drop: every proxy bay action after cargo selection across all shutter_drop rounds, seeds, and attempts."
+      ],
+      "delta_ms": 400,
+      "window_ms": 600,
+      "clause_i": {
+        "holds": true,
+        "reason": "For the common witness D=proxy_drop, take histories at the same task time before the bay action with identical I_t and no prior bay choice. The generator samples target_bay_index independently for each deck, so different seeds require different data-proxy-bay IDs; q(I_t) is therefore identical where the delayed-optimal action is not. The fixed target-bay phase does not remove this cross-seed target identity ambiguity."
+      },
+      "clause_ii": {
+        "holds": true,
+        "reason": "g uses the bounded W_t^600 window (six chronological frames), the two-line instruction, and the visible stage/proxy geometry. The target color identifies the correct bay; consecutive frames expose the target bay's changing open state and aperture, allowing proxy_drop after selecting the visible cargo to be delivered at t+Delta. Cargo selection itself can be prepared before the timed bay action in simplified mode."
+      },
+      "clause_iii": {
+        "holds": true,
+        "reason": "At t≈1580 ms, the target bay is at the center of its open interval. With no new action for Delta=400 ms, it is closed (the target phase is beyond the 680 ms open interval), so the same bay drag/click a loses its outcome value; the next opening begins at about 3140 ms, before the 5000 ms round ends, so success remains possible. The strict loss is the autonomous shutter/aperture state change, not merely less deadline time."
+      },
+      "common_visible_process": "Common witness for simplified: in every shutter_drop round, the generator makes one randomly selected target bay visible and centers its cyclic opening near 1580 ms; the browser continuously renders its open/closed state and aperture. Over Delta=400 ms from the open center, the target shutter closes, making the proxy cargo/bay selection invalid at the same bay while the next opening (about 3140 ms) remains available. The same six-frame, 600 ms visible window supplies the target identity and the shutter trajectory used to choose the delayed action.",
+      "pre_run": {
+        "threshold": 0.5,
+        "at_least_half": false,
+        "rate": null,
+        "basis": "source_structural",
+        "reason": "The generator always emits gate_tag, sync_hold, vector_flick, relay_pair, and shutter_drop, and the grader requires all five dispatches. Gate, hold, flick, and drop each require an outcome-affecting action at a changing or time-specific state during the round; a solution that sends no outcome-affecting actions throughout the autonomous outcome phases cannot complete a generated deck. Thus no generated instance qualifies for a pre-run solution in this mode; no percentage is asserted.",
+        "seed_probe": null
+      },
+      "files_read_completely": [
+        "AGENTS.md",
+        "weird_captcha_gym/docs/controllability/real-time.md",
+        "weird_captcha_gym/environments/five_second_rule_env/controls.json",
+        "weird_captcha_gym/environments/five_second_rule_env/env.json",
+        "weird_captcha_gym/environments/five_second_rule_env/tasks/five_second_rule_seed_0001/task.json",
+        "weird_captcha_gym/environments/five_second_rule_env/tasks/five_second_rule_seed_0001/verifier.py",
+        "weird_captcha_gym/shared_scripts/incubator_generators/five_second_rule.py",
+        "weird_captcha_gym/shared_runtime/app/mechanics/five_second_rule.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/five_second_rule.css",
+        "weird_captcha_gym/shared_runtime/app/time_controller.js",
+        "weird_captcha_gym/shared_runtime/server/incubator_graders/five_second_rule.py",
+        "weird_captcha_gym/shared_runtime/verifier_helpers.py",
+        "weird_captcha_gym/tools/incubator_solvers/five_second_rule.py"
+      ],
+      "source_evidence": [
+        {
+          "path": "weird_captcha_gym/environments/five_second_rule_env/controls.json",
+          "lines": "30-34",
+          "claim": "Difficulty 5 supplies the exact five-second configuration: {\"round_duration_ms\":5000,\"object_count\":7,\"gate_half_width\":27,\"motion_speed\":152,\"vertical_amplitude\":34,\"hold_duration_ms\":670,\"hold_tolerance_ms\":110,\"flick_angle_tolerance_deg\":15,\"flick_min_travel_px\":62,\"relay_relation_depth\":4,\"bay_open_ms\":680,\"bay_period_ms\":1900,\"bay_radius\":42}."
+        },
+        {
+          "path": "weird_captcha_gym/environments/five_second_rule_env/controls.json",
+          "lines": "37-42",
+          "claim": "The simplified interaction surface is implemented, while the shared task settings are observation_window_ms=600, frames_per_observation=6, and play_time_seconds=90."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/five_second_rule.py",
+          "lines": "345-377",
+          "claim": "Every generated shutter_drop round chooses a target cargo, randomly chooses target_bay_index, gives the target bay a visible color/geometry, and offsets its periodic opening around 1580 ms."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/five_second_rule.py",
+          "lines": "391-403",
+          "claim": "Every generated deck contains exactly five shuffled rounds, including one each of gate_tag, sync_hold, vector_flick, relay_pair, and shutter_drop."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/five_second_rule.js",
+          "lines": "117-134, 336-351",
+          "claim": "The browser exposes distinct simplified controls; in simplified mode the proxy token, direction, and bay controls are bound, while direct stage controls are used in full mode."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/five_second_rule.js",
+          "lines": "280-288, 386-400",
+          "claim": "A drop is accepted only when the selected target bay is open, and each animation frame updates the target bay's open class/aperture before expiring the round at 5000 ms."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/five_second_rule.css",
+          "lines": "278-283",
+          "claim": "The bay's shutter height is driven by the visible aperture and the open state visibly changes its glow/background."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/five_second_rule.py",
+          "lines": "9-21, 188-209, 243-280",
+          "claim": "The independent grader binds simplified to its mode-specific input source, validates the bay-open predicate/geometry, requires all five dispatch records, and checks the global event sequence."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/time_controller.js",
+          "lines": "55-78, 193-201, 267-339",
+          "claim": "The shared clock advances task time only while running, maps the mechanic's interactionNow to that task clock, and drives timers/requestAnimationFrame from the same virtual time; live progress therefore changes the rendered shutter between actions."
+        },
+        {
+          "path": "weird_captcha_gym/environments/five_second_rule_env/env.json",
+          "lines": "20-43",
+          "claim": "The environment exposes chronological frame-window observations at 10 fps and the same 600 ms/6-frame runner settings used by the witness."
+        }
+      ],
+      "uncertainties": []
+    }
+  ]
+}

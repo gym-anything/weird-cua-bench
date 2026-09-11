@@ -1,0 +1,152 @@
+{
+  "case_index": 68,
+  "public_environment_name": "Cell Gatekeeper",
+  "environment_id": "cell_gatekeeper_env",
+  "difficulty": 4,
+  "interaction_mode": "simplified",
+  "label": "no",
+  "controls_available": [
+    "Difficulty 4: three solute pairs (sodium, potassium, glucose), five membrane slots, three ATP pumps, two required selective leaks, two inert toolbox decoys, five pump crossings per pump, goal width 2, passive period 4 ticks, pump period 3 ticks, ATP burst size 3, six-tick hold, maximum 270 ticks, and numeric count readouts.",
+    "Simplified protein placement: choose a visible membrane slot and click PLACE on a visible protein card.",
+    "Simplified protein removal: click EJECT for an occupied membrane slot.",
+    "Simplified solute adjustment: visible OUTSIDE/INSIDE plus/minus one-particle buttons for each solute.",
+    "Simplified ATP supply: click SUPPLY ATP BURST (+3).",
+    "Administrative NEW CELL retry and LOCK GRADIENT certification controls."
+  ],
+  "autonomous_processes": [
+    "The task clock advances in 100 ms ticks while the browser is running; in the configured paused schedule, the shared clock advances one 600 ms observation window at a time and the mechanic captures six chronological frames.",
+    "Each installed non-decoy leak attempts one passive high-concentration-to-low-concentration particle crossing when (tick + slot) is divisible by the configured passive period 4; successful crossings change the visible counts and crossing ledger without a new agent action.",
+    "At each multiple of the pump period 3, all installed pumps fire as a cohort only when the shared ATP reservoir can service all three pumps; each successful crossing changes two visible counts, consumes one ATP, and updates the active crossing ledger.",
+    "On every advancing tick, the stable hold counter increments when the base goal is satisfied and resets otherwise; the state times out at 270 ticks. Canvas particle positions and the membrane clock also animate, but that idle animation is not itself outcome-affecting."
+  ],
+  "grouped_control_modes": [
+    "Simplified protein placement, grouped over every visible protein card and empty membrane-slot choice.",
+    "Simplified protein ejection, grouped over every occupied membrane slot.",
+    "Simplified solute adjustment, grouped over every species, compartment, and plus/minus one-particle button.",
+    "Simplified ATP burst supply, grouped over every SUPPLY ATP BURST click.",
+    "LOCK GRADIENT certification and NEW CELL retry are administrative controls, not the physical control mode used for the real-time diagnosis."
+  ],
+  "delta_ms": null,
+  "window_ms": 600,
+  "clause_i": {
+    "holds": true,
+    "reason": "For a candidate solute-adjustment/placement mode, the generator randomizes starting counts, target bands, and the shuffled visible protein catalog. Histories can therefore share the same prior action/timing record while requiring different visible cards, compartments, or plus/minus signs for the tie-broken fastest successful continuation; an observation-free q cannot select those choices across the grouped mode. This observation dependence does not by itself establish the conjunction because it must share clause (iii)'s expiring opportunity."
+  },
+  "clause_ii": {
+    "holds": true,
+    "reason": "The L4 simplified page visibly renders the target bands, numeric current counts, installed slots, ATP amount, crossing ledger, transport trace, and task tick. The configured 600 ms bound (six 100 ms ticks and six chronological frames) is sufficient to expose the current transport state and lets a screenshot-only g choose the corresponding visible placement, ejection, adjustment, or ATP control without private state."
+  },
+  "clause_iii": {
+    "holds": false,
+    "reason": "Leaks and ATP pumps do change the visible counts autonomously, but they do not make a useful simplified control expire or become strictly less effective in outcome value. The visible plus/minus controls can reverse count drift, EJECT stops a transporter, and removing a pump after its required crossings preserves its installed-history credit; the grader imposes no penalty for extra crossings or corrective actions, only final bands, required crossings, leak removal, and the stable hold. Any loss caused only by consumed task time, the deadline, or later completion is excluded by the definition. Thus no legitimate D, Delta, and bounded window supplies a common clause-(iii) witness."
+  },
+  "common_visible_process": "The common candidate process is fixed-period membrane transport: installed leaks and ATP pumps visibly update concentration bars and the crossing ledger while the task clock advances. It supplies useful recent observations, but in this simplified configuration the resulting count changes remain recoverable with visible controls and no action opportunity strictly expires, so there is no valid common real-time witness.",
+  "pre_run": {
+    "threshold": 0.5,
+    "at_least_half": true,
+    "rate": null,
+    "basis": "source_structural",
+    "reason": "The generator builds each target around exactly one passive crossing for each required leak plus exactly five pump crossings, and its initial low/high ranges keep all of those moves within the chamber capacity. During preparation, a screenshot-only policy can place each of the two visible required leaks, wait for its visible passive crossing, eject it, place the three pumps, and supply five visible ATP bursts (15 ATP total). After the last burst, it can send no more outcome-affecting actions: the three pumps fire together five times at period-3 ticks, exhaust ATP, and then the target bands remain stable for the required six ticks. LOCK GRADIENT is administrative. This construction supplies a successful pre-run solution for every generated instance, so the at-least-half threshold is met; no percentage estimate is reported.",
+    "seed_probe": null
+  },
+  "files_read_completely": [
+    "AGENTS.md",
+    "weird_captcha_gym/docs/controllability/real-time.md",
+    "weird_captcha_gym/environments/cell_gatekeeper_env/controls.json",
+    "weird_captcha_gym/environments/cell_gatekeeper_env/env.json",
+    "weird_captcha_gym/environments/cell_gatekeeper_env/tasks/cell_gatekeeper_seed_0001/task.json",
+    "weird_captcha_gym/environments/cell_gatekeeper_env/tasks/cell_gatekeeper_seed_0001/setup_task.sh",
+    "weird_captcha_gym/shared_scripts/incubator_generators/cell_gatekeeper.py",
+    "weird_captcha_gym/shared_runtime/app/index.html",
+    "weird_captcha_gym/shared_runtime/app/time_controller.js",
+    "weird_captcha_gym/shared_runtime/app/mechanics/cell_gatekeeper.js",
+    "weird_captcha_gym/shared_runtime/app/mechanics/cell_gatekeeper.css",
+    "weird_captcha_gym/shared_runtime/verifier_helpers.py",
+    "weird_captcha_gym/shared_runtime/server/incubator_graders/cell_gatekeeper.py",
+    "weird_captcha_gym/environments/cell_gatekeeper_env/tasks/cell_gatekeeper_seed_0001/verifier.py",
+    "weird_captcha_gym/tools/incubator_solvers/cell_gatekeeper.py"
+  ],
+  "source_evidence": [
+    {
+      "path": "weird_captcha_gym/environments/cell_gatekeeper_env/controls.json",
+      "lines": "67-83",
+      "claim": "The assigned difficulty-4 profile activates three species, five slots, two required leaks, five pump cycles, goal width 2, passive period 4, pump period 3, ATP batch 3, numeric readouts, and two decoys."
+    },
+    {
+      "path": "weird_captcha_gym/environments/cell_gatekeeper_env/controls.json",
+      "lines": "106-119",
+      "claim": "Simplified interaction uses visible placement/ejection/solute/ATP proxies, and the configured observation bound is 600 ms with six frames."
+    },
+    {
+      "path": "weird_captcha_gym/environments/cell_gatekeeper_env/env.json",
+      "lines": "20-45",
+      "claim": "The runner exposes a 10 fps frame window at the same 600 ms, six-frame, 180-second settings."
+    },
+    {
+      "path": "weird_captcha_gym/shared_scripts/incubator_generators/cell_gatekeeper.py",
+      "lines": "121-162",
+      "claim": "The generator applies the selected control condition, randomizes low/high starting counts, builds the pump-direction start state, and centers target bands on the result after pump cycles plus passive credit."
+    },
+    {
+      "path": "weird_captcha_gym/shared_scripts/incubator_generators/cell_gatekeeper.py",
+      "lines": "164-245",
+      "claim": "L4 adds only visible decoys, constructs the required protein recipe, and initializes an active zero-ATP world with empty slots and zero crossing counts."
+    },
+    {
+      "path": "weird_captcha_gym/shared_runtime/app/mechanics/cell_gatekeeper.js",
+      "lines": "18-64",
+      "claim": "The browser advances task ticks autonomously; leaks move one particle at their period, pumps fire as an ATP-serviced cohort at their period, and stable_ticks/timeout update without agent actions."
+    },
+    {
+      "path": "weird_captcha_gym/shared_runtime/app/mechanics/cell_gatekeeper.js",
+      "lines": "67-90",
+      "claim": "Success requires target bands, every required protein's installation and crossing obligations, removed required leaks, and the configured stable hold."
+    },
+    {
+      "path": "weird_captcha_gym/shared_runtime/app/mechanics/cell_gatekeeper.js",
+      "lines": "92-184; 247-376",
+      "claim": "The visible UI shows simplified controls, numeric or bar-only counts according to the profile, target bands, installed slots, ATP, crossing trace/ledger, task tick, and moving canvas particles."
+    },
+    {
+      "path": "weird_captcha_gym/shared_runtime/app/mechanics/cell_gatekeeper.js",
+      "lines": "194-245; 428-456",
+      "claim": "Each simplified button records a visible install, remove, solute plus/minus, or ATP burst event; the event is synchronized to autonomous task time before mutation."
+    },
+    {
+      "path": "weird_captcha_gym/shared_runtime/app/mechanics/cell_gatekeeper.css",
+      "lines": "64-66; 78-95; 97-109",
+      "claim": "The CSS visibly renders concentration tracks/bands, simplified buttons and ATP supply, the crossing ledger, the hold status, and administrative lock controls."
+    },
+    {
+      "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/cell_gatekeeper.py",
+      "lines": "29-79",
+      "claim": "The independent replay reproduces passive and cohort ATP transport at the configured periods and increments stable_ticks only while the base goal holds."
+    },
+    {
+      "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/cell_gatekeeper.py",
+      "lines": "81-172",
+      "claim": "Replay accepts all four reversible event families in simplified mode, requires only final target/crossing/leak-removal/stable-hold conditions, and does not penalize extra transport beyond those conditions."
+    },
+    {
+      "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/cell_gatekeeper.py",
+      "lines": "189-263",
+      "claim": "The grader enforces monotonic event times and max_ticks, then compares the final replay state and binary accepted outcome; certification is a final administrative event."
+    },
+    {
+      "path": "weird_captcha_gym/tools/incubator_solvers/cell_gatekeeper.py",
+      "lines": "151-194",
+      "claim": "The reference visible solver places and observes leaks, ejects them, installs pumps, supplies ATP, waits for crossings, calibrates with visible plus/minus controls, and then locks, demonstrating recovery without precise pump stopping."
+    },
+    {
+      "path": "weird_captcha_gym/shared_runtime/app/time_controller.js",
+      "lines": "55-78; 155-177; 548-576",
+      "claim": "The shared clock virtualizes task time, freezes it while paused, and runs exactly bounded observation windows; native input handling does not advance paused task time."
+    },
+    {
+      "path": "weird_captcha_gym/docs/controllability/real-time.md",
+      "lines": "38-96; 105-121",
+      "claim": "The frozen definition requires one common visible process whose action opportunity strictly degrades within a positive delay, and the pre-run threshold overrides the catalog label at one-half."
+    }
+  ],
+  "uncertainties": []
+}

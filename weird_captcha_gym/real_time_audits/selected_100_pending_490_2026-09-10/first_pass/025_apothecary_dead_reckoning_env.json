@@ -1,0 +1,133 @@
+{
+  "case_index": 25,
+  "public_environment_name": "Apothecary Dead Reckoning",
+  "environment_id": "apothecary_dead_reckoning_env",
+  "difficulty": 3,
+  "interaction_mode": "full",
+  "label": "no",
+  "controls_available": [
+    "Full-interface jar drag from an ingredient jar into the mortar, including replacement of the active ingredient.",
+    "Full-interface pestle pointerdown/hold/pointerup; the hold advances the selected ingredient by one grind notch per 240 ms, capped at the final notch.",
+    "STIR PATH click; the first click commits the current ingredient and grind preview, and each click advances six sampled path points.",
+    "WATER button click; moves the flask toward the origin by up to 32 px and consumes one water unit.",
+    "BELLOWS button click; moves the flask up to 21 px along its current heading and consumes one bellows unit.",
+    "SEAL button click; submits the result and is administrative after the outcome-affecting route is complete.",
+    "The environment declares mouse and keyboard action channels, but this mechanic has no outcome-affecting keyboard handler."
+  ],
+  "autonomous_processes": [
+    "There is no free-running outcome-affecting task process while no input is active: generated ingredient paths, route gates, bones, vortices, and effect discs are fixed for the challenge.",
+    "While the pestle pointer remains held, requestAnimationFrame samples the task clock and increments grindStep every 240 ms; pointerup immediately advances once, cancels the frame callback, and stops grinding. This is continuation of the agent's duration-controlled input, not an autonomous process between independent actions.",
+    "The apoth-pound CSS animation runs only while data-grinding is true and changes presentation, not graded state.",
+    "After a failed submission, a 1800 ms timeout only removes the fresh-failure overlay; it does not change an outcome-affecting puzzle state."
+  ],
+  "grouped_control_modes": [
+    "Full jar-drag load or replacement",
+    "Full pestle hold and release for grind selection",
+    "STIR PATH route-motion click",
+    "WATER recovery click",
+    "BELLOWS displacement click",
+    "SEAL submission click (administrative)"
+  ],
+  "delta_ms": null,
+  "window_ms": 240,
+  "clause_i": {
+    "holds": true,
+    "reason": "For the static route-decision portion, seed-dependent ingredient and grind choices are not recoverable from prior actions alone; the visible route gate and path preview are needed. This observation dependence is static and is not a real-time witness."
+  },
+  "clause_ii": {
+    "holds": true,
+    "reason": "The visible gate, selected path preview, grind track, map trace, and recovery controls can guide the route decision from a bounded current screenshot. The frame is sufficient for the resulting state; no bounded recent change is needed to make the route action identifiable."
+  },
+  "clause_iii": {
+    "holds": false,
+    "reason": "No legitimate grouped mode has a non-clock autonomous task-state change that makes an available outcome-affecting action strictly worse during a delay. The only candidate is the fixed-rate grind tick during an already-held pestle input; its release schedule is supplied by the agent's own hold/action clock, matching the excluded minimum-duration-hold pattern. After release, STIR, WATER, and BELLOWS update state synchronously and their opportunities remain actionable while idle."
+  },
+  "common_visible_process": "None. The grind track and path preview can change during the held pestle gesture, but that change is the direct continuation of the agent's input and is not a free-running process between action boundaries; the remaining visible animation is unrelated presentation. Thus no common visible autonomous process witnesses clauses (i), (ii), and (iii).",
+  "pre_run": {
+    "threshold": 0.5,
+    "at_least_half": null,
+    "rate": null,
+    "basis": "not_applicable",
+    "reason": "The mathematical definition already fails clause (iii), so the pre-run threshold cannot change the label and no generated-instance rate is claimed.",
+    "seed_probe": null
+  },
+  "files_read_completely": [
+    "AGENTS.md",
+    "weird_captcha_gym/docs/controllability/real-time.md",
+    "weird_captcha_gym/environments/apothecary_dead_reckoning_env/controls.json",
+    "weird_captcha_gym/environments/apothecary_dead_reckoning_env/env.json",
+    "weird_captcha_gym/shared_scripts/incubator_generators/apothecary_dead_reckoning.py",
+    "weird_captcha_gym/shared_runtime/app/index.html",
+    "weird_captcha_gym/shared_runtime/app/time_controller.js",
+    "weird_captcha_gym/shared_runtime/app/mechanics/apothecary_dead_reckoning.js",
+    "weird_captcha_gym/shared_runtime/app/mechanics/apothecary_dead_reckoning.css",
+    "weird_captcha_gym/shared_runtime/server/incubator_graders/apothecary_dead_reckoning.py",
+    "weird_captcha_gym/environments/apothecary_dead_reckoning_env/tasks/apothecary_dead_reckoning_seed_0001/verifier.py",
+    "weird_captcha_gym/tools/incubator_solvers/apothecary_dead_reckoning.py"
+  ],
+  "source_evidence": [
+    {
+      "path": "weird_captcha_gym/environments/apothecary_dead_reckoning_env/controls.json",
+      "lines": "19-23,44-50",
+      "claim": "Difficulty 3 has six ingredients, four route commits, eleven grind notches, one vortex, five bones, and the listed budgets/tolerances; full interaction is jar drag plus duration-based pestle control, with a 240 ms observation window and one frame."
+    },
+    {
+      "path": "weird_captcha_gym/shared_scripts/incubator_generators/apothecary_dead_reckoning.py",
+      "lines": "125-158,267-347",
+      "claim": "Ingredient paths and headings are deterministic functions of position, ingredient data, and grind step; the route is generated as a fixed sequence of route commits rather than a time-driven process."
+    },
+    {
+      "path": "weird_captcha_gym/shared_scripts/incubator_generators/apothecary_dead_reckoning.py",
+      "lines": "525-591,609-715",
+      "claim": "A seed and stable parameter set generate static ingredients, route gates, bones, vortices, effects, and mechanics; the mechanic records a fixed 240 ms grind tick and post-commit route feedback but no autonomous world update."
+    },
+    {
+      "path": "weird_captcha_gym/shared_runtime/app/mechanics/apothecary_dead_reckoning.js",
+      "lines": "394-446",
+      "claim": "Loading is event-driven, and full-mode grinding starts on pestle pointerdown, advances from performance.now while held, and stops/cancels on pointerup; grindStep changes only within that duration-controlled input."
+    },
+    {
+      "path": "weird_captcha_gym/shared_runtime/app/mechanics/apothecary_dead_reckoning.js",
+      "lines": "448-526",
+      "claim": "STIR PATH, WATER, and BELLOWS resolve movement synchronously inside their click handlers, including path samples, vortex displacement, recovery, and fog reveal."
+    },
+    {
+      "path": "weird_captcha_gym/shared_runtime/app/mechanics/apothecary_dead_reckoning.js",
+      "lines": "583-623,630-701",
+      "claim": "Full jar interaction is a pointer drag into the mortar; the rendered controls are jar drag, pestle, grind track, STIR, WATER, BELLOWS, and SEAL, and the only task timeout clears a failure overlay."
+    },
+    {
+      "path": "weird_captcha_gym/shared_runtime/app/mechanics/apothecary_dead_reckoning.css",
+      "lines": "170-175",
+      "claim": "The pounding animation is conditional presentation while data-grinding is true and is not task-state or grading logic."
+    },
+    {
+      "path": "weird_captcha_gym/shared_runtime/app/time_controller.js",
+      "lines": "55-77,155-177,250-339",
+      "claim": "The shared clock makes task timers and requestAnimationFrame use task time, freezes them while paused, and queues frame callbacks until task time resumes; this confirms the grind callback is clock progress tied to its active hold rather than an independent idle update."
+    },
+    {
+      "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/apothecary_dead_reckoning.py",
+      "lines": "441-485,486-614,620-654",
+      "claim": "The independent replay accepts only the selected input surface, applies grind ticks and all motion only from transcript events, and grades static final geometry, budgets, contacts, route progress, and one seal; it has no timing decay or expiring post-action opportunity."
+    },
+    {
+      "path": "weird_captcha_gym/environments/apothecary_dead_reckoning_env/tasks/apothecary_dead_reckoning_seed_0001/verifier.py",
+      "lines": "22-43",
+      "claim": "The verifier loads the exported result and delegates to the independent grader, so outcome verification does not introduce a hidden real-time rule."
+    },
+    {
+      "path": "weird_captcha_gym/tools/incubator_solvers/apothecary_dead_reckoning.py",
+      "lines": "52-71,74-78",
+      "claim": "The retained solver waits for a requested grindStep and then releases the pestle before issuing synchronous STIR clicks; its private-state polling is implementation evidence, not screenshot information."
+    },
+    {
+      "path": "weird_captcha_gym/docs/controllability/real-time.md",
+      "lines": "40-68,80-90,120-135,145-150",
+      "claim": "The frozen definition requires a common visibly evidenced autonomous process and a strict loss of action value; it explicitly excludes minimum-duration holds solvable from the agent's own action clock and distinguishes task-clock progress from real-time classification."
+    }
+  ],
+  "uncertainties": [
+    "The pestle's held-input callback is the sole borderline case: it can update the visible grind track during a live observation window, but the source ties it to pointer-held duration and a fixed 240 ms schedule, so it does not supply the required autonomous expiring opportunity."
+  ]
+}

@@ -1,0 +1,120 @@
+{
+  "case_index": 27,
+  "public_environment_name": "Apothecary Dead Reckoning",
+  "environment_id": "apothecary_dead_reckoning_env",
+  "difficulty": 4,
+  "interaction_mode": "full",
+  "label": "yes",
+  "controls_available": [
+    "Drag a visible ingredient jar to the mortar to load or replace the active ingredient.",
+    "Hold and release the pestle to advance through the 13-notch grind track; in full mode the selected notch is duration-controlled.",
+    "Click STIR PATH to advance the active route, with WATER and BELLOWS available for synchronous recovery actions.",
+    "Click SEAL to submit the completed preparation."
+  ],
+  "autonomous_processes": [
+    "During a full-mode pestle hold, animation-frame callbacks advance grindStep by one notch for each 240 ms of task-clock time, capped by the grind track, and redraw the current notch and path preview.",
+    "There is no idle map, route, hazard, or physics update: path traversal and hazard/vortex effects occur synchronously when STIR PATH, WATER, or BELLOWS is clicked.",
+    "The CSS pestle-pounding animation runs only while the pestle is held and is not an independent outcome-changing process; the post-failure timeout only hides an overlay."
+  ],
+  "grouped_control_modes": [
+    "Full-mode jar drag/load or replacement",
+    "Full-mode pestle hold/release for duration-based notch selection",
+    "Synchronous STIR PATH route advancement",
+    "Synchronous WATER and BELLOWS recovery movement",
+    "Administrative SEAL submission"
+  ],
+  "delta_ms": 240,
+  "window_ms": 240,
+  "clause_i": {
+    "holds": true,
+    "reason": "For histories after a full-mode pestle hold begins, the delayed-optimal release-versus-continue choice depends on the seed-derived route gate's required grind_step, which is not encoded in the action history. The generator makes route-specific grind steps and the grader accepts only the matching ingredient/grind-step gate, so an action-history-only policy cannot be optimal for all such histories."
+  },
+  "clause_ii": {
+    "holds": true,
+    "reason": "The visible state includes the filled/current grind notch, the active curved path preview, and the route gate. A 240 ms bounded visual window, including the configured single current frame, supplies the current state and the next grind tick horizon, allowing a visual policy to release at the required notch or continue holding."
+  },
+  "clause_iii": {
+    "holds": true,
+    "reason": "Choose a history just before a grind tick when the current notch is the route gate's required notch. If no new input is sent and a delay crosses that tick (with the crossing time still below 240 ms), grindStep advances and the visible path geometry changes; releasing at the formerly aligned notch is then no longer the delayed-optimal action, while success remains possible by reloading/regrinding or using the allowed recovery. The strict loss is route alignment caused by task-state evolution, not a reduced deadline or merely later completion."
+  },
+  "common_visible_process": "A held full-mode pestle is the common witness: with the pointer held down and no new action, the 240 ms task-clock ticks advance the visible grind notch and recompute the active path preview until release.",
+  "pre_run": {
+    "threshold": 0.5,
+    "at_least_half": false,
+    "rate": null,
+    "basis": "source_structural",
+    "reason": "No autonomous outcome phase follows preparation. Each of the five route commits requires separate visible load/grind/release and synchronous STIR PATH actions, and recovery actions are synchronous as well. The only asynchronous interval is the held pestle, which is itself outcome-affecting; SEAL is administrative. Therefore no generated instance admits the specified no-outcome-action pre-run solution, and no percentage is asserted.",
+    "seed_probe": null
+  },
+  "files_read_completely": [
+    "AGENTS.md",
+    "weird_captcha_gym/docs/controllability/real-time.md",
+    "weird_captcha_gym/environments/apothecary_dead_reckoning_env/controls.json",
+    "weird_captcha_gym/environments/apothecary_dead_reckoning_env/env.json",
+    "weird_captcha_gym/environments/apothecary_dead_reckoning_env/tasks/apothecary_dead_reckoning_seed_0001/task.json",
+    "weird_captcha_gym/environments/apothecary_dead_reckoning_env/tasks/apothecary_dead_reckoning_seed_0001/setup_task.sh",
+    "weird_captcha_gym/environments/apothecary_dead_reckoning_env/tasks/apothecary_dead_reckoning_seed_0001/export_result.sh",
+    "weird_captcha_gym/environments/apothecary_dead_reckoning_env/verifier.py",
+    "weird_captcha_gym/shared_scripts/incubator_generators/apothecary_dead_reckoning.py",
+    "weird_captcha_gym/shared_runtime/app/mechanics/apothecary_dead_reckoning.js",
+    "weird_captcha_gym/shared_runtime/app/mechanics/apothecary_dead_reckoning.css",
+    "weird_captcha_gym/shared_runtime/server/incubator_graders/apothecary_dead_reckoning.py",
+    "weird_captcha_gym/tools/incubator_solvers/apothecary_dead_reckoning.py",
+    "weird_captcha_gym/shared_runtime/verifier_helpers.py",
+    "weird_captcha_gym/shared_runtime/app/time_controller.js",
+    "weird_captcha_gym/shared_runtime/app/index.html"
+  ],
+  "source_evidence": [
+    {
+      "path": "weird_captcha_gym/environments/apothecary_dead_reckoning_env/controls.json",
+      "lines": "25-29, 44-50",
+      "claim": "Difficulty 4 supplies the six-ingredient, five-commit, 13-notch route configuration; full mode uses jar drag and duration-based pestle control, with a 240 ms observation window and one frame."
+    },
+    {
+      "path": "weird_captcha_gym/environments/apothecary_dead_reckoning_env/env.json",
+      "lines": "9-14",
+      "claim": "The exact runtime profile is synchronous with a 240 ms observation window, one frame per observation, and a live 180-second play clock."
+    },
+    {
+      "path": "weird_captcha_gym/shared_scripts/incubator_generators/apothecary_dead_reckoning.py",
+      "lines": "65-77, 525-591, 704-715",
+      "claim": "The selected control condition supplies the active parameters; route gates and grind steps are generated into the seeded world, while the exported mechanics specify a 240 ms grind tick and fixed path sampling/stride."
+    },
+    {
+      "path": "weird_captcha_gym/shared_runtime/app/mechanics/apothecary_dead_reckoning.js",
+      "lines": "326-363, 418-446",
+      "claim": "The browser visibly renders the route gate, active path preview, and grind track, and advanceGrinding uses task-clock elapsed time to advance one notch per 240 ms while the pestle is held."
+    },
+    {
+      "path": "weird_captcha_gym/shared_runtime/app/mechanics/apothecary_dead_reckoning.js",
+      "lines": "448-526, 630-693",
+      "claim": "STIR PATH, WATER, and BELLOWS resolve movement synchronously, while full-mode input binds jar drag and pestle pointerdown/pointerup to load and duration-controlled grinding."
+    },
+    {
+      "path": "weird_captcha_gym/shared_runtime/app/mechanics/apothecary_dead_reckoning.css",
+      "lines": "170-182, 211",
+      "claim": "The pounding animation is conditional on the held-grinding state and the notch track exposes current progress; it does not implement a separate world update."
+    },
+    {
+      "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/apothecary_dead_reckoning.py",
+      "lines": "324-387, 441-485, 486-601, 620-654",
+      "claim": "The grader validates route gates against the ingredient and grind step, replays full-mode hold ticks and releases, applies route/recovery effects at submitted events, and requires all route progress before SEAL passes."
+    },
+    {
+      "path": "weird_captcha_gym/tools/incubator_solvers/apothecary_dead_reckoning.py",
+      "lines": "52-78, 126-172",
+      "claim": "The normal full-mode solver holds the pestle until each target notch and then performs synchronous route/recovery actions, confirming that the duration control is outcome-affecting."
+    },
+    {
+      "path": "weird_captcha_gym/shared_runtime/app/time_controller.js",
+      "lines": "55-77, 301-339",
+      "claim": "The runtime binds performance time, timers, and animation-frame scheduling to the task clock, so the live-versus-paused schedule controls whether the held-grinding ticks advance."
+    },
+    {
+      "path": "weird_captcha_gym/environments/apothecary_dead_reckoning_env/verifier.py",
+      "lines": "22-43",
+      "claim": "The environment verifier loads the exported result and delegates authoritative grading to the Apothecary grader rather than using hidden timing shortcuts."
+    }
+  ],
+  "uncertainties": []
+}

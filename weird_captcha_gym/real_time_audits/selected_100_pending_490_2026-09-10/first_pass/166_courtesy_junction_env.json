@@ -1,0 +1,127 @@
+{
+  "case_index": 166,
+  "public_environment_name": "Courtesy Junction",
+  "environment_id": "courtesy_junction_env",
+  "difficulty": 3,
+  "interaction_mode": "simplified",
+  "label": "yes",
+  "controls_available": [
+    "START ENGINE starts the active simulation.",
+    "LEFT, CENTER, and RIGHT are persistent steering buttons.",
+    "BRAKE, COAST, and THROTTLE are persistent pedal buttons.",
+    "FILE DELIVERY submits the current replay and NEW DELIVERY starts an administrative retry after failure."
+  ],
+  "autonomous_processes": [
+    "After the engine starts, requestAnimationFrame/pump advances the simulation by 20 ms physics ticks without a new agent action.",
+    "The two generated horizontal traffic streams advance continuously; each driver recomputes conflict-based braking against the ego and other traffic, changing its speed and position.",
+    "The ego advances under the persistent steering and pedal settings, while each tick checks collision, road-edge, arrival, and timeout status."
+  ],
+  "grouped_control_modes": [
+    "D: all outcome-affecting simplified panel_buttons control changes across every seed, action boundary, round, and retry: persistent steering (LEFT/CENTER/RIGHT) and pedal (BRAKE/COAST/THROTTLE).",
+    "START ENGINE, FILE DELIVERY, and NEW DELIVERY are administrative lifecycle controls rather than outcome-affecting members of D."
+  ],
+  "delta_ms": 400,
+  "window_ms": 400,
+  "clause_i": {
+    "holds": true,
+    "reason": "The same own-action history I_t can occur with different generated turns, traffic phases, speeds, and yield horizons. Near a junction gap, one visible traffic state makes a throttle/turn commit optimal while another makes brake/coast or different turn timing optimal. A policy q(I_t) cannot inspect that state, so no action-only q is optimal for every history in C_Delta(D)."
+  },
+  "clause_ii": {
+    "holds": true,
+    "reason": "The configured five chronological frames over 400 ms visibly expose traffic displacement, direction, and red brake-light responses on the canvas. Tracking that bounded recent trajectory lets g predict whether a stream is closing or yielding and choose the delayed persistent panel setting; it uses the same traffic evolution as clauses (i) and (iii)."
+  },
+  "clause_iii": {
+    "holds": true,
+    "reason": "Within an active crossing opportunity, take a=THROTTLE while steering is set for the selected departure. During a positive subinterval of the 400 ms horizon, traffic continues into or away from the conflict geometry and its braking state changes; success can remain possible with another control, while the same commit can become collision-prone or less effective. The strict loss is caused by moving traffic and vehicle state, not by a deadline or mere later completion."
+  },
+  "common_visible_process": "Responsive cross traffic moves through the junction while the ego vehicle is committed to a turn. Its recent canvas trajectory and brake-light state reveal whether a gap is closing or being yielded; waiting can turn an initially useful throttle/turn action into a worse action even though braking, coasting, or re-steering can still recover the delivery.",
+  "pre_run": {
+    "threshold": 0.5,
+    "at_least_half": false,
+    "rate": null,
+    "basis": "source_structural",
+    "reason": "The rendered model starts with control [0,0], and setControl returns while the simulation is not started, so simplified panel settings cannot be prepared before START ENGINE. With no outcome-affecting action after start, pedal=0 keeps the ego speed at zero under the clamped drag update and its position stays at (480,470); generated goals are at y=190 for a left turn or y=260 for a right turn. No generated instance can arrive under the pre-run protocol, so the 50% override is not met.",
+    "seed_probe": null
+  },
+  "files_read_completely": [
+    "AGENTS.md",
+    "weird_captcha_gym/docs/controllability/real-time.md",
+    "weird_captcha_gym/environments/courtesy_junction_env/controls.json",
+    "weird_captcha_gym/environments/courtesy_junction_env/env.json",
+    "weird_captcha_gym/environments/courtesy_junction_env/scripts/install_puzzle_runtime.sh",
+    "weird_captcha_gym/environments/courtesy_junction_env/scripts/setup_puzzle_runtime.sh",
+    "weird_captcha_gym/environments/courtesy_junction_env/tasks/courtesy_junction_seed_0001/setup_task.sh",
+    "weird_captcha_gym/environments/courtesy_junction_env/tasks/courtesy_junction_seed_0001/export_result.sh",
+    "weird_captcha_gym/environments/courtesy_junction_env/tasks/courtesy_junction_seed_0001/task.json",
+    "weird_captcha_gym/environments/courtesy_junction_env/tasks/courtesy_junction_seed_0001/verifier.py",
+    "weird_captcha_gym/shared_scripts/incubator_generators/courtesy_junction.py",
+    "weird_captcha_gym/shared_runtime/app/mechanics/courtesy_junction.js",
+    "weird_captcha_gym/shared_runtime/app/mechanics/courtesy_junction.css",
+    "weird_captcha_gym/shared_runtime/server/incubator_graders/courtesy_junction.py",
+    "weird_captcha_gym/shared_runtime/verifier_helpers.py",
+    "weird_captcha_gym/tools/incubator_solvers/courtesy_junction.py"
+  ],
+  "source_evidence": [
+    {
+      "path": "weird_captcha_gym/environments/courtesy_junction_env/controls.json",
+      "lines": "42-57",
+      "claim": "Difficulty 3 has two lanes, three cars per lane, 34-48 speed, 1.3-2.1 yield horizons, both turn directions, and road_half 90."
+    },
+    {
+      "path": "weird_captcha_gym/environments/courtesy_junction_env/controls.json",
+      "lines": "94-107",
+      "claim": "The exact simplified surface uses persistent steering and pedal proxy buttons; the configured observation window is 400 ms with five frames."
+    },
+    {
+      "path": "weird_captcha_gym/shared_scripts/incubator_generators/courtesy_junction.py",
+      "lines": "20-27",
+      "claim": "Seeded generation randomizes the turn, traffic phases, speeds, yield horizons, deceleration, and lane traffic while preserving the selected difficulty parameters."
+    },
+    {
+      "path": "weird_captcha_gym/shared_scripts/incubator_generators/courtesy_junction.py",
+      "lines": "46-50",
+      "claim": "The generated world starts the ego at (480,470) with zero speed, has 20 ms physics and a 6000-tick cap, and places the selected turn goal on the left or right departure road."
+    },
+    {
+      "path": "weird_captcha_gym/shared_runtime/app/mechanics/courtesy_junction.js",
+      "lines": "12-24",
+      "claim": "Each active tick updates conflict-based traffic braking, ego kinematics, traffic position, and terminal status; pump advances ticks from elapsed 20 ms task time, and control changes persist."
+    },
+    {
+      "path": "weird_captcha_gym/shared_runtime/app/mechanics/courtesy_junction.js",
+      "lines": "30-39",
+      "claim": "Cars are visibly drawn with braking-dependent red rear lights, and the canvas draws the moving traffic, ego, road, and selected departure goal."
+    },
+    {
+      "path": "weird_captcha_gym/shared_runtime/app/mechanics/courtesy_junction.js",
+      "lines": "41-45",
+      "claim": "The simplified render creates the six persistent panel buttons, initializes control [0,0], ignores control changes before start, and records panel input as panel_buttons."
+    },
+    {
+      "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/courtesy_junction.py",
+      "lines": "42-75",
+      "claim": "The authoritative replay uses dt=.02, moves both ego and traffic, changes braking and speed, and checks physical intersection, road edge, goal arrival, and timeout."
+    },
+    {
+      "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/courtesy_junction.py",
+      "lines": "90-119",
+      "claim": "The grader binds the simplified transcript to panel_buttons and accepts success only when the replayed physical state is arrived."
+    },
+    {
+      "path": "weird_captcha_gym/tools/incubator_solvers/courtesy_junction.py",
+      "lines": "32-50",
+      "claim": "The privileged planner scores candidate controls by simulating 100-tick continuations including braking drivers, showing that traffic state affects control choice."
+    },
+    {
+      "path": "weird_captcha_gym/tools/incubator_solvers/courtesy_junction.py",
+      "lines": "52-80",
+      "claim": "For simplified mode the solver changes panel inputs and reevaluates every 100 ms after starting, rather than relying on one pre-run setting."
+    },
+    {
+      "path": "weird_captcha_gym/environments/courtesy_junction_env/tasks/courtesy_junction_seed_0001/verifier.py",
+      "lines": "22-35",
+      "claim": "Verification loads the exported result and the independent Courtesy Junction replay grader; it does not replace the physical outcome contract."
+    }
+  ],
+  "uncertainties": []
+}

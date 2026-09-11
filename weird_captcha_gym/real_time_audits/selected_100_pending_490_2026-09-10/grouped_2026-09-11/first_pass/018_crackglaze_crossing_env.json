@@ -1,0 +1,1127 @@
+{
+  "case_index": 18,
+  "environment_id": "crackglaze_crossing_env",
+  "public_environment_name": "Crackglaze Crossing",
+  "configuration_reports": [
+    {
+      "case_index": 171,
+      "public_environment_name": "Crackglaze Crossing",
+      "environment_id": "crackglaze_crossing_env",
+      "difficulty": 1,
+      "interaction_mode": "full",
+      "label": "no",
+      "controls_available": [
+        "Full mode: click the intended visible adjacent ceramic tile directly; the tile_click release point must be inside that destination tile. There is no direction pad.",
+        "Difficulty 1 parameters: core_rows=4, core_columns=5, core_cells=11, lantern_count=3, glaze_count=2, fuse_lengths=[3,7], gallery_cells=0, crack_contrast=clear, minimum_policy_failures=2.",
+        "The board visibly shows the generated ceramic geometry, current walker, lanterns, exit door, glaze colors, and crack stages; every outcome-affecting move is discrete and synchronous.",
+        "Configured task clock: play_time_seconds=180, observation_window_ms=0, frames_per_observation=1."
+      ],
+      "autonomous_processes": [],
+      "grouped_control_modes": [
+        "D = accepted movement through the Full tile_click surface, grouped across destination tiles and attempts."
+      ],
+      "delta_ms": null,
+      "window_ms": null,
+      "clause_i": {
+        "holds": true,
+        "reason": "The observation-free q clause is separately blocked by seed-dependent visible state: the generator samples the floor/lantern layout and shuffles the glaze-to-fuse mapping, while the prior action history I_t does not identify that state. Thus a fixed action-history-only route cannot generally be optimal across generated occurrences. This is a static planning/memory distinction, not a real-time transition."
+      },
+      "clause_ii": {
+        "holds": true,
+        "reason": "A current screenshot supplies the board geometry, lantern/door locations, glaze colors, and visible or accumulated crack trace; I_t supplies the agent's own move history from which movement-count ages can be tracked. A bounded state-based policy can choose a current adjacent move, but it has no autonomous future state to predict in this game."
+      },
+      "clause_iii": {
+        "holds": false,
+        "reason": "No common witness exists. With no new outcome-affecting action, the mechanic does not change H_t: model.step, litAt, shattered, position, and status are updated only inside attemptMove. The CSS transition is presentation-only, and waiting can at most consume the external play deadline, which the definition excludes as the required strict action-value loss. Therefore no Delta>0 can make an available move unavailable or strictly less effective through non-clock task-state evolution."
+      },
+      "common_visible_process": "No autonomous task-state process exists during a no-action interval: waiting leaves position, step, lit_at, shattered, and status unchanged. The only CSS transition (.08 s) is action-triggered presentation settling and does not affect hit testing or grading.",
+      "pre_run": {
+        "threshold": 0.5,
+        "at_least_half": null,
+        "rate": null,
+        "basis": "not_applicable",
+        "reason": "There is no autonomous outcome phase: fuses and floor state progress only when movement actions are supplied. The configuration is already No from failed clause (iii), so a pre-run percentage cannot override or change this mathematical result.",
+        "seed_probe": null
+      },
+      "files_read_completely": [
+        "AGENTS.md",
+        "weird_captcha_gym/docs/controllability/real-time.md",
+        "weird_captcha_gym/environments/crackglaze_crossing_env/controls.json",
+        "weird_captcha_gym/environments/crackglaze_crossing_env/env.json",
+        "weird_captcha_gym/environments/crackglaze_crossing_env/tasks/crackglaze_crossing_seed_0001/task.json",
+        "weird_captcha_gym/shared_scripts/incubator_generators/crackglaze_crossing.py",
+        "weird_captcha_gym/shared_runtime/app/mechanics/crackglaze_crossing.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/crackglaze_crossing.css",
+        "weird_captcha_gym/shared_runtime/server/incubator_graders/crackglaze_crossing.py",
+        "weird_captcha_gym/environments/crackglaze_crossing_env/tasks/crackglaze_crossing_seed_0001/verifier.py",
+        "weird_captcha_gym/tools/incubator_solvers/crackglaze_crossing.py"
+      ],
+      "source_evidence": [
+        {
+          "path": "weird_captcha_gym/environments/crackglaze_crossing_env/controls.json",
+          "lines": "5-10",
+          "claim": "Difficulty 1 parameters: core_rows=4, core_columns=5, core_cells=11, lantern_count=3, glaze_count=2, fuse_lengths=[3,7], gallery_cells=0, crack_contrast=clear, minimum_policy_failures=2."
+        },
+        {
+          "path": "weird_captcha_gym/environments/crackglaze_crossing_env/controls.json",
+          "lines": "37-41",
+          "claim": "Full is the selected interaction profile; the environment settings are play_time_seconds=180, observation_window_ms=0, and frames_per_observation=1."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/crackglaze_crossing.py",
+          "lines": "39-48",
+          "claim": "The generator takes difficulty_parameters from the injected control condition, so the supplied level profile is the active generation configuration."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/crackglaze_crossing.py",
+          "lines": "382-396",
+          "claim": "Generation is seed-dependent: it selects the active dimensions/counts, shuffles fuse lengths across glaze colors, and constructs the generated floor."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/crackglaze_crossing.js",
+          "lines": "32-46",
+          "claim": "Crack and shatter display stages are computed from model.step, litAt, and per-cell fuse length, not elapsed wall time."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/crackglaze_crossing.js",
+          "lines": "163-203",
+          "claim": "A valid movement request is the only mechanic path that increments step, records litAt, calls updateShattered, tests an expired destination, and changes the position/status."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/crackglaze_crossing.js",
+          "lines": "49-75",
+          "claim": "Full mode renders each floor tile as a button and binds pointer release/click to tile_click; the grader requires the click point to lie inside the visible destination tile."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/crackglaze_crossing.js",
+          "lines": "232-256",
+          "claim": "Initialization creates the state and renders synchronously; the mechanic contains no timer, interval, or animation-loop task-state update."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/crackglaze_crossing.css",
+          "lines": "162-178",
+          "claim": "The only timed CSS effect is a .08 s visual transition for ceramic appearance; it does not advance the model or change the grading outcome."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/crackglaze_crossing.py",
+          "lines": "157-239",
+          "claim": "The grader replays a finite movement event list and advances next_step only while iterating submitted events; expiration and success are derived from that replay."
+        },
+        {
+          "path": "weird_captcha_gym/environments/crackglaze_crossing_env/tasks/crackglaze_crossing_seed_0001/verifier.py",
+          "lines": "22-43",
+          "claim": "The task verifier invokes the independent Crackglaze grader on the exported UI result, public state, and ground truth."
+        }
+      ],
+      "uncertainties": []
+    },
+    {
+      "case_index": 172,
+      "public_environment_name": "Crackglaze Crossing",
+      "environment_id": "crackglaze_crossing_env",
+      "difficulty": 1,
+      "interaction_mode": "simplified",
+      "label": "no",
+      "controls_available": [
+        "Simplified mode: click one of four stationary arrow buttons (up/left/right/down) to request one orthogonally adjacent move. Direct tile clicks are not the accepted surface.",
+        "Difficulty 1 parameters: core_rows=4, core_columns=5, core_cells=11, lantern_count=3, glaze_count=2, fuse_lengths=[3,7], gallery_cells=0, crack_contrast=clear, minimum_policy_failures=2.",
+        "The board visibly shows the generated ceramic geometry, current walker, lanterns, exit door, glaze colors, and crack stages; every outcome-affecting move is discrete and synchronous.",
+        "Configured task clock: play_time_seconds=180, observation_window_ms=0, frames_per_observation=1."
+      ],
+      "autonomous_processes": [],
+      "grouped_control_modes": [
+        "D = accepted movement through the Simplified direction_button surface, grouped across directions and attempts."
+      ],
+      "delta_ms": null,
+      "window_ms": null,
+      "clause_i": {
+        "holds": true,
+        "reason": "The observation-free q clause is separately blocked by seed-dependent visible state: the generator samples the floor/lantern layout and shuffles the glaze-to-fuse mapping, while the prior action history I_t does not identify that state. Thus a fixed action-history-only route cannot generally be optimal across generated occurrences. This is a static planning/memory distinction, not a real-time transition."
+      },
+      "clause_ii": {
+        "holds": true,
+        "reason": "A current screenshot supplies the board geometry, lantern/door locations, glaze colors, and visible or accumulated crack trace; I_t supplies the agent's own move history from which movement-count ages can be tracked. A bounded state-based policy can choose a current adjacent move, but it has no autonomous future state to predict in this game."
+      },
+      "clause_iii": {
+        "holds": false,
+        "reason": "No common witness exists. With no new outcome-affecting action, the mechanic does not change H_t: model.step, litAt, shattered, position, and status are updated only inside attemptMove. The CSS transition is presentation-only, and waiting can at most consume the external play deadline, which the definition excludes as the required strict action-value loss. Therefore no Delta>0 can make an available move unavailable or strictly less effective through non-clock task-state evolution."
+      },
+      "common_visible_process": "No autonomous task-state process exists during a no-action interval: waiting leaves position, step, lit_at, shattered, and status unchanged. The only CSS transition (.08 s) is action-triggered presentation settling and does not affect hit testing or grading.",
+      "pre_run": {
+        "threshold": 0.5,
+        "at_least_half": null,
+        "rate": null,
+        "basis": "not_applicable",
+        "reason": "There is no autonomous outcome phase: fuses and floor state progress only when movement actions are supplied. The configuration is already No from failed clause (iii), so a pre-run percentage cannot override or change this mathematical result.",
+        "seed_probe": null
+      },
+      "files_read_completely": [
+        "AGENTS.md",
+        "weird_captcha_gym/docs/controllability/real-time.md",
+        "weird_captcha_gym/environments/crackglaze_crossing_env/controls.json",
+        "weird_captcha_gym/environments/crackglaze_crossing_env/env.json",
+        "weird_captcha_gym/environments/crackglaze_crossing_env/tasks/crackglaze_crossing_seed_0001/task.json",
+        "weird_captcha_gym/shared_scripts/incubator_generators/crackglaze_crossing.py",
+        "weird_captcha_gym/shared_runtime/app/mechanics/crackglaze_crossing.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/crackglaze_crossing.css",
+        "weird_captcha_gym/shared_runtime/server/incubator_graders/crackglaze_crossing.py",
+        "weird_captcha_gym/environments/crackglaze_crossing_env/tasks/crackglaze_crossing_seed_0001/verifier.py",
+        "weird_captcha_gym/tools/incubator_solvers/crackglaze_crossing.py"
+      ],
+      "source_evidence": [
+        {
+          "path": "weird_captcha_gym/environments/crackglaze_crossing_env/controls.json",
+          "lines": "5-10",
+          "claim": "Difficulty 1 parameters: core_rows=4, core_columns=5, core_cells=11, lantern_count=3, glaze_count=2, fuse_lengths=[3,7], gallery_cells=0, crack_contrast=clear, minimum_policy_failures=2."
+        },
+        {
+          "path": "weird_captcha_gym/environments/crackglaze_crossing_env/controls.json",
+          "lines": "37-41",
+          "claim": "Simplified is the selected interaction profile; the environment settings are play_time_seconds=180, observation_window_ms=0, and frames_per_observation=1."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/crackglaze_crossing.py",
+          "lines": "39-48",
+          "claim": "The generator takes difficulty_parameters from the injected control condition, so the supplied level profile is the active generation configuration."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/crackglaze_crossing.py",
+          "lines": "382-396",
+          "claim": "Generation is seed-dependent: it selects the active dimensions/counts, shuffles fuse lengths across glaze colors, and constructs the generated floor."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/crackglaze_crossing.js",
+          "lines": "32-46",
+          "claim": "Crack and shatter display stages are computed from model.step, litAt, and per-cell fuse length, not elapsed wall time."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/crackglaze_crossing.js",
+          "lines": "163-203",
+          "claim": "A valid movement request is the only mechanic path that increments step, records litAt, calls updateShattered, tests an expired destination, and changes the position/status."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/crackglaze_crossing.js",
+          "lines": "77-85",
+          "claim": "Simplified mode renders four stationary direction buttons and maps each click to the adjacent destination; the grader requires direction_button and rejects a point payload."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/crackglaze_crossing.js",
+          "lines": "232-256",
+          "claim": "Initialization creates the state and renders synchronously; the mechanic contains no timer, interval, or animation-loop task-state update."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/crackglaze_crossing.css",
+          "lines": "162-178",
+          "claim": "The only timed CSS effect is a .08 s visual transition for ceramic appearance; it does not advance the model or change the grading outcome."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/crackglaze_crossing.py",
+          "lines": "157-239",
+          "claim": "The grader replays a finite movement event list and advances next_step only while iterating submitted events; expiration and success are derived from that replay."
+        },
+        {
+          "path": "weird_captcha_gym/environments/crackglaze_crossing_env/tasks/crackglaze_crossing_seed_0001/verifier.py",
+          "lines": "22-43",
+          "claim": "The task verifier invokes the independent Crackglaze grader on the exported UI result, public state, and ground truth."
+        }
+      ],
+      "uncertainties": []
+    },
+    {
+      "case_index": 173,
+      "public_environment_name": "Crackglaze Crossing",
+      "environment_id": "crackglaze_crossing_env",
+      "difficulty": 2,
+      "interaction_mode": "full",
+      "label": "no",
+      "controls_available": [
+        "Full mode: click the intended visible adjacent ceramic tile directly; the tile_click release point must be inside that destination tile. There is no direction pad.",
+        "Difficulty 2 parameters: core_rows=5, core_columns=6, core_cells=15, lantern_count=3, glaze_count=3, fuse_lengths=[3,6,9], gallery_cells=0, crack_contrast=clear, minimum_policy_failures=3.",
+        "The board visibly shows the generated ceramic geometry, current walker, lanterns, exit door, glaze colors, and crack stages; every outcome-affecting move is discrete and synchronous.",
+        "Configured task clock: play_time_seconds=180, observation_window_ms=0, frames_per_observation=1."
+      ],
+      "autonomous_processes": [],
+      "grouped_control_modes": [
+        "D = accepted movement through the Full tile_click surface, grouped across destination tiles and attempts."
+      ],
+      "delta_ms": null,
+      "window_ms": null,
+      "clause_i": {
+        "holds": true,
+        "reason": "The observation-free q clause is separately blocked by seed-dependent visible state: the generator samples the floor/lantern layout and shuffles the glaze-to-fuse mapping, while the prior action history I_t does not identify that state. Thus a fixed action-history-only route cannot generally be optimal across generated occurrences. This is a static planning/memory distinction, not a real-time transition."
+      },
+      "clause_ii": {
+        "holds": true,
+        "reason": "A current screenshot supplies the board geometry, lantern/door locations, glaze colors, and visible or accumulated crack trace; I_t supplies the agent's own move history from which movement-count ages can be tracked. A bounded state-based policy can choose a current adjacent move, but it has no autonomous future state to predict in this game."
+      },
+      "clause_iii": {
+        "holds": false,
+        "reason": "No common witness exists. With no new outcome-affecting action, the mechanic does not change H_t: model.step, litAt, shattered, position, and status are updated only inside attemptMove. The CSS transition is presentation-only, and waiting can at most consume the external play deadline, which the definition excludes as the required strict action-value loss. Therefore no Delta>0 can make an available move unavailable or strictly less effective through non-clock task-state evolution."
+      },
+      "common_visible_process": "No autonomous task-state process exists during a no-action interval: waiting leaves position, step, lit_at, shattered, and status unchanged. The only CSS transition (.08 s) is action-triggered presentation settling and does not affect hit testing or grading.",
+      "pre_run": {
+        "threshold": 0.5,
+        "at_least_half": null,
+        "rate": null,
+        "basis": "not_applicable",
+        "reason": "There is no autonomous outcome phase: fuses and floor state progress only when movement actions are supplied. The configuration is already No from failed clause (iii), so a pre-run percentage cannot override or change this mathematical result.",
+        "seed_probe": null
+      },
+      "files_read_completely": [
+        "AGENTS.md",
+        "weird_captcha_gym/docs/controllability/real-time.md",
+        "weird_captcha_gym/environments/crackglaze_crossing_env/controls.json",
+        "weird_captcha_gym/environments/crackglaze_crossing_env/env.json",
+        "weird_captcha_gym/environments/crackglaze_crossing_env/tasks/crackglaze_crossing_seed_0001/task.json",
+        "weird_captcha_gym/shared_scripts/incubator_generators/crackglaze_crossing.py",
+        "weird_captcha_gym/shared_runtime/app/mechanics/crackglaze_crossing.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/crackglaze_crossing.css",
+        "weird_captcha_gym/shared_runtime/server/incubator_graders/crackglaze_crossing.py",
+        "weird_captcha_gym/environments/crackglaze_crossing_env/tasks/crackglaze_crossing_seed_0001/verifier.py",
+        "weird_captcha_gym/tools/incubator_solvers/crackglaze_crossing.py"
+      ],
+      "source_evidence": [
+        {
+          "path": "weird_captcha_gym/environments/crackglaze_crossing_env/controls.json",
+          "lines": "12-16",
+          "claim": "Difficulty 2 parameters: core_rows=5, core_columns=6, core_cells=15, lantern_count=3, glaze_count=3, fuse_lengths=[3,6,9], gallery_cells=0, crack_contrast=clear, minimum_policy_failures=3."
+        },
+        {
+          "path": "weird_captcha_gym/environments/crackglaze_crossing_env/controls.json",
+          "lines": "37-41",
+          "claim": "Full is the selected interaction profile; the environment settings are play_time_seconds=180, observation_window_ms=0, and frames_per_observation=1."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/crackglaze_crossing.py",
+          "lines": "39-48",
+          "claim": "The generator takes difficulty_parameters from the injected control condition, so the supplied level profile is the active generation configuration."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/crackglaze_crossing.py",
+          "lines": "382-396",
+          "claim": "Generation is seed-dependent: it selects the active dimensions/counts, shuffles fuse lengths across glaze colors, and constructs the generated floor."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/crackglaze_crossing.js",
+          "lines": "32-46",
+          "claim": "Crack and shatter display stages are computed from model.step, litAt, and per-cell fuse length, not elapsed wall time."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/crackglaze_crossing.js",
+          "lines": "163-203",
+          "claim": "A valid movement request is the only mechanic path that increments step, records litAt, calls updateShattered, tests an expired destination, and changes the position/status."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/crackglaze_crossing.js",
+          "lines": "49-75",
+          "claim": "Full mode renders each floor tile as a button and binds pointer release/click to tile_click; the grader requires the click point to lie inside the visible destination tile."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/crackglaze_crossing.js",
+          "lines": "232-256",
+          "claim": "Initialization creates the state and renders synchronously; the mechanic contains no timer, interval, or animation-loop task-state update."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/crackglaze_crossing.css",
+          "lines": "162-178",
+          "claim": "The only timed CSS effect is a .08 s visual transition for ceramic appearance; it does not advance the model or change the grading outcome."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/crackglaze_crossing.py",
+          "lines": "157-239",
+          "claim": "The grader replays a finite movement event list and advances next_step only while iterating submitted events; expiration and success are derived from that replay."
+        },
+        {
+          "path": "weird_captcha_gym/environments/crackglaze_crossing_env/tasks/crackglaze_crossing_seed_0001/verifier.py",
+          "lines": "22-43",
+          "claim": "The task verifier invokes the independent Crackglaze grader on the exported UI result, public state, and ground truth."
+        }
+      ],
+      "uncertainties": []
+    },
+    {
+      "case_index": 174,
+      "public_environment_name": "Crackglaze Crossing",
+      "environment_id": "crackglaze_crossing_env",
+      "difficulty": 2,
+      "interaction_mode": "simplified",
+      "label": "no",
+      "controls_available": [
+        "Simplified mode: click one of four stationary arrow buttons (up/left/right/down) to request one orthogonally adjacent move. Direct tile clicks are not the accepted surface.",
+        "Difficulty 2 parameters: core_rows=5, core_columns=6, core_cells=15, lantern_count=3, glaze_count=3, fuse_lengths=[3,6,9], gallery_cells=0, crack_contrast=clear, minimum_policy_failures=3.",
+        "The board visibly shows the generated ceramic geometry, current walker, lanterns, exit door, glaze colors, and crack stages; every outcome-affecting move is discrete and synchronous.",
+        "Configured task clock: play_time_seconds=180, observation_window_ms=0, frames_per_observation=1."
+      ],
+      "autonomous_processes": [],
+      "grouped_control_modes": [
+        "D = accepted movement through the Simplified direction_button surface, grouped across directions and attempts."
+      ],
+      "delta_ms": null,
+      "window_ms": null,
+      "clause_i": {
+        "holds": true,
+        "reason": "The observation-free q clause is separately blocked by seed-dependent visible state: the generator samples the floor/lantern layout and shuffles the glaze-to-fuse mapping, while the prior action history I_t does not identify that state. Thus a fixed action-history-only route cannot generally be optimal across generated occurrences. This is a static planning/memory distinction, not a real-time transition."
+      },
+      "clause_ii": {
+        "holds": true,
+        "reason": "A current screenshot supplies the board geometry, lantern/door locations, glaze colors, and visible or accumulated crack trace; I_t supplies the agent's own move history from which movement-count ages can be tracked. A bounded state-based policy can choose a current adjacent move, but it has no autonomous future state to predict in this game."
+      },
+      "clause_iii": {
+        "holds": false,
+        "reason": "No common witness exists. With no new outcome-affecting action, the mechanic does not change H_t: model.step, litAt, shattered, position, and status are updated only inside attemptMove. The CSS transition is presentation-only, and waiting can at most consume the external play deadline, which the definition excludes as the required strict action-value loss. Therefore no Delta>0 can make an available move unavailable or strictly less effective through non-clock task-state evolution."
+      },
+      "common_visible_process": "No autonomous task-state process exists during a no-action interval: waiting leaves position, step, lit_at, shattered, and status unchanged. The only CSS transition (.08 s) is action-triggered presentation settling and does not affect hit testing or grading.",
+      "pre_run": {
+        "threshold": 0.5,
+        "at_least_half": null,
+        "rate": null,
+        "basis": "not_applicable",
+        "reason": "There is no autonomous outcome phase: fuses and floor state progress only when movement actions are supplied. The configuration is already No from failed clause (iii), so a pre-run percentage cannot override or change this mathematical result.",
+        "seed_probe": null
+      },
+      "files_read_completely": [
+        "AGENTS.md",
+        "weird_captcha_gym/docs/controllability/real-time.md",
+        "weird_captcha_gym/environments/crackglaze_crossing_env/controls.json",
+        "weird_captcha_gym/environments/crackglaze_crossing_env/env.json",
+        "weird_captcha_gym/environments/crackglaze_crossing_env/tasks/crackglaze_crossing_seed_0001/task.json",
+        "weird_captcha_gym/shared_scripts/incubator_generators/crackglaze_crossing.py",
+        "weird_captcha_gym/shared_runtime/app/mechanics/crackglaze_crossing.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/crackglaze_crossing.css",
+        "weird_captcha_gym/shared_runtime/server/incubator_graders/crackglaze_crossing.py",
+        "weird_captcha_gym/environments/crackglaze_crossing_env/tasks/crackglaze_crossing_seed_0001/verifier.py",
+        "weird_captcha_gym/tools/incubator_solvers/crackglaze_crossing.py"
+      ],
+      "source_evidence": [
+        {
+          "path": "weird_captcha_gym/environments/crackglaze_crossing_env/controls.json",
+          "lines": "12-16",
+          "claim": "Difficulty 2 parameters: core_rows=5, core_columns=6, core_cells=15, lantern_count=3, glaze_count=3, fuse_lengths=[3,6,9], gallery_cells=0, crack_contrast=clear, minimum_policy_failures=3."
+        },
+        {
+          "path": "weird_captcha_gym/environments/crackglaze_crossing_env/controls.json",
+          "lines": "37-41",
+          "claim": "Simplified is the selected interaction profile; the environment settings are play_time_seconds=180, observation_window_ms=0, and frames_per_observation=1."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/crackglaze_crossing.py",
+          "lines": "39-48",
+          "claim": "The generator takes difficulty_parameters from the injected control condition, so the supplied level profile is the active generation configuration."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/crackglaze_crossing.py",
+          "lines": "382-396",
+          "claim": "Generation is seed-dependent: it selects the active dimensions/counts, shuffles fuse lengths across glaze colors, and constructs the generated floor."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/crackglaze_crossing.js",
+          "lines": "32-46",
+          "claim": "Crack and shatter display stages are computed from model.step, litAt, and per-cell fuse length, not elapsed wall time."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/crackglaze_crossing.js",
+          "lines": "163-203",
+          "claim": "A valid movement request is the only mechanic path that increments step, records litAt, calls updateShattered, tests an expired destination, and changes the position/status."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/crackglaze_crossing.js",
+          "lines": "77-85",
+          "claim": "Simplified mode renders four stationary direction buttons and maps each click to the adjacent destination; the grader requires direction_button and rejects a point payload."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/crackglaze_crossing.js",
+          "lines": "232-256",
+          "claim": "Initialization creates the state and renders synchronously; the mechanic contains no timer, interval, or animation-loop task-state update."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/crackglaze_crossing.css",
+          "lines": "162-178",
+          "claim": "The only timed CSS effect is a .08 s visual transition for ceramic appearance; it does not advance the model or change the grading outcome."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/crackglaze_crossing.py",
+          "lines": "157-239",
+          "claim": "The grader replays a finite movement event list and advances next_step only while iterating submitted events; expiration and success are derived from that replay."
+        },
+        {
+          "path": "weird_captcha_gym/environments/crackglaze_crossing_env/tasks/crackglaze_crossing_seed_0001/verifier.py",
+          "lines": "22-43",
+          "claim": "The task verifier invokes the independent Crackglaze grader on the exported UI result, public state, and ground truth."
+        }
+      ],
+      "uncertainties": []
+    },
+    {
+      "case_index": 175,
+      "public_environment_name": "Crackglaze Crossing",
+      "environment_id": "crackglaze_crossing_env",
+      "difficulty": 3,
+      "interaction_mode": "full",
+      "label": "no",
+      "controls_available": [
+        "Full mode: click the intended visible adjacent ceramic tile directly; the tile_click release point must be inside that destination tile. There is no direction pad.",
+        "Difficulty 3 parameters: core_rows=5, core_columns=6, core_cells=15, lantern_count=3, glaze_count=3, fuse_lengths=[3,6,10], gallery_cells=2, crack_contrast=standard, minimum_policy_failures=4.",
+        "The board visibly shows the generated ceramic geometry, current walker, lanterns, exit door, glaze colors, and crack stages; every outcome-affecting move is discrete and synchronous.",
+        "Configured task clock: play_time_seconds=180, observation_window_ms=0, frames_per_observation=1."
+      ],
+      "autonomous_processes": [],
+      "grouped_control_modes": [
+        "D = accepted movement through the Full tile_click surface, grouped across destination tiles and attempts."
+      ],
+      "delta_ms": null,
+      "window_ms": null,
+      "clause_i": {
+        "holds": true,
+        "reason": "The observation-free q clause is separately blocked by seed-dependent visible state: the generator samples the floor/lantern layout and shuffles the glaze-to-fuse mapping, while the prior action history I_t does not identify that state. Thus a fixed action-history-only route cannot generally be optimal across generated occurrences. This is a static planning/memory distinction, not a real-time transition."
+      },
+      "clause_ii": {
+        "holds": true,
+        "reason": "A current screenshot supplies the board geometry, lantern/door locations, glaze colors, and visible or accumulated crack trace; I_t supplies the agent's own move history from which movement-count ages can be tracked. A bounded state-based policy can choose a current adjacent move, but it has no autonomous future state to predict in this game."
+      },
+      "clause_iii": {
+        "holds": false,
+        "reason": "No common witness exists. With no new outcome-affecting action, the mechanic does not change H_t: model.step, litAt, shattered, position, and status are updated only inside attemptMove. The CSS transition is presentation-only, and waiting can at most consume the external play deadline, which the definition excludes as the required strict action-value loss. Therefore no Delta>0 can make an available move unavailable or strictly less effective through non-clock task-state evolution."
+      },
+      "common_visible_process": "No autonomous task-state process exists during a no-action interval: waiting leaves position, step, lit_at, shattered, and status unchanged. The only CSS transition (.08 s) is action-triggered presentation settling and does not affect hit testing or grading.",
+      "pre_run": {
+        "threshold": 0.5,
+        "at_least_half": null,
+        "rate": null,
+        "basis": "not_applicable",
+        "reason": "There is no autonomous outcome phase: fuses and floor state progress only when movement actions are supplied. The configuration is already No from failed clause (iii), so a pre-run percentage cannot override or change this mathematical result.",
+        "seed_probe": null
+      },
+      "files_read_completely": [
+        "AGENTS.md",
+        "weird_captcha_gym/docs/controllability/real-time.md",
+        "weird_captcha_gym/environments/crackglaze_crossing_env/controls.json",
+        "weird_captcha_gym/environments/crackglaze_crossing_env/env.json",
+        "weird_captcha_gym/environments/crackglaze_crossing_env/tasks/crackglaze_crossing_seed_0001/task.json",
+        "weird_captcha_gym/shared_scripts/incubator_generators/crackglaze_crossing.py",
+        "weird_captcha_gym/shared_runtime/app/mechanics/crackglaze_crossing.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/crackglaze_crossing.css",
+        "weird_captcha_gym/shared_runtime/server/incubator_graders/crackglaze_crossing.py",
+        "weird_captcha_gym/environments/crackglaze_crossing_env/tasks/crackglaze_crossing_seed_0001/verifier.py",
+        "weird_captcha_gym/tools/incubator_solvers/crackglaze_crossing.py"
+      ],
+      "source_evidence": [
+        {
+          "path": "weird_captcha_gym/environments/crackglaze_crossing_env/controls.json",
+          "lines": "18-22",
+          "claim": "Difficulty 3 parameters: core_rows=5, core_columns=6, core_cells=15, lantern_count=3, glaze_count=3, fuse_lengths=[3,6,10], gallery_cells=2, crack_contrast=standard, minimum_policy_failures=4."
+        },
+        {
+          "path": "weird_captcha_gym/environments/crackglaze_crossing_env/controls.json",
+          "lines": "37-41",
+          "claim": "Full is the selected interaction profile; the environment settings are play_time_seconds=180, observation_window_ms=0, and frames_per_observation=1."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/crackglaze_crossing.py",
+          "lines": "39-48",
+          "claim": "The generator takes difficulty_parameters from the injected control condition, so the supplied level profile is the active generation configuration."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/crackglaze_crossing.py",
+          "lines": "382-396",
+          "claim": "Generation is seed-dependent: it selects the active dimensions/counts, shuffles fuse lengths across glaze colors, and constructs the generated floor."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/crackglaze_crossing.js",
+          "lines": "32-46",
+          "claim": "Crack and shatter display stages are computed from model.step, litAt, and per-cell fuse length, not elapsed wall time."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/crackglaze_crossing.js",
+          "lines": "163-203",
+          "claim": "A valid movement request is the only mechanic path that increments step, records litAt, calls updateShattered, tests an expired destination, and changes the position/status."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/crackglaze_crossing.js",
+          "lines": "49-75",
+          "claim": "Full mode renders each floor tile as a button and binds pointer release/click to tile_click; the grader requires the click point to lie inside the visible destination tile."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/crackglaze_crossing.js",
+          "lines": "232-256",
+          "claim": "Initialization creates the state and renders synchronously; the mechanic contains no timer, interval, or animation-loop task-state update."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/crackglaze_crossing.css",
+          "lines": "162-178",
+          "claim": "The only timed CSS effect is a .08 s visual transition for ceramic appearance; it does not advance the model or change the grading outcome."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/crackglaze_crossing.py",
+          "lines": "157-239",
+          "claim": "The grader replays a finite movement event list and advances next_step only while iterating submitted events; expiration and success are derived from that replay."
+        },
+        {
+          "path": "weird_captcha_gym/environments/crackglaze_crossing_env/tasks/crackglaze_crossing_seed_0001/verifier.py",
+          "lines": "22-43",
+          "claim": "The task verifier invokes the independent Crackglaze grader on the exported UI result, public state, and ground truth."
+        }
+      ],
+      "uncertainties": []
+    },
+    {
+      "case_index": 176,
+      "public_environment_name": "Crackglaze Crossing",
+      "environment_id": "crackglaze_crossing_env",
+      "difficulty": 3,
+      "interaction_mode": "simplified",
+      "label": "no",
+      "controls_available": [
+        "Simplified mode: click one of four stationary arrow buttons (up/left/right/down) to request one orthogonally adjacent move. Direct tile clicks are not the accepted surface.",
+        "Difficulty 3 parameters: core_rows=5, core_columns=6, core_cells=15, lantern_count=3, glaze_count=3, fuse_lengths=[3,6,10], gallery_cells=2, crack_contrast=standard, minimum_policy_failures=4.",
+        "The board visibly shows the generated ceramic geometry, current walker, lanterns, exit door, glaze colors, and crack stages; every outcome-affecting move is discrete and synchronous.",
+        "Configured task clock: play_time_seconds=180, observation_window_ms=0, frames_per_observation=1."
+      ],
+      "autonomous_processes": [],
+      "grouped_control_modes": [
+        "D = accepted movement through the Simplified direction_button surface, grouped across directions and attempts."
+      ],
+      "delta_ms": null,
+      "window_ms": null,
+      "clause_i": {
+        "holds": true,
+        "reason": "The observation-free q clause is separately blocked by seed-dependent visible state: the generator samples the floor/lantern layout and shuffles the glaze-to-fuse mapping, while the prior action history I_t does not identify that state. Thus a fixed action-history-only route cannot generally be optimal across generated occurrences. This is a static planning/memory distinction, not a real-time transition."
+      },
+      "clause_ii": {
+        "holds": true,
+        "reason": "A current screenshot supplies the board geometry, lantern/door locations, glaze colors, and visible or accumulated crack trace; I_t supplies the agent's own move history from which movement-count ages can be tracked. A bounded state-based policy can choose a current adjacent move, but it has no autonomous future state to predict in this game."
+      },
+      "clause_iii": {
+        "holds": false,
+        "reason": "No common witness exists. With no new outcome-affecting action, the mechanic does not change H_t: model.step, litAt, shattered, position, and status are updated only inside attemptMove. The CSS transition is presentation-only, and waiting can at most consume the external play deadline, which the definition excludes as the required strict action-value loss. Therefore no Delta>0 can make an available move unavailable or strictly less effective through non-clock task-state evolution."
+      },
+      "common_visible_process": "No autonomous task-state process exists during a no-action interval: waiting leaves position, step, lit_at, shattered, and status unchanged. The only CSS transition (.08 s) is action-triggered presentation settling and does not affect hit testing or grading.",
+      "pre_run": {
+        "threshold": 0.5,
+        "at_least_half": null,
+        "rate": null,
+        "basis": "not_applicable",
+        "reason": "There is no autonomous outcome phase: fuses and floor state progress only when movement actions are supplied. The configuration is already No from failed clause (iii), so a pre-run percentage cannot override or change this mathematical result.",
+        "seed_probe": null
+      },
+      "files_read_completely": [
+        "AGENTS.md",
+        "weird_captcha_gym/docs/controllability/real-time.md",
+        "weird_captcha_gym/environments/crackglaze_crossing_env/controls.json",
+        "weird_captcha_gym/environments/crackglaze_crossing_env/env.json",
+        "weird_captcha_gym/environments/crackglaze_crossing_env/tasks/crackglaze_crossing_seed_0001/task.json",
+        "weird_captcha_gym/shared_scripts/incubator_generators/crackglaze_crossing.py",
+        "weird_captcha_gym/shared_runtime/app/mechanics/crackglaze_crossing.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/crackglaze_crossing.css",
+        "weird_captcha_gym/shared_runtime/server/incubator_graders/crackglaze_crossing.py",
+        "weird_captcha_gym/environments/crackglaze_crossing_env/tasks/crackglaze_crossing_seed_0001/verifier.py",
+        "weird_captcha_gym/tools/incubator_solvers/crackglaze_crossing.py"
+      ],
+      "source_evidence": [
+        {
+          "path": "weird_captcha_gym/environments/crackglaze_crossing_env/controls.json",
+          "lines": "18-22",
+          "claim": "Difficulty 3 parameters: core_rows=5, core_columns=6, core_cells=15, lantern_count=3, glaze_count=3, fuse_lengths=[3,6,10], gallery_cells=2, crack_contrast=standard, minimum_policy_failures=4."
+        },
+        {
+          "path": "weird_captcha_gym/environments/crackglaze_crossing_env/controls.json",
+          "lines": "37-41",
+          "claim": "Simplified is the selected interaction profile; the environment settings are play_time_seconds=180, observation_window_ms=0, and frames_per_observation=1."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/crackglaze_crossing.py",
+          "lines": "39-48",
+          "claim": "The generator takes difficulty_parameters from the injected control condition, so the supplied level profile is the active generation configuration."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/crackglaze_crossing.py",
+          "lines": "382-396",
+          "claim": "Generation is seed-dependent: it selects the active dimensions/counts, shuffles fuse lengths across glaze colors, and constructs the generated floor."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/crackglaze_crossing.js",
+          "lines": "32-46",
+          "claim": "Crack and shatter display stages are computed from model.step, litAt, and per-cell fuse length, not elapsed wall time."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/crackglaze_crossing.js",
+          "lines": "163-203",
+          "claim": "A valid movement request is the only mechanic path that increments step, records litAt, calls updateShattered, tests an expired destination, and changes the position/status."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/crackglaze_crossing.js",
+          "lines": "77-85",
+          "claim": "Simplified mode renders four stationary direction buttons and maps each click to the adjacent destination; the grader requires direction_button and rejects a point payload."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/crackglaze_crossing.js",
+          "lines": "232-256",
+          "claim": "Initialization creates the state and renders synchronously; the mechanic contains no timer, interval, or animation-loop task-state update."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/crackglaze_crossing.css",
+          "lines": "162-178",
+          "claim": "The only timed CSS effect is a .08 s visual transition for ceramic appearance; it does not advance the model or change the grading outcome."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/crackglaze_crossing.py",
+          "lines": "157-239",
+          "claim": "The grader replays a finite movement event list and advances next_step only while iterating submitted events; expiration and success are derived from that replay."
+        },
+        {
+          "path": "weird_captcha_gym/environments/crackglaze_crossing_env/tasks/crackglaze_crossing_seed_0001/verifier.py",
+          "lines": "22-43",
+          "claim": "The task verifier invokes the independent Crackglaze grader on the exported UI result, public state, and ground truth."
+        }
+      ],
+      "uncertainties": []
+    },
+    {
+      "case_index": 177,
+      "public_environment_name": "Crackglaze Crossing",
+      "environment_id": "crackglaze_crossing_env",
+      "difficulty": 4,
+      "interaction_mode": "full",
+      "label": "no",
+      "controls_available": [
+        "Full mode: click the intended visible adjacent ceramic tile directly; the tile_click release point must be inside that destination tile. There is no direction pad.",
+        "Difficulty 4 parameters: core_rows=5, core_columns=7, core_cells=17, lantern_count=3, glaze_count=4, fuse_lengths=[3,5,8,11], gallery_cells=4, crack_contrast=subtle, minimum_policy_failures=5.",
+        "The board visibly shows the generated ceramic geometry, current walker, lanterns, exit door, glaze colors, and crack stages; every outcome-affecting move is discrete and synchronous.",
+        "Configured task clock: play_time_seconds=180, observation_window_ms=0, frames_per_observation=1."
+      ],
+      "autonomous_processes": [],
+      "grouped_control_modes": [
+        "D = accepted movement through the Full tile_click surface, grouped across destination tiles and attempts."
+      ],
+      "delta_ms": null,
+      "window_ms": null,
+      "clause_i": {
+        "holds": true,
+        "reason": "The observation-free q clause is separately blocked by seed-dependent visible state: the generator samples the floor/lantern layout and shuffles the glaze-to-fuse mapping, while the prior action history I_t does not identify that state. Thus a fixed action-history-only route cannot generally be optimal across generated occurrences. This is a static planning/memory distinction, not a real-time transition."
+      },
+      "clause_ii": {
+        "holds": true,
+        "reason": "A current screenshot supplies the board geometry, lantern/door locations, glaze colors, and visible or accumulated crack trace; I_t supplies the agent's own move history from which movement-count ages can be tracked. A bounded state-based policy can choose a current adjacent move, but it has no autonomous future state to predict in this game."
+      },
+      "clause_iii": {
+        "holds": false,
+        "reason": "No common witness exists. With no new outcome-affecting action, the mechanic does not change H_t: model.step, litAt, shattered, position, and status are updated only inside attemptMove. The CSS transition is presentation-only, and waiting can at most consume the external play deadline, which the definition excludes as the required strict action-value loss. Therefore no Delta>0 can make an available move unavailable or strictly less effective through non-clock task-state evolution."
+      },
+      "common_visible_process": "No autonomous task-state process exists during a no-action interval: waiting leaves position, step, lit_at, shattered, and status unchanged. The only CSS transition (.08 s) is action-triggered presentation settling and does not affect hit testing or grading.",
+      "pre_run": {
+        "threshold": 0.5,
+        "at_least_half": null,
+        "rate": null,
+        "basis": "not_applicable",
+        "reason": "There is no autonomous outcome phase: fuses and floor state progress only when movement actions are supplied. The configuration is already No from failed clause (iii), so a pre-run percentage cannot override or change this mathematical result.",
+        "seed_probe": null
+      },
+      "files_read_completely": [
+        "AGENTS.md",
+        "weird_captcha_gym/docs/controllability/real-time.md",
+        "weird_captcha_gym/environments/crackglaze_crossing_env/controls.json",
+        "weird_captcha_gym/environments/crackglaze_crossing_env/env.json",
+        "weird_captcha_gym/environments/crackglaze_crossing_env/tasks/crackglaze_crossing_seed_0001/task.json",
+        "weird_captcha_gym/shared_scripts/incubator_generators/crackglaze_crossing.py",
+        "weird_captcha_gym/shared_runtime/app/mechanics/crackglaze_crossing.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/crackglaze_crossing.css",
+        "weird_captcha_gym/shared_runtime/server/incubator_graders/crackglaze_crossing.py",
+        "weird_captcha_gym/environments/crackglaze_crossing_env/tasks/crackglaze_crossing_seed_0001/verifier.py",
+        "weird_captcha_gym/tools/incubator_solvers/crackglaze_crossing.py"
+      ],
+      "source_evidence": [
+        {
+          "path": "weird_captcha_gym/environments/crackglaze_crossing_env/controls.json",
+          "lines": "24-28",
+          "claim": "Difficulty 4 parameters: core_rows=5, core_columns=7, core_cells=17, lantern_count=3, glaze_count=4, fuse_lengths=[3,5,8,11], gallery_cells=4, crack_contrast=subtle, minimum_policy_failures=5."
+        },
+        {
+          "path": "weird_captcha_gym/environments/crackglaze_crossing_env/controls.json",
+          "lines": "37-41",
+          "claim": "Full is the selected interaction profile; the environment settings are play_time_seconds=180, observation_window_ms=0, and frames_per_observation=1."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/crackglaze_crossing.py",
+          "lines": "39-48",
+          "claim": "The generator takes difficulty_parameters from the injected control condition, so the supplied level profile is the active generation configuration."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/crackglaze_crossing.py",
+          "lines": "382-396",
+          "claim": "Generation is seed-dependent: it selects the active dimensions/counts, shuffles fuse lengths across glaze colors, and constructs the generated floor."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/crackglaze_crossing.js",
+          "lines": "32-46",
+          "claim": "Crack and shatter display stages are computed from model.step, litAt, and per-cell fuse length, not elapsed wall time."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/crackglaze_crossing.js",
+          "lines": "163-203",
+          "claim": "A valid movement request is the only mechanic path that increments step, records litAt, calls updateShattered, tests an expired destination, and changes the position/status."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/crackglaze_crossing.js",
+          "lines": "49-75",
+          "claim": "Full mode renders each floor tile as a button and binds pointer release/click to tile_click; the grader requires the click point to lie inside the visible destination tile."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/crackglaze_crossing.js",
+          "lines": "232-256",
+          "claim": "Initialization creates the state and renders synchronously; the mechanic contains no timer, interval, or animation-loop task-state update."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/crackglaze_crossing.css",
+          "lines": "162-178",
+          "claim": "The only timed CSS effect is a .08 s visual transition for ceramic appearance; it does not advance the model or change the grading outcome."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/crackglaze_crossing.py",
+          "lines": "157-239",
+          "claim": "The grader replays a finite movement event list and advances next_step only while iterating submitted events; expiration and success are derived from that replay."
+        },
+        {
+          "path": "weird_captcha_gym/environments/crackglaze_crossing_env/tasks/crackglaze_crossing_seed_0001/verifier.py",
+          "lines": "22-43",
+          "claim": "The task verifier invokes the independent Crackglaze grader on the exported UI result, public state, and ground truth."
+        }
+      ],
+      "uncertainties": []
+    },
+    {
+      "case_index": 178,
+      "public_environment_name": "Crackglaze Crossing",
+      "environment_id": "crackglaze_crossing_env",
+      "difficulty": 4,
+      "interaction_mode": "simplified",
+      "label": "no",
+      "controls_available": [
+        "Simplified mode: click one of four stationary arrow buttons (up/left/right/down) to request one orthogonally adjacent move. Direct tile clicks are not the accepted surface.",
+        "Difficulty 4 parameters: core_rows=5, core_columns=7, core_cells=17, lantern_count=3, glaze_count=4, fuse_lengths=[3,5,8,11], gallery_cells=4, crack_contrast=subtle, minimum_policy_failures=5.",
+        "The board visibly shows the generated ceramic geometry, current walker, lanterns, exit door, glaze colors, and crack stages; every outcome-affecting move is discrete and synchronous.",
+        "Configured task clock: play_time_seconds=180, observation_window_ms=0, frames_per_observation=1."
+      ],
+      "autonomous_processes": [],
+      "grouped_control_modes": [
+        "D = accepted movement through the Simplified direction_button surface, grouped across directions and attempts."
+      ],
+      "delta_ms": null,
+      "window_ms": null,
+      "clause_i": {
+        "holds": true,
+        "reason": "The observation-free q clause is separately blocked by seed-dependent visible state: the generator samples the floor/lantern layout and shuffles the glaze-to-fuse mapping, while the prior action history I_t does not identify that state. Thus a fixed action-history-only route cannot generally be optimal across generated occurrences. This is a static planning/memory distinction, not a real-time transition."
+      },
+      "clause_ii": {
+        "holds": true,
+        "reason": "A current screenshot supplies the board geometry, lantern/door locations, glaze colors, and visible or accumulated crack trace; I_t supplies the agent's own move history from which movement-count ages can be tracked. A bounded state-based policy can choose a current adjacent move, but it has no autonomous future state to predict in this game."
+      },
+      "clause_iii": {
+        "holds": false,
+        "reason": "No common witness exists. With no new outcome-affecting action, the mechanic does not change H_t: model.step, litAt, shattered, position, and status are updated only inside attemptMove. The CSS transition is presentation-only, and waiting can at most consume the external play deadline, which the definition excludes as the required strict action-value loss. Therefore no Delta>0 can make an available move unavailable or strictly less effective through non-clock task-state evolution."
+      },
+      "common_visible_process": "No autonomous task-state process exists during a no-action interval: waiting leaves position, step, lit_at, shattered, and status unchanged. The only CSS transition (.08 s) is action-triggered presentation settling and does not affect hit testing or grading.",
+      "pre_run": {
+        "threshold": 0.5,
+        "at_least_half": null,
+        "rate": null,
+        "basis": "not_applicable",
+        "reason": "There is no autonomous outcome phase: fuses and floor state progress only when movement actions are supplied. The configuration is already No from failed clause (iii), so a pre-run percentage cannot override or change this mathematical result.",
+        "seed_probe": null
+      },
+      "files_read_completely": [
+        "AGENTS.md",
+        "weird_captcha_gym/docs/controllability/real-time.md",
+        "weird_captcha_gym/environments/crackglaze_crossing_env/controls.json",
+        "weird_captcha_gym/environments/crackglaze_crossing_env/env.json",
+        "weird_captcha_gym/environments/crackglaze_crossing_env/tasks/crackglaze_crossing_seed_0001/task.json",
+        "weird_captcha_gym/shared_scripts/incubator_generators/crackglaze_crossing.py",
+        "weird_captcha_gym/shared_runtime/app/mechanics/crackglaze_crossing.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/crackglaze_crossing.css",
+        "weird_captcha_gym/shared_runtime/server/incubator_graders/crackglaze_crossing.py",
+        "weird_captcha_gym/environments/crackglaze_crossing_env/tasks/crackglaze_crossing_seed_0001/verifier.py",
+        "weird_captcha_gym/tools/incubator_solvers/crackglaze_crossing.py"
+      ],
+      "source_evidence": [
+        {
+          "path": "weird_captcha_gym/environments/crackglaze_crossing_env/controls.json",
+          "lines": "24-28",
+          "claim": "Difficulty 4 parameters: core_rows=5, core_columns=7, core_cells=17, lantern_count=3, glaze_count=4, fuse_lengths=[3,5,8,11], gallery_cells=4, crack_contrast=subtle, minimum_policy_failures=5."
+        },
+        {
+          "path": "weird_captcha_gym/environments/crackglaze_crossing_env/controls.json",
+          "lines": "37-41",
+          "claim": "Simplified is the selected interaction profile; the environment settings are play_time_seconds=180, observation_window_ms=0, and frames_per_observation=1."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/crackglaze_crossing.py",
+          "lines": "39-48",
+          "claim": "The generator takes difficulty_parameters from the injected control condition, so the supplied level profile is the active generation configuration."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/crackglaze_crossing.py",
+          "lines": "382-396",
+          "claim": "Generation is seed-dependent: it selects the active dimensions/counts, shuffles fuse lengths across glaze colors, and constructs the generated floor."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/crackglaze_crossing.js",
+          "lines": "32-46",
+          "claim": "Crack and shatter display stages are computed from model.step, litAt, and per-cell fuse length, not elapsed wall time."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/crackglaze_crossing.js",
+          "lines": "163-203",
+          "claim": "A valid movement request is the only mechanic path that increments step, records litAt, calls updateShattered, tests an expired destination, and changes the position/status."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/crackglaze_crossing.js",
+          "lines": "77-85",
+          "claim": "Simplified mode renders four stationary direction buttons and maps each click to the adjacent destination; the grader requires direction_button and rejects a point payload."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/crackglaze_crossing.js",
+          "lines": "232-256",
+          "claim": "Initialization creates the state and renders synchronously; the mechanic contains no timer, interval, or animation-loop task-state update."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/crackglaze_crossing.css",
+          "lines": "162-178",
+          "claim": "The only timed CSS effect is a .08 s visual transition for ceramic appearance; it does not advance the model or change the grading outcome."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/crackglaze_crossing.py",
+          "lines": "157-239",
+          "claim": "The grader replays a finite movement event list and advances next_step only while iterating submitted events; expiration and success are derived from that replay."
+        },
+        {
+          "path": "weird_captcha_gym/environments/crackglaze_crossing_env/tasks/crackglaze_crossing_seed_0001/verifier.py",
+          "lines": "22-43",
+          "claim": "The task verifier invokes the independent Crackglaze grader on the exported UI result, public state, and ground truth."
+        }
+      ],
+      "uncertainties": []
+    },
+    {
+      "case_index": 179,
+      "public_environment_name": "Crackglaze Crossing",
+      "environment_id": "crackglaze_crossing_env",
+      "difficulty": 5,
+      "interaction_mode": "full",
+      "label": "no",
+      "controls_available": [
+        "Full mode: click the intended visible adjacent ceramic tile directly; the tile_click release point must be inside that destination tile. There is no direction pad.",
+        "Difficulty 5 parameters: core_rows=5, core_columns=7, core_cells=17, lantern_count=4, glaze_count=4, fuse_lengths=[3,5,8,12], gallery_cells=6, crack_contrast=subtle, minimum_policy_failures=6.",
+        "The board visibly shows the generated ceramic geometry, current walker, lanterns, exit door, glaze colors, and crack stages; every outcome-affecting move is discrete and synchronous.",
+        "Configured task clock: play_time_seconds=180, observation_window_ms=0, frames_per_observation=1."
+      ],
+      "autonomous_processes": [],
+      "grouped_control_modes": [
+        "D = accepted movement through the Full tile_click surface, grouped across destination tiles and attempts."
+      ],
+      "delta_ms": null,
+      "window_ms": null,
+      "clause_i": {
+        "holds": true,
+        "reason": "The observation-free q clause is separately blocked by seed-dependent visible state: the generator samples the floor/lantern layout and shuffles the glaze-to-fuse mapping, while the prior action history I_t does not identify that state. Thus a fixed action-history-only route cannot generally be optimal across generated occurrences. This is a static planning/memory distinction, not a real-time transition."
+      },
+      "clause_ii": {
+        "holds": true,
+        "reason": "A current screenshot supplies the board geometry, lantern/door locations, glaze colors, and visible or accumulated crack trace; I_t supplies the agent's own move history from which movement-count ages can be tracked. A bounded state-based policy can choose a current adjacent move, but it has no autonomous future state to predict in this game."
+      },
+      "clause_iii": {
+        "holds": false,
+        "reason": "No common witness exists. With no new outcome-affecting action, the mechanic does not change H_t: model.step, litAt, shattered, position, and status are updated only inside attemptMove. The CSS transition is presentation-only, and waiting can at most consume the external play deadline, which the definition excludes as the required strict action-value loss. Therefore no Delta>0 can make an available move unavailable or strictly less effective through non-clock task-state evolution."
+      },
+      "common_visible_process": "No autonomous task-state process exists during a no-action interval: waiting leaves position, step, lit_at, shattered, and status unchanged. The only CSS transition (.08 s) is action-triggered presentation settling and does not affect hit testing or grading.",
+      "pre_run": {
+        "threshold": 0.5,
+        "at_least_half": null,
+        "rate": null,
+        "basis": "not_applicable",
+        "reason": "There is no autonomous outcome phase: fuses and floor state progress only when movement actions are supplied. The configuration is already No from failed clause (iii), so a pre-run percentage cannot override or change this mathematical result.",
+        "seed_probe": null
+      },
+      "files_read_completely": [
+        "AGENTS.md",
+        "weird_captcha_gym/docs/controllability/real-time.md",
+        "weird_captcha_gym/environments/crackglaze_crossing_env/controls.json",
+        "weird_captcha_gym/environments/crackglaze_crossing_env/env.json",
+        "weird_captcha_gym/environments/crackglaze_crossing_env/tasks/crackglaze_crossing_seed_0001/task.json",
+        "weird_captcha_gym/shared_scripts/incubator_generators/crackglaze_crossing.py",
+        "weird_captcha_gym/shared_runtime/app/mechanics/crackglaze_crossing.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/crackglaze_crossing.css",
+        "weird_captcha_gym/shared_runtime/server/incubator_graders/crackglaze_crossing.py",
+        "weird_captcha_gym/environments/crackglaze_crossing_env/tasks/crackglaze_crossing_seed_0001/verifier.py",
+        "weird_captcha_gym/tools/incubator_solvers/crackglaze_crossing.py"
+      ],
+      "source_evidence": [
+        {
+          "path": "weird_captcha_gym/environments/crackglaze_crossing_env/controls.json",
+          "lines": "30-34",
+          "claim": "Difficulty 5 parameters: core_rows=5, core_columns=7, core_cells=17, lantern_count=4, glaze_count=4, fuse_lengths=[3,5,8,12], gallery_cells=6, crack_contrast=subtle, minimum_policy_failures=6."
+        },
+        {
+          "path": "weird_captcha_gym/environments/crackglaze_crossing_env/controls.json",
+          "lines": "37-41",
+          "claim": "Full is the selected interaction profile; the environment settings are play_time_seconds=180, observation_window_ms=0, and frames_per_observation=1."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/crackglaze_crossing.py",
+          "lines": "39-48",
+          "claim": "The generator takes difficulty_parameters from the injected control condition, so the supplied level profile is the active generation configuration."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/crackglaze_crossing.py",
+          "lines": "382-396",
+          "claim": "Generation is seed-dependent: it selects the active dimensions/counts, shuffles fuse lengths across glaze colors, and constructs the generated floor."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/crackglaze_crossing.js",
+          "lines": "32-46",
+          "claim": "Crack and shatter display stages are computed from model.step, litAt, and per-cell fuse length, not elapsed wall time."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/crackglaze_crossing.js",
+          "lines": "163-203",
+          "claim": "A valid movement request is the only mechanic path that increments step, records litAt, calls updateShattered, tests an expired destination, and changes the position/status."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/crackglaze_crossing.js",
+          "lines": "49-75",
+          "claim": "Full mode renders each floor tile as a button and binds pointer release/click to tile_click; the grader requires the click point to lie inside the visible destination tile."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/crackglaze_crossing.js",
+          "lines": "232-256",
+          "claim": "Initialization creates the state and renders synchronously; the mechanic contains no timer, interval, or animation-loop task-state update."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/crackglaze_crossing.css",
+          "lines": "162-178",
+          "claim": "The only timed CSS effect is a .08 s visual transition for ceramic appearance; it does not advance the model or change the grading outcome."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/crackglaze_crossing.py",
+          "lines": "157-239",
+          "claim": "The grader replays a finite movement event list and advances next_step only while iterating submitted events; expiration and success are derived from that replay."
+        },
+        {
+          "path": "weird_captcha_gym/environments/crackglaze_crossing_env/tasks/crackglaze_crossing_seed_0001/verifier.py",
+          "lines": "22-43",
+          "claim": "The task verifier invokes the independent Crackglaze grader on the exported UI result, public state, and ground truth."
+        }
+      ],
+      "uncertainties": []
+    },
+    {
+      "case_index": 180,
+      "public_environment_name": "Crackglaze Crossing",
+      "environment_id": "crackglaze_crossing_env",
+      "difficulty": 5,
+      "interaction_mode": "simplified",
+      "label": "no",
+      "controls_available": [
+        "Simplified mode: click one of four stationary arrow buttons (up/left/right/down) to request one orthogonally adjacent move. Direct tile clicks are not the accepted surface.",
+        "Difficulty 5 parameters: core_rows=5, core_columns=7, core_cells=17, lantern_count=4, glaze_count=4, fuse_lengths=[3,5,8,12], gallery_cells=6, crack_contrast=subtle, minimum_policy_failures=6.",
+        "The board visibly shows the generated ceramic geometry, current walker, lanterns, exit door, glaze colors, and crack stages; every outcome-affecting move is discrete and synchronous.",
+        "Configured task clock: play_time_seconds=180, observation_window_ms=0, frames_per_observation=1."
+      ],
+      "autonomous_processes": [],
+      "grouped_control_modes": [
+        "D = accepted movement through the Simplified direction_button surface, grouped across directions and attempts."
+      ],
+      "delta_ms": null,
+      "window_ms": null,
+      "clause_i": {
+        "holds": true,
+        "reason": "The observation-free q clause is separately blocked by seed-dependent visible state: the generator samples the floor/lantern layout and shuffles the glaze-to-fuse mapping, while the prior action history I_t does not identify that state. Thus a fixed action-history-only route cannot generally be optimal across generated occurrences. This is a static planning/memory distinction, not a real-time transition."
+      },
+      "clause_ii": {
+        "holds": true,
+        "reason": "A current screenshot supplies the board geometry, lantern/door locations, glaze colors, and visible or accumulated crack trace; I_t supplies the agent's own move history from which movement-count ages can be tracked. A bounded state-based policy can choose a current adjacent move, but it has no autonomous future state to predict in this game."
+      },
+      "clause_iii": {
+        "holds": false,
+        "reason": "No common witness exists. With no new outcome-affecting action, the mechanic does not change H_t: model.step, litAt, shattered, position, and status are updated only inside attemptMove. The CSS transition is presentation-only, and waiting can at most consume the external play deadline, which the definition excludes as the required strict action-value loss. Therefore no Delta>0 can make an available move unavailable or strictly less effective through non-clock task-state evolution."
+      },
+      "common_visible_process": "No autonomous task-state process exists during a no-action interval: waiting leaves position, step, lit_at, shattered, and status unchanged. The only CSS transition (.08 s) is action-triggered presentation settling and does not affect hit testing or grading.",
+      "pre_run": {
+        "threshold": 0.5,
+        "at_least_half": null,
+        "rate": null,
+        "basis": "not_applicable",
+        "reason": "There is no autonomous outcome phase: fuses and floor state progress only when movement actions are supplied. The configuration is already No from failed clause (iii), so a pre-run percentage cannot override or change this mathematical result.",
+        "seed_probe": null
+      },
+      "files_read_completely": [
+        "AGENTS.md",
+        "weird_captcha_gym/docs/controllability/real-time.md",
+        "weird_captcha_gym/environments/crackglaze_crossing_env/controls.json",
+        "weird_captcha_gym/environments/crackglaze_crossing_env/env.json",
+        "weird_captcha_gym/environments/crackglaze_crossing_env/tasks/crackglaze_crossing_seed_0001/task.json",
+        "weird_captcha_gym/shared_scripts/incubator_generators/crackglaze_crossing.py",
+        "weird_captcha_gym/shared_runtime/app/mechanics/crackglaze_crossing.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/crackglaze_crossing.css",
+        "weird_captcha_gym/shared_runtime/server/incubator_graders/crackglaze_crossing.py",
+        "weird_captcha_gym/environments/crackglaze_crossing_env/tasks/crackglaze_crossing_seed_0001/verifier.py",
+        "weird_captcha_gym/tools/incubator_solvers/crackglaze_crossing.py"
+      ],
+      "source_evidence": [
+        {
+          "path": "weird_captcha_gym/environments/crackglaze_crossing_env/controls.json",
+          "lines": "30-34",
+          "claim": "Difficulty 5 parameters: core_rows=5, core_columns=7, core_cells=17, lantern_count=4, glaze_count=4, fuse_lengths=[3,5,8,12], gallery_cells=6, crack_contrast=subtle, minimum_policy_failures=6."
+        },
+        {
+          "path": "weird_captcha_gym/environments/crackglaze_crossing_env/controls.json",
+          "lines": "37-41",
+          "claim": "Simplified is the selected interaction profile; the environment settings are play_time_seconds=180, observation_window_ms=0, and frames_per_observation=1."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/crackglaze_crossing.py",
+          "lines": "39-48",
+          "claim": "The generator takes difficulty_parameters from the injected control condition, so the supplied level profile is the active generation configuration."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/crackglaze_crossing.py",
+          "lines": "382-396",
+          "claim": "Generation is seed-dependent: it selects the active dimensions/counts, shuffles fuse lengths across glaze colors, and constructs the generated floor."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/crackglaze_crossing.js",
+          "lines": "32-46",
+          "claim": "Crack and shatter display stages are computed from model.step, litAt, and per-cell fuse length, not elapsed wall time."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/crackglaze_crossing.js",
+          "lines": "163-203",
+          "claim": "A valid movement request is the only mechanic path that increments step, records litAt, calls updateShattered, tests an expired destination, and changes the position/status."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/crackglaze_crossing.js",
+          "lines": "77-85",
+          "claim": "Simplified mode renders four stationary direction buttons and maps each click to the adjacent destination; the grader requires direction_button and rejects a point payload."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/crackglaze_crossing.js",
+          "lines": "232-256",
+          "claim": "Initialization creates the state and renders synchronously; the mechanic contains no timer, interval, or animation-loop task-state update."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/crackglaze_crossing.css",
+          "lines": "162-178",
+          "claim": "The only timed CSS effect is a .08 s visual transition for ceramic appearance; it does not advance the model or change the grading outcome."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/crackglaze_crossing.py",
+          "lines": "157-239",
+          "claim": "The grader replays a finite movement event list and advances next_step only while iterating submitted events; expiration and success are derived from that replay."
+        },
+        {
+          "path": "weird_captcha_gym/environments/crackglaze_crossing_env/tasks/crackglaze_crossing_seed_0001/verifier.py",
+          "lines": "22-43",
+          "claim": "The task verifier invokes the independent Crackglaze grader on the exported UI result, public state, and ground truth."
+        }
+      ],
+      "uncertainties": []
+    }
+  ]
+}

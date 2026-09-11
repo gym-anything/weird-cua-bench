@@ -1,0 +1,281 @@
+{
+  "case_index": 39,
+  "public_environment_name": "Ballast Lantern",
+  "environment_id": "ballast_lantern_env",
+  "difficulty": 5,
+  "interaction_mode": "full",
+  "label": "yes",
+  "controls_available": [
+    "Hold Space (trusted keydown) to engage the binary winch and apply upward thrust; the cage retains momentum.",
+    "Release Space (trusted keyup) to disengage the winch and let gravity drive the cage downward while momentum persists.",
+    "Space keyup is also forced on window blur; there are no HAUL/COAST buttons in the full interface.",
+    "NEW SHAFT abandons the current attempt and requests regeneration; it is administrative, not an outcome-solving control."
+  ],
+  "autonomous_processes": [
+    "During the active run, the browser advances the shaft every 50 ms without new input: cage velocity and position change under the current engaged/released state, and the specimen position and velocity change under its selected drift law.",
+    "At a randomized tick from 100 through 116, the stationary salvage crate becomes spawned; overlap with the cage then fills the crate meter.",
+    "At every active tick, visible overlap controls capture-meter fill versus drain, and terminal status can become escaped, specimen_only, secured, or timeout without a new action.",
+    "The reel rotation and short CSS position transitions are presentation updates following task ticks; they are not the real-time witness."
+  ],
+  "grouped_control_modes": [
+    {
+      "name": "D_full_keyboard_winch_channel",
+      "actions": [
+        "Space keydown -> engaged/HAUL",
+        "Space keyup -> released/COAST"
+      ],
+      "outcome_affecting": true,
+      "scope": "All active occurrences across seeds, ticks, rounds, and attempts of the full binary winch channel."
+    }
+  ],
+  "delta_ms": 100,
+  "window_ms": 600,
+  "clause_i": {
+    "holds": true,
+    "reason": "No observation-free q(I_t) can choose the delayed-optimal winch state across this D: the L5 generator varies the specimen law, speed, starting position, starting direction/velocity, crate spawn, and crate position across seeds. Thus the same prior action/timing history can reach states where a retained cage velocity calls for HAUL and states where it calls for COAST/braking. The source reference policy explicitly compares cage velocity with a position-plus-velocity target lead, rather than following an action clock."
+  },
+  "clause_ii": {
+    "holds": true,
+    "reason": "A bounded w=600 ms window is available as six chronological frames. Each frame visibly contains the cage and luminous specimen positions; the browser also renders a two-sample specimen wake at L5. Their recent vertical displacement supplies specimen direction and cage motion, so a stationary g(I_t,W_t^600) can select the winch state that will be best after a short 100 ms delay. This uses visible trajectory evidence, not the hidden generator state."
+  },
+  "clause_iii": {
+    "holds": true,
+    "reason": "Use Delta=100 ms, two 50 ms physics ticks, and a reachable active state near the specimen-cage overlap boundary with nonzero capture reserve. If the cage has retained momentum, waiting 50 ms or more advances both cage and specimen before the same Space transition can arrive; the cage can move farther past the useful alignment, the specimen can leave the overlap interval, and capture meter ticks drain. Success remains possible because the run is still active, but the braking/leading action has strictly lower value or advantage after the wait. The loss is caused by changing positions, velocities, and overlap, not by a deadline or late completion."
+  },
+  "common_visible_process": "The common witness is the moving specimen and momentum-bearing cage in the active flooded shaft: every 50 ms the specimen's visible trajectory and the cage's visible position evolve, while the current Space hold/release state changes cage acceleration and retained velocity. That same visible motion determines which delayed winch state is optimal and makes an otherwise useful overlap/capture opportunity degrade when the agent waits.",
+  "pre_run": {
+    "threshold": 0.5,
+    "at_least_half": false,
+    "rate": 0,
+    "basis": "seeded_probe",
+    "reason": "The task starts with status active and the render loop begins immediately; there is no separate visible preparation/start gate. With no further outcome-affecting actions, the full winch can only remain in one of the two persistent states represented by coast or haul. A reproducible probe generated 100 controlled L5/full instances and replayed both constant states from each initial state: 0 of 100 secured under either state (all 100 coast and all 100 haul runs ended escaped). The observed 0/100 rate is below the 0.5 threshold, so the pre-run rule does not override the mathematical Yes.",
+    "seed_probe": {
+      "seeds": [
+        "probe-0000",
+        "probe-0001",
+        "probe-0002",
+        "probe-0003",
+        "probe-0004",
+        "probe-0005",
+        "probe-0006",
+        "probe-0007",
+        "probe-0008",
+        "probe-0009",
+        "probe-0010",
+        "probe-0011",
+        "probe-0012",
+        "probe-0013",
+        "probe-0014",
+        "probe-0015",
+        "probe-0016",
+        "probe-0017",
+        "probe-0018",
+        "probe-0019",
+        "probe-0020",
+        "probe-0021",
+        "probe-0022",
+        "probe-0023",
+        "probe-0024",
+        "probe-0025",
+        "probe-0026",
+        "probe-0027",
+        "probe-0028",
+        "probe-0029",
+        "probe-0030",
+        "probe-0031",
+        "probe-0032",
+        "probe-0033",
+        "probe-0034",
+        "probe-0035",
+        "probe-0036",
+        "probe-0037",
+        "probe-0038",
+        "probe-0039",
+        "probe-0040",
+        "probe-0041",
+        "probe-0042",
+        "probe-0043",
+        "probe-0044",
+        "probe-0045",
+        "probe-0046",
+        "probe-0047",
+        "probe-0048",
+        "probe-0049",
+        "probe-0050",
+        "probe-0051",
+        "probe-0052",
+        "probe-0053",
+        "probe-0054",
+        "probe-0055",
+        "probe-0056",
+        "probe-0057",
+        "probe-0058",
+        "probe-0059",
+        "probe-0060",
+        "probe-0061",
+        "probe-0062",
+        "probe-0063",
+        "probe-0064",
+        "probe-0065",
+        "probe-0066",
+        "probe-0067",
+        "probe-0068",
+        "probe-0069",
+        "probe-0070",
+        "probe-0071",
+        "probe-0072",
+        "probe-0073",
+        "probe-0074",
+        "probe-0075",
+        "probe-0076",
+        "probe-0077",
+        "probe-0078",
+        "probe-0079",
+        "probe-0080",
+        "probe-0081",
+        "probe-0082",
+        "probe-0083",
+        "probe-0084",
+        "probe-0085",
+        "probe-0086",
+        "probe-0087",
+        "probe-0088",
+        "probe-0089",
+        "probe-0090",
+        "probe-0091",
+        "probe-0092",
+        "probe-0093",
+        "probe-0094",
+        "probe-0095",
+        "probe-0096",
+        "probe-0097",
+        "probe-0098",
+        "probe-0099"
+      ],
+      "numerator": 0,
+      "denominator": 100,
+      "tested_policies": [
+        "constant engaged=false (no Space action / COAST)",
+        "constant engaged=true (Space held from the start / HAUL)"
+      ],
+      "command_environment": "PYTHONDONTWRITEBYTECODE=1 PYTHONPATH=/private/tmp/weird-cua-realtime-source-20260910.ObhAQg",
+      "code": "import json\nfrom pathlib import Path\nfrom weird_captcha_gym.shared_scripts.incubator_generators import ballast_lantern as b\n\nroot = Path(\"/private/tmp/weird-cua-realtime-source-20260910.ObhAQg\")\nparameters = json.loads(\n    (root / \"weird_captcha_gym/environments/ballast_lantern_env/controls.json\").read_text()\n)[\"difficulty\"][\"5\"][\"parameters\"]\ntask = {\n    \"id\": \"ballast_lantern_seed_0001@0.1\",\n    \"_control_condition\": {\n        \"difficulty\": 5,\n        \"interaction\": \"full\",\n        \"real_time\": \"live\",\n        \"difficulty_parameters\": parameters,\n    },\n}\n\ndef final_status(truth, engaged):\n    p, motion, crate = truth[\"parameters\"], truth[\"motion\"], truth[\"crate\"]\n    sim = b.initial_simulation(p, motion, crate)\n    while sim[\"status\"] == \"active\":\n        b.advance_tick(sim, engaged, p, motion, crate)\n    return sim[\"status\"]\n\nseeds = [f\"probe-{index:04d}\" for index in range(100)]\nhits = 0\nfor seed in seeds:\n    _public, truth = b.generate(task, seed)\n    hits += int(any(final_status(truth, engaged) == \"secured\" for engaged in (False, True)))\nprint(hits, len(seeds))",
+      "observed_statuses": {
+        "coast": {
+          "escaped": 100
+        },
+        "haul": {
+          "escaped": 100
+        }
+      }
+    }
+  },
+  "files_read_completely": [
+    "AGENTS.md",
+    "weird_captcha_gym/docs/controllability/real-time.md",
+    "weird_captcha_gym/environments/ballast_lantern_env/controls.json",
+    "weird_captcha_gym/environments/ballast_lantern_env/env.json",
+    "weird_captcha_gym/environments/ballast_lantern_env/tasks/ballast_lantern_seed_0001/task.json",
+    "weird_captcha_gym/environments/ballast_lantern_env/tasks/ballast_lantern_seed_0001/setup_task.sh",
+    "weird_captcha_gym/environments/ballast_lantern_env/tasks/ballast_lantern_seed_0001/export_result.sh",
+    "weird_captcha_gym/shared_scripts/setup_task.py",
+    "weird_captcha_gym/shared_scripts/time_control.py",
+    "weird_captcha_gym/shared_runtime/app/index.html",
+    "weird_captcha_gym/shared_runtime/app/time_controller.js",
+    "weird_captcha_gym/shared_runtime/app/mechanics/ballast_lantern.js",
+    "weird_captcha_gym/shared_runtime/app/mechanics/ballast_lantern.css",
+    "weird_captcha_gym/shared_runtime/server/incubator_graders/ballast_lantern.py",
+    "weird_captcha_gym/shared_runtime/verifier_helpers.py",
+    "weird_captcha_gym/tools/incubator_solvers/ballast_lantern.py"
+  ],
+  "source_evidence": [
+    {
+      "path": "weird_captcha_gym/environments/ballast_lantern_env/controls.json",
+      "lines": "34-46",
+      "claim": "Difficulty 5 sets tick_ms=50, max_ticks=1000, cage_half_height=740, specimen speed 30-40, all four drift laws, capture 3400/10000 with 24 fill and 14 drain per tick, crate spawn 100-116 with meter 3400 at 34 per tick, crate separation 2400, trail_samples=2, show_trend_beacon=false; full interaction is Space hold/release and the observation window is 600 ms with 6 frames."
+    },
+    {
+      "path": "weird_captcha_gym/shared_scripts/setup_task.py",
+      "lines": "39-51, 184-220, 1925-1957",
+      "claim": "Controlled tasks validate and copy the difficulty/interaction condition, inject it as _control_condition, and dispatch ballast_lantern to its incubator generator."
+    },
+    {
+      "path": "weird_captcha_gym/environments/ballast_lantern_env/env.json",
+      "lines": "9-25",
+      "claim": "The environment supplies frame-window observations, mouse and keyboard actions, and the shared browser runtime."
+    },
+    {
+      "path": "weird_captcha_gym/shared_runtime/app/index.html",
+      "lines": "7-19",
+      "claim": "The browser loads the shared time controller and app runtime; the mechanic-specific implementation is loaded by that runtime."
+    },
+    {
+      "path": "weird_captcha_gym/shared_runtime/app/time_controller.js",
+      "lines": "15-26, 55-77, 301-339, 548-603",
+      "claim": "Live task time runs from the virtual performance clock, while paused run_for advances only the configured task window; requestAnimationFrame and timers are controlled by task time."
+    },
+    {
+      "path": "weird_captcha_gym/shared_scripts/incubator_generators/ballast_lantern.py",
+      "lines": "130-164",
+      "claim": "Each generated instance selects a law from the active pool and randomizes speed, start position, start velocity/direction, acceleration, boundary behavior, and darter schedule."
+    },
+    {
+      "path": "weird_captcha_gym/shared_scripts/incubator_generators/ballast_lantern.py",
+      "lines": "167-249",
+      "claim": "The simulation starts active; each tick applies engaged thrust or released gravity with drag and boundaries, advances the specimen, spawns the crate, computes overlap predicates, updates both meters, and can terminate from task state."
+    },
+    {
+      "path": "weird_captcha_gym/shared_scripts/incubator_generators/ballast_lantern.py",
+      "lines": "253-319",
+      "claim": "The target-control policy uses predicted target position and velocity against cage velocity, and the reference run changes the winch at no more than one command per 600 ms window while requiring exclusive crate service."
+    },
+    {
+      "path": "weird_captcha_gym/shared_scripts/incubator_generators/ballast_lantern.py",
+      "lines": "363-388",
+      "claim": "Generation is seed-dependent and accepts only runs secured by the state-dependent reference schedule, with enough control transitions and a competing-target check."
+    },
+    {
+      "path": "weird_captcha_gym/shared_scripts/incubator_generators/ballast_lantern.py",
+      "lines": "399-447",
+      "claim": "The generated world, including motion, crate, initial state, and control condition, is exported to public/hidden records for the runtime and grader."
+    },
+    {
+      "path": "weird_captcha_gym/shared_runtime/app/mechanics/ballast_lantern.js",
+      "lines": "35-67",
+      "claim": "The visible runtime reproduces the same autonomous tick dynamics and terminal outcomes."
+    },
+    {
+      "path": "weird_captcha_gym/shared_runtime/app/mechanics/ballast_lantern.js",
+      "lines": "69-85, 241-338",
+      "claim": "Full mode binds trusted Space keydown/keyup to winch transitions, logs them as outcome-affecting events, starts active simulation immediately, and keeps requestAnimationFrame ticking until terminal."
+    },
+    {
+      "path": "weird_captcha_gym/shared_runtime/app/mechanics/ballast_lantern.js",
+      "lines": "180-220, 265-288",
+      "claim": "Each frame renders cage/specimen/crate vertical positions and the recent specimen wake; L5 uses two wake dots and omits the optional trend beacon, while full mode displays a SPACE control."
+    },
+    {
+      "path": "weird_captcha_gym/shared_runtime/app/mechanics/ballast_lantern.css",
+      "lines": "180-247, 267-292",
+      "claim": "The cage, specimen, crate, wake dots, optional direction beacon, and full-mode SPACE indicator are visibly styled; position transitions follow task-state updates."
+    },
+    {
+      "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/ballast_lantern.py",
+      "lines": "117-168, 178-252",
+      "claim": "The grader independently replays every logged winch event through the same evolving state and grades only the resulting terminal outcome, requiring the full interaction source and a secured state for pass."
+    },
+    {
+      "path": "weird_captcha_gym/environments/ballast_lantern_env/tasks/ballast_lantern_seed_0001/verifier.py",
+      "lines": "22-35",
+      "claim": "The task verifier loads the shared exported-result helper and Ballast Lantern replay grader, then returns the replay decision."
+    },
+    {
+      "path": "weird_captcha_gym/tools/incubator_solvers/ballast_lantern.py",
+      "lines": "44-106",
+      "claim": "The reference solver makes repeated state-dependent winch decisions, at one decision per 600 ms in paused mode, and uses the private simulation only as implementation evidence."
+    }
+  ],
+  "uncertainties": [
+    "The pre-run figure is the observed reproducible 0/100 probe rate, not an exhaustive percentage over the nominal 48,000,000,000 variant count; the source has no separate start gate, so constant coast/haul exhaust the no-further-action alternatives."
+  ]
+}

@@ -1,0 +1,1247 @@
+{
+  "case_index": 27,
+  "environment_id": "fluke_census_env",
+  "public_environment_name": "Fluke Census",
+  "configuration_reports": [
+    {
+      "case_index": 261,
+      "public_environment_name": "Fluke Census",
+      "environment_id": "fluke_census_env",
+      "difficulty": 1,
+      "interaction_mode": "full",
+      "label": "no",
+      "controls_available": [
+        "Difficulty 1 active parameters: 3 animals (2 listed-species targets and 1 distractor), notch_difference 22, rotation range 0°, scale range 0.",
+        "Full interaction: move the pointer over the 820×430 water canvas to set the inspection lens; press Space once to photograph the animal currently under the lens.",
+        "Click Census complete to submit after the required individuals have been photographed; submission is administrative."
+      ],
+      "autonomous_processes": [
+        "While the survey is open between inputs, task-time performance.now() advances and requestAnimationFrame redraws each current fluke at its sinusoidally drifting pose.",
+        "The water-line background also changes with task time, but it is decorative, does not affect hit testing or grading, and is not used as evidence.",
+        "A photograph is action-triggered rather than autonomous: it records one focused ID, increments the epoch, clears the lens aim, and switches to the next shuffled layout; submission then closes the survey."
+      ],
+      "grouped_control_modes": [
+        "D_aim_full: every pointermove lens placement over the water canvas, grouped across all epochs, seeds, and attempts; source is pointer.",
+        "D_photo_full: every Space-key photograph control at the current fixed lens, grouped across all epochs, seeds, and attempts; source is space.",
+        "D_submit: the Census complete button, source census_button; administrative and excluded from the outcome-affecting witness."
+      ],
+      "delta_ms": 600,
+      "window_ms": 600,
+      "clause_i": {
+        "holds": true,
+        "reason": "For D_photo_full, holds for the motion candidate: the generator randomizes layout order, positions, phases, and angular rates, while I_t contains only the agent's prior input events and task times. The same action history can therefore require different delayed lens/photograph choices; no q(I_t) can be optimal across C_600(D)."
+      },
+      "clause_ii": {
+        "holds": false,
+        "reason": "Fails. W_t^600 can expose the current fluke motion and tail, but after every successful photograph the pod is reshuffled and no photographed individual is marked. The independent grader requires every required individual ID exactly once and rejects duplicates or off-list photographs. At later epochs, the next safe photograph depends on which inspected tail was photographed earlier; that information can be older than 600 ms and is not recoverable from the agent's own lens coordinates/times. No smaller or equal bounded window repairs this missing identity history, so no single g(I_t,W_t^w) is optimal for every C_Δ(D), even though the local motion prediction is visible."
+      },
+      "clause_iii": {
+        "holds": true,
+        "reason": "Holds for the same motion candidate. Choose a history with the fixed lens at an outward-moving silhouette boundary, τ≈300 ms<Δ=600 ms, and a equal to the current Space action. pose() moves the animal autonomously while m.aim remains fixed; the action can hit and advance the required epoch at H_t but become no-focus/no-op after the drift at H_t^τ. Re-aiming keeps success possible, so the action's value/advantage strictly drops because of non-clock fluke motion, not a deadline."
+      },
+      "common_visible_process": "Candidate common process for D_photo_full: use Δ=600 ms and w=600 ms (the configured four-frame observation window). While the lens is held over a fluke, the visible silhouette, crosshair, and magnified tail card show the fluke's smooth drift; at a boundary-point history, an outward drift makes the same Space photograph stale and ineffective while re-aiming remains possible. The same visible motion prevents an action-only policy from knowing the future lens coordinate. This candidate does not become a valid common witness because later optimal photo choices also require the unmarked identity history from earlier shuffles, which is outside any w≤600 ms window. Decorative water ripples are not used.",
+      "pre_run": {
+        "threshold": 0.5,
+        "at_least_half": false,
+        "rate": null,
+        "basis": "source_structural",
+        "reason": "Every successful transcript needs a user-triggered photograph for each required individual; photograph changes the epoch and is outcome-affecting, while final Census complete is only administrative. Therefore no generated instance admits a successful preparation-then-no-action outcome phase, so the pre-run rate is below half (no percentage is asserted). The mathematical No from clause (ii) already suffices.",
+        "seed_probe": null
+      },
+      "files_read_completely": [
+        "AGENTS.md",
+        "weird_captcha_gym/docs/controllability/real-time.md",
+        "weird_captcha_gym/environments/fluke_census_env/controls.json",
+        "weird_captcha_gym/environments/fluke_census_env/env.json",
+        "weird_captcha_gym/environments/fluke_census_env/tasks/fluke_census_seed_0001/task.json",
+        "weird_captcha_gym/environments/fluke_census_env/tasks/fluke_census_seed_0001/verifier.py",
+        "weird_captcha_gym/shared_scripts/incubator_generators/fluke_census.py",
+        "weird_captcha_gym/shared_runtime/app/mechanics/fluke_census.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/fluke_census.css",
+        "weird_captcha_gym/shared_runtime/app/time_controller.js",
+        "weird_captcha_gym/shared_runtime/server/incubator_graders/fluke_census.py",
+        "weird_captcha_gym/shared_runtime/verifier_helpers.py",
+        "weird_captcha_gym/tools/incubator_solvers/fluke_census.py"
+      ],
+      "source_evidence": [
+        {
+          "path": "weird_captcha_gym/environments/fluke_census_env/controls.json",
+          "lines": "9-18",
+          "claim": "Difficulty 1 sets animal_count=3, notch_difference=22, rotation_range=0, and scale_range=0; these are the active parameters for this report."
+        },
+        {
+          "path": "weird_captcha_gym/environments/fluke_census_env/controls.json",
+          "lines": "61-74",
+          "claim": "full is an implemented mode (pointer over water plus Space); the shared observation settings are observation_window_ms=600 and frames_per_observation=4."
+        },
+        {
+          "path": "weird_captcha_gym/environments/fluke_census_env/env.json",
+          "lines": "20-45",
+          "claim": "The browser receives a frame-window observation, mouse/keyboard action surfaces, and the same 600 ms/4-frame runner settings."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/fluke_census.py",
+          "lines": "28-45",
+          "claim": "The supplied difficulty condition is merged into the generator; it creates three species, listed species, individual IDs, and randomized seed-dependent animal identities."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/fluke_census.py",
+          "lines": "51-72",
+          "claim": "Each epoch has a freshly shuffled layout and every item receives randomized x/y position, phase, and omega in the generated moving world; required IDs are all individuals in the two listed species."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/fluke_census.js",
+          "lines": "59-66",
+          "claim": "pose() changes each item's x/y with task-time sinusoidal motion, and find() hit-tests the current pose against the fixed lens aim."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/fluke_census.js",
+          "lines": "68-92",
+          "claim": "The visible canvas redraws moving animals on every animation frame, displays the lens crosshair, and shows the focused tail at 3× scale in the inspection card."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/fluke_census.js",
+          "lines": "113-128",
+          "claim": "A Space input records the focused ID, increments epoch, clears aim, and exposes the next shuffled layout; pointermove and Space are bound to this mode."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/fluke_census.py",
+          "lines": "64-94",
+          "claim": "The replay grader uses current task time and pose for hit testing, then requires the submitted photo set to equal required IDs with no duplicates/off-list entries and a terminal submit."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/time_controller.js",
+          "lines": "55-62",
+          "claim": "Virtual performance.now() advances only with task time, so live task time advances through the witness delay while paused model inference is frozen."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/time_controller.js",
+          "lines": "267-339",
+          "claim": "The shared clock gates requestAnimationFrame callbacks and virtual animation time by the live/paused task clock."
+        },
+        {
+          "path": "weird_captcha_gym/environments/fluke_census_env/tasks/fluke_census_seed_0001/verifier.py",
+          "lines": "22-35",
+          "claim": "The authoritative verifier loads the exported result and runs the independent Fluke Census grader."
+        }
+      ],
+      "uncertainties": []
+    },
+    {
+      "case_index": 262,
+      "public_environment_name": "Fluke Census",
+      "environment_id": "fluke_census_env",
+      "difficulty": 1,
+      "interaction_mode": "simplified",
+      "label": "no",
+      "controls_available": [
+        "Difficulty 1 active parameters: 3 animals (2 listed-species targets and 1 distractor), notch_difference 22, rotation range 0°, scale range 0.",
+        "Simplified interaction: set Lens X in [0,820] and Y in [0,430], click Position lens, then click Photograph for the animal under the lens.",
+        "Click Census complete to submit after the required individuals have been photographed; submission is administrative."
+      ],
+      "autonomous_processes": [
+        "While the survey is open between inputs, task-time performance.now() advances and requestAnimationFrame redraws each current fluke at its sinusoidally drifting pose.",
+        "The water-line background also changes with task time, but it is decorative, does not affect hit testing or grading, and is not used as evidence.",
+        "A photograph is action-triggered rather than autonomous: it records one focused ID, increments the epoch, clears the lens aim, and switches to the next shuffled layout; submission then closes the survey."
+      ],
+      "grouped_control_modes": [
+        "D_aim_simplified: every coordinate Position lens control, grouped across all epochs, seeds, and attempts; source is coordinates.",
+        "D_photo_simplified: every Photograph button control at the current fixed lens, grouped across all epochs, seeds, and attempts; source is photo_button.",
+        "D_submit: the Census complete button, source census_button; administrative and excluded from the outcome-affecting witness."
+      ],
+      "delta_ms": 600,
+      "window_ms": 600,
+      "clause_i": {
+        "holds": true,
+        "reason": "For D_photo_simplified, holds for the motion candidate: the generator randomizes layout order, positions, phases, and angular rates, while I_t contains only the agent's prior input events and task times. The same action history can therefore require different delayed lens/photograph choices; no q(I_t) can be optimal across C_600(D)."
+      },
+      "clause_ii": {
+        "holds": false,
+        "reason": "Fails. W_t^600 can expose the current fluke motion and tail, but after every successful photograph the pod is reshuffled and no photographed individual is marked. The independent grader requires every required individual ID exactly once and rejects duplicates or off-list photographs. At later epochs, the next safe photograph depends on which inspected tail was photographed earlier; that information can be older than 600 ms and is not recoverable from the agent's own lens coordinates/times. No smaller or equal bounded window repairs this missing identity history, so no single g(I_t,W_t^w) is optimal for every C_Δ(D), even though the local motion prediction is visible."
+      },
+      "clause_iii": {
+        "holds": true,
+        "reason": "Holds for the same motion candidate. Choose a history with the fixed lens at an outward-moving silhouette boundary, τ≈300 ms<Δ=600 ms, and a equal to the current Photograph-button action. pose() moves the animal autonomously while m.aim remains fixed; the action can hit and advance the required epoch at H_t but become no-focus/no-op after the drift at H_t^τ. Re-aiming keeps success possible, so the action's value/advantage strictly drops because of non-clock fluke motion, not a deadline."
+      },
+      "common_visible_process": "Candidate common process for D_photo_simplified: use Δ=600 ms and w=600 ms (the configured four-frame observation window). While the lens is held over a fluke, the visible silhouette, crosshair, and magnified tail card show the fluke's smooth drift; at a boundary-point history, an outward drift makes the same Photograph-button action stale and ineffective while re-aiming remains possible. The same visible motion prevents an action-only policy from knowing the future lens coordinate. This candidate does not become a valid common witness because later optimal photo choices also require the unmarked identity history from earlier shuffles, which is outside any w≤600 ms window. Decorative water ripples are not used.",
+      "pre_run": {
+        "threshold": 0.5,
+        "at_least_half": false,
+        "rate": null,
+        "basis": "source_structural",
+        "reason": "Every successful transcript needs a user-triggered photograph for each required individual; photograph changes the epoch and is outcome-affecting, while final Census complete is only administrative. Therefore no generated instance admits a successful preparation-then-no-action outcome phase, so the pre-run rate is below half (no percentage is asserted). The mathematical No from clause (ii) already suffices.",
+        "seed_probe": null
+      },
+      "files_read_completely": [
+        "AGENTS.md",
+        "weird_captcha_gym/docs/controllability/real-time.md",
+        "weird_captcha_gym/environments/fluke_census_env/controls.json",
+        "weird_captcha_gym/environments/fluke_census_env/env.json",
+        "weird_captcha_gym/environments/fluke_census_env/tasks/fluke_census_seed_0001/task.json",
+        "weird_captcha_gym/environments/fluke_census_env/tasks/fluke_census_seed_0001/verifier.py",
+        "weird_captcha_gym/shared_scripts/incubator_generators/fluke_census.py",
+        "weird_captcha_gym/shared_runtime/app/mechanics/fluke_census.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/fluke_census.css",
+        "weird_captcha_gym/shared_runtime/app/time_controller.js",
+        "weird_captcha_gym/shared_runtime/server/incubator_graders/fluke_census.py",
+        "weird_captcha_gym/shared_runtime/verifier_helpers.py",
+        "weird_captcha_gym/tools/incubator_solvers/fluke_census.py"
+      ],
+      "source_evidence": [
+        {
+          "path": "weird_captcha_gym/environments/fluke_census_env/controls.json",
+          "lines": "9-18",
+          "claim": "Difficulty 1 sets animal_count=3, notch_difference=22, rotation_range=0, and scale_range=0; these are the active parameters for this report."
+        },
+        {
+          "path": "weird_captcha_gym/environments/fluke_census_env/controls.json",
+          "lines": "61-74",
+          "claim": "simplified is an implemented mode (coordinate controls plus Photograph); the shared observation settings are observation_window_ms=600 and frames_per_observation=4."
+        },
+        {
+          "path": "weird_captcha_gym/environments/fluke_census_env/env.json",
+          "lines": "20-45",
+          "claim": "The browser receives a frame-window observation, mouse/keyboard action surfaces, and the same 600 ms/4-frame runner settings."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/fluke_census.py",
+          "lines": "28-45",
+          "claim": "The supplied difficulty condition is merged into the generator; it creates three species, listed species, individual IDs, and randomized seed-dependent animal identities."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/fluke_census.py",
+          "lines": "51-72",
+          "claim": "Each epoch has a freshly shuffled layout and every item receives randomized x/y position, phase, and omega in the generated moving world; required IDs are all individuals in the two listed species."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/fluke_census.js",
+          "lines": "59-66",
+          "claim": "pose() changes each item's x/y with task-time sinusoidal motion, and find() hit-tests the current pose against the fixed lens aim."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/fluke_census.js",
+          "lines": "68-92",
+          "claim": "The visible canvas redraws moving animals on every animation frame, displays the lens crosshair, and shows the focused tail at 3× scale in the inspection card."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/fluke_census.js",
+          "lines": "113-128",
+          "claim": "A Photograph-button input records the focused ID, increments epoch, clears aim, and exposes the next shuffled layout; coordinate Position lens and Photograph are bound to this mode."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/fluke_census.py",
+          "lines": "64-94",
+          "claim": "The replay grader uses current task time and pose for hit testing, then requires the submitted photo set to equal required IDs with no duplicates/off-list entries and a terminal submit."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/time_controller.js",
+          "lines": "55-62",
+          "claim": "Virtual performance.now() advances only with task time, so live task time advances through the witness delay while paused model inference is frozen."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/time_controller.js",
+          "lines": "267-339",
+          "claim": "The shared clock gates requestAnimationFrame callbacks and virtual animation time by the live/paused task clock."
+        },
+        {
+          "path": "weird_captcha_gym/environments/fluke_census_env/tasks/fluke_census_seed_0001/verifier.py",
+          "lines": "22-35",
+          "claim": "The authoritative verifier loads the exported result and runs the independent Fluke Census grader."
+        }
+      ],
+      "uncertainties": []
+    },
+    {
+      "case_index": 263,
+      "public_environment_name": "Fluke Census",
+      "environment_id": "fluke_census_env",
+      "difficulty": 2,
+      "interaction_mode": "full",
+      "label": "no",
+      "controls_available": [
+        "Difficulty 2 active parameters: 6 animals (4 listed-species targets and 2 distractors), notch_difference 18, rotation range 0°, scale range 0.",
+        "Full interaction: move the pointer over the 820×430 water canvas to set the inspection lens; press Space once to photograph the animal currently under the lens.",
+        "Click Census complete to submit after the required individuals have been photographed; submission is administrative."
+      ],
+      "autonomous_processes": [
+        "While the survey is open between inputs, task-time performance.now() advances and requestAnimationFrame redraws each current fluke at its sinusoidally drifting pose.",
+        "The water-line background also changes with task time, but it is decorative, does not affect hit testing or grading, and is not used as evidence.",
+        "A photograph is action-triggered rather than autonomous: it records one focused ID, increments the epoch, clears the lens aim, and switches to the next shuffled layout; submission then closes the survey."
+      ],
+      "grouped_control_modes": [
+        "D_aim_full: every pointermove lens placement over the water canvas, grouped across all epochs, seeds, and attempts; source is pointer.",
+        "D_photo_full: every Space-key photograph control at the current fixed lens, grouped across all epochs, seeds, and attempts; source is space.",
+        "D_submit: the Census complete button, source census_button; administrative and excluded from the outcome-affecting witness."
+      ],
+      "delta_ms": 600,
+      "window_ms": 600,
+      "clause_i": {
+        "holds": true,
+        "reason": "For D_photo_full, holds for the motion candidate: the generator randomizes layout order, positions, phases, and angular rates, while I_t contains only the agent's prior input events and task times. The same action history can therefore require different delayed lens/photograph choices; no q(I_t) can be optimal across C_600(D)."
+      },
+      "clause_ii": {
+        "holds": false,
+        "reason": "Fails. W_t^600 can expose the current fluke motion and tail, but after every successful photograph the pod is reshuffled and no photographed individual is marked. The independent grader requires every required individual ID exactly once and rejects duplicates or off-list photographs. At later epochs, the next safe photograph depends on which inspected tail was photographed earlier; that information can be older than 600 ms and is not recoverable from the agent's own lens coordinates/times. No smaller or equal bounded window repairs this missing identity history, so no single g(I_t,W_t^w) is optimal for every C_Δ(D), even though the local motion prediction is visible."
+      },
+      "clause_iii": {
+        "holds": true,
+        "reason": "Holds for the same motion candidate. Choose a history with the fixed lens at an outward-moving silhouette boundary, τ≈300 ms<Δ=600 ms, and a equal to the current Space action. pose() moves the animal autonomously while m.aim remains fixed; the action can hit and advance the required epoch at H_t but become no-focus/no-op after the drift at H_t^τ. Re-aiming keeps success possible, so the action's value/advantage strictly drops because of non-clock fluke motion, not a deadline."
+      },
+      "common_visible_process": "Candidate common process for D_photo_full: use Δ=600 ms and w=600 ms (the configured four-frame observation window). While the lens is held over a fluke, the visible silhouette, crosshair, and magnified tail card show the fluke's smooth drift; at a boundary-point history, an outward drift makes the same Space photograph stale and ineffective while re-aiming remains possible. The same visible motion prevents an action-only policy from knowing the future lens coordinate. This candidate does not become a valid common witness because later optimal photo choices also require the unmarked identity history from earlier shuffles, which is outside any w≤600 ms window. Decorative water ripples are not used.",
+      "pre_run": {
+        "threshold": 0.5,
+        "at_least_half": false,
+        "rate": null,
+        "basis": "source_structural",
+        "reason": "Every successful transcript needs a user-triggered photograph for each required individual; photograph changes the epoch and is outcome-affecting, while final Census complete is only administrative. Therefore no generated instance admits a successful preparation-then-no-action outcome phase, so the pre-run rate is below half (no percentage is asserted). The mathematical No from clause (ii) already suffices.",
+        "seed_probe": null
+      },
+      "files_read_completely": [
+        "AGENTS.md",
+        "weird_captcha_gym/docs/controllability/real-time.md",
+        "weird_captcha_gym/environments/fluke_census_env/controls.json",
+        "weird_captcha_gym/environments/fluke_census_env/env.json",
+        "weird_captcha_gym/environments/fluke_census_env/tasks/fluke_census_seed_0001/task.json",
+        "weird_captcha_gym/environments/fluke_census_env/tasks/fluke_census_seed_0001/verifier.py",
+        "weird_captcha_gym/shared_scripts/incubator_generators/fluke_census.py",
+        "weird_captcha_gym/shared_runtime/app/mechanics/fluke_census.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/fluke_census.css",
+        "weird_captcha_gym/shared_runtime/app/time_controller.js",
+        "weird_captcha_gym/shared_runtime/server/incubator_graders/fluke_census.py",
+        "weird_captcha_gym/shared_runtime/verifier_helpers.py",
+        "weird_captcha_gym/tools/incubator_solvers/fluke_census.py"
+      ],
+      "source_evidence": [
+        {
+          "path": "weird_captcha_gym/environments/fluke_census_env/controls.json",
+          "lines": "20-28",
+          "claim": "Difficulty 2 sets animal_count=6, notch_difference=18, rotation_range=0, and scale_range=0; these are the active parameters for this report."
+        },
+        {
+          "path": "weird_captcha_gym/environments/fluke_census_env/controls.json",
+          "lines": "61-74",
+          "claim": "full is an implemented mode (pointer over water plus Space); the shared observation settings are observation_window_ms=600 and frames_per_observation=4."
+        },
+        {
+          "path": "weird_captcha_gym/environments/fluke_census_env/env.json",
+          "lines": "20-45",
+          "claim": "The browser receives a frame-window observation, mouse/keyboard action surfaces, and the same 600 ms/4-frame runner settings."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/fluke_census.py",
+          "lines": "28-45",
+          "claim": "The supplied difficulty condition is merged into the generator; it creates three species, listed species, individual IDs, and randomized seed-dependent animal identities."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/fluke_census.py",
+          "lines": "51-72",
+          "claim": "Each epoch has a freshly shuffled layout and every item receives randomized x/y position, phase, and omega in the generated moving world; required IDs are all individuals in the two listed species."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/fluke_census.js",
+          "lines": "59-66",
+          "claim": "pose() changes each item's x/y with task-time sinusoidal motion, and find() hit-tests the current pose against the fixed lens aim."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/fluke_census.js",
+          "lines": "68-92",
+          "claim": "The visible canvas redraws moving animals on every animation frame, displays the lens crosshair, and shows the focused tail at 3× scale in the inspection card."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/fluke_census.js",
+          "lines": "113-128",
+          "claim": "A Space input records the focused ID, increments epoch, clears aim, and exposes the next shuffled layout; pointermove and Space are bound to this mode."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/fluke_census.py",
+          "lines": "64-94",
+          "claim": "The replay grader uses current task time and pose for hit testing, then requires the submitted photo set to equal required IDs with no duplicates/off-list entries and a terminal submit."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/time_controller.js",
+          "lines": "55-62",
+          "claim": "Virtual performance.now() advances only with task time, so live task time advances through the witness delay while paused model inference is frozen."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/time_controller.js",
+          "lines": "267-339",
+          "claim": "The shared clock gates requestAnimationFrame callbacks and virtual animation time by the live/paused task clock."
+        },
+        {
+          "path": "weird_captcha_gym/environments/fluke_census_env/tasks/fluke_census_seed_0001/verifier.py",
+          "lines": "22-35",
+          "claim": "The authoritative verifier loads the exported result and runs the independent Fluke Census grader."
+        }
+      ],
+      "uncertainties": []
+    },
+    {
+      "case_index": 264,
+      "public_environment_name": "Fluke Census",
+      "environment_id": "fluke_census_env",
+      "difficulty": 2,
+      "interaction_mode": "simplified",
+      "label": "no",
+      "controls_available": [
+        "Difficulty 2 active parameters: 6 animals (4 listed-species targets and 2 distractors), notch_difference 18, rotation range 0°, scale range 0.",
+        "Simplified interaction: set Lens X in [0,820] and Y in [0,430], click Position lens, then click Photograph for the animal under the lens.",
+        "Click Census complete to submit after the required individuals have been photographed; submission is administrative."
+      ],
+      "autonomous_processes": [
+        "While the survey is open between inputs, task-time performance.now() advances and requestAnimationFrame redraws each current fluke at its sinusoidally drifting pose.",
+        "The water-line background also changes with task time, but it is decorative, does not affect hit testing or grading, and is not used as evidence.",
+        "A photograph is action-triggered rather than autonomous: it records one focused ID, increments the epoch, clears the lens aim, and switches to the next shuffled layout; submission then closes the survey."
+      ],
+      "grouped_control_modes": [
+        "D_aim_simplified: every coordinate Position lens control, grouped across all epochs, seeds, and attempts; source is coordinates.",
+        "D_photo_simplified: every Photograph button control at the current fixed lens, grouped across all epochs, seeds, and attempts; source is photo_button.",
+        "D_submit: the Census complete button, source census_button; administrative and excluded from the outcome-affecting witness."
+      ],
+      "delta_ms": 600,
+      "window_ms": 600,
+      "clause_i": {
+        "holds": true,
+        "reason": "For D_photo_simplified, holds for the motion candidate: the generator randomizes layout order, positions, phases, and angular rates, while I_t contains only the agent's prior input events and task times. The same action history can therefore require different delayed lens/photograph choices; no q(I_t) can be optimal across C_600(D)."
+      },
+      "clause_ii": {
+        "holds": false,
+        "reason": "Fails. W_t^600 can expose the current fluke motion and tail, but after every successful photograph the pod is reshuffled and no photographed individual is marked. The independent grader requires every required individual ID exactly once and rejects duplicates or off-list photographs. At later epochs, the next safe photograph depends on which inspected tail was photographed earlier; that information can be older than 600 ms and is not recoverable from the agent's own lens coordinates/times. No smaller or equal bounded window repairs this missing identity history, so no single g(I_t,W_t^w) is optimal for every C_Δ(D), even though the local motion prediction is visible."
+      },
+      "clause_iii": {
+        "holds": true,
+        "reason": "Holds for the same motion candidate. Choose a history with the fixed lens at an outward-moving silhouette boundary, τ≈300 ms<Δ=600 ms, and a equal to the current Photograph-button action. pose() moves the animal autonomously while m.aim remains fixed; the action can hit and advance the required epoch at H_t but become no-focus/no-op after the drift at H_t^τ. Re-aiming keeps success possible, so the action's value/advantage strictly drops because of non-clock fluke motion, not a deadline."
+      },
+      "common_visible_process": "Candidate common process for D_photo_simplified: use Δ=600 ms and w=600 ms (the configured four-frame observation window). While the lens is held over a fluke, the visible silhouette, crosshair, and magnified tail card show the fluke's smooth drift; at a boundary-point history, an outward drift makes the same Photograph-button action stale and ineffective while re-aiming remains possible. The same visible motion prevents an action-only policy from knowing the future lens coordinate. This candidate does not become a valid common witness because later optimal photo choices also require the unmarked identity history from earlier shuffles, which is outside any w≤600 ms window. Decorative water ripples are not used.",
+      "pre_run": {
+        "threshold": 0.5,
+        "at_least_half": false,
+        "rate": null,
+        "basis": "source_structural",
+        "reason": "Every successful transcript needs a user-triggered photograph for each required individual; photograph changes the epoch and is outcome-affecting, while final Census complete is only administrative. Therefore no generated instance admits a successful preparation-then-no-action outcome phase, so the pre-run rate is below half (no percentage is asserted). The mathematical No from clause (ii) already suffices.",
+        "seed_probe": null
+      },
+      "files_read_completely": [
+        "AGENTS.md",
+        "weird_captcha_gym/docs/controllability/real-time.md",
+        "weird_captcha_gym/environments/fluke_census_env/controls.json",
+        "weird_captcha_gym/environments/fluke_census_env/env.json",
+        "weird_captcha_gym/environments/fluke_census_env/tasks/fluke_census_seed_0001/task.json",
+        "weird_captcha_gym/environments/fluke_census_env/tasks/fluke_census_seed_0001/verifier.py",
+        "weird_captcha_gym/shared_scripts/incubator_generators/fluke_census.py",
+        "weird_captcha_gym/shared_runtime/app/mechanics/fluke_census.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/fluke_census.css",
+        "weird_captcha_gym/shared_runtime/app/time_controller.js",
+        "weird_captcha_gym/shared_runtime/server/incubator_graders/fluke_census.py",
+        "weird_captcha_gym/shared_runtime/verifier_helpers.py",
+        "weird_captcha_gym/tools/incubator_solvers/fluke_census.py"
+      ],
+      "source_evidence": [
+        {
+          "path": "weird_captcha_gym/environments/fluke_census_env/controls.json",
+          "lines": "20-28",
+          "claim": "Difficulty 2 sets animal_count=6, notch_difference=18, rotation_range=0, and scale_range=0; these are the active parameters for this report."
+        },
+        {
+          "path": "weird_captcha_gym/environments/fluke_census_env/controls.json",
+          "lines": "61-74",
+          "claim": "simplified is an implemented mode (coordinate controls plus Photograph); the shared observation settings are observation_window_ms=600 and frames_per_observation=4."
+        },
+        {
+          "path": "weird_captcha_gym/environments/fluke_census_env/env.json",
+          "lines": "20-45",
+          "claim": "The browser receives a frame-window observation, mouse/keyboard action surfaces, and the same 600 ms/4-frame runner settings."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/fluke_census.py",
+          "lines": "28-45",
+          "claim": "The supplied difficulty condition is merged into the generator; it creates three species, listed species, individual IDs, and randomized seed-dependent animal identities."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/fluke_census.py",
+          "lines": "51-72",
+          "claim": "Each epoch has a freshly shuffled layout and every item receives randomized x/y position, phase, and omega in the generated moving world; required IDs are all individuals in the two listed species."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/fluke_census.js",
+          "lines": "59-66",
+          "claim": "pose() changes each item's x/y with task-time sinusoidal motion, and find() hit-tests the current pose against the fixed lens aim."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/fluke_census.js",
+          "lines": "68-92",
+          "claim": "The visible canvas redraws moving animals on every animation frame, displays the lens crosshair, and shows the focused tail at 3× scale in the inspection card."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/fluke_census.js",
+          "lines": "113-128",
+          "claim": "A Photograph-button input records the focused ID, increments epoch, clears aim, and exposes the next shuffled layout; coordinate Position lens and Photograph are bound to this mode."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/fluke_census.py",
+          "lines": "64-94",
+          "claim": "The replay grader uses current task time and pose for hit testing, then requires the submitted photo set to equal required IDs with no duplicates/off-list entries and a terminal submit."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/time_controller.js",
+          "lines": "55-62",
+          "claim": "Virtual performance.now() advances only with task time, so live task time advances through the witness delay while paused model inference is frozen."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/time_controller.js",
+          "lines": "267-339",
+          "claim": "The shared clock gates requestAnimationFrame callbacks and virtual animation time by the live/paused task clock."
+        },
+        {
+          "path": "weird_captcha_gym/environments/fluke_census_env/tasks/fluke_census_seed_0001/verifier.py",
+          "lines": "22-35",
+          "claim": "The authoritative verifier loads the exported result and runs the independent Fluke Census grader."
+        }
+      ],
+      "uncertainties": []
+    },
+    {
+      "case_index": 265,
+      "public_environment_name": "Fluke Census",
+      "environment_id": "fluke_census_env",
+      "difficulty": 3,
+      "interaction_mode": "full",
+      "label": "no",
+      "controls_available": [
+        "Difficulty 3 active parameters: 6 animals (4 listed-species targets and 2 distractors), notch_difference 12, rotation range ±65°, scale range ±0.12.",
+        "Full interaction: move the pointer over the 820×430 water canvas to set the inspection lens; press Space once to photograph the animal currently under the lens.",
+        "Click Census complete to submit after the required individuals have been photographed; submission is administrative."
+      ],
+      "autonomous_processes": [
+        "While the survey is open between inputs, task-time performance.now() advances and requestAnimationFrame redraws each current fluke at its sinusoidally drifting pose.",
+        "The water-line background also changes with task time, but it is decorative, does not affect hit testing or grading, and is not used as evidence.",
+        "A photograph is action-triggered rather than autonomous: it records one focused ID, increments the epoch, clears the lens aim, and switches to the next shuffled layout; submission then closes the survey."
+      ],
+      "grouped_control_modes": [
+        "D_aim_full: every pointermove lens placement over the water canvas, grouped across all epochs, seeds, and attempts; source is pointer.",
+        "D_photo_full: every Space-key photograph control at the current fixed lens, grouped across all epochs, seeds, and attempts; source is space.",
+        "D_submit: the Census complete button, source census_button; administrative and excluded from the outcome-affecting witness."
+      ],
+      "delta_ms": 600,
+      "window_ms": 600,
+      "clause_i": {
+        "holds": true,
+        "reason": "For D_photo_full, holds for the motion candidate: the generator randomizes layout order, positions, phases, and angular rates, while I_t contains only the agent's prior input events and task times. The same action history can therefore require different delayed lens/photograph choices; no q(I_t) can be optimal across C_600(D)."
+      },
+      "clause_ii": {
+        "holds": false,
+        "reason": "Fails. W_t^600 can expose the current fluke motion and tail, but after every successful photograph the pod is reshuffled and no photographed individual is marked. The independent grader requires every required individual ID exactly once and rejects duplicates or off-list photographs. At later epochs, the next safe photograph depends on which inspected tail was photographed earlier; that information can be older than 600 ms and is not recoverable from the agent's own lens coordinates/times. No smaller or equal bounded window repairs this missing identity history, so no single g(I_t,W_t^w) is optimal for every C_Δ(D), even though the local motion prediction is visible."
+      },
+      "clause_iii": {
+        "holds": true,
+        "reason": "Holds for the same motion candidate. Choose a history with the fixed lens at an outward-moving silhouette boundary, τ≈300 ms<Δ=600 ms, and a equal to the current Space action. pose() moves the animal autonomously while m.aim remains fixed; the action can hit and advance the required epoch at H_t but become no-focus/no-op after the drift at H_t^τ. Re-aiming keeps success possible, so the action's value/advantage strictly drops because of non-clock fluke motion, not a deadline."
+      },
+      "common_visible_process": "Candidate common process for D_photo_full: use Δ=600 ms and w=600 ms (the configured four-frame observation window). While the lens is held over a fluke, the visible silhouette, crosshair, and magnified tail card show the fluke's smooth drift; at a boundary-point history, an outward drift makes the same Space photograph stale and ineffective while re-aiming remains possible. The same visible motion prevents an action-only policy from knowing the future lens coordinate. This candidate does not become a valid common witness because later optimal photo choices also require the unmarked identity history from earlier shuffles, which is outside any w≤600 ms window. Decorative water ripples are not used.",
+      "pre_run": {
+        "threshold": 0.5,
+        "at_least_half": false,
+        "rate": null,
+        "basis": "source_structural",
+        "reason": "Every successful transcript needs a user-triggered photograph for each required individual; photograph changes the epoch and is outcome-affecting, while final Census complete is only administrative. Therefore no generated instance admits a successful preparation-then-no-action outcome phase, so the pre-run rate is below half (no percentage is asserted). The mathematical No from clause (ii) already suffices.",
+        "seed_probe": null
+      },
+      "files_read_completely": [
+        "AGENTS.md",
+        "weird_captcha_gym/docs/controllability/real-time.md",
+        "weird_captcha_gym/environments/fluke_census_env/controls.json",
+        "weird_captcha_gym/environments/fluke_census_env/env.json",
+        "weird_captcha_gym/environments/fluke_census_env/tasks/fluke_census_seed_0001/task.json",
+        "weird_captcha_gym/environments/fluke_census_env/tasks/fluke_census_seed_0001/verifier.py",
+        "weird_captcha_gym/shared_scripts/incubator_generators/fluke_census.py",
+        "weird_captcha_gym/shared_runtime/app/mechanics/fluke_census.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/fluke_census.css",
+        "weird_captcha_gym/shared_runtime/app/time_controller.js",
+        "weird_captcha_gym/shared_runtime/server/incubator_graders/fluke_census.py",
+        "weird_captcha_gym/shared_runtime/verifier_helpers.py",
+        "weird_captcha_gym/tools/incubator_solvers/fluke_census.py"
+      ],
+      "source_evidence": [
+        {
+          "path": "weird_captcha_gym/environments/fluke_census_env/controls.json",
+          "lines": "30-38",
+          "claim": "Difficulty 3 sets animal_count=6, notch_difference=12, rotation_range=65, and scale_range=0.12; these are the active parameters for this report."
+        },
+        {
+          "path": "weird_captcha_gym/environments/fluke_census_env/controls.json",
+          "lines": "61-74",
+          "claim": "full is an implemented mode (pointer over water plus Space); the shared observation settings are observation_window_ms=600 and frames_per_observation=4."
+        },
+        {
+          "path": "weird_captcha_gym/environments/fluke_census_env/env.json",
+          "lines": "20-45",
+          "claim": "The browser receives a frame-window observation, mouse/keyboard action surfaces, and the same 600 ms/4-frame runner settings."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/fluke_census.py",
+          "lines": "28-45",
+          "claim": "The supplied difficulty condition is merged into the generator; it creates three species, listed species, individual IDs, and randomized seed-dependent animal identities."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/fluke_census.py",
+          "lines": "51-72",
+          "claim": "Each epoch has a freshly shuffled layout and every item receives randomized x/y position, phase, and omega in the generated moving world; required IDs are all individuals in the two listed species."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/fluke_census.js",
+          "lines": "59-66",
+          "claim": "pose() changes each item's x/y with task-time sinusoidal motion, and find() hit-tests the current pose against the fixed lens aim."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/fluke_census.js",
+          "lines": "68-92",
+          "claim": "The visible canvas redraws moving animals on every animation frame, displays the lens crosshair, and shows the focused tail at 3× scale in the inspection card."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/fluke_census.js",
+          "lines": "113-128",
+          "claim": "A Space input records the focused ID, increments epoch, clears aim, and exposes the next shuffled layout; pointermove and Space are bound to this mode."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/fluke_census.py",
+          "lines": "64-94",
+          "claim": "The replay grader uses current task time and pose for hit testing, then requires the submitted photo set to equal required IDs with no duplicates/off-list entries and a terminal submit."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/time_controller.js",
+          "lines": "55-62",
+          "claim": "Virtual performance.now() advances only with task time, so live task time advances through the witness delay while paused model inference is frozen."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/time_controller.js",
+          "lines": "267-339",
+          "claim": "The shared clock gates requestAnimationFrame callbacks and virtual animation time by the live/paused task clock."
+        },
+        {
+          "path": "weird_captcha_gym/environments/fluke_census_env/tasks/fluke_census_seed_0001/verifier.py",
+          "lines": "22-35",
+          "claim": "The authoritative verifier loads the exported result and runs the independent Fluke Census grader."
+        }
+      ],
+      "uncertainties": []
+    },
+    {
+      "case_index": 266,
+      "public_environment_name": "Fluke Census",
+      "environment_id": "fluke_census_env",
+      "difficulty": 3,
+      "interaction_mode": "simplified",
+      "label": "no",
+      "controls_available": [
+        "Difficulty 3 active parameters: 6 animals (4 listed-species targets and 2 distractors), notch_difference 12, rotation range ±65°, scale range ±0.12.",
+        "Simplified interaction: set Lens X in [0,820] and Y in [0,430], click Position lens, then click Photograph for the animal under the lens.",
+        "Click Census complete to submit after the required individuals have been photographed; submission is administrative."
+      ],
+      "autonomous_processes": [
+        "While the survey is open between inputs, task-time performance.now() advances and requestAnimationFrame redraws each current fluke at its sinusoidally drifting pose.",
+        "The water-line background also changes with task time, but it is decorative, does not affect hit testing or grading, and is not used as evidence.",
+        "A photograph is action-triggered rather than autonomous: it records one focused ID, increments the epoch, clears the lens aim, and switches to the next shuffled layout; submission then closes the survey."
+      ],
+      "grouped_control_modes": [
+        "D_aim_simplified: every coordinate Position lens control, grouped across all epochs, seeds, and attempts; source is coordinates.",
+        "D_photo_simplified: every Photograph button control at the current fixed lens, grouped across all epochs, seeds, and attempts; source is photo_button.",
+        "D_submit: the Census complete button, source census_button; administrative and excluded from the outcome-affecting witness."
+      ],
+      "delta_ms": 600,
+      "window_ms": 600,
+      "clause_i": {
+        "holds": true,
+        "reason": "For D_photo_simplified, holds for the motion candidate: the generator randomizes layout order, positions, phases, and angular rates, while I_t contains only the agent's prior input events and task times. The same action history can therefore require different delayed lens/photograph choices; no q(I_t) can be optimal across C_600(D)."
+      },
+      "clause_ii": {
+        "holds": false,
+        "reason": "Fails. W_t^600 can expose the current fluke motion and tail, but after every successful photograph the pod is reshuffled and no photographed individual is marked. The independent grader requires every required individual ID exactly once and rejects duplicates or off-list photographs. At later epochs, the next safe photograph depends on which inspected tail was photographed earlier; that information can be older than 600 ms and is not recoverable from the agent's own lens coordinates/times. No smaller or equal bounded window repairs this missing identity history, so no single g(I_t,W_t^w) is optimal for every C_Δ(D), even though the local motion prediction is visible."
+      },
+      "clause_iii": {
+        "holds": true,
+        "reason": "Holds for the same motion candidate. Choose a history with the fixed lens at an outward-moving silhouette boundary, τ≈300 ms<Δ=600 ms, and a equal to the current Photograph-button action. pose() moves the animal autonomously while m.aim remains fixed; the action can hit and advance the required epoch at H_t but become no-focus/no-op after the drift at H_t^τ. Re-aiming keeps success possible, so the action's value/advantage strictly drops because of non-clock fluke motion, not a deadline."
+      },
+      "common_visible_process": "Candidate common process for D_photo_simplified: use Δ=600 ms and w=600 ms (the configured four-frame observation window). While the lens is held over a fluke, the visible silhouette, crosshair, and magnified tail card show the fluke's smooth drift; at a boundary-point history, an outward drift makes the same Photograph-button action stale and ineffective while re-aiming remains possible. The same visible motion prevents an action-only policy from knowing the future lens coordinate. This candidate does not become a valid common witness because later optimal photo choices also require the unmarked identity history from earlier shuffles, which is outside any w≤600 ms window. Decorative water ripples are not used.",
+      "pre_run": {
+        "threshold": 0.5,
+        "at_least_half": false,
+        "rate": null,
+        "basis": "source_structural",
+        "reason": "Every successful transcript needs a user-triggered photograph for each required individual; photograph changes the epoch and is outcome-affecting, while final Census complete is only administrative. Therefore no generated instance admits a successful preparation-then-no-action outcome phase, so the pre-run rate is below half (no percentage is asserted). The mathematical No from clause (ii) already suffices.",
+        "seed_probe": null
+      },
+      "files_read_completely": [
+        "AGENTS.md",
+        "weird_captcha_gym/docs/controllability/real-time.md",
+        "weird_captcha_gym/environments/fluke_census_env/controls.json",
+        "weird_captcha_gym/environments/fluke_census_env/env.json",
+        "weird_captcha_gym/environments/fluke_census_env/tasks/fluke_census_seed_0001/task.json",
+        "weird_captcha_gym/environments/fluke_census_env/tasks/fluke_census_seed_0001/verifier.py",
+        "weird_captcha_gym/shared_scripts/incubator_generators/fluke_census.py",
+        "weird_captcha_gym/shared_runtime/app/mechanics/fluke_census.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/fluke_census.css",
+        "weird_captcha_gym/shared_runtime/app/time_controller.js",
+        "weird_captcha_gym/shared_runtime/server/incubator_graders/fluke_census.py",
+        "weird_captcha_gym/shared_runtime/verifier_helpers.py",
+        "weird_captcha_gym/tools/incubator_solvers/fluke_census.py"
+      ],
+      "source_evidence": [
+        {
+          "path": "weird_captcha_gym/environments/fluke_census_env/controls.json",
+          "lines": "30-38",
+          "claim": "Difficulty 3 sets animal_count=6, notch_difference=12, rotation_range=65, and scale_range=0.12; these are the active parameters for this report."
+        },
+        {
+          "path": "weird_captcha_gym/environments/fluke_census_env/controls.json",
+          "lines": "61-74",
+          "claim": "simplified is an implemented mode (coordinate controls plus Photograph); the shared observation settings are observation_window_ms=600 and frames_per_observation=4."
+        },
+        {
+          "path": "weird_captcha_gym/environments/fluke_census_env/env.json",
+          "lines": "20-45",
+          "claim": "The browser receives a frame-window observation, mouse/keyboard action surfaces, and the same 600 ms/4-frame runner settings."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/fluke_census.py",
+          "lines": "28-45",
+          "claim": "The supplied difficulty condition is merged into the generator; it creates three species, listed species, individual IDs, and randomized seed-dependent animal identities."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/fluke_census.py",
+          "lines": "51-72",
+          "claim": "Each epoch has a freshly shuffled layout and every item receives randomized x/y position, phase, and omega in the generated moving world; required IDs are all individuals in the two listed species."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/fluke_census.js",
+          "lines": "59-66",
+          "claim": "pose() changes each item's x/y with task-time sinusoidal motion, and find() hit-tests the current pose against the fixed lens aim."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/fluke_census.js",
+          "lines": "68-92",
+          "claim": "The visible canvas redraws moving animals on every animation frame, displays the lens crosshair, and shows the focused tail at 3× scale in the inspection card."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/fluke_census.js",
+          "lines": "113-128",
+          "claim": "A Photograph-button input records the focused ID, increments epoch, clears aim, and exposes the next shuffled layout; coordinate Position lens and Photograph are bound to this mode."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/fluke_census.py",
+          "lines": "64-94",
+          "claim": "The replay grader uses current task time and pose for hit testing, then requires the submitted photo set to equal required IDs with no duplicates/off-list entries and a terminal submit."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/time_controller.js",
+          "lines": "55-62",
+          "claim": "Virtual performance.now() advances only with task time, so live task time advances through the witness delay while paused model inference is frozen."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/time_controller.js",
+          "lines": "267-339",
+          "claim": "The shared clock gates requestAnimationFrame callbacks and virtual animation time by the live/paused task clock."
+        },
+        {
+          "path": "weird_captcha_gym/environments/fluke_census_env/tasks/fluke_census_seed_0001/verifier.py",
+          "lines": "22-35",
+          "claim": "The authoritative verifier loads the exported result and runs the independent Fluke Census grader."
+        }
+      ],
+      "uncertainties": []
+    },
+    {
+      "case_index": 267,
+      "public_environment_name": "Fluke Census",
+      "environment_id": "fluke_census_env",
+      "difficulty": 4,
+      "interaction_mode": "full",
+      "label": "no",
+      "controls_available": [
+        "Difficulty 4 active parameters: 9 animals (6 listed-species targets and 3 distractors), notch_difference 8, rotation range ±180°, scale range ±0.20.",
+        "Full interaction: move the pointer over the 820×430 water canvas to set the inspection lens; press Space once to photograph the animal currently under the lens.",
+        "Click Census complete to submit after the required individuals have been photographed; submission is administrative."
+      ],
+      "autonomous_processes": [
+        "While the survey is open between inputs, task-time performance.now() advances and requestAnimationFrame redraws each current fluke at its sinusoidally drifting pose.",
+        "The water-line background also changes with task time, but it is decorative, does not affect hit testing or grading, and is not used as evidence.",
+        "A photograph is action-triggered rather than autonomous: it records one focused ID, increments the epoch, clears the lens aim, and switches to the next shuffled layout; submission then closes the survey."
+      ],
+      "grouped_control_modes": [
+        "D_aim_full: every pointermove lens placement over the water canvas, grouped across all epochs, seeds, and attempts; source is pointer.",
+        "D_photo_full: every Space-key photograph control at the current fixed lens, grouped across all epochs, seeds, and attempts; source is space.",
+        "D_submit: the Census complete button, source census_button; administrative and excluded from the outcome-affecting witness."
+      ],
+      "delta_ms": 600,
+      "window_ms": 600,
+      "clause_i": {
+        "holds": true,
+        "reason": "For D_photo_full, holds for the motion candidate: the generator randomizes layout order, positions, phases, and angular rates, while I_t contains only the agent's prior input events and task times. The same action history can therefore require different delayed lens/photograph choices; no q(I_t) can be optimal across C_600(D)."
+      },
+      "clause_ii": {
+        "holds": false,
+        "reason": "Fails. W_t^600 can expose the current fluke motion and tail, but after every successful photograph the pod is reshuffled and no photographed individual is marked. The independent grader requires every required individual ID exactly once and rejects duplicates or off-list photographs. At later epochs, the next safe photograph depends on which inspected tail was photographed earlier; that information can be older than 600 ms and is not recoverable from the agent's own lens coordinates/times. No smaller or equal bounded window repairs this missing identity history, so no single g(I_t,W_t^w) is optimal for every C_Δ(D), even though the local motion prediction is visible."
+      },
+      "clause_iii": {
+        "holds": true,
+        "reason": "Holds for the same motion candidate. Choose a history with the fixed lens at an outward-moving silhouette boundary, τ≈300 ms<Δ=600 ms, and a equal to the current Space action. pose() moves the animal autonomously while m.aim remains fixed; the action can hit and advance the required epoch at H_t but become no-focus/no-op after the drift at H_t^τ. Re-aiming keeps success possible, so the action's value/advantage strictly drops because of non-clock fluke motion, not a deadline."
+      },
+      "common_visible_process": "Candidate common process for D_photo_full: use Δ=600 ms and w=600 ms (the configured four-frame observation window). While the lens is held over a fluke, the visible silhouette, crosshair, and magnified tail card show the fluke's smooth drift; at a boundary-point history, an outward drift makes the same Space photograph stale and ineffective while re-aiming remains possible. The same visible motion prevents an action-only policy from knowing the future lens coordinate. This candidate does not become a valid common witness because later optimal photo choices also require the unmarked identity history from earlier shuffles, which is outside any w≤600 ms window. Decorative water ripples are not used.",
+      "pre_run": {
+        "threshold": 0.5,
+        "at_least_half": false,
+        "rate": null,
+        "basis": "source_structural",
+        "reason": "Every successful transcript needs a user-triggered photograph for each required individual; photograph changes the epoch and is outcome-affecting, while final Census complete is only administrative. Therefore no generated instance admits a successful preparation-then-no-action outcome phase, so the pre-run rate is below half (no percentage is asserted). The mathematical No from clause (ii) already suffices.",
+        "seed_probe": null
+      },
+      "files_read_completely": [
+        "AGENTS.md",
+        "weird_captcha_gym/docs/controllability/real-time.md",
+        "weird_captcha_gym/environments/fluke_census_env/controls.json",
+        "weird_captcha_gym/environments/fluke_census_env/env.json",
+        "weird_captcha_gym/environments/fluke_census_env/tasks/fluke_census_seed_0001/task.json",
+        "weird_captcha_gym/environments/fluke_census_env/tasks/fluke_census_seed_0001/verifier.py",
+        "weird_captcha_gym/shared_scripts/incubator_generators/fluke_census.py",
+        "weird_captcha_gym/shared_runtime/app/mechanics/fluke_census.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/fluke_census.css",
+        "weird_captcha_gym/shared_runtime/app/time_controller.js",
+        "weird_captcha_gym/shared_runtime/server/incubator_graders/fluke_census.py",
+        "weird_captcha_gym/shared_runtime/verifier_helpers.py",
+        "weird_captcha_gym/tools/incubator_solvers/fluke_census.py"
+      ],
+      "source_evidence": [
+        {
+          "path": "weird_captcha_gym/environments/fluke_census_env/controls.json",
+          "lines": "40-48",
+          "claim": "Difficulty 4 sets animal_count=9, notch_difference=8, rotation_range=180, and scale_range=0.20; these are the active parameters for this report."
+        },
+        {
+          "path": "weird_captcha_gym/environments/fluke_census_env/controls.json",
+          "lines": "61-74",
+          "claim": "full is an implemented mode (pointer over water plus Space); the shared observation settings are observation_window_ms=600 and frames_per_observation=4."
+        },
+        {
+          "path": "weird_captcha_gym/environments/fluke_census_env/env.json",
+          "lines": "20-45",
+          "claim": "The browser receives a frame-window observation, mouse/keyboard action surfaces, and the same 600 ms/4-frame runner settings."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/fluke_census.py",
+          "lines": "28-45",
+          "claim": "The supplied difficulty condition is merged into the generator; it creates three species, listed species, individual IDs, and randomized seed-dependent animal identities."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/fluke_census.py",
+          "lines": "51-72",
+          "claim": "Each epoch has a freshly shuffled layout and every item receives randomized x/y position, phase, and omega in the generated moving world; required IDs are all individuals in the two listed species."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/fluke_census.js",
+          "lines": "59-66",
+          "claim": "pose() changes each item's x/y with task-time sinusoidal motion, and find() hit-tests the current pose against the fixed lens aim."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/fluke_census.js",
+          "lines": "68-92",
+          "claim": "The visible canvas redraws moving animals on every animation frame, displays the lens crosshair, and shows the focused tail at 3× scale in the inspection card."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/fluke_census.js",
+          "lines": "113-128",
+          "claim": "A Space input records the focused ID, increments epoch, clears aim, and exposes the next shuffled layout; pointermove and Space are bound to this mode."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/fluke_census.py",
+          "lines": "64-94",
+          "claim": "The replay grader uses current task time and pose for hit testing, then requires the submitted photo set to equal required IDs with no duplicates/off-list entries and a terminal submit."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/time_controller.js",
+          "lines": "55-62",
+          "claim": "Virtual performance.now() advances only with task time, so live task time advances through the witness delay while paused model inference is frozen."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/time_controller.js",
+          "lines": "267-339",
+          "claim": "The shared clock gates requestAnimationFrame callbacks and virtual animation time by the live/paused task clock."
+        },
+        {
+          "path": "weird_captcha_gym/environments/fluke_census_env/tasks/fluke_census_seed_0001/verifier.py",
+          "lines": "22-35",
+          "claim": "The authoritative verifier loads the exported result and runs the independent Fluke Census grader."
+        }
+      ],
+      "uncertainties": []
+    },
+    {
+      "case_index": 268,
+      "public_environment_name": "Fluke Census",
+      "environment_id": "fluke_census_env",
+      "difficulty": 4,
+      "interaction_mode": "simplified",
+      "label": "no",
+      "controls_available": [
+        "Difficulty 4 active parameters: 9 animals (6 listed-species targets and 3 distractors), notch_difference 8, rotation range ±180°, scale range ±0.20.",
+        "Simplified interaction: set Lens X in [0,820] and Y in [0,430], click Position lens, then click Photograph for the animal under the lens.",
+        "Click Census complete to submit after the required individuals have been photographed; submission is administrative."
+      ],
+      "autonomous_processes": [
+        "While the survey is open between inputs, task-time performance.now() advances and requestAnimationFrame redraws each current fluke at its sinusoidally drifting pose.",
+        "The water-line background also changes with task time, but it is decorative, does not affect hit testing or grading, and is not used as evidence.",
+        "A photograph is action-triggered rather than autonomous: it records one focused ID, increments the epoch, clears the lens aim, and switches to the next shuffled layout; submission then closes the survey."
+      ],
+      "grouped_control_modes": [
+        "D_aim_simplified: every coordinate Position lens control, grouped across all epochs, seeds, and attempts; source is coordinates.",
+        "D_photo_simplified: every Photograph button control at the current fixed lens, grouped across all epochs, seeds, and attempts; source is photo_button.",
+        "D_submit: the Census complete button, source census_button; administrative and excluded from the outcome-affecting witness."
+      ],
+      "delta_ms": 600,
+      "window_ms": 600,
+      "clause_i": {
+        "holds": true,
+        "reason": "For D_photo_simplified, holds for the motion candidate: the generator randomizes layout order, positions, phases, and angular rates, while I_t contains only the agent's prior input events and task times. The same action history can therefore require different delayed lens/photograph choices; no q(I_t) can be optimal across C_600(D)."
+      },
+      "clause_ii": {
+        "holds": false,
+        "reason": "Fails. W_t^600 can expose the current fluke motion and tail, but after every successful photograph the pod is reshuffled and no photographed individual is marked. The independent grader requires every required individual ID exactly once and rejects duplicates or off-list photographs. At later epochs, the next safe photograph depends on which inspected tail was photographed earlier; that information can be older than 600 ms and is not recoverable from the agent's own lens coordinates/times. No smaller or equal bounded window repairs this missing identity history, so no single g(I_t,W_t^w) is optimal for every C_Δ(D), even though the local motion prediction is visible."
+      },
+      "clause_iii": {
+        "holds": true,
+        "reason": "Holds for the same motion candidate. Choose a history with the fixed lens at an outward-moving silhouette boundary, τ≈300 ms<Δ=600 ms, and a equal to the current Photograph-button action. pose() moves the animal autonomously while m.aim remains fixed; the action can hit and advance the required epoch at H_t but become no-focus/no-op after the drift at H_t^τ. Re-aiming keeps success possible, so the action's value/advantage strictly drops because of non-clock fluke motion, not a deadline."
+      },
+      "common_visible_process": "Candidate common process for D_photo_simplified: use Δ=600 ms and w=600 ms (the configured four-frame observation window). While the lens is held over a fluke, the visible silhouette, crosshair, and magnified tail card show the fluke's smooth drift; at a boundary-point history, an outward drift makes the same Photograph-button action stale and ineffective while re-aiming remains possible. The same visible motion prevents an action-only policy from knowing the future lens coordinate. This candidate does not become a valid common witness because later optimal photo choices also require the unmarked identity history from earlier shuffles, which is outside any w≤600 ms window. Decorative water ripples are not used.",
+      "pre_run": {
+        "threshold": 0.5,
+        "at_least_half": false,
+        "rate": null,
+        "basis": "source_structural",
+        "reason": "Every successful transcript needs a user-triggered photograph for each required individual; photograph changes the epoch and is outcome-affecting, while final Census complete is only administrative. Therefore no generated instance admits a successful preparation-then-no-action outcome phase, so the pre-run rate is below half (no percentage is asserted). The mathematical No from clause (ii) already suffices.",
+        "seed_probe": null
+      },
+      "files_read_completely": [
+        "AGENTS.md",
+        "weird_captcha_gym/docs/controllability/real-time.md",
+        "weird_captcha_gym/environments/fluke_census_env/controls.json",
+        "weird_captcha_gym/environments/fluke_census_env/env.json",
+        "weird_captcha_gym/environments/fluke_census_env/tasks/fluke_census_seed_0001/task.json",
+        "weird_captcha_gym/environments/fluke_census_env/tasks/fluke_census_seed_0001/verifier.py",
+        "weird_captcha_gym/shared_scripts/incubator_generators/fluke_census.py",
+        "weird_captcha_gym/shared_runtime/app/mechanics/fluke_census.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/fluke_census.css",
+        "weird_captcha_gym/shared_runtime/app/time_controller.js",
+        "weird_captcha_gym/shared_runtime/server/incubator_graders/fluke_census.py",
+        "weird_captcha_gym/shared_runtime/verifier_helpers.py",
+        "weird_captcha_gym/tools/incubator_solvers/fluke_census.py"
+      ],
+      "source_evidence": [
+        {
+          "path": "weird_captcha_gym/environments/fluke_census_env/controls.json",
+          "lines": "40-48",
+          "claim": "Difficulty 4 sets animal_count=9, notch_difference=8, rotation_range=180, and scale_range=0.20; these are the active parameters for this report."
+        },
+        {
+          "path": "weird_captcha_gym/environments/fluke_census_env/controls.json",
+          "lines": "61-74",
+          "claim": "simplified is an implemented mode (coordinate controls plus Photograph); the shared observation settings are observation_window_ms=600 and frames_per_observation=4."
+        },
+        {
+          "path": "weird_captcha_gym/environments/fluke_census_env/env.json",
+          "lines": "20-45",
+          "claim": "The browser receives a frame-window observation, mouse/keyboard action surfaces, and the same 600 ms/4-frame runner settings."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/fluke_census.py",
+          "lines": "28-45",
+          "claim": "The supplied difficulty condition is merged into the generator; it creates three species, listed species, individual IDs, and randomized seed-dependent animal identities."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/fluke_census.py",
+          "lines": "51-72",
+          "claim": "Each epoch has a freshly shuffled layout and every item receives randomized x/y position, phase, and omega in the generated moving world; required IDs are all individuals in the two listed species."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/fluke_census.js",
+          "lines": "59-66",
+          "claim": "pose() changes each item's x/y with task-time sinusoidal motion, and find() hit-tests the current pose against the fixed lens aim."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/fluke_census.js",
+          "lines": "68-92",
+          "claim": "The visible canvas redraws moving animals on every animation frame, displays the lens crosshair, and shows the focused tail at 3× scale in the inspection card."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/fluke_census.js",
+          "lines": "113-128",
+          "claim": "A Photograph-button input records the focused ID, increments epoch, clears aim, and exposes the next shuffled layout; coordinate Position lens and Photograph are bound to this mode."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/fluke_census.py",
+          "lines": "64-94",
+          "claim": "The replay grader uses current task time and pose for hit testing, then requires the submitted photo set to equal required IDs with no duplicates/off-list entries and a terminal submit."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/time_controller.js",
+          "lines": "55-62",
+          "claim": "Virtual performance.now() advances only with task time, so live task time advances through the witness delay while paused model inference is frozen."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/time_controller.js",
+          "lines": "267-339",
+          "claim": "The shared clock gates requestAnimationFrame callbacks and virtual animation time by the live/paused task clock."
+        },
+        {
+          "path": "weird_captcha_gym/environments/fluke_census_env/tasks/fluke_census_seed_0001/verifier.py",
+          "lines": "22-35",
+          "claim": "The authoritative verifier loads the exported result and runs the independent Fluke Census grader."
+        }
+      ],
+      "uncertainties": []
+    },
+    {
+      "case_index": 269,
+      "public_environment_name": "Fluke Census",
+      "environment_id": "fluke_census_env",
+      "difficulty": 5,
+      "interaction_mode": "full",
+      "label": "no",
+      "controls_available": [
+        "Difficulty 5 active parameters: 12 animals (8 listed-species targets and 4 distractors), notch_difference 5, rotation range ±180°, scale range ±0.28.",
+        "Full interaction: move the pointer over the 820×430 water canvas to set the inspection lens; press Space once to photograph the animal currently under the lens.",
+        "Click Census complete to submit after the required individuals have been photographed; submission is administrative."
+      ],
+      "autonomous_processes": [
+        "While the survey is open between inputs, task-time performance.now() advances and requestAnimationFrame redraws each current fluke at its sinusoidally drifting pose.",
+        "The water-line background also changes with task time, but it is decorative, does not affect hit testing or grading, and is not used as evidence.",
+        "A photograph is action-triggered rather than autonomous: it records one focused ID, increments the epoch, clears the lens aim, and switches to the next shuffled layout; submission then closes the survey."
+      ],
+      "grouped_control_modes": [
+        "D_aim_full: every pointermove lens placement over the water canvas, grouped across all epochs, seeds, and attempts; source is pointer.",
+        "D_photo_full: every Space-key photograph control at the current fixed lens, grouped across all epochs, seeds, and attempts; source is space.",
+        "D_submit: the Census complete button, source census_button; administrative and excluded from the outcome-affecting witness."
+      ],
+      "delta_ms": 600,
+      "window_ms": 600,
+      "clause_i": {
+        "holds": true,
+        "reason": "For D_photo_full, holds for the motion candidate: the generator randomizes layout order, positions, phases, and angular rates, while I_t contains only the agent's prior input events and task times. The same action history can therefore require different delayed lens/photograph choices; no q(I_t) can be optimal across C_600(D)."
+      },
+      "clause_ii": {
+        "holds": false,
+        "reason": "Fails. W_t^600 can expose the current fluke motion and tail, but after every successful photograph the pod is reshuffled and no photographed individual is marked. The independent grader requires every required individual ID exactly once and rejects duplicates or off-list photographs. At later epochs, the next safe photograph depends on which inspected tail was photographed earlier; that information can be older than 600 ms and is not recoverable from the agent's own lens coordinates/times. No smaller or equal bounded window repairs this missing identity history, so no single g(I_t,W_t^w) is optimal for every C_Δ(D), even though the local motion prediction is visible."
+      },
+      "clause_iii": {
+        "holds": true,
+        "reason": "Holds for the same motion candidate. Choose a history with the fixed lens at an outward-moving silhouette boundary, τ≈300 ms<Δ=600 ms, and a equal to the current Space action. pose() moves the animal autonomously while m.aim remains fixed; the action can hit and advance the required epoch at H_t but become no-focus/no-op after the drift at H_t^τ. Re-aiming keeps success possible, so the action's value/advantage strictly drops because of non-clock fluke motion, not a deadline."
+      },
+      "common_visible_process": "Candidate common process for D_photo_full: use Δ=600 ms and w=600 ms (the configured four-frame observation window). While the lens is held over a fluke, the visible silhouette, crosshair, and magnified tail card show the fluke's smooth drift; at a boundary-point history, an outward drift makes the same Space photograph stale and ineffective while re-aiming remains possible. The same visible motion prevents an action-only policy from knowing the future lens coordinate. This candidate does not become a valid common witness because later optimal photo choices also require the unmarked identity history from earlier shuffles, which is outside any w≤600 ms window. Decorative water ripples are not used.",
+      "pre_run": {
+        "threshold": 0.5,
+        "at_least_half": false,
+        "rate": null,
+        "basis": "source_structural",
+        "reason": "Every successful transcript needs a user-triggered photograph for each required individual; photograph changes the epoch and is outcome-affecting, while final Census complete is only administrative. Therefore no generated instance admits a successful preparation-then-no-action outcome phase, so the pre-run rate is below half (no percentage is asserted). The mathematical No from clause (ii) already suffices.",
+        "seed_probe": null
+      },
+      "files_read_completely": [
+        "AGENTS.md",
+        "weird_captcha_gym/docs/controllability/real-time.md",
+        "weird_captcha_gym/environments/fluke_census_env/controls.json",
+        "weird_captcha_gym/environments/fluke_census_env/env.json",
+        "weird_captcha_gym/environments/fluke_census_env/tasks/fluke_census_seed_0001/task.json",
+        "weird_captcha_gym/environments/fluke_census_env/tasks/fluke_census_seed_0001/verifier.py",
+        "weird_captcha_gym/shared_scripts/incubator_generators/fluke_census.py",
+        "weird_captcha_gym/shared_runtime/app/mechanics/fluke_census.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/fluke_census.css",
+        "weird_captcha_gym/shared_runtime/app/time_controller.js",
+        "weird_captcha_gym/shared_runtime/server/incubator_graders/fluke_census.py",
+        "weird_captcha_gym/shared_runtime/verifier_helpers.py",
+        "weird_captcha_gym/tools/incubator_solvers/fluke_census.py"
+      ],
+      "source_evidence": [
+        {
+          "path": "weird_captcha_gym/environments/fluke_census_env/controls.json",
+          "lines": "50-58",
+          "claim": "Difficulty 5 sets animal_count=12, notch_difference=5, rotation_range=180, and scale_range=0.28; these are the active parameters for this report."
+        },
+        {
+          "path": "weird_captcha_gym/environments/fluke_census_env/controls.json",
+          "lines": "61-74",
+          "claim": "full is an implemented mode (pointer over water plus Space); the shared observation settings are observation_window_ms=600 and frames_per_observation=4."
+        },
+        {
+          "path": "weird_captcha_gym/environments/fluke_census_env/env.json",
+          "lines": "20-45",
+          "claim": "The browser receives a frame-window observation, mouse/keyboard action surfaces, and the same 600 ms/4-frame runner settings."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/fluke_census.py",
+          "lines": "28-45",
+          "claim": "The supplied difficulty condition is merged into the generator; it creates three species, listed species, individual IDs, and randomized seed-dependent animal identities."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/fluke_census.py",
+          "lines": "51-72",
+          "claim": "Each epoch has a freshly shuffled layout and every item receives randomized x/y position, phase, and omega in the generated moving world; required IDs are all individuals in the two listed species."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/fluke_census.js",
+          "lines": "59-66",
+          "claim": "pose() changes each item's x/y with task-time sinusoidal motion, and find() hit-tests the current pose against the fixed lens aim."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/fluke_census.js",
+          "lines": "68-92",
+          "claim": "The visible canvas redraws moving animals on every animation frame, displays the lens crosshair, and shows the focused tail at 3× scale in the inspection card."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/fluke_census.js",
+          "lines": "113-128",
+          "claim": "A Space input records the focused ID, increments epoch, clears aim, and exposes the next shuffled layout; pointermove and Space are bound to this mode."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/fluke_census.py",
+          "lines": "64-94",
+          "claim": "The replay grader uses current task time and pose for hit testing, then requires the submitted photo set to equal required IDs with no duplicates/off-list entries and a terminal submit."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/time_controller.js",
+          "lines": "55-62",
+          "claim": "Virtual performance.now() advances only with task time, so live task time advances through the witness delay while paused model inference is frozen."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/time_controller.js",
+          "lines": "267-339",
+          "claim": "The shared clock gates requestAnimationFrame callbacks and virtual animation time by the live/paused task clock."
+        },
+        {
+          "path": "weird_captcha_gym/environments/fluke_census_env/tasks/fluke_census_seed_0001/verifier.py",
+          "lines": "22-35",
+          "claim": "The authoritative verifier loads the exported result and runs the independent Fluke Census grader."
+        }
+      ],
+      "uncertainties": []
+    },
+    {
+      "case_index": 270,
+      "public_environment_name": "Fluke Census",
+      "environment_id": "fluke_census_env",
+      "difficulty": 5,
+      "interaction_mode": "simplified",
+      "label": "no",
+      "controls_available": [
+        "Difficulty 5 active parameters: 12 animals (8 listed-species targets and 4 distractors), notch_difference 5, rotation range ±180°, scale range ±0.28.",
+        "Simplified interaction: set Lens X in [0,820] and Y in [0,430], click Position lens, then click Photograph for the animal under the lens.",
+        "Click Census complete to submit after the required individuals have been photographed; submission is administrative."
+      ],
+      "autonomous_processes": [
+        "While the survey is open between inputs, task-time performance.now() advances and requestAnimationFrame redraws each current fluke at its sinusoidally drifting pose.",
+        "The water-line background also changes with task time, but it is decorative, does not affect hit testing or grading, and is not used as evidence.",
+        "A photograph is action-triggered rather than autonomous: it records one focused ID, increments the epoch, clears the lens aim, and switches to the next shuffled layout; submission then closes the survey."
+      ],
+      "grouped_control_modes": [
+        "D_aim_simplified: every coordinate Position lens control, grouped across all epochs, seeds, and attempts; source is coordinates.",
+        "D_photo_simplified: every Photograph button control at the current fixed lens, grouped across all epochs, seeds, and attempts; source is photo_button.",
+        "D_submit: the Census complete button, source census_button; administrative and excluded from the outcome-affecting witness."
+      ],
+      "delta_ms": 600,
+      "window_ms": 600,
+      "clause_i": {
+        "holds": true,
+        "reason": "For D_photo_simplified, holds for the motion candidate: the generator randomizes layout order, positions, phases, and angular rates, while I_t contains only the agent's prior input events and task times. The same action history can therefore require different delayed lens/photograph choices; no q(I_t) can be optimal across C_600(D)."
+      },
+      "clause_ii": {
+        "holds": false,
+        "reason": "Fails. W_t^600 can expose the current fluke motion and tail, but after every successful photograph the pod is reshuffled and no photographed individual is marked. The independent grader requires every required individual ID exactly once and rejects duplicates or off-list photographs. At later epochs, the next safe photograph depends on which inspected tail was photographed earlier; that information can be older than 600 ms and is not recoverable from the agent's own lens coordinates/times. No smaller or equal bounded window repairs this missing identity history, so no single g(I_t,W_t^w) is optimal for every C_Δ(D), even though the local motion prediction is visible."
+      },
+      "clause_iii": {
+        "holds": true,
+        "reason": "Holds for the same motion candidate. Choose a history with the fixed lens at an outward-moving silhouette boundary, τ≈300 ms<Δ=600 ms, and a equal to the current Photograph-button action. pose() moves the animal autonomously while m.aim remains fixed; the action can hit and advance the required epoch at H_t but become no-focus/no-op after the drift at H_t^τ. Re-aiming keeps success possible, so the action's value/advantage strictly drops because of non-clock fluke motion, not a deadline."
+      },
+      "common_visible_process": "Candidate common process for D_photo_simplified: use Δ=600 ms and w=600 ms (the configured four-frame observation window). While the lens is held over a fluke, the visible silhouette, crosshair, and magnified tail card show the fluke's smooth drift; at a boundary-point history, an outward drift makes the same Photograph-button action stale and ineffective while re-aiming remains possible. The same visible motion prevents an action-only policy from knowing the future lens coordinate. This candidate does not become a valid common witness because later optimal photo choices also require the unmarked identity history from earlier shuffles, which is outside any w≤600 ms window. Decorative water ripples are not used.",
+      "pre_run": {
+        "threshold": 0.5,
+        "at_least_half": false,
+        "rate": null,
+        "basis": "source_structural",
+        "reason": "Every successful transcript needs a user-triggered photograph for each required individual; photograph changes the epoch and is outcome-affecting, while final Census complete is only administrative. Therefore no generated instance admits a successful preparation-then-no-action outcome phase, so the pre-run rate is below half (no percentage is asserted). The mathematical No from clause (ii) already suffices.",
+        "seed_probe": null
+      },
+      "files_read_completely": [
+        "AGENTS.md",
+        "weird_captcha_gym/docs/controllability/real-time.md",
+        "weird_captcha_gym/environments/fluke_census_env/controls.json",
+        "weird_captcha_gym/environments/fluke_census_env/env.json",
+        "weird_captcha_gym/environments/fluke_census_env/tasks/fluke_census_seed_0001/task.json",
+        "weird_captcha_gym/environments/fluke_census_env/tasks/fluke_census_seed_0001/verifier.py",
+        "weird_captcha_gym/shared_scripts/incubator_generators/fluke_census.py",
+        "weird_captcha_gym/shared_runtime/app/mechanics/fluke_census.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/fluke_census.css",
+        "weird_captcha_gym/shared_runtime/app/time_controller.js",
+        "weird_captcha_gym/shared_runtime/server/incubator_graders/fluke_census.py",
+        "weird_captcha_gym/shared_runtime/verifier_helpers.py",
+        "weird_captcha_gym/tools/incubator_solvers/fluke_census.py"
+      ],
+      "source_evidence": [
+        {
+          "path": "weird_captcha_gym/environments/fluke_census_env/controls.json",
+          "lines": "50-58",
+          "claim": "Difficulty 5 sets animal_count=12, notch_difference=5, rotation_range=180, and scale_range=0.28; these are the active parameters for this report."
+        },
+        {
+          "path": "weird_captcha_gym/environments/fluke_census_env/controls.json",
+          "lines": "61-74",
+          "claim": "simplified is an implemented mode (coordinate controls plus Photograph); the shared observation settings are observation_window_ms=600 and frames_per_observation=4."
+        },
+        {
+          "path": "weird_captcha_gym/environments/fluke_census_env/env.json",
+          "lines": "20-45",
+          "claim": "The browser receives a frame-window observation, mouse/keyboard action surfaces, and the same 600 ms/4-frame runner settings."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/fluke_census.py",
+          "lines": "28-45",
+          "claim": "The supplied difficulty condition is merged into the generator; it creates three species, listed species, individual IDs, and randomized seed-dependent animal identities."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/fluke_census.py",
+          "lines": "51-72",
+          "claim": "Each epoch has a freshly shuffled layout and every item receives randomized x/y position, phase, and omega in the generated moving world; required IDs are all individuals in the two listed species."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/fluke_census.js",
+          "lines": "59-66",
+          "claim": "pose() changes each item's x/y with task-time sinusoidal motion, and find() hit-tests the current pose against the fixed lens aim."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/fluke_census.js",
+          "lines": "68-92",
+          "claim": "The visible canvas redraws moving animals on every animation frame, displays the lens crosshair, and shows the focused tail at 3× scale in the inspection card."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/fluke_census.js",
+          "lines": "113-128",
+          "claim": "A Photograph-button input records the focused ID, increments epoch, clears aim, and exposes the next shuffled layout; coordinate Position lens and Photograph are bound to this mode."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/fluke_census.py",
+          "lines": "64-94",
+          "claim": "The replay grader uses current task time and pose for hit testing, then requires the submitted photo set to equal required IDs with no duplicates/off-list entries and a terminal submit."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/time_controller.js",
+          "lines": "55-62",
+          "claim": "Virtual performance.now() advances only with task time, so live task time advances through the witness delay while paused model inference is frozen."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/time_controller.js",
+          "lines": "267-339",
+          "claim": "The shared clock gates requestAnimationFrame callbacks and virtual animation time by the live/paused task clock."
+        },
+        {
+          "path": "weird_captcha_gym/environments/fluke_census_env/tasks/fluke_census_seed_0001/verifier.py",
+          "lines": "22-35",
+          "claim": "The authoritative verifier loads the exported result and runs the independent Fluke Census grader."
+        }
+      ],
+      "uncertainties": []
+    }
+  ]
+}

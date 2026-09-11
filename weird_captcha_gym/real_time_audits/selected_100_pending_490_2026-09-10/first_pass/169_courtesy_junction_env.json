@@ -1,0 +1,138 @@
+{
+  "case_index": 169,
+  "public_environment_name": "Courtesy Junction",
+  "environment_id": "courtesy_junction_env",
+  "difficulty": 5,
+  "interaction_mode": "full",
+  "label": "yes",
+  "controls_available": [
+    "Difficulty 5 activates three traffic lanes, four cars per lane, speeds 44-65, yielding horizons 0.7-1.7 seconds, either left or right turn, and road_half 80.",
+    "Full interaction uses held ArrowLeft/ArrowRight for steering and ArrowUp/ArrowDown for throttle or brake; releasing a key returns that axis to neutral. The active control is the pair [steer, pedal], with nine possible combinations of -1, 0, and 1.",
+    "START ENGINE begins task time. While driving, the current held-key control persists between input events; FILE DELIVERY only certifies the final replay and does not affect the route.",
+    "The configured observation covers 400 ms in five chronological frames, with 120 seconds of task-active play time."
+  ],
+  "autonomous_processes": [
+    "After START ENGINE, requestAnimationFrame advances the simulation in 20 ms physics ticks even without a new agent action. The ego vehicle continues under its current held control, while traffic advances along its lanes and wraps around its cycle.",
+    "Each traffic car autonomously decides whether to brake from predicted conflict with the ego and other cars, updates its speed and position, and exposes braking through its rendered red rear lights.",
+    "Collision, road-edge, arrival, and timeout status are checked on each physics tick without requiring a new control event."
+  ],
+  "grouped_control_modes": [
+    "D_full_held_keys: every outcome-affecting driving occurrence using the full held_keys surface across seeds and attempts; this is the common grouped mode, not a hand-picked early interval.",
+    "Within D_full_held_keys, the nine current control modes are steer/pedal pairs [-1,-1], [-1,0], [-1,1], [0,-1], [0,0], [0,1], [1,-1], [1,0], and [1,1], changed by full-mode keydown or keyup transitions.",
+    "START ENGINE, FILE DELIVERY, and retry are administrative actions rather than outcome-affecting control modes."
+  ],
+  "delta_ms": 400,
+  "window_ms": 400,
+  "clause_i": {
+    "holds": true,
+    "reason": "Across generated seeds, the same own-action history and task time can coexist with different traffic phases, speeds, yielding horizons, and deceleration values. A clear gap and a closing car then require different delayed controls, such as continuing through the turn versus coasting or braking, so no policy using only I_t can be optimal for every history in D."
+  },
+  "clause_ii": {
+    "holds": true,
+    "reason": "The five visible frames over the 400 ms window show lane direction, changing car positions, the ego pose, and brake-light changes. That bounded recent trajectory is sufficient to distinguish a gap that will remain clear from one that will close by delayed delivery and to select the corresponding steering/throttle/brake control without private generator state."
+  },
+  "clause_iii": {
+    "holds": true,
+    "reason": "Use a state just before a junction crossing or turn with a moving, visibly unbraked car approaching the conflict region. Let a be the current steering-plus-throttle control that clears the available gap. With Delta=400 ms and tau=200 ms, autonomous traffic advances during the physics ticks, shrinking the gap; the same a delivered later can collide or lose its clearance advantage, while a neutral, brake, or alternate steering action can still preserve success. The strict loss comes from visible traffic-state evolution, not from the episode deadline."
+  },
+  "common_visible_process": "Responsive traffic flow is the common process: cars move continuously through the junction, and their visibly changing positions and brake lights reflect the conflict-based yielding rule. The same process makes the delayed control observation-dependent and makes an otherwise useful gap-crossing control lose value while the agent waits.",
+  "pre_run": {
+    "threshold": 0.5,
+    "at_least_half": false,
+    "rate": null,
+    "basis": "source_structural",
+    "reason": "There is no autonomous route phase. The browser initializes the ego at rest with control [0,0], and START ENGINE only enables the simulation; with no post-start outcome-affecting control events the ego remains stationary. Reaching either departure goal requires post-start throttle and steering changes, while the solver's successful implementation repeatedly changes those controls from observed state. Therefore the no-action-after-launch pre-run criterion is not satisfied for at least half of the generated instances, and no percentage is asserted.",
+    "seed_probe": null
+  },
+  "files_read_completely": [
+    "AGENTS.md",
+    "weird_captcha_gym/docs/controllability/real-time.md",
+    "weird_captcha_gym/environments/courtesy_junction_env/controls.json",
+    "weird_captcha_gym/environments/courtesy_junction_env/env.json",
+    "weird_captcha_gym/environments/courtesy_junction_env/tasks/courtesy_junction_seed_0001/task.json",
+    "weird_captcha_gym/environments/courtesy_junction_env/tasks/courtesy_junction_seed_0001/setup_task.sh",
+    "weird_captcha_gym/environments/courtesy_junction_env/tasks/courtesy_junction_seed_0001/export_result.sh",
+    "weird_captcha_gym/environments/courtesy_junction_env/scripts/install_puzzle_runtime.sh",
+    "weird_captcha_gym/environments/courtesy_junction_env/scripts/setup_puzzle_runtime.sh",
+    "weird_captcha_gym/shared_scripts/incubator_generators/courtesy_junction.py",
+    "weird_captcha_gym/shared_runtime/app/mechanics/courtesy_junction.js",
+    "weird_captcha_gym/shared_runtime/app/mechanics/courtesy_junction.css",
+    "weird_captcha_gym/shared_runtime/server/incubator_graders/courtesy_junction.py",
+    "weird_captcha_gym/environments/courtesy_junction_env/tasks/courtesy_junction_seed_0001/verifier.py",
+    "weird_captcha_gym/shared_runtime/verifier_helpers.py",
+    "weird_captcha_gym/tools/incubator_solvers/courtesy_junction.py"
+  ],
+  "source_evidence": [
+    {
+      "path": "weird_captcha_gym/environments/courtesy_junction_env/controls.json",
+      "lines": "76-107",
+      "claim": "The assigned difficulty-5 profile has three lanes, four cars per lane, 44-65 speeds, 0.7-1.7 second yielding horizons, both turn directions, road_half 80, full held-key interaction, and a 400 ms/five-frame observation window."
+    },
+    {
+      "path": "weird_captcha_gym/shared_scripts/incubator_generators/courtesy_junction.py",
+      "lines": "20-27",
+      "claim": "Each seed randomizes turn, traffic phase, speed, yielding horizon, deceleration, and lane traffic while leaving interaction out of the world RNG."
+    },
+    {
+      "path": "weird_captcha_gym/shared_scripts/incubator_generators/courtesy_junction.py",
+      "lines": "46-50",
+      "claim": "The world starts the ego at rest, uses 20 ms physics with a 6000-tick limit, and places the left or right departure goal in the generated world."
+    },
+    {
+      "path": "weird_captcha_gym/shared_runtime/app/mechanics/courtesy_junction.js",
+      "lines": "12-24",
+      "claim": "Each tick computes responsive traffic braking, updates ego and traffic motion, checks collision/off-road/goal state, and the performance-time pump advances ticks without a new action."
+    },
+    {
+      "path": "weird_captcha_gym/shared_runtime/app/mechanics/courtesy_junction.js",
+      "lines": "25-30",
+      "claim": "Start only enables the running clock, submission is separate, and braking cars are visibly rendered with red rear lights."
+    },
+    {
+      "path": "weird_captcha_gym/shared_runtime/app/mechanics/courtesy_junction.js",
+      "lines": "41-45",
+      "claim": "Full mode renders held arrow-key controls, initializes the ego at rest with control [0,0], and maps keydown/keyup events to the two control axes."
+    },
+    {
+      "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/courtesy_junction.py",
+      "lines": "42-75",
+      "claim": "The independent replay uses the same 20 ms ego/traffic physics, conflict-based braking, movement, and terminal collision/off-road/arrival checks."
+    },
+    {
+      "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/courtesy_junction.py",
+      "lines": "87-119",
+      "claim": "The grader requires the full configuration's held_keys source and grades the replay outcome as arrived, while submit is only an event boundary."
+    },
+    {
+      "path": "weird_captcha_gym/tools/incubator_solvers/courtesy_junction.py",
+      "lines": "32-50",
+      "claim": "The privileged solver evaluates candidate controls against physical continuation and responsive drivers, including repeated steering and speed decisions."
+    },
+    {
+      "path": "weird_captcha_gym/tools/incubator_solvers/courtesy_junction.py",
+      "lines": "64-80",
+      "claim": "The solver repeatedly observes state, changes full-mode inputs, and waits between control decisions before filing only after arrival."
+    },
+    {
+      "path": "weird_captcha_gym/environments/courtesy_junction_env/env.json",
+      "lines": "20-45",
+      "claim": "The runner exposes a 10 fps frame window and configures 120 seconds, 400 ms observation windows, and five frames per observation with keyboard and mouse actions."
+    },
+    {
+      "path": "weird_captcha_gym/environments/courtesy_junction_env/tasks/courtesy_junction_seed_0001/verifier.py",
+      "lines": "22-35",
+      "claim": "Verification loads the exported result and independent Courtesy Junction grader rather than trusting the browser's displayed verdict."
+    },
+    {
+      "path": "weird_captcha_gym/shared_runtime/verifier_helpers.py",
+      "lines": "33-52",
+      "claim": "The verifier helper reads the exported task result from the environment and rejects malformed non-object exports before grading."
+    },
+    {
+      "path": "weird_captcha_gym/docs/controllability/real-time.md",
+      "lines": "45-96",
+      "claim": "The frozen definition requires a common visible autonomous process, a bounded-window delayed-optimal action, and strict degradation of that action during the delay."
+    }
+  ],
+  "uncertainties": []
+}

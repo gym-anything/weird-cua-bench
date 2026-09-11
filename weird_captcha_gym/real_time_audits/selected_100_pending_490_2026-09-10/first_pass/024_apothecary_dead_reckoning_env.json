@@ -1,0 +1,122 @@
+{
+  "case_index": 24,
+  "public_environment_name": "Apothecary Dead Reckoning",
+  "environment_id": "apothecary_dead_reckoning_env",
+  "difficulty": 2,
+  "interaction_mode": "simplified",
+  "label": "no",
+  "controls_available": [
+    "Mouse-click one of six visible ingredient jars; simplified selection loads or replaces an ingredient in the mortar.",
+    "Mouse-click one of nine curve-notch buttons; the click synchronously sets the grind step. The duration-based pestle control is unavailable in simplified mode.",
+    "Mouse-click STIR PATH; each click synchronously advances six of the 24 path samples and, at the endpoint, spends the ingredient and advances route progress only if the current gate was aligned.",
+    "Mouse-click WATER up to the four-use budget; each click synchronously moves the flask toward the origin by up to 32 px.",
+    "Mouse-click BELLOWS up to the four-use budget; each click synchronously moves the flask 22 px along its current heading, subject to map bounds.",
+    "Mouse-click SEAL to submit the current visible outcome.",
+    "No mechanic-specific keyboard handler is registered for the simplified surface; the environment's generic action declaration still includes keyboard input."
+  ],
+  "autonomous_processes": [
+    "None affect the outcome in simplified mode: between agent clicks, position, heading, route progress, active ingredient, path index, budgets, and hazard contacts remain unchanged.",
+    "After a failed seal, the only Apothecary timer waits 1800 ms and removes the fresh-failure overlay/reset readout; it does not change the route, position, resources, or grading state.",
+    "The shared clock drains timers and animation frames while live, but Apothecary's animation-frame grinding loop is gated to full interaction; the simplified surface has no autonomous world update."
+  ],
+  "grouped_control_modes": [
+    "Simplified jar selection or replacement (load_ingredient/replace_ingredient via jar_select)",
+    "Simplified curve-notch selection (grind_set via curve_notches)",
+    "Synchronous path progression and route commit (stir via ladle_click)",
+    "Synchronous water recovery (water via water_button)",
+    "Synchronous bellows displacement (bellows via bellows_button)",
+    "Administrative seal submission (seal via seal_button)"
+  ],
+  "delta_ms": null,
+  "window_ms": null,
+  "clause_i": {
+    "holds": true,
+    "reason": "For the plausible route-choice mode covering jar and notch decisions across all generated seeds, an observation-free q(I_t) cannot choose the seed-specific ingredient/notch sequence: generation shuffles the ingredient records and independently shuffles the route grind-step schedule, then enforces unique visible gate matches. This is static visual dependence, not a real-time witness."
+  },
+  "clause_ii": {
+    "holds": true,
+    "reason": "For that static route-choice mode, the bounded current screenshot can show the gate, jars, notch controls, and any revealed path needed for the next choice; because the task state does not evolve during the delay, the same visible state remains the delayed-action state. This does not supply a changing process."
+  },
+  "clause_iii": {
+    "holds": false,
+    "reason": "No legitimate grouped mode, Delta > 0, and bounded window can witness the required strict loss. Every outcome-affecting simplified handler updates state synchronously on the click, and no task state changes autonomously between clicks. The 1800 ms post-failure callback changes only administrative UI, while any loss from the live play-time ceiling is clock-only and explicitly excluded."
+  },
+  "common_visible_process": "None. The generator creates a seed-dependent but static world; simplified browser actions synchronously mutate the model. The only delayed visual change is the post-failure overlay timeout, which is unrelated to outcome-affecting control and cannot make an action expire.",
+  "pre_run": {
+    "threshold": 0.5,
+    "at_least_half": null,
+    "rate": null,
+    "basis": "not_applicable",
+    "reason": "The mathematical definition already fails at clause (iii), so the pre-run threshold cannot change the catalog label. There is no autonomous outcome phase in the simplified configuration to assess.",
+    "seed_probe": null
+  },
+  "files_read_completely": [
+    "AGENTS.md",
+    "weird_captcha_gym/docs/controllability/real-time.md",
+    "weird_captcha_gym/environments/apothecary_dead_reckoning_env/controls.json",
+    "weird_captcha_gym/environments/apothecary_dead_reckoning_env/env.json",
+    "weird_captcha_gym/environments/apothecary_dead_reckoning_env/tasks/apothecary_dead_reckoning_seed_0001/task.json",
+    "weird_captcha_gym/environments/apothecary_dead_reckoning_env/tasks/apothecary_dead_reckoning_seed_0001/verifier.py",
+    "weird_captcha_gym/shared_scripts/incubator_generators/apothecary_dead_reckoning.py",
+    "weird_captcha_gym/shared_runtime/app/mechanics/apothecary_dead_reckoning.js",
+    "weird_captcha_gym/shared_runtime/app/mechanics/apothecary_dead_reckoning.css",
+    "weird_captcha_gym/shared_runtime/server/incubator_graders/apothecary_dead_reckoning.py",
+    "weird_captcha_gym/shared_runtime/verifier_helpers.py",
+    "weird_captcha_gym/tools/incubator_solvers/apothecary_dead_reckoning.py",
+    "weird_captcha_gym/shared_runtime/app/index.html",
+    "weird_captcha_gym/shared_runtime/app/time_controller.js"
+  ],
+  "source_evidence": [
+    {
+      "path": "weird_captcha_gym/environments/apothecary_dead_reckoning_env/controls.json",
+      "lines": "12-17, 38-50",
+      "claim": "Difficulty 2 is the six-ingredient, four-route, nine-notch configuration with four-use water and bellows budgets; simplified is implemented as jar selection plus discrete curve-notch buttons, and the configured observation window is 240 ms with one frame."
+    },
+    {
+      "path": "weird_captcha_gym/shared_scripts/incubator_generators/apothecary_dead_reckoning.py",
+      "lines": "65-77, 314-347, 525-533, 704-755",
+      "claim": "The generator reads the injected difficulty parameters, derives a seed-dependent static world and unique route gates, and exports geometry/mechanics/parameters as public and hidden state; its grind tick is a mechanic constant, not a running task process."
+    },
+    {
+      "path": "weird_captcha_gym/shared_runtime/app/mechanics/apothecary_dead_reckoning.js",
+      "lines": "394-405, 448-489, 492-525",
+      "claim": "Ingredient loading, stirring, water, and bellows mutate the model inside synchronous event handlers; stirring advances a fixed six-sample stride and recovery moves are resolved immediately."
+    },
+    {
+      "path": "weird_captcha_gym/shared_runtime/app/mechanics/apothecary_dead_reckoning.js",
+      "lines": "418-446, 630-693",
+      "claim": "The only duration-based grinding loop is explicitly restricted to full interaction; simplified rendering creates notch buttons and wires clicks to grind_set, then wires the remaining visible controls to click handlers."
+    },
+    {
+      "path": "weird_captcha_gym/shared_runtime/app/mechanics/apothecary_dead_reckoning.js",
+      "lines": "694-701",
+      "claim": "The sole Apothecary setTimeout is the 1800 ms fresh-failure UI cleanup, which only removes the failure marker and resets the readout."
+    },
+    {
+      "path": "weird_captcha_gym/shared_runtime/app/mechanics/apothecary_dead_reckoning.css",
+      "lines": "170-180, 200-209",
+      "claim": "The pestle animation is gated by data-grinding=true and the simplified pestle is disabled; the remaining CSS transitions/verdict styling do not alter task outcome."
+    },
+    {
+      "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/apothecary_dead_reckoning.py",
+      "lines": "441-485, 486-601, 620-654",
+      "claim": "The grader binds jar and grinding events to the selected interaction surface, replays route/path/recovery geometry from the submitted event transcript, and bases success on final route/effect/resource state rather than elapsed time."
+    },
+    {
+      "path": "weird_captcha_gym/environments/apothecary_dead_reckoning_env/tasks/apothecary_dead_reckoning_seed_0001/verifier.py",
+      "lines": "22-43",
+      "claim": "Verification loads the exported result and invokes the independent Apothecary replay grader."
+    },
+    {
+      "path": "weird_captcha_gym/tools/incubator_solvers/apothecary_dead_reckoning.py",
+      "lines": "39-78, 126-172",
+      "claim": "The solver's simplified branch uses ordinary jar and notch clicks and repeated synchronous STIR PATH clicks; its private ground-truth reads are implementation evidence, not information assumed for the classification."
+    },
+    {
+      "path": "weird_captcha_gym/shared_runtime/app/time_controller.js",
+      "lines": "301-335, 644-652",
+      "claim": "The shared controller drains timers and animation frames only while the task clock is running and otherwise polls control status; it supplies clock infrastructure but no Apothecary state transition in simplified mode."
+    }
+  ],
+  "uncertainties": []
+}

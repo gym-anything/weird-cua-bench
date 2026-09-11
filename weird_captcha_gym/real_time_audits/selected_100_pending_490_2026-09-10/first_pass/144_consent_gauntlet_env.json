@@ -1,0 +1,112 @@
+{
+  "case_index": 144,
+  "public_environment_name": "Consent Gauntlet",
+  "environment_id": "consent_gauntlet_env",
+  "difficulty": 2,
+  "interaction_mode": "simplified",
+  "label": "no",
+  "controls_available": [
+    "Entry-stage fixed decision proxy with three visible choices: one semantic manage choice and two decoy accept choices.",
+    "One visible ledger drawer with previous/next drawer proxy controls; both are ineffective because drawer_count is 1.",
+    "Four visible purpose rows with explicit SET NO and SET YES buttons; one negative-worded purpose is targeted YES and the three positive purposes are targeted NO.",
+    "REVIEW CURRENT CHOICES button to open the final stage.",
+    "Final-stage fixed decision proxy with three visible choices: one semantic commit choice and two decoy accept choices.",
+    "The simplified surface uses button activation for the outcome-affecting controls; no moving-card click or physical switch drag is required."
+  ],
+  "autonomous_processes": [
+    "requestAnimationFrame(positionOrbit) continuously refreshes the visible packet timer and reapplies gateway CSS geometry. With moving_gateways=false, currentPhase remains constant, so gateway positions and z-order do not change; the timer is an idle visual clock.",
+    "No purpose, drawer, reset, link, or stage state changes without an agent event. A fresh packet after a failed submission is caused by that submission, not by an autonomous task process."
+  ],
+  "grouped_control_modes": [
+    "Entry gateway proxy choice: manage versus decoy accept.",
+    "Simplified purpose-answer proxy choice: SET NO versus SET YES for each visible purpose.",
+    "Review button: advances from the purpose ledger to final review without changing purpose truth.",
+    "Final gateway proxy choice: commit versus decoy accept.",
+    "Single-drawer previous/next navigator: a legitimate visible control, but non-effective in this configuration because both directions resolve to the same drawer."
+  ],
+  "delta_ms": null,
+  "window_ms": 720,
+  "clause_i": {
+    "holds": true,
+    "reason": "The generator randomizes the semantic gateway labels and the purpose labels/initial states across seeds. An observation-free q using only prior actions and task times cannot select the correct manage/commit option or infer the negative-prefix purpose target for every occurrence, while the visible labels vary independently of I_t."
+  },
+  "clause_ii": {
+    "holds": true,
+    "reason": "A current screenshot exposes the fixed proxy labels, the one active drawer, each purpose statement, and its current answer buttons. A policy can read those static visible statements and choose the correct next button; no motion history is needed, so the configured 720 ms window (five frames) is more than sufficient and one endpoint frame would suffice."
+  },
+  "clause_iii": {
+    "holds": false,
+    "reason": "Waiting produces only timer/redraw activity. The simplified proxies remain fixed and available, purpose states do not change, and the one-drawer navigator is inert. The grader replays state changes only from submitted events and uses elapsed time only as a monotone value bounded by 180 seconds; a hard deadline or later completion is excluded by the definition. No grouped control mode has an action whose value strictly decreases due to non-clock autonomous task-state evolution within any positive delay."
+  },
+  "common_visible_process": "None. The only visible autonomous process is the timer/redraw loop, and with stationary gateways it supplies no changing task-state evidence and causes no expiring or degrading action opportunity; therefore it cannot witness clauses (i), (ii), and (iii) together.",
+  "pre_run": {
+    "threshold": 0.5,
+    "at_least_half": true,
+    "rate": null,
+    "basis": "source_structural",
+    "reason": "The exact difficulty-2 construction removes motion, reset traps, and links, so all purpose-state work can be completed through the visible proxy buttons before the final administrative certification. The solver's prepare_solution performs the manage choice and all required purpose decisions before review and commit; its private-state reads are implementation evidence, while the same semantic choices are visible in the ledger. This uniform static construction supports the threshold judgment without asserting a numeric rate.",
+    "seed_probe": null
+  },
+  "files_read_completely": [
+    "AGENTS.md",
+    "weird_captcha_gym/docs/controllability/real-time.md",
+    "weird_captcha_gym/environments/consent_gauntlet_env/controls.json",
+    "weird_captcha_gym/environments/consent_gauntlet_env/env.json",
+    "weird_captcha_gym/environments/consent_gauntlet_env/tasks/consent_gauntlet_seed_0001/task.json",
+    "weird_captcha_gym/environments/consent_gauntlet_env/tasks/consent_gauntlet_seed_0001/verifier.py",
+    "weird_captcha_gym/shared_scripts/incubator_generators/consent_gauntlet.py",
+    "weird_captcha_gym/shared_runtime/app/mechanics/consent_gauntlet.js",
+    "weird_captcha_gym/shared_runtime/app/mechanics/consent_gauntlet.css",
+    "weird_captcha_gym/shared_runtime/server/incubator_graders/consent_gauntlet.py",
+    "weird_captcha_gym/shared_runtime/verifier_helpers.py",
+    "weird_captcha_gym/tools/incubator_solvers/consent_gauntlet.py"
+  ],
+  "source_evidence": [
+    {
+      "path": "weird_captcha_gym/environments/consent_gauntlet_env/controls.json",
+      "lines": "12-16,37-41",
+      "claim": "Difficulty 2 is the four-purpose, one-drawer, no-reset, no-link, stationary-gateway profile with orbit speed 0; simplified mode uses fixed proxies, and the observation bound is 720 ms with five frames."
+    },
+    {
+      "path": "weird_captcha_gym/shared_scripts/incubator_generators/consent_gauntlet.py",
+      "lines": "81-95,136-148,152-176",
+      "claim": "A supplied control condition determines the generated parameters; gateway semantics and purpose labels/initial states are randomized per seed, which makes the visible state necessary for semantic choices but does not create autonomous motion."
+    },
+    {
+      "path": "weird_captcha_gym/shared_scripts/incubator_generators/consent_gauntlet.py",
+      "lines": "188-232",
+      "claim": "Reset traps, directed links, drawers, and gateway surfaces are generated from the exact parameters; with reset_trap_count and link_count zero and drawer_count one, no coupling or reset process exists in this configuration."
+    },
+    {
+      "path": "weird_captcha_gym/shared_runtime/app/mechanics/consent_gauntlet.js",
+      "lines": "101-160",
+      "claim": "Gateway selection is action-driven; currentPhase advances only when moving_gateways is true, while the animation-frame loop updates the timer and positions."
+    },
+    {
+      "path": "weird_captcha_gym/shared_runtime/app/mechanics/consent_gauntlet.js",
+      "lines": "163-175,185-214,242-269,331-353",
+      "claim": "Simplified gateways render fixed decision proxies, the ledger renders explicit SET NO/SET YES controls, and stage/purpose/drawer changes occur only in input event handlers."
+    },
+    {
+      "path": "weird_captcha_gym/shared_runtime/app/mechanics/consent_gauntlet.css",
+      "lines": "91-113,129-149",
+      "claim": "The simplified CSS disables direct orbit-card and physical switch interaction while presenting fixed proxy buttons; no CSS animation supplies a changing control target."
+    },
+    {
+      "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/consent_gauntlet.py",
+      "lines": "137-163,165-250,254-265",
+      "claim": "The grader binds the simplified input sources, replays only submitted events to mutate stage/drawer/purpose state, and checks terminal/final truth; elapsed task time is only required to be finite, monotone, and within 180 seconds."
+    },
+    {
+      "path": "weird_captcha_gym/tools/incubator_solvers/consent_gauntlet.py",
+      "lines": "98-129,134-163",
+      "claim": "The solver's visible-control workflow sets each purpose before review and then makes the final commit, providing structural evidence that required state-setting actions can be front-loaded."
+    },
+    {
+      "path": "weird_captcha_gym/environments/consent_gauntlet_env/tasks/consent_gauntlet_seed_0001/verifier.py",
+      "lines": "22-35",
+      "claim": "The task verifier loads the exported result and invokes the independent Consent Gauntlet grader."
+    }
+  ],
+  "uncertainties": []
+}

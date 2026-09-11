@@ -1,0 +1,154 @@
+{
+  "case_index": 143,
+  "public_environment_name": "Consent Gauntlet",
+  "environment_id": "consent_gauntlet_env",
+  "difficulty": 2,
+  "interaction_mode": "full",
+  "label": "no",
+  "controls_available": [
+    "Difficulty 2 generates four purpose rows in one drawer, with one negative-purpose statement, three entry gateway choices, three final gateway choices, no reset traps, no directed links, and stationary gateways.",
+    "Full interaction uses direct clicks on the gateway cards, the ledger review button, and pointer drags on each purpose switch rail between NO and YES; the single drawer has no meaningful navigation choice.",
+    "The exact task settings are a 720 ms observation window with five frames per observation and 180 seconds of maximum task-active time."
+  ],
+  "autonomous_processes": [
+    "While a gateway stage is visible, requestAnimationFrame repeatedly updates the packet timer and recomputes each card position. With moving_gateways=false, the phase is constant, so the card positions and stacking remain constant.",
+    "While the preferences ledger is visible, the same animation-frame loop continues updating the packet timer, but purpose states, drawer state, and available controls change only from input handlers.",
+    "The shared clock advances performance.now during live run windows and freezes it while paused; this supplies task-clock progress but no outcome-affecting autonomous transition in this configuration."
+  ],
+  "grouped_control_modes": [
+    "Full direct gateway-card clicks, grouped across the entry manage choice and final commit choice (with randomized semantic decoys).",
+    "Full pointer drags on purpose switch rails, across the four generated purpose rows.",
+    "The review-current-choices stage transition."
+  ],
+  "delta_ms": null,
+  "window_ms": null,
+  "clause_i": {
+    "holds": false,
+    "reason": "The relevant controls remain available after waiting, so an observation-free wait/no-op schedule can defer the static semantic choice to a later optimal continuation. The randomized labels and initial switch values create a static visual-grounding problem, not a need to choose from changing state."
+  },
+  "clause_ii": {
+    "holds": true,
+    "reason": "A current screenshot is sufficient: the visible gateway labels identify the manage/commit choice, and the visible purpose text plus switch state identify the required full-mode drag. A zero-length recent window would suffice; the configured 720 ms window and five frames are more than enough."
+  },
+  "clause_iii": {
+    "holds": false,
+    "reason": "No non-clock autonomous evolution makes an available action unavailable or less effective. With moving_gateways=false, currentPhase ignores elapsed time and positionOrbit writes the same card coordinates on each frame; the timer is the only changing display. Purpose states and stages change only in response to clicks/drags, and difficulty 2 has no reset traps or links. The 180-second limit is only a clock/deadline effect, which the definition excludes."
+  },
+  "common_visible_process": "None. The continuously changing packet timer is unrelated to the outcome, while the gateway geometry is stationary; therefore no single visible autonomous process witnesses clauses (i), (ii), and (iii).",
+  "pre_run": {
+    "threshold": 0.5,
+    "at_least_half": null,
+    "rate": null,
+    "basis": "not_applicable",
+    "reason": "The configuration already fails the mathematical real-time definition because there is no autonomous outcome phase with an expiring or degrading action opportunity. The pre-run threshold cannot change that No label, so no percentage is asserted.",
+    "seed_probe": null
+  },
+  "files_read_completely": [
+    "AGENTS.md",
+    "weird_captcha_gym/docs/controllability/real-time.md",
+    "weird_captcha_gym/environments/consent_gauntlet_env/controls.json",
+    "weird_captcha_gym/environments/consent_gauntlet_env/env.json",
+    "weird_captcha_gym/environments/consent_gauntlet_env/tasks/consent_gauntlet_seed_0001/task.json",
+    "weird_captcha_gym/environments/consent_gauntlet_env/tasks/consent_gauntlet_seed_0001/verifier.py",
+    "weird_captcha_gym/shared_scripts/incubator_generators/consent_gauntlet.py",
+    "weird_captcha_gym/shared_runtime/app/mechanics/consent_gauntlet.js",
+    "weird_captcha_gym/shared_runtime/app/mechanics/consent_gauntlet.css",
+    "weird_captcha_gym/shared_runtime/app/time_controller.js",
+    "weird_captcha_gym/shared_runtime/server/incubator_graders/consent_gauntlet.py",
+    "weird_captcha_gym/shared_runtime/verifier_helpers.py",
+    "weird_captcha_gym/tools/incubator_solvers/consent_gauntlet.py"
+  ],
+  "source_evidence": [
+    {
+      "path": "weird_captcha_gym/environments/consent_gauntlet_env/controls.json",
+      "lines": "12-16",
+      "claim": "The assigned difficulty-2 profile is purpose_count 4, negative_count 1, drawer_count 1, three entry and final options, zero reset/link controls, moving_gateways false, and orbit speed 0."
+    },
+    {
+      "path": "weird_captcha_gym/environments/consent_gauntlet_env/controls.json",
+      "lines": "37-41",
+      "claim": "Full mode is implemented as direct gateway-card clicks, ledger-tab interaction, and physical switch drags; the shared settings are 180 seconds, 720 ms, and five frames."
+    },
+    {
+      "path": "weird_captcha_gym/shared_scripts/incubator_generators/consent_gauntlet.py",
+      "lines": "76-95",
+      "claim": "The generator takes difficulty parameters from the control condition and otherwise defines the baseline separately; the assigned control condition therefore determines the active profile."
+    },
+    {
+      "path": "weird_captcha_gym/shared_scripts/incubator_generators/consent_gauntlet.py",
+      "lines": "152-177",
+      "claim": "Purpose labels and initial boolean states are generated per seed, while positive and negative labels determine the target state; this is static instance variation."
+    },
+    {
+      "path": "weird_captcha_gym/shared_scripts/incubator_generators/consent_gauntlet.py",
+      "lines": "221-235",
+      "claim": "The generated surface contains entry/final gateway options, purposes, reset traps, links, and one static phase value; at difficulty 2 the latter controls no motion."
+    },
+    {
+      "path": "weird_captcha_gym/shared_runtime/app/mechanics/consent_gauntlet.js",
+      "lines": "136-160",
+      "claim": "currentPhase adds elapsed time only when moving_gateways is true; positionOrbit changes the packet timer and recalculates card coordinates on each frame."
+    },
+    {
+      "path": "weird_captcha_gym/shared_runtime/app/mechanics/consent_gauntlet.js",
+      "lines": "217-249",
+      "claim": "Stage rendering and purpose/link state changes are invoked by action handlers; there is no autonomous mutation of the ledger state."
+    },
+    {
+      "path": "weird_captcha_gym/shared_runtime/app/mechanics/consent_gauntlet.js",
+      "lines": "271-300",
+      "claim": "Full-mode purpose changes require a pointer drag with movement samples and minimum travel, confirming the active physical control surface."
+    },
+    {
+      "path": "weird_captcha_gym/shared_runtime/app/mechanics/consent_gauntlet.js",
+      "lines": "331-384",
+      "claim": "Gateway clicks, full-mode drawer/switch bindings, review transition, and the per-run timer state are wired as explicit user-event handlers."
+    },
+    {
+      "path": "weird_captcha_gym/shared_runtime/app/mechanics/consent_gauntlet.css",
+      "lines": "91-106",
+      "claim": "Gateway cards are absolutely positioned visual controls with no CSS motion rule; their runtime positions come from the JavaScript phase calculation."
+    },
+    {
+      "path": "weird_captcha_gym/shared_runtime/app/mechanics/consent_gauntlet.css",
+      "lines": "142-157",
+      "claim": "The preferences surface presents static NO/YES rails, pointer-drag styling, and the review button; no difficulty-2 reset control is active."
+    },
+    {
+      "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/consent_gauntlet.py",
+      "lines": "89-106",
+      "claim": "The grader only adds elapsed-time phase to moving gateways; for a stationary profile it uses the fixed surface phase and validates static geometry."
+    },
+    {
+      "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/consent_gauntlet.py",
+      "lines": "160-191",
+      "claim": "The grader replays gateway events and stage transitions from the submitted transcript, rather than advancing any autonomous task state."
+    },
+    {
+      "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/consent_gauntlet.py",
+      "lines": "200-265",
+      "claim": "Purpose, link, reset, review, and final success state are changed/replayed only when corresponding events occur; task time is only ordered and bounded."
+    },
+    {
+      "path": "weird_captcha_gym/tools/incubator_solvers/consent_gauntlet.py",
+      "lines": "111-163",
+      "claim": "The solver actively clicks manage, sets visible purpose switches, reviews, and clicks commit; there is no autonomous outcome phase to run without further outcome-affecting actions."
+    },
+    {
+      "path": "weird_captcha_gym/shared_runtime/app/time_controller.js",
+      "lines": "55-77",
+      "claim": "performance.now is virtualized to task time, and the separate interaction clock is for input evidence while timers/animation/physics remain on the task clock."
+    },
+    {
+      "path": "weird_captcha_gym/shared_runtime/app/time_controller.js",
+      "lines": "155-177",
+      "claim": "When paused, task-time timers and queued animation callbacks do not advance; live windows resume the task clock."
+    },
+    {
+      "path": "weird_captcha_gym/docs/controllability/real-time.md",
+      "lines": "40-68,80-88,118-135",
+      "claim": "The frozen definition requires one visibly evidenced autonomous process that degrades an action opportunity; static puzzles, idle animation, clock-only effects, and indefinitely actionable controls are excluded."
+    }
+  ],
+  "uncertainties": []
+}

@@ -1,0 +1,1593 @@
+{
+  "case_index": 46,
+  "environment_id": "surveyors_toybox_env",
+  "public_environment_name": "Surveyors Toybox",
+  "configuration_reports": [
+    {
+      "case_index": 451,
+      "public_environment_name": "Surveyors Toybox",
+      "environment_id": "surveyors_toybox_env",
+      "difficulty": 1,
+      "interaction_mode": "full",
+      "label": "no",
+      "controls_available": [
+        "Difficulty 1 active profile: 1 requested cuboid, 1 distractor, 1 synchronized frame, point density 32, fit tolerance 0.28, yaw tolerance 18 degrees, and initial box error 0.12.",
+        "Select one of the requested target cuboids.",
+        "Orbit the point cloud by dragging its background; pan with Shift+drag or the visible pan buttons; zoom with the mouse wheel or visible zoom buttons.",
+        "Directly drag the visible cuboid center and the cy, hx, hy, hz, and yaw handles to edit the seven box fields.",
+        "Select a synchronized frame tab.",
+        "Click a visible neutral mark in each overhead, front, and side camera canvas.",
+        "Link the selected mark to the active cuboid.",
+        "Click CERTIFY SURVEY to submit the replayed annotations and links.",
+        "The runner/control setting is observation_window_ms=0, frames_per_observation=1, play_time_seconds=180."
+      ],
+      "autonomous_processes": [
+        "No outcome-affecting autonomous process runs between agent actions: the point cloud, annotations, selected frame, camera marks, links, and view state remain fixed until an input handler changes them.",
+        "The generator precomputes the synchronized camera frames, frame biases, shuffled marks, point cloud, and initial annotations before rendering; selecting a frame is an explicit input, not autonomous progression.",
+        "After a failed submission, the server response may render a fresh static plate as a consequence of that submit action; the only later visible callback is setTimeout(clearFresh, 2200), which removes the transient failure banner and does not change task truth or expire a usable action."
+      ],
+      "grouped_control_modes": [
+        "Requested-target selection (sets the active cuboid).",
+        "Direct point-cloud navigation: background orbit, Shift+drag pan, and wheel/button zoom.",
+        "Direct cuboid manipulation: center translation plus cy, hx, hy, hz, and yaw handle drags, replayed as adjust_box with input_source direct_drag.",
+        "Synchronized frame selection.",
+        "Direct camera-mark selection followed by a direct_mark link event.",
+        "Certification submission (administrative, not an outcome-phase action)."
+      ],
+      "delta_ms": null,
+      "window_ms": null,
+      "clause_i": {
+        "holds": true,
+        "reason": "For a fitting or linking control mode grouped across generated seeds, the correct box corrections and shuffled mark IDs vary with the visible scan/image state, while I_t contains only prior actions and task times; no single observation-free q(I_t) is optimal for all such histories."
+      },
+      "clause_ii": {
+        "holds": true,
+        "reason": "The relevant point cloud, requested-object colors, projected camera subjects, neutral marks, current annotations, and frame choice are visible in the current endpoint screenshot. Because the scene is static, a bounded endpoint window (the configured 0 ms window with one frame) is sufficient; no motion history is needed."
+      },
+      "clause_iii": {
+        "holds": false,
+        "reason": "There is no autonomous non-clock task-state evolution during any active fit or link opportunity. For every valid box edit, mark link, frame selection, or navigation action, waiting leaves the same control available with the same value, so no Delta>0 and 0<tau<Delta can produce the required strict loss. The precomputed frame tabs are not a progressing timeline, and the 2200 ms failure-banner timeout only removes presentation chrome."
+      },
+      "common_visible_process": "None. The visible scene and all outcome-affecting controls are static between inputs; precomputed synchronized frames are selected explicitly rather than advancing autonomously.",
+      "pre_run": {
+        "threshold": 0.5,
+        "at_least_half": null,
+        "rate": null,
+        "basis": "not_applicable",
+        "reason": "The mathematical definition already fails clause (iii), so the pre-run threshold cannot change this configuration's No label; no pre-run percentage is asserted.",
+        "seed_probe": null
+      },
+      "files_read_completely": [
+        "AGENTS.md",
+        "weird_captcha_gym/docs/controllability/real-time.md",
+        "weird_captcha_gym/environments/surveyors_toybox_env/controls.json",
+        "weird_captcha_gym/environments/surveyors_toybox_env/env.json",
+        "weird_captcha_gym/environments/surveyors_toybox_env/tasks/surveyors_toybox_seed_0001/task.json",
+        "weird_captcha_gym/environments/surveyors_toybox_env/tasks/surveyors_toybox_seed_0001/setup_task.sh",
+        "weird_captcha_gym/environments/surveyors_toybox_env/tasks/surveyors_toybox_seed_0001/export_result.sh",
+        "weird_captcha_gym/environments/surveyors_toybox_env/tasks/surveyors_toybox_seed_0001/verifier.py",
+        "weird_captcha_gym/shared_runtime/verifier_helpers.py",
+        "weird_captcha_gym/shared_scripts/incubator_generators/surveyors_toybox.py",
+        "weird_captcha_gym/shared_runtime/app/mechanics/surveyors_toybox.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/surveyors_toybox.css",
+        "weird_captcha_gym/shared_runtime/server/incubator_graders/surveyors_toybox.py",
+        "weird_captcha_gym/tools/incubator_solvers/surveyors_toybox.py"
+      ],
+      "source_evidence": [
+        {
+          "path": "weird_captcha_gym/environments/surveyors_toybox_env/controls.json",
+          "lines": "6-9",
+          "claim": "Difficulty 1 active profile: 1 requested cuboid, 1 distractor, 1 synchronized frame, point density 32, fit tolerance 0.28, yaw tolerance 18 degrees, and initial box error 0.12."
+        },
+        {
+          "path": "weird_captcha_gym/environments/surveyors_toybox_env/controls.json",
+          "lines": "32-36",
+          "claim": "The full interaction surface is implemented, and every profile uses play_time_seconds=180, observation_window_ms=0, and frames_per_observation=1."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/surveyors_toybox.py",
+          "lines": "114-157",
+          "claim": "The generator applies the selected difficulty parameters and validates only static object/frame/count/density/tolerance values; it has no task-clock or autonomous-state parameter."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/surveyors_toybox.py",
+          "lines": "159-243",
+          "claim": "The seeded RNG constructs fixed object geometry, sparse points, precomputed camera frames, shuffled mark rectangles, and initial annotations before returning the state."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/surveyors_toybox.py",
+          "lines": "245-273",
+          "claim": "The public state contains the precomputed camera frames and interaction condition, while the private truth contains target boxes and expected links; neither is advanced by elapsed task time."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/surveyors_toybox.js",
+          "lines": "65-188",
+          "claim": "Full-mode pointer handlers synchronously implement orbit/pan and direct cuboid edits, while explicit handlers implement navigation, target/frame selection, mark selection, and linking."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/surveyors_toybox.js",
+          "lines": "261-326",
+          "claim": "Rendering and event listeners are installed synchronously from the current state; camera marks and frame tabs are read from the selected precomputed frame."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/surveyors_toybox.js",
+          "lines": "278-289",
+          "claim": "Submission awaits an authoritative response; only a failed-submit banner is scheduled for removal after 2200 ms, which is presentation cleanup rather than an outcome-affecting process."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/surveyors_toybox.css",
+          "lines": "1-324",
+          "claim": "The complete stylesheet defines static layout, canvas, cursor, and control styling and contains no task animation or transition that can evolve the puzzle."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/surveyors_toybox.py",
+          "lines": "97-185",
+          "claim": "The grader checks the declared full input sources and replays each submitted edit, frame selection, navigation event, and link against static ground truth."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/surveyors_toybox.py",
+          "lines": "194-214",
+          "claim": "The final grade compares replayed cuboid fit and exact links; no event timestamp or elapsed-time state affects grading."
+        },
+        {
+          "path": "weird_captcha_gym/environments/surveyors_toybox_env/tasks/surveyors_toybox_seed_0001/verifier.py",
+          "lines": "19-35",
+          "claim": "The task verifier loads the exported result and delegates directly to the Surveyors Toybox grader."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/verifier_helpers.py",
+          "lines": "23-45",
+          "claim": "The verifier helper only copies and parses the exported result file; it introduces no task-time behavior."
+        },
+        {
+          "path": "weird_captcha_gym/tools/incubator_solvers/surveyors_toybox.py",
+          "lines": "98-189",
+          "claim": "The scripted wiring solver uses direct visible navigation, direct handle drags, visible frame/mark/link controls, and submission; its private truth reads are implementation evidence, not the screenshot-only solution."
+        },
+        {
+          "path": "weird_captcha_gym/environments/surveyors_toybox_env/env.json",
+          "lines": "1-1",
+          "claim": "The environment runner declares a synchronous task with a zero-millisecond observation window, one frame per observation, and a finite 180-second play allowance."
+        },
+        {
+          "path": "weird_captcha_gym/environments/surveyors_toybox_env/tasks/surveyors_toybox_seed_0001/task.json",
+          "lines": "5-8",
+          "claim": "The visible task is a static cross-modal 3D cuboid fitting and camera-linking task."
+        },
+        {
+          "path": "weird_captcha_gym/environments/surveyors_toybox_env/tasks/surveyors_toybox_seed_0001/task.json",
+          "lines": "31-46",
+          "claim": "The task contract identifies this mechanic and states that the server replays box edits and per-frame/per-view links rather than trusting a browser completion flag."
+        }
+      ],
+      "uncertainties": []
+    },
+    {
+      "case_index": 452,
+      "public_environment_name": "Surveyors Toybox",
+      "environment_id": "surveyors_toybox_env",
+      "difficulty": 1,
+      "interaction_mode": "simplified",
+      "label": "no",
+      "controls_available": [
+        "Difficulty 1 active profile: 1 requested cuboid, 1 distractor, 1 synchronized frame, point density 32, fit tolerance 0.28, yaw tolerance 18 degrees, and initial box error 0.12.",
+        "Select one of the requested target cuboids.",
+        "Use visible proxy buttons to adjust the seven cuboid fields cx, cy, cz, hx, hy, hz, and yaw.",
+        "Use the visible pan and zoom buttons for the point-cloud view; the simplified canvas does not enable direct point-cloud dragging.",
+        "Select a synchronized frame tab.",
+        "Choose a visible mark with its proxy mark-choice button for each overhead, front, and side camera, then link it to the active cuboid. The shared camera canvas click handler also selects visible marks, while the resulting simplified link is recorded as proxy_controls.",
+        "Click CERTIFY SURVEY to submit the replayed annotations and links.",
+        "The runner/control setting is observation_window_ms=0, frames_per_observation=1, play_time_seconds=180."
+      ],
+      "autonomous_processes": [
+        "No outcome-affecting autonomous process runs between agent actions: the point cloud, annotations, selected frame, camera marks, links, and view state remain fixed until an input handler changes them.",
+        "The generator precomputes the synchronized camera frames, frame biases, shuffled marks, point cloud, and initial annotations before rendering; selecting a frame is an explicit input, not autonomous progression.",
+        "After a failed submission, the server response may render a fresh static plate as a consequence of that submit action; the only later visible callback is setTimeout(clearFresh, 2200), which removes the transient failure banner and does not change task truth or expire a usable action."
+      ],
+      "grouped_control_modes": [
+        "Requested-target selection (sets the active cuboid).",
+        "Proxy point-cloud navigation: visible pan and zoom buttons.",
+        "Proxy cuboid manipulation: cx, cy, cz, hx, hy, hz, and yaw buttons, replayed as adjust_box with input_source proxy_controls.",
+        "Synchronized frame selection.",
+        "Proxy camera-mark selection followed by a proxy_controls link event.",
+        "Certification submission (administrative, not an outcome-phase action)."
+      ],
+      "delta_ms": null,
+      "window_ms": null,
+      "clause_i": {
+        "holds": true,
+        "reason": "For a fitting or linking control mode grouped across generated seeds, the correct box corrections and shuffled mark IDs vary with the visible scan/image state, while I_t contains only prior actions and task times; no single observation-free q(I_t) is optimal for all such histories."
+      },
+      "clause_ii": {
+        "holds": true,
+        "reason": "The relevant point cloud, requested-object colors, projected camera subjects, neutral marks, current annotations, and frame choice are visible in the current endpoint screenshot. Because the scene is static, a bounded endpoint window (the configured 0 ms window with one frame) is sufficient; no motion history is needed."
+      },
+      "clause_iii": {
+        "holds": false,
+        "reason": "There is no autonomous non-clock task-state evolution during any active fit or link opportunity. For every valid box edit, mark link, frame selection, or navigation action, waiting leaves the same control available with the same value, so no Delta>0 and 0<tau<Delta can produce the required strict loss. The precomputed frame tabs are not a progressing timeline, and the 2200 ms failure-banner timeout only removes presentation chrome."
+      },
+      "common_visible_process": "None. The visible scene and all outcome-affecting controls are static between inputs; precomputed synchronized frames are selected explicitly rather than advancing autonomously.",
+      "pre_run": {
+        "threshold": 0.5,
+        "at_least_half": null,
+        "rate": null,
+        "basis": "not_applicable",
+        "reason": "The mathematical definition already fails clause (iii), so the pre-run threshold cannot change this configuration's No label; no pre-run percentage is asserted.",
+        "seed_probe": null
+      },
+      "files_read_completely": [
+        "AGENTS.md",
+        "weird_captcha_gym/docs/controllability/real-time.md",
+        "weird_captcha_gym/environments/surveyors_toybox_env/controls.json",
+        "weird_captcha_gym/environments/surveyors_toybox_env/env.json",
+        "weird_captcha_gym/environments/surveyors_toybox_env/tasks/surveyors_toybox_seed_0001/task.json",
+        "weird_captcha_gym/environments/surveyors_toybox_env/tasks/surveyors_toybox_seed_0001/setup_task.sh",
+        "weird_captcha_gym/environments/surveyors_toybox_env/tasks/surveyors_toybox_seed_0001/export_result.sh",
+        "weird_captcha_gym/environments/surveyors_toybox_env/tasks/surveyors_toybox_seed_0001/verifier.py",
+        "weird_captcha_gym/shared_runtime/verifier_helpers.py",
+        "weird_captcha_gym/shared_scripts/incubator_generators/surveyors_toybox.py",
+        "weird_captcha_gym/shared_runtime/app/mechanics/surveyors_toybox.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/surveyors_toybox.css",
+        "weird_captcha_gym/shared_runtime/server/incubator_graders/surveyors_toybox.py",
+        "weird_captcha_gym/tools/incubator_solvers/surveyors_toybox.py"
+      ],
+      "source_evidence": [
+        {
+          "path": "weird_captcha_gym/environments/surveyors_toybox_env/controls.json",
+          "lines": "6-9",
+          "claim": "Difficulty 1 active profile: 1 requested cuboid, 1 distractor, 1 synchronized frame, point density 32, fit tolerance 0.28, yaw tolerance 18 degrees, and initial box error 0.12."
+        },
+        {
+          "path": "weird_captcha_gym/environments/surveyors_toybox_env/controls.json",
+          "lines": "32-36",
+          "claim": "The simplified interaction surface is implemented, and every profile uses play_time_seconds=180, observation_window_ms=0, and frames_per_observation=1."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/surveyors_toybox.py",
+          "lines": "114-157",
+          "claim": "The generator applies the selected difficulty parameters and validates only static object/frame/count/density/tolerance values; it has no task-clock or autonomous-state parameter."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/surveyors_toybox.py",
+          "lines": "159-243",
+          "claim": "The seeded RNG constructs fixed object geometry, sparse points, precomputed camera frames, shuffled mark rectangles, and initial annotations before returning the state."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/surveyors_toybox.py",
+          "lines": "245-273",
+          "claim": "The public state contains the precomputed camera frames and interaction condition, while the private truth contains target boxes and expected links; neither is advanced by elapsed task time."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/surveyors_toybox.js",
+          "lines": "129-188",
+          "claim": "Simplified-mode handlers synchronously implement proxy navigation, proxy cuboid edits, target/frame selection, mark selection, and linking; point-cloud pointer dragging returns immediately outside Full mode."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/surveyors_toybox.js",
+          "lines": "261-326",
+          "claim": "Rendering and event listeners are installed synchronously from the current state; camera marks and frame tabs are read from the selected precomputed frame."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/surveyors_toybox.js",
+          "lines": "278-289",
+          "claim": "Submission awaits an authoritative response; only a failed-submit banner is scheduled for removal after 2200 ms, which is presentation cleanup rather than an outcome-affecting process."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/surveyors_toybox.css",
+          "lines": "1-324",
+          "claim": "The complete stylesheet defines static layout, canvas, cursor, and control styling and contains no task animation or transition that can evolve the puzzle."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/surveyors_toybox.py",
+          "lines": "97-185",
+          "claim": "The grader checks the declared simplified input sources and replays each submitted edit, frame selection, navigation event, and link against static ground truth."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/surveyors_toybox.py",
+          "lines": "194-214",
+          "claim": "The final grade compares replayed cuboid fit and exact links; no event timestamp or elapsed-time state affects grading."
+        },
+        {
+          "path": "weird_captcha_gym/environments/surveyors_toybox_env/tasks/surveyors_toybox_seed_0001/verifier.py",
+          "lines": "19-35",
+          "claim": "The task verifier loads the exported result and delegates directly to the Surveyors Toybox grader."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/verifier_helpers.py",
+          "lines": "23-45",
+          "claim": "The verifier helper only copies and parses the exported result file; it introduces no task-time behavior."
+        },
+        {
+          "path": "weird_captcha_gym/tools/incubator_solvers/surveyors_toybox.py",
+          "lines": "66-189",
+          "claim": "The scripted wiring solver uses visible proxy adjustments or links, visible frame/mark controls, and submission; its private truth reads are implementation evidence, not the screenshot-only solution."
+        },
+        {
+          "path": "weird_captcha_gym/environments/surveyors_toybox_env/env.json",
+          "lines": "1-1",
+          "claim": "The environment runner declares a synchronous task with a zero-millisecond observation window, one frame per observation, and a finite 180-second play allowance."
+        },
+        {
+          "path": "weird_captcha_gym/environments/surveyors_toybox_env/tasks/surveyors_toybox_seed_0001/task.json",
+          "lines": "5-8",
+          "claim": "The visible task is a static cross-modal 3D cuboid fitting and camera-linking task."
+        },
+        {
+          "path": "weird_captcha_gym/environments/surveyors_toybox_env/tasks/surveyors_toybox_seed_0001/task.json",
+          "lines": "31-46",
+          "claim": "The task contract identifies this mechanic and states that the server replays box edits and per-frame/per-view links rather than trusting a browser completion flag."
+        }
+      ],
+      "uncertainties": []
+    },
+    {
+      "case_index": 453,
+      "public_environment_name": "Surveyors Toybox",
+      "environment_id": "surveyors_toybox_env",
+      "difficulty": 2,
+      "interaction_mode": "full",
+      "label": "no",
+      "controls_available": [
+        "Difficulty 2 active profile: 2 requested cuboids, 2 distractors, 1 synchronized frame, point density 28, fit tolerance 0.23, yaw tolerance 14 degrees, and initial box error 0.18.",
+        "Select one of the requested target cuboids.",
+        "Orbit the point cloud by dragging its background; pan with Shift+drag or the visible pan buttons; zoom with the mouse wheel or visible zoom buttons.",
+        "Directly drag the visible cuboid center and the cy, hx, hy, hz, and yaw handles to edit the seven box fields.",
+        "Select a synchronized frame tab.",
+        "Click a visible neutral mark in each overhead, front, and side camera canvas.",
+        "Link the selected mark to the active cuboid.",
+        "Click CERTIFY SURVEY to submit the replayed annotations and links.",
+        "The runner/control setting is observation_window_ms=0, frames_per_observation=1, play_time_seconds=180."
+      ],
+      "autonomous_processes": [
+        "No outcome-affecting autonomous process runs between agent actions: the point cloud, annotations, selected frame, camera marks, links, and view state remain fixed until an input handler changes them.",
+        "The generator precomputes the synchronized camera frames, frame biases, shuffled marks, point cloud, and initial annotations before rendering; selecting a frame is an explicit input, not autonomous progression.",
+        "After a failed submission, the server response may render a fresh static plate as a consequence of that submit action; the only later visible callback is setTimeout(clearFresh, 2200), which removes the transient failure banner and does not change task truth or expire a usable action."
+      ],
+      "grouped_control_modes": [
+        "Requested-target selection (sets the active cuboid).",
+        "Direct point-cloud navigation: background orbit, Shift+drag pan, and wheel/button zoom.",
+        "Direct cuboid manipulation: center translation plus cy, hx, hy, hz, and yaw handle drags, replayed as adjust_box with input_source direct_drag.",
+        "Synchronized frame selection.",
+        "Direct camera-mark selection followed by a direct_mark link event.",
+        "Certification submission (administrative, not an outcome-phase action)."
+      ],
+      "delta_ms": null,
+      "window_ms": null,
+      "clause_i": {
+        "holds": true,
+        "reason": "For a fitting or linking control mode grouped across generated seeds, the correct box corrections and shuffled mark IDs vary with the visible scan/image state, while I_t contains only prior actions and task times; no single observation-free q(I_t) is optimal for all such histories."
+      },
+      "clause_ii": {
+        "holds": true,
+        "reason": "The relevant point cloud, requested-object colors, projected camera subjects, neutral marks, current annotations, and frame choice are visible in the current endpoint screenshot. Because the scene is static, a bounded endpoint window (the configured 0 ms window with one frame) is sufficient; no motion history is needed."
+      },
+      "clause_iii": {
+        "holds": false,
+        "reason": "There is no autonomous non-clock task-state evolution during any active fit or link opportunity. For every valid box edit, mark link, frame selection, or navigation action, waiting leaves the same control available with the same value, so no Delta>0 and 0<tau<Delta can produce the required strict loss. The precomputed frame tabs are not a progressing timeline, and the 2200 ms failure-banner timeout only removes presentation chrome."
+      },
+      "common_visible_process": "None. The visible scene and all outcome-affecting controls are static between inputs; precomputed synchronized frames are selected explicitly rather than advancing autonomously.",
+      "pre_run": {
+        "threshold": 0.5,
+        "at_least_half": null,
+        "rate": null,
+        "basis": "not_applicable",
+        "reason": "The mathematical definition already fails clause (iii), so the pre-run threshold cannot change this configuration's No label; no pre-run percentage is asserted.",
+        "seed_probe": null
+      },
+      "files_read_completely": [
+        "AGENTS.md",
+        "weird_captcha_gym/docs/controllability/real-time.md",
+        "weird_captcha_gym/environments/surveyors_toybox_env/controls.json",
+        "weird_captcha_gym/environments/surveyors_toybox_env/env.json",
+        "weird_captcha_gym/environments/surveyors_toybox_env/tasks/surveyors_toybox_seed_0001/task.json",
+        "weird_captcha_gym/environments/surveyors_toybox_env/tasks/surveyors_toybox_seed_0001/setup_task.sh",
+        "weird_captcha_gym/environments/surveyors_toybox_env/tasks/surveyors_toybox_seed_0001/export_result.sh",
+        "weird_captcha_gym/environments/surveyors_toybox_env/tasks/surveyors_toybox_seed_0001/verifier.py",
+        "weird_captcha_gym/shared_runtime/verifier_helpers.py",
+        "weird_captcha_gym/shared_scripts/incubator_generators/surveyors_toybox.py",
+        "weird_captcha_gym/shared_runtime/app/mechanics/surveyors_toybox.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/surveyors_toybox.css",
+        "weird_captcha_gym/shared_runtime/server/incubator_graders/surveyors_toybox.py",
+        "weird_captcha_gym/tools/incubator_solvers/surveyors_toybox.py"
+      ],
+      "source_evidence": [
+        {
+          "path": "weird_captcha_gym/environments/surveyors_toybox_env/controls.json",
+          "lines": "11-14",
+          "claim": "Difficulty 2 active profile: 2 requested cuboids, 2 distractors, 1 synchronized frame, point density 28, fit tolerance 0.23, yaw tolerance 14 degrees, and initial box error 0.18."
+        },
+        {
+          "path": "weird_captcha_gym/environments/surveyors_toybox_env/controls.json",
+          "lines": "32-36",
+          "claim": "The full interaction surface is implemented, and every profile uses play_time_seconds=180, observation_window_ms=0, and frames_per_observation=1."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/surveyors_toybox.py",
+          "lines": "114-157",
+          "claim": "The generator applies the selected difficulty parameters and validates only static object/frame/count/density/tolerance values; it has no task-clock or autonomous-state parameter."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/surveyors_toybox.py",
+          "lines": "159-243",
+          "claim": "The seeded RNG constructs fixed object geometry, sparse points, precomputed camera frames, shuffled mark rectangles, and initial annotations before returning the state."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/surveyors_toybox.py",
+          "lines": "245-273",
+          "claim": "The public state contains the precomputed camera frames and interaction condition, while the private truth contains target boxes and expected links; neither is advanced by elapsed task time."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/surveyors_toybox.js",
+          "lines": "65-188",
+          "claim": "Full-mode pointer handlers synchronously implement orbit/pan and direct cuboid edits, while explicit handlers implement navigation, target/frame selection, mark selection, and linking."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/surveyors_toybox.js",
+          "lines": "261-326",
+          "claim": "Rendering and event listeners are installed synchronously from the current state; camera marks and frame tabs are read from the selected precomputed frame."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/surveyors_toybox.js",
+          "lines": "278-289",
+          "claim": "Submission awaits an authoritative response; only a failed-submit banner is scheduled for removal after 2200 ms, which is presentation cleanup rather than an outcome-affecting process."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/surveyors_toybox.css",
+          "lines": "1-324",
+          "claim": "The complete stylesheet defines static layout, canvas, cursor, and control styling and contains no task animation or transition that can evolve the puzzle."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/surveyors_toybox.py",
+          "lines": "97-185",
+          "claim": "The grader checks the declared full input sources and replays each submitted edit, frame selection, navigation event, and link against static ground truth."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/surveyors_toybox.py",
+          "lines": "194-214",
+          "claim": "The final grade compares replayed cuboid fit and exact links; no event timestamp or elapsed-time state affects grading."
+        },
+        {
+          "path": "weird_captcha_gym/environments/surveyors_toybox_env/tasks/surveyors_toybox_seed_0001/verifier.py",
+          "lines": "19-35",
+          "claim": "The task verifier loads the exported result and delegates directly to the Surveyors Toybox grader."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/verifier_helpers.py",
+          "lines": "23-45",
+          "claim": "The verifier helper only copies and parses the exported result file; it introduces no task-time behavior."
+        },
+        {
+          "path": "weird_captcha_gym/tools/incubator_solvers/surveyors_toybox.py",
+          "lines": "98-189",
+          "claim": "The scripted wiring solver uses direct visible navigation, direct handle drags, visible frame/mark/link controls, and submission; its private truth reads are implementation evidence, not the screenshot-only solution."
+        },
+        {
+          "path": "weird_captcha_gym/environments/surveyors_toybox_env/env.json",
+          "lines": "1-1",
+          "claim": "The environment runner declares a synchronous task with a zero-millisecond observation window, one frame per observation, and a finite 180-second play allowance."
+        },
+        {
+          "path": "weird_captcha_gym/environments/surveyors_toybox_env/tasks/surveyors_toybox_seed_0001/task.json",
+          "lines": "5-8",
+          "claim": "The visible task is a static cross-modal 3D cuboid fitting and camera-linking task."
+        },
+        {
+          "path": "weird_captcha_gym/environments/surveyors_toybox_env/tasks/surveyors_toybox_seed_0001/task.json",
+          "lines": "31-46",
+          "claim": "The task contract identifies this mechanic and states that the server replays box edits and per-frame/per-view links rather than trusting a browser completion flag."
+        }
+      ],
+      "uncertainties": []
+    },
+    {
+      "case_index": 454,
+      "public_environment_name": "Surveyors Toybox",
+      "environment_id": "surveyors_toybox_env",
+      "difficulty": 2,
+      "interaction_mode": "simplified",
+      "label": "no",
+      "controls_available": [
+        "Difficulty 2 active profile: 2 requested cuboids, 2 distractors, 1 synchronized frame, point density 28, fit tolerance 0.23, yaw tolerance 14 degrees, and initial box error 0.18.",
+        "Select one of the requested target cuboids.",
+        "Use visible proxy buttons to adjust the seven cuboid fields cx, cy, cz, hx, hy, hz, and yaw.",
+        "Use the visible pan and zoom buttons for the point-cloud view; the simplified canvas does not enable direct point-cloud dragging.",
+        "Select a synchronized frame tab.",
+        "Choose a visible mark with its proxy mark-choice button for each overhead, front, and side camera, then link it to the active cuboid. The shared camera canvas click handler also selects visible marks, while the resulting simplified link is recorded as proxy_controls.",
+        "Click CERTIFY SURVEY to submit the replayed annotations and links.",
+        "The runner/control setting is observation_window_ms=0, frames_per_observation=1, play_time_seconds=180."
+      ],
+      "autonomous_processes": [
+        "No outcome-affecting autonomous process runs between agent actions: the point cloud, annotations, selected frame, camera marks, links, and view state remain fixed until an input handler changes them.",
+        "The generator precomputes the synchronized camera frames, frame biases, shuffled marks, point cloud, and initial annotations before rendering; selecting a frame is an explicit input, not autonomous progression.",
+        "After a failed submission, the server response may render a fresh static plate as a consequence of that submit action; the only later visible callback is setTimeout(clearFresh, 2200), which removes the transient failure banner and does not change task truth or expire a usable action."
+      ],
+      "grouped_control_modes": [
+        "Requested-target selection (sets the active cuboid).",
+        "Proxy point-cloud navigation: visible pan and zoom buttons.",
+        "Proxy cuboid manipulation: cx, cy, cz, hx, hy, hz, and yaw buttons, replayed as adjust_box with input_source proxy_controls.",
+        "Synchronized frame selection.",
+        "Proxy camera-mark selection followed by a proxy_controls link event.",
+        "Certification submission (administrative, not an outcome-phase action)."
+      ],
+      "delta_ms": null,
+      "window_ms": null,
+      "clause_i": {
+        "holds": true,
+        "reason": "For a fitting or linking control mode grouped across generated seeds, the correct box corrections and shuffled mark IDs vary with the visible scan/image state, while I_t contains only prior actions and task times; no single observation-free q(I_t) is optimal for all such histories."
+      },
+      "clause_ii": {
+        "holds": true,
+        "reason": "The relevant point cloud, requested-object colors, projected camera subjects, neutral marks, current annotations, and frame choice are visible in the current endpoint screenshot. Because the scene is static, a bounded endpoint window (the configured 0 ms window with one frame) is sufficient; no motion history is needed."
+      },
+      "clause_iii": {
+        "holds": false,
+        "reason": "There is no autonomous non-clock task-state evolution during any active fit or link opportunity. For every valid box edit, mark link, frame selection, or navigation action, waiting leaves the same control available with the same value, so no Delta>0 and 0<tau<Delta can produce the required strict loss. The precomputed frame tabs are not a progressing timeline, and the 2200 ms failure-banner timeout only removes presentation chrome."
+      },
+      "common_visible_process": "None. The visible scene and all outcome-affecting controls are static between inputs; precomputed synchronized frames are selected explicitly rather than advancing autonomously.",
+      "pre_run": {
+        "threshold": 0.5,
+        "at_least_half": null,
+        "rate": null,
+        "basis": "not_applicable",
+        "reason": "The mathematical definition already fails clause (iii), so the pre-run threshold cannot change this configuration's No label; no pre-run percentage is asserted.",
+        "seed_probe": null
+      },
+      "files_read_completely": [
+        "AGENTS.md",
+        "weird_captcha_gym/docs/controllability/real-time.md",
+        "weird_captcha_gym/environments/surveyors_toybox_env/controls.json",
+        "weird_captcha_gym/environments/surveyors_toybox_env/env.json",
+        "weird_captcha_gym/environments/surveyors_toybox_env/tasks/surveyors_toybox_seed_0001/task.json",
+        "weird_captcha_gym/environments/surveyors_toybox_env/tasks/surveyors_toybox_seed_0001/setup_task.sh",
+        "weird_captcha_gym/environments/surveyors_toybox_env/tasks/surveyors_toybox_seed_0001/export_result.sh",
+        "weird_captcha_gym/environments/surveyors_toybox_env/tasks/surveyors_toybox_seed_0001/verifier.py",
+        "weird_captcha_gym/shared_runtime/verifier_helpers.py",
+        "weird_captcha_gym/shared_scripts/incubator_generators/surveyors_toybox.py",
+        "weird_captcha_gym/shared_runtime/app/mechanics/surveyors_toybox.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/surveyors_toybox.css",
+        "weird_captcha_gym/shared_runtime/server/incubator_graders/surveyors_toybox.py",
+        "weird_captcha_gym/tools/incubator_solvers/surveyors_toybox.py"
+      ],
+      "source_evidence": [
+        {
+          "path": "weird_captcha_gym/environments/surveyors_toybox_env/controls.json",
+          "lines": "11-14",
+          "claim": "Difficulty 2 active profile: 2 requested cuboids, 2 distractors, 1 synchronized frame, point density 28, fit tolerance 0.23, yaw tolerance 14 degrees, and initial box error 0.18."
+        },
+        {
+          "path": "weird_captcha_gym/environments/surveyors_toybox_env/controls.json",
+          "lines": "32-36",
+          "claim": "The simplified interaction surface is implemented, and every profile uses play_time_seconds=180, observation_window_ms=0, and frames_per_observation=1."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/surveyors_toybox.py",
+          "lines": "114-157",
+          "claim": "The generator applies the selected difficulty parameters and validates only static object/frame/count/density/tolerance values; it has no task-clock or autonomous-state parameter."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/surveyors_toybox.py",
+          "lines": "159-243",
+          "claim": "The seeded RNG constructs fixed object geometry, sparse points, precomputed camera frames, shuffled mark rectangles, and initial annotations before returning the state."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/surveyors_toybox.py",
+          "lines": "245-273",
+          "claim": "The public state contains the precomputed camera frames and interaction condition, while the private truth contains target boxes and expected links; neither is advanced by elapsed task time."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/surveyors_toybox.js",
+          "lines": "129-188",
+          "claim": "Simplified-mode handlers synchronously implement proxy navigation, proxy cuboid edits, target/frame selection, mark selection, and linking; point-cloud pointer dragging returns immediately outside Full mode."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/surveyors_toybox.js",
+          "lines": "261-326",
+          "claim": "Rendering and event listeners are installed synchronously from the current state; camera marks and frame tabs are read from the selected precomputed frame."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/surveyors_toybox.js",
+          "lines": "278-289",
+          "claim": "Submission awaits an authoritative response; only a failed-submit banner is scheduled for removal after 2200 ms, which is presentation cleanup rather than an outcome-affecting process."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/surveyors_toybox.css",
+          "lines": "1-324",
+          "claim": "The complete stylesheet defines static layout, canvas, cursor, and control styling and contains no task animation or transition that can evolve the puzzle."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/surveyors_toybox.py",
+          "lines": "97-185",
+          "claim": "The grader checks the declared simplified input sources and replays each submitted edit, frame selection, navigation event, and link against static ground truth."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/surveyors_toybox.py",
+          "lines": "194-214",
+          "claim": "The final grade compares replayed cuboid fit and exact links; no event timestamp or elapsed-time state affects grading."
+        },
+        {
+          "path": "weird_captcha_gym/environments/surveyors_toybox_env/tasks/surveyors_toybox_seed_0001/verifier.py",
+          "lines": "19-35",
+          "claim": "The task verifier loads the exported result and delegates directly to the Surveyors Toybox grader."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/verifier_helpers.py",
+          "lines": "23-45",
+          "claim": "The verifier helper only copies and parses the exported result file; it introduces no task-time behavior."
+        },
+        {
+          "path": "weird_captcha_gym/tools/incubator_solvers/surveyors_toybox.py",
+          "lines": "66-189",
+          "claim": "The scripted wiring solver uses visible proxy adjustments or links, visible frame/mark controls, and submission; its private truth reads are implementation evidence, not the screenshot-only solution."
+        },
+        {
+          "path": "weird_captcha_gym/environments/surveyors_toybox_env/env.json",
+          "lines": "1-1",
+          "claim": "The environment runner declares a synchronous task with a zero-millisecond observation window, one frame per observation, and a finite 180-second play allowance."
+        },
+        {
+          "path": "weird_captcha_gym/environments/surveyors_toybox_env/tasks/surveyors_toybox_seed_0001/task.json",
+          "lines": "5-8",
+          "claim": "The visible task is a static cross-modal 3D cuboid fitting and camera-linking task."
+        },
+        {
+          "path": "weird_captcha_gym/environments/surveyors_toybox_env/tasks/surveyors_toybox_seed_0001/task.json",
+          "lines": "31-46",
+          "claim": "The task contract identifies this mechanic and states that the server replays box edits and per-frame/per-view links rather than trusting a browser completion flag."
+        }
+      ],
+      "uncertainties": []
+    },
+    {
+      "case_index": 455,
+      "public_environment_name": "Surveyors Toybox",
+      "environment_id": "surveyors_toybox_env",
+      "difficulty": 3,
+      "interaction_mode": "full",
+      "label": "no",
+      "controls_available": [
+        "Difficulty 3 active profile: 2 requested cuboids, 3 distractors, 2 synchronized frames, point density 24, fit tolerance 0.20, yaw tolerance 11 degrees, and initial box error 0.24.",
+        "Select one of the requested target cuboids.",
+        "Orbit the point cloud by dragging its background; pan with Shift+drag or the visible pan buttons; zoom with the mouse wheel or visible zoom buttons.",
+        "Directly drag the visible cuboid center and the cy, hx, hy, hz, and yaw handles to edit the seven box fields.",
+        "Select a synchronized frame tab.",
+        "Click a visible neutral mark in each overhead, front, and side camera canvas.",
+        "Link the selected mark to the active cuboid.",
+        "Click CERTIFY SURVEY to submit the replayed annotations and links.",
+        "The runner/control setting is observation_window_ms=0, frames_per_observation=1, play_time_seconds=180."
+      ],
+      "autonomous_processes": [
+        "No outcome-affecting autonomous process runs between agent actions: the point cloud, annotations, selected frame, camera marks, links, and view state remain fixed until an input handler changes them.",
+        "The generator precomputes the synchronized camera frames, frame biases, shuffled marks, point cloud, and initial annotations before rendering; selecting a frame is an explicit input, not autonomous progression.",
+        "After a failed submission, the server response may render a fresh static plate as a consequence of that submit action; the only later visible callback is setTimeout(clearFresh, 2200), which removes the transient failure banner and does not change task truth or expire a usable action."
+      ],
+      "grouped_control_modes": [
+        "Requested-target selection (sets the active cuboid).",
+        "Direct point-cloud navigation: background orbit, Shift+drag pan, and wheel/button zoom.",
+        "Direct cuboid manipulation: center translation plus cy, hx, hy, hz, and yaw handle drags, replayed as adjust_box with input_source direct_drag.",
+        "Synchronized frame selection.",
+        "Direct camera-mark selection followed by a direct_mark link event.",
+        "Certification submission (administrative, not an outcome-phase action)."
+      ],
+      "delta_ms": null,
+      "window_ms": null,
+      "clause_i": {
+        "holds": true,
+        "reason": "For a fitting or linking control mode grouped across generated seeds, the correct box corrections and shuffled mark IDs vary with the visible scan/image state, while I_t contains only prior actions and task times; no single observation-free q(I_t) is optimal for all such histories."
+      },
+      "clause_ii": {
+        "holds": true,
+        "reason": "The relevant point cloud, requested-object colors, projected camera subjects, neutral marks, current annotations, and frame choice are visible in the current endpoint screenshot. Because the scene is static, a bounded endpoint window (the configured 0 ms window with one frame) is sufficient; no motion history is needed."
+      },
+      "clause_iii": {
+        "holds": false,
+        "reason": "There is no autonomous non-clock task-state evolution during any active fit or link opportunity. For every valid box edit, mark link, frame selection, or navigation action, waiting leaves the same control available with the same value, so no Delta>0 and 0<tau<Delta can produce the required strict loss. The precomputed frame tabs are not a progressing timeline, and the 2200 ms failure-banner timeout only removes presentation chrome."
+      },
+      "common_visible_process": "None. The visible scene and all outcome-affecting controls are static between inputs; precomputed synchronized frames are selected explicitly rather than advancing autonomously.",
+      "pre_run": {
+        "threshold": 0.5,
+        "at_least_half": null,
+        "rate": null,
+        "basis": "not_applicable",
+        "reason": "The mathematical definition already fails clause (iii), so the pre-run threshold cannot change this configuration's No label; no pre-run percentage is asserted.",
+        "seed_probe": null
+      },
+      "files_read_completely": [
+        "AGENTS.md",
+        "weird_captcha_gym/docs/controllability/real-time.md",
+        "weird_captcha_gym/environments/surveyors_toybox_env/controls.json",
+        "weird_captcha_gym/environments/surveyors_toybox_env/env.json",
+        "weird_captcha_gym/environments/surveyors_toybox_env/tasks/surveyors_toybox_seed_0001/task.json",
+        "weird_captcha_gym/environments/surveyors_toybox_env/tasks/surveyors_toybox_seed_0001/setup_task.sh",
+        "weird_captcha_gym/environments/surveyors_toybox_env/tasks/surveyors_toybox_seed_0001/export_result.sh",
+        "weird_captcha_gym/environments/surveyors_toybox_env/tasks/surveyors_toybox_seed_0001/verifier.py",
+        "weird_captcha_gym/shared_runtime/verifier_helpers.py",
+        "weird_captcha_gym/shared_scripts/incubator_generators/surveyors_toybox.py",
+        "weird_captcha_gym/shared_runtime/app/mechanics/surveyors_toybox.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/surveyors_toybox.css",
+        "weird_captcha_gym/shared_runtime/server/incubator_graders/surveyors_toybox.py",
+        "weird_captcha_gym/tools/incubator_solvers/surveyors_toybox.py"
+      ],
+      "source_evidence": [
+        {
+          "path": "weird_captcha_gym/environments/surveyors_toybox_env/controls.json",
+          "lines": "16-19",
+          "claim": "Difficulty 3 active profile: 2 requested cuboids, 3 distractors, 2 synchronized frames, point density 24, fit tolerance 0.20, yaw tolerance 11 degrees, and initial box error 0.24."
+        },
+        {
+          "path": "weird_captcha_gym/environments/surveyors_toybox_env/controls.json",
+          "lines": "32-36",
+          "claim": "The full interaction surface is implemented, and every profile uses play_time_seconds=180, observation_window_ms=0, and frames_per_observation=1."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/surveyors_toybox.py",
+          "lines": "114-157",
+          "claim": "The generator applies the selected difficulty parameters and validates only static object/frame/count/density/tolerance values; it has no task-clock or autonomous-state parameter."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/surveyors_toybox.py",
+          "lines": "159-243",
+          "claim": "The seeded RNG constructs fixed object geometry, sparse points, precomputed camera frames, shuffled mark rectangles, and initial annotations before returning the state."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/surveyors_toybox.py",
+          "lines": "245-273",
+          "claim": "The public state contains the precomputed camera frames and interaction condition, while the private truth contains target boxes and expected links; neither is advanced by elapsed task time."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/surveyors_toybox.js",
+          "lines": "65-188",
+          "claim": "Full-mode pointer handlers synchronously implement orbit/pan and direct cuboid edits, while explicit handlers implement navigation, target/frame selection, mark selection, and linking."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/surveyors_toybox.js",
+          "lines": "261-326",
+          "claim": "Rendering and event listeners are installed synchronously from the current state; camera marks and frame tabs are read from the selected precomputed frame."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/surveyors_toybox.js",
+          "lines": "278-289",
+          "claim": "Submission awaits an authoritative response; only a failed-submit banner is scheduled for removal after 2200 ms, which is presentation cleanup rather than an outcome-affecting process."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/surveyors_toybox.css",
+          "lines": "1-324",
+          "claim": "The complete stylesheet defines static layout, canvas, cursor, and control styling and contains no task animation or transition that can evolve the puzzle."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/surveyors_toybox.py",
+          "lines": "97-185",
+          "claim": "The grader checks the declared full input sources and replays each submitted edit, frame selection, navigation event, and link against static ground truth."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/surveyors_toybox.py",
+          "lines": "194-214",
+          "claim": "The final grade compares replayed cuboid fit and exact links; no event timestamp or elapsed-time state affects grading."
+        },
+        {
+          "path": "weird_captcha_gym/environments/surveyors_toybox_env/tasks/surveyors_toybox_seed_0001/verifier.py",
+          "lines": "19-35",
+          "claim": "The task verifier loads the exported result and delegates directly to the Surveyors Toybox grader."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/verifier_helpers.py",
+          "lines": "23-45",
+          "claim": "The verifier helper only copies and parses the exported result file; it introduces no task-time behavior."
+        },
+        {
+          "path": "weird_captcha_gym/tools/incubator_solvers/surveyors_toybox.py",
+          "lines": "98-189",
+          "claim": "The scripted wiring solver uses direct visible navigation, direct handle drags, visible frame/mark/link controls, and submission; its private truth reads are implementation evidence, not the screenshot-only solution."
+        },
+        {
+          "path": "weird_captcha_gym/environments/surveyors_toybox_env/env.json",
+          "lines": "1-1",
+          "claim": "The environment runner declares a synchronous task with a zero-millisecond observation window, one frame per observation, and a finite 180-second play allowance."
+        },
+        {
+          "path": "weird_captcha_gym/environments/surveyors_toybox_env/tasks/surveyors_toybox_seed_0001/task.json",
+          "lines": "5-8",
+          "claim": "The visible task is a static cross-modal 3D cuboid fitting and camera-linking task."
+        },
+        {
+          "path": "weird_captcha_gym/environments/surveyors_toybox_env/tasks/surveyors_toybox_seed_0001/task.json",
+          "lines": "31-46",
+          "claim": "The task contract identifies this mechanic and states that the server replays box edits and per-frame/per-view links rather than trusting a browser completion flag."
+        }
+      ],
+      "uncertainties": []
+    },
+    {
+      "case_index": 456,
+      "public_environment_name": "Surveyors Toybox",
+      "environment_id": "surveyors_toybox_env",
+      "difficulty": 3,
+      "interaction_mode": "simplified",
+      "label": "no",
+      "controls_available": [
+        "Difficulty 3 active profile: 2 requested cuboids, 3 distractors, 2 synchronized frames, point density 24, fit tolerance 0.20, yaw tolerance 11 degrees, and initial box error 0.24.",
+        "Select one of the requested target cuboids.",
+        "Use visible proxy buttons to adjust the seven cuboid fields cx, cy, cz, hx, hy, hz, and yaw.",
+        "Use the visible pan and zoom buttons for the point-cloud view; the simplified canvas does not enable direct point-cloud dragging.",
+        "Select a synchronized frame tab.",
+        "Choose a visible mark with its proxy mark-choice button for each overhead, front, and side camera, then link it to the active cuboid. The shared camera canvas click handler also selects visible marks, while the resulting simplified link is recorded as proxy_controls.",
+        "Click CERTIFY SURVEY to submit the replayed annotations and links.",
+        "The runner/control setting is observation_window_ms=0, frames_per_observation=1, play_time_seconds=180."
+      ],
+      "autonomous_processes": [
+        "No outcome-affecting autonomous process runs between agent actions: the point cloud, annotations, selected frame, camera marks, links, and view state remain fixed until an input handler changes them.",
+        "The generator precomputes the synchronized camera frames, frame biases, shuffled marks, point cloud, and initial annotations before rendering; selecting a frame is an explicit input, not autonomous progression.",
+        "After a failed submission, the server response may render a fresh static plate as a consequence of that submit action; the only later visible callback is setTimeout(clearFresh, 2200), which removes the transient failure banner and does not change task truth or expire a usable action."
+      ],
+      "grouped_control_modes": [
+        "Requested-target selection (sets the active cuboid).",
+        "Proxy point-cloud navigation: visible pan and zoom buttons.",
+        "Proxy cuboid manipulation: cx, cy, cz, hx, hy, hz, and yaw buttons, replayed as adjust_box with input_source proxy_controls.",
+        "Synchronized frame selection.",
+        "Proxy camera-mark selection followed by a proxy_controls link event.",
+        "Certification submission (administrative, not an outcome-phase action)."
+      ],
+      "delta_ms": null,
+      "window_ms": null,
+      "clause_i": {
+        "holds": true,
+        "reason": "For a fitting or linking control mode grouped across generated seeds, the correct box corrections and shuffled mark IDs vary with the visible scan/image state, while I_t contains only prior actions and task times; no single observation-free q(I_t) is optimal for all such histories."
+      },
+      "clause_ii": {
+        "holds": true,
+        "reason": "The relevant point cloud, requested-object colors, projected camera subjects, neutral marks, current annotations, and frame choice are visible in the current endpoint screenshot. Because the scene is static, a bounded endpoint window (the configured 0 ms window with one frame) is sufficient; no motion history is needed."
+      },
+      "clause_iii": {
+        "holds": false,
+        "reason": "There is no autonomous non-clock task-state evolution during any active fit or link opportunity. For every valid box edit, mark link, frame selection, or navigation action, waiting leaves the same control available with the same value, so no Delta>0 and 0<tau<Delta can produce the required strict loss. The precomputed frame tabs are not a progressing timeline, and the 2200 ms failure-banner timeout only removes presentation chrome."
+      },
+      "common_visible_process": "None. The visible scene and all outcome-affecting controls are static between inputs; precomputed synchronized frames are selected explicitly rather than advancing autonomously.",
+      "pre_run": {
+        "threshold": 0.5,
+        "at_least_half": null,
+        "rate": null,
+        "basis": "not_applicable",
+        "reason": "The mathematical definition already fails clause (iii), so the pre-run threshold cannot change this configuration's No label; no pre-run percentage is asserted.",
+        "seed_probe": null
+      },
+      "files_read_completely": [
+        "AGENTS.md",
+        "weird_captcha_gym/docs/controllability/real-time.md",
+        "weird_captcha_gym/environments/surveyors_toybox_env/controls.json",
+        "weird_captcha_gym/environments/surveyors_toybox_env/env.json",
+        "weird_captcha_gym/environments/surveyors_toybox_env/tasks/surveyors_toybox_seed_0001/task.json",
+        "weird_captcha_gym/environments/surveyors_toybox_env/tasks/surveyors_toybox_seed_0001/setup_task.sh",
+        "weird_captcha_gym/environments/surveyors_toybox_env/tasks/surveyors_toybox_seed_0001/export_result.sh",
+        "weird_captcha_gym/environments/surveyors_toybox_env/tasks/surveyors_toybox_seed_0001/verifier.py",
+        "weird_captcha_gym/shared_runtime/verifier_helpers.py",
+        "weird_captcha_gym/shared_scripts/incubator_generators/surveyors_toybox.py",
+        "weird_captcha_gym/shared_runtime/app/mechanics/surveyors_toybox.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/surveyors_toybox.css",
+        "weird_captcha_gym/shared_runtime/server/incubator_graders/surveyors_toybox.py",
+        "weird_captcha_gym/tools/incubator_solvers/surveyors_toybox.py"
+      ],
+      "source_evidence": [
+        {
+          "path": "weird_captcha_gym/environments/surveyors_toybox_env/controls.json",
+          "lines": "16-19",
+          "claim": "Difficulty 3 active profile: 2 requested cuboids, 3 distractors, 2 synchronized frames, point density 24, fit tolerance 0.20, yaw tolerance 11 degrees, and initial box error 0.24."
+        },
+        {
+          "path": "weird_captcha_gym/environments/surveyors_toybox_env/controls.json",
+          "lines": "32-36",
+          "claim": "The simplified interaction surface is implemented, and every profile uses play_time_seconds=180, observation_window_ms=0, and frames_per_observation=1."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/surveyors_toybox.py",
+          "lines": "114-157",
+          "claim": "The generator applies the selected difficulty parameters and validates only static object/frame/count/density/tolerance values; it has no task-clock or autonomous-state parameter."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/surveyors_toybox.py",
+          "lines": "159-243",
+          "claim": "The seeded RNG constructs fixed object geometry, sparse points, precomputed camera frames, shuffled mark rectangles, and initial annotations before returning the state."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/surveyors_toybox.py",
+          "lines": "245-273",
+          "claim": "The public state contains the precomputed camera frames and interaction condition, while the private truth contains target boxes and expected links; neither is advanced by elapsed task time."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/surveyors_toybox.js",
+          "lines": "129-188",
+          "claim": "Simplified-mode handlers synchronously implement proxy navigation, proxy cuboid edits, target/frame selection, mark selection, and linking; point-cloud pointer dragging returns immediately outside Full mode."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/surveyors_toybox.js",
+          "lines": "261-326",
+          "claim": "Rendering and event listeners are installed synchronously from the current state; camera marks and frame tabs are read from the selected precomputed frame."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/surveyors_toybox.js",
+          "lines": "278-289",
+          "claim": "Submission awaits an authoritative response; only a failed-submit banner is scheduled for removal after 2200 ms, which is presentation cleanup rather than an outcome-affecting process."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/surveyors_toybox.css",
+          "lines": "1-324",
+          "claim": "The complete stylesheet defines static layout, canvas, cursor, and control styling and contains no task animation or transition that can evolve the puzzle."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/surveyors_toybox.py",
+          "lines": "97-185",
+          "claim": "The grader checks the declared simplified input sources and replays each submitted edit, frame selection, navigation event, and link against static ground truth."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/surveyors_toybox.py",
+          "lines": "194-214",
+          "claim": "The final grade compares replayed cuboid fit and exact links; no event timestamp or elapsed-time state affects grading."
+        },
+        {
+          "path": "weird_captcha_gym/environments/surveyors_toybox_env/tasks/surveyors_toybox_seed_0001/verifier.py",
+          "lines": "19-35",
+          "claim": "The task verifier loads the exported result and delegates directly to the Surveyors Toybox grader."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/verifier_helpers.py",
+          "lines": "23-45",
+          "claim": "The verifier helper only copies and parses the exported result file; it introduces no task-time behavior."
+        },
+        {
+          "path": "weird_captcha_gym/tools/incubator_solvers/surveyors_toybox.py",
+          "lines": "66-189",
+          "claim": "The scripted wiring solver uses visible proxy adjustments or links, visible frame/mark controls, and submission; its private truth reads are implementation evidence, not the screenshot-only solution."
+        },
+        {
+          "path": "weird_captcha_gym/environments/surveyors_toybox_env/env.json",
+          "lines": "1-1",
+          "claim": "The environment runner declares a synchronous task with a zero-millisecond observation window, one frame per observation, and a finite 180-second play allowance."
+        },
+        {
+          "path": "weird_captcha_gym/environments/surveyors_toybox_env/tasks/surveyors_toybox_seed_0001/task.json",
+          "lines": "5-8",
+          "claim": "The visible task is a static cross-modal 3D cuboid fitting and camera-linking task."
+        },
+        {
+          "path": "weird_captcha_gym/environments/surveyors_toybox_env/tasks/surveyors_toybox_seed_0001/task.json",
+          "lines": "31-46",
+          "claim": "The task contract identifies this mechanic and states that the server replays box edits and per-frame/per-view links rather than trusting a browser completion flag."
+        }
+      ],
+      "uncertainties": []
+    },
+    {
+      "case_index": 457,
+      "public_environment_name": "Surveyors Toybox",
+      "environment_id": "surveyors_toybox_env",
+      "difficulty": 4,
+      "interaction_mode": "full",
+      "label": "no",
+      "controls_available": [
+        "Difficulty 4 active profile: 3 requested cuboids, 4 distractors, 2 synchronized frames, point density 18, fit tolerance 0.16, yaw tolerance 8 degrees, and initial box error 0.30 (the generator defaults because the profile parameters are empty).",
+        "Select one of the requested target cuboids.",
+        "Orbit the point cloud by dragging its background; pan with Shift+drag or the visible pan buttons; zoom with the mouse wheel or visible zoom buttons.",
+        "Directly drag the visible cuboid center and the cy, hx, hy, hz, and yaw handles to edit the seven box fields.",
+        "Select a synchronized frame tab.",
+        "Click a visible neutral mark in each overhead, front, and side camera canvas.",
+        "Link the selected mark to the active cuboid.",
+        "Click CERTIFY SURVEY to submit the replayed annotations and links.",
+        "The runner/control setting is observation_window_ms=0, frames_per_observation=1, play_time_seconds=180."
+      ],
+      "autonomous_processes": [
+        "No outcome-affecting autonomous process runs between agent actions: the point cloud, annotations, selected frame, camera marks, links, and view state remain fixed until an input handler changes them.",
+        "The generator precomputes the synchronized camera frames, frame biases, shuffled marks, point cloud, and initial annotations before rendering; selecting a frame is an explicit input, not autonomous progression.",
+        "After a failed submission, the server response may render a fresh static plate as a consequence of that submit action; the only later visible callback is setTimeout(clearFresh, 2200), which removes the transient failure banner and does not change task truth or expire a usable action."
+      ],
+      "grouped_control_modes": [
+        "Requested-target selection (sets the active cuboid).",
+        "Direct point-cloud navigation: background orbit, Shift+drag pan, and wheel/button zoom.",
+        "Direct cuboid manipulation: center translation plus cy, hx, hy, hz, and yaw handle drags, replayed as adjust_box with input_source direct_drag.",
+        "Synchronized frame selection.",
+        "Direct camera-mark selection followed by a direct_mark link event.",
+        "Certification submission (administrative, not an outcome-phase action)."
+      ],
+      "delta_ms": null,
+      "window_ms": null,
+      "clause_i": {
+        "holds": true,
+        "reason": "For a fitting or linking control mode grouped across generated seeds, the correct box corrections and shuffled mark IDs vary with the visible scan/image state, while I_t contains only prior actions and task times; no single observation-free q(I_t) is optimal for all such histories."
+      },
+      "clause_ii": {
+        "holds": true,
+        "reason": "The relevant point cloud, requested-object colors, projected camera subjects, neutral marks, current annotations, and frame choice are visible in the current endpoint screenshot. Because the scene is static, a bounded endpoint window (the configured 0 ms window with one frame) is sufficient; no motion history is needed."
+      },
+      "clause_iii": {
+        "holds": false,
+        "reason": "There is no autonomous non-clock task-state evolution during any active fit or link opportunity. For every valid box edit, mark link, frame selection, or navigation action, waiting leaves the same control available with the same value, so no Delta>0 and 0<tau<Delta can produce the required strict loss. The precomputed frame tabs are not a progressing timeline, and the 2200 ms failure-banner timeout only removes presentation chrome."
+      },
+      "common_visible_process": "None. The visible scene and all outcome-affecting controls are static between inputs; precomputed synchronized frames are selected explicitly rather than advancing autonomously.",
+      "pre_run": {
+        "threshold": 0.5,
+        "at_least_half": null,
+        "rate": null,
+        "basis": "not_applicable",
+        "reason": "The mathematical definition already fails clause (iii), so the pre-run threshold cannot change this configuration's No label; no pre-run percentage is asserted.",
+        "seed_probe": null
+      },
+      "files_read_completely": [
+        "AGENTS.md",
+        "weird_captcha_gym/docs/controllability/real-time.md",
+        "weird_captcha_gym/environments/surveyors_toybox_env/controls.json",
+        "weird_captcha_gym/environments/surveyors_toybox_env/env.json",
+        "weird_captcha_gym/environments/surveyors_toybox_env/tasks/surveyors_toybox_seed_0001/task.json",
+        "weird_captcha_gym/environments/surveyors_toybox_env/tasks/surveyors_toybox_seed_0001/setup_task.sh",
+        "weird_captcha_gym/environments/surveyors_toybox_env/tasks/surveyors_toybox_seed_0001/export_result.sh",
+        "weird_captcha_gym/environments/surveyors_toybox_env/tasks/surveyors_toybox_seed_0001/verifier.py",
+        "weird_captcha_gym/shared_runtime/verifier_helpers.py",
+        "weird_captcha_gym/shared_scripts/incubator_generators/surveyors_toybox.py",
+        "weird_captcha_gym/shared_runtime/app/mechanics/surveyors_toybox.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/surveyors_toybox.css",
+        "weird_captcha_gym/shared_runtime/server/incubator_graders/surveyors_toybox.py",
+        "weird_captcha_gym/tools/incubator_solvers/surveyors_toybox.py"
+      ],
+      "source_evidence": [
+        {
+          "path": "weird_captcha_gym/environments/surveyors_toybox_env/controls.json",
+          "lines": "21-24",
+          "claim": "Difficulty 4 active profile: 3 requested cuboids, 4 distractors, 2 synchronized frames, point density 18, fit tolerance 0.16, yaw tolerance 8 degrees, and initial box error 0.30 (the generator defaults because the profile parameters are empty)."
+        },
+        {
+          "path": "weird_captcha_gym/environments/surveyors_toybox_env/controls.json",
+          "lines": "32-36",
+          "claim": "The full interaction surface is implemented, and every profile uses play_time_seconds=180, observation_window_ms=0, and frames_per_observation=1."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/surveyors_toybox.py",
+          "lines": "114-157",
+          "claim": "The generator applies the selected difficulty parameters and validates only static object/frame/count/density/tolerance values; it has no task-clock or autonomous-state parameter."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/surveyors_toybox.py",
+          "lines": "159-243",
+          "claim": "The seeded RNG constructs fixed object geometry, sparse points, precomputed camera frames, shuffled mark rectangles, and initial annotations before returning the state."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/surveyors_toybox.py",
+          "lines": "245-273",
+          "claim": "The public state contains the precomputed camera frames and interaction condition, while the private truth contains target boxes and expected links; neither is advanced by elapsed task time."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/surveyors_toybox.js",
+          "lines": "65-188",
+          "claim": "Full-mode pointer handlers synchronously implement orbit/pan and direct cuboid edits, while explicit handlers implement navigation, target/frame selection, mark selection, and linking."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/surveyors_toybox.js",
+          "lines": "261-326",
+          "claim": "Rendering and event listeners are installed synchronously from the current state; camera marks and frame tabs are read from the selected precomputed frame."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/surveyors_toybox.js",
+          "lines": "278-289",
+          "claim": "Submission awaits an authoritative response; only a failed-submit banner is scheduled for removal after 2200 ms, which is presentation cleanup rather than an outcome-affecting process."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/surveyors_toybox.css",
+          "lines": "1-324",
+          "claim": "The complete stylesheet defines static layout, canvas, cursor, and control styling and contains no task animation or transition that can evolve the puzzle."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/surveyors_toybox.py",
+          "lines": "97-185",
+          "claim": "The grader checks the declared full input sources and replays each submitted edit, frame selection, navigation event, and link against static ground truth."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/surveyors_toybox.py",
+          "lines": "194-214",
+          "claim": "The final grade compares replayed cuboid fit and exact links; no event timestamp or elapsed-time state affects grading."
+        },
+        {
+          "path": "weird_captcha_gym/environments/surveyors_toybox_env/tasks/surveyors_toybox_seed_0001/verifier.py",
+          "lines": "19-35",
+          "claim": "The task verifier loads the exported result and delegates directly to the Surveyors Toybox grader."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/verifier_helpers.py",
+          "lines": "23-45",
+          "claim": "The verifier helper only copies and parses the exported result file; it introduces no task-time behavior."
+        },
+        {
+          "path": "weird_captcha_gym/tools/incubator_solvers/surveyors_toybox.py",
+          "lines": "98-189",
+          "claim": "The scripted wiring solver uses direct visible navigation, direct handle drags, visible frame/mark/link controls, and submission; its private truth reads are implementation evidence, not the screenshot-only solution."
+        },
+        {
+          "path": "weird_captcha_gym/environments/surveyors_toybox_env/env.json",
+          "lines": "1-1",
+          "claim": "The environment runner declares a synchronous task with a zero-millisecond observation window, one frame per observation, and a finite 180-second play allowance."
+        },
+        {
+          "path": "weird_captcha_gym/environments/surveyors_toybox_env/tasks/surveyors_toybox_seed_0001/task.json",
+          "lines": "5-8",
+          "claim": "The visible task is a static cross-modal 3D cuboid fitting and camera-linking task."
+        },
+        {
+          "path": "weird_captcha_gym/environments/surveyors_toybox_env/tasks/surveyors_toybox_seed_0001/task.json",
+          "lines": "31-46",
+          "claim": "The task contract identifies this mechanic and states that the server replays box edits and per-frame/per-view links rather than trusting a browser completion flag."
+        }
+      ],
+      "uncertainties": []
+    },
+    {
+      "case_index": 458,
+      "public_environment_name": "Surveyors Toybox",
+      "environment_id": "surveyors_toybox_env",
+      "difficulty": 4,
+      "interaction_mode": "simplified",
+      "label": "no",
+      "controls_available": [
+        "Difficulty 4 active profile: 3 requested cuboids, 4 distractors, 2 synchronized frames, point density 18, fit tolerance 0.16, yaw tolerance 8 degrees, and initial box error 0.30 (the generator defaults because the profile parameters are empty).",
+        "Select one of the requested target cuboids.",
+        "Use visible proxy buttons to adjust the seven cuboid fields cx, cy, cz, hx, hy, hz, and yaw.",
+        "Use the visible pan and zoom buttons for the point-cloud view; the simplified canvas does not enable direct point-cloud dragging.",
+        "Select a synchronized frame tab.",
+        "Choose a visible mark with its proxy mark-choice button for each overhead, front, and side camera, then link it to the active cuboid. The shared camera canvas click handler also selects visible marks, while the resulting simplified link is recorded as proxy_controls.",
+        "Click CERTIFY SURVEY to submit the replayed annotations and links.",
+        "The runner/control setting is observation_window_ms=0, frames_per_observation=1, play_time_seconds=180."
+      ],
+      "autonomous_processes": [
+        "No outcome-affecting autonomous process runs between agent actions: the point cloud, annotations, selected frame, camera marks, links, and view state remain fixed until an input handler changes them.",
+        "The generator precomputes the synchronized camera frames, frame biases, shuffled marks, point cloud, and initial annotations before rendering; selecting a frame is an explicit input, not autonomous progression.",
+        "After a failed submission, the server response may render a fresh static plate as a consequence of that submit action; the only later visible callback is setTimeout(clearFresh, 2200), which removes the transient failure banner and does not change task truth or expire a usable action."
+      ],
+      "grouped_control_modes": [
+        "Requested-target selection (sets the active cuboid).",
+        "Proxy point-cloud navigation: visible pan and zoom buttons.",
+        "Proxy cuboid manipulation: cx, cy, cz, hx, hy, hz, and yaw buttons, replayed as adjust_box with input_source proxy_controls.",
+        "Synchronized frame selection.",
+        "Proxy camera-mark selection followed by a proxy_controls link event.",
+        "Certification submission (administrative, not an outcome-phase action)."
+      ],
+      "delta_ms": null,
+      "window_ms": null,
+      "clause_i": {
+        "holds": true,
+        "reason": "For a fitting or linking control mode grouped across generated seeds, the correct box corrections and shuffled mark IDs vary with the visible scan/image state, while I_t contains only prior actions and task times; no single observation-free q(I_t) is optimal for all such histories."
+      },
+      "clause_ii": {
+        "holds": true,
+        "reason": "The relevant point cloud, requested-object colors, projected camera subjects, neutral marks, current annotations, and frame choice are visible in the current endpoint screenshot. Because the scene is static, a bounded endpoint window (the configured 0 ms window with one frame) is sufficient; no motion history is needed."
+      },
+      "clause_iii": {
+        "holds": false,
+        "reason": "There is no autonomous non-clock task-state evolution during any active fit or link opportunity. For every valid box edit, mark link, frame selection, or navigation action, waiting leaves the same control available with the same value, so no Delta>0 and 0<tau<Delta can produce the required strict loss. The precomputed frame tabs are not a progressing timeline, and the 2200 ms failure-banner timeout only removes presentation chrome."
+      },
+      "common_visible_process": "None. The visible scene and all outcome-affecting controls are static between inputs; precomputed synchronized frames are selected explicitly rather than advancing autonomously.",
+      "pre_run": {
+        "threshold": 0.5,
+        "at_least_half": null,
+        "rate": null,
+        "basis": "not_applicable",
+        "reason": "The mathematical definition already fails clause (iii), so the pre-run threshold cannot change this configuration's No label; no pre-run percentage is asserted.",
+        "seed_probe": null
+      },
+      "files_read_completely": [
+        "AGENTS.md",
+        "weird_captcha_gym/docs/controllability/real-time.md",
+        "weird_captcha_gym/environments/surveyors_toybox_env/controls.json",
+        "weird_captcha_gym/environments/surveyors_toybox_env/env.json",
+        "weird_captcha_gym/environments/surveyors_toybox_env/tasks/surveyors_toybox_seed_0001/task.json",
+        "weird_captcha_gym/environments/surveyors_toybox_env/tasks/surveyors_toybox_seed_0001/setup_task.sh",
+        "weird_captcha_gym/environments/surveyors_toybox_env/tasks/surveyors_toybox_seed_0001/export_result.sh",
+        "weird_captcha_gym/environments/surveyors_toybox_env/tasks/surveyors_toybox_seed_0001/verifier.py",
+        "weird_captcha_gym/shared_runtime/verifier_helpers.py",
+        "weird_captcha_gym/shared_scripts/incubator_generators/surveyors_toybox.py",
+        "weird_captcha_gym/shared_runtime/app/mechanics/surveyors_toybox.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/surveyors_toybox.css",
+        "weird_captcha_gym/shared_runtime/server/incubator_graders/surveyors_toybox.py",
+        "weird_captcha_gym/tools/incubator_solvers/surveyors_toybox.py"
+      ],
+      "source_evidence": [
+        {
+          "path": "weird_captcha_gym/environments/surveyors_toybox_env/controls.json",
+          "lines": "21-24",
+          "claim": "Difficulty 4 active profile: 3 requested cuboids, 4 distractors, 2 synchronized frames, point density 18, fit tolerance 0.16, yaw tolerance 8 degrees, and initial box error 0.30 (the generator defaults because the profile parameters are empty)."
+        },
+        {
+          "path": "weird_captcha_gym/environments/surveyors_toybox_env/controls.json",
+          "lines": "32-36",
+          "claim": "The simplified interaction surface is implemented, and every profile uses play_time_seconds=180, observation_window_ms=0, and frames_per_observation=1."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/surveyors_toybox.py",
+          "lines": "114-157",
+          "claim": "The generator applies the selected difficulty parameters and validates only static object/frame/count/density/tolerance values; it has no task-clock or autonomous-state parameter."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/surveyors_toybox.py",
+          "lines": "159-243",
+          "claim": "The seeded RNG constructs fixed object geometry, sparse points, precomputed camera frames, shuffled mark rectangles, and initial annotations before returning the state."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/surveyors_toybox.py",
+          "lines": "245-273",
+          "claim": "The public state contains the precomputed camera frames and interaction condition, while the private truth contains target boxes and expected links; neither is advanced by elapsed task time."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/surveyors_toybox.js",
+          "lines": "129-188",
+          "claim": "Simplified-mode handlers synchronously implement proxy navigation, proxy cuboid edits, target/frame selection, mark selection, and linking; point-cloud pointer dragging returns immediately outside Full mode."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/surveyors_toybox.js",
+          "lines": "261-326",
+          "claim": "Rendering and event listeners are installed synchronously from the current state; camera marks and frame tabs are read from the selected precomputed frame."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/surveyors_toybox.js",
+          "lines": "278-289",
+          "claim": "Submission awaits an authoritative response; only a failed-submit banner is scheduled for removal after 2200 ms, which is presentation cleanup rather than an outcome-affecting process."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/surveyors_toybox.css",
+          "lines": "1-324",
+          "claim": "The complete stylesheet defines static layout, canvas, cursor, and control styling and contains no task animation or transition that can evolve the puzzle."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/surveyors_toybox.py",
+          "lines": "97-185",
+          "claim": "The grader checks the declared simplified input sources and replays each submitted edit, frame selection, navigation event, and link against static ground truth."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/surveyors_toybox.py",
+          "lines": "194-214",
+          "claim": "The final grade compares replayed cuboid fit and exact links; no event timestamp or elapsed-time state affects grading."
+        },
+        {
+          "path": "weird_captcha_gym/environments/surveyors_toybox_env/tasks/surveyors_toybox_seed_0001/verifier.py",
+          "lines": "19-35",
+          "claim": "The task verifier loads the exported result and delegates directly to the Surveyors Toybox grader."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/verifier_helpers.py",
+          "lines": "23-45",
+          "claim": "The verifier helper only copies and parses the exported result file; it introduces no task-time behavior."
+        },
+        {
+          "path": "weird_captcha_gym/tools/incubator_solvers/surveyors_toybox.py",
+          "lines": "66-189",
+          "claim": "The scripted wiring solver uses visible proxy adjustments or links, visible frame/mark controls, and submission; its private truth reads are implementation evidence, not the screenshot-only solution."
+        },
+        {
+          "path": "weird_captcha_gym/environments/surveyors_toybox_env/env.json",
+          "lines": "1-1",
+          "claim": "The environment runner declares a synchronous task with a zero-millisecond observation window, one frame per observation, and a finite 180-second play allowance."
+        },
+        {
+          "path": "weird_captcha_gym/environments/surveyors_toybox_env/tasks/surveyors_toybox_seed_0001/task.json",
+          "lines": "5-8",
+          "claim": "The visible task is a static cross-modal 3D cuboid fitting and camera-linking task."
+        },
+        {
+          "path": "weird_captcha_gym/environments/surveyors_toybox_env/tasks/surveyors_toybox_seed_0001/task.json",
+          "lines": "31-46",
+          "claim": "The task contract identifies this mechanic and states that the server replays box edits and per-frame/per-view links rather than trusting a browser completion flag."
+        }
+      ],
+      "uncertainties": []
+    },
+    {
+      "case_index": 459,
+      "public_environment_name": "Surveyors Toybox",
+      "environment_id": "surveyors_toybox_env",
+      "difficulty": 5,
+      "interaction_mode": "full",
+      "label": "no",
+      "controls_available": [
+        "Difficulty 5 active profile: 4 requested cuboids, 6 distractors, 3 synchronized frames, point density 12, fit tolerance 0.11, yaw tolerance 5 degrees, and initial box error 0.42.",
+        "Select one of the requested target cuboids.",
+        "Orbit the point cloud by dragging its background; pan with Shift+drag or the visible pan buttons; zoom with the mouse wheel or visible zoom buttons.",
+        "Directly drag the visible cuboid center and the cy, hx, hy, hz, and yaw handles to edit the seven box fields.",
+        "Select a synchronized frame tab.",
+        "Click a visible neutral mark in each overhead, front, and side camera canvas.",
+        "Link the selected mark to the active cuboid.",
+        "Click CERTIFY SURVEY to submit the replayed annotations and links.",
+        "The runner/control setting is observation_window_ms=0, frames_per_observation=1, play_time_seconds=180."
+      ],
+      "autonomous_processes": [
+        "No outcome-affecting autonomous process runs between agent actions: the point cloud, annotations, selected frame, camera marks, links, and view state remain fixed until an input handler changes them.",
+        "The generator precomputes the synchronized camera frames, frame biases, shuffled marks, point cloud, and initial annotations before rendering; selecting a frame is an explicit input, not autonomous progression.",
+        "After a failed submission, the server response may render a fresh static plate as a consequence of that submit action; the only later visible callback is setTimeout(clearFresh, 2200), which removes the transient failure banner and does not change task truth or expire a usable action."
+      ],
+      "grouped_control_modes": [
+        "Requested-target selection (sets the active cuboid).",
+        "Direct point-cloud navigation: background orbit, Shift+drag pan, and wheel/button zoom.",
+        "Direct cuboid manipulation: center translation plus cy, hx, hy, hz, and yaw handle drags, replayed as adjust_box with input_source direct_drag.",
+        "Synchronized frame selection.",
+        "Direct camera-mark selection followed by a direct_mark link event.",
+        "Certification submission (administrative, not an outcome-phase action)."
+      ],
+      "delta_ms": null,
+      "window_ms": null,
+      "clause_i": {
+        "holds": true,
+        "reason": "For a fitting or linking control mode grouped across generated seeds, the correct box corrections and shuffled mark IDs vary with the visible scan/image state, while I_t contains only prior actions and task times; no single observation-free q(I_t) is optimal for all such histories."
+      },
+      "clause_ii": {
+        "holds": true,
+        "reason": "The relevant point cloud, requested-object colors, projected camera subjects, neutral marks, current annotations, and frame choice are visible in the current endpoint screenshot. Because the scene is static, a bounded endpoint window (the configured 0 ms window with one frame) is sufficient; no motion history is needed."
+      },
+      "clause_iii": {
+        "holds": false,
+        "reason": "There is no autonomous non-clock task-state evolution during any active fit or link opportunity. For every valid box edit, mark link, frame selection, or navigation action, waiting leaves the same control available with the same value, so no Delta>0 and 0<tau<Delta can produce the required strict loss. The precomputed frame tabs are not a progressing timeline, and the 2200 ms failure-banner timeout only removes presentation chrome."
+      },
+      "common_visible_process": "None. The visible scene and all outcome-affecting controls are static between inputs; precomputed synchronized frames are selected explicitly rather than advancing autonomously.",
+      "pre_run": {
+        "threshold": 0.5,
+        "at_least_half": null,
+        "rate": null,
+        "basis": "not_applicable",
+        "reason": "The mathematical definition already fails clause (iii), so the pre-run threshold cannot change this configuration's No label; no pre-run percentage is asserted.",
+        "seed_probe": null
+      },
+      "files_read_completely": [
+        "AGENTS.md",
+        "weird_captcha_gym/docs/controllability/real-time.md",
+        "weird_captcha_gym/environments/surveyors_toybox_env/controls.json",
+        "weird_captcha_gym/environments/surveyors_toybox_env/env.json",
+        "weird_captcha_gym/environments/surveyors_toybox_env/tasks/surveyors_toybox_seed_0001/task.json",
+        "weird_captcha_gym/environments/surveyors_toybox_env/tasks/surveyors_toybox_seed_0001/setup_task.sh",
+        "weird_captcha_gym/environments/surveyors_toybox_env/tasks/surveyors_toybox_seed_0001/export_result.sh",
+        "weird_captcha_gym/environments/surveyors_toybox_env/tasks/surveyors_toybox_seed_0001/verifier.py",
+        "weird_captcha_gym/shared_runtime/verifier_helpers.py",
+        "weird_captcha_gym/shared_scripts/incubator_generators/surveyors_toybox.py",
+        "weird_captcha_gym/shared_runtime/app/mechanics/surveyors_toybox.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/surveyors_toybox.css",
+        "weird_captcha_gym/shared_runtime/server/incubator_graders/surveyors_toybox.py",
+        "weird_captcha_gym/tools/incubator_solvers/surveyors_toybox.py"
+      ],
+      "source_evidence": [
+        {
+          "path": "weird_captcha_gym/environments/surveyors_toybox_env/controls.json",
+          "lines": "26-29",
+          "claim": "Difficulty 5 active profile: 4 requested cuboids, 6 distractors, 3 synchronized frames, point density 12, fit tolerance 0.11, yaw tolerance 5 degrees, and initial box error 0.42."
+        },
+        {
+          "path": "weird_captcha_gym/environments/surveyors_toybox_env/controls.json",
+          "lines": "32-36",
+          "claim": "The full interaction surface is implemented, and every profile uses play_time_seconds=180, observation_window_ms=0, and frames_per_observation=1."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/surveyors_toybox.py",
+          "lines": "114-157",
+          "claim": "The generator applies the selected difficulty parameters and validates only static object/frame/count/density/tolerance values; it has no task-clock or autonomous-state parameter."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/surveyors_toybox.py",
+          "lines": "159-243",
+          "claim": "The seeded RNG constructs fixed object geometry, sparse points, precomputed camera frames, shuffled mark rectangles, and initial annotations before returning the state."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/surveyors_toybox.py",
+          "lines": "245-273",
+          "claim": "The public state contains the precomputed camera frames and interaction condition, while the private truth contains target boxes and expected links; neither is advanced by elapsed task time."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/surveyors_toybox.js",
+          "lines": "65-188",
+          "claim": "Full-mode pointer handlers synchronously implement orbit/pan and direct cuboid edits, while explicit handlers implement navigation, target/frame selection, mark selection, and linking."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/surveyors_toybox.js",
+          "lines": "261-326",
+          "claim": "Rendering and event listeners are installed synchronously from the current state; camera marks and frame tabs are read from the selected precomputed frame."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/surveyors_toybox.js",
+          "lines": "278-289",
+          "claim": "Submission awaits an authoritative response; only a failed-submit banner is scheduled for removal after 2200 ms, which is presentation cleanup rather than an outcome-affecting process."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/surveyors_toybox.css",
+          "lines": "1-324",
+          "claim": "The complete stylesheet defines static layout, canvas, cursor, and control styling and contains no task animation or transition that can evolve the puzzle."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/surveyors_toybox.py",
+          "lines": "97-185",
+          "claim": "The grader checks the declared full input sources and replays each submitted edit, frame selection, navigation event, and link against static ground truth."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/surveyors_toybox.py",
+          "lines": "194-214",
+          "claim": "The final grade compares replayed cuboid fit and exact links; no event timestamp or elapsed-time state affects grading."
+        },
+        {
+          "path": "weird_captcha_gym/environments/surveyors_toybox_env/tasks/surveyors_toybox_seed_0001/verifier.py",
+          "lines": "19-35",
+          "claim": "The task verifier loads the exported result and delegates directly to the Surveyors Toybox grader."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/verifier_helpers.py",
+          "lines": "23-45",
+          "claim": "The verifier helper only copies and parses the exported result file; it introduces no task-time behavior."
+        },
+        {
+          "path": "weird_captcha_gym/tools/incubator_solvers/surveyors_toybox.py",
+          "lines": "98-189",
+          "claim": "The scripted wiring solver uses direct visible navigation, direct handle drags, visible frame/mark/link controls, and submission; its private truth reads are implementation evidence, not the screenshot-only solution."
+        },
+        {
+          "path": "weird_captcha_gym/environments/surveyors_toybox_env/env.json",
+          "lines": "1-1",
+          "claim": "The environment runner declares a synchronous task with a zero-millisecond observation window, one frame per observation, and a finite 180-second play allowance."
+        },
+        {
+          "path": "weird_captcha_gym/environments/surveyors_toybox_env/tasks/surveyors_toybox_seed_0001/task.json",
+          "lines": "5-8",
+          "claim": "The visible task is a static cross-modal 3D cuboid fitting and camera-linking task."
+        },
+        {
+          "path": "weird_captcha_gym/environments/surveyors_toybox_env/tasks/surveyors_toybox_seed_0001/task.json",
+          "lines": "31-46",
+          "claim": "The task contract identifies this mechanic and states that the server replays box edits and per-frame/per-view links rather than trusting a browser completion flag."
+        }
+      ],
+      "uncertainties": []
+    },
+    {
+      "case_index": 460,
+      "public_environment_name": "Surveyors Toybox",
+      "environment_id": "surveyors_toybox_env",
+      "difficulty": 5,
+      "interaction_mode": "simplified",
+      "label": "no",
+      "controls_available": [
+        "Difficulty 5 active profile: 4 requested cuboids, 6 distractors, 3 synchronized frames, point density 12, fit tolerance 0.11, yaw tolerance 5 degrees, and initial box error 0.42.",
+        "Select one of the requested target cuboids.",
+        "Use visible proxy buttons to adjust the seven cuboid fields cx, cy, cz, hx, hy, hz, and yaw.",
+        "Use the visible pan and zoom buttons for the point-cloud view; the simplified canvas does not enable direct point-cloud dragging.",
+        "Select a synchronized frame tab.",
+        "Choose a visible mark with its proxy mark-choice button for each overhead, front, and side camera, then link it to the active cuboid. The shared camera canvas click handler also selects visible marks, while the resulting simplified link is recorded as proxy_controls.",
+        "Click CERTIFY SURVEY to submit the replayed annotations and links.",
+        "The runner/control setting is observation_window_ms=0, frames_per_observation=1, play_time_seconds=180."
+      ],
+      "autonomous_processes": [
+        "No outcome-affecting autonomous process runs between agent actions: the point cloud, annotations, selected frame, camera marks, links, and view state remain fixed until an input handler changes them.",
+        "The generator precomputes the synchronized camera frames, frame biases, shuffled marks, point cloud, and initial annotations before rendering; selecting a frame is an explicit input, not autonomous progression.",
+        "After a failed submission, the server response may render a fresh static plate as a consequence of that submit action; the only later visible callback is setTimeout(clearFresh, 2200), which removes the transient failure banner and does not change task truth or expire a usable action."
+      ],
+      "grouped_control_modes": [
+        "Requested-target selection (sets the active cuboid).",
+        "Proxy point-cloud navigation: visible pan and zoom buttons.",
+        "Proxy cuboid manipulation: cx, cy, cz, hx, hy, hz, and yaw buttons, replayed as adjust_box with input_source proxy_controls.",
+        "Synchronized frame selection.",
+        "Proxy camera-mark selection followed by a proxy_controls link event.",
+        "Certification submission (administrative, not an outcome-phase action)."
+      ],
+      "delta_ms": null,
+      "window_ms": null,
+      "clause_i": {
+        "holds": true,
+        "reason": "For a fitting or linking control mode grouped across generated seeds, the correct box corrections and shuffled mark IDs vary with the visible scan/image state, while I_t contains only prior actions and task times; no single observation-free q(I_t) is optimal for all such histories."
+      },
+      "clause_ii": {
+        "holds": true,
+        "reason": "The relevant point cloud, requested-object colors, projected camera subjects, neutral marks, current annotations, and frame choice are visible in the current endpoint screenshot. Because the scene is static, a bounded endpoint window (the configured 0 ms window with one frame) is sufficient; no motion history is needed."
+      },
+      "clause_iii": {
+        "holds": false,
+        "reason": "There is no autonomous non-clock task-state evolution during any active fit or link opportunity. For every valid box edit, mark link, frame selection, or navigation action, waiting leaves the same control available with the same value, so no Delta>0 and 0<tau<Delta can produce the required strict loss. The precomputed frame tabs are not a progressing timeline, and the 2200 ms failure-banner timeout only removes presentation chrome."
+      },
+      "common_visible_process": "None. The visible scene and all outcome-affecting controls are static between inputs; precomputed synchronized frames are selected explicitly rather than advancing autonomously.",
+      "pre_run": {
+        "threshold": 0.5,
+        "at_least_half": null,
+        "rate": null,
+        "basis": "not_applicable",
+        "reason": "The mathematical definition already fails clause (iii), so the pre-run threshold cannot change this configuration's No label; no pre-run percentage is asserted.",
+        "seed_probe": null
+      },
+      "files_read_completely": [
+        "AGENTS.md",
+        "weird_captcha_gym/docs/controllability/real-time.md",
+        "weird_captcha_gym/environments/surveyors_toybox_env/controls.json",
+        "weird_captcha_gym/environments/surveyors_toybox_env/env.json",
+        "weird_captcha_gym/environments/surveyors_toybox_env/tasks/surveyors_toybox_seed_0001/task.json",
+        "weird_captcha_gym/environments/surveyors_toybox_env/tasks/surveyors_toybox_seed_0001/setup_task.sh",
+        "weird_captcha_gym/environments/surveyors_toybox_env/tasks/surveyors_toybox_seed_0001/export_result.sh",
+        "weird_captcha_gym/environments/surveyors_toybox_env/tasks/surveyors_toybox_seed_0001/verifier.py",
+        "weird_captcha_gym/shared_runtime/verifier_helpers.py",
+        "weird_captcha_gym/shared_scripts/incubator_generators/surveyors_toybox.py",
+        "weird_captcha_gym/shared_runtime/app/mechanics/surveyors_toybox.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/surveyors_toybox.css",
+        "weird_captcha_gym/shared_runtime/server/incubator_graders/surveyors_toybox.py",
+        "weird_captcha_gym/tools/incubator_solvers/surveyors_toybox.py"
+      ],
+      "source_evidence": [
+        {
+          "path": "weird_captcha_gym/environments/surveyors_toybox_env/controls.json",
+          "lines": "26-29",
+          "claim": "Difficulty 5 active profile: 4 requested cuboids, 6 distractors, 3 synchronized frames, point density 12, fit tolerance 0.11, yaw tolerance 5 degrees, and initial box error 0.42."
+        },
+        {
+          "path": "weird_captcha_gym/environments/surveyors_toybox_env/controls.json",
+          "lines": "32-36",
+          "claim": "The simplified interaction surface is implemented, and every profile uses play_time_seconds=180, observation_window_ms=0, and frames_per_observation=1."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/surveyors_toybox.py",
+          "lines": "114-157",
+          "claim": "The generator applies the selected difficulty parameters and validates only static object/frame/count/density/tolerance values; it has no task-clock or autonomous-state parameter."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/surveyors_toybox.py",
+          "lines": "159-243",
+          "claim": "The seeded RNG constructs fixed object geometry, sparse points, precomputed camera frames, shuffled mark rectangles, and initial annotations before returning the state."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/surveyors_toybox.py",
+          "lines": "245-273",
+          "claim": "The public state contains the precomputed camera frames and interaction condition, while the private truth contains target boxes and expected links; neither is advanced by elapsed task time."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/surveyors_toybox.js",
+          "lines": "129-188",
+          "claim": "Simplified-mode handlers synchronously implement proxy navigation, proxy cuboid edits, target/frame selection, mark selection, and linking; point-cloud pointer dragging returns immediately outside Full mode."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/surveyors_toybox.js",
+          "lines": "261-326",
+          "claim": "Rendering and event listeners are installed synchronously from the current state; camera marks and frame tabs are read from the selected precomputed frame."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/surveyors_toybox.js",
+          "lines": "278-289",
+          "claim": "Submission awaits an authoritative response; only a failed-submit banner is scheduled for removal after 2200 ms, which is presentation cleanup rather than an outcome-affecting process."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/surveyors_toybox.css",
+          "lines": "1-324",
+          "claim": "The complete stylesheet defines static layout, canvas, cursor, and control styling and contains no task animation or transition that can evolve the puzzle."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/surveyors_toybox.py",
+          "lines": "97-185",
+          "claim": "The grader checks the declared simplified input sources and replays each submitted edit, frame selection, navigation event, and link against static ground truth."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/surveyors_toybox.py",
+          "lines": "194-214",
+          "claim": "The final grade compares replayed cuboid fit and exact links; no event timestamp or elapsed-time state affects grading."
+        },
+        {
+          "path": "weird_captcha_gym/environments/surveyors_toybox_env/tasks/surveyors_toybox_seed_0001/verifier.py",
+          "lines": "19-35",
+          "claim": "The task verifier loads the exported result and delegates directly to the Surveyors Toybox grader."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/verifier_helpers.py",
+          "lines": "23-45",
+          "claim": "The verifier helper only copies and parses the exported result file; it introduces no task-time behavior."
+        },
+        {
+          "path": "weird_captcha_gym/tools/incubator_solvers/surveyors_toybox.py",
+          "lines": "66-189",
+          "claim": "The scripted wiring solver uses visible proxy adjustments or links, visible frame/mark controls, and submission; its private truth reads are implementation evidence, not the screenshot-only solution."
+        },
+        {
+          "path": "weird_captcha_gym/environments/surveyors_toybox_env/env.json",
+          "lines": "1-1",
+          "claim": "The environment runner declares a synchronous task with a zero-millisecond observation window, one frame per observation, and a finite 180-second play allowance."
+        },
+        {
+          "path": "weird_captcha_gym/environments/surveyors_toybox_env/tasks/surveyors_toybox_seed_0001/task.json",
+          "lines": "5-8",
+          "claim": "The visible task is a static cross-modal 3D cuboid fitting and camera-linking task."
+        },
+        {
+          "path": "weird_captcha_gym/environments/surveyors_toybox_env/tasks/surveyors_toybox_seed_0001/task.json",
+          "lines": "31-46",
+          "claim": "The task contract identifies this mechanic and states that the server replays box edits and per-frame/per-view links rather than trusting a browser completion flag."
+        }
+      ],
+      "uncertainties": []
+    }
+  ]
+}
+

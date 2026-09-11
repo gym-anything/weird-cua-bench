@@ -1,0 +1,168 @@
+{
+  "case_index": 17,
+  "public_environment_name": "Anthill Front",
+  "environment_id": "anthill_front_env",
+  "difficulty": 4,
+  "interaction_mode": "full",
+  "label": "yes",
+  "controls_available": [
+    "Full-mode mouse selection on the battlefield canvas, including click selection and marquee selection with Shift for multi-selection.",
+    "G/S/D/M/R keyboard orders: GATHER, SCOUT, DIG, MARCH, and RAISE; G, S, D, and M are followed by a visible destination click, while R raises at the brood chamber.",
+    "Visible NORTH and SOUTH tunnel targets, the rival-queen target after all waves are resolved, and viewport panning through minimap, pan buttons, or arrow keys.",
+    "CERTIFY FRONT submits the command ledger and is administrative rather than outcome-affecting."
+  ],
+  "autonomous_processes": [
+    {
+      "period": "After SCOUT is issued, for 42 ticks (4,200 ms)",
+      "state_change": "The scout moves toward the listening front; if it remains assigned, contact is revealed and the scout is automatically changed to GATHER.",
+      "outcome_affecting_control_available": "Yes. GATHER, DIG, and a replacement command remain possible, but this fixed progress only enables later information and creates no expiring action opportunity."
+    },
+    {
+      "period": "While exactly two workers DIG, until 80 work units are accumulated",
+      "state_change": "Brood progress increases by two per 100-ms tick, then brood_ready becomes true and the diggers automatically switch to GATHER.",
+      "outcome_affecting_control_available": "Yes. Worker orders can still be changed and RAISE becomes available after completion; waiting does not make an already useful action strictly worse."
+    },
+    {
+      "period": "Workers on GATHER, in repeated 18-tick cycles",
+      "state_change": "Workers visibly travel to and from the seed pile and add one seed at each completed cycle.",
+      "outcome_affecting_control_available": "Yes. GATHER assignments and RAISE remain available; the resource trip is progress, not an expiring decision."
+    },
+    {
+      "period": "After each RAISE order, for 14 ticks",
+      "state_change": "The production queue resolves and a new soldier appears at the rally position.",
+      "outcome_affecting_control_available": "Yes. Additional RAISE orders can be issued when seeds permit; waiting only enables soldiers."
+    },
+    {
+      "period": "Rival outpost construction before each contact",
+      "state_change": "The visible outpost build percentage grows autonomously; at completion the raid can spawn. Difficulty 4 has wave 1 building at ticks 82-148 and wave 2 at ticks 202-273.",
+      "outcome_affecting_control_available": "Preparation orders remain available, but NORTH/SOUTH interception is not yet accepted before the response band."
+    },
+    {
+      "period": "Wave 1 travels from tick 160 to 250 and wave 2 from tick 285 to 375",
+      "state_change": "Each red formation advances horizontally from its outpost toward the colony. After the response opens it also moves vertically according to a sinusoidal feint between the two tunnel branches.",
+      "outcome_affecting_control_available": "Yes, and this is the relevant period: MARCH NORTH or MARCH SOUTH is accepted only for the lowest uncommitted wave inside its response band."
+    },
+    {
+      "period": "Difficulty-4 response bands: wave 1 ticks 199-239 and wave 2 ticks 324-364",
+      "state_change": "The formation's visible vertical phase changes while the intercept band remains active; at impact, defenders, soldier losses, queen HP, and resolved-wave state are updated.",
+      "outcome_affecting_control_available": "Yes during each band. After the deadline a lane MARCH is rejected, and an uncommitted or incorrectly committed wave cannot be successfully intercepted at impact."
+    },
+    {
+      "period": "After all raids resolve, during the 45-tick assault travel",
+      "state_change": "A valid MARCH to the rival queen moves soldiers toward it and then reduces rival HP autonomously.",
+      "outcome_affecting_control_available": "The enemy MARCH is available only after all waves are cleared; once issued, no further outcome-affecting action is needed for the travel."
+    },
+    {
+      "period": "The CSS anthill-pulse animation and repaint loop",
+      "state_change": "The decorative status dot pulses and the canvas is redrawn.",
+      "outcome_affecting_control_available": "No relevant control. This idle UI animation is not used as the real-time witness."
+    }
+  ],
+  "grouped_control_modes": [
+    "GATHER to the seed pile with a nonempty worker subset.",
+    "SCOUT to the listening front with exactly one worker while the opening is hidden.",
+    "DIG at the brood chamber with exactly two workers.",
+    "RAISE at a ready brood chamber with no selected units and at least two seeds.",
+    "MARCH interception to NORTH or SOUTH with an available soldier subset for the lowest-numbered uncommitted raid inside its response band; this is the common witness mode D across both waves, seeds, and attempts.",
+    "MARCH to the enemy queen with surviving soldiers after every raid is resolved.",
+    "Canvas selection, panning, and CERTIFY FRONT are interface or administrative operations, not outcome-affecting control modes."
+  ],
+  "delta_ms": 400,
+  "window_ms": 800,
+  "clause_i": {
+    "holds": true,
+    "reason": "For the common MARCH interception mode, the same prior actions and task ticks can occur with either random first lane and with different 0-35-tick motion phase offsets. Those hidden cases require different NORTH/SOUTH targets at delivery, while q sees only I_t. A no-op or a lane chosen without the visible formation cannot guarantee the successful intercept required for every wave."
+  },
+  "clause_ii": {
+    "holds": true,
+    "reason": "The 800-ms window covers eight 100-ms task ticks and is captured as six chronological frames. The canvas exposes the formation's horizontal position and vertical trajectory, and the same trajectory determines the intercept lane at a delivery four ticks later. A bounded-window policy g can estimate the current phase/direction and extrapolate to t+Delta; where the earliest response frames leave phase states observationally tied, it can choose an action that is tied for conditional optimum. The screenshot solver independently samples formation y across consecutive screenshots and selects SOUTH versus NORTH from the visible sign of motion."
+  },
+  "clause_iii": {
+    "holds": true,
+    "reason": "Use wave 1, whose difficulty-4 response band is ticks 199-239. In a generated state with seeded lane SOUTH and phase offset 0, at t=207 the phase is 80 degrees, so MARCH SOUTH is correct; after tau=200 ms, at tick 209 the phase is 100 degrees and the same MARCH SOUTH would be marked incorrect, while MARCH NORTH is still possible through tick 239. Thus Q(H_t^tau, MARCH SOUTH) is strictly lower than Q(H_t, MARCH SOUTH) because the moving formation changes the lane, not because of later completion or a clock-only deadline. Delta=400 ms, so tau is strictly inside the delay."
+  },
+  "common_visible_process": "A red raid formation autonomously advances toward the colony and, during its visible intercept band, oscillates vertically between the labeled NORTH and SOUTH tunnels. The recent visible trajectory is the evidence used to infer the lane at delayed MARCH delivery; the same motion changes the interceptLane result before the band closes, making a stale lane ineffective. The decorative CSS pulse is unrelated.",
+  "pre_run": {
+    "threshold": 0.5,
+    "at_least_half": false,
+    "rate": null,
+    "basis": "source_structural",
+    "reason": "A pre-run plan cannot complete the autonomous raid phase without an outcome-affecting action. Before response_open_tick, NORTH/SOUTH MARCH is rejected; during each response band, a lane MARCH commitment is required. With no such action, difficulty-4 wave 1 has count 3 against the queen's 3 HP and reduces queen HP to zero at impact, and the grader additionally requires successful intercepts for both waves. This applies to every lane and phase seed, so the at-least-half threshold is not met; no percentage is asserted.",
+    "seed_probe": null
+  },
+  "files_read_completely": [
+    "AGENTS.md",
+    "weird_captcha_gym/docs/controllability/real-time.md",
+    "weird_captcha_gym/environments/anthill_front_env/controls.json",
+    "weird_captcha_gym/environments/anthill_front_env/env.json",
+    "weird_captcha_gym/environments/anthill_front_env/tasks/anthill_front_seed_0001/task.json",
+    "weird_captcha_gym/shared_scripts/incubator_generators/anthill_front.py",
+    "weird_captcha_gym/shared_runtime/app/index.html",
+    "weird_captcha_gym/shared_runtime/app/time_controller.js",
+    "weird_captcha_gym/shared_scripts/time_control.py",
+    "weird_captcha_gym/shared_runtime/app/mechanics/anthill_front.js",
+    "weird_captcha_gym/shared_runtime/app/mechanics/anthill_front.css",
+    "weird_captcha_gym/shared_runtime/server/incubator_graders/anthill_front.py",
+    "weird_captcha_gym/shared_runtime/verifier_helpers.py",
+    "weird_captcha_gym/environments/anthill_front_env/tasks/anthill_front_seed_0001/verifier.py",
+    "weird_captcha_gym/tools/incubator_solvers/anthill_front.py"
+  ],
+  "source_evidence": [
+    {
+      "path": "weird_captcha_gym/environments/anthill_front_env/controls.json",
+      "lines": "9-16",
+      "claim": "The exact requested difficulty 4 has six workers, hidden opening, exact two-worker/80-work excavation, two seeded/opposite raids with counts 3 and 4, spawn ticks 160 and 285, impact ticks 250 and 375, and full mode exposes direct map interaction; observation_window_ms is 800 with six frames."
+    },
+    {
+      "path": "weird_captcha_gym/shared_scripts/incubator_generators/anthill_front.py",
+      "lines": "31-60, 97-120, 134-160",
+      "claim": "The generator consumes the selected difficulty condition, chooses the first lane from NORTH/SOUTH, maps the opposite lane, computes response_open_tick and response_deadline_tick from each spawn/impact interval, assigns a 100-ms tick, and stores the generated raid phase offset and schedule."
+    },
+    {
+      "path": "weird_captcha_gym/shared_runtime/app/mechanics/anthill_front.js",
+      "lines": "16-20, 55-138, 141-206",
+      "claim": "The browser simulation advances autonomously, resolves defenders and queen damage at impact, and accepts lane MARCH only for an uncommitted raid inside its response band; its commitment is marked correct by the phase-dependent interceptLane function."
+    },
+    {
+      "path": "weird_captcha_gym/shared_runtime/app/mechanics/anthill_front.js",
+      "lines": "263-279, 357-374",
+      "claim": "The visible formation moves horizontally and then follows a phase-dependent vertical sine trajectory; the canvas draws the moving formation and labels the visible intercept band."
+    },
+    {
+      "path": "weird_captcha_gym/shared_runtime/app/mechanics/anthill_front.js",
+      "lines": "460-501, 517-557",
+      "claim": "Full mode uses map selection, keyboard command arming, visible destination clicks, minimap panning, and a performance-clock-driven animation loop; MARCH destinations are the two tunnel lanes or the rival queen."
+    },
+    {
+      "path": "weird_captcha_gym/shared_runtime/app/mechanics/anthill_front.css",
+      "lines": "53-54, 67-88",
+      "claim": "The pulsing live indicator is decorative CSS, while the battlefield canvas and wave readouts are the visible task surface."
+    },
+    {
+      "path": "weird_captcha_gym/tools/incubator_solvers/anthill_front.py",
+      "lines": "165-218, 328-343",
+      "claim": "The screenshot-only solver measures formation pixels at successive visible times, requires consistent vertical movement, converts the observed direction to NORTH/SOUTH, and commits through the full-mode M key plus map click."
+    },
+    {
+      "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/anthill_front.py",
+      "lines": "47-51, 105-155, 221-261, 291-350",
+      "claim": "The verifier replay uses the same phase-dependent lane function, applies wave damage when no correct defenders are committed, accepts interception only inside the response band, binds full-mode events to direct_map, and requires every raid to be successfully intercepted for a pass."
+    },
+    {
+      "path": "weird_captcha_gym/environments/anthill_front_env/tasks/anthill_front_seed_0001/verifier.py",
+      "lines": "21-33",
+      "claim": "The task verifier loads the shared helper and Anthill Front grader and authoritatively grades the exported command replay."
+    },
+    {
+      "path": "weird_captcha_gym/shared_runtime/app/time_controller.js",
+      "lines": "155-201, 548-599",
+      "claim": "The shared browser clock pauses and resumes task time and runs a bounded live window, so the mechanic's performance-clock-driven state progression is the live-versus-paused task behavior rather than an unrelated wall-clock animation."
+    },
+    {
+      "path": "weird_captcha_gym/docs/controllability/real-time.md",
+      "lines": "38-66, 70-90",
+      "claim": "The frozen definition requires one common grouped mode, positive delay, bounded visible window, observation-dependent delayed action, and strict loss from visible autonomous task-state evolution; it also defines the pre-run threshold."
+    }
+  ],
+  "uncertainties": []
+}

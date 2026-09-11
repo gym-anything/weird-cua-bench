@@ -1,0 +1,1899 @@
+{
+  "case_index": 36,
+  "environment_id": "letter_rapids_env",
+  "public_environment_name": "Letter Rapids",
+  "configuration_reports": [
+    {
+      "case_index": 351,
+      "public_environment_name": "Letter Rapids",
+      "environment_id": "letter_rapids_env",
+      "difficulty": 1,
+      "interaction_mode": "full",
+      "label": "yes",
+      "controls_available": [
+        {
+          "surface": "Full canvas pointer",
+          "event_source": "canyon_pointer",
+          "coordinates": "A canvas pointermove sets one continuous x_milli in [0,10000] and y_milli in [0,9999]. y selects the visible probability channel; x above 4350 advances, x below 2250 rewinds, and 2250 through 4350 brakes.",
+          "keyboard_or_buttons": "No task buttons or keyboard handler; sustained pointer position is the outcome control."
+        },
+        {
+          "active_difficulty_profile": {
+            "alphabet": "aetoinrs",
+            "target_pool": [
+              "sea",
+              "rain",
+              "tone",
+              "star"
+            ],
+            "minimum_band_milli": 650,
+            "context_boost_milli": 1500,
+            "probability_jitter_milli": 80,
+            "dead_zone_half_width_milli": 1050,
+            "maximum_speed_units_per_second": 4300,
+            "current_amplitude_milli": 120,
+            "travel_budget_characters_milli": 6500,
+            "maximum_rewound_characters": 4
+          }
+        },
+        {
+          "task_clock_and_observation": {
+            "tick_ms": 50,
+            "commit_units": 10000,
+            "neutral_x_milli": 3300,
+            "travel_budget_units": 65000,
+            "observation_window_ms": 600,
+            "frames_per_observation": 5,
+            "play_time_seconds": 120
+          }
+        }
+      ],
+      "autonomous_processes": [
+        "Every running 50 ms simulation tick advances without a new pointer event. The generated current multiplier changes the flow increment and is shown by the CURRENT readout and moving canvas particles.",
+        "While the persistent flow coordinate is outside the 2250-4350 dead zone, forward flow accumulates progress and travel at the selected y channel; reverse flow cancels progress and can rewind committed characters.",
+        "When progress reaches 10000, the current symbol is appended, progress resets, and the output context changes. The next tick uses the new context's probability row, reflowing visible channel geometry while the input coordinates persist.",
+        "requestAnimationFrame redraws the visible bands, active progress front, selected channel, current value, and particle trace. The CSS live-current pulse is presentation-only."
+      ],
+      "grouped_control_modes": [
+        {
+          "name": "forward channel advance",
+          "events": "All canyon_pointer states with virtual x_milli > 4350.",
+          "effect": "Advances the channel selected by y toward a commit.",
+          "witness_for_clauses": true
+        },
+        {
+          "name": "brake",
+          "events": "All canyon_pointer states with 2250 <= virtual x_milli <= 4350.",
+          "effect": "Stops flow and prevents a stale channel coordinate from acting after row reflow.",
+          "witness_for_clauses": true
+        },
+        {
+          "name": "rewind",
+          "events": "All canyon_pointer states with virtual x_milli < 2250.",
+          "effect": "Cancels progress and may rewind committed output within the configured allowance of 4.",
+          "witness_for_clauses": false
+        },
+        {
+          "name": "channel re-aim",
+          "events": "All canyon_pointer y/aim changes.",
+          "effect": "Changes the selected channel and resets partial forward progress when the symbol changes.",
+          "witness_for_clauses": false
+        }
+      ],
+      "delta_ms": 600,
+      "window_ms": 600,
+      "clause_i": {
+        "holds": true,
+        "reason": "For the complete forward-channel group, the same prior canvas-pointer actions and task times can occur with different visible targets, output prefixes, channel rows, and progress states across seeds. q sees only I_t, so it cannot choose the required y/aim or the advance-versus-brake response for every C_Delta history."
+      },
+      "clause_ii": {
+        "holds": true,
+        "reason": "The configured five chronological frames cover the last 600 ms and show target/output, selected channel, moving progress front, CURRENT, and particle motion. g can predict whether forward progress will cross the 10000-unit commit boundary during the delay, then deliver forward continuation when it will not or neutral brake when it will commit and reflow; the next observation exposes the new row for re-aiming."
+      },
+      "clause_iii": {
+        "holds": true,
+        "reason": "Choose a nonfinal character with forward flow active, y aimed inside its current band, and progress just below commit. For some 0 < tau < 600, autonomous ticks append the character and switch currentRow(output), visibly reflowing the bands. The same old-y forward action can then hit the wrong next symbol and strictly lose value or advantage, while braking and re-aiming keep success possible. The loss is caused by non-clock row reflow, not deadline passage."
+      },
+      "common_visible_process": "A persistent pointer is held in the current visible channel while its progress front advances. During the 600 ms witness horizon, the front can cross the 10000-unit commit threshold; output gains that symbol and the probability row immediately reflows for the new output context while the pointer/slider coordinates remain unchanged. The same five-frame trace predicts whether the delayed action should continue forward or switch to neutral brake. The old forward coordinate is less effective after reflow because it can drive the wrong next character, although the task remains recoverable on the next visible re-aim.",
+      "pre_run": {
+        "threshold": 0.5,
+        "at_least_half": false,
+        "rate": 0,
+        "basis": "seeded_probe",
+        "reason": "After preparation, a no-input autonomous phase leaves both virtual coordinates fixed. A necessary condition for success is one fixed y/aim lying in the intersection of the displayed bands for every target character in its successive output context. The exact 10000-seed generator-row probe found 0 such routes for this difficulty; the separate slider surface preserves the same virtual-coordinate effects.",
+        "seed_probe": {
+          "seeds": "probe-00000 through probe-09999",
+          "numerator": 0,
+          "denominator": 10000,
+          "method": "Reconstruct each generated display row exactly, intersect the fixed-y band for target[0], target[1], and so on through the context row after each prefix. An empty intersection is a necessary failure for any fixed prepared pointer; flow speed/current cannot repair it.",
+          "code": "import importlib.util,json,random\nfrom pathlib import Path\nR=Path('/private/tmp/weird-cua-realtime-source-20260910.ObhAQg')\nS=importlib.util.spec_from_file_location('g',R/'weird_captcha_gym/shared_scripts/incubator_generators/letter_rapids.py')\ng=importlib.util.module_from_spec(S); S.loader.exec_module(g)\nC=json.loads((R/'weird_captcha_gym/environments/letter_rapids_env/controls.json').read_text())\nD=1; M='full'; P=C['difficulty'][str(D)]['parameters']\ndef band(row,f,ch):\n free=10000-f*len(row); w=[f+free*(int(b['end_milli'])-int(b['start_milli']))//10000 for b in row]\n for i in range(10000-sum(w)): w[i]+=1\n c=0\n for b,z in zip(row,w):\n  if b['symbol']==ch:return c,c+z\n  c+=z\ndef ok(target,rows,f):\n lo,hi=0,9999; out=''\n for ch in target:\n  z=band(rows[out[-1] if out else '^'],f,ch)\n  if z is None:return 0\n  lo=max(lo,z[0]); hi=min(hi,z[1]-1); out+=ch\n return lo<=hi\nn=10000; c=0\nfor i in range(n):\n seed=f'probe-{i:05d}'; profile,_=g._profile({'_control_condition':{'difficulty':D,'interaction':M,'difficulty_parameters':P}})\n target=random.Random(g._seed_int(seed,g.MECHANIC_ID)).choice(tuple(profile['target_pool']))\n rows={ctx:g._row(seed,ctx,profile) for ctx in '^'+str(profile['alphabet'])}\n c+=int(ok(target,rows,g.DISPLAY_BAND_FLOOR_MILLI))\nprint(c,n)"
+        }
+      },
+      "files_read_completely": [
+        "AGENTS.md",
+        "weird_captcha_gym/docs/controllability/real-time.md",
+        "weird_captcha_gym/environments/letter_rapids_env/controls.json",
+        "weird_captcha_gym/environments/letter_rapids_env/env.json",
+        "weird_captcha_gym/environments/letter_rapids_env/tasks/letter_rapids_seed_0001/task.json",
+        "weird_captcha_gym/environments/letter_rapids_env/tasks/letter_rapids_seed_0001/setup_task.sh",
+        "weird_captcha_gym/environments/letter_rapids_env/tasks/letter_rapids_seed_0001/export_result.sh",
+        "weird_captcha_gym/shared_scripts/incubator_generators/letter_rapids.py",
+        "weird_captcha_gym/shared_runtime/app/mechanics/letter_rapids.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/letter_rapids.css",
+        "weird_captcha_gym/shared_runtime/server/incubator_graders/letter_rapids.py",
+        "weird_captcha_gym/environments/letter_rapids_env/tasks/letter_rapids_seed_0001/verifier.py",
+        "weird_captcha_gym/tools/incubator_solvers/letter_rapids.py",
+        "weird_captcha_gym/shared_runtime/verifier_helpers.py",
+        "weird_captcha_gym/shared_runtime/app/time_controller.js"
+      ],
+      "source_evidence": [
+        {
+          "path": "weird_captcha_gym/environments/letter_rapids_env/controls.json",
+          "lines": "9-25",
+          "claim": "Difficulty 1 active alphabet, target pool, band, steering, current, travel, and rewind parameters."
+        },
+        {
+          "path": "weird_captcha_gym/environments/letter_rapids_env/controls.json",
+          "lines": "96-109",
+          "claim": "full interaction is implemented and the configured observation is 600 ms with five frames and a 120-second allowance."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/letter_rapids.py",
+          "lines": "128-172",
+          "claim": "The generator creates context-dependent contiguous probability bands and a changing 2400-tick current trace."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/letter_rapids.js",
+          "lines": "46-65",
+          "claim": "x selects forward/brake/rewind flow and y selects the current channel."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/letter_rapids.js",
+          "lines": "100-148",
+          "claim": "Autonomous ticks accumulate flow, commit at commit_units, change output context, and can rewind."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/letter_rapids.js",
+          "lines": "248-323",
+          "claim": "The visible canvas renders channel bands, the active progress front, current value, and current-dependent particles."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/letter_rapids.js",
+          "lines": "346-374",
+          "claim": "Simulation time uses the shared interaction clock; Full binds outcome input to canyon_pointer."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/letter_rapids.py",
+          "lines": "143-173",
+          "claim": "The grader enforces canyon_pointer as the exact input source."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/letter_rapids.py",
+          "lines": "198-270",
+          "claim": "Server replay applies each tick, context-specific hit test, commit/reflow, travel, and exact-target terminal check."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/time_controller.js",
+          "lines": "55-78",
+          "claim": "The running task clock, not native wall time, drives interactionNow."
+        },
+        {
+          "path": "weird_captcha_gym/tools/incubator_solvers/letter_rapids.py",
+          "lines": "85-99",
+          "claim": "The visible solver aims a band, sustains forward flow, waits for output, and brakes."
+        },
+        {
+          "path": "weird_captcha_gym/environments/letter_rapids_env/tasks/letter_rapids_seed_0001/verifier.py",
+          "lines": "21-37",
+          "claim": "The exported UI result is delegated to the Letter Rapids replay grader."
+        }
+      ],
+      "uncertainties": [
+        "The terminal grader does not expose a numeric intermediate reward; strict action degradation is established from exact replay, where the stale forward coordinate can append a wrong symbol while a brake-and-reaim continuation remains successful."
+      ]
+    },
+    {
+      "case_index": 352,
+      "public_environment_name": "Letter Rapids",
+      "environment_id": "letter_rapids_env",
+      "difficulty": 1,
+      "interaction_mode": "simplified",
+      "label": "yes",
+      "controls_available": [
+        {
+          "surface": "Simplified axis proxies",
+          "event_source": "axis_proxy",
+          "coordinates": "rapids-aim sets y_milli in [0,9999] and rapids-flow sets x_milli in [0,10000]. x above 4350 advances, x below 2250 rewinds, and 2250 through 4350 brakes.",
+          "keyboard_or_buttons": "The two range inputs are the bound outcome controls; canvas pointer movement is not the bound interaction surface."
+        },
+        {
+          "active_difficulty_profile": {
+            "alphabet": "aetoinrs",
+            "target_pool": [
+              "sea",
+              "rain",
+              "tone",
+              "star"
+            ],
+            "minimum_band_milli": 650,
+            "context_boost_milli": 1500,
+            "probability_jitter_milli": 80,
+            "dead_zone_half_width_milli": 1050,
+            "maximum_speed_units_per_second": 4300,
+            "current_amplitude_milli": 120,
+            "travel_budget_characters_milli": 6500,
+            "maximum_rewound_characters": 4
+          }
+        },
+        {
+          "task_clock_and_observation": {
+            "tick_ms": 50,
+            "commit_units": 10000,
+            "neutral_x_milli": 3300,
+            "travel_budget_units": 65000,
+            "observation_window_ms": 600,
+            "frames_per_observation": 5,
+            "play_time_seconds": 120
+          }
+        }
+      ],
+      "autonomous_processes": [
+        "Every running 50 ms simulation tick advances without a new slider event. The generated current multiplier changes the flow increment and is shown by the CURRENT readout and moving canvas particles.",
+        "While the persistent flow coordinate is outside the 2250-4350 dead zone, forward flow accumulates progress and travel at the selected y channel; reverse flow cancels progress and can rewind committed characters.",
+        "When progress reaches 10000, the current symbol is appended, progress resets, and the output context changes. The next tick uses the new context's probability row, reflowing visible channel geometry while the input coordinates persist.",
+        "requestAnimationFrame redraws the visible bands, active progress front, selected channel, current value, and particle trace. The CSS live-current pulse is presentation-only."
+      ],
+      "grouped_control_modes": [
+        {
+          "name": "forward channel advance",
+          "events": "All axis_proxy states with virtual x_milli > 4350.",
+          "effect": "Advances the channel selected by y toward a commit.",
+          "witness_for_clauses": true
+        },
+        {
+          "name": "brake",
+          "events": "All axis_proxy states with 2250 <= virtual x_milli <= 4350.",
+          "effect": "Stops flow and prevents a stale channel coordinate from acting after row reflow.",
+          "witness_for_clauses": true
+        },
+        {
+          "name": "rewind",
+          "events": "All axis_proxy states with virtual x_milli < 2250.",
+          "effect": "Cancels progress and may rewind committed output within the configured allowance of 4.",
+          "witness_for_clauses": false
+        },
+        {
+          "name": "channel re-aim",
+          "events": "All axis_proxy y/aim changes.",
+          "effect": "Changes the selected channel and resets partial forward progress when the symbol changes.",
+          "witness_for_clauses": false
+        }
+      ],
+      "delta_ms": 600,
+      "window_ms": 600,
+      "clause_i": {
+        "holds": true,
+        "reason": "For the complete forward-channel group, the same prior axis-proxy actions and task times can occur with different visible targets, output prefixes, channel rows, and progress states across seeds. q sees only I_t, so it cannot choose the required y/aim or the advance-versus-brake response for every C_Delta history."
+      },
+      "clause_ii": {
+        "holds": true,
+        "reason": "The configured five chronological frames cover the last 600 ms and show target/output, selected channel, moving progress front, CURRENT, and particle motion. g can predict whether forward progress will cross the 10000-unit commit boundary during the delay, then deliver forward continuation when it will not or neutral brake when it will commit and reflow; the next observation exposes the new row for re-aiming."
+      },
+      "clause_iii": {
+        "holds": true,
+        "reason": "Choose a nonfinal character with forward flow active, y aimed inside its current band, and progress just below commit. For some 0 < tau < 600, autonomous ticks append the character and switch currentRow(output), visibly reflowing the bands. The same old-y forward action can then hit the wrong next symbol and strictly lose value or advantage, while braking and re-aiming keep success possible. The loss is caused by non-clock row reflow, not deadline passage."
+      },
+      "common_visible_process": "A persistent pointer is held in the current visible channel while its progress front advances. During the 600 ms witness horizon, the front can cross the 10000-unit commit threshold; output gains that symbol and the probability row immediately reflows for the new output context while the pointer/slider coordinates remain unchanged. The same five-frame trace predicts whether the delayed action should continue forward or switch to neutral brake. The old forward coordinate is less effective after reflow because it can drive the wrong next character, although the task remains recoverable on the next visible re-aim.",
+      "pre_run": {
+        "threshold": 0.5,
+        "at_least_half": false,
+        "rate": 0,
+        "basis": "seeded_probe",
+        "reason": "After preparation, a no-input autonomous phase leaves both virtual coordinates fixed. A necessary condition for success is one fixed y/aim lying in the intersection of the displayed bands for every target character in its successive output context. The exact 10000-seed generator-row probe found 0 such routes for this difficulty; the separate slider surface preserves the same virtual-coordinate effects.",
+        "seed_probe": {
+          "seeds": "probe-00000 through probe-09999",
+          "numerator": 0,
+          "denominator": 10000,
+          "method": "Reconstruct each generated display row exactly, intersect the fixed-y band for target[0], target[1], and so on through the context row after each prefix. An empty intersection is a necessary failure for any fixed prepared pointer; flow speed/current cannot repair it.",
+          "code": "import importlib.util,json,random\nfrom pathlib import Path\nR=Path('/private/tmp/weird-cua-realtime-source-20260910.ObhAQg')\nS=importlib.util.spec_from_file_location('g',R/'weird_captcha_gym/shared_scripts/incubator_generators/letter_rapids.py')\ng=importlib.util.module_from_spec(S); S.loader.exec_module(g)\nC=json.loads((R/'weird_captcha_gym/environments/letter_rapids_env/controls.json').read_text())\nD=1; M='simplified'; P=C['difficulty'][str(D)]['parameters']\ndef band(row,f,ch):\n free=10000-f*len(row); w=[f+free*(int(b['end_milli'])-int(b['start_milli']))//10000 for b in row]\n for i in range(10000-sum(w)): w[i]+=1\n c=0\n for b,z in zip(row,w):\n  if b['symbol']==ch:return c,c+z\n  c+=z\ndef ok(target,rows,f):\n lo,hi=0,9999; out=''\n for ch in target:\n  z=band(rows[out[-1] if out else '^'],f,ch)\n  if z is None:return 0\n  lo=max(lo,z[0]); hi=min(hi,z[1]-1); out+=ch\n return lo<=hi\nn=10000; c=0\nfor i in range(n):\n seed=f'probe-{i:05d}'; profile,_=g._profile({'_control_condition':{'difficulty':D,'interaction':M,'difficulty_parameters':P}})\n target=random.Random(g._seed_int(seed,g.MECHANIC_ID)).choice(tuple(profile['target_pool']))\n rows={ctx:g._row(seed,ctx,profile) for ctx in '^'+str(profile['alphabet'])}\n c+=int(ok(target,rows,g.DISPLAY_BAND_FLOOR_MILLI))\nprint(c,n)"
+        }
+      },
+      "files_read_completely": [
+        "AGENTS.md",
+        "weird_captcha_gym/docs/controllability/real-time.md",
+        "weird_captcha_gym/environments/letter_rapids_env/controls.json",
+        "weird_captcha_gym/environments/letter_rapids_env/env.json",
+        "weird_captcha_gym/environments/letter_rapids_env/tasks/letter_rapids_seed_0001/task.json",
+        "weird_captcha_gym/environments/letter_rapids_env/tasks/letter_rapids_seed_0001/setup_task.sh",
+        "weird_captcha_gym/environments/letter_rapids_env/tasks/letter_rapids_seed_0001/export_result.sh",
+        "weird_captcha_gym/shared_scripts/incubator_generators/letter_rapids.py",
+        "weird_captcha_gym/shared_runtime/app/mechanics/letter_rapids.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/letter_rapids.css",
+        "weird_captcha_gym/shared_runtime/server/incubator_graders/letter_rapids.py",
+        "weird_captcha_gym/environments/letter_rapids_env/tasks/letter_rapids_seed_0001/verifier.py",
+        "weird_captcha_gym/tools/incubator_solvers/letter_rapids.py",
+        "weird_captcha_gym/shared_runtime/verifier_helpers.py",
+        "weird_captcha_gym/shared_runtime/app/time_controller.js"
+      ],
+      "source_evidence": [
+        {
+          "path": "weird_captcha_gym/environments/letter_rapids_env/controls.json",
+          "lines": "9-25",
+          "claim": "Difficulty 1 active alphabet, target pool, band, steering, current, travel, and rewind parameters."
+        },
+        {
+          "path": "weird_captcha_gym/environments/letter_rapids_env/controls.json",
+          "lines": "96-109",
+          "claim": "simplified interaction is implemented and the configured observation is 600 ms with five frames and a 120-second allowance."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/letter_rapids.py",
+          "lines": "128-172",
+          "claim": "The generator creates context-dependent contiguous probability bands and a changing 2400-tick current trace."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/letter_rapids.js",
+          "lines": "46-65",
+          "claim": "x selects forward/brake/rewind flow and y selects the current channel."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/letter_rapids.js",
+          "lines": "100-148",
+          "claim": "Autonomous ticks accumulate flow, commit at commit_units, change output context, and can rewind."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/letter_rapids.js",
+          "lines": "248-323",
+          "claim": "The visible canvas renders channel bands, the active progress front, current value, and current-dependent particles."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/letter_rapids.js",
+          "lines": "346-374",
+          "claim": "Simulation time uses the shared interaction clock; Simplified binds outcome input to axis_proxy from separate aim and flow ranges."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/letter_rapids.py",
+          "lines": "143-173",
+          "claim": "The grader enforces axis_proxy as the exact input source."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/letter_rapids.py",
+          "lines": "198-270",
+          "claim": "Server replay applies each tick, context-specific hit test, commit/reflow, travel, and exact-target terminal check."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/time_controller.js",
+          "lines": "55-78",
+          "claim": "The running task clock, not native wall time, drives interactionNow."
+        },
+        {
+          "path": "weird_captcha_gym/tools/incubator_solvers/letter_rapids.py",
+          "lines": "85-99",
+          "claim": "The visible solver aims a band, sustains forward flow, waits for output, and brakes."
+        },
+        {
+          "path": "weird_captcha_gym/environments/letter_rapids_env/tasks/letter_rapids_seed_0001/verifier.py",
+          "lines": "21-37",
+          "claim": "The exported UI result is delegated to the Letter Rapids replay grader."
+        }
+      ],
+      "uncertainties": [
+        "The terminal grader does not expose a numeric intermediate reward; strict action degradation is established from exact replay, where the stale forward coordinate can append a wrong symbol while a brake-and-reaim continuation remains successful."
+      ]
+    },
+    {
+      "case_index": 353,
+      "public_environment_name": "Letter Rapids",
+      "environment_id": "letter_rapids_env",
+      "difficulty": 2,
+      "interaction_mode": "full",
+      "label": "yes",
+      "controls_available": [
+        {
+          "surface": "Full canvas pointer",
+          "event_source": "canyon_pointer",
+          "coordinates": "A canvas pointermove sets one continuous x_milli in [0,10000] and y_milli in [0,9999]. y selects the visible probability channel; x above 4200 advances, x below 2400 rewinds, and 2400 through 4200 brakes.",
+          "keyboard_or_buttons": "No task buttons or keyboard handler; sustained pointer position is the outcome control."
+        },
+        {
+          "active_difficulty_profile": {
+            "alphabet": "etaoinshrdlu",
+            "target_pool": [
+              "thread",
+              "round",
+              "shore",
+              "train"
+            ],
+            "minimum_band_milli": 430,
+            "context_boost_milli": 1650,
+            "probability_jitter_milli": 120,
+            "dead_zone_half_width_milli": 900,
+            "maximum_speed_units_per_second": 5100,
+            "current_amplitude_milli": 190,
+            "travel_budget_characters_milli": 8000,
+            "maximum_rewound_characters": 4
+          }
+        },
+        {
+          "task_clock_and_observation": {
+            "tick_ms": 50,
+            "commit_units": 10000,
+            "neutral_x_milli": 3300,
+            "travel_budget_units": 80000,
+            "observation_window_ms": 600,
+            "frames_per_observation": 5,
+            "play_time_seconds": 120
+          }
+        }
+      ],
+      "autonomous_processes": [
+        "Every running 50 ms simulation tick advances without a new pointer event. The generated current multiplier changes the flow increment and is shown by the CURRENT readout and moving canvas particles.",
+        "While the persistent flow coordinate is outside the 2400-4200 dead zone, forward flow accumulates progress and travel at the selected y channel; reverse flow cancels progress and can rewind committed characters.",
+        "When progress reaches 10000, the current symbol is appended, progress resets, and the output context changes. The next tick uses the new context's probability row, reflowing visible channel geometry while the input coordinates persist.",
+        "requestAnimationFrame redraws the visible bands, active progress front, selected channel, current value, and particle trace. The CSS live-current pulse is presentation-only."
+      ],
+      "grouped_control_modes": [
+        {
+          "name": "forward channel advance",
+          "events": "All canyon_pointer states with virtual x_milli > 4200.",
+          "effect": "Advances the channel selected by y toward a commit.",
+          "witness_for_clauses": true
+        },
+        {
+          "name": "brake",
+          "events": "All canyon_pointer states with 2400 <= virtual x_milli <= 4200.",
+          "effect": "Stops flow and prevents a stale channel coordinate from acting after row reflow.",
+          "witness_for_clauses": true
+        },
+        {
+          "name": "rewind",
+          "events": "All canyon_pointer states with virtual x_milli < 2400.",
+          "effect": "Cancels progress and may rewind committed output within the configured allowance of 4.",
+          "witness_for_clauses": false
+        },
+        {
+          "name": "channel re-aim",
+          "events": "All canyon_pointer y/aim changes.",
+          "effect": "Changes the selected channel and resets partial forward progress when the symbol changes.",
+          "witness_for_clauses": false
+        }
+      ],
+      "delta_ms": 600,
+      "window_ms": 600,
+      "clause_i": {
+        "holds": true,
+        "reason": "For the complete forward-channel group, the same prior canvas-pointer actions and task times can occur with different visible targets, output prefixes, channel rows, and progress states across seeds. q sees only I_t, so it cannot choose the required y/aim or the advance-versus-brake response for every C_Delta history."
+      },
+      "clause_ii": {
+        "holds": true,
+        "reason": "The configured five chronological frames cover the last 600 ms and show target/output, selected channel, moving progress front, CURRENT, and particle motion. g can predict whether forward progress will cross the 10000-unit commit boundary during the delay, then deliver forward continuation when it will not or neutral brake when it will commit and reflow; the next observation exposes the new row for re-aiming."
+      },
+      "clause_iii": {
+        "holds": true,
+        "reason": "Choose a nonfinal character with forward flow active, y aimed inside its current band, and progress just below commit. For some 0 < tau < 600, autonomous ticks append the character and switch currentRow(output), visibly reflowing the bands. The same old-y forward action can then hit the wrong next symbol and strictly lose value or advantage, while braking and re-aiming keep success possible. The loss is caused by non-clock row reflow, not deadline passage."
+      },
+      "common_visible_process": "A persistent pointer is held in the current visible channel while its progress front advances. During the 600 ms witness horizon, the front can cross the 10000-unit commit threshold; output gains that symbol and the probability row immediately reflows for the new output context while the pointer/slider coordinates remain unchanged. The same five-frame trace predicts whether the delayed action should continue forward or switch to neutral brake. The old forward coordinate is less effective after reflow because it can drive the wrong next character, although the task remains recoverable on the next visible re-aim.",
+      "pre_run": {
+        "threshold": 0.5,
+        "at_least_half": false,
+        "rate": 0,
+        "basis": "seeded_probe",
+        "reason": "After preparation, a no-input autonomous phase leaves both virtual coordinates fixed. A necessary condition for success is one fixed y/aim lying in the intersection of the displayed bands for every target character in its successive output context. The exact 10000-seed generator-row probe found 0 such routes for this difficulty; the separate slider surface preserves the same virtual-coordinate effects.",
+        "seed_probe": {
+          "seeds": "probe-00000 through probe-09999",
+          "numerator": 0,
+          "denominator": 10000,
+          "method": "Reconstruct each generated display row exactly, intersect the fixed-y band for target[0], target[1], and so on through the context row after each prefix. An empty intersection is a necessary failure for any fixed prepared pointer; flow speed/current cannot repair it.",
+          "code": "import importlib.util,json,random\nfrom pathlib import Path\nR=Path('/private/tmp/weird-cua-realtime-source-20260910.ObhAQg')\nS=importlib.util.spec_from_file_location('g',R/'weird_captcha_gym/shared_scripts/incubator_generators/letter_rapids.py')\ng=importlib.util.module_from_spec(S); S.loader.exec_module(g)\nC=json.loads((R/'weird_captcha_gym/environments/letter_rapids_env/controls.json').read_text())\nD=2; M='full'; P=C['difficulty'][str(D)]['parameters']\ndef band(row,f,ch):\n free=10000-f*len(row); w=[f+free*(int(b['end_milli'])-int(b['start_milli']))//10000 for b in row]\n for i in range(10000-sum(w)): w[i]+=1\n c=0\n for b,z in zip(row,w):\n  if b['symbol']==ch:return c,c+z\n  c+=z\ndef ok(target,rows,f):\n lo,hi=0,9999; out=''\n for ch in target:\n  z=band(rows[out[-1] if out else '^'],f,ch)\n  if z is None:return 0\n  lo=max(lo,z[0]); hi=min(hi,z[1]-1); out+=ch\n return lo<=hi\nn=10000; c=0\nfor i in range(n):\n seed=f'probe-{i:05d}'; profile,_=g._profile({'_control_condition':{'difficulty':D,'interaction':M,'difficulty_parameters':P}})\n target=random.Random(g._seed_int(seed,g.MECHANIC_ID)).choice(tuple(profile['target_pool']))\n rows={ctx:g._row(seed,ctx,profile) for ctx in '^'+str(profile['alphabet'])}\n c+=int(ok(target,rows,g.DISPLAY_BAND_FLOOR_MILLI))\nprint(c,n)"
+        }
+      },
+      "files_read_completely": [
+        "AGENTS.md",
+        "weird_captcha_gym/docs/controllability/real-time.md",
+        "weird_captcha_gym/environments/letter_rapids_env/controls.json",
+        "weird_captcha_gym/environments/letter_rapids_env/env.json",
+        "weird_captcha_gym/environments/letter_rapids_env/tasks/letter_rapids_seed_0001/task.json",
+        "weird_captcha_gym/environments/letter_rapids_env/tasks/letter_rapids_seed_0001/setup_task.sh",
+        "weird_captcha_gym/environments/letter_rapids_env/tasks/letter_rapids_seed_0001/export_result.sh",
+        "weird_captcha_gym/shared_scripts/incubator_generators/letter_rapids.py",
+        "weird_captcha_gym/shared_runtime/app/mechanics/letter_rapids.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/letter_rapids.css",
+        "weird_captcha_gym/shared_runtime/server/incubator_graders/letter_rapids.py",
+        "weird_captcha_gym/environments/letter_rapids_env/tasks/letter_rapids_seed_0001/verifier.py",
+        "weird_captcha_gym/tools/incubator_solvers/letter_rapids.py",
+        "weird_captcha_gym/shared_runtime/verifier_helpers.py",
+        "weird_captcha_gym/shared_runtime/app/time_controller.js"
+      ],
+      "source_evidence": [
+        {
+          "path": "weird_captcha_gym/environments/letter_rapids_env/controls.json",
+          "lines": "27-42",
+          "claim": "Difficulty 2 active alphabet, target pool, band, steering, current, travel, and rewind parameters."
+        },
+        {
+          "path": "weird_captcha_gym/environments/letter_rapids_env/controls.json",
+          "lines": "96-109",
+          "claim": "full interaction is implemented and the configured observation is 600 ms with five frames and a 120-second allowance."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/letter_rapids.py",
+          "lines": "128-172",
+          "claim": "The generator creates context-dependent contiguous probability bands and a changing 2400-tick current trace."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/letter_rapids.js",
+          "lines": "46-65",
+          "claim": "x selects forward/brake/rewind flow and y selects the current channel."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/letter_rapids.js",
+          "lines": "100-148",
+          "claim": "Autonomous ticks accumulate flow, commit at commit_units, change output context, and can rewind."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/letter_rapids.js",
+          "lines": "248-323",
+          "claim": "The visible canvas renders channel bands, the active progress front, current value, and current-dependent particles."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/letter_rapids.js",
+          "lines": "346-374",
+          "claim": "Simulation time uses the shared interaction clock; Full binds outcome input to canyon_pointer."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/letter_rapids.py",
+          "lines": "143-173",
+          "claim": "The grader enforces canyon_pointer as the exact input source."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/letter_rapids.py",
+          "lines": "198-270",
+          "claim": "Server replay applies each tick, context-specific hit test, commit/reflow, travel, and exact-target terminal check."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/time_controller.js",
+          "lines": "55-78",
+          "claim": "The running task clock, not native wall time, drives interactionNow."
+        },
+        {
+          "path": "weird_captcha_gym/tools/incubator_solvers/letter_rapids.py",
+          "lines": "85-99",
+          "claim": "The visible solver aims a band, sustains forward flow, waits for output, and brakes."
+        },
+        {
+          "path": "weird_captcha_gym/environments/letter_rapids_env/tasks/letter_rapids_seed_0001/verifier.py",
+          "lines": "21-37",
+          "claim": "The exported UI result is delegated to the Letter Rapids replay grader."
+        }
+      ],
+      "uncertainties": [
+        "The terminal grader does not expose a numeric intermediate reward; strict action degradation is established from exact replay, where the stale forward coordinate can append a wrong symbol while a brake-and-reaim continuation remains successful."
+      ]
+    },
+    {
+      "case_index": 354,
+      "public_environment_name": "Letter Rapids",
+      "environment_id": "letter_rapids_env",
+      "difficulty": 2,
+      "interaction_mode": "simplified",
+      "label": "yes",
+      "controls_available": [
+        {
+          "surface": "Simplified axis proxies",
+          "event_source": "axis_proxy",
+          "coordinates": "rapids-aim sets y_milli in [0,9999] and rapids-flow sets x_milli in [0,10000]. x above 4200 advances, x below 2400 rewinds, and 2400 through 4200 brakes.",
+          "keyboard_or_buttons": "The two range inputs are the bound outcome controls; canvas pointer movement is not the bound interaction surface."
+        },
+        {
+          "active_difficulty_profile": {
+            "alphabet": "etaoinshrdlu",
+            "target_pool": [
+              "thread",
+              "round",
+              "shore",
+              "train"
+            ],
+            "minimum_band_milli": 430,
+            "context_boost_milli": 1650,
+            "probability_jitter_milli": 120,
+            "dead_zone_half_width_milli": 900,
+            "maximum_speed_units_per_second": 5100,
+            "current_amplitude_milli": 190,
+            "travel_budget_characters_milli": 8000,
+            "maximum_rewound_characters": 4
+          }
+        },
+        {
+          "task_clock_and_observation": {
+            "tick_ms": 50,
+            "commit_units": 10000,
+            "neutral_x_milli": 3300,
+            "travel_budget_units": 80000,
+            "observation_window_ms": 600,
+            "frames_per_observation": 5,
+            "play_time_seconds": 120
+          }
+        }
+      ],
+      "autonomous_processes": [
+        "Every running 50 ms simulation tick advances without a new slider event. The generated current multiplier changes the flow increment and is shown by the CURRENT readout and moving canvas particles.",
+        "While the persistent flow coordinate is outside the 2400-4200 dead zone, forward flow accumulates progress and travel at the selected y channel; reverse flow cancels progress and can rewind committed characters.",
+        "When progress reaches 10000, the current symbol is appended, progress resets, and the output context changes. The next tick uses the new context's probability row, reflowing visible channel geometry while the input coordinates persist.",
+        "requestAnimationFrame redraws the visible bands, active progress front, selected channel, current value, and particle trace. The CSS live-current pulse is presentation-only."
+      ],
+      "grouped_control_modes": [
+        {
+          "name": "forward channel advance",
+          "events": "All axis_proxy states with virtual x_milli > 4200.",
+          "effect": "Advances the channel selected by y toward a commit.",
+          "witness_for_clauses": true
+        },
+        {
+          "name": "brake",
+          "events": "All axis_proxy states with 2400 <= virtual x_milli <= 4200.",
+          "effect": "Stops flow and prevents a stale channel coordinate from acting after row reflow.",
+          "witness_for_clauses": true
+        },
+        {
+          "name": "rewind",
+          "events": "All axis_proxy states with virtual x_milli < 2400.",
+          "effect": "Cancels progress and may rewind committed output within the configured allowance of 4.",
+          "witness_for_clauses": false
+        },
+        {
+          "name": "channel re-aim",
+          "events": "All axis_proxy y/aim changes.",
+          "effect": "Changes the selected channel and resets partial forward progress when the symbol changes.",
+          "witness_for_clauses": false
+        }
+      ],
+      "delta_ms": 600,
+      "window_ms": 600,
+      "clause_i": {
+        "holds": true,
+        "reason": "For the complete forward-channel group, the same prior axis-proxy actions and task times can occur with different visible targets, output prefixes, channel rows, and progress states across seeds. q sees only I_t, so it cannot choose the required y/aim or the advance-versus-brake response for every C_Delta history."
+      },
+      "clause_ii": {
+        "holds": true,
+        "reason": "The configured five chronological frames cover the last 600 ms and show target/output, selected channel, moving progress front, CURRENT, and particle motion. g can predict whether forward progress will cross the 10000-unit commit boundary during the delay, then deliver forward continuation when it will not or neutral brake when it will commit and reflow; the next observation exposes the new row for re-aiming."
+      },
+      "clause_iii": {
+        "holds": true,
+        "reason": "Choose a nonfinal character with forward flow active, y aimed inside its current band, and progress just below commit. For some 0 < tau < 600, autonomous ticks append the character and switch currentRow(output), visibly reflowing the bands. The same old-y forward action can then hit the wrong next symbol and strictly lose value or advantage, while braking and re-aiming keep success possible. The loss is caused by non-clock row reflow, not deadline passage."
+      },
+      "common_visible_process": "A persistent pointer is held in the current visible channel while its progress front advances. During the 600 ms witness horizon, the front can cross the 10000-unit commit threshold; output gains that symbol and the probability row immediately reflows for the new output context while the pointer/slider coordinates remain unchanged. The same five-frame trace predicts whether the delayed action should continue forward or switch to neutral brake. The old forward coordinate is less effective after reflow because it can drive the wrong next character, although the task remains recoverable on the next visible re-aim.",
+      "pre_run": {
+        "threshold": 0.5,
+        "at_least_half": false,
+        "rate": 0,
+        "basis": "seeded_probe",
+        "reason": "After preparation, a no-input autonomous phase leaves both virtual coordinates fixed. A necessary condition for success is one fixed y/aim lying in the intersection of the displayed bands for every target character in its successive output context. The exact 10000-seed generator-row probe found 0 such routes for this difficulty; the separate slider surface preserves the same virtual-coordinate effects.",
+        "seed_probe": {
+          "seeds": "probe-00000 through probe-09999",
+          "numerator": 0,
+          "denominator": 10000,
+          "method": "Reconstruct each generated display row exactly, intersect the fixed-y band for target[0], target[1], and so on through the context row after each prefix. An empty intersection is a necessary failure for any fixed prepared pointer; flow speed/current cannot repair it.",
+          "code": "import importlib.util,json,random\nfrom pathlib import Path\nR=Path('/private/tmp/weird-cua-realtime-source-20260910.ObhAQg')\nS=importlib.util.spec_from_file_location('g',R/'weird_captcha_gym/shared_scripts/incubator_generators/letter_rapids.py')\ng=importlib.util.module_from_spec(S); S.loader.exec_module(g)\nC=json.loads((R/'weird_captcha_gym/environments/letter_rapids_env/controls.json').read_text())\nD=2; M='simplified'; P=C['difficulty'][str(D)]['parameters']\ndef band(row,f,ch):\n free=10000-f*len(row); w=[f+free*(int(b['end_milli'])-int(b['start_milli']))//10000 for b in row]\n for i in range(10000-sum(w)): w[i]+=1\n c=0\n for b,z in zip(row,w):\n  if b['symbol']==ch:return c,c+z\n  c+=z\ndef ok(target,rows,f):\n lo,hi=0,9999; out=''\n for ch in target:\n  z=band(rows[out[-1] if out else '^'],f,ch)\n  if z is None:return 0\n  lo=max(lo,z[0]); hi=min(hi,z[1]-1); out+=ch\n return lo<=hi\nn=10000; c=0\nfor i in range(n):\n seed=f'probe-{i:05d}'; profile,_=g._profile({'_control_condition':{'difficulty':D,'interaction':M,'difficulty_parameters':P}})\n target=random.Random(g._seed_int(seed,g.MECHANIC_ID)).choice(tuple(profile['target_pool']))\n rows={ctx:g._row(seed,ctx,profile) for ctx in '^'+str(profile['alphabet'])}\n c+=int(ok(target,rows,g.DISPLAY_BAND_FLOOR_MILLI))\nprint(c,n)"
+        }
+      },
+      "files_read_completely": [
+        "AGENTS.md",
+        "weird_captcha_gym/docs/controllability/real-time.md",
+        "weird_captcha_gym/environments/letter_rapids_env/controls.json",
+        "weird_captcha_gym/environments/letter_rapids_env/env.json",
+        "weird_captcha_gym/environments/letter_rapids_env/tasks/letter_rapids_seed_0001/task.json",
+        "weird_captcha_gym/environments/letter_rapids_env/tasks/letter_rapids_seed_0001/setup_task.sh",
+        "weird_captcha_gym/environments/letter_rapids_env/tasks/letter_rapids_seed_0001/export_result.sh",
+        "weird_captcha_gym/shared_scripts/incubator_generators/letter_rapids.py",
+        "weird_captcha_gym/shared_runtime/app/mechanics/letter_rapids.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/letter_rapids.css",
+        "weird_captcha_gym/shared_runtime/server/incubator_graders/letter_rapids.py",
+        "weird_captcha_gym/environments/letter_rapids_env/tasks/letter_rapids_seed_0001/verifier.py",
+        "weird_captcha_gym/tools/incubator_solvers/letter_rapids.py",
+        "weird_captcha_gym/shared_runtime/verifier_helpers.py",
+        "weird_captcha_gym/shared_runtime/app/time_controller.js"
+      ],
+      "source_evidence": [
+        {
+          "path": "weird_captcha_gym/environments/letter_rapids_env/controls.json",
+          "lines": "27-42",
+          "claim": "Difficulty 2 active alphabet, target pool, band, steering, current, travel, and rewind parameters."
+        },
+        {
+          "path": "weird_captcha_gym/environments/letter_rapids_env/controls.json",
+          "lines": "96-109",
+          "claim": "simplified interaction is implemented and the configured observation is 600 ms with five frames and a 120-second allowance."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/letter_rapids.py",
+          "lines": "128-172",
+          "claim": "The generator creates context-dependent contiguous probability bands and a changing 2400-tick current trace."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/letter_rapids.js",
+          "lines": "46-65",
+          "claim": "x selects forward/brake/rewind flow and y selects the current channel."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/letter_rapids.js",
+          "lines": "100-148",
+          "claim": "Autonomous ticks accumulate flow, commit at commit_units, change output context, and can rewind."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/letter_rapids.js",
+          "lines": "248-323",
+          "claim": "The visible canvas renders channel bands, the active progress front, current value, and current-dependent particles."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/letter_rapids.js",
+          "lines": "346-374",
+          "claim": "Simulation time uses the shared interaction clock; Simplified binds outcome input to axis_proxy from separate aim and flow ranges."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/letter_rapids.py",
+          "lines": "143-173",
+          "claim": "The grader enforces axis_proxy as the exact input source."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/letter_rapids.py",
+          "lines": "198-270",
+          "claim": "Server replay applies each tick, context-specific hit test, commit/reflow, travel, and exact-target terminal check."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/time_controller.js",
+          "lines": "55-78",
+          "claim": "The running task clock, not native wall time, drives interactionNow."
+        },
+        {
+          "path": "weird_captcha_gym/tools/incubator_solvers/letter_rapids.py",
+          "lines": "85-99",
+          "claim": "The visible solver aims a band, sustains forward flow, waits for output, and brakes."
+        },
+        {
+          "path": "weird_captcha_gym/environments/letter_rapids_env/tasks/letter_rapids_seed_0001/verifier.py",
+          "lines": "21-37",
+          "claim": "The exported UI result is delegated to the Letter Rapids replay grader."
+        }
+      ],
+      "uncertainties": [
+        "The terminal grader does not expose a numeric intermediate reward; strict action degradation is established from exact replay, where the stale forward coordinate can append a wrong symbol while a brake-and-reaim continuation remains successful."
+      ]
+    },
+    {
+      "case_index": 355,
+      "public_environment_name": "Letter Rapids",
+      "environment_id": "letter_rapids_env",
+      "difficulty": 3,
+      "interaction_mode": "full",
+      "label": "yes",
+      "controls_available": [
+        {
+          "surface": "Full canvas pointer",
+          "event_source": "canyon_pointer",
+          "coordinates": "A canvas pointermove sets one continuous x_milli in [0,10000] and y_milli in [0,9999]. y selects the visible probability channel; x above 4060 advances, x below 2540 rewinds, and 2540 through 4060 brakes.",
+          "keyboard_or_buttons": "No task buttons or keyboard handler; sustained pointer position is the outcome control."
+        },
+        {
+          "active_difficulty_profile": {
+            "alphabet": "etaoinshrdlucmfwypgb",
+            "target_pool": [
+              "crumble",
+              "whisper",
+              "bright",
+              "plunger"
+            ],
+            "minimum_band_milli": 230,
+            "context_boost_milli": 1800,
+            "probability_jitter_milli": 160,
+            "dead_zone_half_width_milli": 760,
+            "maximum_speed_units_per_second": 6100,
+            "current_amplitude_milli": 260,
+            "travel_budget_characters_milli": 9500,
+            "maximum_rewound_characters": 3
+          }
+        },
+        {
+          "task_clock_and_observation": {
+            "tick_ms": 50,
+            "commit_units": 10000,
+            "neutral_x_milli": 3300,
+            "travel_budget_units": 95000,
+            "observation_window_ms": 600,
+            "frames_per_observation": 5,
+            "play_time_seconds": 120
+          }
+        }
+      ],
+      "autonomous_processes": [
+        "Every running 50 ms simulation tick advances without a new pointer event. The generated current multiplier changes the flow increment and is shown by the CURRENT readout and moving canvas particles.",
+        "While the persistent flow coordinate is outside the 2540-4060 dead zone, forward flow accumulates progress and travel at the selected y channel; reverse flow cancels progress and can rewind committed characters.",
+        "When progress reaches 10000, the current symbol is appended, progress resets, and the output context changes. The next tick uses the new context's probability row, reflowing visible channel geometry while the input coordinates persist.",
+        "requestAnimationFrame redraws the visible bands, active progress front, selected channel, current value, and particle trace. The CSS live-current pulse is presentation-only."
+      ],
+      "grouped_control_modes": [
+        {
+          "name": "forward channel advance",
+          "events": "All canyon_pointer states with virtual x_milli > 4060.",
+          "effect": "Advances the channel selected by y toward a commit.",
+          "witness_for_clauses": true
+        },
+        {
+          "name": "brake",
+          "events": "All canyon_pointer states with 2540 <= virtual x_milli <= 4060.",
+          "effect": "Stops flow and prevents a stale channel coordinate from acting after row reflow.",
+          "witness_for_clauses": true
+        },
+        {
+          "name": "rewind",
+          "events": "All canyon_pointer states with virtual x_milli < 2540.",
+          "effect": "Cancels progress and may rewind committed output within the configured allowance of 3.",
+          "witness_for_clauses": false
+        },
+        {
+          "name": "channel re-aim",
+          "events": "All canyon_pointer y/aim changes.",
+          "effect": "Changes the selected channel and resets partial forward progress when the symbol changes.",
+          "witness_for_clauses": false
+        }
+      ],
+      "delta_ms": 600,
+      "window_ms": 600,
+      "clause_i": {
+        "holds": true,
+        "reason": "For the complete forward-channel group, the same prior canvas-pointer actions and task times can occur with different visible targets, output prefixes, channel rows, and progress states across seeds. q sees only I_t, so it cannot choose the required y/aim or the advance-versus-brake response for every C_Delta history."
+      },
+      "clause_ii": {
+        "holds": true,
+        "reason": "The configured five chronological frames cover the last 600 ms and show target/output, selected channel, moving progress front, CURRENT, and particle motion. g can predict whether forward progress will cross the 10000-unit commit boundary during the delay, then deliver forward continuation when it will not or neutral brake when it will commit and reflow; the next observation exposes the new row for re-aiming."
+      },
+      "clause_iii": {
+        "holds": true,
+        "reason": "Choose a nonfinal character with forward flow active, y aimed inside its current band, and progress just below commit. For some 0 < tau < 600, autonomous ticks append the character and switch currentRow(output), visibly reflowing the bands. The same old-y forward action can then hit the wrong next symbol and strictly lose value or advantage, while braking and re-aiming keep success possible. The loss is caused by non-clock row reflow, not deadline passage."
+      },
+      "common_visible_process": "A persistent pointer is held in the current visible channel while its progress front advances. During the 600 ms witness horizon, the front can cross the 10000-unit commit threshold; output gains that symbol and the probability row immediately reflows for the new output context while the pointer/slider coordinates remain unchanged. The same five-frame trace predicts whether the delayed action should continue forward or switch to neutral brake. The old forward coordinate is less effective after reflow because it can drive the wrong next character, although the task remains recoverable on the next visible re-aim.",
+      "pre_run": {
+        "threshold": 0.5,
+        "at_least_half": false,
+        "rate": 0,
+        "basis": "seeded_probe",
+        "reason": "After preparation, a no-input autonomous phase leaves both virtual coordinates fixed. A necessary condition for success is one fixed y/aim lying in the intersection of the displayed bands for every target character in its successive output context. The exact 10000-seed generator-row probe found 0 such routes for this difficulty; the separate slider surface preserves the same virtual-coordinate effects.",
+        "seed_probe": {
+          "seeds": "probe-00000 through probe-09999",
+          "numerator": 0,
+          "denominator": 10000,
+          "method": "Reconstruct each generated display row exactly, intersect the fixed-y band for target[0], target[1], and so on through the context row after each prefix. An empty intersection is a necessary failure for any fixed prepared pointer; flow speed/current cannot repair it.",
+          "code": "import importlib.util,json,random\nfrom pathlib import Path\nR=Path('/private/tmp/weird-cua-realtime-source-20260910.ObhAQg')\nS=importlib.util.spec_from_file_location('g',R/'weird_captcha_gym/shared_scripts/incubator_generators/letter_rapids.py')\ng=importlib.util.module_from_spec(S); S.loader.exec_module(g)\nC=json.loads((R/'weird_captcha_gym/environments/letter_rapids_env/controls.json').read_text())\nD=3; M='full'; P=C['difficulty'][str(D)]['parameters']\ndef band(row,f,ch):\n free=10000-f*len(row); w=[f+free*(int(b['end_milli'])-int(b['start_milli']))//10000 for b in row]\n for i in range(10000-sum(w)): w[i]+=1\n c=0\n for b,z in zip(row,w):\n  if b['symbol']==ch:return c,c+z\n  c+=z\ndef ok(target,rows,f):\n lo,hi=0,9999; out=''\n for ch in target:\n  z=band(rows[out[-1] if out else '^'],f,ch)\n  if z is None:return 0\n  lo=max(lo,z[0]); hi=min(hi,z[1]-1); out+=ch\n return lo<=hi\nn=10000; c=0\nfor i in range(n):\n seed=f'probe-{i:05d}'; profile,_=g._profile({'_control_condition':{'difficulty':D,'interaction':M,'difficulty_parameters':P}})\n target=random.Random(g._seed_int(seed,g.MECHANIC_ID)).choice(tuple(profile['target_pool']))\n rows={ctx:g._row(seed,ctx,profile) for ctx in '^'+str(profile['alphabet'])}\n c+=int(ok(target,rows,g.DISPLAY_BAND_FLOOR_MILLI))\nprint(c,n)"
+        }
+      },
+      "files_read_completely": [
+        "AGENTS.md",
+        "weird_captcha_gym/docs/controllability/real-time.md",
+        "weird_captcha_gym/environments/letter_rapids_env/controls.json",
+        "weird_captcha_gym/environments/letter_rapids_env/env.json",
+        "weird_captcha_gym/environments/letter_rapids_env/tasks/letter_rapids_seed_0001/task.json",
+        "weird_captcha_gym/environments/letter_rapids_env/tasks/letter_rapids_seed_0001/setup_task.sh",
+        "weird_captcha_gym/environments/letter_rapids_env/tasks/letter_rapids_seed_0001/export_result.sh",
+        "weird_captcha_gym/shared_scripts/incubator_generators/letter_rapids.py",
+        "weird_captcha_gym/shared_runtime/app/mechanics/letter_rapids.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/letter_rapids.css",
+        "weird_captcha_gym/shared_runtime/server/incubator_graders/letter_rapids.py",
+        "weird_captcha_gym/environments/letter_rapids_env/tasks/letter_rapids_seed_0001/verifier.py",
+        "weird_captcha_gym/tools/incubator_solvers/letter_rapids.py",
+        "weird_captcha_gym/shared_runtime/verifier_helpers.py",
+        "weird_captcha_gym/shared_runtime/app/time_controller.js"
+      ],
+      "source_evidence": [
+        {
+          "path": "weird_captcha_gym/environments/letter_rapids_env/controls.json",
+          "lines": "44-59",
+          "claim": "Difficulty 3 active alphabet, target pool, band, steering, current, travel, and rewind parameters."
+        },
+        {
+          "path": "weird_captcha_gym/environments/letter_rapids_env/controls.json",
+          "lines": "96-109",
+          "claim": "full interaction is implemented and the configured observation is 600 ms with five frames and a 120-second allowance."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/letter_rapids.py",
+          "lines": "128-172",
+          "claim": "The generator creates context-dependent contiguous probability bands and a changing 2400-tick current trace."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/letter_rapids.js",
+          "lines": "46-65",
+          "claim": "x selects forward/brake/rewind flow and y selects the current channel."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/letter_rapids.js",
+          "lines": "100-148",
+          "claim": "Autonomous ticks accumulate flow, commit at commit_units, change output context, and can rewind."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/letter_rapids.js",
+          "lines": "248-323",
+          "claim": "The visible canvas renders channel bands, the active progress front, current value, and current-dependent particles."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/letter_rapids.js",
+          "lines": "346-374",
+          "claim": "Simulation time uses the shared interaction clock; Full binds outcome input to canyon_pointer."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/letter_rapids.py",
+          "lines": "143-173",
+          "claim": "The grader enforces canyon_pointer as the exact input source."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/letter_rapids.py",
+          "lines": "198-270",
+          "claim": "Server replay applies each tick, context-specific hit test, commit/reflow, travel, and exact-target terminal check."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/time_controller.js",
+          "lines": "55-78",
+          "claim": "The running task clock, not native wall time, drives interactionNow."
+        },
+        {
+          "path": "weird_captcha_gym/tools/incubator_solvers/letter_rapids.py",
+          "lines": "85-99",
+          "claim": "The visible solver aims a band, sustains forward flow, waits for output, and brakes."
+        },
+        {
+          "path": "weird_captcha_gym/environments/letter_rapids_env/tasks/letter_rapids_seed_0001/verifier.py",
+          "lines": "21-37",
+          "claim": "The exported UI result is delegated to the Letter Rapids replay grader."
+        }
+      ],
+      "uncertainties": [
+        "The terminal grader does not expose a numeric intermediate reward; strict action degradation is established from exact replay, where the stale forward coordinate can append a wrong symbol while a brake-and-reaim continuation remains successful."
+      ]
+    },
+    {
+      "case_index": 356,
+      "public_environment_name": "Letter Rapids",
+      "environment_id": "letter_rapids_env",
+      "difficulty": 3,
+      "interaction_mode": "simplified",
+      "label": "yes",
+      "controls_available": [
+        {
+          "surface": "Simplified axis proxies",
+          "event_source": "axis_proxy",
+          "coordinates": "rapids-aim sets y_milli in [0,9999] and rapids-flow sets x_milli in [0,10000]. x above 4060 advances, x below 2540 rewinds, and 2540 through 4060 brakes.",
+          "keyboard_or_buttons": "The two range inputs are the bound outcome controls; canvas pointer movement is not the bound interaction surface."
+        },
+        {
+          "active_difficulty_profile": {
+            "alphabet": "etaoinshrdlucmfwypgb",
+            "target_pool": [
+              "crumble",
+              "whisper",
+              "bright",
+              "plunger"
+            ],
+            "minimum_band_milli": 230,
+            "context_boost_milli": 1800,
+            "probability_jitter_milli": 160,
+            "dead_zone_half_width_milli": 760,
+            "maximum_speed_units_per_second": 6100,
+            "current_amplitude_milli": 260,
+            "travel_budget_characters_milli": 9500,
+            "maximum_rewound_characters": 3
+          }
+        },
+        {
+          "task_clock_and_observation": {
+            "tick_ms": 50,
+            "commit_units": 10000,
+            "neutral_x_milli": 3300,
+            "travel_budget_units": 95000,
+            "observation_window_ms": 600,
+            "frames_per_observation": 5,
+            "play_time_seconds": 120
+          }
+        }
+      ],
+      "autonomous_processes": [
+        "Every running 50 ms simulation tick advances without a new slider event. The generated current multiplier changes the flow increment and is shown by the CURRENT readout and moving canvas particles.",
+        "While the persistent flow coordinate is outside the 2540-4060 dead zone, forward flow accumulates progress and travel at the selected y channel; reverse flow cancels progress and can rewind committed characters.",
+        "When progress reaches 10000, the current symbol is appended, progress resets, and the output context changes. The next tick uses the new context's probability row, reflowing visible channel geometry while the input coordinates persist.",
+        "requestAnimationFrame redraws the visible bands, active progress front, selected channel, current value, and particle trace. The CSS live-current pulse is presentation-only."
+      ],
+      "grouped_control_modes": [
+        {
+          "name": "forward channel advance",
+          "events": "All axis_proxy states with virtual x_milli > 4060.",
+          "effect": "Advances the channel selected by y toward a commit.",
+          "witness_for_clauses": true
+        },
+        {
+          "name": "brake",
+          "events": "All axis_proxy states with 2540 <= virtual x_milli <= 4060.",
+          "effect": "Stops flow and prevents a stale channel coordinate from acting after row reflow.",
+          "witness_for_clauses": true
+        },
+        {
+          "name": "rewind",
+          "events": "All axis_proxy states with virtual x_milli < 2540.",
+          "effect": "Cancels progress and may rewind committed output within the configured allowance of 3.",
+          "witness_for_clauses": false
+        },
+        {
+          "name": "channel re-aim",
+          "events": "All axis_proxy y/aim changes.",
+          "effect": "Changes the selected channel and resets partial forward progress when the symbol changes.",
+          "witness_for_clauses": false
+        }
+      ],
+      "delta_ms": 600,
+      "window_ms": 600,
+      "clause_i": {
+        "holds": true,
+        "reason": "For the complete forward-channel group, the same prior axis-proxy actions and task times can occur with different visible targets, output prefixes, channel rows, and progress states across seeds. q sees only I_t, so it cannot choose the required y/aim or the advance-versus-brake response for every C_Delta history."
+      },
+      "clause_ii": {
+        "holds": true,
+        "reason": "The configured five chronological frames cover the last 600 ms and show target/output, selected channel, moving progress front, CURRENT, and particle motion. g can predict whether forward progress will cross the 10000-unit commit boundary during the delay, then deliver forward continuation when it will not or neutral brake when it will commit and reflow; the next observation exposes the new row for re-aiming."
+      },
+      "clause_iii": {
+        "holds": true,
+        "reason": "Choose a nonfinal character with forward flow active, y aimed inside its current band, and progress just below commit. For some 0 < tau < 600, autonomous ticks append the character and switch currentRow(output), visibly reflowing the bands. The same old-y forward action can then hit the wrong next symbol and strictly lose value or advantage, while braking and re-aiming keep success possible. The loss is caused by non-clock row reflow, not deadline passage."
+      },
+      "common_visible_process": "A persistent pointer is held in the current visible channel while its progress front advances. During the 600 ms witness horizon, the front can cross the 10000-unit commit threshold; output gains that symbol and the probability row immediately reflows for the new output context while the pointer/slider coordinates remain unchanged. The same five-frame trace predicts whether the delayed action should continue forward or switch to neutral brake. The old forward coordinate is less effective after reflow because it can drive the wrong next character, although the task remains recoverable on the next visible re-aim.",
+      "pre_run": {
+        "threshold": 0.5,
+        "at_least_half": false,
+        "rate": 0,
+        "basis": "seeded_probe",
+        "reason": "After preparation, a no-input autonomous phase leaves both virtual coordinates fixed. A necessary condition for success is one fixed y/aim lying in the intersection of the displayed bands for every target character in its successive output context. The exact 10000-seed generator-row probe found 0 such routes for this difficulty; the separate slider surface preserves the same virtual-coordinate effects.",
+        "seed_probe": {
+          "seeds": "probe-00000 through probe-09999",
+          "numerator": 0,
+          "denominator": 10000,
+          "method": "Reconstruct each generated display row exactly, intersect the fixed-y band for target[0], target[1], and so on through the context row after each prefix. An empty intersection is a necessary failure for any fixed prepared pointer; flow speed/current cannot repair it.",
+          "code": "import importlib.util,json,random\nfrom pathlib import Path\nR=Path('/private/tmp/weird-cua-realtime-source-20260910.ObhAQg')\nS=importlib.util.spec_from_file_location('g',R/'weird_captcha_gym/shared_scripts/incubator_generators/letter_rapids.py')\ng=importlib.util.module_from_spec(S); S.loader.exec_module(g)\nC=json.loads((R/'weird_captcha_gym/environments/letter_rapids_env/controls.json').read_text())\nD=3; M='simplified'; P=C['difficulty'][str(D)]['parameters']\ndef band(row,f,ch):\n free=10000-f*len(row); w=[f+free*(int(b['end_milli'])-int(b['start_milli']))//10000 for b in row]\n for i in range(10000-sum(w)): w[i]+=1\n c=0\n for b,z in zip(row,w):\n  if b['symbol']==ch:return c,c+z\n  c+=z\ndef ok(target,rows,f):\n lo,hi=0,9999; out=''\n for ch in target:\n  z=band(rows[out[-1] if out else '^'],f,ch)\n  if z is None:return 0\n  lo=max(lo,z[0]); hi=min(hi,z[1]-1); out+=ch\n return lo<=hi\nn=10000; c=0\nfor i in range(n):\n seed=f'probe-{i:05d}'; profile,_=g._profile({'_control_condition':{'difficulty':D,'interaction':M,'difficulty_parameters':P}})\n target=random.Random(g._seed_int(seed,g.MECHANIC_ID)).choice(tuple(profile['target_pool']))\n rows={ctx:g._row(seed,ctx,profile) for ctx in '^'+str(profile['alphabet'])}\n c+=int(ok(target,rows,g.DISPLAY_BAND_FLOOR_MILLI))\nprint(c,n)"
+        }
+      },
+      "files_read_completely": [
+        "AGENTS.md",
+        "weird_captcha_gym/docs/controllability/real-time.md",
+        "weird_captcha_gym/environments/letter_rapids_env/controls.json",
+        "weird_captcha_gym/environments/letter_rapids_env/env.json",
+        "weird_captcha_gym/environments/letter_rapids_env/tasks/letter_rapids_seed_0001/task.json",
+        "weird_captcha_gym/environments/letter_rapids_env/tasks/letter_rapids_seed_0001/setup_task.sh",
+        "weird_captcha_gym/environments/letter_rapids_env/tasks/letter_rapids_seed_0001/export_result.sh",
+        "weird_captcha_gym/shared_scripts/incubator_generators/letter_rapids.py",
+        "weird_captcha_gym/shared_runtime/app/mechanics/letter_rapids.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/letter_rapids.css",
+        "weird_captcha_gym/shared_runtime/server/incubator_graders/letter_rapids.py",
+        "weird_captcha_gym/environments/letter_rapids_env/tasks/letter_rapids_seed_0001/verifier.py",
+        "weird_captcha_gym/tools/incubator_solvers/letter_rapids.py",
+        "weird_captcha_gym/shared_runtime/verifier_helpers.py",
+        "weird_captcha_gym/shared_runtime/app/time_controller.js"
+      ],
+      "source_evidence": [
+        {
+          "path": "weird_captcha_gym/environments/letter_rapids_env/controls.json",
+          "lines": "44-59",
+          "claim": "Difficulty 3 active alphabet, target pool, band, steering, current, travel, and rewind parameters."
+        },
+        {
+          "path": "weird_captcha_gym/environments/letter_rapids_env/controls.json",
+          "lines": "96-109",
+          "claim": "simplified interaction is implemented and the configured observation is 600 ms with five frames and a 120-second allowance."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/letter_rapids.py",
+          "lines": "128-172",
+          "claim": "The generator creates context-dependent contiguous probability bands and a changing 2400-tick current trace."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/letter_rapids.js",
+          "lines": "46-65",
+          "claim": "x selects forward/brake/rewind flow and y selects the current channel."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/letter_rapids.js",
+          "lines": "100-148",
+          "claim": "Autonomous ticks accumulate flow, commit at commit_units, change output context, and can rewind."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/letter_rapids.js",
+          "lines": "248-323",
+          "claim": "The visible canvas renders channel bands, the active progress front, current value, and current-dependent particles."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/letter_rapids.js",
+          "lines": "346-374",
+          "claim": "Simulation time uses the shared interaction clock; Simplified binds outcome input to axis_proxy from separate aim and flow ranges."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/letter_rapids.py",
+          "lines": "143-173",
+          "claim": "The grader enforces axis_proxy as the exact input source."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/letter_rapids.py",
+          "lines": "198-270",
+          "claim": "Server replay applies each tick, context-specific hit test, commit/reflow, travel, and exact-target terminal check."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/time_controller.js",
+          "lines": "55-78",
+          "claim": "The running task clock, not native wall time, drives interactionNow."
+        },
+        {
+          "path": "weird_captcha_gym/tools/incubator_solvers/letter_rapids.py",
+          "lines": "85-99",
+          "claim": "The visible solver aims a band, sustains forward flow, waits for output, and brakes."
+        },
+        {
+          "path": "weird_captcha_gym/environments/letter_rapids_env/tasks/letter_rapids_seed_0001/verifier.py",
+          "lines": "21-37",
+          "claim": "The exported UI result is delegated to the Letter Rapids replay grader."
+        }
+      ],
+      "uncertainties": [
+        "The terminal grader does not expose a numeric intermediate reward; strict action degradation is established from exact replay, where the stale forward coordinate can append a wrong symbol while a brake-and-reaim continuation remains successful."
+      ]
+    },
+    {
+      "case_index": 357,
+      "public_environment_name": "Letter Rapids",
+      "environment_id": "letter_rapids_env",
+      "difficulty": 4,
+      "interaction_mode": "full",
+      "label": "yes",
+      "controls_available": [
+        {
+          "surface": "Full canvas pointer",
+          "event_source": "canyon_pointer",
+          "coordinates": "A canvas pointermove sets one continuous x_milli in [0,10000] and y_milli in [0,9999]. y selects the visible probability channel; x above 3950 advances, x below 2650 rewinds, and 2650 through 3950 brakes.",
+          "keyboard_or_buttons": "No task buttons or keyboard handler; sustained pointer position is the outcome control."
+        },
+        {
+          "active_difficulty_profile": {
+            "alphabet": "etaoinshrdlucmfwypvbgkqjxz ",
+            "target_pool": [
+              "quartz",
+              "zephyr",
+              "sphinx",
+              "jigsaw",
+              "vexing"
+            ],
+            "minimum_band_milli": 110,
+            "context_boost_milli": 1950,
+            "probability_jitter_milli": 200,
+            "dead_zone_half_width_milli": 650,
+            "maximum_speed_units_per_second": 7600,
+            "current_amplitude_milli": 340,
+            "travel_budget_characters_milli": 10500,
+            "maximum_rewound_characters": 2
+          }
+        },
+        {
+          "task_clock_and_observation": {
+            "tick_ms": 50,
+            "commit_units": 10000,
+            "neutral_x_milli": 3300,
+            "travel_budget_units": 105000,
+            "observation_window_ms": 600,
+            "frames_per_observation": 5,
+            "play_time_seconds": 120
+          }
+        }
+      ],
+      "autonomous_processes": [
+        "Every running 50 ms simulation tick advances without a new pointer event. The generated current multiplier changes the flow increment and is shown by the CURRENT readout and moving canvas particles.",
+        "While the persistent flow coordinate is outside the 2650-3950 dead zone, forward flow accumulates progress and travel at the selected y channel; reverse flow cancels progress and can rewind committed characters.",
+        "When progress reaches 10000, the current symbol is appended, progress resets, and the output context changes. The next tick uses the new context's probability row, reflowing visible channel geometry while the input coordinates persist.",
+        "requestAnimationFrame redraws the visible bands, active progress front, selected channel, current value, and particle trace. The CSS live-current pulse is presentation-only."
+      ],
+      "grouped_control_modes": [
+        {
+          "name": "forward channel advance",
+          "events": "All canyon_pointer states with virtual x_milli > 3950.",
+          "effect": "Advances the channel selected by y toward a commit.",
+          "witness_for_clauses": true
+        },
+        {
+          "name": "brake",
+          "events": "All canyon_pointer states with 2650 <= virtual x_milli <= 3950.",
+          "effect": "Stops flow and prevents a stale channel coordinate from acting after row reflow.",
+          "witness_for_clauses": true
+        },
+        {
+          "name": "rewind",
+          "events": "All canyon_pointer states with virtual x_milli < 2650.",
+          "effect": "Cancels progress and may rewind committed output within the configured allowance of 2.",
+          "witness_for_clauses": false
+        },
+        {
+          "name": "channel re-aim",
+          "events": "All canyon_pointer y/aim changes.",
+          "effect": "Changes the selected channel and resets partial forward progress when the symbol changes.",
+          "witness_for_clauses": false
+        }
+      ],
+      "delta_ms": 600,
+      "window_ms": 600,
+      "clause_i": {
+        "holds": true,
+        "reason": "For the complete forward-channel group, the same prior canvas-pointer actions and task times can occur with different visible targets, output prefixes, channel rows, and progress states across seeds. q sees only I_t, so it cannot choose the required y/aim or the advance-versus-brake response for every C_Delta history."
+      },
+      "clause_ii": {
+        "holds": true,
+        "reason": "The configured five chronological frames cover the last 600 ms and show target/output, selected channel, moving progress front, CURRENT, and particle motion. g can predict whether forward progress will cross the 10000-unit commit boundary during the delay, then deliver forward continuation when it will not or neutral brake when it will commit and reflow; the next observation exposes the new row for re-aiming."
+      },
+      "clause_iii": {
+        "holds": true,
+        "reason": "Choose a nonfinal character with forward flow active, y aimed inside its current band, and progress just below commit. For some 0 < tau < 600, autonomous ticks append the character and switch currentRow(output), visibly reflowing the bands. The same old-y forward action can then hit the wrong next symbol and strictly lose value or advantage, while braking and re-aiming keep success possible. The loss is caused by non-clock row reflow, not deadline passage."
+      },
+      "common_visible_process": "A persistent pointer is held in the current visible channel while its progress front advances. During the 600 ms witness horizon, the front can cross the 10000-unit commit threshold; output gains that symbol and the probability row immediately reflows for the new output context while the pointer/slider coordinates remain unchanged. The same five-frame trace predicts whether the delayed action should continue forward or switch to neutral brake. The old forward coordinate is less effective after reflow because it can drive the wrong next character, although the task remains recoverable on the next visible re-aim.",
+      "pre_run": {
+        "threshold": 0.5,
+        "at_least_half": false,
+        "rate": 0,
+        "basis": "seeded_probe",
+        "reason": "After preparation, a no-input autonomous phase leaves both virtual coordinates fixed. A necessary condition for success is one fixed y/aim lying in the intersection of the displayed bands for every target character in its successive output context. The exact 10000-seed generator-row probe found 0 such routes for this difficulty; the separate slider surface preserves the same virtual-coordinate effects.",
+        "seed_probe": {
+          "seeds": "probe-00000 through probe-09999",
+          "numerator": 0,
+          "denominator": 10000,
+          "method": "Reconstruct each generated display row exactly, intersect the fixed-y band for target[0], target[1], and so on through the context row after each prefix. An empty intersection is a necessary failure for any fixed prepared pointer; flow speed/current cannot repair it.",
+          "code": "import importlib.util,json,random\nfrom pathlib import Path\nR=Path('/private/tmp/weird-cua-realtime-source-20260910.ObhAQg')\nS=importlib.util.spec_from_file_location('g',R/'weird_captcha_gym/shared_scripts/incubator_generators/letter_rapids.py')\ng=importlib.util.module_from_spec(S); S.loader.exec_module(g)\nC=json.loads((R/'weird_captcha_gym/environments/letter_rapids_env/controls.json').read_text())\nD=4; M='full'; P=C['difficulty'][str(D)]['parameters']\ndef band(row,f,ch):\n free=10000-f*len(row); w=[f+free*(int(b['end_milli'])-int(b['start_milli']))//10000 for b in row]\n for i in range(10000-sum(w)): w[i]+=1\n c=0\n for b,z in zip(row,w):\n  if b['symbol']==ch:return c,c+z\n  c+=z\ndef ok(target,rows,f):\n lo,hi=0,9999; out=''\n for ch in target:\n  z=band(rows[out[-1] if out else '^'],f,ch)\n  if z is None:return 0\n  lo=max(lo,z[0]); hi=min(hi,z[1]-1); out+=ch\n return lo<=hi\nn=10000; c=0\nfor i in range(n):\n seed=f'probe-{i:05d}'; profile,_=g._profile({'_control_condition':{'difficulty':D,'interaction':M,'difficulty_parameters':P}})\n target=random.Random(g._seed_int(seed,g.MECHANIC_ID)).choice(tuple(profile['target_pool']))\n rows={ctx:g._row(seed,ctx,profile) for ctx in '^'+str(profile['alphabet'])}\n c+=int(ok(target,rows,g.DISPLAY_BAND_FLOOR_MILLI))\nprint(c,n)"
+        }
+      },
+      "files_read_completely": [
+        "AGENTS.md",
+        "weird_captcha_gym/docs/controllability/real-time.md",
+        "weird_captcha_gym/environments/letter_rapids_env/controls.json",
+        "weird_captcha_gym/environments/letter_rapids_env/env.json",
+        "weird_captcha_gym/environments/letter_rapids_env/tasks/letter_rapids_seed_0001/task.json",
+        "weird_captcha_gym/environments/letter_rapids_env/tasks/letter_rapids_seed_0001/setup_task.sh",
+        "weird_captcha_gym/environments/letter_rapids_env/tasks/letter_rapids_seed_0001/export_result.sh",
+        "weird_captcha_gym/shared_scripts/incubator_generators/letter_rapids.py",
+        "weird_captcha_gym/shared_runtime/app/mechanics/letter_rapids.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/letter_rapids.css",
+        "weird_captcha_gym/shared_runtime/server/incubator_graders/letter_rapids.py",
+        "weird_captcha_gym/environments/letter_rapids_env/tasks/letter_rapids_seed_0001/verifier.py",
+        "weird_captcha_gym/tools/incubator_solvers/letter_rapids.py",
+        "weird_captcha_gym/shared_runtime/verifier_helpers.py",
+        "weird_captcha_gym/shared_runtime/app/time_controller.js"
+      ],
+      "source_evidence": [
+        {
+          "path": "weird_captcha_gym/environments/letter_rapids_env/controls.json",
+          "lines": "61-76",
+          "claim": "Difficulty 4 active alphabet, target pool, band, steering, current, travel, and rewind parameters."
+        },
+        {
+          "path": "weird_captcha_gym/environments/letter_rapids_env/controls.json",
+          "lines": "96-109",
+          "claim": "full interaction is implemented and the configured observation is 600 ms with five frames and a 120-second allowance."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/letter_rapids.py",
+          "lines": "128-172",
+          "claim": "The generator creates context-dependent contiguous probability bands and a changing 2400-tick current trace."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/letter_rapids.js",
+          "lines": "46-65",
+          "claim": "x selects forward/brake/rewind flow and y selects the current channel."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/letter_rapids.js",
+          "lines": "100-148",
+          "claim": "Autonomous ticks accumulate flow, commit at commit_units, change output context, and can rewind."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/letter_rapids.js",
+          "lines": "248-323",
+          "claim": "The visible canvas renders channel bands, the active progress front, current value, and current-dependent particles."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/letter_rapids.js",
+          "lines": "346-374",
+          "claim": "Simulation time uses the shared interaction clock; Full binds outcome input to canyon_pointer."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/letter_rapids.py",
+          "lines": "143-173",
+          "claim": "The grader enforces canyon_pointer as the exact input source."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/letter_rapids.py",
+          "lines": "198-270",
+          "claim": "Server replay applies each tick, context-specific hit test, commit/reflow, travel, and exact-target terminal check."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/time_controller.js",
+          "lines": "55-78",
+          "claim": "The running task clock, not native wall time, drives interactionNow."
+        },
+        {
+          "path": "weird_captcha_gym/tools/incubator_solvers/letter_rapids.py",
+          "lines": "85-99",
+          "claim": "The visible solver aims a band, sustains forward flow, waits for output, and brakes."
+        },
+        {
+          "path": "weird_captcha_gym/environments/letter_rapids_env/tasks/letter_rapids_seed_0001/verifier.py",
+          "lines": "21-37",
+          "claim": "The exported UI result is delegated to the Letter Rapids replay grader."
+        }
+      ],
+      "uncertainties": [
+        "The terminal grader does not expose a numeric intermediate reward; strict action degradation is established from exact replay, where the stale forward coordinate can append a wrong symbol while a brake-and-reaim continuation remains successful."
+      ]
+    },
+    {
+      "case_index": 358,
+      "public_environment_name": "Letter Rapids",
+      "environment_id": "letter_rapids_env",
+      "difficulty": 4,
+      "interaction_mode": "simplified",
+      "label": "yes",
+      "controls_available": [
+        {
+          "surface": "Simplified axis proxies",
+          "event_source": "axis_proxy",
+          "coordinates": "rapids-aim sets y_milli in [0,9999] and rapids-flow sets x_milli in [0,10000]. x above 3950 advances, x below 2650 rewinds, and 2650 through 3950 brakes.",
+          "keyboard_or_buttons": "The two range inputs are the bound outcome controls; canvas pointer movement is not the bound interaction surface."
+        },
+        {
+          "active_difficulty_profile": {
+            "alphabet": "etaoinshrdlucmfwypvbgkqjxz ",
+            "target_pool": [
+              "quartz",
+              "zephyr",
+              "sphinx",
+              "jigsaw",
+              "vexing"
+            ],
+            "minimum_band_milli": 110,
+            "context_boost_milli": 1950,
+            "probability_jitter_milli": 200,
+            "dead_zone_half_width_milli": 650,
+            "maximum_speed_units_per_second": 7600,
+            "current_amplitude_milli": 340,
+            "travel_budget_characters_milli": 10500,
+            "maximum_rewound_characters": 2
+          }
+        },
+        {
+          "task_clock_and_observation": {
+            "tick_ms": 50,
+            "commit_units": 10000,
+            "neutral_x_milli": 3300,
+            "travel_budget_units": 105000,
+            "observation_window_ms": 600,
+            "frames_per_observation": 5,
+            "play_time_seconds": 120
+          }
+        }
+      ],
+      "autonomous_processes": [
+        "Every running 50 ms simulation tick advances without a new slider event. The generated current multiplier changes the flow increment and is shown by the CURRENT readout and moving canvas particles.",
+        "While the persistent flow coordinate is outside the 2650-3950 dead zone, forward flow accumulates progress and travel at the selected y channel; reverse flow cancels progress and can rewind committed characters.",
+        "When progress reaches 10000, the current symbol is appended, progress resets, and the output context changes. The next tick uses the new context's probability row, reflowing visible channel geometry while the input coordinates persist.",
+        "requestAnimationFrame redraws the visible bands, active progress front, selected channel, current value, and particle trace. The CSS live-current pulse is presentation-only."
+      ],
+      "grouped_control_modes": [
+        {
+          "name": "forward channel advance",
+          "events": "All axis_proxy states with virtual x_milli > 3950.",
+          "effect": "Advances the channel selected by y toward a commit.",
+          "witness_for_clauses": true
+        },
+        {
+          "name": "brake",
+          "events": "All axis_proxy states with 2650 <= virtual x_milli <= 3950.",
+          "effect": "Stops flow and prevents a stale channel coordinate from acting after row reflow.",
+          "witness_for_clauses": true
+        },
+        {
+          "name": "rewind",
+          "events": "All axis_proxy states with virtual x_milli < 2650.",
+          "effect": "Cancels progress and may rewind committed output within the configured allowance of 2.",
+          "witness_for_clauses": false
+        },
+        {
+          "name": "channel re-aim",
+          "events": "All axis_proxy y/aim changes.",
+          "effect": "Changes the selected channel and resets partial forward progress when the symbol changes.",
+          "witness_for_clauses": false
+        }
+      ],
+      "delta_ms": 600,
+      "window_ms": 600,
+      "clause_i": {
+        "holds": true,
+        "reason": "For the complete forward-channel group, the same prior axis-proxy actions and task times can occur with different visible targets, output prefixes, channel rows, and progress states across seeds. q sees only I_t, so it cannot choose the required y/aim or the advance-versus-brake response for every C_Delta history."
+      },
+      "clause_ii": {
+        "holds": true,
+        "reason": "The configured five chronological frames cover the last 600 ms and show target/output, selected channel, moving progress front, CURRENT, and particle motion. g can predict whether forward progress will cross the 10000-unit commit boundary during the delay, then deliver forward continuation when it will not or neutral brake when it will commit and reflow; the next observation exposes the new row for re-aiming."
+      },
+      "clause_iii": {
+        "holds": true,
+        "reason": "Choose a nonfinal character with forward flow active, y aimed inside its current band, and progress just below commit. For some 0 < tau < 600, autonomous ticks append the character and switch currentRow(output), visibly reflowing the bands. The same old-y forward action can then hit the wrong next symbol and strictly lose value or advantage, while braking and re-aiming keep success possible. The loss is caused by non-clock row reflow, not deadline passage."
+      },
+      "common_visible_process": "A persistent pointer is held in the current visible channel while its progress front advances. During the 600 ms witness horizon, the front can cross the 10000-unit commit threshold; output gains that symbol and the probability row immediately reflows for the new output context while the pointer/slider coordinates remain unchanged. The same five-frame trace predicts whether the delayed action should continue forward or switch to neutral brake. The old forward coordinate is less effective after reflow because it can drive the wrong next character, although the task remains recoverable on the next visible re-aim.",
+      "pre_run": {
+        "threshold": 0.5,
+        "at_least_half": false,
+        "rate": 0,
+        "basis": "seeded_probe",
+        "reason": "After preparation, a no-input autonomous phase leaves both virtual coordinates fixed. A necessary condition for success is one fixed y/aim lying in the intersection of the displayed bands for every target character in its successive output context. The exact 10000-seed generator-row probe found 0 such routes for this difficulty; the separate slider surface preserves the same virtual-coordinate effects.",
+        "seed_probe": {
+          "seeds": "probe-00000 through probe-09999",
+          "numerator": 0,
+          "denominator": 10000,
+          "method": "Reconstruct each generated display row exactly, intersect the fixed-y band for target[0], target[1], and so on through the context row after each prefix. An empty intersection is a necessary failure for any fixed prepared pointer; flow speed/current cannot repair it.",
+          "code": "import importlib.util,json,random\nfrom pathlib import Path\nR=Path('/private/tmp/weird-cua-realtime-source-20260910.ObhAQg')\nS=importlib.util.spec_from_file_location('g',R/'weird_captcha_gym/shared_scripts/incubator_generators/letter_rapids.py')\ng=importlib.util.module_from_spec(S); S.loader.exec_module(g)\nC=json.loads((R/'weird_captcha_gym/environments/letter_rapids_env/controls.json').read_text())\nD=4; M='simplified'; P=C['difficulty'][str(D)]['parameters']\ndef band(row,f,ch):\n free=10000-f*len(row); w=[f+free*(int(b['end_milli'])-int(b['start_milli']))//10000 for b in row]\n for i in range(10000-sum(w)): w[i]+=1\n c=0\n for b,z in zip(row,w):\n  if b['symbol']==ch:return c,c+z\n  c+=z\ndef ok(target,rows,f):\n lo,hi=0,9999; out=''\n for ch in target:\n  z=band(rows[out[-1] if out else '^'],f,ch)\n  if z is None:return 0\n  lo=max(lo,z[0]); hi=min(hi,z[1]-1); out+=ch\n return lo<=hi\nn=10000; c=0\nfor i in range(n):\n seed=f'probe-{i:05d}'; profile,_=g._profile({'_control_condition':{'difficulty':D,'interaction':M,'difficulty_parameters':P}})\n target=random.Random(g._seed_int(seed,g.MECHANIC_ID)).choice(tuple(profile['target_pool']))\n rows={ctx:g._row(seed,ctx,profile) for ctx in '^'+str(profile['alphabet'])}\n c+=int(ok(target,rows,g.DISPLAY_BAND_FLOOR_MILLI))\nprint(c,n)"
+        }
+      },
+      "files_read_completely": [
+        "AGENTS.md",
+        "weird_captcha_gym/docs/controllability/real-time.md",
+        "weird_captcha_gym/environments/letter_rapids_env/controls.json",
+        "weird_captcha_gym/environments/letter_rapids_env/env.json",
+        "weird_captcha_gym/environments/letter_rapids_env/tasks/letter_rapids_seed_0001/task.json",
+        "weird_captcha_gym/environments/letter_rapids_env/tasks/letter_rapids_seed_0001/setup_task.sh",
+        "weird_captcha_gym/environments/letter_rapids_env/tasks/letter_rapids_seed_0001/export_result.sh",
+        "weird_captcha_gym/shared_scripts/incubator_generators/letter_rapids.py",
+        "weird_captcha_gym/shared_runtime/app/mechanics/letter_rapids.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/letter_rapids.css",
+        "weird_captcha_gym/shared_runtime/server/incubator_graders/letter_rapids.py",
+        "weird_captcha_gym/environments/letter_rapids_env/tasks/letter_rapids_seed_0001/verifier.py",
+        "weird_captcha_gym/tools/incubator_solvers/letter_rapids.py",
+        "weird_captcha_gym/shared_runtime/verifier_helpers.py",
+        "weird_captcha_gym/shared_runtime/app/time_controller.js"
+      ],
+      "source_evidence": [
+        {
+          "path": "weird_captcha_gym/environments/letter_rapids_env/controls.json",
+          "lines": "61-76",
+          "claim": "Difficulty 4 active alphabet, target pool, band, steering, current, travel, and rewind parameters."
+        },
+        {
+          "path": "weird_captcha_gym/environments/letter_rapids_env/controls.json",
+          "lines": "96-109",
+          "claim": "simplified interaction is implemented and the configured observation is 600 ms with five frames and a 120-second allowance."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/letter_rapids.py",
+          "lines": "128-172",
+          "claim": "The generator creates context-dependent contiguous probability bands and a changing 2400-tick current trace."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/letter_rapids.js",
+          "lines": "46-65",
+          "claim": "x selects forward/brake/rewind flow and y selects the current channel."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/letter_rapids.js",
+          "lines": "100-148",
+          "claim": "Autonomous ticks accumulate flow, commit at commit_units, change output context, and can rewind."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/letter_rapids.js",
+          "lines": "248-323",
+          "claim": "The visible canvas renders channel bands, the active progress front, current value, and current-dependent particles."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/letter_rapids.js",
+          "lines": "346-374",
+          "claim": "Simulation time uses the shared interaction clock; Simplified binds outcome input to axis_proxy from separate aim and flow ranges."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/letter_rapids.py",
+          "lines": "143-173",
+          "claim": "The grader enforces axis_proxy as the exact input source."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/letter_rapids.py",
+          "lines": "198-270",
+          "claim": "Server replay applies each tick, context-specific hit test, commit/reflow, travel, and exact-target terminal check."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/time_controller.js",
+          "lines": "55-78",
+          "claim": "The running task clock, not native wall time, drives interactionNow."
+        },
+        {
+          "path": "weird_captcha_gym/tools/incubator_solvers/letter_rapids.py",
+          "lines": "85-99",
+          "claim": "The visible solver aims a band, sustains forward flow, waits for output, and brakes."
+        },
+        {
+          "path": "weird_captcha_gym/environments/letter_rapids_env/tasks/letter_rapids_seed_0001/verifier.py",
+          "lines": "21-37",
+          "claim": "The exported UI result is delegated to the Letter Rapids replay grader."
+        }
+      ],
+      "uncertainties": [
+        "The terminal grader does not expose a numeric intermediate reward; strict action degradation is established from exact replay, where the stale forward coordinate can append a wrong symbol while a brake-and-reaim continuation remains successful."
+      ]
+    },
+    {
+      "case_index": 359,
+      "public_environment_name": "Letter Rapids",
+      "environment_id": "letter_rapids_env",
+      "difficulty": 5,
+      "interaction_mode": "full",
+      "label": "yes",
+      "controls_available": [
+        {
+          "surface": "Full canvas pointer",
+          "event_source": "canyon_pointer",
+          "coordinates": "A canvas pointermove sets one continuous x_milli in [0,10000] and y_milli in [0,9999]. y selects the visible probability channel; x above 3840 advances, x below 2760 rewinds, and 2760 through 3840 brakes.",
+          "keyboard_or_buttons": "No task buttons or keyboard handler; sustained pointer position is the outcome control."
+        },
+        {
+          "active_difficulty_profile": {
+            "alphabet": "etaoinshrdlucmfwypvbgkqjxz ",
+            "target_pool": [
+              "quick fox",
+              "jazz quip",
+              "vexed yak",
+              "quartz box"
+            ],
+            "minimum_band_milli": 70,
+            "context_boost_milli": 2100,
+            "probability_jitter_milli": 250,
+            "dead_zone_half_width_milli": 540,
+            "maximum_speed_units_per_second": 8800,
+            "current_amplitude_milli": 430,
+            "travel_budget_characters_milli": 14500,
+            "maximum_rewound_characters": 2
+          }
+        },
+        {
+          "task_clock_and_observation": {
+            "tick_ms": 50,
+            "commit_units": 10000,
+            "neutral_x_milli": 3300,
+            "travel_budget_units": 145000,
+            "observation_window_ms": 600,
+            "frames_per_observation": 5,
+            "play_time_seconds": 120
+          }
+        }
+      ],
+      "autonomous_processes": [
+        "Every running 50 ms simulation tick advances without a new pointer event. The generated current multiplier changes the flow increment and is shown by the CURRENT readout and moving canvas particles.",
+        "While the persistent flow coordinate is outside the 2760-3840 dead zone, forward flow accumulates progress and travel at the selected y channel; reverse flow cancels progress and can rewind committed characters.",
+        "When progress reaches 10000, the current symbol is appended, progress resets, and the output context changes. The next tick uses the new context's probability row, reflowing visible channel geometry while the input coordinates persist.",
+        "requestAnimationFrame redraws the visible bands, active progress front, selected channel, current value, and particle trace. The CSS live-current pulse is presentation-only."
+      ],
+      "grouped_control_modes": [
+        {
+          "name": "forward channel advance",
+          "events": "All canyon_pointer states with virtual x_milli > 3840.",
+          "effect": "Advances the channel selected by y toward a commit.",
+          "witness_for_clauses": true
+        },
+        {
+          "name": "brake",
+          "events": "All canyon_pointer states with 2760 <= virtual x_milli <= 3840.",
+          "effect": "Stops flow and prevents a stale channel coordinate from acting after row reflow.",
+          "witness_for_clauses": true
+        },
+        {
+          "name": "rewind",
+          "events": "All canyon_pointer states with virtual x_milli < 2760.",
+          "effect": "Cancels progress and may rewind committed output within the configured allowance of 2.",
+          "witness_for_clauses": false
+        },
+        {
+          "name": "channel re-aim",
+          "events": "All canyon_pointer y/aim changes.",
+          "effect": "Changes the selected channel and resets partial forward progress when the symbol changes.",
+          "witness_for_clauses": false
+        }
+      ],
+      "delta_ms": 600,
+      "window_ms": 600,
+      "clause_i": {
+        "holds": true,
+        "reason": "For the complete forward-channel group, the same prior canvas-pointer actions and task times can occur with different visible targets, output prefixes, channel rows, and progress states across seeds. q sees only I_t, so it cannot choose the required y/aim or the advance-versus-brake response for every C_Delta history."
+      },
+      "clause_ii": {
+        "holds": true,
+        "reason": "The configured five chronological frames cover the last 600 ms and show target/output, selected channel, moving progress front, CURRENT, and particle motion. g can predict whether forward progress will cross the 10000-unit commit boundary during the delay, then deliver forward continuation when it will not or neutral brake when it will commit and reflow; the next observation exposes the new row for re-aiming."
+      },
+      "clause_iii": {
+        "holds": true,
+        "reason": "Choose a nonfinal character with forward flow active, y aimed inside its current band, and progress just below commit. For some 0 < tau < 600, autonomous ticks append the character and switch currentRow(output), visibly reflowing the bands. The same old-y forward action can then hit the wrong next symbol and strictly lose value or advantage, while braking and re-aiming keep success possible. The loss is caused by non-clock row reflow, not deadline passage."
+      },
+      "common_visible_process": "A persistent pointer is held in the current visible channel while its progress front advances. During the 600 ms witness horizon, the front can cross the 10000-unit commit threshold; output gains that symbol and the probability row immediately reflows for the new output context while the pointer/slider coordinates remain unchanged. The same five-frame trace predicts whether the delayed action should continue forward or switch to neutral brake. The old forward coordinate is less effective after reflow because it can drive the wrong next character, although the task remains recoverable on the next visible re-aim.",
+      "pre_run": {
+        "threshold": 0.5,
+        "at_least_half": false,
+        "rate": 0,
+        "basis": "seeded_probe",
+        "reason": "After preparation, a no-input autonomous phase leaves both virtual coordinates fixed. A necessary condition for success is one fixed y/aim lying in the intersection of the displayed bands for every target character in its successive output context. The exact 10000-seed generator-row probe found 0 such routes for this difficulty; the separate slider surface preserves the same virtual-coordinate effects.",
+        "seed_probe": {
+          "seeds": "probe-00000 through probe-09999",
+          "numerator": 0,
+          "denominator": 10000,
+          "method": "Reconstruct each generated display row exactly, intersect the fixed-y band for target[0], target[1], and so on through the context row after each prefix. An empty intersection is a necessary failure for any fixed prepared pointer; flow speed/current cannot repair it.",
+          "code": "import importlib.util,json,random\nfrom pathlib import Path\nR=Path('/private/tmp/weird-cua-realtime-source-20260910.ObhAQg')\nS=importlib.util.spec_from_file_location('g',R/'weird_captcha_gym/shared_scripts/incubator_generators/letter_rapids.py')\ng=importlib.util.module_from_spec(S); S.loader.exec_module(g)\nC=json.loads((R/'weird_captcha_gym/environments/letter_rapids_env/controls.json').read_text())\nD=5; M='full'; P=C['difficulty'][str(D)]['parameters']\ndef band(row,f,ch):\n free=10000-f*len(row); w=[f+free*(int(b['end_milli'])-int(b['start_milli']))//10000 for b in row]\n for i in range(10000-sum(w)): w[i]+=1\n c=0\n for b,z in zip(row,w):\n  if b['symbol']==ch:return c,c+z\n  c+=z\ndef ok(target,rows,f):\n lo,hi=0,9999; out=''\n for ch in target:\n  z=band(rows[out[-1] if out else '^'],f,ch)\n  if z is None:return 0\n  lo=max(lo,z[0]); hi=min(hi,z[1]-1); out+=ch\n return lo<=hi\nn=10000; c=0\nfor i in range(n):\n seed=f'probe-{i:05d}'; profile,_=g._profile({'_control_condition':{'difficulty':D,'interaction':M,'difficulty_parameters':P}})\n target=random.Random(g._seed_int(seed,g.MECHANIC_ID)).choice(tuple(profile['target_pool']))\n rows={ctx:g._row(seed,ctx,profile) for ctx in '^'+str(profile['alphabet'])}\n c+=int(ok(target,rows,g.DISPLAY_BAND_FLOOR_MILLI))\nprint(c,n)"
+        }
+      },
+      "files_read_completely": [
+        "AGENTS.md",
+        "weird_captcha_gym/docs/controllability/real-time.md",
+        "weird_captcha_gym/environments/letter_rapids_env/controls.json",
+        "weird_captcha_gym/environments/letter_rapids_env/env.json",
+        "weird_captcha_gym/environments/letter_rapids_env/tasks/letter_rapids_seed_0001/task.json",
+        "weird_captcha_gym/environments/letter_rapids_env/tasks/letter_rapids_seed_0001/setup_task.sh",
+        "weird_captcha_gym/environments/letter_rapids_env/tasks/letter_rapids_seed_0001/export_result.sh",
+        "weird_captcha_gym/shared_scripts/incubator_generators/letter_rapids.py",
+        "weird_captcha_gym/shared_runtime/app/mechanics/letter_rapids.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/letter_rapids.css",
+        "weird_captcha_gym/shared_runtime/server/incubator_graders/letter_rapids.py",
+        "weird_captcha_gym/environments/letter_rapids_env/tasks/letter_rapids_seed_0001/verifier.py",
+        "weird_captcha_gym/tools/incubator_solvers/letter_rapids.py",
+        "weird_captcha_gym/shared_runtime/verifier_helpers.py",
+        "weird_captcha_gym/shared_runtime/app/time_controller.js"
+      ],
+      "source_evidence": [
+        {
+          "path": "weird_captcha_gym/environments/letter_rapids_env/controls.json",
+          "lines": "78-93",
+          "claim": "Difficulty 5 active alphabet, target pool, band, steering, current, travel, and rewind parameters."
+        },
+        {
+          "path": "weird_captcha_gym/environments/letter_rapids_env/controls.json",
+          "lines": "96-109",
+          "claim": "full interaction is implemented and the configured observation is 600 ms with five frames and a 120-second allowance."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/letter_rapids.py",
+          "lines": "128-172",
+          "claim": "The generator creates context-dependent contiguous probability bands and a changing 2400-tick current trace."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/letter_rapids.js",
+          "lines": "46-65",
+          "claim": "x selects forward/brake/rewind flow and y selects the current channel."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/letter_rapids.js",
+          "lines": "100-148",
+          "claim": "Autonomous ticks accumulate flow, commit at commit_units, change output context, and can rewind."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/letter_rapids.js",
+          "lines": "248-323",
+          "claim": "The visible canvas renders channel bands, the active progress front, current value, and current-dependent particles."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/letter_rapids.js",
+          "lines": "346-374",
+          "claim": "Simulation time uses the shared interaction clock; Full binds outcome input to canyon_pointer."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/letter_rapids.py",
+          "lines": "143-173",
+          "claim": "The grader enforces canyon_pointer as the exact input source."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/letter_rapids.py",
+          "lines": "198-270",
+          "claim": "Server replay applies each tick, context-specific hit test, commit/reflow, travel, and exact-target terminal check."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/time_controller.js",
+          "lines": "55-78",
+          "claim": "The running task clock, not native wall time, drives interactionNow."
+        },
+        {
+          "path": "weird_captcha_gym/tools/incubator_solvers/letter_rapids.py",
+          "lines": "85-99",
+          "claim": "The visible solver aims a band, sustains forward flow, waits for output, and brakes."
+        },
+        {
+          "path": "weird_captcha_gym/environments/letter_rapids_env/tasks/letter_rapids_seed_0001/verifier.py",
+          "lines": "21-37",
+          "claim": "The exported UI result is delegated to the Letter Rapids replay grader."
+        }
+      ],
+      "uncertainties": [
+        "The terminal grader does not expose a numeric intermediate reward; strict action degradation is established from exact replay, where the stale forward coordinate can append a wrong symbol while a brake-and-reaim continuation remains successful."
+      ]
+    },
+    {
+      "case_index": 360,
+      "public_environment_name": "Letter Rapids",
+      "environment_id": "letter_rapids_env",
+      "difficulty": 5,
+      "interaction_mode": "simplified",
+      "label": "yes",
+      "controls_available": [
+        {
+          "surface": "Simplified axis proxies",
+          "event_source": "axis_proxy",
+          "coordinates": "rapids-aim sets y_milli in [0,9999] and rapids-flow sets x_milli in [0,10000]. x above 3840 advances, x below 2760 rewinds, and 2760 through 3840 brakes.",
+          "keyboard_or_buttons": "The two range inputs are the bound outcome controls; canvas pointer movement is not the bound interaction surface."
+        },
+        {
+          "active_difficulty_profile": {
+            "alphabet": "etaoinshrdlucmfwypvbgkqjxz ",
+            "target_pool": [
+              "quick fox",
+              "jazz quip",
+              "vexed yak",
+              "quartz box"
+            ],
+            "minimum_band_milli": 70,
+            "context_boost_milli": 2100,
+            "probability_jitter_milli": 250,
+            "dead_zone_half_width_milli": 540,
+            "maximum_speed_units_per_second": 8800,
+            "current_amplitude_milli": 430,
+            "travel_budget_characters_milli": 14500,
+            "maximum_rewound_characters": 2
+          }
+        },
+        {
+          "task_clock_and_observation": {
+            "tick_ms": 50,
+            "commit_units": 10000,
+            "neutral_x_milli": 3300,
+            "travel_budget_units": 145000,
+            "observation_window_ms": 600,
+            "frames_per_observation": 5,
+            "play_time_seconds": 120
+          }
+        }
+      ],
+      "autonomous_processes": [
+        "Every running 50 ms simulation tick advances without a new slider event. The generated current multiplier changes the flow increment and is shown by the CURRENT readout and moving canvas particles.",
+        "While the persistent flow coordinate is outside the 2760-3840 dead zone, forward flow accumulates progress and travel at the selected y channel; reverse flow cancels progress and can rewind committed characters.",
+        "When progress reaches 10000, the current symbol is appended, progress resets, and the output context changes. The next tick uses the new context's probability row, reflowing visible channel geometry while the input coordinates persist.",
+        "requestAnimationFrame redraws the visible bands, active progress front, selected channel, current value, and particle trace. The CSS live-current pulse is presentation-only."
+      ],
+      "grouped_control_modes": [
+        {
+          "name": "forward channel advance",
+          "events": "All axis_proxy states with virtual x_milli > 3840.",
+          "effect": "Advances the channel selected by y toward a commit.",
+          "witness_for_clauses": true
+        },
+        {
+          "name": "brake",
+          "events": "All axis_proxy states with 2760 <= virtual x_milli <= 3840.",
+          "effect": "Stops flow and prevents a stale channel coordinate from acting after row reflow.",
+          "witness_for_clauses": true
+        },
+        {
+          "name": "rewind",
+          "events": "All axis_proxy states with virtual x_milli < 2760.",
+          "effect": "Cancels progress and may rewind committed output within the configured allowance of 2.",
+          "witness_for_clauses": false
+        },
+        {
+          "name": "channel re-aim",
+          "events": "All axis_proxy y/aim changes.",
+          "effect": "Changes the selected channel and resets partial forward progress when the symbol changes.",
+          "witness_for_clauses": false
+        }
+      ],
+      "delta_ms": 600,
+      "window_ms": 600,
+      "clause_i": {
+        "holds": true,
+        "reason": "For the complete forward-channel group, the same prior axis-proxy actions and task times can occur with different visible targets, output prefixes, channel rows, and progress states across seeds. q sees only I_t, so it cannot choose the required y/aim or the advance-versus-brake response for every C_Delta history."
+      },
+      "clause_ii": {
+        "holds": true,
+        "reason": "The configured five chronological frames cover the last 600 ms and show target/output, selected channel, moving progress front, CURRENT, and particle motion. g can predict whether forward progress will cross the 10000-unit commit boundary during the delay, then deliver forward continuation when it will not or neutral brake when it will commit and reflow; the next observation exposes the new row for re-aiming."
+      },
+      "clause_iii": {
+        "holds": true,
+        "reason": "Choose a nonfinal character with forward flow active, y aimed inside its current band, and progress just below commit. For some 0 < tau < 600, autonomous ticks append the character and switch currentRow(output), visibly reflowing the bands. The same old-y forward action can then hit the wrong next symbol and strictly lose value or advantage, while braking and re-aiming keep success possible. The loss is caused by non-clock row reflow, not deadline passage."
+      },
+      "common_visible_process": "A persistent pointer is held in the current visible channel while its progress front advances. During the 600 ms witness horizon, the front can cross the 10000-unit commit threshold; output gains that symbol and the probability row immediately reflows for the new output context while the pointer/slider coordinates remain unchanged. The same five-frame trace predicts whether the delayed action should continue forward or switch to neutral brake. The old forward coordinate is less effective after reflow because it can drive the wrong next character, although the task remains recoverable on the next visible re-aim.",
+      "pre_run": {
+        "threshold": 0.5,
+        "at_least_half": false,
+        "rate": 0,
+        "basis": "seeded_probe",
+        "reason": "After preparation, a no-input autonomous phase leaves both virtual coordinates fixed. A necessary condition for success is one fixed y/aim lying in the intersection of the displayed bands for every target character in its successive output context. The exact 10000-seed generator-row probe found 0 such routes for this difficulty; the separate slider surface preserves the same virtual-coordinate effects.",
+        "seed_probe": {
+          "seeds": "probe-00000 through probe-09999",
+          "numerator": 0,
+          "denominator": 10000,
+          "method": "Reconstruct each generated display row exactly, intersect the fixed-y band for target[0], target[1], and so on through the context row after each prefix. An empty intersection is a necessary failure for any fixed prepared pointer; flow speed/current cannot repair it.",
+          "code": "import importlib.util,json,random\nfrom pathlib import Path\nR=Path('/private/tmp/weird-cua-realtime-source-20260910.ObhAQg')\nS=importlib.util.spec_from_file_location('g',R/'weird_captcha_gym/shared_scripts/incubator_generators/letter_rapids.py')\ng=importlib.util.module_from_spec(S); S.loader.exec_module(g)\nC=json.loads((R/'weird_captcha_gym/environments/letter_rapids_env/controls.json').read_text())\nD=5; M='simplified'; P=C['difficulty'][str(D)]['parameters']\ndef band(row,f,ch):\n free=10000-f*len(row); w=[f+free*(int(b['end_milli'])-int(b['start_milli']))//10000 for b in row]\n for i in range(10000-sum(w)): w[i]+=1\n c=0\n for b,z in zip(row,w):\n  if b['symbol']==ch:return c,c+z\n  c+=z\ndef ok(target,rows,f):\n lo,hi=0,9999; out=''\n for ch in target:\n  z=band(rows[out[-1] if out else '^'],f,ch)\n  if z is None:return 0\n  lo=max(lo,z[0]); hi=min(hi,z[1]-1); out+=ch\n return lo<=hi\nn=10000; c=0\nfor i in range(n):\n seed=f'probe-{i:05d}'; profile,_=g._profile({'_control_condition':{'difficulty':D,'interaction':M,'difficulty_parameters':P}})\n target=random.Random(g._seed_int(seed,g.MECHANIC_ID)).choice(tuple(profile['target_pool']))\n rows={ctx:g._row(seed,ctx,profile) for ctx in '^'+str(profile['alphabet'])}\n c+=int(ok(target,rows,g.DISPLAY_BAND_FLOOR_MILLI))\nprint(c,n)"
+        }
+      },
+      "files_read_completely": [
+        "AGENTS.md",
+        "weird_captcha_gym/docs/controllability/real-time.md",
+        "weird_captcha_gym/environments/letter_rapids_env/controls.json",
+        "weird_captcha_gym/environments/letter_rapids_env/env.json",
+        "weird_captcha_gym/environments/letter_rapids_env/tasks/letter_rapids_seed_0001/task.json",
+        "weird_captcha_gym/environments/letter_rapids_env/tasks/letter_rapids_seed_0001/setup_task.sh",
+        "weird_captcha_gym/environments/letter_rapids_env/tasks/letter_rapids_seed_0001/export_result.sh",
+        "weird_captcha_gym/shared_scripts/incubator_generators/letter_rapids.py",
+        "weird_captcha_gym/shared_runtime/app/mechanics/letter_rapids.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/letter_rapids.css",
+        "weird_captcha_gym/shared_runtime/server/incubator_graders/letter_rapids.py",
+        "weird_captcha_gym/environments/letter_rapids_env/tasks/letter_rapids_seed_0001/verifier.py",
+        "weird_captcha_gym/tools/incubator_solvers/letter_rapids.py",
+        "weird_captcha_gym/shared_runtime/verifier_helpers.py",
+        "weird_captcha_gym/shared_runtime/app/time_controller.js"
+      ],
+      "source_evidence": [
+        {
+          "path": "weird_captcha_gym/environments/letter_rapids_env/controls.json",
+          "lines": "78-93",
+          "claim": "Difficulty 5 active alphabet, target pool, band, steering, current, travel, and rewind parameters."
+        },
+        {
+          "path": "weird_captcha_gym/environments/letter_rapids_env/controls.json",
+          "lines": "96-109",
+          "claim": "simplified interaction is implemented and the configured observation is 600 ms with five frames and a 120-second allowance."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/letter_rapids.py",
+          "lines": "128-172",
+          "claim": "The generator creates context-dependent contiguous probability bands and a changing 2400-tick current trace."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/letter_rapids.js",
+          "lines": "46-65",
+          "claim": "x selects forward/brake/rewind flow and y selects the current channel."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/letter_rapids.js",
+          "lines": "100-148",
+          "claim": "Autonomous ticks accumulate flow, commit at commit_units, change output context, and can rewind."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/letter_rapids.js",
+          "lines": "248-323",
+          "claim": "The visible canvas renders channel bands, the active progress front, current value, and current-dependent particles."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/letter_rapids.js",
+          "lines": "346-374",
+          "claim": "Simulation time uses the shared interaction clock; Simplified binds outcome input to axis_proxy from separate aim and flow ranges."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/letter_rapids.py",
+          "lines": "143-173",
+          "claim": "The grader enforces axis_proxy as the exact input source."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/letter_rapids.py",
+          "lines": "198-270",
+          "claim": "Server replay applies each tick, context-specific hit test, commit/reflow, travel, and exact-target terminal check."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/time_controller.js",
+          "lines": "55-78",
+          "claim": "The running task clock, not native wall time, drives interactionNow."
+        },
+        {
+          "path": "weird_captcha_gym/tools/incubator_solvers/letter_rapids.py",
+          "lines": "85-99",
+          "claim": "The visible solver aims a band, sustains forward flow, waits for output, and brakes."
+        },
+        {
+          "path": "weird_captcha_gym/environments/letter_rapids_env/tasks/letter_rapids_seed_0001/verifier.py",
+          "lines": "21-37",
+          "claim": "The exported UI result is delegated to the Letter Rapids replay grader."
+        }
+      ],
+      "uncertainties": [
+        "The terminal grader does not expose a numeric intermediate reward; strict action degradation is established from exact replay, where the stale forward coordinate can append a wrong symbol while a brake-and-reaim continuation remains successful."
+      ]
+    }
+  ]
+}

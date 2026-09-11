@@ -1,0 +1,163 @@
+{
+  "case_index": 61,
+  "public_environment_name": "Cell Gatekeeper",
+  "environment_id": "cell_gatekeeper_env",
+  "difficulty": 1,
+  "interaction_mode": "full",
+  "label": "no",
+  "controls_available": [
+    "Drag the visible protein cards into either of the two membrane slots.",
+    "Drag an installed membrane protein to the eject dock.",
+    "Drag the sodium +1 or -1 solute token into the outside or inside compartment drop zone.",
+    "Drag the ATP BURST (+3) token into the ATP reservoir.",
+    "Click LOCK GRADIENT to certify or NEW CELL to request a fresh attempt."
+  ],
+  "autonomous_processes": [
+    {
+      "process": "The task clock advances in 100 ms ticks; the configured observation window is 600 ms with 6 frames, and the episode limit is 160 ticks.",
+      "outcome_affecting_control_available": "Protein, solute, and ATP drags remain available; waiting is not itself a required control."
+    },
+    {
+      "process": "With the sodium pump installed and ATP available, every 4 ticks one sodium moves from inside to outside, one ATP is consumed, and an active crossing is recorded. The single +3 burst therefore supports exactly three pump crossings.",
+      "outcome_affecting_control_available": "Solute calibration and protein ejection remain available, but the deterministic prepared route needs no intervention during these crossings."
+    },
+    {
+      "process": "The catalog still contains an optional sodium leak, which would move one high-side sodium to the low side every 6 ticks if a policy installed it; required_leak_count is 0, so the normal route does not install it.",
+      "outcome_affecting_control_available": "The leak can be ejected and solute counts can be adjusted; no useful action window closes."
+    },
+    {
+      "process": "Once the base target and transporter requirements hold, stable_ticks increments autonomously; six stable ticks are required before lock. Particle positions and membrane beads also animate with the tick but do not change the graded counts.",
+      "outcome_affecting_control_available": "LOCK GRADIENT becomes valid after the hold; any outcome-affecting adjustment or protein change resets the hold, which is a fixed-duration hold rather than an expiring action opportunity."
+    }
+  ],
+  "grouped_control_modes": [
+    {
+      "mode": "protein_drag",
+      "actions": "Drag a protein card to a membrane slot, or drag an installed protein to the eject dock.",
+      "full_mode_effect": "The browser records install/remove events with input_source protein_drag."
+    },
+    {
+      "mode": "solute_drag",
+      "actions": "Drag sodium +1 or -1 to either compartment.",
+      "full_mode_effect": "The browser records a one-particle solute adjustment with input_source solute_drag."
+    },
+    {
+      "mode": "atp_drag",
+      "actions": "Drag an ATP burst into the fuel well.",
+      "full_mode_effect": "The browser records the configured +3 ATP burst with input_source atp_drag."
+    }
+  ],
+  "delta_ms": null,
+  "window_ms": null,
+  "clause_i": {
+    "holds": false,
+    "reason": "An observation-free action-clock route is available. The normal route identifies the visible sodium ATP pump, installs it, supplies exactly one +3 burst, waits through the fixed three pump firings, waits the six-tick hold, and locks. Even without relying on the shuffled card identity, a fixed route can install both catalog cards, fuel once, and eject both after the three pump firings; the L1 passive period and width-4 bands tolerate the bounded pre-ejection leak transfers. Thus current bar observations are not needed to select the outcome-affecting route."
+  },
+  "clause_ii": {
+    "holds": true,
+    "reason": "The bounded window is sufficient to read the visible pump card, numeric concentration bars, target bands, ATP readout, and crossing ledger, so a window policy can choose the same actions. That sufficiency is nonessential because the fixed prepared route succeeds without using the window to predict a delayed action."
+  },
+  "clause_iii": {
+    "holds": false,
+    "reason": "The ATP-driven sodium transfers are autonomous and visibly reflected in the bars and ledger, but they advance a precomputed target rather than make a useful action strictly less effective. Exact ATP supply leaves no further pump action required; solute +/-1 calibration and protein ejection remain available and reversible. The six-tick hold, fixed tick schedule, and 160-tick timeout are clock effects, while particle/bead motion is cosmetic. No common delay causes an outcome-affecting action to lose value through non-clock state evolution."
+  },
+  "common_visible_process": "No real-time witness exists. The only outcome-affecting autonomous process is deterministic ATP-driven sodium transport at fixed four-tick boundaries (with an optional, non-required six-tick leak if deliberately installed). The visible particle and membrane animation is unrelated to grading. Transport can be initiated as preparation and then allowed to finish without another outcome-affecting action; it does not create a degrading action opportunity.",
+  "pre_run": {
+    "threshold": 0.5,
+    "at_least_half": true,
+    "rate": null,
+    "basis": "source_structural",
+    "reason": "At difficulty 1 the generator creates one sodium species, zero required leaks, three required pump crossings, a +3 ATP burst, a four-tick pump period, and target bands centered on the state after exactly those three inside-to-outside transfers. The only seed-dependent counts are outside 4-6 and inside 11-14; the pump source therefore has enough sodium and the target chamber has capacity 30 for every allowed variation. A screenshot-only preparation can drag the visibly labeled sodium ATP pump into a slot and drag one ATP burst into the reservoir, then send no outcome-affecting actions while the pump fires and the six-tick hold completes; LOCK GRADIENT is administrative. Catalog order, theme, and particle layout do not change this route.",
+    "seed_probe": null
+  },
+  "files_read_completely": [
+    "AGENTS.md",
+    "weird_captcha_gym/docs/controllability/real-time.md",
+    "weird_captcha_gym/environments/cell_gatekeeper_env/controls.json",
+    "weird_captcha_gym/environments/cell_gatekeeper_env/env.json",
+    "weird_captcha_gym/environments/cell_gatekeeper_env/scripts/install_puzzle_runtime.sh",
+    "weird_captcha_gym/environments/cell_gatekeeper_env/scripts/setup_puzzle_runtime.sh",
+    "weird_captcha_gym/environments/cell_gatekeeper_env/tasks/cell_gatekeeper_seed_0001/setup_task.sh",
+    "weird_captcha_gym/environments/cell_gatekeeper_env/tasks/cell_gatekeeper_seed_0001/task.json",
+    "weird_captcha_gym/environments/cell_gatekeeper_env/tasks/cell_gatekeeper_seed_0001/verifier.py",
+    "weird_captcha_gym/shared_runtime/app/index.html",
+    "weird_captcha_gym/shared_runtime/app/mechanics/cell_gatekeeper.js",
+    "weird_captcha_gym/shared_runtime/app/mechanics/cell_gatekeeper.css",
+    "weird_captcha_gym/shared_scripts/incubator_generators/cell_gatekeeper.py",
+    "weird_captcha_gym/shared_runtime/server/incubator_graders/cell_gatekeeper.py",
+    "weird_captcha_gym/tools/incubator_solvers/cell_gatekeeper.py"
+  ],
+  "source_evidence": [
+    {
+      "path": "weird_captcha_gym/environments/cell_gatekeeper_env/controls.json",
+      "lines": "10-27",
+      "claim": "Difficulty 1 is one sodium pair with zero required leaks, three pump cycles, goal width 4, passive period 6, pump period 4, ATP batch 3, six observation ticks, max 160 ticks, numeric feedback, and no decoys."
+    },
+    {
+      "path": "weird_captcha_gym/environments/cell_gatekeeper_env/controls.json",
+      "lines": "111-119",
+      "claim": "Full interaction uses protein, eject, solute, and ATP drags; the observation window is 600 ms with 6 frames."
+    },
+    {
+      "path": "weird_captcha_gym/shared_scripts/incubator_generators/cell_gatekeeper.py",
+      "lines": "121-162",
+      "claim": "The selected profile is used for generation; for each seed the initial sodium counts are outside 4-6 and inside 11-14, and the goal is constructed around the pump transfer count."
+    },
+    {
+      "path": "weird_captcha_gym/shared_scripts/incubator_generators/cell_gatekeeper.py",
+      "lines": "126-130",
+      "claim": "The required proteins are one pump for the single species plus leaks only for the first required_leak_count species, so L1 requires only sodium_pump."
+    },
+    {
+      "path": "weird_captcha_gym/shared_runtime/app/mechanics/cell_gatekeeper.js",
+      "lines": "18-65",
+      "claim": "Autonomous advancement applies pump transport only on pump-period ticks, consumes one ATP per successful crossing, records active crossings, and stops at max_ticks."
+    },
+    {
+      "path": "weird_captcha_gym/shared_runtime/app/mechanics/cell_gatekeeper.js",
+      "lines": "67-90",
+      "claim": "The base goal requires the target bands and pump crossing quota; the final goal additionally requires the configured six stable ticks."
+    },
+    {
+      "path": "weird_captcha_gym/shared_runtime/app/mechanics/cell_gatekeeper.js",
+      "lines": "123-183",
+      "claim": "The visible full-mode page renders protein cards, membrane slots, numeric target bars, ATP burst control, crossing ledger, and lock controls."
+    },
+    {
+      "path": "weird_captcha_gym/shared_runtime/app/mechanics/cell_gatekeeper.js",
+      "lines": "194-245",
+      "claim": "Install, remove, solute, and ATP actions mutate the visible simulation and non-certification events reset the stable hold; ATP supply adds the configured burst."
+    },
+    {
+      "path": "weird_captcha_gym/shared_runtime/app/mechanics/cell_gatekeeper.js",
+      "lines": "339-376",
+      "claim": "Particle positions and membrane beads are drawn as functions of the task tick, while the graded concentration bars and task clock are updated separately."
+    },
+    {
+      "path": "weird_captcha_gym/shared_runtime/app/mechanics/cell_gatekeeper.js",
+      "lines": "394-457",
+      "claim": "LOCK GRADIENT submits certification; full mode binds protein, solute, and ATP actions to native drag events and their full-mode input sources."
+    },
+    {
+      "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/cell_gatekeeper.py",
+      "lines": "29-78",
+      "claim": "The independent replay uses the same four-tick pump schedule, ATP consumption, crossing counts, and six-tick stable hold."
+    },
+    {
+      "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/cell_gatekeeper.py",
+      "lines": "81-172",
+      "claim": "The grader binds full-mode event sources and checks the pump quota, visible target counts, and observation hold."
+    },
+    {
+      "path": "weird_captcha_gym/tools/incubator_solvers/cell_gatekeeper.py",
+      "lines": "151-185",
+      "claim": "The reference route has no leak phase when L1 has no required leak, supplies len(pumps)*pump_cycles ATP (3 units here), waits for crossings, then waits for the goal hold before locking."
+    },
+    {
+      "path": "weird_captcha_gym/environments/cell_gatekeeper_env/env.json",
+      "lines": "20-46",
+      "claim": "The environment exposes frame-window observations and the shared 600 ms/6-frame/180-second runner settings."
+    }
+  ],
+  "uncertainties": []
+}

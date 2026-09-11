@@ -1,0 +1,156 @@
+{
+  "case_index": 145,
+  "public_environment_name": "Consent Gauntlet",
+  "environment_id": "consent_gauntlet_env",
+  "difficulty": 3,
+  "interaction_mode": "full",
+  "label": "yes",
+  "controls_available": [
+    "Entry stage: directly click one of five moving semantic gateway cards with the full-mode orbit_card surface; one generated card performs manage and four decoys perform accept.",
+    "Preferences stage: click either of two drawer tabs, then set six purpose switches across the drawers with physical horizontal drags between NO and YES.",
+    "The one L3 reset trap is in the first drawer and is activated by dragging its provider reset rail; it restores that drawer's initial states.",
+    "Click REVIEW CURRENT CHOICES to enter the final stage, optionally RETURN TO LEDGER, then directly click one of five moving final cards; one performs commit and four are accept decoys. L3 has no links. The environment advertises keyboard input globally, but this mechanic has no task-state keyboard handler."
+  ],
+  "autonomous_processes": [
+    "While the entry or final gateway stage is displayed, requestAnimationFrame repeatedly advances every gateway card around an ellipse from task-time performance.now; the L3 angular speed is 14 degrees per second.",
+    "The visible packet timer is refreshed on each animation frame in every rendered stage, but it is only an elapsed-time readout and does not mutate ledger outcome state.",
+    "During the preferences stage there are no autonomous purpose, drawer, reset, or link mutations; those state changes occur only in response to controls."
+  ],
+  "grouped_control_modes": [
+    "All full-mode direct orbit_card clicks on entry gateway cards across generated instances and attempts.",
+    "All full-mode direct orbit_card clicks on final gateway cards across generated instances and attempts.",
+    "Full-mode drawer_tab clicks.",
+    "Full-mode switch_drag gestures on purpose rails.",
+    "Full-mode trap_slider gestures on reset rails.",
+    "Review-button and back-button clicks."
+  ],
+  "delta_ms": 2000,
+  "window_ms": 720,
+  "clause_i": {
+    "holds": true,
+    "reason": "For D consisting of final full-mode orbit-card decisions, an observation-free q receives only its own action history and task times. The generator randomizes the gateway label ordering and phase, and the card coordinates depend on that unobserved phase, so no fixed click action can select the correct commit card for every history in C_Delta(D)."
+  },
+  "clause_ii": {
+    "holds": true,
+    "reason": "The configured 720 ms window contains five chronological frames showing both the required semantic label and its changing card position. From that bounded window a policy can identify the commit card, infer the common angular motion, and extrapolate its visible coordinate 2,000 ms ahead; at 14 degrees per second this is a 28-degree forecast. No information outside the recent visual window is required."
+  },
+  "clause_iii": {
+    "holds": true,
+    "reason": "Choose an early final-stage history with the commit card visible and let a be a click at its current center. For a suitable orbital phase, waiting tau=1,500 ms (< Delta) moves the card by 21 degrees, so that same coordinate misses the commit card or lands on a decoy while the card remains available elsewhere. Success remains possible by clicking its later location, but the old click loses its advantage relative to no-op. This is a relocation loss caused by task-state motion, not merely by a deadline or later completion."
+  },
+  "common_visible_process": "The common witness is the continuously rotating gateway-card orbit in the final stage: the required commit label is visible on one card, its position visibly changes across frames, and the same motion continues during the delayed action. The random initial phase and card ordering defeat q, the recent five-frame window supports a forecast for g, and the old card-center click degrades during the delay while the opportunity remains recoverable.",
+  "pre_run": {
+    "threshold": 0.5,
+    "at_least_half": false,
+    "rate": null,
+    "basis": "source_structural",
+    "reason": "The threshold is not met for any generated instance: every generated surface has one final commit option, the browser sends submit(true) only for that final commit action, and the grader requires terminal=committed plus completed=true. Thus a successful run must send an outcome-affecting final gateway action after ledger preparation; there is no action-free autonomous outcome phase that can finish the packet. No percentage is asserted.",
+    "seed_probe": null
+  },
+  "files_read_completely": [
+    "AGENTS.md",
+    "weird_captcha_gym/docs/controllability/real-time.md",
+    "weird_captcha_gym/environments/consent_gauntlet_env/controls.json",
+    "weird_captcha_gym/environments/consent_gauntlet_env/env.json",
+    "weird_captcha_gym/environments/consent_gauntlet_env/tasks/consent_gauntlet_seed_0001/task.json",
+    "weird_captcha_gym/environments/consent_gauntlet_env/tasks/consent_gauntlet_seed_0001/setup_task.sh",
+    "weird_captcha_gym/environments/consent_gauntlet_env/tasks/consent_gauntlet_seed_0001/verifier.py",
+    "weird_captcha_gym/environments/consent_gauntlet_env/tasks/consent_gauntlet_seed_0001/export_result.sh",
+    "weird_captcha_gym/shared_scripts/incubator_generators/consent_gauntlet.py",
+    "weird_captcha_gym/shared_runtime/app/mechanics/consent_gauntlet.js",
+    "weird_captcha_gym/shared_runtime/app/mechanics/consent_gauntlet.css",
+    "weird_captcha_gym/shared_runtime/server/incubator_graders/consent_gauntlet.py",
+    "weird_captcha_gym/tools/incubator_solvers/consent_gauntlet.py",
+    "weird_captcha_gym/shared_runtime/verifier_helpers.py",
+    "weird_captcha_gym/shared_runtime/app/time_controller.js",
+    "weird_captcha_gym/shared_runtime/app/index.html"
+  ],
+  "source_evidence": [
+    {
+      "path": "weird_captcha_gym/environments/consent_gauntlet_env/controls.json",
+      "lines": "18-22",
+      "claim": "Difficulty 3 is medium with six purposes in two drawers, five entry and final options, one reset trap, no links, moving gateways, and a 14 degree-per-second orbit."
+    },
+    {
+      "path": "weird_captcha_gym/environments/consent_gauntlet_env/controls.json",
+      "lines": "37-41",
+      "claim": "Full interaction uses direct moving-card clicks, ledger tabs, physical switch drags, and the observation settings are 720 ms with five frames."
+    },
+    {
+      "path": "weird_captcha_gym/environments/consent_gauntlet_env/env.json",
+      "lines": "9-14",
+      "claim": "The runtime supplies a mouse and keyboard surface, a 720 ms observation window, five frames, and a 180-second play allowance."
+    },
+    {
+      "path": "weird_captcha_gym/shared_scripts/incubator_generators/consent_gauntlet.py",
+      "lines": "127-148",
+      "claim": "Each gateway has exactly one correct action plus decoys, shuffles their order, and assigns randomized angular offsets."
+    },
+    {
+      "path": "weird_captcha_gym/shared_scripts/incubator_generators/consent_gauntlet.py",
+      "lines": "221-235",
+      "claim": "The generated surface contains entry and final gateways, drawers, purposes, reset traps, links, and a randomized base phase; L3 sets links to zero."
+    },
+    {
+      "path": "weird_captcha_gym/shared_runtime/app/mechanics/consent_gauntlet.js",
+      "lines": "101-133",
+      "claim": "Full gateway clicks record orbit_card geometry; manage opens preferences, commit submits success, and decoy gateway actions submit failure."
+    },
+    {
+      "path": "weird_captcha_gym/shared_runtime/app/mechanics/consent_gauntlet.js",
+      "lines": "136-160",
+      "claim": "The current phase advances from task-time performance.now and card positions are recomputed on every animation frame along an ellipse."
+    },
+    {
+      "path": "weird_captcha_gym/shared_runtime/app/mechanics/consent_gauntlet.js",
+      "lines": "217-228",
+      "claim": "Rendering starts and resets the orbit for gateway stages, while the preferences stage renders the stationary ledger."
+    },
+    {
+      "path": "weird_captcha_gym/shared_runtime/app/mechanics/consent_gauntlet.js",
+      "lines": "331-353",
+      "claim": "The full-mode controls bind drawer tabs, physical purpose rails, reset sliders, review, and back; proxy controls are for simplified mode."
+    },
+    {
+      "path": "weird_captcha_gym/shared_runtime/app/mechanics/consent_gauntlet.css",
+      "lines": "91-113",
+      "claim": "Gateway cards are absolutely positioned clickable elements, while the fixed decision proxy is disabled for full mode."
+    },
+    {
+      "path": "weird_captcha_gym/shared_runtime/app/mechanics/consent_gauntlet.css",
+      "lines": "129-157",
+      "claim": "The visible ledger exposes drawer tabs, horizontal switch rails, a reset rail, and the review button."
+    },
+    {
+      "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/consent_gauntlet.py",
+      "lines": "62-106",
+      "claim": "The grader replays task-time phase, orbital geometry, and pointer bounds for a moving full-mode gateway click."
+    },
+    {
+      "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/consent_gauntlet.py",
+      "lines": "160-191",
+      "claim": "The replay binds full-mode input sources and treats the final commit option as the committed terminal decision."
+    },
+    {
+      "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/consent_gauntlet.py",
+      "lines": "240-265",
+      "claim": "The final pass requires terminal committed, completed true, exact purpose states, and all linked controls exercised."
+    },
+    {
+      "path": "weird_captcha_gym/tools/incubator_solvers/consent_gauntlet.py",
+      "lines": "26-49,134-163",
+      "claim": "The normal full-mode solver waits for an unobscured moving-card point and finishes with a direct final commit click; this is implementation evidence of the visible control path."
+    },
+    {
+      "path": "weird_captcha_gym/shared_runtime/app/time_controller.js",
+      "lines": "55-61,548-576",
+      "claim": "Task time is the clock used for virtual performance.now and run_for advances it only inside the configured running window."
+    },
+    {
+      "path": "weird_captcha_gym/environments/consent_gauntlet_env/tasks/consent_gauntlet_seed_0001/verifier.py",
+      "lines": "22-35",
+      "claim": "The task verifier loads the independent Consent Gauntlet grader and grades the exported UI result."
+    }
+  ],
+  "uncertainties": []
+}

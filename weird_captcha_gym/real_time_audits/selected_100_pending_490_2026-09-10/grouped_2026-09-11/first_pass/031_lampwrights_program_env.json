@@ -1,0 +1,1548 @@
+{
+  "case_index": 31,
+  "environment_id": "lampwrights_program_env",
+  "public_environment_name": "Lampwrights Program",
+  "configuration_reports": [
+    {
+      "case_index": 301,
+      "public_environment_name": "Lampwrights Program",
+      "environment_id": "lampwrights_program_env",
+      "difficulty": 1,
+      "interaction_mode": "full",
+      "label": "no",
+      "controls_available": [
+        "Static isometric rooftop map with stepped blocks, visible numbered/unlit target lamps, robot start pose/heading, and a seven-command palette F/L/R/J/G/A/B.",
+        "difficulty 1: main_slots=4, sub_slots=4, decorations=3, height_variation=0; fixed program main=[A], A=[G,F,J,G], B=[]; the generated route has two marked tiles and one height crossing.",
+        "Full interaction: drag an instruction glyph into a visible slot; populated slots can also be dragged to reorder.",
+        "RUN PROGRAM evaluates the current routine program; CERTIFY submits it after the run. The generic environment advertises mouse and keyboard actions, but this browser mechanic binds program edits to the stated mouse surface and has no keyboard input listener.",
+        "A normal screenshot-only solution reads the visible map, composes the reusable program in the visible slots, runs it, waits for the visible route playback, and certifies the result."
+      ],
+      "autonomous_processes": [
+        "Before RUN PROGRAM, the map and editor are static; no task state advances without an action.",
+        "After RUN PROGRAM, the browser synchronously computes the full route, then autonomously displays each already-computed step by updating the robot and lamp highlights every 150 ms until the route completes or blocks.",
+        "During that playback, model.playing prevents edits, reordering, and another run; certification is disabled/guarded. A rejected CERTIFY request can render a fresh roof, but only as a direct response to that submission, not as autonomous evolution."
+      ],
+      "grouped_control_modes": [
+        "D_full_edit: drag_drop program editing (drag a palette glyph into a visible slot; drag populated slots to reorder).",
+        "D_run: clicking RUN PROGRAM for the current program; this starts the precomputed visual playback.",
+        "CERTIFY is administrative/final submission and is excluded as an outcome-affecting control during the pre-run phase."
+      ],
+      "delta_ms": null,
+      "window_ms": null,
+      "clause_i": {
+        "holds": false,
+        "reason": "An observation-free q exists for this exact difficulty and full mode: the generator uses the same fixed profile program for every seed, and decorative randomness does not alter the route. q can issue a predetermined full drag_drop slot-filling sequence, click RUN PROGRAM, and then use its own action clock to wait for the fixed playback before administrative certification."
+      },
+      "clause_ii": {
+        "holds": true,
+        "reason": "A bounded-window policy exists only trivially: it can use the configured endpoint frame (w=0) or ignore W_t^w and follow the same fixed sequence as q. The screenshot is useful for a normal human solution, but no recent visual change is what selects the delayed action."
+      },
+      "clause_iii": {
+        "holds": false,
+        "reason": "No legitimate D, positive Delta, and bounded window satisfies the required loss. Before RUN there is no autonomous task-state change. During the only changing period, the route has already been synchronously evaluated, all outcome-affecting controls are gated by model.playing, and the only control that later becomes available is administrative CERTIFY. Waiting therefore does not make any useful action unavailable or strictly less effective; it only lets a fixed presentation animation finish."
+      },
+      "common_visible_process": "None satisfies the common-witness requirement. The visible robot/lamp sequence after RUN is a fixed playback of result.steps, independent of new observations and unable to accept outcome-affecting edits; it is not an expiring or degrading control opportunity.",
+      "pre_run": {
+        "threshold": 0.5,
+        "at_least_half": true,
+        "rate": null,
+        "basis": "source_structural",
+        "reason": "The difficulty profile supplies one fixed successful program for every generated seed; decoration selection excludes route blocks and does not alter that program. A solver can prepare that program, start RUN PROGRAM, send no outcome-affecting actions during playback, and then perform administrative certification. Thus the at-least-half pre-run condition is structurally met, although it is unnecessary because the mathematical definition already fails.",
+        "seed_probe": null
+      },
+      "files_read_completely": [
+        "AGENTS.md",
+        "weird_captcha_gym/docs/controllability/real-time.md",
+        "weird_captcha_gym/environments/lampwrights_program_env/controls.json",
+        "weird_captcha_gym/environments/lampwrights_program_env/env.json",
+        "weird_captcha_gym/environments/lampwrights_program_env/tasks/lampwrights_program_seed_0001/task.json",
+        "weird_captcha_gym/environments/lampwrights_program_env/tasks/lampwrights_program_seed_0001/setup_task.sh",
+        "weird_captcha_gym/environments/lampwrights_program_env/tasks/lampwrights_program_seed_0001/export_result.sh",
+        "weird_captcha_gym/environments/lampwrights_program_env/scripts/install_puzzle_runtime.sh",
+        "weird_captcha_gym/environments/lampwrights_program_env/scripts/setup_puzzle_runtime.sh",
+        "weird_captcha_gym/shared_scripts/incubator_generators/lampwrights_program.py",
+        "weird_captcha_gym/shared_runtime/app/mechanics/lampwrights_program.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/lampwrights_program.css",
+        "weird_captcha_gym/shared_runtime/server/incubator_graders/lampwrights_program.py",
+        "weird_captcha_gym/shared_runtime/verifier_helpers.py",
+        "weird_captcha_gym/environments/lampwrights_program_env/tasks/lampwrights_program_seed_0001/verifier.py",
+        "weird_captcha_gym/tools/incubator_solvers/lampwrights_program.py"
+      ],
+      "source_evidence": [
+        {
+          "path": "weird_captcha_gym/environments/lampwrights_program_env/controls.json",
+          "lines": "6-10",
+          "claim": "difficulty 1: main_slots=4, sub_slots=4, decorations=3, height_variation=0; fixed program main=[A], A=[G,F,J,G], B=[]; the generated route has two marked tiles and one height crossing."
+        },
+        {
+          "path": "weird_captcha_gym/environments/lampwrights_program_env/controls.json",
+          "lines": "37-41",
+          "claim": "Both interaction modes are implemented, while observation_window_ms=0, frames_per_observation=1, and play_time_seconds=180 are common settings."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/lampwrights_program.py",
+          "lines": "14-20",
+          "claim": "The generator stores the level's program and slot/decorative/height parameters as a fixed profile."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/lampwrights_program.py",
+          "lines": "57-67",
+          "claim": "The active control condition selects the fixed difficulty profile and only applies explicit profile parameter overrides."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/lampwrights_program.py",
+          "lines": "159-175",
+          "claim": "Seed randomness only shuffles and heights decorative blocks; route blocks, targets, and the solution program are built before those decorations and are not an ongoing process."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/lampwrights_program.js",
+          "lines": "68-145",
+          "claim": "Simplified editing uses palette_click, full editing uses drag_drop, and full mode also supports drag reordering; no keyboard handler changes the program."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/lampwrights_program.js",
+          "lines": "151-184",
+          "claim": "RUN evaluation synchronously computes the entire route, including all steps, pose, lamps, and blocked/success result before playback."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/lampwrights_program.js",
+          "lines": "186-209",
+          "claim": "After RUN, playback merely applies the precomputed steps and uses a fixed setTimeout(tick, 150) between visual updates; model.playing gates the period."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/lampwrights_program.js",
+          "lines": "211-235",
+          "claim": "Certification is a later fetch; while playback is active submission is guarded/disabled, and rejection creates a fresh state only in response to the action."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/lampwrights_program.css",
+          "lines": "1",
+          "claim": "The mechanic CSS styles the static map/editor and has no independent task animation or timer."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/lampwrights_program.py",
+          "lines": "18-73",
+          "claim": "The grader independently replays a submitted program against fixed terrain and targets; success depends on the program, not on playback timing."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/lampwrights_program.py",
+          "lines": "76-119",
+          "claim": "The grader enforces the mode-specific edit source and compares the visible execution step count with the independent replay."
+        },
+        {
+          "path": "weird_captcha_gym/environments/lampwrights_program_env/tasks/lampwrights_program_seed_0001/verifier.py",
+          "lines": "22-35",
+          "claim": "The verifier loads the exported result and invokes the independent Lampwrights Program grader."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/verifier_helpers.py",
+          "lines": "33-52",
+          "claim": "The shared verifier helper only copies and parses the final exported JSON; it contributes no live task process."
+        },
+        {
+          "path": "weird_captcha_gym/tools/incubator_solvers/lampwrights_program.py",
+          "lines": "24-36",
+          "claim": "The normal solver enters the known program using the selected visible interaction surface."
+        },
+        {
+          "path": "weird_captcha_gym/tools/incubator_solvers/lampwrights_program.py",
+          "lines": "61-79",
+          "claim": "The normal solver runs, waits for the fixed playback to finish, then certifies; no outcome-affecting edit is needed during playback."
+        },
+        {
+          "path": "weird_captcha_gym/environments/lampwrights_program_env/env.json",
+          "lines": "9-14",
+          "claim": "The environment exposes a single frame at a zero-length observation window and declares a 150 ms runner cycle, matching the browser's fixed playback cadence."
+        }
+      ],
+      "uncertainties": []
+    },
+    {
+      "case_index": 302,
+      "public_environment_name": "Lampwrights Program",
+      "environment_id": "lampwrights_program_env",
+      "difficulty": 1,
+      "interaction_mode": "simplified",
+      "label": "no",
+      "controls_available": [
+        "Static isometric rooftop map with stepped blocks, visible numbered/unlit target lamps, robot start pose/heading, and a seven-command palette F/L/R/J/G/A/B.",
+        "difficulty 1: main_slots=4, sub_slots=4, decorations=3, height_variation=0; fixed program main=[A], A=[G,F,J,G], B=[]; the generated route has two marked tiles and one height crossing.",
+        "Simplified interaction: click an instruction glyph, then click a visible slot to place or replace it; a slot click with no selected instruction clears it.",
+        "RUN PROGRAM evaluates the current routine program; CERTIFY submits it after the run. The generic environment advertises mouse and keyboard actions, but this browser mechanic binds program edits to the stated mouse surface and has no keyboard input listener.",
+        "A normal screenshot-only solution reads the visible map, composes the reusable program in the visible slots, runs it, waits for the visible route playback, and certifies the result."
+      ],
+      "autonomous_processes": [
+        "Before RUN PROGRAM, the map and editor are static; no task state advances without an action.",
+        "After RUN PROGRAM, the browser synchronously computes the full route, then autonomously displays each already-computed step by updating the robot and lamp highlights every 150 ms until the route completes or blocks.",
+        "During that playback, model.playing prevents edits, reordering, and another run; certification is disabled/guarded. A rejected CERTIFY request can render a fresh roof, but only as a direct response to that submission, not as autonomous evolution."
+      ],
+      "grouped_control_modes": [
+        "D_simplified_edit: palette_click program editing (select F/L/R/J/G/A/B, then click a visible slot to place or replace; clicking a populated slot with no selection clears it).",
+        "D_run: clicking RUN PROGRAM for the current program; this starts the precomputed visual playback.",
+        "CERTIFY is administrative/final submission and is excluded as an outcome-affecting control during the pre-run phase."
+      ],
+      "delta_ms": null,
+      "window_ms": null,
+      "clause_i": {
+        "holds": false,
+        "reason": "An observation-free q exists for this exact difficulty and simplified mode: the generator uses the same fixed profile program for every seed, and decorative randomness does not alter the route. q can issue a predetermined simplified palette_click slot-filling sequence, click RUN PROGRAM, and then use its own action clock to wait for the fixed playback before administrative certification."
+      },
+      "clause_ii": {
+        "holds": true,
+        "reason": "A bounded-window policy exists only trivially: it can use the configured endpoint frame (w=0) or ignore W_t^w and follow the same fixed sequence as q. The screenshot is useful for a normal human solution, but no recent visual change is what selects the delayed action."
+      },
+      "clause_iii": {
+        "holds": false,
+        "reason": "No legitimate D, positive Delta, and bounded window satisfies the required loss. Before RUN there is no autonomous task-state change. During the only changing period, the route has already been synchronously evaluated, all outcome-affecting controls are gated by model.playing, and the only control that later becomes available is administrative CERTIFY. Waiting therefore does not make any useful action unavailable or strictly less effective; it only lets a fixed presentation animation finish."
+      },
+      "common_visible_process": "None satisfies the common-witness requirement. The visible robot/lamp sequence after RUN is a fixed playback of result.steps, independent of new observations and unable to accept outcome-affecting edits; it is not an expiring or degrading control opportunity.",
+      "pre_run": {
+        "threshold": 0.5,
+        "at_least_half": true,
+        "rate": null,
+        "basis": "source_structural",
+        "reason": "The difficulty profile supplies one fixed successful program for every generated seed; decoration selection excludes route blocks and does not alter that program. A solver can prepare that program, start RUN PROGRAM, send no outcome-affecting actions during playback, and then perform administrative certification. Thus the at-least-half pre-run condition is structurally met, although it is unnecessary because the mathematical definition already fails.",
+        "seed_probe": null
+      },
+      "files_read_completely": [
+        "AGENTS.md",
+        "weird_captcha_gym/docs/controllability/real-time.md",
+        "weird_captcha_gym/environments/lampwrights_program_env/controls.json",
+        "weird_captcha_gym/environments/lampwrights_program_env/env.json",
+        "weird_captcha_gym/environments/lampwrights_program_env/tasks/lampwrights_program_seed_0001/task.json",
+        "weird_captcha_gym/environments/lampwrights_program_env/tasks/lampwrights_program_seed_0001/setup_task.sh",
+        "weird_captcha_gym/environments/lampwrights_program_env/tasks/lampwrights_program_seed_0001/export_result.sh",
+        "weird_captcha_gym/environments/lampwrights_program_env/scripts/install_puzzle_runtime.sh",
+        "weird_captcha_gym/environments/lampwrights_program_env/scripts/setup_puzzle_runtime.sh",
+        "weird_captcha_gym/shared_scripts/incubator_generators/lampwrights_program.py",
+        "weird_captcha_gym/shared_runtime/app/mechanics/lampwrights_program.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/lampwrights_program.css",
+        "weird_captcha_gym/shared_runtime/server/incubator_graders/lampwrights_program.py",
+        "weird_captcha_gym/shared_runtime/verifier_helpers.py",
+        "weird_captcha_gym/environments/lampwrights_program_env/tasks/lampwrights_program_seed_0001/verifier.py",
+        "weird_captcha_gym/tools/incubator_solvers/lampwrights_program.py"
+      ],
+      "source_evidence": [
+        {
+          "path": "weird_captcha_gym/environments/lampwrights_program_env/controls.json",
+          "lines": "6-10",
+          "claim": "difficulty 1: main_slots=4, sub_slots=4, decorations=3, height_variation=0; fixed program main=[A], A=[G,F,J,G], B=[]; the generated route has two marked tiles and one height crossing."
+        },
+        {
+          "path": "weird_captcha_gym/environments/lampwrights_program_env/controls.json",
+          "lines": "37-41",
+          "claim": "Both interaction modes are implemented, while observation_window_ms=0, frames_per_observation=1, and play_time_seconds=180 are common settings."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/lampwrights_program.py",
+          "lines": "14-20",
+          "claim": "The generator stores the level's program and slot/decorative/height parameters as a fixed profile."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/lampwrights_program.py",
+          "lines": "57-67",
+          "claim": "The active control condition selects the fixed difficulty profile and only applies explicit profile parameter overrides."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/lampwrights_program.py",
+          "lines": "159-175",
+          "claim": "Seed randomness only shuffles and heights decorative blocks; route blocks, targets, and the solution program are built before those decorations and are not an ongoing process."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/lampwrights_program.js",
+          "lines": "68-145",
+          "claim": "Simplified editing uses palette_click, full editing uses drag_drop, and full mode also supports drag reordering; no keyboard handler changes the program."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/lampwrights_program.js",
+          "lines": "151-184",
+          "claim": "RUN evaluation synchronously computes the entire route, including all steps, pose, lamps, and blocked/success result before playback."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/lampwrights_program.js",
+          "lines": "186-209",
+          "claim": "After RUN, playback merely applies the precomputed steps and uses a fixed setTimeout(tick, 150) between visual updates; model.playing gates the period."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/lampwrights_program.js",
+          "lines": "211-235",
+          "claim": "Certification is a later fetch; while playback is active submission is guarded/disabled, and rejection creates a fresh state only in response to the action."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/lampwrights_program.css",
+          "lines": "1",
+          "claim": "The mechanic CSS styles the static map/editor and has no independent task animation or timer."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/lampwrights_program.py",
+          "lines": "18-73",
+          "claim": "The grader independently replays a submitted program against fixed terrain and targets; success depends on the program, not on playback timing."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/lampwrights_program.py",
+          "lines": "76-119",
+          "claim": "The grader enforces the mode-specific edit source and compares the visible execution step count with the independent replay."
+        },
+        {
+          "path": "weird_captcha_gym/environments/lampwrights_program_env/tasks/lampwrights_program_seed_0001/verifier.py",
+          "lines": "22-35",
+          "claim": "The verifier loads the exported result and invokes the independent Lampwrights Program grader."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/verifier_helpers.py",
+          "lines": "33-52",
+          "claim": "The shared verifier helper only copies and parses the final exported JSON; it contributes no live task process."
+        },
+        {
+          "path": "weird_captcha_gym/tools/incubator_solvers/lampwrights_program.py",
+          "lines": "24-36",
+          "claim": "The normal solver enters the known program using the selected visible interaction surface."
+        },
+        {
+          "path": "weird_captcha_gym/tools/incubator_solvers/lampwrights_program.py",
+          "lines": "61-79",
+          "claim": "The normal solver runs, waits for the fixed playback to finish, then certifies; no outcome-affecting edit is needed during playback."
+        },
+        {
+          "path": "weird_captcha_gym/environments/lampwrights_program_env/env.json",
+          "lines": "9-14",
+          "claim": "The environment exposes a single frame at a zero-length observation window and declares a 150 ms runner cycle, matching the browser's fixed playback cadence."
+        }
+      ],
+      "uncertainties": []
+    },
+    {
+      "case_index": 303,
+      "public_environment_name": "Lampwrights Program",
+      "environment_id": "lampwrights_program_env",
+      "difficulty": 2,
+      "interaction_mode": "full",
+      "label": "no",
+      "controls_available": [
+        "Static isometric rooftop map with stepped blocks, visible numbered/unlit target lamps, robot start pose/heading, and a seven-command palette F/L/R/J/G/A/B.",
+        "difficulty 2: main_slots=5, sub_slots=5, decorations=5, height_variation=1; fixed program main=[A,R,B], A=[G,F,J,F,G], B=[F,R,F,G]; the generated route has three marked tiles across two heights.",
+        "Full interaction: drag an instruction glyph into a visible slot; populated slots can also be dragged to reorder.",
+        "RUN PROGRAM evaluates the current routine program; CERTIFY submits it after the run. The generic environment advertises mouse and keyboard actions, but this browser mechanic binds program edits to the stated mouse surface and has no keyboard input listener.",
+        "A normal screenshot-only solution reads the visible map, composes the reusable program in the visible slots, runs it, waits for the visible route playback, and certifies the result."
+      ],
+      "autonomous_processes": [
+        "Before RUN PROGRAM, the map and editor are static; no task state advances without an action.",
+        "After RUN PROGRAM, the browser synchronously computes the full route, then autonomously displays each already-computed step by updating the robot and lamp highlights every 150 ms until the route completes or blocks.",
+        "During that playback, model.playing prevents edits, reordering, and another run; certification is disabled/guarded. A rejected CERTIFY request can render a fresh roof, but only as a direct response to that submission, not as autonomous evolution."
+      ],
+      "grouped_control_modes": [
+        "D_full_edit: drag_drop program editing (drag a palette glyph into a visible slot; drag populated slots to reorder).",
+        "D_run: clicking RUN PROGRAM for the current program; this starts the precomputed visual playback.",
+        "CERTIFY is administrative/final submission and is excluded as an outcome-affecting control during the pre-run phase."
+      ],
+      "delta_ms": null,
+      "window_ms": null,
+      "clause_i": {
+        "holds": false,
+        "reason": "An observation-free q exists for this exact difficulty and full mode: the generator uses the same fixed profile program for every seed, and decorative randomness does not alter the route. q can issue a predetermined full drag_drop slot-filling sequence, click RUN PROGRAM, and then use its own action clock to wait for the fixed playback before administrative certification."
+      },
+      "clause_ii": {
+        "holds": true,
+        "reason": "A bounded-window policy exists only trivially: it can use the configured endpoint frame (w=0) or ignore W_t^w and follow the same fixed sequence as q. The screenshot is useful for a normal human solution, but no recent visual change is what selects the delayed action."
+      },
+      "clause_iii": {
+        "holds": false,
+        "reason": "No legitimate D, positive Delta, and bounded window satisfies the required loss. Before RUN there is no autonomous task-state change. During the only changing period, the route has already been synchronously evaluated, all outcome-affecting controls are gated by model.playing, and the only control that later becomes available is administrative CERTIFY. Waiting therefore does not make any useful action unavailable or strictly less effective; it only lets a fixed presentation animation finish."
+      },
+      "common_visible_process": "None satisfies the common-witness requirement. The visible robot/lamp sequence after RUN is a fixed playback of result.steps, independent of new observations and unable to accept outcome-affecting edits; it is not an expiring or degrading control opportunity.",
+      "pre_run": {
+        "threshold": 0.5,
+        "at_least_half": true,
+        "rate": null,
+        "basis": "source_structural",
+        "reason": "The difficulty profile supplies one fixed successful program for every generated seed; decoration selection excludes route blocks and does not alter that program. A solver can prepare that program, start RUN PROGRAM, send no outcome-affecting actions during playback, and then perform administrative certification. Thus the at-least-half pre-run condition is structurally met, although it is unnecessary because the mathematical definition already fails.",
+        "seed_probe": null
+      },
+      "files_read_completely": [
+        "AGENTS.md",
+        "weird_captcha_gym/docs/controllability/real-time.md",
+        "weird_captcha_gym/environments/lampwrights_program_env/controls.json",
+        "weird_captcha_gym/environments/lampwrights_program_env/env.json",
+        "weird_captcha_gym/environments/lampwrights_program_env/tasks/lampwrights_program_seed_0001/task.json",
+        "weird_captcha_gym/environments/lampwrights_program_env/tasks/lampwrights_program_seed_0001/setup_task.sh",
+        "weird_captcha_gym/environments/lampwrights_program_env/tasks/lampwrights_program_seed_0001/export_result.sh",
+        "weird_captcha_gym/environments/lampwrights_program_env/scripts/install_puzzle_runtime.sh",
+        "weird_captcha_gym/environments/lampwrights_program_env/scripts/setup_puzzle_runtime.sh",
+        "weird_captcha_gym/shared_scripts/incubator_generators/lampwrights_program.py",
+        "weird_captcha_gym/shared_runtime/app/mechanics/lampwrights_program.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/lampwrights_program.css",
+        "weird_captcha_gym/shared_runtime/server/incubator_graders/lampwrights_program.py",
+        "weird_captcha_gym/shared_runtime/verifier_helpers.py",
+        "weird_captcha_gym/environments/lampwrights_program_env/tasks/lampwrights_program_seed_0001/verifier.py",
+        "weird_captcha_gym/tools/incubator_solvers/lampwrights_program.py"
+      ],
+      "source_evidence": [
+        {
+          "path": "weird_captcha_gym/environments/lampwrights_program_env/controls.json",
+          "lines": "12-16",
+          "claim": "difficulty 2: main_slots=5, sub_slots=5, decorations=5, height_variation=1; fixed program main=[A,R,B], A=[G,F,J,F,G], B=[F,R,F,G]; the generated route has three marked tiles across two heights."
+        },
+        {
+          "path": "weird_captcha_gym/environments/lampwrights_program_env/controls.json",
+          "lines": "37-41",
+          "claim": "Both interaction modes are implemented, while observation_window_ms=0, frames_per_observation=1, and play_time_seconds=180 are common settings."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/lampwrights_program.py",
+          "lines": "22-28",
+          "claim": "The generator stores the level's program and slot/decorative/height parameters as a fixed profile."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/lampwrights_program.py",
+          "lines": "57-67",
+          "claim": "The active control condition selects the fixed difficulty profile and only applies explicit profile parameter overrides."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/lampwrights_program.py",
+          "lines": "159-175",
+          "claim": "Seed randomness only shuffles and heights decorative blocks; route blocks, targets, and the solution program are built before those decorations and are not an ongoing process."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/lampwrights_program.js",
+          "lines": "68-145",
+          "claim": "Simplified editing uses palette_click, full editing uses drag_drop, and full mode also supports drag reordering; no keyboard handler changes the program."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/lampwrights_program.js",
+          "lines": "151-184",
+          "claim": "RUN evaluation synchronously computes the entire route, including all steps, pose, lamps, and blocked/success result before playback."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/lampwrights_program.js",
+          "lines": "186-209",
+          "claim": "After RUN, playback merely applies the precomputed steps and uses a fixed setTimeout(tick, 150) between visual updates; model.playing gates the period."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/lampwrights_program.js",
+          "lines": "211-235",
+          "claim": "Certification is a later fetch; while playback is active submission is guarded/disabled, and rejection creates a fresh state only in response to the action."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/lampwrights_program.css",
+          "lines": "1",
+          "claim": "The mechanic CSS styles the static map/editor and has no independent task animation or timer."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/lampwrights_program.py",
+          "lines": "18-73",
+          "claim": "The grader independently replays a submitted program against fixed terrain and targets; success depends on the program, not on playback timing."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/lampwrights_program.py",
+          "lines": "76-119",
+          "claim": "The grader enforces the mode-specific edit source and compares the visible execution step count with the independent replay."
+        },
+        {
+          "path": "weird_captcha_gym/environments/lampwrights_program_env/tasks/lampwrights_program_seed_0001/verifier.py",
+          "lines": "22-35",
+          "claim": "The verifier loads the exported result and invokes the independent Lampwrights Program grader."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/verifier_helpers.py",
+          "lines": "33-52",
+          "claim": "The shared verifier helper only copies and parses the final exported JSON; it contributes no live task process."
+        },
+        {
+          "path": "weird_captcha_gym/tools/incubator_solvers/lampwrights_program.py",
+          "lines": "24-36",
+          "claim": "The normal solver enters the known program using the selected visible interaction surface."
+        },
+        {
+          "path": "weird_captcha_gym/tools/incubator_solvers/lampwrights_program.py",
+          "lines": "61-79",
+          "claim": "The normal solver runs, waits for the fixed playback to finish, then certifies; no outcome-affecting edit is needed during playback."
+        },
+        {
+          "path": "weird_captcha_gym/environments/lampwrights_program_env/env.json",
+          "lines": "9-14",
+          "claim": "The environment exposes a single frame at a zero-length observation window and declares a 150 ms runner cycle, matching the browser's fixed playback cadence."
+        }
+      ],
+      "uncertainties": []
+    },
+    {
+      "case_index": 304,
+      "public_environment_name": "Lampwrights Program",
+      "environment_id": "lampwrights_program_env",
+      "difficulty": 2,
+      "interaction_mode": "simplified",
+      "label": "no",
+      "controls_available": [
+        "Static isometric rooftop map with stepped blocks, visible numbered/unlit target lamps, robot start pose/heading, and a seven-command palette F/L/R/J/G/A/B.",
+        "difficulty 2: main_slots=5, sub_slots=5, decorations=5, height_variation=1; fixed program main=[A,R,B], A=[G,F,J,F,G], B=[F,R,F,G]; the generated route has three marked tiles across two heights.",
+        "Simplified interaction: click an instruction glyph, then click a visible slot to place or replace it; a slot click with no selected instruction clears it.",
+        "RUN PROGRAM evaluates the current routine program; CERTIFY submits it after the run. The generic environment advertises mouse and keyboard actions, but this browser mechanic binds program edits to the stated mouse surface and has no keyboard input listener.",
+        "A normal screenshot-only solution reads the visible map, composes the reusable program in the visible slots, runs it, waits for the visible route playback, and certifies the result."
+      ],
+      "autonomous_processes": [
+        "Before RUN PROGRAM, the map and editor are static; no task state advances without an action.",
+        "After RUN PROGRAM, the browser synchronously computes the full route, then autonomously displays each already-computed step by updating the robot and lamp highlights every 150 ms until the route completes or blocks.",
+        "During that playback, model.playing prevents edits, reordering, and another run; certification is disabled/guarded. A rejected CERTIFY request can render a fresh roof, but only as a direct response to that submission, not as autonomous evolution."
+      ],
+      "grouped_control_modes": [
+        "D_simplified_edit: palette_click program editing (select F/L/R/J/G/A/B, then click a visible slot to place or replace; clicking a populated slot with no selection clears it).",
+        "D_run: clicking RUN PROGRAM for the current program; this starts the precomputed visual playback.",
+        "CERTIFY is administrative/final submission and is excluded as an outcome-affecting control during the pre-run phase."
+      ],
+      "delta_ms": null,
+      "window_ms": null,
+      "clause_i": {
+        "holds": false,
+        "reason": "An observation-free q exists for this exact difficulty and simplified mode: the generator uses the same fixed profile program for every seed, and decorative randomness does not alter the route. q can issue a predetermined simplified palette_click slot-filling sequence, click RUN PROGRAM, and then use its own action clock to wait for the fixed playback before administrative certification."
+      },
+      "clause_ii": {
+        "holds": true,
+        "reason": "A bounded-window policy exists only trivially: it can use the configured endpoint frame (w=0) or ignore W_t^w and follow the same fixed sequence as q. The screenshot is useful for a normal human solution, but no recent visual change is what selects the delayed action."
+      },
+      "clause_iii": {
+        "holds": false,
+        "reason": "No legitimate D, positive Delta, and bounded window satisfies the required loss. Before RUN there is no autonomous task-state change. During the only changing period, the route has already been synchronously evaluated, all outcome-affecting controls are gated by model.playing, and the only control that later becomes available is administrative CERTIFY. Waiting therefore does not make any useful action unavailable or strictly less effective; it only lets a fixed presentation animation finish."
+      },
+      "common_visible_process": "None satisfies the common-witness requirement. The visible robot/lamp sequence after RUN is a fixed playback of result.steps, independent of new observations and unable to accept outcome-affecting edits; it is not an expiring or degrading control opportunity.",
+      "pre_run": {
+        "threshold": 0.5,
+        "at_least_half": true,
+        "rate": null,
+        "basis": "source_structural",
+        "reason": "The difficulty profile supplies one fixed successful program for every generated seed; decoration selection excludes route blocks and does not alter that program. A solver can prepare that program, start RUN PROGRAM, send no outcome-affecting actions during playback, and then perform administrative certification. Thus the at-least-half pre-run condition is structurally met, although it is unnecessary because the mathematical definition already fails.",
+        "seed_probe": null
+      },
+      "files_read_completely": [
+        "AGENTS.md",
+        "weird_captcha_gym/docs/controllability/real-time.md",
+        "weird_captcha_gym/environments/lampwrights_program_env/controls.json",
+        "weird_captcha_gym/environments/lampwrights_program_env/env.json",
+        "weird_captcha_gym/environments/lampwrights_program_env/tasks/lampwrights_program_seed_0001/task.json",
+        "weird_captcha_gym/environments/lampwrights_program_env/tasks/lampwrights_program_seed_0001/setup_task.sh",
+        "weird_captcha_gym/environments/lampwrights_program_env/tasks/lampwrights_program_seed_0001/export_result.sh",
+        "weird_captcha_gym/environments/lampwrights_program_env/scripts/install_puzzle_runtime.sh",
+        "weird_captcha_gym/environments/lampwrights_program_env/scripts/setup_puzzle_runtime.sh",
+        "weird_captcha_gym/shared_scripts/incubator_generators/lampwrights_program.py",
+        "weird_captcha_gym/shared_runtime/app/mechanics/lampwrights_program.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/lampwrights_program.css",
+        "weird_captcha_gym/shared_runtime/server/incubator_graders/lampwrights_program.py",
+        "weird_captcha_gym/shared_runtime/verifier_helpers.py",
+        "weird_captcha_gym/environments/lampwrights_program_env/tasks/lampwrights_program_seed_0001/verifier.py",
+        "weird_captcha_gym/tools/incubator_solvers/lampwrights_program.py"
+      ],
+      "source_evidence": [
+        {
+          "path": "weird_captcha_gym/environments/lampwrights_program_env/controls.json",
+          "lines": "12-16",
+          "claim": "difficulty 2: main_slots=5, sub_slots=5, decorations=5, height_variation=1; fixed program main=[A,R,B], A=[G,F,J,F,G], B=[F,R,F,G]; the generated route has three marked tiles across two heights."
+        },
+        {
+          "path": "weird_captcha_gym/environments/lampwrights_program_env/controls.json",
+          "lines": "37-41",
+          "claim": "Both interaction modes are implemented, while observation_window_ms=0, frames_per_observation=1, and play_time_seconds=180 are common settings."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/lampwrights_program.py",
+          "lines": "22-28",
+          "claim": "The generator stores the level's program and slot/decorative/height parameters as a fixed profile."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/lampwrights_program.py",
+          "lines": "57-67",
+          "claim": "The active control condition selects the fixed difficulty profile and only applies explicit profile parameter overrides."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/lampwrights_program.py",
+          "lines": "159-175",
+          "claim": "Seed randomness only shuffles and heights decorative blocks; route blocks, targets, and the solution program are built before those decorations and are not an ongoing process."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/lampwrights_program.js",
+          "lines": "68-145",
+          "claim": "Simplified editing uses palette_click, full editing uses drag_drop, and full mode also supports drag reordering; no keyboard handler changes the program."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/lampwrights_program.js",
+          "lines": "151-184",
+          "claim": "RUN evaluation synchronously computes the entire route, including all steps, pose, lamps, and blocked/success result before playback."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/lampwrights_program.js",
+          "lines": "186-209",
+          "claim": "After RUN, playback merely applies the precomputed steps and uses a fixed setTimeout(tick, 150) between visual updates; model.playing gates the period."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/lampwrights_program.js",
+          "lines": "211-235",
+          "claim": "Certification is a later fetch; while playback is active submission is guarded/disabled, and rejection creates a fresh state only in response to the action."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/lampwrights_program.css",
+          "lines": "1",
+          "claim": "The mechanic CSS styles the static map/editor and has no independent task animation or timer."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/lampwrights_program.py",
+          "lines": "18-73",
+          "claim": "The grader independently replays a submitted program against fixed terrain and targets; success depends on the program, not on playback timing."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/lampwrights_program.py",
+          "lines": "76-119",
+          "claim": "The grader enforces the mode-specific edit source and compares the visible execution step count with the independent replay."
+        },
+        {
+          "path": "weird_captcha_gym/environments/lampwrights_program_env/tasks/lampwrights_program_seed_0001/verifier.py",
+          "lines": "22-35",
+          "claim": "The verifier loads the exported result and invokes the independent Lampwrights Program grader."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/verifier_helpers.py",
+          "lines": "33-52",
+          "claim": "The shared verifier helper only copies and parses the final exported JSON; it contributes no live task process."
+        },
+        {
+          "path": "weird_captcha_gym/tools/incubator_solvers/lampwrights_program.py",
+          "lines": "24-36",
+          "claim": "The normal solver enters the known program using the selected visible interaction surface."
+        },
+        {
+          "path": "weird_captcha_gym/tools/incubator_solvers/lampwrights_program.py",
+          "lines": "61-79",
+          "claim": "The normal solver runs, waits for the fixed playback to finish, then certifies; no outcome-affecting edit is needed during playback."
+        },
+        {
+          "path": "weird_captcha_gym/environments/lampwrights_program_env/env.json",
+          "lines": "9-14",
+          "claim": "The environment exposes a single frame at a zero-length observation window and declares a 150 ms runner cycle, matching the browser's fixed playback cadence."
+        }
+      ],
+      "uncertainties": []
+    },
+    {
+      "case_index": 305,
+      "public_environment_name": "Lampwrights Program",
+      "environment_id": "lampwrights_program_env",
+      "difficulty": 3,
+      "interaction_mode": "full",
+      "label": "no",
+      "controls_available": [
+        "Static isometric rooftop map with stepped blocks, visible numbered/unlit target lamps, robot start pose/heading, and a seven-command palette F/L/R/J/G/A/B.",
+        "difficulty 3: main_slots=6, sub_slots=6, decorations=7, height_variation=1; fixed program main=[A,R,B,L,A], A=[G,F,F,J,F,G], B=[F,R,F,J,F,G]; the generated route has four marked tiles and two elevation changes.",
+        "Full interaction: drag an instruction glyph into a visible slot; populated slots can also be dragged to reorder.",
+        "RUN PROGRAM evaluates the current routine program; CERTIFY submits it after the run. The generic environment advertises mouse and keyboard actions, but this browser mechanic binds program edits to the stated mouse surface and has no keyboard input listener.",
+        "A normal screenshot-only solution reads the visible map, composes the reusable program in the visible slots, runs it, waits for the visible route playback, and certifies the result."
+      ],
+      "autonomous_processes": [
+        "Before RUN PROGRAM, the map and editor are static; no task state advances without an action.",
+        "After RUN PROGRAM, the browser synchronously computes the full route, then autonomously displays each already-computed step by updating the robot and lamp highlights every 150 ms until the route completes or blocks.",
+        "During that playback, model.playing prevents edits, reordering, and another run; certification is disabled/guarded. A rejected CERTIFY request can render a fresh roof, but only as a direct response to that submission, not as autonomous evolution."
+      ],
+      "grouped_control_modes": [
+        "D_full_edit: drag_drop program editing (drag a palette glyph into a visible slot; drag populated slots to reorder).",
+        "D_run: clicking RUN PROGRAM for the current program; this starts the precomputed visual playback.",
+        "CERTIFY is administrative/final submission and is excluded as an outcome-affecting control during the pre-run phase."
+      ],
+      "delta_ms": null,
+      "window_ms": null,
+      "clause_i": {
+        "holds": false,
+        "reason": "An observation-free q exists for this exact difficulty and full mode: the generator uses the same fixed profile program for every seed, and decorative randomness does not alter the route. q can issue a predetermined full drag_drop slot-filling sequence, click RUN PROGRAM, and then use its own action clock to wait for the fixed playback before administrative certification."
+      },
+      "clause_ii": {
+        "holds": true,
+        "reason": "A bounded-window policy exists only trivially: it can use the configured endpoint frame (w=0) or ignore W_t^w and follow the same fixed sequence as q. The screenshot is useful for a normal human solution, but no recent visual change is what selects the delayed action."
+      },
+      "clause_iii": {
+        "holds": false,
+        "reason": "No legitimate D, positive Delta, and bounded window satisfies the required loss. Before RUN there is no autonomous task-state change. During the only changing period, the route has already been synchronously evaluated, all outcome-affecting controls are gated by model.playing, and the only control that later becomes available is administrative CERTIFY. Waiting therefore does not make any useful action unavailable or strictly less effective; it only lets a fixed presentation animation finish."
+      },
+      "common_visible_process": "None satisfies the common-witness requirement. The visible robot/lamp sequence after RUN is a fixed playback of result.steps, independent of new observations and unable to accept outcome-affecting edits; it is not an expiring or degrading control opportunity.",
+      "pre_run": {
+        "threshold": 0.5,
+        "at_least_half": true,
+        "rate": null,
+        "basis": "source_structural",
+        "reason": "The difficulty profile supplies one fixed successful program for every generated seed; decoration selection excludes route blocks and does not alter that program. A solver can prepare that program, start RUN PROGRAM, send no outcome-affecting actions during playback, and then perform administrative certification. Thus the at-least-half pre-run condition is structurally met, although it is unnecessary because the mathematical definition already fails.",
+        "seed_probe": null
+      },
+      "files_read_completely": [
+        "AGENTS.md",
+        "weird_captcha_gym/docs/controllability/real-time.md",
+        "weird_captcha_gym/environments/lampwrights_program_env/controls.json",
+        "weird_captcha_gym/environments/lampwrights_program_env/env.json",
+        "weird_captcha_gym/environments/lampwrights_program_env/tasks/lampwrights_program_seed_0001/task.json",
+        "weird_captcha_gym/environments/lampwrights_program_env/tasks/lampwrights_program_seed_0001/setup_task.sh",
+        "weird_captcha_gym/environments/lampwrights_program_env/tasks/lampwrights_program_seed_0001/export_result.sh",
+        "weird_captcha_gym/environments/lampwrights_program_env/scripts/install_puzzle_runtime.sh",
+        "weird_captcha_gym/environments/lampwrights_program_env/scripts/setup_puzzle_runtime.sh",
+        "weird_captcha_gym/shared_scripts/incubator_generators/lampwrights_program.py",
+        "weird_captcha_gym/shared_runtime/app/mechanics/lampwrights_program.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/lampwrights_program.css",
+        "weird_captcha_gym/shared_runtime/server/incubator_graders/lampwrights_program.py",
+        "weird_captcha_gym/shared_runtime/verifier_helpers.py",
+        "weird_captcha_gym/environments/lampwrights_program_env/tasks/lampwrights_program_seed_0001/verifier.py",
+        "weird_captcha_gym/tools/incubator_solvers/lampwrights_program.py"
+      ],
+      "source_evidence": [
+        {
+          "path": "weird_captcha_gym/environments/lampwrights_program_env/controls.json",
+          "lines": "18-22",
+          "claim": "difficulty 3: main_slots=6, sub_slots=6, decorations=7, height_variation=1; fixed program main=[A,R,B,L,A], A=[G,F,F,J,F,G], B=[F,R,F,J,F,G]; the generated route has four marked tiles and two elevation changes."
+        },
+        {
+          "path": "weird_captcha_gym/environments/lampwrights_program_env/controls.json",
+          "lines": "37-41",
+          "claim": "Both interaction modes are implemented, while observation_window_ms=0, frames_per_observation=1, and play_time_seconds=180 are common settings."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/lampwrights_program.py",
+          "lines": "29-35",
+          "claim": "The generator stores the level's program and slot/decorative/height parameters as a fixed profile."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/lampwrights_program.py",
+          "lines": "57-67",
+          "claim": "The active control condition selects the fixed difficulty profile and only applies explicit profile parameter overrides."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/lampwrights_program.py",
+          "lines": "159-175",
+          "claim": "Seed randomness only shuffles and heights decorative blocks; route blocks, targets, and the solution program are built before those decorations and are not an ongoing process."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/lampwrights_program.js",
+          "lines": "68-145",
+          "claim": "Simplified editing uses palette_click, full editing uses drag_drop, and full mode also supports drag reordering; no keyboard handler changes the program."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/lampwrights_program.js",
+          "lines": "151-184",
+          "claim": "RUN evaluation synchronously computes the entire route, including all steps, pose, lamps, and blocked/success result before playback."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/lampwrights_program.js",
+          "lines": "186-209",
+          "claim": "After RUN, playback merely applies the precomputed steps and uses a fixed setTimeout(tick, 150) between visual updates; model.playing gates the period."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/lampwrights_program.js",
+          "lines": "211-235",
+          "claim": "Certification is a later fetch; while playback is active submission is guarded/disabled, and rejection creates a fresh state only in response to the action."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/lampwrights_program.css",
+          "lines": "1",
+          "claim": "The mechanic CSS styles the static map/editor and has no independent task animation or timer."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/lampwrights_program.py",
+          "lines": "18-73",
+          "claim": "The grader independently replays a submitted program against fixed terrain and targets; success depends on the program, not on playback timing."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/lampwrights_program.py",
+          "lines": "76-119",
+          "claim": "The grader enforces the mode-specific edit source and compares the visible execution step count with the independent replay."
+        },
+        {
+          "path": "weird_captcha_gym/environments/lampwrights_program_env/tasks/lampwrights_program_seed_0001/verifier.py",
+          "lines": "22-35",
+          "claim": "The verifier loads the exported result and invokes the independent Lampwrights Program grader."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/verifier_helpers.py",
+          "lines": "33-52",
+          "claim": "The shared verifier helper only copies and parses the final exported JSON; it contributes no live task process."
+        },
+        {
+          "path": "weird_captcha_gym/tools/incubator_solvers/lampwrights_program.py",
+          "lines": "24-36",
+          "claim": "The normal solver enters the known program using the selected visible interaction surface."
+        },
+        {
+          "path": "weird_captcha_gym/tools/incubator_solvers/lampwrights_program.py",
+          "lines": "61-79",
+          "claim": "The normal solver runs, waits for the fixed playback to finish, then certifies; no outcome-affecting edit is needed during playback."
+        },
+        {
+          "path": "weird_captcha_gym/environments/lampwrights_program_env/env.json",
+          "lines": "9-14",
+          "claim": "The environment exposes a single frame at a zero-length observation window and declares a 150 ms runner cycle, matching the browser's fixed playback cadence."
+        }
+      ],
+      "uncertainties": []
+    },
+    {
+      "case_index": 306,
+      "public_environment_name": "Lampwrights Program",
+      "environment_id": "lampwrights_program_env",
+      "difficulty": 3,
+      "interaction_mode": "simplified",
+      "label": "no",
+      "controls_available": [
+        "Static isometric rooftop map with stepped blocks, visible numbered/unlit target lamps, robot start pose/heading, and a seven-command palette F/L/R/J/G/A/B.",
+        "difficulty 3: main_slots=6, sub_slots=6, decorations=7, height_variation=1; fixed program main=[A,R,B,L,A], A=[G,F,F,J,F,G], B=[F,R,F,J,F,G]; the generated route has four marked tiles and two elevation changes.",
+        "Simplified interaction: click an instruction glyph, then click a visible slot to place or replace it; a slot click with no selected instruction clears it.",
+        "RUN PROGRAM evaluates the current routine program; CERTIFY submits it after the run. The generic environment advertises mouse and keyboard actions, but this browser mechanic binds program edits to the stated mouse surface and has no keyboard input listener.",
+        "A normal screenshot-only solution reads the visible map, composes the reusable program in the visible slots, runs it, waits for the visible route playback, and certifies the result."
+      ],
+      "autonomous_processes": [
+        "Before RUN PROGRAM, the map and editor are static; no task state advances without an action.",
+        "After RUN PROGRAM, the browser synchronously computes the full route, then autonomously displays each already-computed step by updating the robot and lamp highlights every 150 ms until the route completes or blocks.",
+        "During that playback, model.playing prevents edits, reordering, and another run; certification is disabled/guarded. A rejected CERTIFY request can render a fresh roof, but only as a direct response to that submission, not as autonomous evolution."
+      ],
+      "grouped_control_modes": [
+        "D_simplified_edit: palette_click program editing (select F/L/R/J/G/A/B, then click a visible slot to place or replace; clicking a populated slot with no selection clears it).",
+        "D_run: clicking RUN PROGRAM for the current program; this starts the precomputed visual playback.",
+        "CERTIFY is administrative/final submission and is excluded as an outcome-affecting control during the pre-run phase."
+      ],
+      "delta_ms": null,
+      "window_ms": null,
+      "clause_i": {
+        "holds": false,
+        "reason": "An observation-free q exists for this exact difficulty and simplified mode: the generator uses the same fixed profile program for every seed, and decorative randomness does not alter the route. q can issue a predetermined simplified palette_click slot-filling sequence, click RUN PROGRAM, and then use its own action clock to wait for the fixed playback before administrative certification."
+      },
+      "clause_ii": {
+        "holds": true,
+        "reason": "A bounded-window policy exists only trivially: it can use the configured endpoint frame (w=0) or ignore W_t^w and follow the same fixed sequence as q. The screenshot is useful for a normal human solution, but no recent visual change is what selects the delayed action."
+      },
+      "clause_iii": {
+        "holds": false,
+        "reason": "No legitimate D, positive Delta, and bounded window satisfies the required loss. Before RUN there is no autonomous task-state change. During the only changing period, the route has already been synchronously evaluated, all outcome-affecting controls are gated by model.playing, and the only control that later becomes available is administrative CERTIFY. Waiting therefore does not make any useful action unavailable or strictly less effective; it only lets a fixed presentation animation finish."
+      },
+      "common_visible_process": "None satisfies the common-witness requirement. The visible robot/lamp sequence after RUN is a fixed playback of result.steps, independent of new observations and unable to accept outcome-affecting edits; it is not an expiring or degrading control opportunity.",
+      "pre_run": {
+        "threshold": 0.5,
+        "at_least_half": true,
+        "rate": null,
+        "basis": "source_structural",
+        "reason": "The difficulty profile supplies one fixed successful program for every generated seed; decoration selection excludes route blocks and does not alter that program. A solver can prepare that program, start RUN PROGRAM, send no outcome-affecting actions during playback, and then perform administrative certification. Thus the at-least-half pre-run condition is structurally met, although it is unnecessary because the mathematical definition already fails.",
+        "seed_probe": null
+      },
+      "files_read_completely": [
+        "AGENTS.md",
+        "weird_captcha_gym/docs/controllability/real-time.md",
+        "weird_captcha_gym/environments/lampwrights_program_env/controls.json",
+        "weird_captcha_gym/environments/lampwrights_program_env/env.json",
+        "weird_captcha_gym/environments/lampwrights_program_env/tasks/lampwrights_program_seed_0001/task.json",
+        "weird_captcha_gym/environments/lampwrights_program_env/tasks/lampwrights_program_seed_0001/setup_task.sh",
+        "weird_captcha_gym/environments/lampwrights_program_env/tasks/lampwrights_program_seed_0001/export_result.sh",
+        "weird_captcha_gym/environments/lampwrights_program_env/scripts/install_puzzle_runtime.sh",
+        "weird_captcha_gym/environments/lampwrights_program_env/scripts/setup_puzzle_runtime.sh",
+        "weird_captcha_gym/shared_scripts/incubator_generators/lampwrights_program.py",
+        "weird_captcha_gym/shared_runtime/app/mechanics/lampwrights_program.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/lampwrights_program.css",
+        "weird_captcha_gym/shared_runtime/server/incubator_graders/lampwrights_program.py",
+        "weird_captcha_gym/shared_runtime/verifier_helpers.py",
+        "weird_captcha_gym/environments/lampwrights_program_env/tasks/lampwrights_program_seed_0001/verifier.py",
+        "weird_captcha_gym/tools/incubator_solvers/lampwrights_program.py"
+      ],
+      "source_evidence": [
+        {
+          "path": "weird_captcha_gym/environments/lampwrights_program_env/controls.json",
+          "lines": "18-22",
+          "claim": "difficulty 3: main_slots=6, sub_slots=6, decorations=7, height_variation=1; fixed program main=[A,R,B,L,A], A=[G,F,F,J,F,G], B=[F,R,F,J,F,G]; the generated route has four marked tiles and two elevation changes."
+        },
+        {
+          "path": "weird_captcha_gym/environments/lampwrights_program_env/controls.json",
+          "lines": "37-41",
+          "claim": "Both interaction modes are implemented, while observation_window_ms=0, frames_per_observation=1, and play_time_seconds=180 are common settings."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/lampwrights_program.py",
+          "lines": "29-35",
+          "claim": "The generator stores the level's program and slot/decorative/height parameters as a fixed profile."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/lampwrights_program.py",
+          "lines": "57-67",
+          "claim": "The active control condition selects the fixed difficulty profile and only applies explicit profile parameter overrides."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/lampwrights_program.py",
+          "lines": "159-175",
+          "claim": "Seed randomness only shuffles and heights decorative blocks; route blocks, targets, and the solution program are built before those decorations and are not an ongoing process."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/lampwrights_program.js",
+          "lines": "68-145",
+          "claim": "Simplified editing uses palette_click, full editing uses drag_drop, and full mode also supports drag reordering; no keyboard handler changes the program."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/lampwrights_program.js",
+          "lines": "151-184",
+          "claim": "RUN evaluation synchronously computes the entire route, including all steps, pose, lamps, and blocked/success result before playback."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/lampwrights_program.js",
+          "lines": "186-209",
+          "claim": "After RUN, playback merely applies the precomputed steps and uses a fixed setTimeout(tick, 150) between visual updates; model.playing gates the period."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/lampwrights_program.js",
+          "lines": "211-235",
+          "claim": "Certification is a later fetch; while playback is active submission is guarded/disabled, and rejection creates a fresh state only in response to the action."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/lampwrights_program.css",
+          "lines": "1",
+          "claim": "The mechanic CSS styles the static map/editor and has no independent task animation or timer."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/lampwrights_program.py",
+          "lines": "18-73",
+          "claim": "The grader independently replays a submitted program against fixed terrain and targets; success depends on the program, not on playback timing."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/lampwrights_program.py",
+          "lines": "76-119",
+          "claim": "The grader enforces the mode-specific edit source and compares the visible execution step count with the independent replay."
+        },
+        {
+          "path": "weird_captcha_gym/environments/lampwrights_program_env/tasks/lampwrights_program_seed_0001/verifier.py",
+          "lines": "22-35",
+          "claim": "The verifier loads the exported result and invokes the independent Lampwrights Program grader."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/verifier_helpers.py",
+          "lines": "33-52",
+          "claim": "The shared verifier helper only copies and parses the final exported JSON; it contributes no live task process."
+        },
+        {
+          "path": "weird_captcha_gym/tools/incubator_solvers/lampwrights_program.py",
+          "lines": "24-36",
+          "claim": "The normal solver enters the known program using the selected visible interaction surface."
+        },
+        {
+          "path": "weird_captcha_gym/tools/incubator_solvers/lampwrights_program.py",
+          "lines": "61-79",
+          "claim": "The normal solver runs, waits for the fixed playback to finish, then certifies; no outcome-affecting edit is needed during playback."
+        },
+        {
+          "path": "weird_captcha_gym/environments/lampwrights_program_env/env.json",
+          "lines": "9-14",
+          "claim": "The environment exposes a single frame at a zero-length observation window and declares a 150 ms runner cycle, matching the browser's fixed playback cadence."
+        }
+      ],
+      "uncertainties": []
+    },
+    {
+      "case_index": 307,
+      "public_environment_name": "Lampwrights Program",
+      "environment_id": "lampwrights_program_env",
+      "difficulty": 4,
+      "interaction_mode": "full",
+      "label": "no",
+      "controls_available": [
+        "Static isometric rooftop map with stepped blocks, visible numbered/unlit target lamps, robot start pose/heading, and a seven-command palette F/L/R/J/G/A/B.",
+        "difficulty 4: main_slots=8, sub_slots=6, decorations=10, height_variation=2; fixed program main=[A,R,B,L,A,R,B], A=[G,F,F,J,F,G], B=[F,R,F,J,F,G]; the generated route has five marked tiles and repeated height changes.",
+        "Full interaction: drag an instruction glyph into a visible slot; populated slots can also be dragged to reorder.",
+        "RUN PROGRAM evaluates the current routine program; CERTIFY submits it after the run. The generic environment advertises mouse and keyboard actions, but this browser mechanic binds program edits to the stated mouse surface and has no keyboard input listener.",
+        "A normal screenshot-only solution reads the visible map, composes the reusable program in the visible slots, runs it, waits for the visible route playback, and certifies the result."
+      ],
+      "autonomous_processes": [
+        "Before RUN PROGRAM, the map and editor are static; no task state advances without an action.",
+        "After RUN PROGRAM, the browser synchronously computes the full route, then autonomously displays each already-computed step by updating the robot and lamp highlights every 150 ms until the route completes or blocks.",
+        "During that playback, model.playing prevents edits, reordering, and another run; certification is disabled/guarded. A rejected CERTIFY request can render a fresh roof, but only as a direct response to that submission, not as autonomous evolution."
+      ],
+      "grouped_control_modes": [
+        "D_full_edit: drag_drop program editing (drag a palette glyph into a visible slot; drag populated slots to reorder).",
+        "D_run: clicking RUN PROGRAM for the current program; this starts the precomputed visual playback.",
+        "CERTIFY is administrative/final submission and is excluded as an outcome-affecting control during the pre-run phase."
+      ],
+      "delta_ms": null,
+      "window_ms": null,
+      "clause_i": {
+        "holds": false,
+        "reason": "An observation-free q exists for this exact difficulty and full mode: the generator uses the same fixed profile program for every seed, and decorative randomness does not alter the route. q can issue a predetermined full drag_drop slot-filling sequence, click RUN PROGRAM, and then use its own action clock to wait for the fixed playback before administrative certification."
+      },
+      "clause_ii": {
+        "holds": true,
+        "reason": "A bounded-window policy exists only trivially: it can use the configured endpoint frame (w=0) or ignore W_t^w and follow the same fixed sequence as q. The screenshot is useful for a normal human solution, but no recent visual change is what selects the delayed action."
+      },
+      "clause_iii": {
+        "holds": false,
+        "reason": "No legitimate D, positive Delta, and bounded window satisfies the required loss. Before RUN there is no autonomous task-state change. During the only changing period, the route has already been synchronously evaluated, all outcome-affecting controls are gated by model.playing, and the only control that later becomes available is administrative CERTIFY. Waiting therefore does not make any useful action unavailable or strictly less effective; it only lets a fixed presentation animation finish."
+      },
+      "common_visible_process": "None satisfies the common-witness requirement. The visible robot/lamp sequence after RUN is a fixed playback of result.steps, independent of new observations and unable to accept outcome-affecting edits; it is not an expiring or degrading control opportunity.",
+      "pre_run": {
+        "threshold": 0.5,
+        "at_least_half": true,
+        "rate": null,
+        "basis": "source_structural",
+        "reason": "The difficulty profile supplies one fixed successful program for every generated seed; decoration selection excludes route blocks and does not alter that program. A solver can prepare that program, start RUN PROGRAM, send no outcome-affecting actions during playback, and then perform administrative certification. Thus the at-least-half pre-run condition is structurally met, although it is unnecessary because the mathematical definition already fails.",
+        "seed_probe": null
+      },
+      "files_read_completely": [
+        "AGENTS.md",
+        "weird_captcha_gym/docs/controllability/real-time.md",
+        "weird_captcha_gym/environments/lampwrights_program_env/controls.json",
+        "weird_captcha_gym/environments/lampwrights_program_env/env.json",
+        "weird_captcha_gym/environments/lampwrights_program_env/tasks/lampwrights_program_seed_0001/task.json",
+        "weird_captcha_gym/environments/lampwrights_program_env/tasks/lampwrights_program_seed_0001/setup_task.sh",
+        "weird_captcha_gym/environments/lampwrights_program_env/tasks/lampwrights_program_seed_0001/export_result.sh",
+        "weird_captcha_gym/environments/lampwrights_program_env/scripts/install_puzzle_runtime.sh",
+        "weird_captcha_gym/environments/lampwrights_program_env/scripts/setup_puzzle_runtime.sh",
+        "weird_captcha_gym/shared_scripts/incubator_generators/lampwrights_program.py",
+        "weird_captcha_gym/shared_runtime/app/mechanics/lampwrights_program.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/lampwrights_program.css",
+        "weird_captcha_gym/shared_runtime/server/incubator_graders/lampwrights_program.py",
+        "weird_captcha_gym/shared_runtime/verifier_helpers.py",
+        "weird_captcha_gym/environments/lampwrights_program_env/tasks/lampwrights_program_seed_0001/verifier.py",
+        "weird_captcha_gym/tools/incubator_solvers/lampwrights_program.py"
+      ],
+      "source_evidence": [
+        {
+          "path": "weird_captcha_gym/environments/lampwrights_program_env/controls.json",
+          "lines": "24-28",
+          "claim": "difficulty 4: main_slots=8, sub_slots=6, decorations=10, height_variation=2; fixed program main=[A,R,B,L,A,R,B], A=[G,F,F,J,F,G], B=[F,R,F,J,F,G]; the generated route has five marked tiles and repeated height changes."
+        },
+        {
+          "path": "weird_captcha_gym/environments/lampwrights_program_env/controls.json",
+          "lines": "37-41",
+          "claim": "Both interaction modes are implemented, while observation_window_ms=0, frames_per_observation=1, and play_time_seconds=180 are common settings."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/lampwrights_program.py",
+          "lines": "36-42",
+          "claim": "The generator stores the level's program and slot/decorative/height parameters as a fixed profile."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/lampwrights_program.py",
+          "lines": "57-67",
+          "claim": "The active control condition selects the fixed difficulty profile and only applies explicit profile parameter overrides."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/lampwrights_program.py",
+          "lines": "159-175",
+          "claim": "Seed randomness only shuffles and heights decorative blocks; route blocks, targets, and the solution program are built before those decorations and are not an ongoing process."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/lampwrights_program.js",
+          "lines": "68-145",
+          "claim": "Simplified editing uses palette_click, full editing uses drag_drop, and full mode also supports drag reordering; no keyboard handler changes the program."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/lampwrights_program.js",
+          "lines": "151-184",
+          "claim": "RUN evaluation synchronously computes the entire route, including all steps, pose, lamps, and blocked/success result before playback."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/lampwrights_program.js",
+          "lines": "186-209",
+          "claim": "After RUN, playback merely applies the precomputed steps and uses a fixed setTimeout(tick, 150) between visual updates; model.playing gates the period."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/lampwrights_program.js",
+          "lines": "211-235",
+          "claim": "Certification is a later fetch; while playback is active submission is guarded/disabled, and rejection creates a fresh state only in response to the action."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/lampwrights_program.css",
+          "lines": "1",
+          "claim": "The mechanic CSS styles the static map/editor and has no independent task animation or timer."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/lampwrights_program.py",
+          "lines": "18-73",
+          "claim": "The grader independently replays a submitted program against fixed terrain and targets; success depends on the program, not on playback timing."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/lampwrights_program.py",
+          "lines": "76-119",
+          "claim": "The grader enforces the mode-specific edit source and compares the visible execution step count with the independent replay."
+        },
+        {
+          "path": "weird_captcha_gym/environments/lampwrights_program_env/tasks/lampwrights_program_seed_0001/verifier.py",
+          "lines": "22-35",
+          "claim": "The verifier loads the exported result and invokes the independent Lampwrights Program grader."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/verifier_helpers.py",
+          "lines": "33-52",
+          "claim": "The shared verifier helper only copies and parses the final exported JSON; it contributes no live task process."
+        },
+        {
+          "path": "weird_captcha_gym/tools/incubator_solvers/lampwrights_program.py",
+          "lines": "24-36",
+          "claim": "The normal solver enters the known program using the selected visible interaction surface."
+        },
+        {
+          "path": "weird_captcha_gym/tools/incubator_solvers/lampwrights_program.py",
+          "lines": "61-79",
+          "claim": "The normal solver runs, waits for the fixed playback to finish, then certifies; no outcome-affecting edit is needed during playback."
+        },
+        {
+          "path": "weird_captcha_gym/environments/lampwrights_program_env/env.json",
+          "lines": "9-14",
+          "claim": "The environment exposes a single frame at a zero-length observation window and declares a 150 ms runner cycle, matching the browser's fixed playback cadence."
+        }
+      ],
+      "uncertainties": []
+    },
+    {
+      "case_index": 308,
+      "public_environment_name": "Lampwrights Program",
+      "environment_id": "lampwrights_program_env",
+      "difficulty": 4,
+      "interaction_mode": "simplified",
+      "label": "no",
+      "controls_available": [
+        "Static isometric rooftop map with stepped blocks, visible numbered/unlit target lamps, robot start pose/heading, and a seven-command palette F/L/R/J/G/A/B.",
+        "difficulty 4: main_slots=8, sub_slots=6, decorations=10, height_variation=2; fixed program main=[A,R,B,L,A,R,B], A=[G,F,F,J,F,G], B=[F,R,F,J,F,G]; the generated route has five marked tiles and repeated height changes.",
+        "Simplified interaction: click an instruction glyph, then click a visible slot to place or replace it; a slot click with no selected instruction clears it.",
+        "RUN PROGRAM evaluates the current routine program; CERTIFY submits it after the run. The generic environment advertises mouse and keyboard actions, but this browser mechanic binds program edits to the stated mouse surface and has no keyboard input listener.",
+        "A normal screenshot-only solution reads the visible map, composes the reusable program in the visible slots, runs it, waits for the visible route playback, and certifies the result."
+      ],
+      "autonomous_processes": [
+        "Before RUN PROGRAM, the map and editor are static; no task state advances without an action.",
+        "After RUN PROGRAM, the browser synchronously computes the full route, then autonomously displays each already-computed step by updating the robot and lamp highlights every 150 ms until the route completes or blocks.",
+        "During that playback, model.playing prevents edits, reordering, and another run; certification is disabled/guarded. A rejected CERTIFY request can render a fresh roof, but only as a direct response to that submission, not as autonomous evolution."
+      ],
+      "grouped_control_modes": [
+        "D_simplified_edit: palette_click program editing (select F/L/R/J/G/A/B, then click a visible slot to place or replace; clicking a populated slot with no selection clears it).",
+        "D_run: clicking RUN PROGRAM for the current program; this starts the precomputed visual playback.",
+        "CERTIFY is administrative/final submission and is excluded as an outcome-affecting control during the pre-run phase."
+      ],
+      "delta_ms": null,
+      "window_ms": null,
+      "clause_i": {
+        "holds": false,
+        "reason": "An observation-free q exists for this exact difficulty and simplified mode: the generator uses the same fixed profile program for every seed, and decorative randomness does not alter the route. q can issue a predetermined simplified palette_click slot-filling sequence, click RUN PROGRAM, and then use its own action clock to wait for the fixed playback before administrative certification."
+      },
+      "clause_ii": {
+        "holds": true,
+        "reason": "A bounded-window policy exists only trivially: it can use the configured endpoint frame (w=0) or ignore W_t^w and follow the same fixed sequence as q. The screenshot is useful for a normal human solution, but no recent visual change is what selects the delayed action."
+      },
+      "clause_iii": {
+        "holds": false,
+        "reason": "No legitimate D, positive Delta, and bounded window satisfies the required loss. Before RUN there is no autonomous task-state change. During the only changing period, the route has already been synchronously evaluated, all outcome-affecting controls are gated by model.playing, and the only control that later becomes available is administrative CERTIFY. Waiting therefore does not make any useful action unavailable or strictly less effective; it only lets a fixed presentation animation finish."
+      },
+      "common_visible_process": "None satisfies the common-witness requirement. The visible robot/lamp sequence after RUN is a fixed playback of result.steps, independent of new observations and unable to accept outcome-affecting edits; it is not an expiring or degrading control opportunity.",
+      "pre_run": {
+        "threshold": 0.5,
+        "at_least_half": true,
+        "rate": null,
+        "basis": "source_structural",
+        "reason": "The difficulty profile supplies one fixed successful program for every generated seed; decoration selection excludes route blocks and does not alter that program. A solver can prepare that program, start RUN PROGRAM, send no outcome-affecting actions during playback, and then perform administrative certification. Thus the at-least-half pre-run condition is structurally met, although it is unnecessary because the mathematical definition already fails.",
+        "seed_probe": null
+      },
+      "files_read_completely": [
+        "AGENTS.md",
+        "weird_captcha_gym/docs/controllability/real-time.md",
+        "weird_captcha_gym/environments/lampwrights_program_env/controls.json",
+        "weird_captcha_gym/environments/lampwrights_program_env/env.json",
+        "weird_captcha_gym/environments/lampwrights_program_env/tasks/lampwrights_program_seed_0001/task.json",
+        "weird_captcha_gym/environments/lampwrights_program_env/tasks/lampwrights_program_seed_0001/setup_task.sh",
+        "weird_captcha_gym/environments/lampwrights_program_env/tasks/lampwrights_program_seed_0001/export_result.sh",
+        "weird_captcha_gym/environments/lampwrights_program_env/scripts/install_puzzle_runtime.sh",
+        "weird_captcha_gym/environments/lampwrights_program_env/scripts/setup_puzzle_runtime.sh",
+        "weird_captcha_gym/shared_scripts/incubator_generators/lampwrights_program.py",
+        "weird_captcha_gym/shared_runtime/app/mechanics/lampwrights_program.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/lampwrights_program.css",
+        "weird_captcha_gym/shared_runtime/server/incubator_graders/lampwrights_program.py",
+        "weird_captcha_gym/shared_runtime/verifier_helpers.py",
+        "weird_captcha_gym/environments/lampwrights_program_env/tasks/lampwrights_program_seed_0001/verifier.py",
+        "weird_captcha_gym/tools/incubator_solvers/lampwrights_program.py"
+      ],
+      "source_evidence": [
+        {
+          "path": "weird_captcha_gym/environments/lampwrights_program_env/controls.json",
+          "lines": "24-28",
+          "claim": "difficulty 4: main_slots=8, sub_slots=6, decorations=10, height_variation=2; fixed program main=[A,R,B,L,A,R,B], A=[G,F,F,J,F,G], B=[F,R,F,J,F,G]; the generated route has five marked tiles and repeated height changes."
+        },
+        {
+          "path": "weird_captcha_gym/environments/lampwrights_program_env/controls.json",
+          "lines": "37-41",
+          "claim": "Both interaction modes are implemented, while observation_window_ms=0, frames_per_observation=1, and play_time_seconds=180 are common settings."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/lampwrights_program.py",
+          "lines": "36-42",
+          "claim": "The generator stores the level's program and slot/decorative/height parameters as a fixed profile."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/lampwrights_program.py",
+          "lines": "57-67",
+          "claim": "The active control condition selects the fixed difficulty profile and only applies explicit profile parameter overrides."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/lampwrights_program.py",
+          "lines": "159-175",
+          "claim": "Seed randomness only shuffles and heights decorative blocks; route blocks, targets, and the solution program are built before those decorations and are not an ongoing process."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/lampwrights_program.js",
+          "lines": "68-145",
+          "claim": "Simplified editing uses palette_click, full editing uses drag_drop, and full mode also supports drag reordering; no keyboard handler changes the program."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/lampwrights_program.js",
+          "lines": "151-184",
+          "claim": "RUN evaluation synchronously computes the entire route, including all steps, pose, lamps, and blocked/success result before playback."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/lampwrights_program.js",
+          "lines": "186-209",
+          "claim": "After RUN, playback merely applies the precomputed steps and uses a fixed setTimeout(tick, 150) between visual updates; model.playing gates the period."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/lampwrights_program.js",
+          "lines": "211-235",
+          "claim": "Certification is a later fetch; while playback is active submission is guarded/disabled, and rejection creates a fresh state only in response to the action."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/lampwrights_program.css",
+          "lines": "1",
+          "claim": "The mechanic CSS styles the static map/editor and has no independent task animation or timer."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/lampwrights_program.py",
+          "lines": "18-73",
+          "claim": "The grader independently replays a submitted program against fixed terrain and targets; success depends on the program, not on playback timing."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/lampwrights_program.py",
+          "lines": "76-119",
+          "claim": "The grader enforces the mode-specific edit source and compares the visible execution step count with the independent replay."
+        },
+        {
+          "path": "weird_captcha_gym/environments/lampwrights_program_env/tasks/lampwrights_program_seed_0001/verifier.py",
+          "lines": "22-35",
+          "claim": "The verifier loads the exported result and invokes the independent Lampwrights Program grader."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/verifier_helpers.py",
+          "lines": "33-52",
+          "claim": "The shared verifier helper only copies and parses the final exported JSON; it contributes no live task process."
+        },
+        {
+          "path": "weird_captcha_gym/tools/incubator_solvers/lampwrights_program.py",
+          "lines": "24-36",
+          "claim": "The normal solver enters the known program using the selected visible interaction surface."
+        },
+        {
+          "path": "weird_captcha_gym/tools/incubator_solvers/lampwrights_program.py",
+          "lines": "61-79",
+          "claim": "The normal solver runs, waits for the fixed playback to finish, then certifies; no outcome-affecting edit is needed during playback."
+        },
+        {
+          "path": "weird_captcha_gym/environments/lampwrights_program_env/env.json",
+          "lines": "9-14",
+          "claim": "The environment exposes a single frame at a zero-length observation window and declares a 150 ms runner cycle, matching the browser's fixed playback cadence."
+        }
+      ],
+      "uncertainties": []
+    },
+    {
+      "case_index": 309,
+      "public_environment_name": "Lampwrights Program",
+      "environment_id": "lampwrights_program_env",
+      "difficulty": 5,
+      "interaction_mode": "full",
+      "label": "no",
+      "controls_available": [
+        "Static isometric rooftop map with stepped blocks, visible numbered/unlit target lamps, robot start pose/heading, and a seven-command palette F/L/R/J/G/A/B.",
+        "difficulty 5: main_slots=10, sub_slots=7, decorations=15, height_variation=2; fixed program main=[A,R,B,L,A,R,B,L,A], A=[G,F,F,J,F,G], B=[F,R,F,J,F,G]; the generated route has six marked tiles, repeated elevation changes, and dense decoy terrain.",
+        "Full interaction: drag an instruction glyph into a visible slot; populated slots can also be dragged to reorder.",
+        "RUN PROGRAM evaluates the current routine program; CERTIFY submits it after the run. The generic environment advertises mouse and keyboard actions, but this browser mechanic binds program edits to the stated mouse surface and has no keyboard input listener.",
+        "A normal screenshot-only solution reads the visible map, composes the reusable program in the visible slots, runs it, waits for the visible route playback, and certifies the result."
+      ],
+      "autonomous_processes": [
+        "Before RUN PROGRAM, the map and editor are static; no task state advances without an action.",
+        "After RUN PROGRAM, the browser synchronously computes the full route, then autonomously displays each already-computed step by updating the robot and lamp highlights every 150 ms until the route completes or blocks.",
+        "During that playback, model.playing prevents edits, reordering, and another run; certification is disabled/guarded. A rejected CERTIFY request can render a fresh roof, but only as a direct response to that submission, not as autonomous evolution."
+      ],
+      "grouped_control_modes": [
+        "D_full_edit: drag_drop program editing (drag a palette glyph into a visible slot; drag populated slots to reorder).",
+        "D_run: clicking RUN PROGRAM for the current program; this starts the precomputed visual playback.",
+        "CERTIFY is administrative/final submission and is excluded as an outcome-affecting control during the pre-run phase."
+      ],
+      "delta_ms": null,
+      "window_ms": null,
+      "clause_i": {
+        "holds": false,
+        "reason": "An observation-free q exists for this exact difficulty and full mode: the generator uses the same fixed profile program for every seed, and decorative randomness does not alter the route. q can issue a predetermined full drag_drop slot-filling sequence, click RUN PROGRAM, and then use its own action clock to wait for the fixed playback before administrative certification."
+      },
+      "clause_ii": {
+        "holds": true,
+        "reason": "A bounded-window policy exists only trivially: it can use the configured endpoint frame (w=0) or ignore W_t^w and follow the same fixed sequence as q. The screenshot is useful for a normal human solution, but no recent visual change is what selects the delayed action."
+      },
+      "clause_iii": {
+        "holds": false,
+        "reason": "No legitimate D, positive Delta, and bounded window satisfies the required loss. Before RUN there is no autonomous task-state change. During the only changing period, the route has already been synchronously evaluated, all outcome-affecting controls are gated by model.playing, and the only control that later becomes available is administrative CERTIFY. Waiting therefore does not make any useful action unavailable or strictly less effective; it only lets a fixed presentation animation finish."
+      },
+      "common_visible_process": "None satisfies the common-witness requirement. The visible robot/lamp sequence after RUN is a fixed playback of result.steps, independent of new observations and unable to accept outcome-affecting edits; it is not an expiring or degrading control opportunity.",
+      "pre_run": {
+        "threshold": 0.5,
+        "at_least_half": true,
+        "rate": null,
+        "basis": "source_structural",
+        "reason": "The difficulty profile supplies one fixed successful program for every generated seed; decoration selection excludes route blocks and does not alter that program. A solver can prepare that program, start RUN PROGRAM, send no outcome-affecting actions during playback, and then perform administrative certification. Thus the at-least-half pre-run condition is structurally met, although it is unnecessary because the mathematical definition already fails.",
+        "seed_probe": null
+      },
+      "files_read_completely": [
+        "AGENTS.md",
+        "weird_captcha_gym/docs/controllability/real-time.md",
+        "weird_captcha_gym/environments/lampwrights_program_env/controls.json",
+        "weird_captcha_gym/environments/lampwrights_program_env/env.json",
+        "weird_captcha_gym/environments/lampwrights_program_env/tasks/lampwrights_program_seed_0001/task.json",
+        "weird_captcha_gym/environments/lampwrights_program_env/tasks/lampwrights_program_seed_0001/setup_task.sh",
+        "weird_captcha_gym/environments/lampwrights_program_env/tasks/lampwrights_program_seed_0001/export_result.sh",
+        "weird_captcha_gym/environments/lampwrights_program_env/scripts/install_puzzle_runtime.sh",
+        "weird_captcha_gym/environments/lampwrights_program_env/scripts/setup_puzzle_runtime.sh",
+        "weird_captcha_gym/shared_scripts/incubator_generators/lampwrights_program.py",
+        "weird_captcha_gym/shared_runtime/app/mechanics/lampwrights_program.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/lampwrights_program.css",
+        "weird_captcha_gym/shared_runtime/server/incubator_graders/lampwrights_program.py",
+        "weird_captcha_gym/shared_runtime/verifier_helpers.py",
+        "weird_captcha_gym/environments/lampwrights_program_env/tasks/lampwrights_program_seed_0001/verifier.py",
+        "weird_captcha_gym/tools/incubator_solvers/lampwrights_program.py"
+      ],
+      "source_evidence": [
+        {
+          "path": "weird_captcha_gym/environments/lampwrights_program_env/controls.json",
+          "lines": "30-34",
+          "claim": "difficulty 5: main_slots=10, sub_slots=7, decorations=15, height_variation=2; fixed program main=[A,R,B,L,A,R,B,L,A], A=[G,F,F,J,F,G], B=[F,R,F,J,F,G]; the generated route has six marked tiles, repeated elevation changes, and dense decoy terrain."
+        },
+        {
+          "path": "weird_captcha_gym/environments/lampwrights_program_env/controls.json",
+          "lines": "37-41",
+          "claim": "Both interaction modes are implemented, while observation_window_ms=0, frames_per_observation=1, and play_time_seconds=180 are common settings."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/lampwrights_program.py",
+          "lines": "43-49",
+          "claim": "The generator stores the level's program and slot/decorative/height parameters as a fixed profile."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/lampwrights_program.py",
+          "lines": "57-67",
+          "claim": "The active control condition selects the fixed difficulty profile and only applies explicit profile parameter overrides."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/lampwrights_program.py",
+          "lines": "159-175",
+          "claim": "Seed randomness only shuffles and heights decorative blocks; route blocks, targets, and the solution program are built before those decorations and are not an ongoing process."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/lampwrights_program.js",
+          "lines": "68-145",
+          "claim": "Simplified editing uses palette_click, full editing uses drag_drop, and full mode also supports drag reordering; no keyboard handler changes the program."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/lampwrights_program.js",
+          "lines": "151-184",
+          "claim": "RUN evaluation synchronously computes the entire route, including all steps, pose, lamps, and blocked/success result before playback."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/lampwrights_program.js",
+          "lines": "186-209",
+          "claim": "After RUN, playback merely applies the precomputed steps and uses a fixed setTimeout(tick, 150) between visual updates; model.playing gates the period."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/lampwrights_program.js",
+          "lines": "211-235",
+          "claim": "Certification is a later fetch; while playback is active submission is guarded/disabled, and rejection creates a fresh state only in response to the action."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/lampwrights_program.css",
+          "lines": "1",
+          "claim": "The mechanic CSS styles the static map/editor and has no independent task animation or timer."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/lampwrights_program.py",
+          "lines": "18-73",
+          "claim": "The grader independently replays a submitted program against fixed terrain and targets; success depends on the program, not on playback timing."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/lampwrights_program.py",
+          "lines": "76-119",
+          "claim": "The grader enforces the mode-specific edit source and compares the visible execution step count with the independent replay."
+        },
+        {
+          "path": "weird_captcha_gym/environments/lampwrights_program_env/tasks/lampwrights_program_seed_0001/verifier.py",
+          "lines": "22-35",
+          "claim": "The verifier loads the exported result and invokes the independent Lampwrights Program grader."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/verifier_helpers.py",
+          "lines": "33-52",
+          "claim": "The shared verifier helper only copies and parses the final exported JSON; it contributes no live task process."
+        },
+        {
+          "path": "weird_captcha_gym/tools/incubator_solvers/lampwrights_program.py",
+          "lines": "24-36",
+          "claim": "The normal solver enters the known program using the selected visible interaction surface."
+        },
+        {
+          "path": "weird_captcha_gym/tools/incubator_solvers/lampwrights_program.py",
+          "lines": "61-79",
+          "claim": "The normal solver runs, waits for the fixed playback to finish, then certifies; no outcome-affecting edit is needed during playback."
+        },
+        {
+          "path": "weird_captcha_gym/environments/lampwrights_program_env/env.json",
+          "lines": "9-14",
+          "claim": "The environment exposes a single frame at a zero-length observation window and declares a 150 ms runner cycle, matching the browser's fixed playback cadence."
+        }
+      ],
+      "uncertainties": []
+    },
+    {
+      "case_index": 310,
+      "public_environment_name": "Lampwrights Program",
+      "environment_id": "lampwrights_program_env",
+      "difficulty": 5,
+      "interaction_mode": "simplified",
+      "label": "no",
+      "controls_available": [
+        "Static isometric rooftop map with stepped blocks, visible numbered/unlit target lamps, robot start pose/heading, and a seven-command palette F/L/R/J/G/A/B.",
+        "difficulty 5: main_slots=10, sub_slots=7, decorations=15, height_variation=2; fixed program main=[A,R,B,L,A,R,B,L,A], A=[G,F,F,J,F,G], B=[F,R,F,J,F,G]; the generated route has six marked tiles, repeated elevation changes, and dense decoy terrain.",
+        "Simplified interaction: click an instruction glyph, then click a visible slot to place or replace it; a slot click with no selected instruction clears it.",
+        "RUN PROGRAM evaluates the current routine program; CERTIFY submits it after the run. The generic environment advertises mouse and keyboard actions, but this browser mechanic binds program edits to the stated mouse surface and has no keyboard input listener.",
+        "A normal screenshot-only solution reads the visible map, composes the reusable program in the visible slots, runs it, waits for the visible route playback, and certifies the result."
+      ],
+      "autonomous_processes": [
+        "Before RUN PROGRAM, the map and editor are static; no task state advances without an action.",
+        "After RUN PROGRAM, the browser synchronously computes the full route, then autonomously displays each already-computed step by updating the robot and lamp highlights every 150 ms until the route completes or blocks.",
+        "During that playback, model.playing prevents edits, reordering, and another run; certification is disabled/guarded. A rejected CERTIFY request can render a fresh roof, but only as a direct response to that submission, not as autonomous evolution."
+      ],
+      "grouped_control_modes": [
+        "D_simplified_edit: palette_click program editing (select F/L/R/J/G/A/B, then click a visible slot to place or replace; clicking a populated slot with no selection clears it).",
+        "D_run: clicking RUN PROGRAM for the current program; this starts the precomputed visual playback.",
+        "CERTIFY is administrative/final submission and is excluded as an outcome-affecting control during the pre-run phase."
+      ],
+      "delta_ms": null,
+      "window_ms": null,
+      "clause_i": {
+        "holds": false,
+        "reason": "An observation-free q exists for this exact difficulty and simplified mode: the generator uses the same fixed profile program for every seed, and decorative randomness does not alter the route. q can issue a predetermined simplified palette_click slot-filling sequence, click RUN PROGRAM, and then use its own action clock to wait for the fixed playback before administrative certification."
+      },
+      "clause_ii": {
+        "holds": true,
+        "reason": "A bounded-window policy exists only trivially: it can use the configured endpoint frame (w=0) or ignore W_t^w and follow the same fixed sequence as q. The screenshot is useful for a normal human solution, but no recent visual change is what selects the delayed action."
+      },
+      "clause_iii": {
+        "holds": false,
+        "reason": "No legitimate D, positive Delta, and bounded window satisfies the required loss. Before RUN there is no autonomous task-state change. During the only changing period, the route has already been synchronously evaluated, all outcome-affecting controls are gated by model.playing, and the only control that later becomes available is administrative CERTIFY. Waiting therefore does not make any useful action unavailable or strictly less effective; it only lets a fixed presentation animation finish."
+      },
+      "common_visible_process": "None satisfies the common-witness requirement. The visible robot/lamp sequence after RUN is a fixed playback of result.steps, independent of new observations and unable to accept outcome-affecting edits; it is not an expiring or degrading control opportunity.",
+      "pre_run": {
+        "threshold": 0.5,
+        "at_least_half": true,
+        "rate": null,
+        "basis": "source_structural",
+        "reason": "The difficulty profile supplies one fixed successful program for every generated seed; decoration selection excludes route blocks and does not alter that program. A solver can prepare that program, start RUN PROGRAM, send no outcome-affecting actions during playback, and then perform administrative certification. Thus the at-least-half pre-run condition is structurally met, although it is unnecessary because the mathematical definition already fails.",
+        "seed_probe": null
+      },
+      "files_read_completely": [
+        "AGENTS.md",
+        "weird_captcha_gym/docs/controllability/real-time.md",
+        "weird_captcha_gym/environments/lampwrights_program_env/controls.json",
+        "weird_captcha_gym/environments/lampwrights_program_env/env.json",
+        "weird_captcha_gym/environments/lampwrights_program_env/tasks/lampwrights_program_seed_0001/task.json",
+        "weird_captcha_gym/environments/lampwrights_program_env/tasks/lampwrights_program_seed_0001/setup_task.sh",
+        "weird_captcha_gym/environments/lampwrights_program_env/tasks/lampwrights_program_seed_0001/export_result.sh",
+        "weird_captcha_gym/environments/lampwrights_program_env/scripts/install_puzzle_runtime.sh",
+        "weird_captcha_gym/environments/lampwrights_program_env/scripts/setup_puzzle_runtime.sh",
+        "weird_captcha_gym/shared_scripts/incubator_generators/lampwrights_program.py",
+        "weird_captcha_gym/shared_runtime/app/mechanics/lampwrights_program.js",
+        "weird_captcha_gym/shared_runtime/app/mechanics/lampwrights_program.css",
+        "weird_captcha_gym/shared_runtime/server/incubator_graders/lampwrights_program.py",
+        "weird_captcha_gym/shared_runtime/verifier_helpers.py",
+        "weird_captcha_gym/environments/lampwrights_program_env/tasks/lampwrights_program_seed_0001/verifier.py",
+        "weird_captcha_gym/tools/incubator_solvers/lampwrights_program.py"
+      ],
+      "source_evidence": [
+        {
+          "path": "weird_captcha_gym/environments/lampwrights_program_env/controls.json",
+          "lines": "30-34",
+          "claim": "difficulty 5: main_slots=10, sub_slots=7, decorations=15, height_variation=2; fixed program main=[A,R,B,L,A,R,B,L,A], A=[G,F,F,J,F,G], B=[F,R,F,J,F,G]; the generated route has six marked tiles, repeated elevation changes, and dense decoy terrain."
+        },
+        {
+          "path": "weird_captcha_gym/environments/lampwrights_program_env/controls.json",
+          "lines": "37-41",
+          "claim": "Both interaction modes are implemented, while observation_window_ms=0, frames_per_observation=1, and play_time_seconds=180 are common settings."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/lampwrights_program.py",
+          "lines": "43-49",
+          "claim": "The generator stores the level's program and slot/decorative/height parameters as a fixed profile."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/lampwrights_program.py",
+          "lines": "57-67",
+          "claim": "The active control condition selects the fixed difficulty profile and only applies explicit profile parameter overrides."
+        },
+        {
+          "path": "weird_captcha_gym/shared_scripts/incubator_generators/lampwrights_program.py",
+          "lines": "159-175",
+          "claim": "Seed randomness only shuffles and heights decorative blocks; route blocks, targets, and the solution program are built before those decorations and are not an ongoing process."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/lampwrights_program.js",
+          "lines": "68-145",
+          "claim": "Simplified editing uses palette_click, full editing uses drag_drop, and full mode also supports drag reordering; no keyboard handler changes the program."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/lampwrights_program.js",
+          "lines": "151-184",
+          "claim": "RUN evaluation synchronously computes the entire route, including all steps, pose, lamps, and blocked/success result before playback."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/lampwrights_program.js",
+          "lines": "186-209",
+          "claim": "After RUN, playback merely applies the precomputed steps and uses a fixed setTimeout(tick, 150) between visual updates; model.playing gates the period."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/lampwrights_program.js",
+          "lines": "211-235",
+          "claim": "Certification is a later fetch; while playback is active submission is guarded/disabled, and rejection creates a fresh state only in response to the action."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/app/mechanics/lampwrights_program.css",
+          "lines": "1",
+          "claim": "The mechanic CSS styles the static map/editor and has no independent task animation or timer."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/lampwrights_program.py",
+          "lines": "18-73",
+          "claim": "The grader independently replays a submitted program against fixed terrain and targets; success depends on the program, not on playback timing."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/lampwrights_program.py",
+          "lines": "76-119",
+          "claim": "The grader enforces the mode-specific edit source and compares the visible execution step count with the independent replay."
+        },
+        {
+          "path": "weird_captcha_gym/environments/lampwrights_program_env/tasks/lampwrights_program_seed_0001/verifier.py",
+          "lines": "22-35",
+          "claim": "The verifier loads the exported result and invokes the independent Lampwrights Program grader."
+        },
+        {
+          "path": "weird_captcha_gym/shared_runtime/verifier_helpers.py",
+          "lines": "33-52",
+          "claim": "The shared verifier helper only copies and parses the final exported JSON; it contributes no live task process."
+        },
+        {
+          "path": "weird_captcha_gym/tools/incubator_solvers/lampwrights_program.py",
+          "lines": "24-36",
+          "claim": "The normal solver enters the known program using the selected visible interaction surface."
+        },
+        {
+          "path": "weird_captcha_gym/tools/incubator_solvers/lampwrights_program.py",
+          "lines": "61-79",
+          "claim": "The normal solver runs, waits for the fixed playback to finish, then certifies; no outcome-affecting edit is needed during playback."
+        },
+        {
+          "path": "weird_captcha_gym/environments/lampwrights_program_env/env.json",
+          "lines": "9-14",
+          "claim": "The environment exposes a single frame at a zero-length observation window and declares a 150 ms runner cycle, matching the browser's fixed playback cadence."
+        }
+      ],
+      "uncertainties": []
+    }
+  ]
+}
+

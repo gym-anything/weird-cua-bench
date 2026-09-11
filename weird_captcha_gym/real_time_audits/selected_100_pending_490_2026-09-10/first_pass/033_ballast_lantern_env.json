@@ -1,0 +1,142 @@
+{
+  "case_index": 33,
+  "public_environment_name": "Ballast Lantern",
+  "environment_id": "ballast_lantern_env",
+  "difficulty": 2,
+  "interaction_mode": "full",
+  "label": "yes",
+  "controls_available": [
+    "Space keydown engages the winch and applies upward thrust; the hold remains active until Space keyup.",
+    "Space keyup releases the winch so the cage coasts/falls under gravity while retaining its velocity.",
+    "NEW SHAFT abandons the current run and is administrative rather than an outcome-solving control."
+  ],
+  "autonomous_processes": [
+    "While the task is active, requestAnimationFrame advances the simulation to wall-clock time; every 50 ms tick updates the cage position and retained velocity without a new agent action.",
+    "The specimen moves autonomously under the selected steady_sinker or floater law, including acceleration and boundary responses.",
+    "Each tick recomputes specimen/cage and crate/cage overlap and changes the capture and crate meters; the crate appears at a generated tick between 76 and 88 and terminal status follows meter or maximum-tick conditions.",
+    "CSS bottom transitions and the rotating reel animate the presentation, but the classification relies on the autonomous cage/specimen task state and overlap changes."
+  ],
+  "grouped_control_modes": [
+    "D: the full keyboard_hold winch channel, grouping every Space keydown/engaged transition and Space keyup/coast transition across seeds, rounds, and attempts; both actions affect the same cage trajectory."
+  ],
+  "delta_ms": 600,
+  "window_ms": 600,
+  "clause_i": {
+    "holds": true,
+    "reason": "At the same own action history and task time, generated instances can have different hidden motion laws, specimen start positions/speeds, and crate positions. Level 2 selects steady_sinker or floater, and the generator randomizes the motion candidate and crate. Therefore an action-clock-only q cannot choose the same delayed-optimal Space transition for all histories in D: the required hold/release direction and target lead differ even when I_t is identical."
+  },
+  "clause_ii": {
+    "holds": true,
+    "reason": "The visible cage, specimen, and spawned crate positions are redrawn every tick. At this configuration the UI also exposes a five-sample specimen wake and a drift beacon whose arrow is derived from the current specimen velocity; the six chronological frames cover a bounded 600 ms window. Those recent positions/direction and cage motion provide the information needed to predict the delayed relative state and select the next Space transition, so a bounded-window g using I_t and W_t^600 can supply the delayed-optimal control."
+  },
+  "clause_iii": {
+    "holds": true,
+    "reason": "Use a history in which the cage has upward retained velocity and the specimen is near the upper capture edge: Space keyup to coast/brake is useful immediately. With no new action for 0 < tau < 600 ms, one or more autonomous 50 ms ticks move the inertial cage and the drifting specimen, changing their separation and the overlap/meter state; the same keyup then arrives with less capture margin and lower value or advantage. Capture reserve can remain positive, so the delayed state is still salvageable. This loss is caused by non-clock position/velocity and overlap evolution, not merely by a later deadline."
+  },
+  "common_visible_process": "The flooded shaft visibly shows a drifting luminous specimen, a moving momentum-bearing cage, and a wake/direction trace. During the same process, 50 ms physics ticks advance both trajectories and update overlap meters. Over the 600 ms witness horizon, the recent visible motion predicts where a hold/release action will land, while continued motion can carry the cage past a useful capture alignment before that action is delivered.",
+  "pre_run": {
+    "threshold": 0.5,
+    "at_least_half": false,
+    "rate": null,
+    "basis": "source_structural",
+    "reason": "There is no separate start control that turns on an autonomous outcome phase: the task is active from tick zero and the only outcome-affecting control is the winch. The generator accepts only worlds whose reference run has 8 to 220 winch transitions, whose specimen-only run does not secure the task, and whose crate receives a material amount of exclusive service while the specimen is outside. Those conditions establish a competing, separated target-control problem rather than an action-free majority; no exact percentage is claimed.",
+    "seed_probe": null
+  },
+  "files_read_completely": [
+    "AGENTS.md",
+    "weird_captcha_gym/docs/controllability/real-time.md",
+    "weird_captcha_gym/environments/ballast_lantern_env/controls.json",
+    "weird_captcha_gym/environments/ballast_lantern_env/env.json",
+    "weird_captcha_gym/environments/ballast_lantern_env/tasks/ballast_lantern_seed_0001/task.json",
+    "weird_captcha_gym/environments/ballast_lantern_env/tasks/ballast_lantern_seed_0001/verifier.py",
+    "weird_captcha_gym/shared_scripts/incubator_generators/ballast_lantern.py",
+    "weird_captcha_gym/shared_runtime/app/mechanics/ballast_lantern.js",
+    "weird_captcha_gym/shared_runtime/app/mechanics/ballast_lantern.css",
+    "weird_captcha_gym/shared_runtime/server/incubator_graders/ballast_lantern.py",
+    "weird_captcha_gym/shared_runtime/verifier_helpers.py",
+    "weird_captcha_gym/tools/incubator_solvers/ballast_lantern.py"
+  ],
+  "source_evidence": [
+    {
+      "path": "weird_captcha_gym/environments/ballast_lantern_env/controls.json",
+      "lines": "13-18",
+      "claim": "The assigned level 2 profile uses a 1100-unit cage, steady_sinker/floater laws, 20-26 specimen speed, 50 ms ticks, five trail samples, a visible trend beacon, and competing capture/crate meters."
+    },
+    {
+      "path": "weird_captcha_gym/environments/ballast_lantern_env/controls.json",
+      "lines": "42-46",
+      "claim": "Full interaction is Space hold/release, and the configured observation window is 600 ms with six frames and a 90-second play allowance."
+    },
+    {
+      "path": "weird_captcha_gym/shared_scripts/incubator_generators/ballast_lantern.py",
+      "lines": "130-164",
+      "claim": "The generator randomizes motion law, speed, starting position, direction/velocity, and the visible motion-law parameters."
+    },
+    {
+      "path": "weird_captcha_gym/shared_scripts/incubator_generators/ballast_lantern.py",
+      "lines": "183-250",
+      "claim": "Autonomous ticks update cage and specimen position/velocity, overlap flags, capture/crate meters, and terminal status."
+    },
+    {
+      "path": "weird_captcha_gym/shared_scripts/incubator_generators/ballast_lantern.py",
+      "lines": "253-260",
+      "claim": "The control policy explicitly leads the target using target position and velocity while accounting for retained cage momentum."
+    },
+    {
+      "path": "weird_captcha_gym/shared_scripts/incubator_generators/ballast_lantern.py",
+      "lines": "277-319",
+      "claim": "The reference run changes the winch at the declared 600 ms decision cadence and records crate service while the specimen is outside."
+    },
+    {
+      "path": "weird_captcha_gym/shared_scripts/incubator_generators/ballast_lantern.py",
+      "lines": "348-385",
+      "claim": "Crate spawn and position are generated separately from the specimen, and accepted instances require a secured reference, at least eight transitions, failed specimen-only completion, and exclusive crate-fill ticks."
+    },
+    {
+      "path": "weird_captcha_gym/shared_runtime/app/mechanics/ballast_lantern.js",
+      "lines": "35-67",
+      "claim": "The browser replay advances cage momentum, specimen motion, overlap, meters, crate spawn, and terminal status on each tick."
+    },
+    {
+      "path": "weird_captcha_gym/shared_runtime/app/mechanics/ballast_lantern.js",
+      "lines": "69-84",
+      "claim": "A Space control transition first catches up the simulation, then changes the persistent engaged winch state and records the full-input event."
+    },
+    {
+      "path": "weird_captcha_gym/shared_runtime/app/mechanics/ballast_lantern.js",
+      "lines": "180-219",
+      "claim": "Visible geometry is derived from current cage/specimen/crate positions; the trend direction and wake dots are rendered from specimen motion and recent samples."
+    },
+    {
+      "path": "weird_captcha_gym/shared_runtime/app/mechanics/ballast_lantern.js",
+      "lines": "241-327",
+      "claim": "Full mode renders a SPACE control surface, binds keydown/keyup to the winch, and runs the autonomous tick loop."
+    },
+    {
+      "path": "weird_captcha_gym/shared_runtime/app/mechanics/ballast_lantern.css",
+      "lines": "180-220",
+      "claim": "The cage, specimen, and wake are visibly positioned in the shaft, with transitions suitable for observing motion."
+    },
+    {
+      "path": "weird_captcha_gym/shared_runtime/app/mechanics/ballast_lantern.css",
+      "lines": "223-247",
+      "claim": "The crate visibly appears at spawn and the drift beacon visibly distinguishes upward from downward specimen motion."
+    },
+    {
+      "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/ballast_lantern.py",
+      "lines": "178-252",
+      "claim": "The grader replays every submitted winch event through the same tick physics, requires the full keyboard_hold source for full mode, and grades the final secured state."
+    },
+    {
+      "path": "weird_captcha_gym/environments/ballast_lantern_env/tasks/ballast_lantern_seed_0001/verifier.py",
+      "lines": "22-35",
+      "claim": "The task verifier loads the exported result and independent Ballast Lantern grader, so the outcome is based on the replayed task state."
+    },
+    {
+      "path": "weird_captcha_gym/tools/incubator_solvers/ballast_lantern.py",
+      "lines": "44-107",
+      "claim": "The reference solver observes the current simulation, selects specimen versus crate control, applies the target-leading policy, and uses six-hundred-millisecond decisions in paused mode; its private-state reads are implementation evidence only."
+    }
+  ],
+  "uncertainties": []
+}

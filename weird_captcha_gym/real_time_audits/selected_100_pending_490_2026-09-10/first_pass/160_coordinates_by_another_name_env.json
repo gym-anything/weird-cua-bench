@@ -1,0 +1,116 @@
+{
+  "case_index": 160,
+  "public_environment_name": "Coordinates by Another Name",
+  "environment_id": "coordinates_by_another_name_env",
+  "difficulty": 5,
+  "interaction_mode": "simplified",
+  "label": "no",
+  "controls_available": [
+    "Level 5 uses a 6-row by 9-column irregular chart with five holes, locally reversed counts, touching vessels, no hit-orientation feedback, fleet lengths 4/3/3/2, and two sweep charges.",
+    "Simplified interaction exposes explicit value buttons for the sorted numeric bands, blocks A/B/C, and counts 1-9 plus '*'.",
+    "FIRE applies the selected band/block/count designation; '*' charts one band-block run and consumes a sweep charge.",
+    "END ATTEMPT or CERTIFY FLEET submits the result administratively; rotary-dial dragging is not the active simplified input surface."
+  ],
+  "autonomous_processes": [],
+  "grouped_control_modes": [
+    {
+      "mode": "simplified value-button selection",
+      "scope": "band, block, or count selector buttons",
+      "outcome_effect": "sets the designation used by a subsequent Fire action"
+    },
+    {
+      "mode": "numeric Fire",
+      "scope": "Fire with count 1-9",
+      "outcome_effect": "charts the matching visible cells and may reveal hits or sink vessels"
+    },
+    {
+      "mode": "sweep Fire",
+      "scope": "Fire with count '*'",
+      "outcome_effect": "charts one band-block run and decrements the finite sweep count"
+    }
+  ],
+  "delta_ms": null,
+  "window_ms": 0,
+  "clause_i": {
+    "holds": true,
+    "reason": "For the outcome-affecting shot modes, the best next designation can differ with the visible chart and persistent hit/miss evidence, so a policy using only its prior actions and task times cannot be optimal across the grouped occurrences. This is static spatial/search dependence, not evidence of real-time evolution."
+  },
+  "clause_ii": {
+    "holds": true,
+    "reason": "A stationary screenshot policy can use the current chart's bands, block boundaries, count arrows, holes, and persistent shot marks to choose the next designation. No multi-frame temporal window is needed; the configured zero-length window is sufficient for the static state."
+  },
+  "clause_iii": {
+    "holds": false,
+    "reason": "With no new action, the task state does not autonomously change. The mechanic updates designation state only in select handlers and updates seen cells, shots, sweeps, and sunk status only in the Fire handler; certification is administrative. The target CSS has no animation or transition, and the finite play-time limit cannot supply the required non-clock state evolution. Thus H_t^tau remains H_t and no available action becomes strictly less effective within a positive Delta."
+  },
+  "common_visible_process": "None. The chart and all task evidence remain static between actions; visible changes are caused by selector clicks or Fire, and certification only submits the accumulated record.",
+  "pre_run": {
+    "threshold": 0.5,
+    "at_least_half": null,
+    "rate": null,
+    "basis": "not_applicable",
+    "reason": "The mathematical definition already fails clause (iii), so the configuration is No regardless of the pre-run rate. The source has no autonomous outcome phase whose start could define a pre-run interval.",
+    "seed_probe": null
+  },
+  "files_read_completely": [
+    "AGENTS.md",
+    "weird_captcha_gym/docs/controllability/real-time.md",
+    "weird_captcha_gym/environments/coordinates_by_another_name_env/controls.json",
+    "weird_captcha_gym/environments/coordinates_by_another_name_env/env.json",
+    "weird_captcha_gym/environments/coordinates_by_another_name_env/scripts/install_puzzle_runtime.sh",
+    "weird_captcha_gym/environments/coordinates_by_another_name_env/scripts/setup_puzzle_runtime.sh",
+    "weird_captcha_gym/environments/coordinates_by_another_name_env/tasks/coordinates_by_another_name_seed_0001/setup_task.sh",
+    "weird_captcha_gym/environments/coordinates_by_another_name_env/tasks/coordinates_by_another_name_seed_0001/export_result.sh",
+    "weird_captcha_gym/environments/coordinates_by_another_name_env/tasks/coordinates_by_another_name_seed_0001/task.json",
+    "weird_captcha_gym/environments/coordinates_by_another_name_env/tasks/coordinates_by_another_name_seed_0001/verifier.py",
+    "weird_captcha_gym/shared_scripts/incubator_generators/coordinates_by_another_name.py",
+    "weird_captcha_gym/shared_runtime/app/mechanics/coordinates_by_another_name.js",
+    "weird_captcha_gym/shared_runtime/app/mechanics/coordinates_by_another_name.css",
+    "weird_captcha_gym/shared_runtime/server/incubator_graders/coordinates_by_another_name.py",
+    "weird_captcha_gym/shared_runtime/verifier_helpers.py",
+    "weird_captcha_gym/tools/incubator_solvers/coordinates_by_another_name.py"
+  ],
+  "source_evidence": [
+    {
+      "path": "weird_captcha_gym/environments/coordinates_by_another_name_env/controls.json",
+      "lines": "85-119",
+      "claim": "The assigned level-5 parameters are the 6x9 irregular chart, reversed counts, no orientation feedback, touching vessels, five holes, fleet lengths 4/3/3/2, and two sweeps; simplified mode uses explicit buttons; the configured observation window is 0 ms with one frame."
+    },
+    {
+      "path": "weird_captcha_gym/environments/coordinates_by_another_name_env/env.json",
+      "lines": "20-45",
+      "claim": "The environment exposes a frame-window observation and mouse/keyboard action types but uses the same zero-ms, one-frame runner schedule."
+    },
+    {
+      "path": "weird_captcha_gym/shared_scripts/incubator_generators/coordinates_by_another_name.py",
+      "lines": "15-45, 52-70, 94-111",
+      "claim": "The control condition supplies generation parameters, and seeded randomness constructs the chart, holes, runs, and fleet during generation; the returned world and truth contain no autonomous clock or motion state."
+    },
+    {
+      "path": "weird_captcha_gym/shared_runtime/app/mechanics/coordinates_by_another_name.js",
+      "lines": "12-19, 44-47, 70-86, 110-114",
+      "claim": "Simplified input renders value buttons; selection changes only on an input event, and chart, shot, sweep, and sunk state changes occur only in the Fire handler. Render initializes a static model and binds click handlers without a timer or animation loop."
+    },
+    {
+      "path": "weird_captcha_gym/shared_runtime/app/mechanics/coordinates_by_another_name.css",
+      "lines": "1-10",
+      "claim": "The mechanic stylesheet contains static layout and visual rules and no animation or transition rule that could autonomously evolve task state."
+    },
+    {
+      "path": "weird_captcha_gym/shared_runtime/server/incubator_graders/coordinates_by_another_name.py",
+      "lines": "31-76",
+      "claim": "The grader replays the event list synchronously, changes seen/shots/sweeps/sunk only while replaying events, and grades fleet completion and shot efficiency without timestamps or task-clock state."
+    },
+    {
+      "path": "weird_captcha_gym/environments/coordinates_by_another_name_env/tasks/coordinates_by_another_name_seed_0001/verifier.py",
+      "lines": "35-51",
+      "claim": "Verification loads the exported result and performs the independent designation replay; it has no time-dependent acceptance rule."
+    },
+    {
+      "path": "weird_captcha_gym/tools/incubator_solvers/coordinates_by_another_name.py",
+      "lines": "49-91",
+      "claim": "The structural solver reads rendered chart marks, enumerates candidate straight vessels, issues selector and Fire actions, and uses no temporal prediction; its optional pacing is not a task mechanic."
+    }
+  ],
+  "uncertainties": []
+}
