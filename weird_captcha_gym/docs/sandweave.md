@@ -174,7 +174,7 @@ The original integration smoke checks used a gateway-side deadline wait. Their
 sandbox-side scheduling. They are not measurements of the input service above.
 CPU-memory checkpointing was not exercised.
 
-The full benchmark suite is **not green**: three historical tests in
+On the pre-sync feature branch, the full benchmark suite was **not green**: three historical tests in
 `tests/test_agent_sample_runner.py` reject the expanded task population against
 their frozen 75-task manifest. The run was interrupted after 17 minutes of NFS
 traversal, with 34 passes and those three failures. Historical manifests were
@@ -251,9 +251,11 @@ The timestamped-execution case also exercised scheduled input through
 final transport cleanup passed another nine scheduled inputs and the concurrency
 checks, saved in `../scheduled-input-verified/remote/`.
 
-The full benchmark suite still has failures outside this change. Its latest
-full-suite attempt stopped at six failures after 427 passes: the three frozen
+On that pre-sync checkout, the last full-suite attempt stopped at six failures
+after 427 passes: the three frozen
 75-task manifest assertions and three Compass Vault verifier subprocess import
 failures. A separate real-time suite run had 24 passes and one browser-window
 readiness timeout. Those tests and environment files were not modified to hide
-the failures.
+the failures. These results precede synchronization with `main` at `aa085c8`;
+the integration PR checks validate the combined tree, including main's newer
+manifest tests and isolated-browser dependencies.
