@@ -27,6 +27,7 @@ import json
 import logging
 import math
 import shlex
+import threading
 import time
 from pathlib import Path
 from typing import Any, Dict, Optional
@@ -246,6 +247,12 @@ class WeirdCaptchaRunner(BaseRunner):
         # Ordered (command, result) clock transitions for this episode.
         self.clock_log: list = []
         self.input_log: list = []
+        self._input_service = None
+        self._input_closed = False
+        self._last_input_receipt = None
+        self._input_start_lock = threading.Lock()
+        self._input_step_lock = threading.Lock()
+        self._input_requests = {}
 
     # --- class-level facts ------------------------------------------------
 
@@ -352,6 +359,12 @@ class WeirdCaptchaRunner(BaseRunner):
     # --- episode participation -------------------------------------------
 
     def on_episode_start(self, context: Dict[str, Any]) -> None:
+        if self._input_service is not None:
+            self._input_service.close()
+            self._input_service = None
+        self._input_requests = {}
+        self._input_closed = False
+        self._last_input_receipt = None
         self._context = dict(context)
         if self._context.get("episode_dir"):
             # Frame paths travel to remote clients that fetch them by this
@@ -497,8 +510,83 @@ class WeirdCaptchaRunner(BaseRunner):
 
     # --- actions ----------------------------------------------------------
 
+    def prepare_input(self):
+        if self.time_mode != "live":
+            raise ValueError("sandbox input scheduling requires live mode")
+        with self._input_start_lock:
+            if self._input_closed:
+                raise RuntimeError("episode input is closed")
+            self._ensure_ready()
+            self._ensure_live_started()
+            if self._input_service is None:
+                from weird_captcha_gym.scheduled_input import SandboxInput
+                self._input_service = SandboxInput(self.inner, self._episode_started_wall_ms)
+        return self._input_service
+
+    def close_input(self):
+        with self._input_start_lock:
+            self._input_closed = True
+            if self._input_service is not None:
+                self._input_service.close()
+                self._input_service = None
+
+    def execute_input_step(self, env, actions, execute_at_s=None, *, request_id):
+        from concurrent.futures import Future
+        signature = json.dumps([actions, execute_at_s], sort_keys=True, allow_nan=False)
+        with self._input_step_lock:
+            previous = self._input_requests.get(request_id)
+            if previous is not None:
+                if previous[0] != signature:
+                    raise ValueError("request id reused with different input")
+                future, owner = previous[1], False
+            else:
+                future, owner = Future(), True
+                self._input_requests[request_id] = (signature, future)
+        if not owner:
+            return future.result(timeout=3660)
+        try:
+            receipt = self.prepare_input().execute(actions, execute_at_s, request_id=request_id)
+            # Core still owns step accounting, trajectory logging and limits.
+            # Waiting for the guest never holds this short accounting lock.
+            with self._input_step_lock:
+                _, reward, done, info = env.step([{
+                    "action": "input_receipt", "actions": actions, "receipt": receipt,
+                }], capture_observation=False, settle_after_actions=False)
+            result = {"receipt": receipt, "reward": reward, "done": done, "info": info}
+            future.set_result(result)
+            return result
+        except BaseException as error:
+            future.set_exception(error)
+            raise
+
     def inject_action(self, action: Dict[str, Any]):
         kind = action.get("action") if isinstance(action, dict) else None
+        if kind == "input_receipt":
+            self.last_action_result = action["receipt"]
+            self._last_input_receipt = action["receipt"]
+            self.input_log.append(dict(action))
+            return self.last_action_result
+        if kind == "scheduled_input":
+            if self.inner.compatibility().runner != "sandweave":
+                target_ms = action.get("wall_time_ms")
+                if target_ms is None:
+                    self._ensure_ready()
+                    self._ensure_live_started()
+                    target_ms = self._episode_started_wall_ms + float(action["execute_at_s"]) * 1000
+                self.inject_action({"action": "wait_until", "wall_time_ms": target_ms})
+                for item in action["actions"]:
+                    self.inject_action(item)
+                return
+            target = action.get("execute_at_s")
+            if target is None and "wall_time_ms" in action:
+                self._ensure_ready()
+                self._ensure_live_started()
+                target = (float(action["wall_time_ms"]) - self._episode_started_wall_ms) / 1000
+            receipt = self.prepare_input().execute(action["actions"], target)
+            self.last_action_result = receipt
+            self._last_input_receipt = receipt
+            self.input_log.append({"action": "input_receipt", "actions": action["actions"], "receipt": receipt})
+            return receipt
         if kind == "time":
             self._ensure_ready()
             result = self.time_command(str(action.get("command")))
@@ -537,7 +625,11 @@ class WeirdCaptchaRunner(BaseRunner):
         self._ensure_ready()
         if self.time_mode == "live":
             self._ensure_live_started()
-            self.inner.inject_action(action)
+            if self._input_service is None:
+                self.inner.inject_action(action)
+            else:
+                self.last_action_result = self._input_service.execute([action])
+                self._last_input_receipt = self.last_action_result
             return
 
         if self._clock_running:
@@ -684,6 +776,7 @@ class WeirdCaptchaRunner(BaseRunner):
             # Raw clock report for callers that need it without another
             # guest roundtrip; it also crosses the remote wire this way.
             "time_status": time_status,
+            "input_receipt": self._last_input_receipt,
         }
 
     # --- artifacts --------------------------------------------------------
@@ -710,6 +803,10 @@ class WeirdCaptchaRunner(BaseRunner):
 
     def stop(self) -> None:
         try:
+            self.close_input()
+        except Exception:
+            logger.warning("Could not close Weird CUA input service", exc_info=True)
+        try:
             self.collect_artifacts()
         except Exception:
             logger.warning("Could not collect Weird CUA artifacts", exc_info=True)
@@ -724,6 +821,8 @@ class WeirdCaptchaRunner(BaseRunner):
 
     def run_hook(self, command: str, *, stage: str,
                  timeout: Optional[int] = None, use_pty: bool = True) -> int:
+        if stage == "post_task":
+            self.close_input()
         return self.inner.run_hook(command, stage=stage, timeout=timeout, use_pty=use_pty)
 
     def set_reporter(self, reporter) -> None:
@@ -738,6 +837,10 @@ class WeirdCaptchaRunner(BaseRunner):
 
     def supports_live_recording(self) -> bool:
         return self.inner.supports_live_recording()
+
+    def supports_native_recording(self) -> bool:
+        capability = getattr(self.inner, "supports_native_recording", None)
+        return bool(capability()) if callable(capability) else False
 
     def supports_checkpoint_caching(self) -> bool:
         return self.inner.supports_checkpoint_caching()

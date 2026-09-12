@@ -84,6 +84,10 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--cache-level", "--cache_level", default="pre_start")
     parser.add_argument("--use-savevm", "--use_savevm", action="store_true")
     parser.add_argument("--fast-io", "--fast_io", action="store_true")
+    parser.add_argument(
+        "--inner-runner",
+        help="Execution backend for the benchmark runner (registered key or class locator).",
+    )
     parser.add_argument("--remote-url", "--remote_url")
     parser.add_argument("--remote-timeout", "--remote_timeout", type=int, default=300)
     parser.add_argument(
@@ -148,7 +152,7 @@ def _runner_options(args: argparse.Namespace, settings: RealTimeSettings) -> dic
     observation schedule with the invocation's run condition merged in."""
     temporal_mode = _temporal_mode(args)
     live = world_time_mode(temporal_mode) == "live"
-    return {
+    options = {
         "time_mode": "live" if live else "paused",
         "start_paused": True,
         # A live agent can request another observation at any time. Each
@@ -158,6 +162,9 @@ def _runner_options(args: argparse.Namespace, settings: RealTimeSettings) -> dic
         "frames_per_observation": 1 if live else settings.frames_per_observation,
         "play_time_seconds": settings.play_time_seconds,
     }
+    if getattr(args, "inner_runner", None):
+        options["inner"] = args.inner_runner
+    return options
 
 
 def _play_time_limit_seconds(
@@ -190,8 +197,7 @@ def _actions_with_schedule(
     if not math.isfinite(target_wall_ms) or target_wall_ms < 0:
         raise ValueError("scheduled action wall time must be finite and non-negative")
     return [
-        {"action": "wait_until", "wall_time_ms": target_wall_ms},
-        *actions,
+        {"action": "scheduled_input", "wall_time_ms": target_wall_ms, "actions": actions},
     ]
 
 
@@ -788,6 +794,9 @@ def run(args: argparse.Namespace) -> int:
                 task_time_after_execution_ms = float(
                     clock_after_action.get("task_time_ms") or 0
                 )
+                input_receipt = obs.get("input_receipt")
+                if input_receipt is not None:
+                    task_time_after_execution_ms = input_receipt["action_completed_at_s"] * 1000
 
                 turn += 1
                 action_result = info.get("action_result", {"action": "other", "output": "Executed the action"})
@@ -795,6 +804,7 @@ def run(args: argparse.Namespace) -> int:
                     action_result["output"] = obs["screen"]["path"]
                 action_outputs.append({**action_result, "tool_id": group.get("tool_id"), "obs": obs})
                 action_records.append({
+                    "input_receipt": input_receipt,
                     "tool_id": group.get("tool_id"),
                     "action_count": len(actual_actions),
                     "requested_execute_at_s": (
