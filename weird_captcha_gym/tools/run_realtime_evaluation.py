@@ -197,8 +197,7 @@ def _actions_with_schedule(
     if not math.isfinite(target_wall_ms) or target_wall_ms < 0:
         raise ValueError("scheduled action wall time must be finite and non-negative")
     return [
-        {"action": "wait_until", "wall_time_ms": target_wall_ms},
-        *actions,
+        {"action": "scheduled_input", "wall_time_ms": target_wall_ms, "actions": actions},
     ]
 
 
@@ -795,6 +794,9 @@ def run(args: argparse.Namespace) -> int:
                 task_time_after_execution_ms = float(
                     clock_after_action.get("task_time_ms") or 0
                 )
+                input_receipt = obs.get("input_receipt")
+                if input_receipt is not None:
+                    task_time_after_execution_ms = input_receipt["action_completed_at_s"] * 1000
 
                 turn += 1
                 action_result = info.get("action_result", {"action": "other", "output": "Executed the action"})
@@ -802,6 +804,7 @@ def run(args: argparse.Namespace) -> int:
                     action_result["output"] = obs["screen"]["path"]
                 action_outputs.append({**action_result, "tool_id": group.get("tool_id"), "obs": obs})
                 action_records.append({
+                    "input_receipt": input_receipt,
                     "tool_id": group.get("tool_id"),
                     "action_count": len(actual_actions),
                     "requested_execute_at_s": (

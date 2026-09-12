@@ -73,7 +73,7 @@ def main():
              "from gym_anything.runtime.runners.registry import register_runner; "
              "from weird_captcha_gym.runner import WeirdCaptchaRunner; "
              "register_runner('weird_captcha', WeirdCaptchaRunner, replace=True); "
-             "from gym_anything.remote.worker import main; main()",
+             "from weird_captcha_gym.worker import main; main()",
              "--host", "127.0.0.1", "--port", str(worker_port), "--master-url", master_url,
              "--max-envs", "2", "--heartbeat-interval", "1", "--advertise-host", "127.0.0.1",
              "--must-support-runner", "weird_captcha,sandweave"],
@@ -122,7 +122,8 @@ def main():
                 assert not response.get("error"), response
                 if live:
                     assert response["timing"]["action_executed_at_s"] >= command["execute_at_s"] - 0.01
-                (folder / "after-click.png").write_bytes(base64.b64decode(response["screenshot_b64"]))
+                image_response = gateway.step_from_command('{"action":"screenshot"}') if live else response
+                (folder / "after-click.png").write_bytes(base64.b64decode(image_response["screenshot_b64"]))
                 report = {"mode": mode, "env_id": env.env_id, "sandbox_id": session.instance_name,
                           "episode_dir": session.artifacts_dir, "timing": response.get("timing")}
             finally:

@@ -29,6 +29,7 @@ def main() -> None:
     parser.add_argument("--use-cache", action="store_true")
     parser.add_argument("--recording", action="store_true")
     parser.add_argument("--stage-mounts", action="store_true", help="Copy runtime inputs to local storage, excluding Python bytecode caches")
+    parser.add_argument("--connection-file", type=Path, help="Use already staged mounts from a CPU-node diagnostic")
     args = parser.parse_args()
     logging.basicConfig(level=logging.INFO)
     root = args.output_dir.resolve()
@@ -38,6 +39,8 @@ def main() -> None:
     env_dir = Path("weird_captcha_gym/environments/rotating_keyboard_env")
     staged = tempfile.TemporaryDirectory(prefix="wcb-sandweave-inputs-") if args.stage_mounts else None
     overrides = {}
+    if args.connection_file:
+        overrides["mounts"] = json.loads(args.connection_file.read_text())["mounts"]
     if staged:
         mounts = json.loads((env_dir / "env.json").read_text())["mounts"]
         for index, mount in enumerate(mounts):
@@ -66,6 +69,7 @@ def main() -> None:
         )
         started = time.monotonic()
         print(f"START {mode}", flush=True)
+        gateway = None
         try:
             initial = env.reset(seed=42, use_cache=args.use_cache, cache_level="pre_start")
             reset_seconds = time.monotonic() - started
@@ -104,6 +108,10 @@ def main() -> None:
                 assert not response.get("error"), response
                 assert response["timing"]["action_executed_at_s"] >= target - 0.01, response["timing"]
                 responses.append({k: v for k, v in response.items() if "b64" not in k})
+                target = response["timing"]["current_time_s"] + .25
+                direct, _, _, _ = env.step([{"action": "scheduled_input", "execute_at_s": target,
+                    "actions": [{"mouse": {"move": [100, 500]}}]}], settle_after_actions=False)
+                assert direct["input_receipt"]["action_executed_at_s"] >= target
             env.runner.capture_screenshot(output / "final-desktop.png")
             results.append({
                 "mode": mode, "reset_seconds": reset_seconds, "idle_task_time_delta_ms": delta,
@@ -111,6 +119,8 @@ def main() -> None:
                 "initial_frame_count": len(initial["frames"]),
             })
         finally:
+            if gateway is not None:
+                gateway.stop()
             env.close()
         assert (episode_dir / "current_task.json").is_file(), episode_dir
         assert env.runner.inner._sandbox is None
