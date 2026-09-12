@@ -2,6 +2,25 @@
 
 This repository contains only Weird CUA Bench: interaction-first visual puzzles for evaluating screenshot-driven computer-use agents.
 
+## Final evaluation selection
+
+Use the exact `selected_100` array in
+`weird_captcha_gym/difficulty_audits/pilot_10_2026-09-09/manifest.json`
+for the final evaluation. Despite its pilot directory name, this manifest records
+all 100 selected environments. Do not substitute the old 75-environment set,
+the complete 170-environment catalog, or a newly computed selection unless the
+user explicitly changes the selection.
+
+The selection includes all 38 environments requiring 3D understanding and all
+27 without reasoning requirements (61 distinct environments after overlap),
+plus 39 chosen to balance capability coverage. Its capability counts are
+38 visual/3D, 55 temporal, 73 reasoning, and 55 exploration.
+
+Five difficulty levels and two interaction modes give 1,000 configurations.
+Evaluating each under both paused and live execution gives 2,000 evaluations
+per model and seed. Use the temporal mode specified for the run; the selection
+does not authorize running every available live variant.
+
 ## Current benchmark framework
 
 Preserve the following framework verbatim. Do not replace these broad categories with narrower hand-engineered definitions.
@@ -164,6 +183,7 @@ Both interaction modes are implemented for all twenty. The exact environment-spe
 
 ## Collaboration rules learned from the project
 
+- Avoid frequent polling and repeated unchanged status messages for long CI runs. Use longer waits between checks.
 - When asked to explore the repository, explain its purpose, principles, architecture, components, and current state before listing small defects. Ongoing experiments are unfinished work rather than evidence against the project.
 - Answer the question that was asked. Do not replace it with unsolicited recommendations.
 - When the user points out a problem, inspect the evidence and improve the work. Agreement or a restatement is not a correction.
