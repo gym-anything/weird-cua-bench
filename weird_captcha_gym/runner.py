@@ -739,6 +739,10 @@ class WeirdCaptchaRunner(BaseRunner):
     def supports_live_recording(self) -> bool:
         return self.inner.supports_live_recording()
 
+    def supports_native_recording(self) -> bool:
+        capability = getattr(self.inner, "supports_native_recording", None)
+        return bool(capability()) if callable(capability) else False
+
     def supports_checkpoint_caching(self) -> bool:
         return self.inner.supports_checkpoint_caching()
 

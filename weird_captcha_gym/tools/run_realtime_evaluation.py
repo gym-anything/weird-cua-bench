@@ -84,6 +84,10 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--cache-level", "--cache_level", default="pre_start")
     parser.add_argument("--use-savevm", "--use_savevm", action="store_true")
     parser.add_argument("--fast-io", "--fast_io", action="store_true")
+    parser.add_argument(
+        "--inner-runner",
+        help="Execution backend for the benchmark runner (registered key or class locator).",
+    )
     parser.add_argument("--remote-url", "--remote_url")
     parser.add_argument("--remote-timeout", "--remote_timeout", type=int, default=300)
     parser.add_argument(
@@ -148,7 +152,7 @@ def _runner_options(args: argparse.Namespace, settings: RealTimeSettings) -> dic
     observation schedule with the invocation's run condition merged in."""
     temporal_mode = _temporal_mode(args)
     live = world_time_mode(temporal_mode) == "live"
-    return {
+    options = {
         "time_mode": "live" if live else "paused",
         "start_paused": True,
         # A live agent can request another observation at any time. Each
@@ -158,6 +162,9 @@ def _runner_options(args: argparse.Namespace, settings: RealTimeSettings) -> dic
         "frames_per_observation": 1 if live else settings.frames_per_observation,
         "play_time_seconds": settings.play_time_seconds,
     }
+    if getattr(args, "inner_runner", None):
+        options["inner"] = args.inner_runner
+    return options
 
 
 def _play_time_limit_seconds(
