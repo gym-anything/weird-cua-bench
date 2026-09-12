@@ -8,6 +8,7 @@ import secrets
 import subprocess
 import tempfile
 import threading
+import time
 from pathlib import Path
 from typing import Any
 
@@ -36,6 +37,76 @@ class WeirdCodexActionGateway(ActionGateway):
         self._timing_write_lock = threading.Lock()
         self._next_request_index = 0
         self._finished = False
+        self._input_ready = False
+        self._sandbox_input = False
+        self._input_ready_lock = threading.Lock()
+        self._input_request = threading.local()
+
+    def _prepare_input(self):
+        if self.temporal_mode == "paused":
+            return
+        with self._input_ready_lock:
+            if not self._input_ready:
+                from weird_captcha_gym.scheduled_input import prepare_input
+                ready = prepare_input(self.env)
+                self._sandbox_input = ready.get("sandbox_scheduling", True)
+                if self._sandbox_input:
+                    self._t0_ms = float(ready["episode_started_wall_ms"])
+                self._input_ready = True
+
+    def _execute_action(self, env_actions, *, target_wall_ms):
+        if self.temporal_mode == "paused":
+            return super()._execute_action(env_actions, target_wall_ms=target_wall_ms)
+        from weird_captcha_gym.scheduled_input import execute_input
+        self._prepare_input()
+        if not self._sandbox_input:
+            return super()._execute_action(env_actions, target_wall_ms=target_wall_ms)
+        if not env_actions:
+            from weird_captcha_gym.scheduled_input import close_input
+            close_input(self.env)
+            return True, time.time_ns() / 1e6
+        result = execute_input(self.env, env_actions, self._input_request.execute_at_s)
+        self._input_request.receipt = result["receipt"]
+        return bool(result["done"]), self._t0_ms + result["receipt"]["action_executed_at_s"] * 1000
+
+    def _capture_payload(self, *, action_receipt=None):
+        if self.temporal_mode == "paused":
+            return super()._capture_payload(action_receipt=action_receipt)
+        self._prepare_input()
+        if not self._sandbox_input:
+            return super()._capture_payload(action_receipt=action_receipt)
+        if action_receipt is None or self._input_request.receipt is None:
+            return super()._capture_payload()
+        receipt = self._input_request.receipt
+        timing = None
+        if timestamps_enabled(self.temporal_mode):
+            executed = receipt["action_executed_at_s"]
+            timing = {
+                "action_executed_at_s": executed,
+                "action_completed_at_s": receipt["action_completed_at_s"],
+                "previous_action_finished_executing_by_s": receipt["action_completed_at_s"],
+                "action_queued_at_s": receipt["queued_at_s"],
+                "action_ack_sent_at_s": receipt["ack_sent_at_s"],
+                "current_time_s": (time.time_ns() / 1e6 - self._t0_ms) / 1000,
+                "acknowledgement": receipt["acknowledgement"],
+            }
+            target = receipt.get("requested_execute_at_s")
+            if target is not None:
+                timing["previous_action_requested_execute_at_s"] = target
+                timing["action_execution_lateness_s"] = executed - target
+            observed = action_receipt.get("observed_frame_s")
+            if observed is not None:
+                latency = executed - observed
+                with self._state_lock:
+                    self._latency_log.append(latency)
+                    recent = self._latency_log[-8:]
+                timing["seconds_between_your_last_screenshot_and_that_action_landing"] = latency
+                timing["your_recent_observe_to_execute_latencies_s"] = recent
+        payload = {"screenshots_b64": [], "screenshot_b64": None, "observation": None,
+                   "timing": timing, "acknowledgement": receipt["acknowledgement"]}
+        if timestamps_enabled(self.temporal_mode):
+            payload["input_receipt"] = receipt
+        return payload
 
     def _env_actions_for(
         self, command: str,
@@ -63,8 +134,12 @@ class WeirdCodexActionGateway(ActionGateway):
         action_receipt: dict[str, float | None] | None,
         capture_finished_wall_ms: float,
     ) -> dict[str, Any] | None:
-        if timestamps_enabled(self.temporal_mode) and self._t0_ms is None:
-            self._t0_ms = episode_clock_origin_ms(obs)
+        if timestamps_enabled(self.temporal_mode):
+            origin = episode_clock_origin_ms(obs)
+            if self._t0_ms is None:
+                self._t0_ms = origin
+            elif abs(origin - self._t0_ms) > 1:
+                raise RuntimeError("observation and input service have different episode clocks")
         return super()._timing_payload(
             obs,
             action_receipt=action_receipt,
@@ -74,7 +149,8 @@ class WeirdCodexActionGateway(ActionGateway):
     def step_from_command(self, command: str) -> dict[str, Any]:
         # The upstream error response captures a new observation. In paused
         # mode that advances task time, so validate here before entering it.
-        error = self._env_actions_for(command)[-1]
+        parsed = self._env_actions_for(command)
+        error = parsed[-1]
         with self._state_lock:
             if self._finished or error is not None:
                 if self._finished:
@@ -94,6 +170,8 @@ class WeirdCodexActionGateway(ActionGateway):
                 }
             request_index = self._next_request_index
             self._next_request_index += 1
+        self._input_request.execute_at_s = parsed[3]
+        self._input_request.receipt = None
         response = super().step_from_command(command)
         with self._state_lock:
             self._finished = self._finished or bool(response.get("done"))
@@ -117,6 +195,7 @@ class WeirdCodexActionGateway(ActionGateway):
                         "action_execution_lateness_s": timing.get(
                             "action_execution_lateness_s"
                         ),
+                        "input_receipt": response.get("input_receipt"),
                     }
                 )
             if timing.get("frame_captured_at_s") is not None:
@@ -134,6 +213,14 @@ class WeirdCodexActionGateway(ActionGateway):
                     for event in events:
                         handle.write(json.dumps(event, sort_keys=True) + "\n")
         return response
+
+    def stop(self):
+        try:
+            if self._sandbox_input:
+                from weird_captcha_gym.scheduled_input import close_input
+                close_input(self.env)
+        finally:
+            super().stop()
 
 
 class WeirdCodexCliAgent(CodexCliAgent):
