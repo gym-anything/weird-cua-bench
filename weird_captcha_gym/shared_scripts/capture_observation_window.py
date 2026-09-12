@@ -89,8 +89,32 @@ def capture(args: argparse.Namespace) -> dict:
     output_dir.mkdir(parents=True)
 
     wait_until_ready(port=args.port, timeout=args.timeout)
-    fps = max(30, math.ceil(args.frames * 1000 / max(1, args.duration_ms)) * 2)
     width, height = (args.width, args.height) if args.width and args.height else display_size(args.display)
+    if args.mode == "live" and args.duration_ms == 0 and args.frames == 1:
+        # One live observation needs one frame, not a running window recorder
+        # whose shutdown can outlast the capture itself.
+        destination = output_dir / "frame-000.png"
+        display_input = args.display if "." in args.display.rsplit(":", 1)[-1] else f"{args.display}.0"
+        start_ms = time.time_ns() / 1_000_000
+        subprocess.run([
+            "ffmpeg", "-nostdin", "-y", "-loglevel", "error", "-f", "x11grab",
+            "-draw_mouse", "1", "-framerate", "30", "-video_size", f"{width}x{height}",
+            "-i", display_input, "-frames:v", "1", "-compression_level", "1", str(destination),
+        ], check=True, timeout=args.timeout, stdout=subprocess.DEVNULL, stderr=subprocess.PIPE)
+        captured_ms = destination.stat().st_mtime_ns / 1_000_000
+        end_ms = time.time_ns() / 1_000_000
+        manifest = {
+            "mode": "live", "resolution": [width, height],
+            "observation_window_ms": 0, "frames_per_observation": 1,
+            "window_started_wall_ms": start_ms, "window_completed_wall_ms": end_ms,
+            "scheduled_window_completed_wall_ms": start_ms,
+            "actual_window_wall_ms": max(0, end_ms - start_ms),
+            "frames": [{"path": str(destination), "offset_ms": round(captured_ms - start_ms, 3), "target_offset_ms": 0}],
+            "time_status": get_status(port=args.port),
+        }
+        (output_dir / "manifest.json").write_text(json.dumps(manifest, indent=2), encoding="utf-8")
+        return manifest
+    fps = max(30, math.ceil(args.frames * 1000 / max(1, args.duration_ms)) * 2)
     recorder = start_recorder(
         raw_dir,
         display=args.display,
