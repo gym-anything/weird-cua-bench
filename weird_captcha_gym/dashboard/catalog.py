@@ -23,6 +23,7 @@ BENCHMARK_ROOT = DASHBOARD_ROOT.parent
 REPO_ROOT = BENCHMARK_ROOT.parent
 ENVIRONMENTS_ROOT = BENCHMARK_ROOT / "environments"
 EVIDENCE_ROOT = BENCHMARK_ROOT / "evidence"
+SELECTION_MANIFEST = BENCHMARK_ROOT / "difficulty_audits" / "pilot_10_2026-09-09" / "manifest.json"
 DIRECT_HUMAN_STATUSES = {"human-tested", "feedback-integrated", "human-iterated"}
 
 
@@ -1231,6 +1232,10 @@ def _solution_videos() -> dict[str, dict[str, Any]]:
 
 
 def build_catalog() -> dict[str, Any]:
+    selection = json.loads(SELECTION_MANIFEST.read_text(encoding="utf-8"))["selected_100"]
+    selected_ids = {item["environment_id"] for item in selection}
+    if len(selection) != 100 or len(selected_ids) != 100:
+        raise ValueError("The final evaluation selection must contain 100 distinct environments")
     validation = _validation_summaries()
     solution_videos = _solution_videos()
     capability_annotations = build_capability_annotations()
@@ -1356,6 +1361,12 @@ def build_catalog() -> dict[str, Any]:
             "concept_index": concept["concept_index"],
             "motif": concept["motif"],
         })
+
+    missing_selected = selected_ids - {item["id"] for item in environments if item["stage"] == "built"}
+    if missing_selected:
+        raise ValueError(f"Selected environments missing from the built catalog: {sorted(missing_selected)}")
+    for environment in environments:
+        environment["selected_for_evaluation"] = environment["id"] in selected_ids
 
     environments.sort(key=lambda item: (item["order"], item["title"].lower()))
     groups: list[dict[str, Any]] = []
