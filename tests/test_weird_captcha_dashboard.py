@@ -12,7 +12,7 @@ from collections import Counter
 from pathlib import Path
 from unittest import mock
 
-from weird_captcha_gym.dashboard.catalog import BENCHMARK_ROOT, REPO_ROOT, build_catalog
+from weird_captcha_gym.dashboard.catalog import BENCHMARK_ROOT, REPO_ROOT, SELECTION_MANIFEST, build_catalog
 from weird_captcha_gym.dashboard.capability_annotations import (
     ANNOTATIONS,
     LEGACY_TEMPORAL_ANNOTATION_STATUS,
@@ -105,6 +105,39 @@ SURVEY_SKIP_REASON = "optional sibling research/collection survey corpus is not 
 
 
 class WeirdCaptchaDashboardTests(unittest.TestCase):
+    def test_final_selection_matches_the_evaluation_manifest(self) -> None:
+        expected = {
+            item["environment_id"]
+            for item in json.loads(SELECTION_MANIFEST.read_text())["selected_100"]
+        }
+        catalog = build_catalog()
+        selected = {
+            item["id"] for item in catalog["environments"]
+            if item["selected_for_evaluation"]
+        }
+        self.assertEqual(len(expected), 100)
+        self.assertEqual(selected, expected)
+        self.assertGreater(catalog["stats"]["total"], len(selected))
+        self.assertEqual(catalog["stats"]["total"], len(catalog["environments"]))
+        self.assertTrue(all(
+            item["stage"] == "built" for item in catalog["environments"]
+            if item["selected_for_evaluation"]
+        ))
+
+    def test_final_selection_rejects_duplicates_and_missing_environments(self) -> None:
+        selection = json.loads(SELECTION_MANIFEST.read_text())
+        with tempfile.TemporaryDirectory() as temporary:
+            manifest = Path(temporary) / "manifest.json"
+            with mock.patch("weird_captcha_gym.dashboard.catalog.SELECTION_MANIFEST", manifest):
+                duplicate = {"selected_100": [selection["selected_100"][0]] * 100}
+                manifest.write_text(json.dumps(duplicate))
+                with self.assertRaisesRegex(ValueError, "100 distinct"):
+                    build_catalog()
+                selection["selected_100"][0] = {"environment_id": "missing_selected_environment_env"}
+                manifest.write_text(json.dumps(selection))
+                with self.assertRaisesRegex(ValueError, "missing_selected_environment_env"):
+                    build_catalog()
+
     def test_human_launcher_defaults_local_and_expands_hosted_shortcut(self) -> None:
         self.assertEqual(launcher_args([]), ["--open"])
         self.assertEqual(launcher_args(["--runner", "local"]), ["--open", "--runner", "local"])
@@ -1001,4 +1034,3 @@ class WeirdCaptchaDashboardTests(unittest.TestCase):
             server.shutdown()
             server.server_close()
             thread.join(timeout=3)
-

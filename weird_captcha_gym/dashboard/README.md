@@ -30,6 +30,12 @@ The local dashboard deliberately generates links against the canonical GitHub Pa
 
 The Environment collection exposes the benchmark annotations as composable filters. Real-time status and visual dimensionality are single-choice filters. Temporal understanding and memory, reasoning and planning, plus exploration and interface understanding can be selected together; an environment must match every active selection. Capability filters also compose with search, collection, stage, review, and starred-only filters.
 
+The **Selected 100** toggle restricts the collection to the exact `selected_100`
+array in `difficulty_audits/pilot_10_2026-09-09/manifest.json`. It composes with
+the other filters, and capability counts reflect the selected set while enabled.
+Turn it off to browse the full catalog. Share the selected view with
+`?selection=selected_100#/environments`; the selection also survives a reload.
+
 ## Play controlled tasks
 
 Seventy-five environments expose difficulty levels 1 through 5 plus simplified and full interaction modes on their environment dossiers. Choose both values in the runtime console before selecting **Play in browser**. The selected task summary, agent instruction, task identity, generated challenge, and grader all use the same condition.

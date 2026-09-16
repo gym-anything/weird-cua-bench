@@ -16,6 +16,58 @@ ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(ROOT))
 
 from weird_captcha_gym.dashboard.export_static import export_dashboard
+from weird_captcha_gym.dashboard.catalog import SELECTION_MANIFEST
+
+
+def check_selected_100(page, base_url: str, out_dir: Path | None = None) -> None:
+    selected = {
+        item["environment_id"]
+        for item in json.loads(SELECTION_MANIFEST.read_text())["selected_100"]
+    }
+    page.goto(f"{base_url}/#/environments", wait_until="networkidle")
+    catalog = page.evaluate("async () => (await fetch('data/catalog.json')).json()")
+    built_count = sum(item["stage"] == "built" for item in catalog["environments"])
+    cards = page.locator("#environment-grid .environment-card")
+    toggle = page.get_by_role("button", name="Selected 100", exact=True)
+    expect(cards).to_have_count(built_count)
+    expect(toggle).to_have_attribute("aria-pressed", "false")
+    toggle.click()
+    expect(cards).to_have_count(100)
+    expect(toggle).to_have_attribute("aria-pressed", "true")
+    assert set(cards.evaluate_all("nodes => nodes.map(node => node.dataset.openEnv)")) == selected
+    expect(page.locator(".catalog-count")).to_have_text(f"100 / {catalog['stats']['total']}")
+    expect(page.locator('[data-capability-value="exploration_interface"] b')).to_have_text("55")
+    page.locator('[data-capability-value="exploration_interface"]').click()
+    expect(cards).to_have_count(55)
+    page.locator('[data-action="clear-capability-filters"]').click()
+    page.locator("#environment-search").fill("Rotating On-Screen Keyboard")
+    expect(cards).to_have_count(1)
+    page.locator('[data-star-environment="rotating_keyboard_env"]').click()
+    page.locator('[data-action="toggle-star-filter"]').click()
+    page.locator("#environment-search").fill("")
+    expect(cards).to_have_count(1)
+    page.locator('[data-action="toggle-star-filter"]').click()
+    expect(cards).to_have_count(100)
+    page.locator('[data-view="compact"]').click()
+    expect(page.locator("#environment-grid")).to_have_class("environment-grid is-compact")
+    expect(cards).to_have_count(100)
+    page.reload(wait_until="networkidle")
+    expect(cards).to_have_count(100)
+    expect(toggle).to_have_attribute("aria-pressed", "true")
+    if out_dir:
+        page.screenshot(path=str(out_dir / "selected-100-desktop.png"))
+    original_viewport = page.viewport_size
+    page.set_viewport_size({"width": 390, "height": 844})
+    expect(toggle).to_be_visible()
+    assert page.evaluate("document.documentElement.scrollWidth <= innerWidth")
+    if out_dir:
+        page.screenshot(path=str(out_dir / "selected-100-mobile.png"))
+    toggle.click()
+    expect(cards).to_have_count(built_count)
+    expect(toggle).to_have_attribute("aria-pressed", "false")
+    page.reload(wait_until="networkidle")
+    expect(cards).to_have_count(built_count)
+    page.set_viewport_size(original_viewport)
 
 
 def parse_args() -> argparse.Namespace:
@@ -88,6 +140,7 @@ def main() -> None:
                         "error": str(error),
                     }),
                 )
+                check_selected_100(dashboard, base_url, args.out_dir)
                 dashboard.goto(
                     f"{base_url}/#/environment/rotating_keyboard_env",
                     wait_until="networkidle",

@@ -67,6 +67,7 @@ const state = {
     review: "all",
     view: "grid",
     starredOnly: initialSharedStars.size > 0,
+    selectedOnly: new URLSearchParams(location.search).get("selection") === "selected_100",
     capabilityRealTime: "all",
     capabilityVisual: "all",
     capabilityCore: new Set(),
@@ -527,6 +528,7 @@ function renderObservatory() {
 function capabilityFilterCount(field, value) {
   return state.catalog.environments.filter((environment) => (
     environment.stage === "built"
+    && (!state.filters.selectedOnly || environment.selected_for_evaluation)
     && environment.capability_annotation
     && environment.capability_annotation[field] === value
   )).length;
@@ -603,9 +605,10 @@ function filteredEnvironments() {
     const stageMatch = state.filters.stage === "all" || environment.stage === state.filters.stage;
     const reviewMatch = state.filters.review === "all" || (environment.stage === "built" && reviewFor(environment.id).status === state.filters.review);
     const starMatch = !state.filters.starredOnly || stars.has(environment.id);
+    const selectionMatch = !state.filters.selectedOnly || environment.selected_for_evaluation;
     const capabilityMatch = environmentMatchesCapabilityFilters(environment);
     const haystack = [environment.title, environment.summary, environment.mechanic_id, environment.group, ...environment.axes].join(" ").toLowerCase();
-    return groupMatch && stageMatch && reviewMatch && starMatch && capabilityMatch && (!query || haystack.includes(query));
+    return groupMatch && stageMatch && reviewMatch && starMatch && selectionMatch && capabilityMatch && (!query || haystack.includes(query));
   });
 }
 
@@ -620,6 +623,9 @@ function refreshCapabilityFilterChrome() {
     const pressed = capabilityFilterPressed(button.dataset.capabilityGroup, button.dataset.capabilityValue);
     button.classList.toggle("is-active", pressed);
     button.setAttribute("aria-pressed", String(pressed));
+    const field = button.dataset.capabilityGroup === "core" ? button.dataset.capabilityValue : button.dataset.capabilityGroup;
+    const value = button.dataset.capabilityGroup === "core" ? true : button.dataset.capabilityValue;
+    button.querySelector("b").textContent = capabilityFilterCount(field, value);
   });
   const clear = document.querySelector('[data-action="clear-capability-filters"]');
   if (clear) clear.disabled = !hasCapabilityFilters();
@@ -640,6 +646,11 @@ function refreshEnvironmentCatalog({rebuild = true} = {}) {
     button.classList.toggle("is-active", button.dataset.view === state.filters.view);
   });
   refreshStarChrome();
+  const selection = document.querySelector('[data-action="toggle-selection-filter"]');
+  if (selection) {
+    selection.classList.toggle("is-active", state.filters.selectedOnly);
+    selection.setAttribute("aria-pressed", String(state.filters.selectedOnly));
+  }
   const stage = document.getElementById("stage-filter");
   if (stage && stage.value !== state.filters.stage) stage.value = state.filters.stage;
   const review = document.getElementById("review-filter");
@@ -662,6 +673,7 @@ function renderEnvironments() {
       ${sharedStarsBannerMarkup()}
       <div class="catalog-toolbar">
         <label class="search-field">${searchIcon}<input id="environment-search" type="search" value="${escapeHtml(state.filters.query)}" placeholder="Search motion, physics, memory…" aria-label="Search environments"></label>
+        <button class="star-filter-button ${state.filters.selectedOnly ? "is-active" : ""}" type="button" data-action="toggle-selection-filter" aria-pressed="${state.filters.selectedOnly}" title="Show the 100 environments selected for evaluation">Selected 100</button>
         <select class="filter-select" id="stage-filter" aria-label="Filter by stage">
           <option value="all" ${state.filters.stage === "all" ? "selected" : ""}>All stages</option>
           <option value="built" ${state.filters.stage === "built" ? "selected" : ""}>Built designs</option>
@@ -1659,6 +1671,14 @@ document.addEventListener("click", async (event) => {
     if (action === "close-modal") {
       if (event.target.classList.contains("modal-backdrop") || target.classList.contains("modal-close") || target.closest("form")) closeModal();
     } else if (action === "open-companion") openCompanionDialog();
+    else if (action === "toggle-selection-filter") {
+      state.filters.selectedOnly = !state.filters.selectedOnly;
+      const url = new URL(location.href);
+      if (state.filters.selectedOnly) url.searchParams.set("selection", "selected_100");
+      else url.searchParams.delete("selection");
+      history.replaceState(null, "", url);
+      refreshEnvironmentCatalog();
+    }
     else if (action === "toggle-star-filter") {
       if (!state.stars.sharedView) {
         state.filters.starredOnly = !state.filters.starredOnly;
