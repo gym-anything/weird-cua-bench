@@ -35,22 +35,25 @@ windows while the input stays held. Down, wait, up in a single batch does NOT
 advance paused task time between down and up."""
     else:
         timing = """The task keeps running while you reason, deliver inputs, and wait.
-Each response returns one instantaneous screenshot after the action batch
-finishes. Held keys/buttons remain down across responses until you release them.
+An input request returns its execution acknowledgement without a screenshot.
+Request {"action":"screenshot"} separately for one instantaneous frame.
+Held keys/buttons remain down across responses until you release them.
 A batch containing down, wait, up can express a timed hold in live mode."""
     if timestamps_enabled(temporal_mode):
         timing += """
 Time zero is the start of the environment. Responses include
 timing.frame_captured_at_s for the screenshot and timing.current_time_s near
 response serialization. Input responses include timing.action_executed_at_s
-(the acknowledgement after the whole batch),
+(the sandbox's start of input injection), timing.action_completed_at_s
+(the X-server acknowledgement after the batch),
 seconds_between_your_last_screenshot_and_that_action_landing, and
 your_recent_observe_to_execute_latencies_s. Screenshot capture and action
 injection can overlap across concurrent requests."""
     if scheduled_execution_enabled(temporal_mode):
         timing += """
 Optionally send {"actions": [...], "execute_at_s": 10.0} to schedule the start
-of a batch at an absolute time on this clock. A time in the past runs as soon
+of a batch at an absolute time on this clock. Send the request beforehand:
+it is queued inside the task sandbox until that time. A time in the past runs as soon
 as the injection lane is free. This is a start time, not a hold duration.
 The response reports previous_action_requested_execute_at_s and
 action_execution_lateness_s. For a timed press and release, schedule separate
@@ -142,7 +145,7 @@ response, paths = computer([])  # Begin by observing the task.
 
 You have at most {max_steps} steps. One non-observation request (including an
 ordered action list) consumes one step, just as one env.step call does. A batch
-returns its observation after the entire list. Release held inputs before
+returns after the entire list. Release held inputs before
 finishing. Stop when done is true. No further inputs will be accepted.
 
 Task:

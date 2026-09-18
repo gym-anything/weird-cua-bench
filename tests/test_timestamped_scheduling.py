@@ -91,7 +91,7 @@ def test_existing_timing_fields_survive_scheduled_action(tmp_path: Path) -> None
     assert agent._latency_log == [2.2]
 
 
-def test_evaluator_prepends_absolute_runner_wait() -> None:
+def test_evaluator_sends_deadline_and_actions_in_one_runner_request() -> None:
     group = {
         "actions": [{"mouse": {"left_click": [12, 34]}}],
         "metadata": {"execute_at_s": 3.5, "execute_at_wall_ms": 12_345.0},
@@ -99,8 +99,11 @@ def test_evaluator_prepends_absolute_runner_wait() -> None:
     assert _actions_with_schedule(
         group, temporal_mode="live_timestamped_execution"
     ) == [
-        {"action": "wait_until", "wall_time_ms": 12_345.0},
-        {"mouse": {"left_click": [12, 34]}},
+        {
+            "action": "scheduled_input",
+            "wall_time_ms": 12_345.0,
+            "actions": [{"mouse": {"left_click": [12, 34]}}],
+        },
     ]
     for mode in ("paused", "live", "live_timestamped"):
         with pytest.raises(ValueError, match="live_timestamped_execution"):

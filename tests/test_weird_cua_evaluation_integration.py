@@ -102,6 +102,26 @@ def test_temporal_modes_map_to_two_runner_clock_modes() -> None:
         )
 
 
+@pytest.mark.parametrize("inner", ["sandweave", "qemu", "example.runner:Runner"])
+@pytest.mark.parametrize("mode", evaluator.TEMPORAL_MODES)
+def test_inner_runner_selection_preserves_temporal_mode(inner, mode) -> None:
+    args = evaluator.build_parser().parse_args([
+        "--env-dir", "environment", "--task", "task",
+        "--agent", "CodexCliAgent", "--agent-args", "{}",
+        "--temporal-mode", mode, "--inner-runner", inner,
+    ])
+    settings = SimpleNamespace(
+        observation_window_ms=800, frames_per_observation=6, play_time_seconds=90,
+    )
+    options = evaluator._runner_options(args, settings)
+    assert options["inner"] == inner
+    assert options["time_mode"] == ("paused" if mode == "paused" else "live")
+    assert options["frames_per_observation"] == (6 if mode == "paused" else 1)
+    assert options["observation_window_ms"] == (800 if mode == "paused" else 0)
+    args.inner_runner = None
+    assert "inner" not in evaluator._runner_options(args, settings)
+
+
 def test_timestamped_modes_select_timestamped_reference_agents() -> None:
     from weird_captcha_gym.evaluation.codex_cli import WeirdCodexCliAgent
     from weird_captcha_gym.evaluation.gemini_timestamped import (
@@ -244,7 +264,7 @@ def test_make_env_merges_runner_options_locally(monkeypatch) -> None:
         task="task",
         fast_io=True,
     )
-    options = {"time_mode": "paused", "observation_window_ms": 800}
+    options = {"inner": "sandweave", "time_mode": "paused", "observation_window_ms": 800}
     assert evaluator._make_env(args, options) is sentinel
     assert received == {
         "env_dir": "environment",
@@ -276,6 +296,7 @@ def test_make_env_creates_remote_by_benchmark_name_with_overrides(monkeypatch) -
         frames_per_observation=None,
     )
     options = {
+        "inner": "sandweave",
         "time_mode": "live",
         "observation_window_ms": 0,
         "frames_per_observation": 1,

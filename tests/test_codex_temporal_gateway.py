@@ -13,6 +13,18 @@ class TimedEnvironment:
         self.origin_ms = time.time_ns() / 1_000_000 - 1_000
         self.capture_count = 0
         self.step_calls: list[tuple[list[dict], bool, bool]] = []
+        self.runner = self
+        self._episode_started_wall_ms = self.origin_ms
+
+    def prepare_input(self):
+        pass
+
+    def execute_input_step(self, env, actions, execute_at_s=None, *, request_id):
+        self.step(actions, capture_observation=False, settle_after_actions=False)
+        return {"done": False, "receipt": {"id": request_id, "queued_at_s": 1.0,
+                "requested_execute_at_s": execute_at_s, "action_executed_at_s": 1.1,
+                "action_completed_at_s": 1.101, "ack_sent_at_s": 1.102,
+                "acknowledgement": "x-server-processed"}}
 
     def capture_observation(self) -> dict:
         index = self.capture_count
@@ -69,7 +81,8 @@ def test_codex_clock_starts_before_first_frame_and_persists_every_event(
     )
 
     assert first["timing"]["frame_captured_at_s"] == 0.25
-    assert action["timing"]["frame_captured_at_s"] == 0.35
+    assert action["screenshot_b64"] is None
+    assert "frame_captured_at_s" not in action["timing"]
     assert action["timing"]["action_executed_at_s"] >= 0
     assert env.step_calls == [
         ([{"mouse": {"left_click": [20, 30]}}], False, False)
@@ -78,7 +91,6 @@ def test_codex_clock_starts_before_first_frame_and_persists_every_event(
     assert [event["event"] for event in events] == [
         "screenshot_captured",
         "action_executed",
-        "screenshot_captured",
     ]
     assert events[0]["frame_captured_at_s"] == 0.25
     assert events[1]["action_executed_at_s"] == action["timing"][

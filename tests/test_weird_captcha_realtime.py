@@ -665,6 +665,32 @@ def test_frame_targets_include_both_ends_of_a_window() -> None:
     assert CAPTURE.frame_targets(1000, 0, 1) == [1000]
 
 
+def test_one_live_frame_does_not_start_a_window_recorder(tmp_path, monkeypatch):
+    from types import SimpleNamespace
+
+    calls = []
+    monkeypatch.setattr(CAPTURE, "wait_until_ready", lambda **kwargs: None)
+    monkeypatch.setattr(CAPTURE, "get_status", lambda **kwargs: {"state": "running", "task_time_ms": 42})
+
+    def capture_one(command, **kwargs):
+        calls.append((command, kwargs))
+        Path(command[-1]).write_bytes(b"png")
+
+    monkeypatch.setattr(CAPTURE.subprocess, "run", capture_one)
+    monkeypatch.setattr(CAPTURE, "start_recorder", lambda *args, **kwargs: (_ for _ in ()).throw(AssertionError("window recorder")))
+    args = SimpleNamespace(output_dir=str(tmp_path / "capture"), mode="live", duration_ms=0,
+                           frames=1, width=1920, height=1080, display=":1", port=8787, timeout=30)
+    result = CAPTURE.capture(args)
+    command, options = calls[0]
+    assert command[command.index("-frames:v") + 1] == "1"
+    assert command[command.index("-framerate") + 1] == "30"
+    assert options["check"] and options["timeout"] == 30
+    assert len(result["frames"]) == 1
+    assert result["resolution"] == [1920, 1080]
+    assert result["time_status"]["state"] == "running"
+    assert (tmp_path / "capture" / "manifest.json").is_file()
+
+
 def test_frame_selection_uses_nearest_capture_time(tmp_path: Path) -> None:
     paths = []
     for index, timestamp_ms in enumerate((1000, 1100, 1200)):

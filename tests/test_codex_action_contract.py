@@ -33,6 +33,26 @@ class InputEnvironment:
         self.held = set()
         self.window_holds = []
         self.origin = time.time_ns() / 1_000_000 - 1000
+        self.runner = self
+        self._episode_started_wall_ms = self.origin
+
+    def prepare_input(self):
+        pass
+
+    def close_input(self):
+        self.input_closed = True
+
+    def execute_input_step(self, env, actions, execute_at_s=None, *, request_id):
+        queued = (time.time_ns() / 1e6 - self.origin) / 1000
+        if execute_at_s is not None:
+            time.sleep(max(0, execute_at_s - queued))
+        started = (time.time_ns() / 1e6 - self.origin) / 1000
+        self.step(actions, capture_observation=False, settle_after_actions=False)
+        finished = (time.time_ns() / 1e6 - self.origin) / 1000
+        return {"done": False, "receipt": {"id": request_id, "queued_at_s": queued,
+                "requested_execute_at_s": execute_at_s, "action_executed_at_s": started,
+                "action_completed_at_s": finished, "ack_sent_at_s": finished,
+                "acknowledgement": "x-server-processed"}}
 
     def step(self, actions, *, capture_observation, settle_after_actions):
         assert not capture_observation and not settle_after_actions
@@ -87,7 +107,7 @@ def test_every_native_input_reaches_env_step_unchanged(tmp_path, mode, action):
     assert response["error"] is None
     assert env.calls == [[action]]
     assert response["step"] == 1
-    assert env.captures == 1
+    assert env.captures == (1 if mode == "paused" else 0)
     if "timestamped" in mode:
         assert "action_executed_at_s" in response["timing"]
 
